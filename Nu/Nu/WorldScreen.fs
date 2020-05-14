@@ -146,10 +146,10 @@ module WorldScreenModule =
 
         /// Set the dissolve properties of a screen.
         [<FunctionBinding>]
-        static member setScreenDissolve dissolveData songOpt (screen : Screen) world =
-            let dissolveImageOpt = Some dissolveData.DissolveImage
-            let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveData.IncomingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
-            let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveData.OutgoingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
+        static member setScreenDissolve dissolveDescriptor songOpt (screen : Screen) world =
+            let dissolveImageOpt = Some dissolveDescriptor.DissolveImage
+            let world = screen.SetIncoming { Transition.make Incoming with TransitionLifetime = dissolveDescriptor.IncomingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
+            let world = screen.SetOutgoing { Transition.make Outgoing with TransitionLifetime = dissolveDescriptor.OutgoingTime; DissolveImageOpt = dissolveImageOpt; SongOpt = songOpt } world
             world
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
@@ -203,14 +203,14 @@ module WorldScreenModule =
 
         /// Create a screen with a dissolving transition, and add it to the world.
         [<FunctionBinding "createDissolveScreen">]
-        static member createDissolveScreen5 dispatcherName nameOpt dissolveData songOpt world =
+        static member createDissolveScreen5 dispatcherName nameOpt dissolveDescriptor songOpt world =
             let (screen, world) = World.createScreen3 dispatcherName nameOpt world
-            let world = World.setScreenDissolve dissolveData songOpt screen world
+            let world = World.setScreenDissolve dissolveDescriptor songOpt screen world
             (screen, world)
         
         /// Create a screen with a dissolving transition, and add it to the world.
-        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> nameOpt dissolveData world =
-            World.createDissolveScreen5 typeof<'d>.Name nameOpt dissolveData world
+        static member createDissolveScreen<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor world =
+            World.createDissolveScreen5 typeof<'d>.Name nameOpt dissolveDescriptor world
 
         /// Write a screen to a screen descriptor.
         static member writeScreen screen screenDescriptor world =
@@ -264,10 +264,10 @@ module WorldScreenModule =
         static member applyScreenBehavior setScreenSplash behavior (screen : Screen) world =
             match behavior with
             | Vanilla -> (screen, world)
-            | Dissolve (dissolveData, songOpt) -> (screen, World.setScreenDissolve dissolveData songOpt screen world)
-            | Splash (dissolveData, splashData, destination) ->
-                let world = World.setScreenDissolve dissolveData None screen world
-                let world = setScreenSplash (Some splashData) destination screen world
+            | Dissolve (dissolveDescriptor, songOpt) -> (screen, World.setScreenDissolve dissolveDescriptor songOpt screen world)
+            | Splash (dissolveDescriptor, splashDescriptor, destination) ->
+                let world = World.setScreenDissolve dissolveDescriptor None screen world
+                let world = setScreenSplash (Some splashDescriptor) destination screen world
                 (screen, world)
             | OmniScreen -> (screen, World.setOmniScreen screen world)
 
