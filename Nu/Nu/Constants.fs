@@ -66,7 +66,7 @@ module Audio =
     let [<Literal>] DefaultSongVolume = 0.25f
     let [<Literal>] DefaultSoundVolume = 0.5f
     let [<Literal>] DefaultBufferSize = 1024
-    let [<Literal>] DefaultTimeToFadeOutSongMs = 500
+    let [<Literal>] DefaultFadeOutMs = 500
     let (*Literal*) AssetMapConfig = Functional
 
 [<RequireQualifiedAccess>]

@@ -62,8 +62,8 @@ module OmniGame =
             just world
 
         override this.Content (model, _) =
-            let playTitleSong = { Volume = Constants.Audio.DefaultSongVolume; TimeToFadeOutSongMs = Constants.Audio.DefaultTimeToFadeOutSongMs; Song = Assets.TitleSong }
-            let playBattleSong = { Volume = Constants.Audio.DefaultSongVolume; TimeToFadeOutSongMs = Constants.Audio.DefaultTimeToFadeOutSongMs; Song = Assets.BattleSong }
+            let playTitleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = Assets.TitleSong }
+            let playBattleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = Assets.BattleSong }
             [Content.screen Simulants.Splash.Name (Splash (Constants.OmniBlade.DissolveData, Constants.OmniBlade.SplashData, Simulants.Title)) [] []
              Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.OmniBlade.DissolveData, (Some playTitleSong))) Assets.TitleLayerFilePath
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.OmniBlade.DissolveData, (Some playTitleSong))) Assets.CreditsLayerFilePath

@@ -41,8 +41,8 @@ module BlazeDispatcherModule =
 
         // here we describe the content of the game including all of its screens.
         override this.Content (_, _) =
-            let playMachinery = { Volume = Constants.Audio.DefaultSongVolume; TimeToFadeOutSongMs = Constants.Audio.DefaultTimeToFadeOutSongMs; Song = Assets.MachinerySong }
-            let playDeadBlaze = { Volume = 0.5f (* turn up song's volume! *); TimeToFadeOutSongMs = Constants.Audio.DefaultTimeToFadeOutSongMs; Song = Assets.DeadBlazeSong }
+            let playMachinery = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = Assets.MachinerySong }
+            let playDeadBlaze = { Volume = 0.5f (* turn up song's volume! *); FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = Assets.DeadBlazeSong }
             [Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, Simulants.Title)) [] []
              Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some playMachinery)) Assets.TitleLayerFilePath
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some playMachinery)) Assets.CreditsLayerFilePath

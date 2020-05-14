@@ -59,7 +59,7 @@ module WorldAudioModule =
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]
         static member playSong timeToFadeOutSongMs volume song world =
-            let playSongMessage = PlaySongMessage { TimeToFadeOutSongMs = timeToFadeOutSongMs; Volume = volume; Song = song }
+            let playSongMessage = PlaySongMessage { FadeOutMs = timeToFadeOutSongMs; Volume = volume; Song = song }
             World.enqueueAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.
