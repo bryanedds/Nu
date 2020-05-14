@@ -7,9 +7,4 @@
    [[Depth 10]
     [Name Back]
     [Position [216.0f -264.0f]]
-    [Text Back]]]
-  [LabelDispatcher
-   [[Depth -100]
-    [LabelImage [Default Image8]]
-    [Position [-480.0f -272.0f]]
-    [Size [960.0f 544.0f]]]]]]
+    [Text Back]]]]]

@@ -727,20 +727,24 @@ module OmniBattle =
 
         member private this.SceneContent (model : Lens<BattleModel, World>, _ : Screen) =
 
+            // scene layer
             let background = Simulants.BattleScene / "Background"
             Content.layer Simulants.BattleScene.Name []
 
+                // background
                 [Content.label background.Name
                     [background.Position == v2 -480.0f -512.0f
                      background.Size == v2 1024.0f 1024.0f
                      background.Depth == Constants.Battle.BackgroundDepth
                      background.LabelImage == asset "Battle" "Background"]
 
+                 // allies
                  Content.entitiesIndexedBy
                     (model --> fun model -> BattleModel.getAllies model |> seq)
                     (fun model -> model.PartyIndex)
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.CharacterModel <== model])
 
+                 // enemies
                  Content.entitiesIndexedBy
                     (model --> fun model -> BattleModel.getEnemies model |> seq)
                     (fun model -> model.PartyIndex)
@@ -748,12 +752,15 @@ module OmniBattle =
 
         member private this.InputContent (model : Lens<BattleModel, World>, screen : Screen) =
 
+            // input layers
             Content.layers (model --> fun model -> BattleModel.getAllies model |> seq) $ fun index ally _ ->
 
+                // input layer
                 let allyIndex = AllyIndex index
                 let input = screen / ("Input" + "+" + scstring index)
                 Content.layer input.Name []
 
+                    // health bar
                     [Content.fillBar "HealthBar" 
                         [Entity.Size == v2 64.0f 8.0f
                          Entity.Center <== ally --> fun ally -> ally.BottomOffset
@@ -761,6 +768,7 @@ module OmniBattle =
                          Entity.Visible <== ally --> fun ally -> ally.HitPoints > 0
                          Entity.Fill <== ally --> fun ally -> single ally.HitPoints / single ally.HitPointsMax]
 
+                     // regular menu
                      Content.entity<RingMenuDispatcher> "RegularMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
                          Entity.Depth == Constants.Battle.GuiDepth
@@ -776,6 +784,7 @@ module OmniBattle =
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
 
+                     // consumable menu
                      Content.entity<RingMenuDispatcher> "ConsumableMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
                          Entity.Depth == Constants.Battle.GuiDepth
@@ -788,6 +797,7 @@ module OmniBattle =
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ConsumableItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (ConsumableItemCancel allyIndex)]
 
+                     // tech menu
                      Content.entity<RingMenuDispatcher> "TechMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
                          Entity.Depth == Constants.Battle.GuiDepth
@@ -808,6 +818,7 @@ module OmniBattle =
                          Entity.ItemSelectEvent ==|> fun evt -> msg (TechItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (TechItemCancel allyIndex)]
 
+                     // reticles
                      Content.entity<ReticlesDispatcher> "Reticles"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
                          Entity.Depth == Constants.Battle.GuiDepth

@@ -3,12 +3,7 @@
   [Name Gui]
   [Persistent True]
   [Visible True]]
- [[LabelDispatcher
-   [[Depth -1]
-    [LabelImage [Default Image8]]
-    [Position [-480.0f -272.0f]]
-    [Size [960.0f 544.0f]]]]
-  [ButtonDispatcher
+ [[ButtonDispatcher
    [[Name Back]
     [Position [-128.0f -224.0f]]
     [Text Back]]]

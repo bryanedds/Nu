@@ -28,7 +28,7 @@ module Default =
     let DissolveData =
         { IncomingTime = 20L
           OutgoingTime = 30L
-          DissolveImage = AssetTag.make Assets.DefaultPackageName "Image8" }
+          DissolveImage = AssetTag.make Assets.DefaultPackageName "Image9" }
 
     /// The default 'splashing' behavior of game's splash screen.
     let SplashData =

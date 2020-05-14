@@ -152,7 +152,11 @@ module OmniField =
                 just world
 
         override this.Content (model, _) =
+            
+            // main layer
             [Content.layer Simulants.FieldScene.Name []
+                
+                // tile map
                 [Content.tileMap Simulants.FieldTileMap.Name
                     [Entity.Depth == Constants.Field.BackgroundDepth
                      Entity.TileMapAsset <== model --> fun model ->
@@ -160,12 +164,16 @@ module OmniField =
                         | Some fieldData -> fieldData.FieldTileMap
                         | None -> Assets.DebugRoomTileMap
                      Entity.TileLayerClearance == 10.0f]
+                 
+                 // avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
                     [Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Position == v2 256.0f 256.0f
                      Entity.Depth == Constants.Field.ForgroundDepth
                      Entity.LinearDamping == Constants.Field.LinearDamping
                      Entity.AvatarModel <== model --> fun model -> model.Avatar]
+                 
+                 // interact button
                  Content.button Simulants.FieldInteract.Name
                     [Entity.Size == v2Dup 92.0f
                      Entity.Position == v2 360.0f 160.0f
@@ -178,6 +186,8 @@ module OmniField =
                         | Some interaction -> interaction
                         | None -> ""
                      Entity.ClickSoundOpt == None]
+                 
+                 // dialog
                  Content.text Simulants.FieldDialog.Name
                     [Entity.Bounds <== model --> fun model ->
                         match model.DialogOpt with
@@ -205,6 +215,8 @@ module OmniField =
                      Entity.Visible <== model --> fun model -> Option.isSome model.DialogOpt
                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                      Entity.Margins == v2 32.0f 0.0f]
+                 
+                 // props
                  Content.entities
                     (model ->> fun model world ->
                         match Map.tryFind model.FieldType data.Value.Fields with
