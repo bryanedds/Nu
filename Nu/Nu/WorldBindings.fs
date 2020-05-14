@@ -203,8 +203,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let splashDataOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<SplashData>> splashDataOpt world with
-                | Some value -> value :?> FSharpOption<SplashData>
+                match ScriptingSystem.tryExport typeof<FSharpOption<SplashDescriptor>> splashDataOpt world with
+                | Some value -> value :?> FSharpOption<SplashDescriptor>
                 | None -> failwith "Invalid argument type for 'splashDataOpt'; expecting a value convertable to FSharpOption`1."
             let struct (destination, world) =
                 let context = World.getScriptContext world
@@ -232,7 +232,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setScreenSplash' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData songOpt layerFilePath world =
+    let createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveDescriptor songOpt layerFilePath world =
         let oldWorld = world
         try
             let dispatcherName =
@@ -243,10 +243,10 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
                 | Some value -> value :?> FSharpOption<String>
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
-            let dissolveData =
-                match ScriptingSystem.tryExport typeof<DissolveData> dissolveData world with
-                | Some value -> value :?> DissolveData
-                | None -> failwith "Invalid argument type for 'dissolveData'; expecting a value convertable to DissolveData."
+            let dissolveDescriptor =
+                match ScriptingSystem.tryExport typeof<DissolveDescriptor> dissolveDescriptor world with
+                | Some value -> value :?> DissolveDescriptor
+                | None -> failwith "Invalid argument type for 'dissolveDescriptor'; expecting a value convertable to DissolveDescriptor."
             let songOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<SongDescriptor>> songOpt world with
                 | Some value -> value :?> FSharpOption<SongDescriptor>
@@ -255,7 +255,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<String> layerFilePath world with
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'layerFilePath'; expecting a value convertable to String."
-            let result = World.createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData songOpt layerFilePath world
+            let result = World.createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveDescriptor songOpt layerFilePath world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
@@ -263,17 +263,17 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreenFromLayerFile6' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createDissolveScreenFromLayerFile nameOpt dissolveData songOpt layerFilePath world =
+    let createDissolveScreenFromLayerFile nameOpt dissolveDescriptor songOpt layerFilePath world =
         let oldWorld = world
         try
             let nameOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
                 | Some value -> value :?> FSharpOption<String>
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
-            let dissolveData =
-                match ScriptingSystem.tryExport typeof<DissolveData> dissolveData world with
-                | Some value -> value :?> DissolveData
-                | None -> failwith "Invalid argument type for 'dissolveData'; expecting a value convertable to DissolveData."
+            let dissolveDescriptor =
+                match ScriptingSystem.tryExport typeof<DissolveDescriptor> dissolveDescriptor world with
+                | Some value -> value :?> DissolveDescriptor
+                | None -> failwith "Invalid argument type for 'dissolveDescriptor'; expecting a value convertable to DissolveDescriptor."
             let songOpt =
                 match ScriptingSystem.tryExport typeof<String> songOpt world with
                 | Some value -> value :?> String
@@ -282,7 +282,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<FSharpOption<SongDescriptor>> layerFilePath world with
                 | Some value -> value :?> FSharpOption<SongDescriptor>
                 | None -> failwith "Invalid argument type for 'layerFilePath'; expecting a value convertable to FSharpOption`1."
-            let result = World.createDissolveScreenFromLayerFile nameOpt dissolveData songOpt layerFilePath world
+            let result = World.createDissolveScreenFromLayerFile nameOpt dissolveDescriptor songOpt layerFilePath world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
@@ -290,7 +290,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createDissolveScreenFromLayerFile' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createSplashScreen6 dispatcherName nameOpt splashData destination world =
+    let createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world =
         let oldWorld = world
         try
             let dispatcherName =
@@ -301,10 +301,10 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
                 | Some value -> value :?> FSharpOption<String>
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
-            let splashData =
-                match ScriptingSystem.tryExport typeof<SplashData> splashData world with
-                | Some value -> value :?> SplashData
-                | None -> failwith "Invalid argument type for 'splashData'; expecting a value convertable to SplashData."
+            let splashDescriptor =
+                match ScriptingSystem.tryExport typeof<SplashDescriptor> splashDescriptor world with
+                | Some value -> value :?> SplashDescriptor
+                | None -> failwith "Invalid argument type for 'splashDescriptor'; expecting a value convertable to SplashDescriptor."
             let struct (destination, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal destination world with
@@ -315,7 +315,7 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createSplashScreen6 dispatcherName nameOpt splashData destination world
+            let result = World.createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
@@ -323,17 +323,17 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createSplashScreen6' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createSplashScreen nameOpt splashData destination world =
+    let createSplashScreen nameOpt splashDescriptor destination world =
         let oldWorld = world
         try
             let nameOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
                 | Some value -> value :?> FSharpOption<String>
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
-            let splashData =
-                match ScriptingSystem.tryExport typeof<SplashData> splashData world with
-                | Some value -> value :?> SplashData
-                | None -> failwith "Invalid argument type for 'splashData'; expecting a value convertable to SplashData."
+            let splashDescriptor =
+                match ScriptingSystem.tryExport typeof<SplashDescriptor> splashDescriptor world with
+                | Some value -> value :?> SplashDescriptor
+                | None -> failwith "Invalid argument type for 'splashDescriptor'; expecting a value convertable to SplashDescriptor."
             let struct (destination, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal destination world with
@@ -344,7 +344,7 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.createSplashScreen nameOpt splashData destination world
+            let result = World.createSplashScreen nameOpt splashDescriptor destination world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
@@ -1105,8 +1105,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let setScreenSplash =
-                match ScriptingSystem.tryExport typeof<FSharpFunc<FSharpOption<SplashData>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>> setScreenSplash world with
-                | Some value -> value :?> FSharpFunc<FSharpOption<SplashData>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>
+                match ScriptingSystem.tryExport typeof<FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>> setScreenSplash world with
+                | Some value -> value :?> FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>
                 | None -> failwith "Invalid argument type for 'setScreenSplash'; expecting a value convertable to FSharpFunc`2."
             let guidOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<Guid>> guidOpt world with
@@ -1384,13 +1384,13 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getScreens' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setScreenDissolve dissolveData songOpt screen world =
+    let setScreenDissolve dissolveDescriptor songOpt screen world =
         let oldWorld = world
         try
-            let dissolveData =
-                match ScriptingSystem.tryExport typeof<DissolveData> dissolveData world with
-                | Some value -> value :?> DissolveData
-                | None -> failwith "Invalid argument type for 'dissolveData'; expecting a value convertable to DissolveData."
+            let dissolveDescriptor =
+                match ScriptingSystem.tryExport typeof<DissolveDescriptor> dissolveDescriptor world with
+                | Some value -> value :?> DissolveDescriptor
+                | None -> failwith "Invalid argument type for 'dissolveDescriptor'; expecting a value convertable to DissolveDescriptor."
             let songOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<SongDescriptor>> songOpt world with
                 | Some value -> value :?> FSharpOption<SongDescriptor>
@@ -1405,7 +1405,7 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.setScreenDissolve dissolveData songOpt screen world
+            let result = World.setScreenDissolve dissolveDescriptor songOpt screen world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setScreenDissolve' due to: " + scstring exn, None)
@@ -1449,7 +1449,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'createScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let createDissolveScreen dispatcherName nameOpt dissolveData songOpt world =
+    let createDissolveScreen dispatcherName nameOpt dissolveDescriptor songOpt world =
         let oldWorld = world
         try
             let dispatcherName =
@@ -1460,15 +1460,15 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<FSharpOption<String>> nameOpt world with
                 | Some value -> value :?> FSharpOption<String>
                 | None -> failwith "Invalid argument type for 'nameOpt'; expecting a value convertable to FSharpOption`1."
-            let dissolveData =
-                match ScriptingSystem.tryExport typeof<DissolveData> dissolveData world with
-                | Some value -> value :?> DissolveData
-                | None -> failwith "Invalid argument type for 'dissolveData'; expecting a value convertable to DissolveData."
+            let dissolveDescriptor =
+                match ScriptingSystem.tryExport typeof<DissolveDescriptor> dissolveDescriptor world with
+                | Some value -> value :?> DissolveDescriptor
+                | None -> failwith "Invalid argument type for 'dissolveDescriptor'; expecting a value convertable to DissolveDescriptor."
             let songOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<SongDescriptor>> songOpt world with
                 | Some value -> value :?> FSharpOption<SongDescriptor>
                 | None -> failwith "Invalid argument type for 'songOpt'; expecting a value convertable to FSharpOption`1."
-            let result = World.createDissolveScreen5 dispatcherName nameOpt dissolveData songOpt world
+            let result = World.createDissolveScreen5 dispatcherName nameOpt dissolveDescriptor songOpt world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
             struct (value, world)
@@ -2525,7 +2525,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|dispatcherName; nameOpt; dissolveData; songOpt; layerFilePath|] -> createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData songOpt layerFilePath world
+            | [|dispatcherName; nameOpt; dissolveDescriptor; songOpt; layerFilePath|] -> createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveDescriptor songOpt layerFilePath world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2536,7 +2536,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|nameOpt; dissolveData; songOpt; layerFilePath|] -> createDissolveScreenFromLayerFile nameOpt dissolveData songOpt layerFilePath world
+            | [|nameOpt; dissolveDescriptor; songOpt; layerFilePath|] -> createDissolveScreenFromLayerFile nameOpt dissolveDescriptor songOpt layerFilePath world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2547,7 +2547,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|dispatcherName; nameOpt; splashData; destination|] -> createSplashScreen6 dispatcherName nameOpt splashData destination world
+            | [|dispatcherName; nameOpt; splashDescriptor; destination|] -> createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2558,7 +2558,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|nameOpt; splashData; destination|] -> createSplashScreen nameOpt splashData destination world
+            | [|nameOpt; splashDescriptor; destination|] -> createSplashScreen nameOpt splashDescriptor destination world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3229,7 +3229,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|dissolveData; songOpt; screen|] -> setScreenDissolve dissolveData songOpt screen world
+            | [|dissolveDescriptor; songOpt; screen|] -> setScreenDissolve dissolveDescriptor songOpt screen world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3262,7 +3262,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|dispatcherName; nameOpt; dissolveData; songOpt|] -> createDissolveScreen dispatcherName nameOpt dissolveData songOpt world
+            | [|dispatcherName; nameOpt; dissolveDescriptor; songOpt|] -> createDissolveScreen dispatcherName nameOpt dissolveDescriptor songOpt world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3881,10 +3881,10 @@ module WorldBindings =
              ("tryTransitionScreen", { Fn = evalTryTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
              ("transitionScreen", { Fn = evalTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
              ("setScreenSplash", { Fn = evalSetScreenSplashBinding; Pars = [|"splashDataOpt"; "destination"; "screen"|]; DocOpt = None })
-             ("createDissolveScreenFromLayerFile6", { Fn = evalCreateDissolveScreenFromLayerFile6Binding; Pars = [|"dispatcherName"; "nameOpt"; "dissolveData"; "songOpt"; "layerFilePath"|]; DocOpt = None })
-             ("createDissolveScreenFromLayerFile", { Fn = evalCreateDissolveScreenFromLayerFileBinding; Pars = [|"nameOpt"; "dissolveData"; "songOpt"; "layerFilePath"|]; DocOpt = None })
-             ("createSplashScreen6", { Fn = evalCreateSplashScreen6Binding; Pars = [|"dispatcherName"; "nameOpt"; "splashData"; "destination"|]; DocOpt = None })
-             ("createSplashScreen", { Fn = evalCreateSplashScreenBinding; Pars = [|"nameOpt"; "splashData"; "destination"|]; DocOpt = None })
+             ("createDissolveScreenFromLayerFile6", { Fn = evalCreateDissolveScreenFromLayerFile6Binding; Pars = [|"dispatcherName"; "nameOpt"; "dissolveDescriptor"; "songOpt"; "layerFilePath"|]; DocOpt = None })
+             ("createDissolveScreenFromLayerFile", { Fn = evalCreateDissolveScreenFromLayerFileBinding; Pars = [|"nameOpt"; "dissolveDescriptor"; "songOpt"; "layerFilePath"|]; DocOpt = None })
+             ("createSplashScreen6", { Fn = evalCreateSplashScreen6Binding; Pars = [|"dispatcherName"; "nameOpt"; "splashDescriptor"; "destination"|]; DocOpt = None })
+             ("createSplashScreen", { Fn = evalCreateSplashScreenBinding; Pars = [|"nameOpt"; "splashDescriptor"; "destination"|]; DocOpt = None })
              ("getEntitiesInView2", { Fn = evalGetEntitiesInView2Binding; Pars = [||]; DocOpt = None })
              ("getEntitiesInBounds3", { Fn = evalGetEntitiesInBounds3Binding; Pars = [|"bounds"|]; DocOpt = None })
              ("getEntitiesAtPoint3", { Fn = evalGetEntitiesAtPoint3Binding; Pars = [|"point"|]; DocOpt = None })
@@ -3945,10 +3945,10 @@ module WorldBindings =
              ("writeGameToFile", { Fn = evalWriteGameToFileBinding; Pars = [|"filePath"|]; DocOpt = None })
              ("readGameFromFile", { Fn = evalReadGameFromFileBinding; Pars = [|"filePath"|]; DocOpt = None })
              ("getScreens", { Fn = evalGetScreensBinding; Pars = [||]; DocOpt = None })
-             ("setScreenDissolve", { Fn = evalSetScreenDissolveBinding; Pars = [|"dissolveData"; "songOpt"; "screen"|]; DocOpt = None })
+             ("setScreenDissolve", { Fn = evalSetScreenDissolveBinding; Pars = [|"dissolveDescriptor"; "songOpt"; "screen"|]; DocOpt = None })
              ("destroyScreen", { Fn = evalDestroyScreenBinding; Pars = [|"screen"|]; DocOpt = None })
              ("createScreen", { Fn = evalCreateScreenBinding; Pars = [|"dispatcherName"; "nameOpt"|]; DocOpt = None })
-             ("createDissolveScreen", { Fn = evalCreateDissolveScreenBinding; Pars = [|"dispatcherName"; "nameOpt"; "dissolveData"; "songOpt"|]; DocOpt = None })
+             ("createDissolveScreen", { Fn = evalCreateDissolveScreenBinding; Pars = [|"dispatcherName"; "nameOpt"; "dissolveDescriptor"; "songOpt"|]; DocOpt = None })
              ("writeScreenToFile", { Fn = evalWriteScreenToFileBinding; Pars = [|"filePath"; "screen"|]; DocOpt = None })
              ("readScreenFromFile", { Fn = evalReadScreenFromFileBinding; Pars = [|"filePath"; "nameOpt"|]; DocOpt = None })
              ("getLayers", { Fn = evalGetLayersBinding; Pars = [|"screen"|]; DocOpt = None })

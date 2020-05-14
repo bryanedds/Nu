@@ -9,8 +9,8 @@ open Nu
 /// Describes the behavior of a screen.
 type [<NoComparison>] ScreenBehavior =
     | Vanilla
-    | Dissolve  of DissolveData * SongDescriptor option
-    | Splash of DissolveData * SplashData * Screen
+    | Dissolve  of DissolveDescriptor * SongDescriptor option
+    | Splash of DissolveDescriptor * SplashDescriptor * Screen
     | OmniScreen
 
 /// Describes the content of an entity.

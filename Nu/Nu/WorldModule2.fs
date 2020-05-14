@@ -299,7 +299,7 @@ module WorldModule2 =
             let splashLabel = splashLayer / "SplashLabel"
             let world = World.destroyLayerImmediate splashLayer world
             match splashDataOpt with
-            | Some splashData ->
+            | Some splashDescriptor ->
                 let cameraEyeSize = World.getEyeSize world
                 let world = World.createLayer<LayerDispatcher> (Some splashLayer.Name) screen world |> snd
                 let world = splashLayer.SetPersistent false world
@@ -307,8 +307,8 @@ module WorldModule2 =
                 let world = splashLabel.SetPersistent false world
                 let world = splashLabel.SetSize cameraEyeSize world
                 let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
-                let world = splashLabel.SetLabelImage splashData.SplashImage world
-                let (unsub, world) = World.monitorPlus (World.handleSplashScreenIdle splashData.IdlingTime screen) (Events.IncomingFinish --> screen) screen world
+                let world = splashLabel.SetLabelImage splashDescriptor.SplashImage world
+                let (unsub, world) = World.monitorPlus (World.handleSplashScreenIdle splashDescriptor.IdlingTime screen) (Events.IncomingFinish --> screen) screen world
                 let (unsub2, world) = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish --> screen) screen world
                 let world = World.monitor (fun _ -> unsub >> unsub2) (Events.Unregistering --> splashLayer) screen world
                 world
@@ -316,27 +316,27 @@ module WorldModule2 =
 
         /// Create a dissolve screen whose content is loaded from the given layer file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData songOpt layerFilePath world =
-            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveData songOpt world
+        static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveDescriptor songOpt layerFilePath world =
+            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveDescriptor songOpt world
             let world = World.readLayerFromFile layerFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
         /// Create a dissolve screen whose content is loaded from the given layer file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveData songOpt layerFilePath world =
-            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveData layerFilePath songOpt world
+        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor songOpt layerFilePath world =
+            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveDescriptor layerFilePath songOpt world
 
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
-        static member createSplashScreen6 dispatcherName nameOpt splashData destination world =
-            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashData.DissolveData None world
-            let world = World.setScreenSplash (Some splashData) destination splashScreen world
+        static member createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world =
+            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashDescriptor.DissolveData None world
+            let world = World.setScreenSplash (Some splashDescriptor) destination splashScreen world
             (splashScreen, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
-        static member createSplashScreen<'d when 'd :> ScreenDispatcher> nameOpt splashData destination world =
-            World.createSplashScreen6 typeof<'d>.Name nameOpt splashData destination world
+        static member createSplashScreen<'d when 'd :> ScreenDispatcher> nameOpt splashDescriptor destination world =
+            World.createSplashScreen6 typeof<'d>.Name nameOpt splashDescriptor destination world
 
         static member internal handleSubscribeAndUnsubscribe event world =
             // here we need to update the event publish flags for entities based on whether there are subscriptions to

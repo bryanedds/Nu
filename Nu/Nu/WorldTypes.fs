@@ -20,6 +20,28 @@ open TiledSharp
 open Prime
 open Nu
 
+/// The data needed to describe a Tiled tile.
+type [<StructuralEquality; NoComparison>] TileData =
+    { Tile : TmxLayerTile
+      I : int
+      J : int
+      Gid : int
+      GidPosition : int
+      Gid2 : Vector2i
+      TileSetTileOpt : TmxTilesetTile option
+      TilePosition : Vector2i }
+
+/// The data needed to describe a Tiled tile map.
+type [<StructuralEquality; NoComparison>] TileMapData =
+    { Map : TmxMap
+      MapSize : Vector2i
+      TileSize : Vector2i
+      TileSizeF : Vector2
+      TileMapSize : Vector2i
+      TileMapSizeF : Vector2
+      TileSet : TmxTileset
+      TileSetSize : Vector2i }
+
 /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
 /// means an existing screen being hidden.
 type TransitionType =
@@ -47,38 +69,16 @@ type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
           SongOpt = None }
 
 /// Describes the behavior of the screen dissolving algorithm.
-type [<StructuralEquality; NoComparison>] DissolveData =
+type [<StructuralEquality; NoComparison>] DissolveDescriptor =
     { IncomingTime : int64
       OutgoingTime : int64
       DissolveImage : Image AssetTag }
 
 /// Describes the behavior of the screen splash algorithm.
-type [<StructuralEquality; NoComparison>] SplashData =
-    { DissolveData : DissolveData
+type [<StructuralEquality; NoComparison>] SplashDescriptor =
+    { DissolveData : DissolveDescriptor
       IdlingTime : int64
       SplashImage : Image AssetTag }
-
-/// The data needed to describe a Tiled tile map.
-type [<StructuralEquality; NoComparison>] TileMapData =
-    { Map : TmxMap
-      MapSize : Vector2i
-      TileSize : Vector2i
-      TileSizeF : Vector2
-      TileMapSize : Vector2i
-      TileMapSizeF : Vector2
-      TileSet : TmxTileset
-      TileSetSize : Vector2i }
-
-/// The data needed to describe a Tiled tile.
-type [<StructuralEquality; NoComparison>] TileData =
-    { Tile : TmxLayerTile
-      I : int
-      J : int
-      Gid : int
-      GidPosition : int
-      Gid2 : Vector2i
-      TileSetTileOpt : TmxTilesetTile option
-      TilePosition : Vector2i }
 
 /// Describes the shape of a desired overlay.
 type OverlayNameDescriptor =
