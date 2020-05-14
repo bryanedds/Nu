@@ -9,9 +9,11 @@ module Assets =
     let GameplayPackageName = "Gameplay"
 
     // gui assets
-    let NuSplashSound = asset<Audio> GuiPackageName "Nu"
     let TitleSong = asset<Audio> GuiPackageName "Title"
     let AffirmSound = asset<Audio> GuiPackageName "Affirm"
+    let DialogThin = asset<Image> GuiPackageName "DialogThin"
+    let DialogMedium = asset<Image> GuiPackageName "DialogMedium"
+    let DialogLarge = asset<Image> GuiPackageName "DialogLarge"
 
     // gameplay assets
     let FinnAnimationSheet = asset<Image> GameplayPackageName "Finn"

@@ -12,12 +12,13 @@ module OmniField =
 
     type [<NoComparison>] FieldMessage =
         | AvatarChanged of AvatarModel
+        | UpdateDialog
         | Interact
 
     type FieldCommand =
         | FadeSong
         | PlaySound of int64 * single * AssetTag<Audio>
-        | Move of Vector2
+        | TryMove of Vector2
         | EyeTrack
 
     type Screen with
@@ -36,17 +37,23 @@ module OmniField =
                 { Items = Map.empty }
                 100)
 
-        static let tryGetInteraction advents prop =
-            match prop with
-            | Chest (_, _, _, chestId) ->
-                if Set.contains (Opened chestId) advents then None
-                else Some "Open"
-            | Door _ -> Some "Open"
-            | Portal -> None
-            | Switch -> Some "Use"
-            | Sensor -> None
-            | Npc _ -> Some "Talk"
-            | Shopkeep _ -> Some "Inquire"
+        static let tryGetInteraction dialogOpt advents prop =
+            match dialogOpt with
+            | Some dialog ->
+                if dialog.DialogProgress > dialog.DialogText.Length
+                then Some "Next"
+                else None
+            | None ->
+                match prop with
+                | Chest (_, _, _, chestId) ->
+                    if Set.contains (Opened chestId) advents then None
+                    else Some "Open"
+                | Door _ -> Some "Open"
+                | Portal -> None
+                | Switch -> Some "Use"
+                | Sensor -> None
+                | Npc _ -> Some "Talk"
+                | Shopkeep _ -> Some "Inquire"
 
         static let isFacingBodyShape bodyShape (avatar : AvatarModel) world =
             if bodyShape.SourceEntity.Is<PropDispatcher> world then
@@ -68,9 +75,9 @@ module OmniField =
                 Some prop.PropData
             | [] -> None
 
-        static let tryGetInteraction advents (avatar : AvatarModel) world =
+        static let tryGetInteraction dialogOpt advents (avatar : AvatarModel) world =
             match tryGetFacingProp avatar world with
-            | Some prop -> tryGetInteraction advents prop
+            | Some prop -> tryGetInteraction dialogOpt advents prop
             | None -> None
 
         override this.Channel (_, field, _) =
@@ -80,7 +87,7 @@ module OmniField =
                 let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.WalkForce 0.0f + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Up then v2 0.0f Constants.Field.WalkForce + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.WalkForce + force else force
-                [cmd (Move force)]
+                [msg UpdateDialog; cmd (TryMove force)]
              field.PostUpdateEvent => [cmd EyeTrack]
              field.OutgoingStartEvent => [cmd FadeSong]
              Simulants.FieldInteract.ClickEvent => [msg Interact]
@@ -93,24 +100,41 @@ module OmniField =
                 let model = FieldModel.updateAvatar (constant avatarModel) model
                 just model
 
-            | Interact ->
-                match tryGetFacingProp model.Avatar world with
-                | Some prop ->
-                    match prop with
-                    | Chest (itemType, lockType, chestType, chestId) ->
-                        let model = FieldModel.updateInventory (Inventory.addItem itemType) model
-                        let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
-                        withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
-                    | _ -> just model
-                | None -> just model
+            | UpdateDialog ->
+                let model =
+                    FieldModel.updateDialogOpt
+                        (function
+                         | Some dialog -> Some { dialog with DialogProgress = inc dialog.DialogProgress }
+                         | None -> None)
+                        model
+                just model
 
-        override this.Command (_, command, _, world) =
+            | Interact ->
+                match model.DialogOpt with
+                | Some dialog ->
+                    let model = FieldModel.updateDialogOpt (constant None) model
+                    just model
+                | None ->
+                    match tryGetFacingProp model.Avatar world with
+                    | Some prop ->
+                        match prop with
+                        | Chest (itemType, lockType, chestType, chestId) ->
+                            let model = FieldModel.updateInventory (Inventory.addItem itemType) model
+                            let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
+                            let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found '" + scstring itemType + "'!"]; DialogProgress = 0 })) model
+                            withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
+                        | _ -> just model
+                    | None -> just model
+
+        override this.Command (model, command, _, world) =
 
             match command with
-            | Move force ->
-                let physicsId = Simulants.FieldAvatar.GetPhysicsId world
-                let world = World.applyBodyForce force physicsId world
-                just world
+            | TryMove force ->
+                if Option.isNone model.DialogOpt then
+                    let physicsId = Simulants.FieldAvatar.GetPhysicsId world
+                    let world = World.applyBodyForce force physicsId world
+                    just world
+                else just world
 
             | EyeTrack ->
                 let avatarModel = Simulants.FieldAvatar.GetAvatarModel world
@@ -125,7 +149,7 @@ module OmniField =
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
 
-        override this.Content (model, _, _) =
+        override this.Content (model, _) =
             [Content.layer Simulants.FieldScene.Name []
                 [Content.tileMap Simulants.FieldTileMap.Name
                     [Entity.Depth == Constants.Field.BackgroundDepth
@@ -142,16 +166,41 @@ module OmniField =
                      Entity.AvatarModel <== model --> fun model -> model.Avatar]
                  Content.button Simulants.FieldInteract.Name
                     [Entity.Size == v2Dup 92.0f
-                     Entity.Position == v2 -400.0f -200.0f
+                     Entity.Position == v2 360.0f 160.0f
                      Entity.Depth == Constants.Field.GuiDepth
                      Entity.Visible <== model ->> fun model world ->
-                        let interactionOpt = tryGetInteraction model.Advents model.Avatar world
+                        let interactionOpt = tryGetInteraction model.DialogOpt model.Advents model.Avatar world
                         Option.isSome interactionOpt
                      Entity.Text <== model ->> fun model world ->
-                        match tryGetInteraction model.Advents model.Avatar world with
+                        match tryGetInteraction model.DialogOpt model.Advents model.Avatar world with
                         | Some interaction -> interaction
                         | None -> ""
                      Entity.ClickSoundOpt == None]
+                 Content.text Simulants.FieldDialog.Name
+                    [Entity.Bounds <== model --> fun model ->
+                        match model.DialogOpt with
+                        | Some dialog ->
+                            match dialog.DialogForm with
+                            | DialogThin -> v4Bounds (v2 -448.0f 128.0f) (v2 896.0f 112.0f)
+                            | DialogMedium -> v4Bounds (v2 -448.0f 128.0f) (v2 640.0f 320.0f)
+                            | DialogLarge -> v4Bounds (v2 -448.0f 128.0f) (v2 896.0f 320.0f)
+                        | None -> v4Zero
+                     Entity.BackgroundImage <== model --> fun model ->
+                        match model.DialogOpt with
+                        | Some dialog ->
+                            match dialog.DialogForm with
+                            | DialogThin -> Assets.DialogThin
+                            | DialogMedium -> Assets.DialogMedium
+                            | DialogLarge -> Assets.DialogLarge
+                        | None -> Assets.DialogLarge
+                     Entity.Text <== model --> fun model ->
+                        match model.DialogOpt with
+                        | Some dialog ->
+                            let text = String.Join ("\n", dialog.DialogText)
+                            let textToShow = String.tryTake dialog.DialogProgress text
+                            textToShow
+                        | None -> ""
+                     Entity.Visible <== model --> fun model -> Option.isSome model.DialogOpt]
                  Content.entities
                     (model ->> fun model world ->
                         match Map.tryFind model.FieldType data.Value.Fields with

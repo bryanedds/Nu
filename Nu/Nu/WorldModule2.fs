@@ -926,16 +926,16 @@ module GameDispatcherModule =
             lens Property? Model (this.GetModel game) (flip this.SetModel game) game
 
         override this.Register (game, world) =
-            let (model, world) = World.attachModel initial Property? Model game world
-            let channels = this.Channel (model, game, world)
+            let (_, world) = World.attachModel initial Property? Model game world
+            let channels = this.Channel (this.Model game, game)
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
-            let content = this.Content (this.Model game, game, world)
+            let content = this.Content (this.Model game, game)
             let world =
                 List.foldi (fun contentIndex world content ->
                     let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
                     if contentIndex = 0 then World.selectScreen screen world else world)
                     world content
-            let initializers = this.Initializers (this.Model game, game, world)
+            let initializers = this.Initializers (this.Model game, game)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
@@ -963,11 +963,11 @@ module GameDispatcherModule =
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> * Game * World -> PropertyInitializer list
-        default this.Initializers (_, _, _) = []
+        abstract member Initializers : Lens<'model, World> * Game -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
-        abstract member Channel : 'model * Game * World -> Channel<'message, 'command, Game, World> list
-        default this.Channel (_, _, _) = []
+        abstract member Channel : Lens<'model, World> * Game -> Channel<'message, 'command, Game, World> list
+        default this.Channel (_, _) = []
 
         abstract member Message : 'model * 'message * Game * World -> 'model * Signal<'message, 'command> list
         default this.Message (model, _, _, _) = just model
@@ -975,8 +975,8 @@ module GameDispatcherModule =
         abstract member Command : 'model * 'command * Game * World -> World * Signal<'message, 'command> list
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Game * World -> ScreenContent list
-        default this.Content (_, _, _) = []
+        abstract member Content : Lens<'model, World> * Game -> ScreenContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Game * World -> View list
         default this.View (_, _, _) = []

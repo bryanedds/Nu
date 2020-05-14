@@ -102,15 +102,15 @@ module FacetModule =
             lens this.ModelName (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let (model, world) = World.attachModel initial this.ModelName entity world
-            let channels = this.Channel (model, entity, world)
+            let (_, world) = World.attachModel initial this.ModelName entity world
+            let channels = this.Channel (this.Model entity, entity)
             let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
-            let content = this.Content (this.Model entity, entity, world)
+            let content = this.Content (this.Model entity, entity)
             let world =
                 List.fold (fun world content ->
                     World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) entity.Parent world)
                     world content
-            let initializers = this.Initializers (this.Model entity, entity, world)
+            let initializers = this.Initializers (this.Model entity, entity)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
@@ -138,11 +138,11 @@ module FacetModule =
             | :? Signal<obj, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) (getTypeName this) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> * Entity * World -> PropertyInitializer list
-        default this.Initializers (_, _, _) = []
+        abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
-        abstract member Channel : 'model * Entity * World -> Channel<'message, 'command, Entity, World> list
-        default this.Channel (_, _, _) = []
+        abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
+        default this.Channel (_, _) = []
 
         abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command> list
         default this.Message (model, _, _, _) = just model
@@ -150,8 +150,8 @@ module FacetModule =
         abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command> list
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
-        default this.Content (_, _, _) = []
+        abstract member Content : Lens<'model, World> * Entity -> EntityContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Entity * World -> View list
         default this.View (_, _, _) = []
@@ -1191,15 +1191,15 @@ module EntityDispatcherModule =
             lens Property? Model (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let (model, world) = World.attachModel initial Property? Model entity world
-            let channels = this.Channel (model, entity, world)
+            let (_, world) = World.attachModel initial Property? Model entity world
+            let channels = this.Channel (this.Model entity, entity)
             let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
-            let content = this.Content (this.Model entity, entity, world)
+            let content = this.Content (this.Model entity, entity)
             let world =
                 List.fold (fun world content ->
                     World.expandEntityContent None content (SimulantOrigin entity) entity.Parent world)
                     world content
-            let initializers = this.Initializers (this.Model entity, entity, world)
+            let initializers = this.Initializers (this.Model entity, entity)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
@@ -1230,11 +1230,11 @@ module EntityDispatcherModule =
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> * Entity * World -> PropertyInitializer list
-        default this.Initializers (_, _, _) = []
+        abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
-        abstract member Channel : 'model * Entity * World -> Channel<'message, 'command, Entity, World> list
-        default this.Channel (_, _, _) = []
+        abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
+        default this.Channel (_, _) = []
 
         abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command> list
         default this.Message (model, _, _, _) = just model
@@ -1242,8 +1242,8 @@ module EntityDispatcherModule =
         abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command> list
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
-        default this.Content (_, _, _) = []
+        abstract member Content : Lens<'model, World> * Entity -> EntityContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Entity * World -> View list
         default this.View (_, _, _) = []
@@ -2042,15 +2042,15 @@ module LayerDispatcherModule =
             lens Property? Model (this.GetModel layer) (flip this.SetModel layer) layer
 
         override this.Register (layer, world) =
-            let (model, world) = World.attachModel initial Property? Model layer world
-            let channels = this.Channel (model, layer, world)
+            let (_, world) = World.attachModel initial Property? Model layer world
+            let channels = this.Channel (this.Model layer, layer)
             let world = Signal.processChannels this.Message this.Command (this.Model layer) channels layer world
-            let content = this.Content (this.Model layer, layer, world)
+            let content = this.Content (this.Model layer, layer)
             let world =
                 List.fold (fun world content ->
                     World.expandEntityContent None content (SimulantOrigin layer) layer world)
                     world content
-            let initializers = this.Initializers (this.Model layer, layer, world)
+            let initializers = this.Initializers (this.Model layer, layer)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
@@ -2078,11 +2078,11 @@ module LayerDispatcherModule =
             | :? Signal<obj, 'command> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> * Layer * World -> PropertyInitializer list
-        default this.Initializers (_, _, _) = []
+        abstract member Initializers : Lens<'model, World> * Layer -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
-        abstract member Channel : 'model * Layer * World -> Channel<'message, 'command, Layer, World> list
-        default this.Channel (_, _, _) = []
+        abstract member Channel : Lens<'model, World> * Layer -> Channel<'message, 'command, Layer, World> list
+        default this.Channel (_, _) = []
 
         abstract member Message : 'model * 'message * Layer * World -> 'model * Signal<'message, 'command> list
         default this.Message (model, _, _, _) = just model
@@ -2090,8 +2090,8 @@ module LayerDispatcherModule =
         abstract member Command : 'model * 'command * Layer * World -> World * Signal<'message, 'command> list
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Layer * World -> EntityContent list
-        default this.Content (_, _, _) = []
+        abstract member Content : Lens<'model, World> * Layer -> EntityContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Layer * World -> View list
         default this.View (_, _, _) = []
@@ -2144,7 +2144,7 @@ module ScreenDispatcherModule =
             let (model, world) = World.attachModel initial Property? Model screen world
             let channels = this.Channel (model, screen, world)
             let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
-            let content = this.Content (this.Model screen, screen, world)
+            let content = this.Content (this.Model screen, screen)
             let world =
                 List.fold (fun world content ->
                     World.expandLayerContent None content (SimulantOrigin screen) screen world)
@@ -2189,8 +2189,8 @@ module ScreenDispatcherModule =
         abstract member Command : 'model * 'command * Screen * World -> World * Signal<'message, 'command> list
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Screen * World -> LayerContent list
-        default this.Content (_, _, _) = []
+        abstract member Content : Lens<'model, World> * Screen -> LayerContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Screen * World -> View list
         default this.View (_, _, _) = []

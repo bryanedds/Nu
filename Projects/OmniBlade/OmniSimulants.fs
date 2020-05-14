@@ -29,6 +29,7 @@ module Simulants =
     let FieldTileMap = FieldScene / "TileMap"
     let FieldAvatar = FieldScene / "Avatar"
     let FieldInteract = FieldScene / "Interact"
+    let FieldDialog = FieldScene / "Dialog"
 
     // battle
     let Battle = Screen "Battle"

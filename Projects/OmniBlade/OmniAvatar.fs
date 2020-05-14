@@ -35,12 +35,12 @@ module AvatarDispatcherModule =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        override this.Channel (_, entity, _) =
+        override this.Channel (_, entity) =
             [entity.UpdateEvent => [msg Update]
              entity.CollisionEvent =|> fun evt -> [msg (Collision evt.Data)]
              entity.SeparationEvent =|> fun evt -> [msg (Separation evt.Data)]]
 
-        override this.Initializers (model, entity, _) =
+        override this.Initializers (model, entity) =
             let bodyShapes =
                 BodyShapes
                     [BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }

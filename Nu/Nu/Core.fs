@@ -96,3 +96,22 @@ module Seq =
     /// Eagerly evaluate a sequence.
     /// TODO: move this into Prime.
     let eval seq = seq |> Seq.toArray |> Seq.ofArray
+
+[<RequireQualifiedAccess>]
+module String =
+
+    /// Take a substring from a string.
+    /// TODO: move this into Prime.
+    let take n (str : string) = str |> Seq.take n |> Seq.toArray |> String
+
+    /// Take a substring from a string.
+    /// TODO: move this into Prime.
+    let tryTake n (str : string) = str |> Seq.tryTake n |> Seq.toArray |> String
+
+    /// Skip a potion of a string.
+    /// TODO: move this into Prime.
+    let skip n (str : string) = str |> Seq.skip n |> Seq.toArray |> String
+
+    /// Skip a potion of a string.
+    /// TODO: move this into Prime.
+    let trySkip n (str : string) = str |> Seq.trySkip n |> Seq.toArray |> String
