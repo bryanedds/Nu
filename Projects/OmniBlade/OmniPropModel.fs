@@ -10,7 +10,7 @@ module PropModel =
             { Bounds_ : Vector4
               Depth_ : single
               Advents_ : Advent Set
-              Props_ : PropData }
+              PropData_ : PropData }
 
         (* Bounds Properties *)
         member this.Bounds = this.Bounds_
@@ -22,7 +22,7 @@ module PropModel =
         (* Local Properties *)
         member this.Depth = this.Depth_
         member this.Advents = this.Advents_
-        member this.Props = this.Props_
+        member this.PropData = this.PropData_
 
         static member updateBounds updater (model : PropModel) =
             { model with Bounds_ = updater model.Bounds_ }
@@ -40,6 +40,6 @@ module PropModel =
             { Bounds_ = bounds
               Depth_ = depth
               Advents_ = advents
-              Props_ = props }
+              PropData_ = props }
 
 type PropModel = PropModel.PropModel

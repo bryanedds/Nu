@@ -17,6 +17,11 @@ module Assets =
     let FinnAnimationSheet = asset<Image> GameplayPackageName "Finn"
     let GlennAnimationSheet = asset<Image> GameplayPackageName "Glenn"
     let BlueGoblinAnimationSheet = asset<Image> GameplayPackageName "BlueGoblin"
+    let HitSound = asset<Audio> GameplayPackageName "Hit"
+    let ExplosionSound = asset<Audio> GameplayPackageName "Explosion"
+    let HealSound = asset<Audio> GameplayPackageName "Heal"
+    let DeathSound = asset<Audio> GameplayPackageName "Death"
+    let OpenChestSound = asset<Audio> GameplayPackageName "Unlatch"
 
     // field assets
     let DebugRoomTileMap = asset<TileMap> FieldPackageName "DebugRoom"
@@ -27,10 +32,6 @@ module Assets =
 
     // battle assets
     let BattleSong = asset<Audio> BattlePackageName "Battle"
-    let HitSound = asset<Audio> BattlePackageName "Hit"
-    let ExplosionSound = asset<Audio> BattlePackageName "Explosion"
-    let HealSound = asset<Audio> BattlePackageName "Heal"
-    let DeathSound = asset<Audio> BattlePackageName "Death"
     let CancelImage = asset<Image> BattlePackageName "Cancel"
     let BoltAnimationSheet = asset<Image> BattlePackageName "Bolt"
     let ExplosionAnimationSheet = asset<Image> BattlePackageName "Explosion"

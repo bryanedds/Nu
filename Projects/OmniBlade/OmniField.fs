@@ -36,6 +36,43 @@ module OmniField =
                 { Items = Map.empty }
                 100)
 
+        static let tryGetInteraction advents prop =
+            match prop with
+            | Chest (_, _, _, chestId) ->
+                if Set.contains (Opened chestId) advents then None
+                else Some "Open"
+            | Door _ -> Some "Open"
+            | Portal -> None
+            | Switch -> Some "Use"
+            | Sensor -> None
+            | Npc _ -> Some "Talk"
+            | Shopkeep _ -> Some "Inquire"
+
+        static let isFacingBodyShape bodyShape (avatar : AvatarModel) world =
+            if bodyShape.SourceEntity.Is<PropDispatcher> world then
+                let v = bodyShape.SourceEntity.GetBottom world - avatar.Bottom
+                let direction = Direction.fromVector2 v
+                direction = avatar.Direction
+            else false
+
+        static let getFacingBodyShapes (avatar : AvatarModel) world =
+            List.filter
+                (fun bodyShape -> isFacingBodyShape bodyShape avatar world)
+                avatar.IntersectedBodyShapes
+
+        static let tryGetFacingProp (avatar : AvatarModel) world =
+            match getFacingBodyShapes avatar world with
+            | head :: _ ->
+                // TODO: distance-sort these instead of just taking head
+                let prop = head.SourceEntity.GetPropModel world
+                Some prop.PropData
+            | [] -> None
+
+        static let tryGetInteraction advents (avatar : AvatarModel) world =
+            match tryGetFacingProp avatar world with
+            | Some prop -> tryGetInteraction advents prop
+            | None -> None
+
         override this.Channel (_, field, _) =
             [field.UpdateEvent =|> fun _ ->
                 let force = v2Zero
@@ -57,20 +94,15 @@ module OmniField =
                 just model
 
             | Interact ->
-                let model =
-                    match model.Avatar.IntersectedBodyShapes with
-                    | head :: _ ->
-                        if head.SourceEntity.Is<PropDispatcher> world then
-                            let propModel = head.SourceEntity.GetPropModel world
-                            match propModel.Props with
-                            | Chest (itemType, lockType, chestType, chestId) ->
-                                let model = FieldModel.updateInventory (Inventory.addItem itemType) model
-                                let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
-                                model
-                            | _ -> model
-                        else model
-                    | [] -> model
-                just model
+                match tryGetFacingProp model.Avatar world with
+                | Some prop ->
+                    match prop with
+                    | Chest (itemType, lockType, chestType, chestId) ->
+                        let model = FieldModel.updateInventory (Inventory.addItem itemType) model
+                        let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
+                        withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
+                    | _ -> just model
+                | None -> just model
 
         override this.Command (_, command, _, world) =
 
@@ -112,18 +144,14 @@ module OmniField =
                     [Entity.Size == v2Dup 92.0f
                      Entity.Position == v2 -400.0f -200.0f
                      Entity.Depth == Constants.Field.GuiDepth
-                     Entity.Visible <== model --> fun model ->
-                        List.notEmpty model.Avatar.IntersectedBodyShapes
+                     Entity.Visible <== model ->> fun model world ->
+                        let interactionOpt = tryGetInteraction model.Advents model.Avatar world
+                        Option.isSome interactionOpt
                      Entity.Text <== model ->> fun model world ->
-                        match model.Avatar.IntersectedBodyShapes with
-                        | head :: _ ->
-                            if head.SourceEntity.Is<PropDispatcher> world then
-                                let propModel = head.SourceEntity.GetPropModel world
-                                match propModel.Props with
-                                | Chest _ -> "Open"
-                                | _ -> ""
-                            else ""
-                        | [] -> ""]
+                        match tryGetInteraction model.Advents model.Avatar world with
+                        | Some interaction -> interaction
+                        | None -> ""
+                     Entity.ClickSoundOpt == None]
                  Content.entities
                     (model ->> fun model world ->
                         match Map.tryFind model.FieldType data.Value.Fields with
