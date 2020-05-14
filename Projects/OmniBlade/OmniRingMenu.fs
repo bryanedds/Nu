@@ -50,7 +50,7 @@ module OmniRingMenu =
              define Entity.SwallowMouseLeft false
              define Entity.Visible false]
 
-        override this.Content (model, menu, _) =
+        override this.Content (model, menu) =
             [Content.entitiesIndexedByFst (model --> fun model -> model.Items |> seq) $ fun index item world ->
                 let itemValue = item.Get world |> snd
                 let buttonName = menu.Name + "+" + itemValue

@@ -725,7 +725,7 @@ module OmniBattle =
                 let world = World.hintRenderPackageDisuse Assets.BattlePackageName world
                 just (World.hintAudioPackageDisuse Assets.BattlePackageName world)
 
-        member private this.SceneContent (model : Lens<BattleModel, World>, _ : Screen, _ : World) =
+        member private this.SceneContent (model : Lens<BattleModel, World>, _ : Screen) =
 
             let background = Simulants.BattleScene / "Background"
             Content.layer Simulants.BattleScene.Name []
@@ -746,7 +746,7 @@ module OmniBattle =
                     (fun model -> model.PartyIndex)
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.CharacterModel <== model])]
 
-        member private this.InputContent (model : Lens<BattleModel, World>, screen : Screen, _ : World) =
+        member private this.InputContent (model : Lens<BattleModel, World>, screen : Screen) =
 
             Content.layers (model --> fun model -> BattleModel.getAllies model |> seq) $ fun index ally _ ->
 
@@ -816,6 +816,6 @@ module OmniBattle =
                          Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, allyIndex))
                          Entity.CancelEvent ==> msg (ReticlesCancel allyIndex)]]
 
-        override this.Content (model, screen, world) =
-            [this.SceneContent (model, screen, world)
-             this.InputContent (model, screen, world)]
+        override this.Content (model, screen) =
+            [this.SceneContent (model, screen)
+             this.InputContent (model, screen)]

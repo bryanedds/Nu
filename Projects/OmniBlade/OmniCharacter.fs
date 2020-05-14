@@ -51,7 +51,7 @@ module OmniCharacter =
         static member Properties =
             [define Entity.Omnipresent true]
 
-        override this.Initializers (model, _, _) =
+        override this.Initializers (model, _) =
             [Entity.Bounds <== model --> fun (model : CharacterModel) -> model.Bounds]
 
         override this.View (model, character, world) =

@@ -238,7 +238,7 @@ module SceneModule =
     type SceneDispatcher () =
         inherit LayerDispatcher<unit, unit, SceneCommand> ()
 
-        override this.Channel (_, scene, _) =
+        override this.Channel (_, scene) =
             [scene.UpdateEvent => [cmd AdjustCamera]
              scene.UpdateEvent => [cmd PlayerFall]]
 

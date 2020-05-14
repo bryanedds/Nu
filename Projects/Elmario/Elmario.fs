@@ -20,7 +20,7 @@ type ElmarioDispatcher () =
     inherit GameDispatcher<unit, unit, Command> (())
 
     // here we channel from events to signals
-    override this.Channel (_, game, _) =
+    override this.Channel (_, game) =
         [game.KeyboardKeyDownEvent =|> fun evt ->
             if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
             then [cmd Jump]
@@ -54,7 +54,7 @@ type ElmarioDispatcher () =
         just world
 
     // here we describe the content of the game including elmario, the ground he walks on, and a rock.
-    override this.Content (_, _, _) =
+    override this.Content (_, _) =
         [Content.screen Default.Screen.Name Vanilla []
             [Content.layer Default.Layer.Name []
                 [Content.character Simulants.Elmario.Name

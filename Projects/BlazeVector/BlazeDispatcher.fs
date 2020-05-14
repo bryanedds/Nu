@@ -22,7 +22,7 @@ module BlazeDispatcherModule =
         inherit GameDispatcher<unit, unit, BlazeCommand> (())
 
         // here we channel from events to signals
-        override this.Channel (_, _, _) =
+        override this.Channel (_, _) =
             [Simulants.Splash.SelectEvent => [cmd PlaySplashSound]
              Simulants.Title.IncomingStartEvent => [cmd PlayTitleSong]
              Simulants.Title.OutgoingStartEvent => [cmd FadeSong]
@@ -47,7 +47,7 @@ module BlazeDispatcherModule =
             just world
 
         // here we describe the content of the game including all of its screens.
-        override this.Content (_, _, _) =
+        override this.Content (_, _) =
             [Content.screen Simulants.Splash.Name (Splash (Default.DissolveData, Default.SplashData, Simulants.Title)) [] []
              Content.screenFromLayerFile Simulants.Title.Name (Dissolve Default.DissolveData) Assets.TitleLayerFilePath
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Default.DissolveData) Assets.CreditsLayerFilePath

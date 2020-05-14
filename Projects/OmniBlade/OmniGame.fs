@@ -7,7 +7,6 @@ open OmniBlade
 module OmniGame =
 
     type OmniCommand =
-        | PlaySplashSound
         | PlayTitleSong
         | FadeSong
         | ShowTitle
@@ -23,9 +22,8 @@ module OmniGame =
             let world = World.hintAudioPackageUse Assets.GuiPackageName world
             base.Register (game, world)
 
-        override this.Channel (_, _, _) =
-            [Simulants.Splash.RegisterEvent => [cmd PlaySplashSound]
-             Simulants.Title.IncomingStartEvent => [cmd PlayTitleSong]
+        override this.Channel (_, _) =
+            [Simulants.Title.IncomingStartEvent => [cmd PlayTitleSong]
              Simulants.Title.OutgoingStartEvent => [cmd FadeSong]
              Simulants.TitleCredits.ClickEvent => [cmd ShowCredits]
              Simulants.TitlePlay.ClickEvent => [cmd ShowField]
@@ -40,7 +38,6 @@ module OmniGame =
             let world =
                 match command with
                 | PlayTitleSong -> World.playSong 0 (Constants.Audio.DefaultSongVolume) Assets.TitleSong world
-                | PlaySplashSound -> World.playSound Constants.Audio.DefaultSoundVolume Assets.NuSplashSound world
                 | FadeSong -> World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
                 | ShowTitle -> World.transitionScreen Simulants.Title world
                 | ShowCredits -> World.transitionScreen Simulants.Credits world
@@ -48,7 +45,7 @@ module OmniGame =
                 | ExitGame -> World.exit world
             just world
 
-        override this.Content (_, _, _) =
+        override this.Content (_, _) =
             [Content.screen Simulants.Splash.Name (Splash (Constants.OmniBlade.DissolveData, Constants.OmniBlade.SplashData, Simulants.Title)) [] []
              Content.screenFromLayerFile Simulants.Title.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.TitleLayerFilePath
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.CreditsLayerFilePath

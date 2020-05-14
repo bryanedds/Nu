@@ -26,7 +26,7 @@ type NelmishDispatcher () =
 
     // here we describe the content of the game including its one screen, one layer, three
     // button entities, and one text control.
-    override this.Content (model, _, _) =
+    override this.Content (model, _) =
         [Content.screen Default.Screen.Name Vanilla []
             [Content.layer Default.Layer.Name []
                 [Content.button "Decrement"

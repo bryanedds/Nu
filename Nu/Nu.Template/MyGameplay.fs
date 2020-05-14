@@ -64,7 +64,7 @@ type MyGameplayDispatcher () =
         just world
 
     // here we describe the content of the game including the player and the level
-    override this.Content (_, _, _) =
+    override this.Content (_, _) =
         [Content.layer Simulants.Hud.Name []
             [Content.button Simulants.Back.Name
                 [Entity.Text == "Back"
