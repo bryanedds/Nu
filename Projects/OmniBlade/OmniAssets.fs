@@ -41,8 +41,6 @@ module Assets =
     // layer file paths
     let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
     let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
-    let FieldHudLayerFilePath = "Assets/Field/Hud.nulyr"
-    let BattleSceneLayerFilePath = "Assets/Battle/Scene.nulyr"
 
     // data file paths
     let WeaponDataFilePath = "Assets/Gameplay/WeaponData.csv"

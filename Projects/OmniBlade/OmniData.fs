@@ -277,6 +277,9 @@ type PropData =
     | Npc of Dialog * Direction
     | Shopkeep of ShopkeepType
 
+    static member empty =
+        Chest (Consumable GreenHerb, Unlocked, WoodenChest, Gen.idEmpty)
+
 type FieldData =
     { FieldType : FieldType // key
       FieldSongOpt : Audio AssetTag option

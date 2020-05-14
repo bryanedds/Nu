@@ -1,10 +1,16 @@
 ﻿namespace OmniBlade
 open Prime
 open Nu
+open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
 module OmniGame =
+
+    type [<NoComparison>] OmniModel =
+        | Gui
+        | Field of FieldModel
+        | Battle of FieldModel * BattleModel
 
     type OmniCommand =
         | PlayTitleSong
@@ -15,7 +21,7 @@ module OmniGame =
         | ExitGame
 
     type OmniDispatcher () =
-        inherit GameDispatcher<unit, unit, OmniCommand> (())
+        inherit GameDispatcher<OmniModel, unit, OmniCommand> (Gui)
 
         override this.Register (game, world) =
             let world = World.hintRenderPackageUse Assets.GuiPackageName world
@@ -45,9 +51,21 @@ module OmniGame =
                 | ExitGame -> World.exit world
             just world
 
-        override this.Content (_, _) =
+        override this.Content (model, _) =
             [Content.screen Simulants.Splash.Name (Splash (Constants.OmniBlade.DissolveData, Constants.OmniBlade.SplashData, Simulants.Title)) [] []
              Content.screenFromLayerFile Simulants.Title.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.TitleLayerFilePath
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.CreditsLayerFilePath
-             Content.screenFromLayerFile<FieldDispatcher> Simulants.Field.Name (Dissolve Constants.OmniBlade.DissolveData) Assets.FieldHudLayerFilePath
-             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve Constants.OmniBlade.DissolveData) [] []]
+             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve Constants.OmniBlade.DissolveData)
+                [Screen.FieldModel <== model --> fun model ->
+                    match model with
+                    | Gui -> FieldModel.empty
+                    | Field _ -> FieldModel.empty
+                    | Battle (fieldModel, _) -> fieldModel]
+                []
+             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve Constants.OmniBlade.DissolveData)
+                [Screen.BattleModel <== model --> fun model ->
+                    match model with
+                    | Gui -> BattleModel.empty
+                    | Field _ -> BattleModel.empty
+                    | Battle (_, battleModel) -> battleModel]
+                []]

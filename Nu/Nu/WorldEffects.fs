@@ -173,7 +173,11 @@ type [<NoEquality; NoComparison>] Effect =
       Definitions : Effects.Definitions
       Content : Effects.Content }
 
-    static member empty =
+[<RequireQualifiedAccess>]
+module Effect =
+
+    /// The empty effect.
+    let empty =
         { EffectName = Constants.Engine.DefaultEffectName
           LifetimeOpt = None
           Definitions = Map.empty

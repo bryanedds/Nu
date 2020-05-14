@@ -35,41 +35,48 @@ module AvatarModel =
         (* Local Properties *)
         member this.IntersectedBodyShapes = this.IntersectedBodyShapes_
 
-        static member getAnimationIndex time avatar =
-            CharacterAnimationState.index time avatar.AnimationState
+    let getAnimationIndex time avatar =
+        CharacterAnimationState.index time avatar.AnimationState
 
-        static member getAnimationProgressOpt time avatar =
-            CharacterAnimationState.progressOpt time avatar.AnimationState
+    let getAnimationProgressOpt time avatar =
+        CharacterAnimationState.progressOpt time avatar.AnimationState
 
-        static member getAnimationFinished time avatar =
-            CharacterAnimationState.getFinished time avatar.AnimationState
+    let getAnimationFinished time avatar =
+        CharacterAnimationState.getFinished time avatar.AnimationState
 
-        static member updateIntersectedBodyShapes updater (avatar : AvatarModel) =
-            { avatar with IntersectedBodyShapes_ = updater avatar.IntersectedBodyShapes_ }
+    let updateIntersectedBodyShapes updater (avatar : AvatarModel) =
+        { avatar with IntersectedBodyShapes_ = updater avatar.IntersectedBodyShapes_ }
 
-        static member updateBounds updater (avatar : AvatarModel) =
-            { avatar with Bounds_ = updater avatar.Bounds_ }
+    let updateBounds updater (avatar : AvatarModel) =
+        { avatar with Bounds_ = updater avatar.Bounds_ }
 
-        static member updatePosition updater (avatar : AvatarModel) =
-            { avatar with Bounds_ = avatar.Position |> updater |> avatar.Bounds.WithPosition }
+    let updatePosition updater (avatar : AvatarModel) =
+        { avatar with Bounds_ = avatar.Position |> updater |> avatar.Bounds.WithPosition }
 
-        static member updateCenter updater (avatar : AvatarModel) =
-            { avatar with Bounds_ = avatar.Center |> updater |> avatar.Bounds.WithCenter }
+    let updateCenter updater (avatar : AvatarModel) =
+        { avatar with Bounds_ = avatar.Center |> updater |> avatar.Bounds.WithCenter }
 
-        static member updateBottom updater (avatar : AvatarModel) =
-            { avatar with Bounds_ = avatar.Bottom |> updater |> avatar.Bounds.WithBottom }
+    let updateBottom updater (avatar : AvatarModel) =
+        { avatar with Bounds_ = avatar.Bottom |> updater |> avatar.Bounds.WithBottom }
 
-        static member updateDirection updater (avatar : AvatarModel) =
-            { avatar with AnimationState = { avatar.AnimationState with Direction = updater avatar.AnimationState.Direction }}
+    let updateDirection updater (avatar : AvatarModel) =
+        { avatar with AnimationState = { avatar.AnimationState with Direction = updater avatar.AnimationState.Direction }}
 
-        static member animate time cycle avatar =
-            { avatar with AnimationState = CharacterAnimationState.setCycle (Some time) cycle avatar.AnimationState }
+    let animate time cycle avatar =
+        { avatar with AnimationState = CharacterAnimationState.setCycle (Some time) cycle avatar.AnimationState }
 
-        static member make bounds animationSheet direction =
-            let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = IdleCycle; Direction = direction }
-            { BoundsOriginal_ = bounds
-              Bounds_ = bounds
-              AnimationState = animationState
-              IntersectedBodyShapes_ = [] }
+    let make bounds animationSheet direction =
+        let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = IdleCycle; Direction = direction }
+        { BoundsOriginal_ = bounds
+          Bounds_ = bounds
+          AnimationState = animationState
+          IntersectedBodyShapes_ = [] }
+
+    let empty =
+        let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
+        { BoundsOriginal_ = bounds
+          Bounds_ = bounds
+          AnimationState = CharacterAnimationState.empty
+          IntersectedBodyShapes_ = [] }
 
 type AvatarModel = AvatarModel.AvatarModel

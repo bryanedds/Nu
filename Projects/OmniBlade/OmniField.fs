@@ -242,7 +242,7 @@ module OmniField =
                             let propData =
                                 match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
                                 | (true, propDataStr) -> scvalue<PropData> propDataStr
-                                | (false, _) -> Chest (Consumable GreenHerb, Unlocked, WoodenChest, Gen.idEmpty)
+                                | (false, _) -> PropData.empty
                             let propModel = PropModel.make propBounds propDepth advents propData
                             propModel)
                         Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]]
