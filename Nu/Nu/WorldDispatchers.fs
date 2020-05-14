@@ -1373,8 +1373,8 @@ module ButtonDispatcherModule =
         member this.GetDownImage world : Image AssetTag = this.Get Property? DownImage world
         member this.SetDownImage (value : Image AssetTag) world = this.SetFast Property? DownImage false false value world
         member this.DownImage = lens Property? DownImage this.GetDownImage this.SetDownImage this
-        member this.GetClickSoundOpt world : Audio AssetTag option = this.Get Property? ClickSoundOpt world
-        member this.SetClickSoundOpt (value : Audio AssetTag option) world = this.SetFast Property? ClickSoundOpt false false value world
+        member this.GetClickSoundOpt world : Sound AssetTag option = this.Get Property? ClickSoundOpt world
+        member this.SetClickSoundOpt (value : Sound AssetTag option) world = this.SetFast Property? ClickSoundOpt false false value world
         member this.ClickSoundOpt = lens Property? ClickSoundOpt this.GetClickSoundOpt this.SetClickSoundOpt this
         member this.GetClickSoundVolume world : single = this.Get Property? ClickSoundVolume world
         member this.SetClickSoundVolume (value : single) world = this.SetFast Property? ClickSoundVolume false false value world
@@ -1434,7 +1434,7 @@ module ButtonDispatcherModule =
              define Entity.Down false
              define Entity.UpImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
              define Entity.DownImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
-             define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackageName "Sound"))
+             define Entity.ClickSoundOpt (Some (AssetTag.make<Sound> Assets.DefaultPackageName "Sound"))
              define Entity.ClickSoundVolume Constants.Audio.DefaultSoundVolume]
 
         override this.Register (button, world) =
@@ -1581,8 +1581,8 @@ module ToggleDispatcherModule =
         member this.GetClosedImage world : Image AssetTag = this.Get Property? ClosedImage world
         member this.SetClosedImage (value : Image AssetTag) world = this.SetFast Property? ClosedImage false false value world
         member this.ClosedImage = lens Property? ClosedImage this.GetClosedImage this.SetClosedImage this
-        member this.GetToggleSoundOpt world : Audio AssetTag option = this.Get Property? ToggleSoundOpt world
-        member this.SetToggleSoundOpt (value : Audio AssetTag option) world = this.SetFast Property? ToggleSoundOpt false false value world
+        member this.GetToggleSoundOpt world : Sound AssetTag option = this.Get Property? ToggleSoundOpt world
+        member this.SetToggleSoundOpt (value : Sound AssetTag option) world = this.SetFast Property? ToggleSoundOpt false false value world
         member this.ToggleSoundOpt = lens Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt this
         member this.GetToggleSoundVolume world : single = this.Get Property? ToggleSoundVolume world
         member this.SetToggleSoundVolume (value : single) world = this.SetFast Property? ToggleSoundVolume false false value world
@@ -1641,7 +1641,7 @@ module ToggleDispatcherModule =
              define Entity.Pressed false
              define Entity.OpenImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
              define Entity.ClosedImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
-             define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackageName "Sound"))
+             define Entity.ToggleSoundOpt (Some (AssetTag.make<Sound> Assets.DefaultPackageName "Sound"))
              define Entity.ToggleSoundVolume Constants.Audio.DefaultSoundVolume]
 
         override this.Register (toggle, world) =

@@ -43,8 +43,7 @@ module OmniBattle =
         | Tick
 
     type BattleCommand =
-        | FadeSong
-        | PlaySound of int64 * single * AssetTag<Audio>
+        | PlaySound of int64 * single * AssetTag<Sound>
         | DisplayCancel of CharacterIndex
         | DisplayHitPointsChange of CharacterIndex * int
         | DisplayBolt of CharacterIndex
@@ -292,8 +291,7 @@ module OmniBattle =
             (model, sigs)
 
         override this.Channel (_, battle, _) =
-            [battle.OutgoingStartEvent => [cmd FadeSong]
-             battle.SelectEvent => [cmd InitializeBattle]
+            [battle.SelectEvent => [cmd InitializeBattle]
              battle.DeselectEvent => [cmd FinalizeBattle]
              battle.UpdateEvent => [msg Tick]]
 
@@ -651,10 +649,6 @@ module OmniBattle =
         override this.Command (model, command, battle, world) =
 
             match command with
-            | FadeSong ->
-                let world = World.fadeOutSong Constants.Audio.DefaultFadeOutMs world
-                just world
-
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
