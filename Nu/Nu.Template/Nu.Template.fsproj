@@ -105,6 +105,7 @@
     <None Include="Assets\Default\Image8.png" />
     <None Include="Assets\Default\Image9.png" />
     <None Include="Assets\Default\Image10.png" />
+    <None Include="Assets\Default\Image11.png" />
     <None Include="Assets\Default\TileSet.png" />
     <None Include="Assets\Default\TileMap.tmx" />
     <None Include="Assets\Gameplay\Jump.wav" />

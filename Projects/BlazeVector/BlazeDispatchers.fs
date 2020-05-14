@@ -134,7 +134,7 @@ module PlayerModule =
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
 
-        static let [<Literal>] WalkForce = 1000.0f
+        static let [<Literal>] WalkForce = 1100.0f
         static let [<Literal>] FallForce = -4000.0f
         static let [<Literal>] ClimbForce = 1500.0f
 
