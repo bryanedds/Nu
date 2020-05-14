@@ -861,7 +861,7 @@ module WorldModuleEntity =
 
         /// Create an entity and add it to the world.
         [<FunctionBinding "createEntity">]
-        static member createEntity5 dispatcherName nameOpt overlayNameDescriptor (layer : Layer) world =
+        static member createEntity5 dispatcherName nameOpt overlayDescriptor (layer : Layer) world =
 
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world
@@ -872,7 +872,7 @@ module WorldModuleEntity =
 
             // compute the optional overlay name
             let overlayNameOpt =
-                match overlayNameDescriptor with
+                match overlayDescriptor with
                 | NoOverlay -> None
                 | RoutedOverlay -> Option.flatten (World.tryFindRoutedOverlayNameOpt dispatcherName world)
                 | DefaultOverlay -> Some (Option.getOrDefault dispatcherName (Option.flatten (World.tryFindRoutedOverlayNameOpt dispatcherName world)))
