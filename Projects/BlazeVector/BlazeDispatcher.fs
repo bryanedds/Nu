@@ -32,7 +32,7 @@ module BlazeDispatcherModule =
         override this.Command (_, command, _, world) =
             let world =
                 match command with
-                | PlaySplashSound -> World.playSound Constants.Audio.DefaultSoundVolume Assets.NuSplashSound world
+                | PlaySplashSound -> World.playSound Constants.Audio.DefaultSoundVolume Assets.SplashSound world
                 | ShowTitle -> World.transitionScreen Simulants.Title world
                 | ShowCredits -> World.transitionScreen Simulants.Credits world
                 | ShowGameplay -> World.transitionScreen Simulants.Gameplay world
@@ -41,12 +41,10 @@ module BlazeDispatcherModule =
 
         // here we describe the content of the game including all of its screens.
         override this.Content (_, _) =
-            let machinerySong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = Assets.MachinerySong }
-            let deadBlazeSong = { Volume = 0.5f (* turn up song's volume! *); FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = Assets.DeadBlazeSong }
             [Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, Simulants.Title)) [] []
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some machinerySong)) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some machinerySong)) Assets.CreditsLayerFilePath
-             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, (Some deadBlazeSong))) Assets.GameplayLayerFilePath]
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some Assets.MachinerySong)) Assets.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some Assets.MachinerySong)) Assets.CreditsLayerFilePath
+             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.DeadBlazeSong))) Assets.GameplayLayerFilePath]
 
         // here we hint to the renderer and audio system that the 'Gui' package should be loaded
         override this.Register (game, world) =
