@@ -63,9 +63,13 @@ module WorldModuleScreen =
 
         static member private publishScreenChange (propertyName : string) (propertyValue : obj) (screen : Screen) world =
             let world =
+                let changeData =
+                    match propertyValue with
+                    | :? DesignerProperty as dp -> { Name = propertyName; Value = dp.DesignerValue }
+                    | _ -> { Name = propertyName; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; screen.Name|]
                 let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy { Name = propertyName; Value = propertyValue } changeEventAddress eventTrace screen false world
+                World.publishPlus World.sortSubscriptionsByHierarchy changeData changeEventAddress eventTrace screen false world
             world
 
         static member private getScreenStateOpt screen world =

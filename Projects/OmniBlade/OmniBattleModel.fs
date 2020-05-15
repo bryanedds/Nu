@@ -33,14 +33,13 @@ module BattleModel =
             { BattleState_ : BattleState
               Characters : Map<CharacterIndex, CharacterModel>
               Inventory_ : Inventory
-              Gold_ : int
+              BonusItemOpt_ : ItemType option
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand Queue }
 
         (* Local Properties *)
         member this.BattleState = this.BattleState_
         member this.Inventory = this.Inventory_
-        member this.Gold = this.Gold_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
 
@@ -146,9 +145,6 @@ module BattleModel =
     let updateInventory updater model =
         { model with Inventory_ = updater model.Inventory_ }
 
-    let updateGold updater model =
-        { model with Gold_ = updater model.Gold_ }
-
     let updateCurrentCommandOpt updater model =
         { model with CurrentCommandOpt_ = updater model.CurrentCommandOpt_ }
 
@@ -159,34 +155,25 @@ module BattleModel =
         { model with ActionCommands_ = Queue.conj command model.ActionCommands }
 
     let prependActionCommand command model =
-        { model with ActionCommands_ = Queue.rev model.ActionCommands |> Queue.conj command |> Queue.rev }
+         { model with ActionCommands_ = Queue.rev model.ActionCommands |> Queue.conj command |> Queue.rev }
 
-    let make allies inventory gold battleType time =
-        match Map.tryFind battleType data.Value.Battles with
-        | Some battleData ->
-            let enemies = List.mapi CharacterModel.makeEnemy battleData.BattleEnemies
-            let characters = allies @ enemies |> Map.ofListBy (fun (character : CharacterModel) -> (character.CharacterIndex, character))
-            let model =
-                { BattleState_ = BattleReady time
-                  Characters = characters
-                  Inventory_ = inventory
-                  Gold_ = gold
-                  CurrentCommandOpt_ = None
-                  ActionCommands_ = Queue.empty }
-            model
-        | None ->
-            { BattleState_ = BattleReady 0L
-              Characters = Map.empty
-              Inventory_ = { Items = Map.empty }
-              Gold_ = 0
+    let make battleData allies inventory bonusItemOpt time =
+        let enemies = List.mapi CharacterModel.makeEnemy battleData.BattleEnemies
+        let characters = allies @ enemies |> Map.ofListBy (fun (character : CharacterModel) -> (character.CharacterIndex, character))
+        let model =
+            { BattleState_ = BattleReady time
+              Characters = characters
+              Inventory_ = inventory
+              BonusItemOpt_ = bonusItemOpt
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty }
+        model
 
     let empty =
         { BattleState_ = BattleReady 0L
           Characters = Map.empty
-          Inventory_ = { Items = Map.empty }
-          Gold_ = 0
+          Inventory_ = { Items = Map.empty; Gold = 0 }
+          BonusItemOpt_ = None
           CurrentCommandOpt_ = None
           ActionCommands_ = Queue.empty }
 

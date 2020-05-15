@@ -13,9 +13,11 @@ module CharacterModel =
         private
             { BoundsOriginal_ : Vector4
               Bounds_ : Vector4
+              CharacterIndex_ : CharacterIndex
               CharacterState_ : CharacterState
               AnimationState_ : CharacterAnimationState
               AutoBattleOpt_ : AutoBattle option
+              ActionTime_ : int
               InputState_ : CharacterInputState }
 
         (* Bounds Original Properties *)
@@ -40,7 +42,11 @@ module CharacterModel =
         member this.BottomOffset2 = this.Bottom + Constants.Battle.CharacterBottomOffset2
 
         (* CharacterState Properties *)
-        member this.PartyIndex = this.CharacterState_.PartyIndex
+        member this.CharacterIndex = this.CharacterIndex_
+        member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
+        member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
+        member this.IsEnemy = not this.IsAlly
+        member this.ActionTime = this.ActionTime_
         member this.ExpPoints = this.CharacterState_.ExpPoints
         member this.HitPoints = this.CharacterState_.HitPoints
         member this.TechPoints = this.CharacterState_.TechPoints
@@ -55,10 +61,6 @@ module CharacterModel =
         member this.ShieldBuff = this.CharacterState_.ShieldBuff
         member this.MagicBuff = this.CharacterState_.MagicBuff
         member this.CounterBuff = this.CharacterState_.CounterBuff
-        member this.ActionTime = this.CharacterState_.ActionTime
-        member this.CharacterIndex = this.CharacterState_.CharacterIndex
-        member this.IsEnemy = this.CharacterState_.IsEnemy
-        member this.IsAlly = this.CharacterState_.IsAlly
         member this.IsHealthy = this.CharacterState_.IsHealthy
         member this.IsWounded = this.CharacterState_.IsWounded
         member this.Level = this.CharacterState_.Level
@@ -77,13 +79,13 @@ module CharacterModel =
         member this.AutoBattleOpt = this.AutoBattleOpt_
         member this.InputState = this.InputState_
 
-    let isTeammate character character2 =
-        CharacterState.isTeammate character.CharacterState_ character2.CharacterState_
+    let isTeammate (character : CharacterModel) (character2 : CharacterModel) =
+        CharacterIndex.isTeammate character.CharacterIndex character2.CharacterIndex
 
     let isReadyForAutoBattle character =
         Option.isNone character.AutoBattleOpt_ &&
-        character.CharacterState_.ActionTime > Constants.Battle.AutoBattleReadyTime &&
-        character.CharacterState_.IsEnemy
+        character.ActionTime > Constants.Battle.AutoBattleReadyTime &&
+        character.IsEnemy
 
     let isAutoBattling character =
         match character.AutoBattleOpt_ with
@@ -183,6 +185,9 @@ module CharacterModel =
     let getAnimationFinished time character =
         CharacterAnimationState.getFinished time character.AnimationState_
 
+    let updateActionTime updater state =
+        { state with ActionTime_ = updater state.ActionTime_ }
+
     let updateHitPoints updater character =
         let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
         let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
@@ -197,9 +202,6 @@ module CharacterModel =
 
     let updateInputState updater character =
         { character with InputState_ = updater character.InputState_ }
-    
-    let updateActionTime updater character =
-        { character with CharacterState_ = CharacterState.updateActionTime updater character.CharacterState_ }
 
     let updateAutoBattleOpt updater character =
         { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
@@ -246,31 +248,38 @@ module CharacterModel =
     let animate time cycle character =
         { character with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState_ }
 
-    let make bounds characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet direction =
-        let characterState = CharacterState.make characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet
+    let make bounds characterIndex (characterState : CharacterState) animationSheet direction =
         let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = ReadyCycle; Direction = direction }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
+          CharacterIndex_ = characterIndex
           CharacterState_ = characterState
           AnimationState_ = animationState
           AutoBattleOpt_ = None
+          ActionTime_ = 0
           InputState_ = NoInput }
 
     let makeEnemy index enemyData =
-        let animationSheet = 
-            let characterType = Enemy enemyData.EnemyType
-            match Map.tryFind characterType data.Value.Characters with
-            | Some characterData -> characterData.AnimationSheet
-            | None -> Assets.BlueGoblinAnimationSheet
-        let enemy =
-            make
-                (v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize)
-                (EnemyIndex index)
-                (Enemy enemyData.EnemyType)
-                0
-                None None [] // TODO: figure out if / how we should populate these 
-                animationSheet
-                Leftward
+        // TODO: error checking
+        let characterData = 
+            match Map.tryFind (Enemy enemyData.EnemyType) data.Value.Characters with
+            | Some characterData -> characterData
+            | None -> failwith ("Could not find CharacterData for '" + scstring enemyData.EnemyType + "'")
+        let characterState = CharacterState.make characterData 0 None None [] // TODO: figure out if / how we should populate equipment
+        let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
+        let enemy = make bounds (EnemyIndex index) characterState characterData.AnimationSheet Leftward
         enemy
+
+    let empty =
+        let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
+        let animationState = { TimeStart = 0L; AnimationSheet = Assets.FinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Downward }
+        { BoundsOriginal_ = bounds
+          Bounds_ = bounds
+          CharacterIndex_ = AllyIndex 0
+          CharacterState_ = CharacterState.empty
+          AnimationState_ = animationState
+          AutoBattleOpt_ = None
+          ActionTime_ = 0
+          InputState_ = NoInput }
 
 type CharacterModel = CharacterModel.CharacterModel

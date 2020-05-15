@@ -1,2 +1,2 @@
-Type,FieldSongOpt,FieldAmbienceOpt,FieldTileMap,FieldObjects
-DebugRoom,[Some [Field Field]],None,[Field DebugRoom],[]
+Type,FieldTileMap,FieldPropss,FieldSongOpt,FieldAmbienceOpt
+DebugField,[Field DebugField],[],[Some [Field Field]],None
