@@ -7,7 +7,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniReticles =
 
-    type [<NoComparison>] ReticlesModel =
+    type [<StructuralEquality; NoComparison>] ReticlesModel =
         { BattleModel : BattleModel
           AimType : AimType }
 

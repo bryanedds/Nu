@@ -5,7 +5,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module PropModel =
 
-    type [<ReferenceEquality; NoComparison>] PropModel =
+    type [<StructuralEquality; NoComparison>] PropModel =
         private
             { Bounds_ : Vector4
               Depth_ : single

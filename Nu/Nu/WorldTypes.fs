@@ -158,7 +158,7 @@ module WorldTypes =
         { OldWorldWithOldState : World }
 
     /// Store origination information about a simulant physics body.
-    and [<NoComparison>] BodySource =
+    and [<StructuralEquality; NoComparison>] BodySource =
         { Entity : Entity
           BodyId : Guid }
         static member internal fromInternal (internal_ : BodySourceInternal) =
@@ -166,7 +166,7 @@ module WorldTypes =
               BodyId = internal_.BodyId }
     
     /// Store origination information about a simulant physics shape body.
-    and [<NoComparison>] BodyShapeSource =
+    and [<StructuralEquality; NoComparison>] BodyShapeSource =
         { Entity : Entity
           BodyId : Guid
           BodyShapeId : Guid }

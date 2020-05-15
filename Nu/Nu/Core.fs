@@ -115,3 +115,17 @@ module String =
     /// Skip a potion of a string.
     /// TODO: move this into Prime.
     let trySkip n (str : string) = str |> Seq.trySkip n |> Seq.toArray |> String
+
+[<AutoOpen>]
+module SymbolicOperators =
+
+    // TODO: move this into Prime
+    let dict = Collections.Generic.Dictionary<string, obj> ()
+    let scvaluememo<'a> str =
+        match dict.TryGetValue str with
+        | (true, value) -> value :?> 'a
+        | (false, _) ->
+            let value = scvalue<'a> str
+            dict.Add (str, value)
+            value
+        

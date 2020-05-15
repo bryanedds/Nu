@@ -29,7 +29,7 @@ type AssetTag =
         end
 
 /// Describes a means for looking up an asset.
-type 'a AssetTag =
+type[<StructuralEquality; NoComparison>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
 

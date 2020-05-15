@@ -3,12 +3,12 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type BattleState =
+type [<StructuralEquality; StructuralComparison>]BattleState =
     | BattleReady of int64
     | BattleRunning
     | BattleCease of bool * int64
 
-type ActionCommand =
+type [<StructuralEquality; NoComparison>] ActionCommand =
     { Action : ActionType
       Source : CharacterIndex
       TargetOpt : CharacterIndex option }
@@ -18,7 +18,7 @@ type ActionCommand =
           Source = source
           TargetOpt = targetOpt }
 
-type CurrentCommand =
+type [<StructuralEquality; NoComparison>] CurrentCommand =
     { TimeStart : int64
       ActionCommand : ActionCommand }
 
@@ -28,7 +28,7 @@ type CurrentCommand =
 [<RequireQualifiedAccess>]
 module BattleModel =
 
-    type [<ReferenceEquality; NoComparison>] BattleModel =
+    type [<StructuralEquality; NoComparison>] BattleModel =
         private
             { BattleState_ : BattleState
               Characters : Map<CharacterIndex, CharacterModel>

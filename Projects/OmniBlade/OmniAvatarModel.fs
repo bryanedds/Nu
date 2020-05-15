@@ -5,7 +5,7 @@ open Nu
 [<RequireQualifiedAccess>]
 module AvatarModel =
 
-    type [<ReferenceEquality; NoComparison>] AvatarModel =
+    type [<StructuralEquality; NoComparison>] AvatarModel =
         private
             { BoundsOriginal_ : Vector4
               Bounds_ : Vector4

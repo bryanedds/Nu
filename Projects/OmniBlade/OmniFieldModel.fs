@@ -21,12 +21,12 @@ type Legionnaire =
           ArmorOpt = None
           Accessories = [] }
 
-type DialogForm =
+type [<StructuralEquality; NoComparison>] DialogForm =
     | DialogThin
     | DialogMedium
     | DialogLarge
 
-type DialogModel =
+type [<StructuralEquality; NoComparison>] DialogModel =
     { DialogForm : DialogForm
       DialogText : Dialog
       DialogProgress : int }
@@ -34,7 +34,7 @@ type DialogModel =
 [<RequireQualifiedAccess>]
 module FieldModel =
 
-    type [<ReferenceEquality; NoComparison>] FieldModel =
+    type [<StructuralEquality; NoComparison>] FieldModel =
         private
             { FieldType_ : FieldType
               Avatar_ : AvatarModel
