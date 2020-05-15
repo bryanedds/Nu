@@ -13,6 +13,7 @@ module OmniBattle =
           HopStop : Vector2 }
 
     type BattleMessage =
+        | Tick
         | RegularItemSelect of CharacterIndex * string
         | RegularItemCancel of CharacterIndex
         | ConsumableItemSelect of CharacterIndex * string
@@ -40,17 +41,15 @@ module OmniBattle =
         | WoundCharacter of CharacterIndex
         | ResetCharacter of CharacterIndex
         | DestroyCharacter of CharacterIndex
-        | Tick
 
     type BattleCommand =
-        | PlaySound of int64 * single * AssetTag<Sound>
+        | UpdateEye
         | DisplayCancel of CharacterIndex
         | DisplayHitPointsChange of CharacterIndex * int
         | DisplayBolt of CharacterIndex
         | DisplayHop of Hop
         | DisplayCircle of Vector2 * single
-        | InitializeBattle
-        | FinalizeBattle
+        | PlaySound of int64 * single * AssetTag<Sound>
 
     type Screen with
 
@@ -283,13 +282,16 @@ module OmniBattle =
             (model, sigs)
 
         override this.Channel (_, battle, _) =
-            [battle.SelectEvent => [cmd InitializeBattle]
-             battle.DeselectEvent => [cmd FinalizeBattle]
-             battle.UpdateEvent => [msg Tick]]
+            [battle.UpdateEvent => [msg Tick; cmd UpdateEye]]
 
         override this.Message (model, message, _, world) =
 
             match message with
+            | Tick ->
+                if World.isTicking world
+                then tick (World.getTickTime world) model
+                else just model
+
             | RegularItemSelect (characterIndex, item) ->
                 let model =
                     match item with
@@ -633,16 +635,11 @@ module OmniBattle =
                 let model = if character.IsEnemy then BattleModel.removeCharacter characterIndex model else model
                 just model
 
-            | Tick ->
-                if World.isTicking world
-                then tick (World.getTickTime world) model
-                else just model
-
-        override this.Command (model, command, battle, world) =
+        override this.Command (model, command, _, world) =
 
             match command with
-            | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
+            | UpdateEye ->
+                let world = World.setEyeCenter v2Zero world
                 just world
 
             | DisplayCancel targetIndex ->
@@ -699,24 +696,15 @@ module OmniBattle =
                 let world = entity.SetSelfDestruct true world
                 just world
 
-            | InitializeBattle ->
-                let world = World.setEyeCenter v2Zero world
-                let world = World.hintRenderPackageUse Assets.BattlePackageName world
-                let world = World.hintAudioPackageUse Assets.BattlePackageName world
-                let world = World.playSong 0 Constants.Audio.DefaultSongVolume Assets.BattleSong world
-                let model = BattleModel.updateBattleState (constant (BattleReady (World.getTickTime world))) model
-                let world = battle.SetBattleModel model world
+            | PlaySound (delay, volume, sound) ->
+                let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
 
-            | FinalizeBattle ->
-                let world = World.hintRenderPackageDisuse Assets.BattlePackageName world
-                just (World.hintAudioPackageDisuse Assets.BattlePackageName world)
+        override this.Content (model, screen) =
 
-        member private this.SceneContent (model : Lens<BattleModel, World>, _ : Screen) =
-
-            // scene layer
-            let background = Simulants.BattleScene / "Background"
-            Content.layer Simulants.BattleScene.Name []
+            [// scene layer
+             let background = Simulants.BattleScene / "Background"
+             Content.layer Simulants.BattleScene.Name []
 
                 // background
                 [Content.label background.Name
@@ -737,10 +725,8 @@ module OmniBattle =
                     (fun model -> model.PartyIndex)
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.CharacterModel <== model])]
 
-        member private this.InputContent (model : Lens<BattleModel, World>, screen : Screen) =
-
-            // input layers
-            Content.layers (model --> fun model -> BattleModel.getAllies model) $ fun index ally _ ->
+             // input layers
+             Content.layers (model --> fun model -> BattleModel.getAllies model) $ fun index ally _ ->
 
                 // input layer
                 let allyIndex = AllyIndex index
@@ -817,8 +803,4 @@ module OmniBattle =
                                 | None -> NoAim
                             { BattleModel = model; AimType = aimType }
                          Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, allyIndex))
-                         Entity.CancelEvent ==> msg (ReticlesCancel allyIndex)]]
-
-        override this.Content (model, screen) =
-            [this.SceneContent (model, screen)
-             this.InputContent (model, screen)]
+                         Entity.CancelEvent ==> msg (ReticlesCancel allyIndex)]]]

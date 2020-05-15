@@ -11,15 +11,14 @@ open OmniBlade
 module OmniField =
 
     type [<NoComparison>] FieldMessage =
-        | AvatarChanged of AvatarModel
-        | UpdateDialog
         | Interact
+        | UpdateAvatar of AvatarModel
+        | UpdateDialog
 
     type FieldCommand =
-        | FadeSong
         | PlaySound of int64 * single * AssetTag<Sound>
-        | TryMove of Vector2
-        | EyeTrack
+        | Move of Vector2
+        | UpdateEye
 
     type Screen with
 
@@ -29,24 +28,6 @@ module OmniField =
 
     type FieldDispatcher () =
         inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand> (FieldModel.empty)
-
-        static let tryGetInteraction dialogOpt advents prop =
-            match dialogOpt with
-            | Some dialog ->
-                if dialog.DialogProgress > String.Join("\n", dialog.DialogText).Length
-                then Some "Next"
-                else None
-            | None ->
-                match prop with
-                | Chest (_, _, chestId, _, _) ->
-                    if Set.contains (Opened chestId) advents then None
-                    else Some "Open"
-                | Door _ -> Some "Open"
-                | Portal -> None
-                | Switch -> Some "Use"
-                | Sensor -> None
-                | Npc _ -> Some "Talk"
-                | Shopkeep _ -> Some "Inquire"
 
         static let isFacingBodyShape bodyShape (avatar : AvatarModel) world =
             if bodyShape.Entity.Is<PropDispatcher> world then
@@ -68,9 +49,27 @@ module OmniField =
                 Some prop.PropData
             | [] -> None
 
+        static let tryGetInteraction3 dialogOpt advents prop =
+            match dialogOpt with
+            | Some dialog ->
+                if dialog.DialogProgress > String.Join("\n", dialog.DialogText).Length
+                then Some "Next"
+                else None
+            | None ->
+                match prop with
+                | Chest (_, _, chestId, _, _) ->
+                    if Set.contains (Opened chestId) advents then None
+                    else Some "Open"
+                | Door _ -> Some "Open"
+                | Portal -> None
+                | Switch -> Some "Use"
+                | Sensor -> None
+                | Npc _ -> Some "Talk"
+                | Shopkeep _ -> Some "Inquire"
+
         static let tryGetInteraction dialogOpt advents (avatar : AvatarModel) world =
             match tryGetFacingProp avatar world with
-            | Some prop -> tryGetInteraction dialogOpt advents prop
+            | Some prop -> tryGetInteraction3 dialogOpt advents prop
             | None -> None
 
         override this.Channel (_, field, _) =
@@ -80,16 +79,15 @@ module OmniField =
                 let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.WalkForce 0.0f + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Up then v2 0.0f Constants.Field.WalkForce + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.WalkForce + force else force
-                [msg UpdateDialog; cmd (TryMove force)]
-             field.PostUpdateEvent => [cmd EyeTrack]
-             field.OutgoingStartEvent => [cmd FadeSong]
+                [msg UpdateDialog; cmd (Move force)]
+             field.PostUpdateEvent => [cmd UpdateEye]
              Simulants.FieldInteract.ClickEvent => [msg Interact]
-             Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> [msg (AvatarChanged (evt.Data.Value :?> AvatarModel))]]
+             Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> [msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))]]
 
         override this.Message (model, message, _, world) =
 
             match message with
-            | AvatarChanged avatarModel ->
+            | UpdateAvatar avatarModel ->
                 let model = FieldModel.updateAvatar (constant avatarModel) model
                 just model
 
@@ -149,21 +147,17 @@ module OmniField =
         override this.Command (model, command, _, world) =
 
             match command with
-            | TryMove force ->
+            | UpdateEye ->
+                let avatarModel = Simulants.FieldAvatar.GetAvatarModel world
+                let world = World.setEyeCenter avatarModel.Center world
+                just world
+
+            | Move force ->
                 if Option.isNone model.DialogOpt then
                     let physicsId = Simulants.FieldAvatar.GetPhysicsId world
                     let world = World.applyBodyForce force physicsId world
                     just world
                 else just world
-
-            | EyeTrack ->
-                let avatarModel = Simulants.FieldAvatar.GetAvatarModel world
-                let world = World.setEyeCenter avatarModel.Center world
-                just world
-
-            | FadeSong ->
-                let world = World.fadeOutSong Constants.Audio.DefaultFadeOutMs world
-                just world
 
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
