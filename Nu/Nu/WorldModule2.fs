@@ -15,16 +15,7 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
 
-    (* Transition Values *)
-    let private ScreenTransitionMouseLeftKey = Gen.id
-    let private ScreenTransitionMouseCenterKey = Gen.id
-    let private ScreenTransitionMouseRightKey = Gen.id
-    let private ScreenTransitionMouseX1Key = Gen.id
-    let private ScreenTransitionMouseX2Key = Gen.id
-    let private ScreenTransitionKeyboardKeyKey = Gen.id
-    let private SplashScreenUpdateKey = Gen.id
-
-    (* Timers *)
+    (* Performance Timers *)
     let private TotalTimer = Diagnostics.Stopwatch ()
     let private InputTimer = Diagnostics.Stopwatch ()
     let private PhysicsTimer = Diagnostics.Stopwatch ()
@@ -45,6 +36,15 @@ module WorldModule2 =
     let private ActualizeTimer = Diagnostics.Stopwatch ()
     let private RenderTimer = Diagnostics.Stopwatch ()
     let private AudioTimer = Diagnostics.Stopwatch ()
+
+    (* Transition Values *)
+    let private ScreenTransitionMouseLeftKey = Gen.id
+    let private ScreenTransitionMouseCenterKey = Gen.id
+    let private ScreenTransitionMouseRightKey = Gen.id
+    let private ScreenTransitionMouseX1Key = Gen.id
+    let private ScreenTransitionMouseX2Key = Gen.id
+    let private ScreenTransitionKeyboardKeyKey = Gen.id
+    let private SplashScreenUpdateKey = Gen.id
 
     type World with
 
