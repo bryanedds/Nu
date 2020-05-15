@@ -8,7 +8,7 @@ open Nu
 
 /// Describes a generalized simulant value independent of the engine.
 /// Not used for serialization.
-type [<NoComparison>] SimulantDescriptor =
+type [<StructuralEquality; NoComparison>] SimulantDescriptor =
     { SimulantNameOpt : string option
       SimulantDispatcherName : string
       SimulantProperties : (string * Property) list
@@ -16,7 +16,7 @@ type [<NoComparison>] SimulantDescriptor =
 
 /// Describes an entity value independent of the engine.
 /// Used to directly serialize an entity.
-type [<NoComparison>] EntityDescriptor =
+type [<StructuralEquality; NoComparison>] EntityDescriptor =
     { EntityDispatcherName : string
       EntityProperties : Map<string, Symbol> }
 
@@ -36,7 +36,7 @@ module EntityDescriptor =
 
 /// Describes a layer value independent of the engine.
 /// Used to directly serialize a layer.
-type [<NoComparison>] LayerDescriptor =
+type [<StructuralEquality; NoComparison>] LayerDescriptor =
     { LayerDispatcherName : string
       LayerProperties : Map<string, Symbol>
       EntitieDescriptors : EntityDescriptor list }
@@ -58,7 +58,7 @@ module LayerDescriptor =
 
 /// Describes a screen value independent of the engine.
 /// Used to directly serialize a screen.
-type [<NoComparison>] ScreenDescriptor =
+type [<StructuralEquality; NoComparison>] ScreenDescriptor =
     { ScreenDispatcherName : string
       ScreenProperties : Map<string, Symbol>
       LayerDescriptors : LayerDescriptor list }
@@ -80,7 +80,7 @@ module ScreenDescriptor =
 
 /// Describes a game value independent of the engine.
 /// Used to directly serialize a game.
-type [<NoComparison>] GameDescriptor =
+type [<StructuralEquality; NoComparison>] GameDescriptor =
     { GameDispatcherName : string
       GameProperties : Map<string, Symbol>
       ScreenDescriptors : ScreenDescriptor list }

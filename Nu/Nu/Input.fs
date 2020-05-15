@@ -8,7 +8,7 @@ open Prime
 open Nu
 
 /// Describes a mouse button.
-type MouseButton =
+type [<StructuralEquality; StructuralComparison>] MouseButton =
     | MouseLeft
     | MouseCenter
     | MouseRight
@@ -82,7 +82,7 @@ module KeyboardState =
         isKeyDown KeyboardKey.Rshift
 
 /// Describes a gamepad direction.
-type GamepadDirection =
+type [<StructuralEquality; StructuralComparison>] GamepadDirection =
     | DirectionUp
     | DirectionUpLeft
     | DirectionLeft
@@ -94,7 +94,7 @@ type GamepadDirection =
     | DirectionCentered
 
 /// Describes a gamepad button.
-type GamepadButton =
+type [<StructuralEquality; StructuralComparison>] GamepadButton =
     | ButtonA
     | ButtonB
     | ButtonX

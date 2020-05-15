@@ -65,7 +65,7 @@ module Subsystem =
 module SubsystemsModule =
 
     /// The subsystems of a world.
-    type [<ReferenceEquality>] 'w Subsystems =
+    type [<ReferenceEquality; NoComparison>] 'w Subsystems =
         { PhysicsEngine : 'w Subsystem
           Renderer : 'w Subsystem
           AudioPlayer : 'w Subsystem }

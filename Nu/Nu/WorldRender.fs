@@ -11,7 +11,7 @@ open Nu
 module WorldRenderModule =
 
     /// The subsystem for the world's renderer.
-    type [<ReferenceEquality>] RendererSubsystem =
+    type [<ReferenceEquality; NoComparison>] RendererSubsystem =
         private
             { Renderer : Renderer }
     

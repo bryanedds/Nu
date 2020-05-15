@@ -7,7 +7,7 @@ open System.Collections.Generic
 open Prime
 module Effects =
 
-    type Algorithm =
+    type [<StructuralEquality; StructuralComparison>] Algorithm =
         | Constant
         | Linear
         | Random
@@ -20,7 +20,7 @@ module Effects =
         | Cos
         | CosScaled of single
 
-    type LogicApplicator =
+    type [<StructuralEquality; StructuralComparison>] LogicApplicator =
         | Or
         | Nor
         | Xor
@@ -28,14 +28,14 @@ module Effects =
         | Nand
         | Equal
 
-    type TweenApplicator =
+    type [<StructuralEquality; StructuralComparison>] TweenApplicator =
         | Sum
         | Delta
         | Scale
         | Ratio
         | Set
 
-    type Slice =
+    type [<StructuralEquality; StructuralComparison>] Slice =
         { Position : Vector2
           Size : Vector2
           Rotation : single
@@ -50,68 +50,68 @@ module Effects =
     type KeyFrame =
         abstract KeyFrameLength : int64
 
-    type LogicKeyFrame =
+    type [<StructuralEquality; StructuralComparison>] LogicKeyFrame =
         { LogicValue : bool
           LogicLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.LogicLength
 
-    type TweenKeyFrame =
+    type [<StructuralEquality; StructuralComparison>] TweenKeyFrame =
         { TweenValue : single
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type Tween2KeyFrame =
+    type [<StructuralEquality; StructuralComparison>] Tween2KeyFrame =
         { TweenValue : Vector2
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type Tween3KeyFrame =
+    type [<StructuralEquality; StructuralComparison>] Tween3KeyFrame =
         { TweenValue : Vector3
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type Tween4KeyFrame =
+    type [<StructuralEquality; StructuralComparison>] Tween4KeyFrame =
         { TweenValue : Vector4
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type TweenIKeyFrame =
+    type [<StructuralEquality; StructuralComparison>] TweenIKeyFrame =
         { TweenValue : int
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type Tween2IKeyFrame =
+    type [<StructuralEquality; StructuralComparison>] Tween2IKeyFrame =
         { TweenValue : Vector2i
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
             
-    type Playback =
+    type [<StructuralEquality; StructuralComparison>] Playback =
         | Once
         | Loop
         | Bounce
         
-    type Repetition =
+    type [<StructuralEquality; StructuralComparison>] Repetition =
         | Cycle of Cycles : int
         | Iterate of Iterations : int
 
-    type Rate =
+    type [<StructuralEquality; StructuralComparison>] Rate =
         Rate of single
 
-    type Shift =
+    type [<StructuralEquality; StructuralComparison>] Shift =
         Shift of single
 
-    type [<NoComparison>] Resource =
+    type [<StructuralEquality; NoComparison>] Resource =
         | Resource of string * string
         | Expand of string * Argument array
 
-    and [<NoComparison>] Aspect =
+    and [<StructuralEquality; NoComparison>] Aspect =
         | Enabled of LogicApplicator * Playback * LogicKeyFrame array
         | Position of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
         | Translation of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
@@ -127,7 +127,7 @@ module Effects =
         | Expand of string * Argument array
         | Aspects of Aspect array
 
-    and [<NoComparison>] Content =
+    and [<StructuralEquality; NoComparison>] Content =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Aspect array * Content
         | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Aspect array * Content
@@ -145,7 +145,7 @@ module Effects =
     and Argument =
         SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
 
-    type [<NoComparison>] Definition =
+    type [<StructuralEquality; NoComparison>] Definition =
         { DefinitionParams : string array
           DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
@@ -167,7 +167,7 @@ module Effects =
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
             Constants.PrettyPrinter.CompositionalThresholdMax)>]
-type [<NoEquality; NoComparison>] Effect =
+type [<StructuralEquality; NoComparison>] Effect =
     { EffectName : string
       LifetimeOpt : int64 option
       Definitions : Effects.Definitions
@@ -190,7 +190,7 @@ module EffectSystemModule =
     open Effects
 
     /// An abstract data type for executing effects.
-    type [<NoEquality; NoComparison>] EffectSystem =
+    type [<StructuralEquality; NoComparison>] EffectSystem =
         private
             { ViewType : ViewType
               Views : View List
@@ -198,7 +198,7 @@ module EffectSystemModule =
               ProgressOffset : single
               EffectTime : int64
               EffectEnv : Definitions
-              Chaos : System.Random }
+              Chaos : Random }
 
     [<RequireQualifiedAccess>]
     module EffectSystem =

@@ -11,7 +11,7 @@ open Nu
 module WorldAudioModule =
 
     /// The subsystem for the world's audio player.
-    type [<ReferenceEquality>] AudioPlayerSubsystem =
+    type [<ReferenceEquality; NoComparison>] AudioPlayerSubsystem =
         private
             { AudioPlayer : AudioPlayer }
     

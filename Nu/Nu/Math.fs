@@ -13,7 +13,8 @@ open Nu
 [<Syntax
     ("Absolute Relative", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.SimpleThresholdMax)>]
+     Constants.PrettyPrinter.SimpleThresholdMax);
+     StructuralEquality; StructuralComparison>]
 type ViewType =
     | Absolute
     | Relative

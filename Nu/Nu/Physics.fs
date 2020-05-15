@@ -46,18 +46,18 @@ type [<CustomEquality; NoComparison>] PhysicsId =
         PhysicsId.hash this
 
 /// Store origination information about a simulant physics body.
-type [<NoComparison>] BodySourceInternal =
+type [<StructuralEquality; NoComparison>] BodySourceInternal =
     { Simulant : Simulant
       BodyId : Guid }
 
 /// Store origination information about a simulant physics shape body.
-type [<NoComparison>] BodyShapeSourceInternal =
+type [<StructuralEquality; NoComparison>] BodyShapeSourceInternal =
     { Simulant : Simulant
       BodyId : Guid
       ShapeId : Guid }
 
 /// Describes body shape-specific properties.
-type BodyShapeProperties =
+type [<StructuralEquality; NoComparison>] BodyShapeProperties =
     { BodyShapeId : Guid
       FrictionOpt : single option
       RestitutionOpt : single option
@@ -118,7 +118,8 @@ type [<StructuralEquality; NoComparison>] BodyShape =
 [<Syntax
     ("Static Kinematic Dynamic", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.SimpleThresholdMax)>]
+     Constants.PrettyPrinter.SimpleThresholdMax);
+     StructuralEquality; StructuralComparison>]
 type BodyType =
     | Static
     | Kinematic
@@ -172,7 +173,7 @@ module BodyProperties =
           IsBullet = false
           IsSensor = false }
 
-type [<NoComparison>] JointAngle =
+type [<StructuralEquality; NoComparison>] JointAngle =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector2
@@ -180,7 +181,7 @@ type [<NoComparison>] JointAngle =
       TargetAngle : single
       Softness : single }
 
-type [<NoComparison>] JointDistance =
+type [<StructuralEquality; NoComparison>] JointDistance =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector2
@@ -188,49 +189,49 @@ type [<NoComparison>] JointDistance =
       Length : single
       Frequency : single }
 
-type [<NoComparison>] JointFriction =
+type [<StructuralEquality; NoComparison>] JointFriction =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector2
       Anchor2 : Vector2 }
 
-type [<NoComparison>] JointGear =
+type [<StructuralEquality; NoComparison>] JointGear =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector2
       Anchor2 : Vector2 }
 
-type [<NoComparison>] JointMotor =
+type [<StructuralEquality; NoComparison>] JointMotor =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector2
       Anchor2 : Vector2 }
 
-type [<NoComparison>] JointPrismatic =
+type [<StructuralEquality; NoComparison>] JointPrismatic =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector2
       Anchor2 : Vector2 }
 
-type [<NoComparison>] JointPulley =
+type [<StructuralEquality; NoComparison>] JointPulley =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector2
       Anchor2 : Vector2 }
 
-type [<NoComparison>] JointRevolute =
+type [<StructuralEquality; NoComparison>] JointRevolute =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector2
       Anchor2 : Vector2 }
 
-type [<NoComparison>] JointRope =
+type [<StructuralEquality; NoComparison>] JointRope =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector2
       Anchor2 : Vector2 }
 
-type [<NoComparison>] JointWheel =
+type [<StructuralEquality; NoComparison>] JointWheel =
     { TargetId : PhysicsId
       TargetId2 : PhysicsId
       Anchor : Vector2
@@ -241,8 +242,9 @@ type [<NoComparison>] JointWheel =
     ("JointAngle JointDistance JointFriction JointGear JointMotor JointPrismatic JointPulley JointRevolute JointRope JointWheel",
      "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
-     Constants.PrettyPrinter.DetailedThresholdMax)>]
-type [<StructuralEquality; NoComparison>] JointDevice =
+     Constants.PrettyPrinter.DetailedThresholdMax);
+     StructuralEquality; NoComparison>]
+type JointDevice =
     | JointEmpty
     | JointAngle of JointAngle
     | JointDistance of JointDistance
@@ -255,7 +257,7 @@ type [<StructuralEquality; NoComparison>] JointDevice =
     | JointRope of JointRope
     | JointWheel of JointWheel
 
-type [<NoComparison>] JointProperties =
+type [<StructuralEquality; NoComparison>] JointProperties =
     { JointId : Guid
       JointDevice : JointDevice }
 
@@ -417,7 +419,7 @@ type PhysicsEngine =
     abstract Integrate : int64 -> PhysicsMessage UList -> IntegrationMessage List
 
 /// The mock implementation of PhysicsEngine.
-type MockPhysicsEngine =
+type [<ReferenceEquality; NoComparison>] MockPhysicsEngine =
     private { MockPhysicsEngine : unit }
     static member make () = { MockPhysicsEngine = () }
     interface PhysicsEngine with
@@ -434,7 +436,7 @@ type MockPhysicsEngine =
         member physicsEngine.Integrate _ _ = List<IntegrationMessage> ()
 
 /// The Farseer implementation of PhysicsEngine.
-type [<ReferenceEquality>] FarseerPhysicsEngine =
+type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
     private
         { PhysicsContext : Dynamics.World
           Bodies : BodyDictionary

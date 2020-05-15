@@ -9,7 +9,7 @@ open Prime
 open Nu
 
 /// Describes the overlay state of a property.
-type internal OverlayState =
+type [<StructuralEquality; StructuralComparison>] internal OverlayState =
     | Bare
     | Altered
     | Overlaid
@@ -22,7 +22,8 @@ type internal OverlayState =
      "EffectFacet ScriptFacet TextFacet RigidBodyFacet RigidBodiesFacet JointFacet TileMapFacet NodeFacet StaticSpriteFacet AnimatedSpriteFacet",
      "", "", "",
      Constants.PrettyPrinter.StructuredThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
+     Constants.PrettyPrinter.DefaultThresholdMax);
+     StructuralEquality; StructuralComparison>]
 type Overlay =
     { OverlayName : string
       OverlayIncludeNames : string list

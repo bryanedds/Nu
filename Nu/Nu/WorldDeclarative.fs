@@ -7,7 +7,7 @@ open Prime
 open Nu
 
 /// Describes the behavior of a screen.
-type [<NoComparison>] ScreenBehavior =
+type [<StructuralEquality; NoComparison>] ScreenBehavior =
     | Vanilla
     | Dissolve  of DissolveDescriptor * SongDescriptor option
     | Splash of DissolveDescriptor * SplashDescriptor * Screen

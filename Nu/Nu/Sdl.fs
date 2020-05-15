@@ -8,7 +8,7 @@ open Prime
 open Nu
 
 /// Describes the initial configuration of a window created via SDL.
-type SdlWindowConfig =
+type [<StructuralEquality; NoComparison>] SdlWindowConfig =
     { WindowTitle : string
       WindowX : int
       WindowY : int
@@ -22,13 +22,13 @@ type SdlWindowConfig =
           WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN }
 
 /// Describes the view that SDL will use to render.
-type SdlViewConfig =
+type [<StructuralEquality; NoComparison>] SdlViewConfig =
     | NewWindow of SdlWindowConfig
     | ExistingWindow of nativeint
     //| FullScreen TODO: implement
 
 /// Describes the general configuration of SDL.
-type SdlConfig =
+type [<StructuralEquality; NoComparison>] SdlConfig =
     { ViewConfig : SdlViewConfig
       ViewW : int
       ViewH : int
@@ -47,7 +47,7 @@ type SdlConfig =
 module SdlDepsModule =
 
     /// The dependencies needed to initialize SDL.
-    type [<ReferenceEquality>] SdlDeps =
+    type [<ReferenceEquality; NoComparison>] SdlDeps =
         private
             { RenderContextOpt : nativeint option
               WindowOpt : nativeint option
