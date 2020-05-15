@@ -25,9 +25,19 @@ module WorldModule2 =
     let private SplashScreenUpdateKey = Gen.id
 
     (* Timers *)
+    let private TotalTimer = Diagnostics.Stopwatch ()
     let private InputTimer = Diagnostics.Stopwatch ()
     let private PhysicsTimer = Diagnostics.Stopwatch ()
     let private UpdateTimer = Diagnostics.Stopwatch ()
+    let private UpdateGatherTimer = Diagnostics.Stopwatch ()
+    let private UpdateGameTimer = Diagnostics.Stopwatch ()
+    let private UpdateScreensTimer = Diagnostics.Stopwatch ()
+    let private UpdateLayersTimer = Diagnostics.Stopwatch ()
+    let private UpdateEntitiesTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateGameTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateScreensTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateLayersTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateEntitiesTimer = Diagnostics.Stopwatch ()
     let private TaskletsTimer = Diagnostics.Stopwatch ()
     let private PerFrameTimer = Diagnostics.Stopwatch ()
     let private PreFrameTimer = Diagnostics.Stopwatch ()
@@ -35,7 +45,6 @@ module WorldModule2 =
     let private ActualizeTimer = Diagnostics.Stopwatch ()
     let private RenderTimer = Diagnostics.Stopwatch ()
     let private AudioTimer = Diagnostics.Stopwatch ()
-    let private TotalTimer = Diagnostics.Stopwatch ()
 
     type World with
 
@@ -644,16 +653,31 @@ module WorldModule2 =
         static member private updateSimulants world =
 
             // gather simulants
+            UpdateGatherTimer.Start ()
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let layers = Seq.concat (List.map (flip World.getLayers world) screens)
             let (entities, world) = World.getEntitiesInView2 world
+            UpdateGatherTimer.Stop ()
 
-            // update simulants breadth-first
+            // update game
+            UpdateGameTimer.Start ()
             let world = World.updateGame world
+            UpdateGameTimer.Stop ()
+            
+            // update screens
+            UpdateScreensTimer.Start ()
             let world = List.fold (fun world screen -> World.updateScreen screen world) world screens
+            UpdateScreensTimer.Stop ()
+
+            // update layers
+            UpdateLayersTimer.Start ()
             let world = Seq.fold (fun world layer -> World.updateLayer layer world) world layers
+            UpdateLayersTimer.Stop ()
+
+            // update entities
+            UpdateEntitiesTimer.Start ()
             let world =
                 Seq.fold (fun world (entity : Entity) ->
                     if World.isTicking world || entity.GetAlwaysUpdate world
@@ -661,12 +685,26 @@ module WorldModule2 =
                     else world)
                     world
                     entities
+            UpdateEntitiesTimer.Stop ()
 
 #if !DISABLE_POST_UPDATES
-            // post-update simulants breadth-first
+            // post-update game
+            PostUpdateGameTimer.Start ()
             let world = World.postUpdateGame world
+            PostUpdateGameTimer.Stop ()
+
+            // post-update screens
+            PostUpdateScreensTimer.Start ()
             let world = List.fold (fun world screen -> World.postUpdateScreen screen world) world screens
+            PostUpdateScreensTimer.Stop ()
+
+            // post-update layers
+            PostUpdateLayersTimer.Start ()
             let world = Seq.fold (fun world layer -> World.postUpdateLayer layer world) world layers
+            PostUpdateLayersTimer.Stop ()
+
+            // post-update entities
+            PostUpdateEntitiesTimer.Start ()
             let world =
                 Seq.fold (fun world (entity : Entity) ->
                     if World.isTicking world || entity.GetAlwaysUpdate world
@@ -674,6 +712,7 @@ module WorldModule2 =
                     else world)
                     world
                     entities
+            PostUpdateEntitiesTimer.Stop ()
 #endif
 
             // fin
