@@ -8,11 +8,11 @@ module Assets =
     let BattlePackageName = "Battle"
 
     // gui assets
-    let TitleSong = asset<Song> GuiPackageName "Title"
-    let AffirmSound = asset<Sound> GuiPackageName "Affirm"
     let DialogThin = asset<Image> GuiPackageName "DialogThin"
     let DialogMedium = asset<Image> GuiPackageName "DialogMedium"
     let DialogLarge = asset<Image> GuiPackageName "DialogLarge"
+    let AffirmSound = asset<Sound> GuiPackageName "Affirm"
+    let TitleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> GuiPackageName "Title" }
 
     // field assets
     let DebugFieldTileMap = asset<TileMap> FieldPackageName "DebugField"
@@ -31,10 +31,10 @@ module Assets =
     let OpenChestSound = asset<Sound> FieldPackageName "Unlatch"
 
     // battle assets
-    let BattleSong = asset<Song> BattlePackageName "Battle"
     let CancelImage = asset<Image> BattlePackageName "Cancel"
     let BoltAnimationSheet = asset<Image> BattlePackageName "Bolt"
     let ExplosionAnimationSheet = asset<Image> BattlePackageName "Explosion"
+    let BattleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> BattlePackageName "Battle" }
 
     // layer file paths
     let TitleLayerFilePath = "Assets/Gui/Title.nulyr"

@@ -54,6 +54,7 @@ module OmniGame =
 
             match message with
             | UpdateModel model ->
+                ignore ()
                 just model
 
             | UpdateFieldModel field ->
@@ -88,24 +89,30 @@ module OmniGame =
                     | None -> withCmd model (Show Simulants.Field)
 
         override this.Command (_, command, _, world) =
-            let world =
-                match command with
-                | Show screen -> World.transitionScreen screen world
-                | Exit -> World.exit world
-            just world
+            match command with
+            | Show screen -> World.transitionScreen screen world |> just
+            | Exit -> World.exit world |> just
 
         override this.Content (model, _) =
-            let titleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = Assets.TitleSong }
-            let battleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = Assets.BattleSong }
-            [Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, Simulants.Title)) [] []
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, (Some titleSong))) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, (Some titleSong))) Assets.CreditsLayerFilePath
+
+            [// splash
+             Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, Simulants.Title)) [] []
+
+             // title
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.TitleLayerFilePath
+
+             // credits
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.CreditsLayerFilePath
+
+             // field
              Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, None))
                 [Screen.FieldModel <== model --> fun model ->
                     match model with
                     | Gui _ -> FieldModel.empty
                     | Field field -> field] []
-             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Dissolve.Default, (Some battleSong)))
+
+             // battle
+             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.BattleSong)))
                 [Screen.BattleModel <== model --> fun model ->
                     match model with
                     | Gui _ -> BattleModel.empty
