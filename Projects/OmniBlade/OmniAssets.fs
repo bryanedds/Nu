@@ -29,6 +29,7 @@ module Assets =
     let HealSound = asset<Sound> FieldPackageName "Heal"
     let DeathSound = asset<Sound> FieldPackageName "Death"
     let OpenChestSound = asset<Sound> FieldPackageName "Unlatch"
+    let FieldSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> FieldPackageName "Field" }
 
     // battle assets
     let CancelImage = asset<Image> BattlePackageName "Cancel"

@@ -105,7 +105,7 @@ module OmniGame =
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.CreditsLayerFilePath
 
              // field
-             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, None))
+             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.FieldSong)))
                 [Screen.FieldModel <== model --> fun model ->
                     match model with
                     | Gui _ -> FieldModel.empty
