@@ -1,0 +1,4 @@
+Type,ArchetypeType,LevelBase,AnimationSheet,Description
+[Ally Finn],Fighter,0,[Field Finn],The main protagonist.
+[Ally Glenn],Brawler,0,[Field Glenn],Finn's best friend.
+[Enemy Goblin],Goblin,0,[Field Goblin],A minor goblin from the Golobogos Islands.

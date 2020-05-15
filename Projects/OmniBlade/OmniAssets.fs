@@ -6,7 +6,6 @@ module Assets =
     let GuiPackageName = "Gui"
     let FieldPackageName = "Field"
     let BattlePackageName = "Battle"
-    let GameplayPackageName = "Gameplay"
 
     // gui assets
     let TitleSong = asset<Song> GuiPackageName "Title"
@@ -15,23 +14,21 @@ module Assets =
     let DialogMedium = asset<Image> GuiPackageName "DialogMedium"
     let DialogLarge = asset<Image> GuiPackageName "DialogLarge"
 
-    // gameplay assets
-    let FinnAnimationSheet = asset<Image> GameplayPackageName "Finn"
-    let GlennAnimationSheet = asset<Image> GameplayPackageName "Glenn"
-    let BlueGoblinAnimationSheet = asset<Image> GameplayPackageName "BlueGoblin"
-    let HitSound = asset<Sound> GameplayPackageName "Hit"
-    let ExplosionSound = asset<Sound> GameplayPackageName "Explosion"
-    let EnterBattleSound = asset<Sound> GameplayPackageName "EnterBattle"
-    let HealSound = asset<Sound> GameplayPackageName "Heal"
-    let DeathSound = asset<Sound> GameplayPackageName "Death"
-    let OpenChestSound = asset<Sound> GameplayPackageName "Unlatch"
-
     // field assets
     let DebugFieldTileMap = asset<TileMap> FieldPackageName "DebugField"
     let WoodenChestImageOpened = asset<Image> FieldPackageName "WoodenChestOpened"
     let WoodenChestImageClosed = asset<Image> FieldPackageName "WoodenChestClosed"
     let BrassChestImageOpened = asset<Image> FieldPackageName "BrassChestOpened"
     let BrassChestImageClosed = asset<Image> FieldPackageName "BrassChestClosed"
+    let FinnAnimationSheet = asset<Image> FieldPackageName "Finn"
+    let GlennAnimationSheet = asset<Image> FieldPackageName "Glenn"
+    let GoblinAnimationSheet = asset<Image> FieldPackageName "Goblin"
+    let HitSound = asset<Sound> FieldPackageName "Hit"
+    let ExplosionSound = asset<Sound> FieldPackageName "Explosion"
+    let EnterBattleSound = asset<Sound> FieldPackageName "EnterBattle"
+    let HealSound = asset<Sound> FieldPackageName "Heal"
+    let DeathSound = asset<Sound> FieldPackageName "Death"
+    let OpenChestSound = asset<Sound> FieldPackageName "Unlatch"
 
     // battle assets
     let BattleSong = asset<Song> BattlePackageName "Battle"
@@ -44,14 +41,14 @@ module Assets =
     let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
 
     // data file paths
-    let WeaponDataFilePath = "Assets/Gameplay/WeaponData.csv"
-    let ArmorDataFilePath = "Assets/Gameplay/ArmorData.csv"
-    let AccessoryDataFilePath = "Assets/Gameplay/AccessoryData.csv"
-    let ConsumableDataFilePath = "Assets/Gameplay/ConsumableData.csv"
-    let TechDataFilePath = "Assets/Gameplay/TechData.csv"
-    let ArchetypeDataFilePath = "Assets/Gameplay/ArchetypeData.csv"
-    let CharacterDataFilePath = "Assets/Gameplay/CharacterData.csv"
-    let FieldDataFilePath = "Assets/Gameplay/FieldData.csv"
-    let BattleDataFilePath = "Assets/Gameplay/BattleData.csv"
-    let TechAnimationDataFilePath = "Assets/Gameplay/TechAnimationData.csv"
-    let CharacterAnimationDataFilePath = "Assets/Gameplay/CharacterAnimationData.csv"
+    let WeaponDataFilePath = "Assets/Field/WeaponData.csv"
+    let ArmorDataFilePath = "Assets/Field/ArmorData.csv"
+    let AccessoryDataFilePath = "Assets/Field/AccessoryData.csv"
+    let ConsumableDataFilePath = "Assets/Field/ConsumableData.csv"
+    let TechDataFilePath = "Assets/Field/TechData.csv"
+    let ArchetypeDataFilePath = "Assets/Field/ArchetypeData.csv"
+    let CharacterDataFilePath = "Assets/Field/CharacterData.csv"
+    let FieldDataFilePath = "Assets/Field/FieldData.csv"
+    let BattleDataFilePath = "Assets/Field/BattleData.csv"
+    let TechAnimationDataFilePath = "Assets/Field/TechAnimationData.csv"
+    let CharacterAnimationDataFilePath = "Assets/Field/CharacterAnimationData.csv"
