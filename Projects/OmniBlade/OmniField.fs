@@ -10,12 +10,17 @@ open OmniBlade
 [<AutoOpen>]
 module OmniField =
 
+    let Timers =
+        let timers = Array.init 100 (fun _ -> Diagnostics.Stopwatch ())
+        timers.[0].Start ()
+        timers
+
     type [<NoComparison>] FieldMessage =
         | Interact
         | UpdateAvatar of AvatarModel
         | UpdateDialog
 
-    type FieldCommand =
+    type [<NoComparison>] FieldCommand =
         | PlaySound of int64 * single * AssetTag<Sound>
         | Move of Vector2
         | UpdateEye
@@ -88,10 +93,13 @@ module OmniField =
 
             match message with
             | UpdateAvatar avatarModel ->
+                Timers.[1].Start ()
                 let model = FieldModel.updateAvatar (constant avatarModel) model
+                Timers.[1].Stop ()
                 just model
 
             | UpdateDialog ->
+                Timers.[2].Start ()
                 let model =
                     FieldModel.updateDialogOpt
                         (function
@@ -100,62 +108,71 @@ module OmniField =
                             Some { dialog with DialogProgress = dialog.DialogProgress + increment }
                          | None -> None)
                         model
+                Timers.[2].Stop ()
                 just model
 
             | Interact ->
-                match model.DialogOpt with
-                | Some _ ->
-                    let model = FieldModel.updateDialogOpt (constant None) model
-                    just model
-                | None ->
-                    match tryGetFacingProp model.Avatar world with
-                    | Some prop ->
-                        match prop with
-                        | Chest (itemType, _, chestId, battleTypeOpt, _) ->
-                            match battleTypeOpt with
-                            | Some battleType ->
-                                match Map.tryFind battleType data.Value.Battles with
-                                | Some battleData ->
-                                    let legionnaires = Map.toValueList (FieldModel.getParty model)
-                                    let allies =
-                                        List.map
-                                            (fun legionnaire ->
-                                                match Map.tryFind legionnaire.CharacterType data.Value.Characters with
-                                                | Some characterData ->
-                                                    // TODO: bounds checking
-                                                    let index = legionnaire.LegionIndex
-                                                    let bounds = v4Bounds battleData.BattleAllyPositions.[index] Constants.Gameplay.CharacterSize
-                                                    let characterIndex = AllyIndex index
-                                                    let characterState = CharacterState.make characterData legionnaire.ExpPoints legionnaire.WeaponOpt legionnaire.ArmorOpt legionnaire.Accessories
-                                                    let animationSheet = characterData.AnimationSheet
-                                                    let direction = Direction.fromVector2 -bounds.Bottom
-                                                    CharacterModel.make bounds characterIndex characterState animationSheet direction
-                                                | None -> failwith ("Could not find CharacterData for '" + scstring legionnaire.CharacterType + "'."))
-                                            legionnaires
-                                    let battleModel = BattleModel.make battleData allies model.Inventory (Some itemType) (World.getTickTime world)
-                                    let model = FieldModel.updateBattleOpt (constant (Some battleModel)) model
-                                    just model
-                                | None -> just model
-                            | None ->
-                                let model = FieldModel.updateInventory (Inventory.addItem itemType) model
-                                let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
-                                let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
-                                withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
-                        | _ -> just model
-                    | None -> just model
+                Timers.[3].Start ()
+                let result =
+                    match model.DialogOpt with
+                    | Some _ ->
+                        let model = FieldModel.updateDialogOpt (constant None) model
+                        just model
+                    | None ->
+                        match tryGetFacingProp model.Avatar world with
+                        | Some prop ->
+                            match prop with
+                            | Chest (itemType, _, chestId, battleTypeOpt, _) ->
+                                match battleTypeOpt with
+                                | Some battleType ->
+                                    match Map.tryFind battleType data.Value.Battles with
+                                    | Some battleData ->
+                                        let legionnaires = Map.toValueList (FieldModel.getParty model)
+                                        let allies =
+                                            List.map
+                                                (fun legionnaire ->
+                                                    match Map.tryFind legionnaire.CharacterType data.Value.Characters with
+                                                    | Some characterData ->
+                                                        // TODO: bounds checking
+                                                        let index = legionnaire.LegionIndex
+                                                        let bounds = v4Bounds battleData.BattleAllyPositions.[index] Constants.Gameplay.CharacterSize
+                                                        let characterIndex = AllyIndex index
+                                                        let characterState = CharacterState.make characterData legionnaire.ExpPoints legionnaire.WeaponOpt legionnaire.ArmorOpt legionnaire.Accessories
+                                                        let animationSheet = characterData.AnimationSheet
+                                                        let direction = Direction.fromVector2 -bounds.Bottom
+                                                        CharacterModel.make bounds characterIndex characterState animationSheet direction
+                                                    | None -> failwith ("Could not find CharacterData for '" + scstring legionnaire.CharacterType + "'."))
+                                                legionnaires
+                                        let battleModel = BattleModel.make battleData allies model.Inventory (Some itemType) (World.getTickTime world)
+                                        let model = FieldModel.updateBattleOpt (constant (Some battleModel)) model
+                                        just model
+                                    | None -> just model
+                                | None ->
+                                    let model = FieldModel.updateInventory (Inventory.addItem itemType) model
+                                    let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
+                                    let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
+                                    withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
+                            | _ -> just model
+                        | None -> just model
+                Timers.[3].Stop ()
+                result
 
         override this.Command (model, command, _, world) =
 
             match command with
             | UpdateEye ->
+                Timers.[4].Start ()
                 let avatarModel = Simulants.FieldAvatar.GetAvatarModel world
                 let world = World.setEyeCenter avatarModel.Center world
+                Timers.[4].Stop ()
                 just world
 
             | Move force ->
                 if Option.isNone model.DialogOpt then
+                    Timers.[5].Start ()
                     let physicsId = Simulants.FieldAvatar.GetPhysicsId world
                     let world = World.applyBodyForce force physicsId world
+                    Timers.[5].Stop ()
                     just world
                 else just world
 
@@ -165,11 +182,11 @@ module OmniField =
 
         override this.Content (model, _) =
             
-            // main layer
-            [Content.layer Simulants.FieldScene.Name []
-                
-                // tile map
-                [Content.tileMap Simulants.FieldTileMap.Name
+            [// main layer
+             Content.layer Simulants.FieldScene.Name []
+
+                [// tile map
+                 Content.tileMap Simulants.FieldTileMap.Name
                     [Entity.Depth == Constants.Field.BackgroundDepth
                      Entity.TileMapAsset <== model --> fun model ->
                         match Map.tryFind model.FieldType data.Value.Fields with
@@ -191,7 +208,9 @@ module OmniField =
                      Entity.Position == v2 360.0f 160.0f
                      Entity.Depth == Constants.Field.GuiDepth
                      Entity.Visible <== model ->> fun model world ->
+                        Timers.[6].Start ()
                         let interactionOpt = tryGetInteraction model.DialogOpt model.Advents model.Avatar world
+                        Timers.[6].Stop ()
                         Option.isSome interactionOpt
                      Entity.Text <== model ->> fun model world ->
                         match tryGetInteraction model.DialogOpt model.Advents model.Avatar world with
@@ -220,8 +239,10 @@ module OmniField =
                      Entity.Text <== model --> fun model ->
                         match model.DialogOpt with
                         | Some dialog ->
+                            Timers.[7].Start ()
                             let text = String.Join ("\n", dialog.DialogText)
                             let textToShow = String.tryTake dialog.DialogProgress text
+                            Timers.[7].Stop ()
                             textToShow
                         | None -> ""
                      Entity.Visible <== model --> fun model -> Option.isSome model.DialogOpt
@@ -231,30 +252,36 @@ module OmniField =
                  // props
                  Content.entities
                     (model ->> fun model world ->
-                        match Map.tryFind model.FieldType data.Value.Fields with
-                        | Some fieldData ->
-                            match World.tryGetTileMapMetadata fieldData.FieldTileMap world with
-                            | Some (_, _, tileMap) ->
-                                if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
-                                    let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
-                                    let objects = enumerable<TmxObject> group.Objects
-                                    let results = Seq.map (fun object -> (object, group, tileMap, model.Advents)) objects
-                                    Seq.toList results
-                                else []
+                        Timers.[8].Start ()
+                        let result =
+                            match Map.tryFind model.FieldType data.Value.Fields with
+                            | Some fieldData ->
+                                match World.tryGetTileMapMetadata fieldData.FieldTileMap world with
+                                | Some (_, _, tileMap) ->
+                                    if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
+                                        let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
+                                        let objects = enumerable<TmxObject> group.Objects
+                                        let results = Seq.map (fun object -> (object, group, tileMap, model.Advents)) objects
+                                        Seq.toList results
+                                    else []
+                                | None -> []
                             | None -> []
-                        | None -> [])
+                        Timers.[8].Stop ()
+                        result)
                     (fun _ model _ ->
                         let propModel = model.Map (fun (object, group, tileMap, advents) ->
+                            Timers.[9].Start ()
                             let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
                             let propBounds = v4Bounds propPosition Constants.Gameplay.TileSize
                             let propDepth =
                                 match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-                                | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
+                                | (true, depthStr) -> Constants.Field.ForgroundDepth + scvaluememo depthStr
                                 | (false, _) -> Constants.Field.ForgroundDepth
                             let propData =
                                 match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
-                                | (true, propDataStr) -> scvalue<PropData> propDataStr
+                                | (true, propDataStr) -> scvaluememo propDataStr
                                 | (false, _) -> PropData.empty
                             let propModel = PropModel.make propBounds propDepth advents propData
+                            Timers.[9].Stop ()
                             propModel)
                         Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]]

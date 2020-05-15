@@ -8,7 +8,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniBattle =
 
-    type Hop =
+    type [<StructuralEquality; NoComparison>] Hop =
         { HopStart : Vector2
           HopStop : Vector2 }
 
@@ -42,7 +42,7 @@ module OmniBattle =
         | ResetCharacter of CharacterIndex
         | DestroyCharacter of CharacterIndex
 
-    type BattleCommand =
+    type [<NoComparison>] BattleCommand =
         | UpdateEye
         | DisplayCancel of CharacterIndex
         | DisplayHitPointsChange of CharacterIndex * int

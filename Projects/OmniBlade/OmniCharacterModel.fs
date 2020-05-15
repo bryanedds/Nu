@@ -2,14 +2,14 @@
 open Prime
 open Nu
 
-type AutoBattle =
+type [<StructuralEquality; NoComparison>] AutoBattle =
     { AutoTarget : CharacterIndex
       AutoTechOpt : TechType option }
 
 [<RequireQualifiedAccess>]
 module CharacterModel =
 
-    type [<ReferenceEquality; NoComparison>] CharacterModel =
+    type [<StructuralEquality; NoComparison>] CharacterModel =
         private
             { BoundsOriginal_ : Vector4
               Bounds_ : Vector4

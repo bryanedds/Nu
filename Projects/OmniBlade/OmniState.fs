@@ -37,7 +37,7 @@ type [<CustomEquality; CustomComparison>] Advent =
             | :? Advent as thatAdvent -> (this :> IComparable<Advent>).CompareTo thatAdvent
             | _ -> -1
 
-type Inventory =
+type [<StructuralEquality; NoComparison>] Inventory =
     { Items : Map<ItemType, int>
       Gold : int }
 
@@ -75,17 +75,16 @@ type Inventory =
             { inventory with Items = Map.remove item inventory.Items }
         | _ -> inventory
 
-type CharacterIndex =
+type [<StructuralEquality; StructuralComparison>] CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
-
     static member isTeammate index index2 =
         match (index, index2) with
         | (AllyIndex _, AllyIndex _) -> true
         | (EnemyIndex _, EnemyIndex _) -> true
         | (_, _) -> false
 
-type CharacterState =
+type [<StructuralEquality; NoComparison>] CharacterState =
     { ArchetypeType : ArchetypeType
       ExpPoints : int
       WeaponOpt : WeaponType option
@@ -185,7 +184,7 @@ type CharacterState =
               CounterBuff = 1.0f }
         characterState
 
-type CharacterAnimationState =
+type [<StructuralEquality; NoComparison>] CharacterAnimationState =
     { TimeStart : int64
       AnimationSheet : Image AssetTag
       AnimationCycle : CharacterAnimationCycle
@@ -272,7 +271,7 @@ type CharacterAnimationState =
           AnimationCycle = IdleCycle
           Direction = Downward }
 
-type CharacterInputState =
+type [<StructuralEquality; StructuralComparison>] CharacterInputState =
     | NoInput
     | RegularMenu
     | TechMenu
