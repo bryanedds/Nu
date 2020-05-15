@@ -7,20 +7,20 @@ open OmniBlade
 [<AutoOpen>]
 module OmniGame =
 
-    type Gui =
+    type GuiModel =
         | Splashing
         | Title
         | Credits
 
     type [<NoComparison>] OmniModel =
-        | Gui of Gui
+        | Gui of GuiModel
         | Gameplay of FieldModel
 
     type [<NoComparison>] OmniMessage =
-        | UpdateModel
+        | Update
+        | UpdateModel of OmniModel
         | UpdateFieldModel of FieldModel
         | UpdateBattleModel of BattleModel
-        | SetModel of OmniModel
 
     type [<NoComparison>] OmniCommand =
         | Show of Screen
@@ -41,22 +41,41 @@ module OmniGame =
             base.Register (game, world)
 
         override this.Channel (_, _) =
-            [Simulants.TitleExit.ClickEvent => [cmd Exit]
-             Simulants.TitlePlay.ClickEvent => [msg (SetModel (Gameplay FieldModel.empty))]
-             Simulants.TitleCredits.ClickEvent => [msg (SetModel (Gui Credits))]
-             Simulants.CreditsBack.ClickEvent => [msg (SetModel (Gui Title))]
-             Simulants.FieldBack.ClickEvent => [msg (SetModel (Gui Title))]
-             Simulants.Game.UpdateEvent => [msg UpdateModel]
+            [Simulants.Game.UpdateEvent => [msg Update]
+             Simulants.TitleCredits.ClickEvent => [msg (UpdateModel (Gui Credits))]
+             Simulants.CreditsBack.ClickEvent => [msg (UpdateModel (Gui Title))]
+             Simulants.FieldBack.ClickEvent => [msg (UpdateModel (Gui Title))]
+             Simulants.TitlePlay.ClickEvent => [msg (UpdateModel (Gameplay FieldModel.empty))]
              Simulants.Field.FieldModel.ChangeEvent =|> fun evt -> [msg (UpdateFieldModel (evt.Data.Value :?> FieldModel))]
-             Simulants.Battle.BattleModel.ChangeEvent =|> fun evt -> [msg (UpdateBattleModel (evt.Data.Value :?> BattleModel))]]
+             Simulants.Battle.BattleModel.ChangeEvent =|> fun evt -> [msg (UpdateBattleModel (evt.Data.Value :?> BattleModel))]
+             Simulants.TitleExit.ClickEvent => [cmd Exit]]
 
         override this.Message (model, message, _, world) =
+
             match message with
-            | UpdateModel ->
+            | UpdateModel model ->
+                just model
+
+            | UpdateFieldModel field ->
                 match model with
-                | Gui Splashing -> just model
-                | Gui Title -> withCmd model (Show Simulants.Title)
-                | Gui Credits -> withCmd model (Show Simulants.Credits)
+                | Gui _ -> just model
+                | Gameplay _ -> just (Gameplay field)
+
+            | UpdateBattleModel battle ->
+                match model with
+                | Gui _ -> just model
+                | Gameplay field ->
+                    match field.BattleOpt with
+                    | None -> just model
+                    | Some _ -> just (Gameplay (FieldModel.updateBattleOpt (constant (Some battle)) field))
+
+            | Update ->
+                match model with
+                | Gui gui ->
+                    match gui with
+                    | Splashing -> just model
+                    | Title -> withCmd model (Show Simulants.Title)
+                    | Credits -> withCmd model (Show Simulants.Credits)
                 | Gameplay field ->
                     match field.BattleOpt with
                     | Some battle ->
@@ -67,15 +86,6 @@ module OmniGame =
                             else withCmd model (Show Simulants.Field)
                         | _ -> withCmd model (Show Simulants.Battle)
                     | None -> withCmd model (Show Simulants.Field)
-            | UpdateFieldModel field ->
-                match model with
-                | Gui _ -> just model
-                | Gameplay _ -> just (Gameplay field)
-            | UpdateBattleModel battle ->
-                match model with
-                | Gui _ -> just model
-                | Gameplay field -> just (Gameplay (FieldModel.updateBattleOpt (constant (Some battle)) field))
-            | SetModel model -> just model
 
         override this.Command (_, command, _, world) =
             let world =
