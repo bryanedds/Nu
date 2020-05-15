@@ -14,7 +14,7 @@ module OmniGame =
 
     type [<NoComparison>] OmniModel =
         | Gui of GuiModel
-        | Gameplay of FieldModel
+        | Field of FieldModel
 
     type [<NoComparison>] OmniMessage =
         | Update
@@ -45,7 +45,7 @@ module OmniGame =
              Simulants.TitleCredits.ClickEvent => [msg (UpdateModel (Gui Credits))]
              Simulants.CreditsBack.ClickEvent => [msg (UpdateModel (Gui Title))]
              Simulants.FieldBack.ClickEvent => [msg (UpdateModel (Gui Title))]
-             Simulants.TitlePlay.ClickEvent => [msg (UpdateModel (Gameplay FieldModel.empty))]
+             Simulants.TitlePlay.ClickEvent => [msg (UpdateModel (Field FieldModel.empty))]
              Simulants.Field.FieldModel.ChangeEvent =|> fun evt -> [msg (UpdateFieldModel (evt.Data.Value :?> FieldModel))]
              Simulants.Battle.BattleModel.ChangeEvent =|> fun evt -> [msg (UpdateBattleModel (evt.Data.Value :?> BattleModel))]
              Simulants.TitleExit.ClickEvent => [cmd Exit]]
@@ -59,15 +59,15 @@ module OmniGame =
             | UpdateFieldModel field ->
                 match model with
                 | Gui _ -> just model
-                | Gameplay _ -> just (Gameplay field)
+                | Field _ -> just (Field field)
 
             | UpdateBattleModel battle ->
                 match model with
                 | Gui _ -> just model
-                | Gameplay field ->
+                | Field field ->
                     match field.BattleOpt with
                     | None -> just model
-                    | Some _ -> just (Gameplay (FieldModel.updateBattleOpt (constant (Some battle)) field))
+                    | Some _ -> just (Field (FieldModel.updateBattleOpt (constant (Some battle)) field))
 
             | Update ->
                 match model with
@@ -76,7 +76,7 @@ module OmniGame =
                     | Splashing -> just model
                     | Title -> withCmd model (Show Simulants.Title)
                     | Credits -> withCmd model (Show Simulants.Credits)
-                | Gameplay field ->
+                | Field field ->
                     match field.BattleOpt with
                     | Some battle ->
                         match battle.BattleState with
@@ -104,9 +104,9 @@ module OmniGame =
                 [Screen.FieldModel <== model --> fun model ->
                     match model with
                     | Gui _ -> FieldModel.empty
-                    | Gameplay field -> field] []
+                    | Field field -> field] []
              Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Dissolve.Default, (Some battleSong)))
                 [Screen.BattleModel <== model --> fun model ->
                     match model with
                     | Gui _ -> BattleModel.empty
-                    | Gameplay field -> Option.getOrDefault BattleModel.empty field.BattleOpt] []]
+                    | Field field -> Option.getOrDefault BattleModel.empty field.BattleOpt] []]

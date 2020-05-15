@@ -182,7 +182,7 @@ type AllyType =
     | Glenn
 
 type EnemyType =
-    | BlueGoblin
+    | Goblin
 
 type CharacterType =
     | Ally of AllyType
