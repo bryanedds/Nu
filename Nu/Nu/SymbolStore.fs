@@ -12,12 +12,12 @@ open Nu
 module SymbolStoreModule =
 
     /// Symbol loading metadata.
-    type SymbolLoadMetadata =
+    type [<StructuralEquality; StructuralComparison>] SymbolLoadMetadata =
         { ImplicitDelimiters : bool
           StripCsvHeader : bool }
 
     /// Provides references to Symbols that are loaded from files.
-    type [<ReferenceEquality>] SymbolStore =
+    type [<ReferenceEquality; NoComparison>] SymbolStore =
         private
             { SymbolPackages : (SymbolLoadMetadata * Symbol) Packages }
 

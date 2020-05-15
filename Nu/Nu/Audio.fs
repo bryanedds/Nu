@@ -37,7 +37,7 @@ type [<StructuralEquality; NoComparison>] AudioMessage =
     | ReloadAudioAssetsMessage
 
 /// An audio asset used by the audio system.
-type [<ReferenceEquality>] AudioAsset =
+type [<StructuralEquality; NoComparison>] AudioAsset =
     | WavAsset of nativeint
     | OggAsset of nativeint
 
@@ -53,7 +53,7 @@ type AudioPlayer =
     abstract Play : AudioMessage List -> unit
 
 /// The mock implementation of AudioPlayer.
-type [<ReferenceEquality>] MockAudioPlayer =
+type [<ReferenceEquality; NoComparison>] MockAudioPlayer =
     private
         { MockAudioPlayer : unit }
     
@@ -67,7 +67,7 @@ type [<ReferenceEquality>] MockAudioPlayer =
         { MockAudioPlayer = () }
 
 /// The SDL implementation of AudioPlayer.
-type [<ReferenceEquality>] SdlAudioPlayer =
+type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
     private
         { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
           AudioPackages : AudioAsset Packages

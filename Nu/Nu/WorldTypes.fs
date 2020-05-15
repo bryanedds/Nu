@@ -55,7 +55,7 @@ type TransitionState =
     | IdlingState
 
 /// Describes one of a screen's transition processes.
-type [<CLIMutable; StructuralEquality; NoComparison>] Transition =
+type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
     { TransitionType : TransitionType
       TransitionLifetime : int64
       DissolveImageOpt : Image AssetTag option
@@ -81,14 +81,14 @@ type [<StructuralEquality; NoComparison>] SplashDescriptor =
       SplashImage : Image AssetTag }
 
 /// Describes the shape of a desired overlay.
-type OverlayNameDescriptor =
+type [<StructuralEquality; StructuralComparison>] OverlayNameDescriptor =
     | NoOverlay
     | RoutedOverlay
     | DefaultOverlay
     | ExplicitOverlay of string
 
 /// Describes the origin of a piece of simulnat content.
-type [<NoComparison>] ContentOrigin =
+type [<StructuralEquality; NoComparison>] ContentOrigin =
     | SimulantOrigin of Simulant
     | FacetOrigin of Simulant * string
 
@@ -109,7 +109,7 @@ type [<AttributeUsage (AttributeTargets.Method); AllowNullLiteral>]
     new () = FunctionBindingAttribute ""
 
 /// Configuration parameters for Nu.
-type NuConfig =
+type [<StructuralEquality; NoComparison>] NuConfig =
     { RunSynchronously : bool }
 
     /// The default configuration for Nu.
@@ -117,7 +117,7 @@ type NuConfig =
         { RunSynchronously = false }
 
 /// Configuration parameters for the world.
-type WorldConfig =
+type [<StructuralEquality; NoComparison>] WorldConfig =
     { NuConfig : NuConfig
       SdlConfig : SdlConfig
       TickRate : int64
@@ -405,7 +405,7 @@ module WorldTypes =
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     /// NOTE: The properties here have duplicated representations in WorldModuleGame that exist
     /// for performance that must be kept in sync.
-    and [<CLIMutable; NoEquality; NoComparison>] GameState =
+    and [<NoEquality; NoComparison; CLIMutable>] GameState =
         { Xtension : Xtension
           Dispatcher : GameDispatcher
           OmniScreenOpt : Screen option
@@ -470,7 +470,7 @@ module WorldTypes =
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     /// NOTE: The properties here have duplicated representations in WorldModuleScreen that exist
     /// for performance that must be kept in sync.
-    and [<CLIMutable; NoEquality; NoComparison>] ScreenState =
+    and [<NoEquality; NoComparison; CLIMutable>] ScreenState =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
           TransitionState : TransitionState
@@ -536,7 +536,7 @@ module WorldTypes =
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     /// NOTE: The properties here have duplicated representations in WorldModuleLayer that exist
     /// for performance that must be kept in sync.
-    and [<CLIMutable; NoEquality; NoComparison>] LayerState =
+    and [<NoEquality; NoComparison; CLIMutable>] LayerState =
         { Dispatcher : LayerDispatcher
           Xtension : Xtension
           Depth : single
@@ -596,7 +596,7 @@ module WorldTypes =
 
     /// A prototype component for an entity-component-system implementation of Nu's backend.
     /// See here for the related C++ prototype - https://github.com/bryanedds/ax/blob/5bb53b6985ee1cd07f869cb88ed4e333749fd118/src/hpp/ax/impl/system.hpp#L55-L64
-    and [<Struct; CLIMutable; NoEquality; NoComparison>] EntityCore =
+    and [<NoEquality; NoComparison; CLIMutable; Struct>] EntityCore =
         { mutable Transform : Transform
           mutable StaticData : DesignerProperty
           mutable Overflow : Vector2
@@ -605,7 +605,7 @@ module WorldTypes =
     /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     /// OPTIMIZATION: Booleans are packed into the Flags field.
-    and [<CLIMutable; NoEquality; NoComparison>] EntityState =
+    and [<NoEquality; NoComparison; CLIMutable>] EntityState =
         { // cache line begin
           Dispatcher : EntityDispatcher
           mutable Facets : Facet array
@@ -986,7 +986,7 @@ module WorldTypes =
     /// 
     /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
     /// type for efficiency reasons.
-    and [<ReferenceEquality>] internal Dispatchers =
+    and [<ReferenceEquality; NoComparison>] internal Dispatchers =
         { GameDispatchers : Map<string, GameDispatcher>
           ScreenDispatchers : Map<string, ScreenDispatcher>
           LayerDispatchers : Map<string, LayerDispatcher>
@@ -1007,7 +1007,7 @@ module WorldTypes =
     ///
     /// NOTE: this would be better as private, but there is just too much code to fit in this file
     /// for that.
-    and [<ReferenceEquality>] World =
+    and [<ReferenceEquality; NoComparison>] World =
         internal
             { // cache line begin
               EventSystemDelegate : World EventSystemDelegate

@@ -11,7 +11,7 @@ open Nu
 module WorldPhysicsModule =
 
     /// The subsystem for the world's physics system.
-    type [<ReferenceEquality>] PhysicsEngineSubsystem =
+    type [<ReferenceEquality; NoComparison>] PhysicsEngineSubsystem =
         private
             { PhysicsEngine : PhysicsEngine }
 

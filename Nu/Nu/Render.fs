@@ -19,21 +19,21 @@ type Font = private { __ : unit }
 /// A tile map. Currently just used as a phantom type.
 type TileMap = private { __ : unit }
 
-type JustificationH =
+type [<StructuralEquality; StructuralComparison>] JustificationH =
     | JustifyLeft
     | JustifyCenter
     | JustifyRight
 
-type JustificationV =
+type [<StructuralEquality; StructuralComparison>] JustificationV =
     | JustifyTop
     | JustifyMiddle
     | JustifyBottom
 
-type Justification =
+type [<StructuralEquality; StructuralComparison>] Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
 
-type Flip =
+type [<StructuralEquality; StructuralComparison>] Flip =
     | FlipNone
     | FlipH
     | FlipV
@@ -109,7 +109,7 @@ type [<StructuralEquality; NoComparison>] RenderMessage =
     //| ScreenFlashMessage of ...
 
 /// An asset that is used for rendering.
-type [<ReferenceEquality>] RenderAsset =
+type [<StructuralEquality; NoComparison>] RenderAsset =
     | TextureAsset of nativeint
     | FontAsset of nativeint * int
 
@@ -127,7 +127,7 @@ type Renderer =
     abstract CleanUp : unit -> Renderer
 
 /// The mock implementation of Renderer.
-type [<ReferenceEquality>] MockRenderer =
+type [<ReferenceEquality; NoComparison>] MockRenderer =
     private
         { MockRenderer : unit }
 
@@ -142,7 +142,7 @@ type [<ReferenceEquality>] MockRenderer =
         { MockRenderer = () }
 
 /// The SDL implementation of Renderer.
-type [<ReferenceEquality>] SdlRenderer =
+type [<ReferenceEquality; NoComparison>] SdlRenderer =
     private
         { RenderContext : nativeint
           RenderPackages : RenderAsset Packages

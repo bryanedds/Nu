@@ -275,11 +275,11 @@ module OmniField =
                             let propBounds = v4Bounds propPosition Constants.Gameplay.TileSize
                             let propDepth =
                                 match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-                                | (true, depthStr) -> Constants.Field.ForgroundDepth + scvaluememo depthStr
+                                | (true, depthStr) -> Constants.Field.ForgroundDepth + scvaluem depthStr
                                 | (false, _) -> Constants.Field.ForgroundDepth
                             let propData =
                                 match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
-                                | (true, propDataStr) -> scvaluememo propDataStr
+                                | (true, propDataStr) -> scvaluem propDataStr
                                 | (false, _) -> PropData.empty
                             let propModel = PropModel.make propBounds propDepth advents propData
                             Timers.[9].Stop ()

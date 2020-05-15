@@ -23,7 +23,7 @@ module AmbientStateModule =
     let mutable private TaskletsProcessing = false
 
     /// The ambient state of the world.
-    type [<ReferenceEquality>] 'w AmbientState =
+    type [<ReferenceEquality; NoComparison>] 'w AmbientState =
         private
             { // cache line begin
               TickRate : int64 // NOTE: might be better to make this accessible from World to avoid the cache misses
