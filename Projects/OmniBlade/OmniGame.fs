@@ -16,6 +16,7 @@ module OmniGame =
     type [<NoComparison>] OmniMessage =
         | Update
         | UpdateFieldModel of FieldModel
+        | UpdateBattleModel of BattleModel
         | SetModel of OmniModel
 
     type [<NoComparison>] OmniCommand =
@@ -43,9 +44,10 @@ module OmniGame =
              Simulants.CreditsBack.ClickEvent => [msg (SetModel Title)]
              Simulants.FieldBack.ClickEvent => [msg (SetModel Title)]
              Simulants.TitleExit.ClickEvent => [cmd Exit]
-             Simulants.Field.FieldModel.ChangeEvent =|> fun evt -> [msg (UpdateFieldModel (evt.Data.Value :?> FieldModel))]]
+             Simulants.Field.FieldModel.ChangeEvent =|> fun evt -> [msg (UpdateFieldModel (evt.Data.Value :?> FieldModel))]
+             Simulants.Battle.BattleModel.ChangeEvent =|> fun evt -> [msg (UpdateBattleModel (evt.Data.Value :?> BattleModel))]]
 
-        override this.Message (model, message, _, _) =
+        override this.Message (model, message, _, world) =
             match message with
             | Update ->
                 match model with
@@ -56,13 +58,20 @@ module OmniGame =
                     match field.BattleOpt with
                     | Some battle ->
                         match battle.BattleState with
-                        | BattleCease (_, time) when time >= 120L -> withCmd model (Show Simulants.Field)
+                        | BattleCease (_, time) ->
+                            if World.getTickTime world - time >= 120L
+                            then withCmd model (Show Simulants.Field)
+                            else withCmd model (Show Simulants.Battle)
                         | _ -> withCmd model (Show Simulants.Battle)
                     | None -> withCmd model (Show Simulants.Field)
             | UpdateFieldModel field ->
                 match model with
                 | Splashing | Title | Credits -> just model
                 | Gameplay _ -> just (Gameplay field)
+            | UpdateBattleModel battle ->
+                match model with
+                | Splashing | Title | Credits -> just model
+                | Gameplay field -> just (Gameplay (FieldModel.updateBattleOpt (constant (Some battle)) field))
             | SetModel model -> just model
 
         override this.Command (_, command, _, world) =
