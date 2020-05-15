@@ -15,6 +15,7 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
 
+    (* Transition Values *)
     let private ScreenTransitionMouseLeftKey = Gen.id
     let private ScreenTransitionMouseCenterKey = Gen.id
     let private ScreenTransitionMouseRightKey = Gen.id
@@ -22,6 +23,19 @@ module WorldModule2 =
     let private ScreenTransitionMouseX2Key = Gen.id
     let private ScreenTransitionKeyboardKeyKey = Gen.id
     let private SplashScreenUpdateKey = Gen.id
+
+    (* Timers *)
+    let private InputTimer = Diagnostics.Stopwatch ()
+    let private PhysicsTimer = Diagnostics.Stopwatch ()
+    let private UpdateTimer = Diagnostics.Stopwatch ()
+    let private TaskletsTimer = Diagnostics.Stopwatch ()
+    let private PerFrameTimer = Diagnostics.Stopwatch ()
+    let private PreFrameTimer = Diagnostics.Stopwatch ()
+    let private PostFrameTimer = Diagnostics.Stopwatch ()
+    let private ActualizeTimer = Diagnostics.Stopwatch ()
+    let private RenderTimer = Diagnostics.Stopwatch ()
+    let private AudioTimer = Diagnostics.Stopwatch ()
+    let private TotalTimer = Diagnostics.Stopwatch ()
 
     type World with
 
@@ -756,30 +770,45 @@ module WorldModule2 =
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
         static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world =
+            TotalTimer.Start ()
             if runWhile world then
+                PreFrameTimer.Start ()
                 let world = preProcess world
                 let world = World.preFrame world
+                PreFrameTimer.Stop ()
                 match liveness with
                 | Running ->
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Running ->
+                        InputTimer.Start ()
                         let (liveness, world) = World.processInput world
+                        InputTimer.Stop ()
                         match liveness with
                         | Running ->
+                            PhysicsTimer.Start ()
                             let world = World.processPhysics world
+                            PhysicsTimer.Stop ()
                             match World.getLiveness world with
                             | Running ->
+                                UpdateTimer.Start ()
                                 let world = World.updateSimulants world
+                                UpdateTimer.Stop ()
                                 match World.getLiveness world with
                                 | Running ->
+                                    TaskletsTimer.Start ()
                                     let world = World.processTasklets world
+                                    TaskletsTimer.Stop ()
                                     match World.getLiveness world with
                                     | Running ->
+                                        ActualizeTimer.Start ()
                                         let world = World.actualizeSimulants world
+                                        ActualizeTimer.Stop ()
                                         match World.getLiveness world with
                                         | Running ->
+                                            PerFrameTimer.Start ()
                                             let world = World.perFrame world
+                                            PerFrameTimer.Stop ()
                                             match World.getLiveness world with
                                             | Running ->
 #if MULTITHREAD
@@ -821,6 +850,7 @@ module WorldModule2 =
                                                     else (None, world)
 #else
                                                 // process rendering on main thread
+                                                RenderTimer.Start ()
                                                 let world =
                                                     match SdlDeps.getRenderContextOpt sdlDeps with
                                                     | Some renderContext ->
@@ -830,8 +860,10 @@ module WorldModule2 =
                                                         let rendererResult = World.render renderMessages renderContext renderer world
                                                         Subsystem.applyResult rendererResult (World.getRenderer world) world
                                                     | None -> world
+                                                RenderTimer.Stop ()
 
                                                 // process audio on main thread
+                                                AudioTimer.Start ()
                                                 let world =
                                                     if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
                                                         let audioPlayer = World.getAudioPlayer world
@@ -840,14 +872,18 @@ module WorldModule2 =
                                                         let audioPlayerResult = World.play audioMessages audioPlayer world
                                                         Subsystem.applyResult audioPlayerResult (World.getAudioPlayer world) world
                                                     else world
+                                                AudioTimer.Stop ()
 #endif
                                                 // post-process the world
+                                                PostFrameTimer.Start ()
                                                 let world = World.postFrame world
                                                 let world = postProcess world
+                                                PostFrameTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Running ->
 
                                                     // update counters and recur
+                                                    TotalTimer.Stop ()
                                                     let world = World.updateTickTime world
                                                     let world = World.incrementUpdateCount world
                                                     World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
