@@ -6,7 +6,20 @@ open Nu
 type Legionnaire =
     { LegionIndex : int // key
       PartyIndexOpt : int option
-      CharacterType : CharacterType }
+      CharacterType : CharacterType
+      ExpPoints : int
+      WeaponOpt : WeaponType option
+      ArmorOpt : ArmorType option
+      Accessories : AccessoryType list }
+
+    static member empty =
+        { LegionIndex = 0
+          PartyIndexOpt = Some 0
+          CharacterType = Ally Finn
+          ExpPoints = 0
+          WeaponOpt = None
+          ArmorOpt = None
+          Accessories = [] }
 
 type DialogForm =
     | DialogThin
@@ -28,21 +41,24 @@ module FieldModel =
               Legion_ : Map<int, Legionnaire>
               Advents_ : Advent Set
               Inventory_ : Inventory
-              Gold_ : int
-              DialogOpt_ : DialogModel option }
+              DialogOpt_ : DialogModel option
+              BattleOpt_ : BattleModel option}
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
         member this.Avatar = this.Avatar_
+        member this.Legion = this.Legion_
         member this.Advents = this.Advents_
         member this.Inventory = this.Inventory_
-        member this.Gold = this.Gold_
         member this.DialogOpt = this.DialogOpt_
+        member this.BattleOpt = this.BattleOpt_
 
-    let getPartyMembers fieldModel =
-        Map.filter
-            (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt)
-            fieldModel.Legion_
+    let getParty fieldModel =
+        fieldModel.Legion_ |>
+        Map.filter (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt) |>
+        Map.toSeq |>
+        Seq.tryTake 3 |>
+        Map.ofSeq
 
     let updateAvatar updater fieldModel =
         { fieldModel with Avatar_ = updater fieldModel.Avatar_ }
@@ -53,28 +69,28 @@ module FieldModel =
     let updateInventory updater model =
         { model with Inventory_ = updater model.Inventory_ }
 
-    let updateGold updater model =
-        { model with Gold_ = updater model.Gold_ }
-
     let updateDialogOpt updater model =
         { model with DialogOpt_ = updater model.DialogOpt_ }
 
-    let make fieldType avatarModel legion advents inventory gold =
+    let updateBattleOpt updater model =
+        { model with BattleOpt_ = updater model.BattleOpt_ }
+
+    let make fieldType avatarModel legion advents inventory =
         { FieldType_ = fieldType
           Avatar_ = avatarModel
           Legion_ = legion
           Advents_ = advents
           Inventory_ = inventory
-          Gold_ = gold
-          DialogOpt_ = None }
+          DialogOpt_ = None
+          BattleOpt_ = None }
 
     let empty =
-        { FieldType_ = FieldType.DebugRoom
+        { FieldType_ = DebugField
           Avatar_ = AvatarModel.empty
-          Legion_ = Map.empty
+          Legion_ = Map.singleton 0 Legionnaire.empty
           Advents_ = Set.empty
-          Inventory_ = { Items = Map.empty }
-          Gold_ = 0
-          DialogOpt_ = None }
+          Inventory_ = { Items = Map.empty; Gold = 0 }
+          DialogOpt_ = None
+          BattleOpt_ = None }
 
 type FieldModel = FieldModel.FieldModel

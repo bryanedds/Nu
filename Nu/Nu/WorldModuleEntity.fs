@@ -123,14 +123,14 @@ module WorldModuleEntity =
 
         static member private publishEntityChange propertyName (propertyValue : obj) (entity : Entity) world =
             let world =
-                let entityNames = Address.getNames entity.EntityAddress
-                let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-                let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-                let allowWildcard = propertyName = "ParentNodeOpt"
                 let changeData =
                     match propertyValue with
                     | :? DesignerProperty as dp -> { Name = propertyName; Value = dp.DesignerValue }
                     | _ -> { Name = propertyName; Value = propertyValue }
+                let entityNames = Address.getNames entity.EntityAddress
+                let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+                let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
+                let allowWildcard = propertyName = "ParentNodeOpt"
                 World.publishPlus World.sortSubscriptionsByHierarchy changeData changeEventAddress eventTrace entity allowWildcard world
             world
 

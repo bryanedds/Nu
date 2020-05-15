@@ -2,8 +2,6 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
-open System
-open Nu
 module Assets =
 
     let [<Literal>] DefaultPackageName = "Default"

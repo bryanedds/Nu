@@ -21,12 +21,13 @@ module Assets =
     let BlueGoblinAnimationSheet = asset<Image> GameplayPackageName "BlueGoblin"
     let HitSound = asset<Sound> GameplayPackageName "Hit"
     let ExplosionSound = asset<Sound> GameplayPackageName "Explosion"
+    let EnterBattleSound = asset<Sound> GameplayPackageName "EnterBattle"
     let HealSound = asset<Sound> GameplayPackageName "Heal"
     let DeathSound = asset<Sound> GameplayPackageName "Death"
     let OpenChestSound = asset<Sound> GameplayPackageName "Unlatch"
 
     // field assets
-    let DebugRoomTileMap = asset<TileMap> FieldPackageName "DebugRoom"
+    let DebugFieldTileMap = asset<TileMap> FieldPackageName "DebugField"
     let WoodenChestImageOpened = asset<Image> FieldPackageName "WoodenChestOpened"
     let WoodenChestImageClosed = asset<Image> FieldPackageName "WoodenChestClosed"
     let BrassChestImageOpened = asset<Image> FieldPackageName "BrassChestOpened"

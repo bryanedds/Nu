@@ -38,7 +38,8 @@ type [<CustomEquality; CustomComparison>] Advent =
             | _ -> -1
 
 type Inventory =
-    { Items : Map<ItemType, int> }
+    { Items : Map<ItemType, int>
+      Gold : int }
 
     static member getKeyItems inv =
         inv.Items |>
@@ -85,30 +86,24 @@ type CharacterIndex =
         | (_, _) -> false
 
 type CharacterState =
-    { CharacterIndex : CharacterIndex // key
-      ArchetypeType : ArchetypeType
+    { ArchetypeType : ArchetypeType
       ExpPoints : int
-      HitPoints : int
-      TechPoints : int
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list
+      HitPoints : int
+      TechPoints : int
       Statuses : StatusType Set
       Defending : bool
       Charging : bool
       PowerBuff : single
       ShieldBuff : single
       MagicBuff : single
-      CounterBuff : single
-      ActionTime : int
-      AnimationSheet : Image AssetTag }
+      CounterBuff : single }
 
-    member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
-    member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
-    member this.IsEnemy = not this.IsAlly
+    member this.Level = Algorithms.expPointsToLevel this.ExpPoints
     member this.IsHealthy = this.HitPoints > 0
     member this.IsWounded = this.HitPoints <= 0
-    member this.Level = Algorithms.expPointsToLevel this.ExpPoints
     member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.Power = Algorithms.power this.WeaponOpt this.PowerBuff this.ArchetypeType this.Level
@@ -116,18 +111,12 @@ type CharacterState =
     member this.Shield effectType = Algorithms.shield effectType this.Accessories this.ShieldBuff this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
-    static member isTeammate (state : CharacterState) (state2 : CharacterState) =
-        CharacterIndex.isTeammate state.CharacterIndex state2.CharacterIndex
-
     static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
         let power = source.Power
         let shield = target.Shield effectType
         let damageUnscaled = power - shield
         let damage = single damageUnscaled |> int |> max 1
         damage
-
-    static member updateActionTime updater state =
-        { state with ActionTime = updater state.ActionTime }
 
     static member updateHitPoints updater (state : CharacterState) =
         let hitPoints = updater state.HitPoints
@@ -154,33 +143,46 @@ type CharacterState =
         elif state.Charging then Charging
         else Poising
 
-    static member make characterIndex characterType expPoints weaponOpt armorOpt accessories animationSheet =
-        let (archetypeType, levelBase) =
-            match Map.tryFind characterType data.Value.Characters with
-            | Some characterData -> (characterData.ArchetypeType, characterData.LevelBase)
-            | None -> (Squire, 0)
+    static member make characterData expPoints weaponOpt armorOpt accessories =
+        let levelBase = characterData.LevelBase
+        let archetypeType = characterData.ArchetypeType
         let expPointsTotal = Algorithms.levelToExpPoints levelBase + expPoints
         let level = Algorithms.expPointsToLevel expPointsTotal
         let hitPointsMax = Algorithms.hitPointsMax armorOpt archetypeType level
         let techPointsMax = Algorithms.hitPointsMax armorOpt archetypeType level
         let characterState =
-            { CharacterIndex = characterIndex
-              ArchetypeType = archetypeType
+            { ArchetypeType = archetypeType
               ExpPoints = expPointsTotal
-              HitPoints = hitPointsMax
-              TechPoints = techPointsMax
               WeaponOpt = weaponOpt
               ArmorOpt = armorOpt
               Accessories = accessories
+              HitPoints = hitPointsMax
+              TechPoints = techPointsMax
               Statuses = Set.empty
               Defending = false
               Charging = false
               PowerBuff = 1.0f
               MagicBuff = 1.0f
               ShieldBuff = 1.0f
-              CounterBuff = 1.0f
-              ActionTime = 0
-              AnimationSheet = animationSheet }
+              CounterBuff = 1.0f }
+        characterState
+
+    static member empty =
+        let characterState =
+            { ArchetypeType = Squire
+              ExpPoints = 0
+              WeaponOpt = None
+              ArmorOpt = None
+              Accessories = []
+              HitPoints = 1
+              TechPoints = 0
+              Statuses = Set.empty
+              Defending = false
+              Charging = false
+              PowerBuff = 1.0f
+              MagicBuff = 1.0f
+              ShieldBuff = 1.0f
+              CounterBuff = 1.0f }
         characterState
 
 type CharacterAnimationState =

@@ -28,14 +28,7 @@ module OmniField =
         member this.FieldModel = this.Model<FieldModel> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand>
-            (FieldModel.make
-                DebugRoom
-                (AvatarModel.make (v4Bounds (v2 128.0f 128.0f) Constants.Gameplay.CharacterSize) Assets.FinnAnimationSheet Downward)
-                Map.empty
-                Set.empty
-                { Items = Map.empty }
-                100)
+        inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand> (FieldModel.empty)
 
         static let tryGetInteraction dialogOpt advents prop =
             match dialogOpt with
@@ -45,7 +38,7 @@ module OmniField =
                 else None
             | None ->
                 match prop with
-                | Chest (_, _, _, chestId) ->
+                | Chest (_, _, chestId, _, _) ->
                     if Set.contains (Opened chestId) advents then None
                     else Some "Open"
                 | Door _ -> Some "Open"
@@ -120,11 +113,36 @@ module OmniField =
                     match tryGetFacingProp model.Avatar world with
                     | Some prop ->
                         match prop with
-                        | Chest (itemType, lockType, chestType, chestId) ->
-                            let model = FieldModel.updateInventory (Inventory.addItem itemType) model
-                            let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
-                            let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
-                            withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
+                        | Chest (itemType, _, chestId, battleTypeOpt, _) ->
+                            match battleTypeOpt with
+                            | Some battleType ->
+                                match Map.tryFind battleType data.Value.Battles with
+                                | Some battleData ->
+                                    let legionnaires = Map.toValueList (FieldModel.getParty model)
+                                    let allies =
+                                        List.map
+                                            (fun legionnaire ->
+                                                match Map.tryFind legionnaire.CharacterType data.Value.Characters with
+                                                | Some characterData ->
+                                                    // TODO: bounds checking
+                                                    let index = legionnaire.LegionIndex
+                                                    let bounds = v4Bounds battleData.BattleAllyPositions.[index] Constants.Gameplay.CharacterSize
+                                                    let characterIndex = AllyIndex index
+                                                    let characterState = CharacterState.make characterData legionnaire.ExpPoints legionnaire.WeaponOpt legionnaire.ArmorOpt legionnaire.Accessories
+                                                    let animationSheet = characterData.AnimationSheet
+                                                    let direction = Direction.fromVector2 -bounds.Bottom
+                                                    CharacterModel.make bounds characterIndex characterState animationSheet direction
+                                                | None -> failwith ("Could not find CharacterData for '" + scstring legionnaire.CharacterType + "'."))
+                                            legionnaires
+                                    let battleModel = BattleModel.make battleData allies model.Inventory (Some itemType) (World.getTickTime world)
+                                    let model = FieldModel.updateBattleOpt (constant (Some battleModel)) model
+                                    just model
+                                | None -> just model
+                            | None ->
+                                let model = FieldModel.updateInventory (Inventory.addItem itemType) model
+                                let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
+                                let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
+                                withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
                         | _ -> just model
                     | None -> just model
 
@@ -162,7 +180,7 @@ module OmniField =
                      Entity.TileMapAsset <== model --> fun model ->
                         match Map.tryFind model.FieldType data.Value.Fields with
                         | Some fieldData -> fieldData.FieldTileMap
-                        | None -> Assets.DebugRoomTileMap
+                        | None -> Assets.DebugFieldTileMap
                      Entity.TileLayerClearance == 10.0f]
                  
                  // avatar

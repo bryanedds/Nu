@@ -59,14 +59,7 @@ module OmniBattle =
         member this.BattleModel = this.Model<BattleModel> ()
 
     type BattleDispatcher () =
-        inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand>
-            (// TODO: data-drive ally positions
-             let allies =
-                [CharacterModel.make (v4Bounds (v2 -224.0f -168.0f) Constants.Gameplay.CharacterSize) (AllyIndex 0) (Ally Finn) 0 (Some "WoodenSword") (Some "LeatherVest") [] Assets.FinnAnimationSheet Rightward
-                 CharacterModel.make (v4Bounds (v2 224.0f 64.0f) Constants.Gameplay.CharacterSize) (AllyIndex 1) (Ally Glenn) 0 (Some "StoneSword") (Some "LeatherMail") [] Assets.GlennAnimationSheet Leftward]
-             let inventory = { Items = Map.ofList [(Consumable GreenHerb, 2); (Consumable RedHerb, 2)] }
-             let model = BattleModel.make allies inventory 100 DebugBattle 0L
-             model)
+        inherit ScreenDispatcher<BattleModel, BattleMessage, BattleCommand> (BattleModel.empty)
 
         static let tickAttack sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             match targetIndexOpt with
@@ -187,12 +180,11 @@ module OmniBattle =
 
         and tickReady time timeStart model =
             let timeLocal = time - timeStart
-            match timeLocal with
-            | 0L -> withMsg model ReadyCharacters
-            | 30L ->
+            if timeLocal = 0L then withMsg model ReadyCharacters
+            elif timeLocal >= 30L then
                 let model = BattleModel.updateBattleState (constant BattleRunning) model
                 withMsg model PoiseCharacters
-            | _ -> just model
+            else just model
 
         and tickCurrentCommand time currentCommand model =
             let timeLocal = time - currentCommand.TimeStart
@@ -708,6 +700,7 @@ module OmniBattle =
                 just world
 
             | InitializeBattle ->
+                let world = World.setEyeCenter v2Zero world
                 let world = World.hintRenderPackageUse Assets.BattlePackageName world
                 let world = World.hintAudioPackageUse Assets.BattlePackageName world
                 let world = World.playSong 0 Constants.Audio.DefaultSongVolume Assets.BattleSong world

@@ -73,7 +73,7 @@ module AvatarModel =
           IntersectedBodyShapes_ = [] }
 
     let empty =
-        let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
+        let bounds = v4Bounds (v2Dup 128.0f) Constants.Gameplay.CharacterSize
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           AnimationState = CharacterAnimationState.empty

@@ -51,7 +51,7 @@ module PropDispatcherModule =
             if entity.GetVisibleLayered world && entity.GetInView world then
                 let image =
                     match model.PropData with
-                    | Chest (_, _, chestType, chestId) ->
+                    | Chest (_, chestType, chestId, _, _) ->
                         match chestType with
                         | WoodenChest ->
                             if Set.contains (Opened chestId) model.Advents

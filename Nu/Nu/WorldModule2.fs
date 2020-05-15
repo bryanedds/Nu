@@ -157,22 +157,22 @@ module WorldModule2 =
         static member tryTransitionScreen destination world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                if not (World.isSelectedScreenTransitioning world) then
-                    if World.getScreenExists selectedScreen world then
-                        let subscriptionKey = Gen.id
-                        let subscription = fun (_ : Event<unit, Screen>) world ->
-                            match World.getScreenTransitionDestinationOpt world with
-                            | Some destination ->
-                                let world = World.unsubscribe subscriptionKey world
-                                let world = World.setScreenTransitionDestinationOpt None world
-                                let world = World.selectScreen destination world
-                                (Cascade, world)
-                            | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
-                        let world = World.setScreenTransitionDestinationOpt (Some destination) world
-                        let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                        let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
-                        (true, world)
-                    else (false, world)
+                if  selectedScreen <> destination &&
+                    not (World.isSelectedScreenTransitioning world) &&
+                    World.getScreenExists selectedScreen world then
+                    let subscriptionKey = Gen.id
+                    let subscription = fun (_ : Event<unit, Screen>) world ->
+                        match World.getScreenTransitionDestinationOpt world with
+                        | Some destination ->
+                            let world = World.unsubscribe subscriptionKey world
+                            let world = World.setScreenTransitionDestinationOpt None world
+                            let world = World.selectScreen destination world
+                            (Cascade, world)
+                        | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
+                    let world = World.setScreenTransitionDestinationOpt (Some destination) world
+                    let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
+                    let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
+                    (true, world)
                 else (false, world)
             | None -> (false, world)
 
