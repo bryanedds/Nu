@@ -95,7 +95,7 @@ module WorldModule =
     /// F# reach-around for binding properties.
     /// HACK: bind5 allows the use of fake lenses in declarative usage.
     /// NOTE: the downside to using fake lenses is that composed fake lenses do not function.
-    let mutable internal bind5 : Simulant -> World Lens -> World Lens -> bool -> World -> World =
+    let mutable internal bind5 : Simulant -> World Lens -> World Lens -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal register : Simulant -> World -> World =
@@ -250,9 +250,9 @@ module WorldModule =
             World.choose (EventSystem.unsubscribe<World> subscriptionKey world)
 
         /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-        static member subscribePlus<'a, 's when 's :> Simulant>
-            subscriptionKey (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            mapSnd World.choose (EventSystem.subscribePlus<'a, 's, World> subscriptionKey subscription eventAddress subscriber world)
+        static member subscribePlus<'a, 'b, 's when 's :> Simulant>
+            subscriptionKey mapperOpt filterOpt stateOpt (subscription : Event<'b, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
+            mapSnd World.choose (EventSystem.subscribePlus<'a, 'b, 's, World> subscriptionKey mapperOpt filterOpt stateOpt subscription eventAddress subscriber world)
 
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Simulant>
@@ -260,12 +260,12 @@ module WorldModule =
             World.choose (EventSystem.subscribe<'a, 's, World> subscription eventAddress subscriber world)
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
-        static member monitorPlus<'a, 's when 's :> Simulant>
-            (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            mapSnd World.choose (EventSystem.monitorPlus<'a, 's, World> subscription eventAddress subscriber world)
+        static member monitorPlus<'a, 'b, 's when 's :> Simulant>
+            mapperOpt filterOpt stateOpt (subscription : Event<'b, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
+            mapSnd World.choose (EventSystem.monitorPlus<'a, 'b, 's, World> mapperOpt filterOpt stateOpt subscription eventAddress subscriber world)
 
         /// Keep active a subscription for the lifetime of a simulant.
-        static member monitor<'a, 's when 's :> Simulant>
+        static member monitor<'a, 'b, 's when 's :> Simulant>
             (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
             World.choose (EventSystem.monitor<'a, 's, World> subscription eventAddress subscriber world)
 

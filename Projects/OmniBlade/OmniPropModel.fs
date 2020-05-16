@@ -36,11 +36,11 @@ module PropModel =
     let updateBottom updater (model : PropModel) =
         { model with Bounds_ = model.Bottom |> updater |> model.Bounds.WithBottom }
 
-    let make bounds depth advents props =
+    let make bounds depth advents propData =
         { Bounds_ = bounds
           Depth_ = depth
           Advents_ = advents
-          PropData_ = props }
+          PropData_ = propData }
 
     let empty =
         { Bounds_ = v4Bounds v2Zero Constants.Gameplay.CharacterSize

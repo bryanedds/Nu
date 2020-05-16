@@ -344,16 +344,16 @@ module WorldEntityModule =
                     layerDescriptor.EntitieDescriptors
                     ([], world)
 
-        /// Turn an entity stream into a series of live entities.
-        static member expandEntityStream (lens : Lens<obj, World>) indexerOpt mapper origin layer world =
-            let mapperGeneralized = fun i lens world -> mapper i lens world :> SimulantContent
-            World.expandSimulantStream lens indexerOpt mapperGeneralized origin layer world
+        /// Turn an entity lens into a series of live entities.
+        static member expandEntities (lens : Lens<obj, World>) sieve spread indexOpt mapper origin layer world =
+            let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
+            World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin layer world
 
         /// Turn entity content into a live entity.
         static member expandEntityContent guidOpt content origin layer world =
             match EntityContent.expand content layer world with
-            | Choice1Of3 (lens, indexerOpt, mapper) ->
-                World.expandEntityStream lens indexerOpt mapper origin layer world
+            | Choice1Of3 (lens, sieve, spread, indexOpt, mapper) ->
+                World.expandEntities lens sieve spread indexOpt mapper origin layer world
             | Choice2Of3 (_, descriptor, handlers, binds, content) ->
                 let (entity, world) =
                     World.createEntity4 DefaultOverlay descriptor layer world
@@ -376,8 +376,8 @@ module WorldEntityModule =
                             entity
                             world
                 let world =
-                    List.fold (fun world (simulant, left : World Lens, right, breaking) ->
-                        WorldModule.bind5 simulant left right breaking world)
+                    List.fold (fun world (simulant, left : World Lens, right) ->
+                        WorldModule.bind5 simulant left right world)
                         world binds
                 let world =
                     List.fold (fun world (handler, address, simulant) ->

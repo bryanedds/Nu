@@ -30,47 +30,45 @@ module Content =
     let screen<'d when 'd :> ScreenDispatcher> screenName behavior initializers layers =
         ScreenFromInitializers (typeof<'d>.Name, screenName, behavior, initializers, layers)
 
-    /// Describe layers to be streamed from a lens indexed by the given mapper.
-    let layersIndexedBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
-        let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
-        LayersFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
+    /// Describe layers to be streamed from a lens.
+    let layersIndexed
+        (lens : Lens<'a, World>)
+        (sieve : 'a -> 'b)
+        (spread : 'b -> World -> 'c list)
+        (indexOpt : ('c -> int) option)
+        (mapper : int -> Lens<'c, World> -> World -> LayerContent) =
+        let lens = lens.Map box
+        let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
+        let spread = fun (b : obj) w -> spread (b :?> 'b) w |> Reflection.objToObjSeq
+        let indexOpt =
+            match indexOpt with
+            | Some indexOpt -> Some (fun (o : obj) -> indexOpt (o :?> 'c))
+            | None -> None
+        let mapper = fun i (c : obj) world -> mapper i (c :?> Lens<obj, World> --> cast<'c>) world
+        LayersFromStream (lens, sieve, spread, indexOpt, mapper)
 
     /// Describe layers to be streamed from a lens indexed by fst.
-    let layersIndexedByFst (lens : Lens<(int * 'a) list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
-        layersIndexedBy lens fst (fun i lens -> mapper i (Lens.map snd lens))
-
-    /// Describe layers to be streamed from a lens indexed by snd.
-    let layersIndexedBySnd (lens : Lens<('a * int) list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
-        layersIndexedBy lens snd (fun i lens -> mapper i (Lens.map fst lens))
-
-    /// Describe layers to be streamed from a lens indexed by discriminated union tag.
-    let layersIndexedByArray (lens : Lens<'a list, World>) (arr : 'a array) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
-        let indexer a = Array.findIndex ((=) a) arr
-        layersIndexedBy lens indexer mapper
-
-    /// Describe layers to be streamed from a lens indexed by its union tag.
-    let layersIndexedByTag (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
-        let indexer (a : 'a) =
-            let (unionCaseInfo, _) = FSharpValue.GetUnionFields (a :> obj, typeof<'a>)
-            unionCaseInfo.Tag
-        layersIndexedBy lens indexer mapper
+    let layersIndexedByFst lens sieve spread mapper =
+        let mapper = (fun i lens world -> mapper i (lens --> snd) world)
+        layersIndexed lens sieve spread (Some (fun c -> fst c)) mapper
 
     /// Describe layers to be streamed from a lens.
-    let layers (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> LayerContent) =
-        let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
-        LayersFromStream (lens.Map box, None, mapper)
+    let layers lens sieve spread mapper =
+        layersIndexed lens sieve spread None mapper
 
     /// Describe a layer to be optionally streamed from a lens.
-    let layerOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> LayerContent) =
-        layers (lens --> function Some a -> [a] | None -> []) (fun _ -> mapper)
-
-    /// Describe a layer to be optionally streamed from a lens.
-    let layerIf (lens : Lens<bool, World>) (mapper : Lens<unit, World> -> World -> LayerContent) =
-        layers (lens --> function true -> [()] | false -> []) (fun _ -> mapper)
+    let layerIf lens predicate mapper =
+        layersIndexed lens id (fun a _ -> if predicate a then [a] else []) None (constant mapper)
 
     /// Describe a layer to be streamed when a screen is selected.
     let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> LayerContent) =
-        layerIf (Simulants.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
+        let mapper = (fun lens world -> mapper (lens --> constant ()) world)
+        layerIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
+
+    /// Describe a layer to be optionally streamed from a lens.
+    let layerOpt lens mapper =
+        let mapper = (fun i lens world -> mapper i (lens --> Option.get) world)
+        layersIndexed lens id (fun a _ -> if Option.isSome a then [a] else []) None mapper
 
     /// Describe a layer to be loaded from a file.
     let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
@@ -80,47 +78,45 @@ module Content =
     let layer<'d when 'd :> LayerDispatcher> layerName initializers entities =
         LayerFromInitializers (typeof<'d>.Name, layerName, initializers, entities)
 
-    /// Describe entities to be streamed from a lens indexed by the given indexer.
-    let entitiesIndexedBy (lens : Lens<'a list, World>) (indexer : 'a -> int) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
-        let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
-        EntitiesFromStream (lens.Map box, Some (fun (o : obj) -> indexer (o :?> 'a)), mapper)
+    /// Describe entities to be streamed from a lens.
+    let entitiesIndexed
+        (lens : Lens<'a, World>)
+        (sieve : 'a -> 'b)
+        (spread : 'b -> World -> 'c list)
+        (indexOpt : ('c -> int) option)
+        (mapper : int -> Lens<'c, World> -> World -> EntityContent) =
+        let lens = lens.Map box
+        let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
+        let spread = fun (b : obj) w -> spread (b :?> 'b) w |> Reflection.objToObjSeq
+        let indexOpt =
+            match indexOpt with
+            | Some indexOpt -> Some (fun (o : obj) -> indexOpt (o :?> 'c))
+            | None -> None
+        let mapper = fun i (c : obj) world -> mapper i (c :?> Lens<obj, World> --> cast<'c>) world
+        EntitiesFromStream (lens, sieve, spread, indexOpt, mapper)
 
     /// Describe entities to be streamed from a lens indexed by fst.
-    let entitiesIndexedByFst (lens : Lens<(int * 'a) list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
-        entitiesIndexedBy lens fst (fun i lens -> mapper i (Lens.map snd lens))
-
-    /// Describe entities to be streamed from a lens indexed by snd.
-    let entitiesIndexedBySnd (lens : Lens<('a * int) list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
-        entitiesIndexedBy lens snd (fun i lens -> mapper i (Lens.map fst lens))
-
-    /// Describe entities to be streamed from a lens indexed by discriminated union tag.
-    let entitiesIndexedByArray (lens : Lens<'a list, World>) (arr : 'a array) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
-        let indexer a = Array.findIndex ((=) a) arr
-        entitiesIndexedBy lens indexer mapper
-
-    /// Describe entities to be streamed from a lens indexed by its union tag.
-    let entitiesIndexedByTag (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
-        let indexer (a : 'a) =
-            let (unionCaseInfo, _) = FSharpValue.GetUnionFields (a :> obj, typeof<'a>)
-            unionCaseInfo.Tag
-        entitiesIndexedBy lens indexer mapper
+    let entitiesIndexedByFst lens sieve spread mapper =
+        let mapper = (fun i lens world -> mapper i (lens --> snd) world)
+        entitiesIndexed lens sieve spread (Some (fun c -> fst c)) mapper
 
     /// Describe entities to be streamed from a lens.
-    let entities (lens : Lens<'a list, World>) (mapper : int -> Lens<'a, World> -> World -> EntityContent) =
-        let mapper = fun i (a : obj) world -> mapper i (a :?> Lens<obj, World> |> Lens.map (cast<'a>)) world
-        EntitiesFromStream (lens.Map box, None, mapper)
+    let entities lens sieve spread mapper =
+        entitiesIndexed lens sieve spread None mapper
 
     /// Describe an entity to be optionally streamed from a lens.
-    let entityOpt (lens : Lens<'a option, World>) (mapper : Lens<'a, World> -> World -> EntityContent) =
-        entities (lens --> function Some a -> [a] | None -> []) (fun _ -> mapper)
-
-    /// Describe an entity to be optionally streamed from a lens.
-    let entityIf (lens : Lens<bool, World>) (mapper : Lens<unit, World> -> World -> EntityContent) =
-        entities (lens --> function true -> [()] | false -> []) (fun _ -> mapper)
+    let entityIf lens predicate mapper =
+        entitiesIndexed lens id (fun a _ -> if predicate a then [a] else []) None (constant mapper)
 
     /// Describe an entity to be streamed when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
-        entityIf (Simulants.Game.SelectedScreenOpt --> fun screenOpt -> screenOpt = Some screen) mapper
+        let mapper = (fun lens world -> mapper (Lens.map (constant ()) lens) world)
+        entityIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
+
+    /// Describe an entity to be optionally streamed from a lens.
+    let entityOpt lens sieve mapper =
+        let mapper = (fun i lens world -> mapper i (lens --> Option.get) world)
+        entitiesIndexed lens sieve (fun a _ -> if Option.isSome a then [a] else []) None mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
