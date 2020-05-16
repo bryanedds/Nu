@@ -232,23 +232,20 @@ module WorldSimulantModule =
             Stream.first
 
         /// Bind the left property to the value of the right, optionally breaking any cycles.
-        static member bind (left : Lens<'a, World>) (right : Lens<'a, World>) breaking world =
+        static member bind (left : Lens<'a, World>) (right : Lens<'a, World>) world =
             match left.This :> obj with
             | null -> failwithumf ()
-            | :? Simulant as simulant -> WorldModule.bind5 simulant left right breaking world
+            | :? Simulant as simulant -> WorldModule.bind5 simulant left right world
             | _ -> failwithumf ()
 
 [<AutoOpen>]
 module WorldSimulantOperators =
 
-    /// Bind one property to the value of another, optionally breaking potential cycles.
-    let bind<'a> (left : Lens<'a, World>) right breaking world = World.bind left right breaking world
+    /// Bind one property to the value of another.
+    let bind<'a> (left : Lens<'a, World>) right world = World.bind left right world
 
-    /// Equate two properties, not breaking potential cycles.
-    let inline (===) left right = bind left right false
-
-    /// Equate two properties, breaking potential cycles.
-    let inline (=/=) left right = bind left right true
+    /// Bind one property to the value of another.
+    let inline (===) left right = bind left right
 
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =

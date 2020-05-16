@@ -30,8 +30,8 @@ module Nu =
                     | :? DesignerProperty as designerProperty -> (Option.get left.SetOpt) ({ designerProperty with DesignerValue = value } :> obj) world
                     | _ -> (Option.get left.SetOpt) value world
                 else world
-            world
-        else world
+            (Cascade, world)
+        else (Cascade, world)
 
     /// Propagate lensed property by property name.
     let private tryPropagateByName simulant leftName (right : World Lens) (_ : Event) world =
@@ -42,19 +42,21 @@ module Nu =
                 match right.GetWithoutValidation world with
                 | :? DesignerProperty as property -> property.DesignerValue
                 | value -> value
-            match World.tryGetProperty leftName simulant world with
-            | Some property ->
-                if property.PropertyType = typeof<DesignerProperty> then
-                    let designerProperty = property.PropertyValue :?> DesignerProperty
-                    let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
-                    World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
-                else
-                    let property = { property with PropertyValue = value }
-                    World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
-            | None ->
-                Log.debug "Property propagation failed. You have used a composed lens on a faux simulant reference, which is not supported."
-                world
-        else world
+            let world =
+                match World.tryGetProperty leftName simulant world with
+                | Some property ->
+                    if property.PropertyType = typeof<DesignerProperty> then
+                        let designerProperty = property.PropertyValue :?> DesignerProperty
+                        let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
+                        World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
+                    else
+                        let property = { property with PropertyValue = value }
+                        World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
+                | None ->
+                    Log.debug "Property propagation failed. You have used a composed lens on a faux simulant reference, which is not supported."
+                    world
+            (Cascade, world)
+        else (Cascade, world)
 
     /// Initialize the Nu game engine.
     let init nuConfig =
@@ -175,7 +177,7 @@ module Nu =
                 let handler = handler :?> World PropertyChangeHandler
                 let (unsubscribe, world) =
                     World.subscribePlus
-                        Gen.id
+                        Gen.id None None None
                         (fun (event : Event<obj, _>) world ->
                             let data = event.Data :?> ChangeData
                             let world = handler data.Value world
@@ -301,15 +303,31 @@ module Nu =
                     world entities
 
             // init bind5 F# reach-around
-            WorldModule.bind5 <- fun simulant left right breaking world ->
+            WorldModule.bind5 <- fun simulant left right world ->
                 let tryPropagate =
                     if notNull (left.This :> obj)
                     then tryPropagateByLens left right
                     else tryPropagateByName simulant left.Name right
-                let world = tryPropagate Unchecked.defaultof<_> world // propagate immediately to start things out synchronized
-                let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
-                let world = Stream.make (atooa Events.Register --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor tryPropagate right.This $ world
-                Stream.make (atooa (Events.Change right.Name) --> right.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor tryPropagate right.This $ world
+                let (_, world) =
+                    // propagate immediately to start things out synchronized
+                    tryPropagate Unchecked.defaultof<_> world
+                let (_, world) =
+                    World.monitorPlus
+                        None None None
+                        tryPropagate
+                        (Events.Register --> right.This.SimulantAddress)
+                        right.This
+                        world
+                let (_, world) =
+                    World.monitorPlus
+                        (match right.PayloadOpt with Some payload -> Some (payload :?> (ChangeData -> obj option -> World -> obj)) | None -> None)
+                        (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true))
+                        None
+                        tryPropagate
+                        (Events.Change right.Name --> right.This.SimulantAddress)
+                        right.This
+                        world
+                world
 
             // init remaining reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world

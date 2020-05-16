@@ -245,16 +245,16 @@ module WorldLayerModule =
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             World.readLayer layerDescriptor nameOpt screen world
 
-        /// Turn a layers stream into a series of live layers.
-        static member expandLayerStream (lens : Lens<obj, World>) indexerOpt mapper origin screen world =
-            let mapperGeneralized = fun i lens world -> mapper i lens world :> SimulantContent
-            World.expandSimulantStream lens indexerOpt mapperGeneralized origin screen world
+        /// Turn a layers lens into a series of live layers.
+        static member expandLayers (lens : Lens<obj, World>) sieve spread indexOpt mapper origin screen world =
+            let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
+            World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin screen world
 
         /// Turn layer content into a live layer.
         static member expandLayerContent guidOpt content origin screen world =
             match LayerContent.expand content screen world with
-            | Choice1Of3 (lens, indexerOpt, mapper) ->
-                World.expandLayerStream lens indexerOpt mapper origin screen world
+            | Choice1Of3 (lens, sieve, spread, indexOpt, mapper) ->
+                World.expandLayers lens sieve spread indexOpt mapper origin screen world
             | Choice2Of3 (_, descriptor, handlers, binds, streams, entityFilePaths, entityContents) ->
                 let (layer, world) =
                     World.createLayer3 descriptor screen world
@@ -263,8 +263,8 @@ module WorldLayerModule =
                         World.readEntityFromFile filePath (Some entityName) layer world |> snd)
                         world entityFilePaths
                 let world =
-                    List.fold (fun world (simulant, left : World Lens, right, breaking) ->
-                        WorldModule.bind5 simulant left right breaking world)
+                    List.fold (fun world (simulant, left : World Lens, right) ->
+                        WorldModule.bind5 simulant left right world)
                         world binds
                 let world =
                     List.fold (fun world (handler, address, simulant) ->
@@ -275,8 +275,8 @@ module WorldLayerModule =
                             address simulant world)
                         world handlers
                 let world =
-                    List.fold (fun world (layer, lens, indexerOpt, mapper) ->
-                        World.expandEntityStream lens indexerOpt mapper origin layer world)
+                    List.fold (fun world (layer, lens, sieve, spread, indexOpt, mapper) ->
+                        World.expandEntities lens sieve spread indexOpt mapper origin layer world)
                         world streams
                 let world =
                     List.fold (fun world (owner, entityContents) ->

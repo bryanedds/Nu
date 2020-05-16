@@ -153,12 +153,12 @@ module WorldModule2 =
                 world
             | IncomingState
             | OutgoingState ->
-                let world = World.subscribePlus ScreenTransitionMouseLeftKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseCenterKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseRightKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX1Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX2Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionKeyboardKeyKey World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseLeftKey None None None World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseCenterKey None None None World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseRightKey None None None World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX1Key None None None World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX2Key None None None World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionKeyboardKeyKey None None None World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game world |> snd
                 world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
@@ -194,7 +194,7 @@ module WorldModule2 =
                         | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world
                     let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                    let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
+                    let world = World.subscribePlus<unit, unit, Screen> subscriptionKey None None None subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
                     (true, world)
                 else (false, world)
             | None -> (false, world)
@@ -296,7 +296,7 @@ module WorldModule2 =
             let world = World.unsubscribe SplashScreenUpdateKey world
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc ticks)
-                let world = World.subscribePlus SplashScreenUpdateKey subscription evt.Address evt.Subscriber world |> snd
+                let world = World.subscribePlus SplashScreenUpdateKey None None None subscription evt.Address evt.Subscriber world |> snd
                 (Cascade, world)
             else
                 match World.getSelectedScreenOpt world with
@@ -312,7 +312,7 @@ module WorldModule2 =
                     (Resolve, World.exit world)
 
         static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) evt world =
-            let world = World.subscribePlus SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
+            let world = World.subscribePlus SplashScreenUpdateKey None None None (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
             (Cascade, world)
 
         /// Set the splash aspects of a screen.
@@ -331,8 +331,8 @@ module WorldModule2 =
                 let world = splashLabel.SetSize cameraEyeSize world
                 let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
                 let world = splashLabel.SetLabelImage splashDescriptor.SplashImage world
-                let (unsub, world) = World.monitorPlus (World.handleSplashScreenIdle splashDescriptor.IdlingTime screen) (Events.IncomingFinish --> screen) screen world
-                let (unsub2, world) = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish --> screen) screen world
+                let (unsub, world) = World.monitorPlus None None None (World.handleSplashScreenIdle splashDescriptor.IdlingTime screen) (Events.IncomingFinish --> screen) screen world
+                let (unsub2, world) = World.monitorPlus None None None (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish --> screen) screen world
                 let world = World.monitor (fun _ -> unsub >> unsub2) (Events.Unregistering --> splashLayer) screen world
                 world
             | None -> world
@@ -1034,8 +1034,8 @@ module GameDispatcherModule =
                     World.monitor (fun (evt : Event) world ->
                         WorldModule.trySignal (handler evt) game world)
                         eventAddress (game :> Simulant) world
-                | BindDefinition (left, right, breaking) ->
-                    WorldModule.bind5 game left right breaking world)
+                | BindDefinition (left, right) ->
+                    WorldModule.bind5 game left right world)
                 world initializers
 
         override this.Actualize (game, world) =

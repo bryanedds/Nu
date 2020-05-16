@@ -706,35 +706,35 @@ module OmniBattle =
              let background = Simulants.BattleScene / "Background"
              Content.layer Simulants.BattleScene.Name []
 
-                // background
-                [Content.label background.Name
+                [// background
+                 Content.label background.Name
                     [background.Position == v2 -480.0f -512.0f
                      background.Size == v2 1024.0f 1024.0f
                      background.Depth == Constants.Battle.BackgroundDepth
                      background.LabelImage == asset "Battle" "Background"]
 
                  // allies
-                 Content.entitiesIndexedBy
-                    (model --> fun model -> BattleModel.getAllies model)
-                    (fun model -> model.PartyIndex)
+                 Content.entitiesIndexed model
+                    (fun model -> BattleModel.getAllies model) (constant >> id)
+                    (Some (fun model -> model.PartyIndex))
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.CharacterModel <== model])
 
                  // enemies
-                 Content.entitiesIndexedBy
-                    (model --> fun model -> BattleModel.getEnemies model)
-                    (fun model -> model.PartyIndex)
+                 Content.entitiesIndexed model
+                    (fun model -> BattleModel.getEnemies model) (constant >> id)
+                    (Some (fun model -> model.PartyIndex))
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.CharacterModel <== model])]
 
              // input layers
-             Content.layers (model --> fun model -> BattleModel.getAllies model) $ fun index ally _ ->
+             Content.layers model (fun model -> BattleModel.getAllies model) (constant >> id) $ fun index ally _ ->
 
                 // input layer
                 let allyIndex = AllyIndex index
                 let input = screen / ("Input" + "+" + scstring index)
                 Content.layer input.Name []
 
-                    // health bar
-                    [Content.fillBar "HealthBar" 
+                    [// health bar
+                     Content.fillBar "HealthBar" 
                         [Entity.Size == v2 64.0f 8.0f
                          Entity.Center <== ally --> fun ally -> ally.BottomOffset
                          Entity.Depth == Constants.Battle.GuiDepth

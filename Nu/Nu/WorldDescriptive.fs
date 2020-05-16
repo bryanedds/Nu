@@ -98,7 +98,7 @@ module GameDescriptor =
 type [<NoEquality; NoComparison>] PropertyInitializer =
     | PropertyDefinition of PropertyDefinition
     | EventHandlerDefinition of (Event -> obj) * obj Address
-    | BindDefinition of World Lens * World Lens * bool
+    | BindDefinition of World Lens * World Lens
 
 /// Contains primitives for describing simulants.
 [<RequireQualifiedAccess>]
@@ -145,7 +145,7 @@ module Describe =
             match initializer with
             | PropertyDefinition _ -> None
             | EventHandlerDefinition _ -> None
-            | BindDefinition (left, right, breaking) -> Some (simulant, left, right, breaking)) |>
+            | BindDefinition (left, right) -> Some (simulant, left, right)) |>
         List.definitize
 
     /// Describe a simulant with the given initializers and contained children.

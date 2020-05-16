@@ -286,8 +286,8 @@ module WorldScreenModule =
                         World.readEntityFromFile filePath (Some entityName) (screen / layerName) world |> snd)
                         world entityFilePaths
                 let world =
-                    List.fold (fun world (simulant, left : World Lens, right, breaking) ->
-                        WorldModule.bind5 simulant left right breaking world)
+                    List.fold (fun world (simulant, left : World Lens, right) ->
+                        WorldModule.bind5 simulant left right world)
                         world binds
                 let world =
                     List.fold (fun world (handler, address, simulant) ->
@@ -298,12 +298,12 @@ module WorldScreenModule =
                             address simulant world)
                         world handlers
                 let world =
-                    List.fold (fun world (screen, lens, indexerOpt, mapper) ->
-                        World.expandLayerStream lens indexerOpt mapper origin screen world)
+                    List.fold (fun world (screen, lens, sieve, spread, indexOpt, mapper) ->
+                        World.expandLayers lens sieve spread indexOpt mapper origin screen world)
                         world layerStreams
                 let world =
-                    List.fold (fun world (layer, lens, indexerOpt, mapper) ->
-                        World.expandEntityStream lens indexerOpt mapper origin layer world)
+                    List.fold (fun world (layer, lens, sieve, spread, indexOpt, mapper) ->
+                        World.expandEntities lens sieve spread indexOpt mapper origin layer world)
                         world entityStreams
                 let world =
                     List.fold (fun world (owner : Entity, entityContents) ->
