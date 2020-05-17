@@ -264,7 +264,7 @@ module CharacterModel =
         let characterData = 
             match Map.tryFind (Enemy enemyData.EnemyType) data.Value.Characters with
             | Some characterData -> characterData
-            | None -> failwith ("Could not find CharacterData for '" + scstring enemyData.EnemyType + "'")
+            | None -> failwith ("Could not find CharacterData for '" + scstringm enemyData.EnemyType + "'")
         let characterState = CharacterState.make characterData 0 None None [] // TODO: figure out if / how we should populate equipment
         let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
         let enemy = make bounds (EnemyIndex index) characterState characterData.AnimationSheet Leftward

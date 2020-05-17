@@ -717,20 +717,20 @@ module OmniBattle =
                  Content.entitiesIndexed model
                     (fun model -> BattleModel.getAllies model) (constant >> id)
                     (Some (fun model -> model.PartyIndex))
-                    (fun index model _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.CharacterModel <== model])
+                    (fun index model _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstringm index) [Entity.CharacterModel <== model])
 
                  // enemies
                  Content.entitiesIndexed model
                     (fun model -> BattleModel.getEnemies model) (constant >> id)
                     (Some (fun model -> model.PartyIndex))
-                    (fun index model _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.CharacterModel <== model])]
+                    (fun index model _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstringm index) [Entity.CharacterModel <== model])]
 
              // input layers
              Content.layers model (fun model -> BattleModel.getAllies model) (constant >> id) $ fun index ally _ ->
 
                 // input layer
                 let allyIndex = AllyIndex index
-                let input = screen / ("Input" + "+" + scstring index)
+                let input = screen / ("Input" + "+" + scstringm index)
                 Content.layer input.Name []
 
                     [// health bar
@@ -765,7 +765,7 @@ module OmniBattle =
                          Entity.RingMenuModel <== model --> fun model ->
                             let consumables = Inventory.getConsumables model.Inventory
                             let consumables = Map.toKeyList consumables
-                            let consumables = List.map (fun consumable -> (getTag consumable, (true, scstring consumable))) consumables
+                            let consumables = List.map (fun consumable -> (getTag consumable, (true, scstringm consumable))) consumables
                             { Items = consumables; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ConsumableItemSelect (allyIndex, evt.Data))
                          Entity.CancelEvent ==> msg (ConsumableItemCancel allyIndex)]
@@ -784,7 +784,7 @@ module OmniBattle =
                                         match Map.tryFind tech data.Value.Techs with
                                         | Some techData -> techData.TechCost <= ally.TechPoints
                                         | None -> false
-                                    let techName = scstring tech
+                                    let techName = scstringm tech
                                     (techTag, (techUsable, techName)))
                                     techs
                             { Items = techs; ItemCancelOpt = Some "Cancel" }

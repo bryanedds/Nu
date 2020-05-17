@@ -61,9 +61,9 @@ type [<StructuralEquality; StructuralComparison>] ItemType =
     | KeyItem of KeyItemType
     static member getName item =
         match item with
-        | Equipment ty -> scstring ty
-        | Consumable ty -> scstring ty
-        | KeyItem ty -> scstring ty
+        | Equipment ty -> scstringm ty
+        | Consumable ty -> scstringm ty
+        | KeyItem ty -> scstringm ty
 
 type [<StructuralEquality; StructuralComparison>] AimType =
     | EnemyAim of bool // healthy (N/A)
