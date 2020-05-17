@@ -130,8 +130,8 @@ module WorldModuleEntity =
                 let entityNames = Address.getNames entity.EntityAddress
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
                 let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-                let allowWildcard = propertyName = "ParentNodeOpt"
-                World.publishPlus World.sortSubscriptionsByHierarchy changeData changeEventAddress eventTrace entity allowWildcard world
+                let sorted = propertyName = "ParentNodeOpt"
+                World.publishPlus changeData changeEventAddress eventTrace entity sorted world
             world
 
         static member private getEntityStateOpt entity world =
@@ -752,13 +752,13 @@ module WorldModuleEntity =
                         world facets
                 let world = World.updateEntityPublishFlags entity world
                 let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-                World.publish () (rtoa<unit> [|"Register"; "Event"|] --> entity) eventTrace entity world)
+                World.publish () (rtoa<unit> [|"Register"; "Event"|] --> entity) eventTrace entity false world)
                 entity world
 
         static member internal unregisterEntity entity world =
             World.withEventContext (fun world ->
                 let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
-                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> entity) eventTrace entity world
+                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> entity) eventTrace entity false world
                 let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
                 let facets = World.getEntityFacets entity world
                 let world = dispatcher.Unregister (entity, world)
@@ -851,7 +851,7 @@ module WorldModuleEntity =
                     else world
 
                 // remove cached entity event addresses
-                EventSystem.cleanEventAddressCache entity.EntityAddress
+                EventSystemDelegate.cleanEventAddressCache entity.EntityAddress
 
                 // remove the entity from the world
                 World.removeEntityState entity world

@@ -253,7 +253,21 @@ module Nu =
             // init isSelected F# reach-around
             WorldModule.isSelected <- fun simulant world ->
                 World.isSelected simulant world
-                
+
+            WorldModule.sortSubscriptionsByDepth <- fun subscriptions worldObj ->
+                let world = worldObj :?> World
+                EventSystem.sortSubscriptionsBy
+                    (fun (simulant : Simulant) _ ->
+                        match simulant with
+                        | :? GlobalSimulantGeneralized
+                        | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
+                        | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
+                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
+                        | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
+                        | _ -> failwithumf ())
+                    subscriptions
+                    world
+
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
                 let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
@@ -351,7 +365,7 @@ module Nu =
             Vsync.Init nuConfig.RunSynchronously
 
             // init event world caching
-            EventSystem.setEventAddressCaching true
+            EventSystemDelegate.setEventAddressCaching true
 
             // mark init flag
             Initialized <- true

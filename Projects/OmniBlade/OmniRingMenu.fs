@@ -33,8 +33,8 @@ module OmniRingMenu =
 
         override this.Command (model, command, menu, world) =
             match command with
-            | ItemCancel -> just (World.publish () menu.CancelEvent [] menu world)
-            | ItemSelect item -> just (World.publish item menu.ItemSelectEvent [] menu world)
+            | ItemCancel -> just (World.publish () menu.CancelEvent [] menu true world)
+            | ItemSelect item -> just (World.publish item menu.ItemSelectEvent [] menu true world)
             | ArrangeItemButton (button, index) ->
                 let radius = menu.GetRadius world
                 let itemCount = List.length model.Items

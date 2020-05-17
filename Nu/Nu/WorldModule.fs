@@ -68,6 +68,9 @@ module WorldModule =
     let mutable internal isSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
+    let mutable internal sortSubscriptionsByDepth : SubscriptionEntry array -> obj -> SubscriptionEntry array =
+        Unchecked.defaultof<_>
+
     /// F# reach-around for registering physics entities of an entire screen.
     let mutable internal evictScreenElements : Screen -> World -> World =
         Unchecked.defaultof<_>
@@ -159,115 +162,6 @@ module WorldModule =
                 World.choose
                     { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             world
-
-    type World with // EventSystem
-
-        /// Get event subscriptions.
-        static member internal getSubscriptions world =
-            EventSystem.getSubscriptions<World> world
-
-        /// Get event unsubscriptions.
-        static member internal getUnsubscriptions world =
-            EventSystem.getUnsubscriptions<World> world
-
-        /// Get whether events are being traced.
-        static member getEventTracing (world : World) =
-            EventSystem.getEventTracing world
-
-        /// Set whether events are being traced.
-        static member setEventTracing tracing (world : World) =
-            World.choose (EventSystem.setEventTracing tracing world)
-
-        /// Get the state of the event filter.
-        static member getEventFilter (world : World) =
-            EventSystem.getEventFilter world
-
-        /// Set the state of the event filter.
-        static member setEventFilter filter (world : World) =
-            World.choose (EventSystem.setEventFilter filter world)
-
-        /// Get the context of the event system.
-        static member getEventContext (world : World) =
-            EventSystem.getEventContext world
-
-        /// A hack to allow a sidelined event system to be continued by resetting its mutable state.
-        static member internal continueEventSystemHack (world : World) =
-            EventSystem.setEventContext (Game ()) world
-
-        /// Set the context of the event system.
-#if DEBUG
-        static member internal withEventContext operation (context : Simulant) (world : World) =
-            let oldContext = World.getEventContext world
-            EventSystem.setEventContext context world
-            let world = operation world
-            EventSystem.setEventContext oldContext world
-            world
-#else
-        static member inline internal withEventContext operation _ (world : World) =
-            // NOTE: inlined to hopefully get rid of the lambda
-            operation world
-#endif
-
-        /// Qualify the context of the event system.
-        static member internal qualifyEventContext address (world : World) =
-            EventSystem.qualifyEventContext address world
-
-        /// Sort subscriptions using categorization via the 'by' procedure.
-        static member sortSubscriptionsBy by subscriptions (world : World) =
-            EventSystem.sortSubscriptionsBy by subscriptions world
-
-        /// Sort subscriptions by their place in the world's simulant hierarchy.
-        static member sortSubscriptionsByHierarchy subscriptions (world : World) =
-            // OPTIMIZATION: entity priority boxed up front to decrease GC pressure.
-            let entityPriorityBoxed = Constants.Engine.EntitySortPriority :> IComparable
-            World.sortSubscriptionsBy
-                (fun (simulant : Simulant) _ ->
-                    match simulant with
-                    | :? GlobalSimulantGeneralized
-                    | :? Game -> Constants.Engine.GameSortPriority :> IComparable
-                    | :? Screen -> Constants.Engine.ScreenSortPriority :> IComparable
-                    | :? Layer -> Constants.Engine.LayerSortPriority :> IComparable
-                    | :? Entity -> entityPriorityBoxed
-                    | _ -> failwithumf ())
-                subscriptions
-                world
-
-        /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
-        static member sortSubscriptionsNone subscriptions (world : World) =
-            EventSystem.sortSubscriptionsNone subscriptions world
-
-        /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
-        static member publishPlus<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
-            World.choose (EventSystem.publishPlus<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world)
-
-        /// Publish an event.
-        static member publish<'a, 'p when 'p :> Simulant>
-            (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            World.choose (EventSystem.publishPlus<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world)
-
-        /// Unsubscribe from an event.
-        static member unsubscribe subscriptionKey world =
-            World.choose (EventSystem.unsubscribe<World> subscriptionKey world)
-
-        /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-        static member subscribePlus<'a, 'b, 's when 's :> Simulant>
-            subscriptionKey mapperOpt filterOpt stateOpt (subscription : Event<'b, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            mapSnd World.choose (EventSystem.subscribePlus<'a, 'b, 's, World> subscriptionKey mapperOpt filterOpt stateOpt subscription eventAddress subscriber world)
-
-        /// Subscribe to an event.
-        static member subscribe<'a, 's when 's :> Simulant>
-            (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
-            World.choose (EventSystem.subscribe<'a, 's, World> subscription eventAddress subscriber world)
-
-        /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
-        static member monitorPlus<'a, 'b, 's when 's :> Simulant>
-            mapperOpt filterOpt stateOpt (subscription : Event<'b, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            mapSnd World.choose (EventSystem.monitorPlus<'a, 'b, 's, World> mapperOpt filterOpt stateOpt subscription eventAddress subscriber world)
-
-        /// Keep active a subscription for the lifetime of a simulant.
-        static member monitor<'a, 'b, 's when 's :> Simulant>
-            (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
-            World.choose (EventSystem.monitor<'a, 's, World> subscription eventAddress subscriber world)
 
     type World with // Caching
 
@@ -581,6 +475,188 @@ module WorldModule =
             let subsystems = World.getSubsystems world
             let (subsystems, world) = Subsystems.cleanUp subsystems world
             World.setSubsystems subsystems world
+
+    type World with // EventSystem
+
+        /// Get event subscriptions.
+        static member internal getSubscriptions world =
+            EventSystem.getSubscriptions<World> world
+
+        /// Get event unsubscriptions.
+        static member internal getUnsubscriptions world =
+            EventSystem.getUnsubscriptions<World> world
+
+        /// Get whether events are being traced.
+        static member getEventTracing (world : World) =
+            EventSystem.getEventTracing world
+
+        /// Set whether events are being traced.
+        static member setEventTracing tracing (world : World) =
+            World.choose (EventSystem.setEventTracing tracing world)
+
+        /// Get the state of the event filter.
+        static member getEventFilter (world : World) =
+            EventSystem.getEventFilter world
+
+        /// Set the state of the event filter.
+        static member setEventFilter filter (world : World) =
+            World.choose (EventSystem.setEventFilter filter world)
+
+        /// Get the context of the event system.
+        static member getEventContext (world : World) =
+            EventSystem.getEventContext world
+
+        /// A hack to allow a sidelined event system to be continued by resetting its mutable state.
+        static member internal continueEventSystemHack (world : World) =
+            EventSystem.setEventContext (Game ()) world
+
+        /// Set the context of the event system.
+#if DEBUG
+        static member internal withEventContext operation (context : Simulant) (world : World) =
+            let oldContext = World.getEventContext world
+            EventSystem.setEventContext context world
+            let world = operation world
+            EventSystem.setEventContext oldContext world
+            world
+#else
+        static member inline internal withEventContext operation _ (world : World) =
+            // NOTE: inlined to hopefully get rid of the lambda
+            operation world
+#endif
+
+        static member internal qualifyEventContext address (world : World) =
+            EventSystem.qualifyEventContext address world
+
+        /// Publish an event directly.
+        static member publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant> evt (subscriber : Simulant) subscription world =
+            let callableSubscription = unbox<World BoxableSubscription> subscription
+            let oldEventContext = EventSystemDelegate.getEventContext world.EventSystemDelegate
+            EventSystemDelegate.setEventContext subscriber world.EventSystemDelegate
+            let (handling, world) = callableSubscription evt world
+            EventSystemDelegate.setEventContext oldEventContext world.EventSystemDelegate
+            (handling, world)
+
+        /// Publish an event with no subscription sorting.
+        /// NOTE: unrolled publishPlus here for speed.
+        static member publishPlus<'a, 'p when 'p :> Simulant>
+            (eventData : 'a)
+            (eventAddress : 'a Address)
+            eventTrace
+            (publisher : 'p)
+            sorted
+            (world : World) =
+
+            // OPTIMIZATION: potentially box and generalize these only once
+            let eventDataObj = eventData :> obj
+            let eventAddressObj = Address.generalize eventAddress
+
+#if DEBUG
+            // log event based on event filter
+            EventSystemDelegate.logEvent<World> eventAddressObj eventTrace world.EventSystemDelegate
+#endif
+
+            // get subscriptions the fastest way possible
+            let subscriptions =
+                if sorted then
+                    EventSystem.getSubscriptionsSorted sortSubscriptionsByDepth eventAddressObj world
+                else
+                    let subscriptions = EventSystemDelegate.getSubscriptions world.EventSystemDelegate
+                    match UMap.tryFind eventAddressObj subscriptions with Some subs -> subs | None -> [||]
+
+            // publish to each subscription
+            // NOTE: inlined foldWhite here in order to compact the call stack.
+            let (_, world) =
+                let mutable lastState = (Cascade, world)
+                let mutable stateOpt = Some lastState
+                use mutable enr = (subscriptions :> _ seq).GetEnumerator ()
+                while stateOpt.IsSome && enr.MoveNext () do
+                    lastState <- stateOpt.Value
+                    stateOpt <-
+                        let (handling, world) = lastState
+                        let subscription = enr.Current
+#if DEBUG
+                        let eventAddresses = EventSystemDelegate.getEventAddresses world.EventSystemDelegate
+                        let cycleDetected = List.containsTriplicates eventAddresses
+                        if cycleDetected then Trace.WriteLine ("Event cycle detected in '" + scstring eventAddresses + "'.")
+#else
+                        let cycleDetected = false
+#endif
+                        if not cycleDetected &&
+                            (match handling with Cascade -> true | Resolve -> false) &&
+                            (match World.getLiveness world with Running -> true | Exiting -> false) then
+#if DEBUG
+                            let world = World.choose { world with EventSystemDelegate = EventSystemDelegate.pushEventAddress eventAddressObj world.EventSystemDelegate }
+#endif
+                            let mapped =
+                                match subscription.MapperOpt with
+                                | Some mapper -> mapper eventDataObj subscription.PreviousDataOpt world
+                                | None -> eventData :> obj
+                            let filtered =
+                                match subscription.FilterOpt with
+                                | Some filter -> filter mapped subscription.PreviousDataOpt world
+                                | None -> true
+                            subscription.PreviousDataOpt <- Some mapped
+                            let (handling, world) =
+                                if filtered then
+                                    // NOTE: unrolled PublishEventHook here for speed.
+                                    let subscriber = subscription.SubscriberEntry
+                                    let evt =
+                                        { Data = eventDataObj
+                                          Subscriber = subscriber
+                                          Publisher = publisher
+                                          Address = eventAddressObj
+                                          Trace = eventTrace }
+                                    let (handling, world) =
+                                        match subscriber with
+                                        | :? GlobalSimulantGeneralized -> World.publishEvent<'a, 'p, Simulant> evt subscriber subscription.Callback world
+                                        | :? Game -> World.publishEvent<'a, 'p, Game> evt subscriber subscription.Callback world
+                                        | :? Screen -> World.publishEvent<'a, 'p, Screen> evt subscriber subscription.Callback world
+                                        | :? Layer -> World.publishEvent<'a, 'p, Layer> evt subscriber subscription.Callback world
+                                        | :? Entity -> World.publishEvent<'a, 'p, Entity> evt subscriber subscription.Callback world
+                                        | _ -> failwithumf ()
+#if DEBUG
+                                    let world = World.choose world
+#endif
+                                    (handling, world)
+                                else (Cascade, world)
+#if DEBUG
+                            let world = World.choose { world with EventSystemDelegate = EventSystemDelegate.popEventAddress world.EventSystemDelegate }
+#endif
+                            Some (handling, world)
+                        else None
+                match stateOpt with
+                | Some state -> state
+                | None -> lastState
+            world
+
+        /// Publish an event with no subscription sorting.
+        static member publish<'a, 'p when 'p :> Simulant>
+            (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) sorted world =
+            World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher sorted world
+
+        /// Unsubscribe from an event.
+        static member unsubscribe subscriptionKey world =
+            World.choose (EventSystem.unsubscribe<World> subscriptionKey world)
+
+        /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
+        static member subscribePlus<'a, 'b, 's when 's :> Simulant>
+            subscriptionKey mapperOpt filterOpt stateOpt (subscription : Event<'b, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
+            mapSnd World.choose (EventSystem.subscribePlus<'a, 'b, 's, World> subscriptionKey mapperOpt filterOpt stateOpt subscription eventAddress subscriber world)
+
+        /// Subscribe to an event.
+        static member subscribe<'a, 's when 's :> Simulant>
+            (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
+            World.choose (EventSystem.subscribe<'a, 's, World> subscription eventAddress subscriber world)
+
+        /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
+        static member monitorPlus<'a, 'b, 's when 's :> Simulant>
+            mapperOpt filterOpt stateOpt (subscription : Event<'b, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
+            mapSnd World.choose (EventSystem.monitorPlus<'a, 'b, 's, World> mapperOpt filterOpt stateOpt subscription eventAddress subscriber world)
+
+        /// Keep active a subscription for the lifetime of a simulant.
+        static member monitor<'a, 'b, 's when 's :> Simulant>
+            (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
+            World.choose (EventSystem.monitor<'a, 's, World> subscription eventAddress subscriber world)
 
     type World with // Scripting
 

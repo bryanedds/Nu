@@ -31,8 +31,8 @@ module OmniReticles =
 
         override this.Command (_, command, rets, world) =
             match command with
-            | TargetCancel -> just (World.publish () rets.CancelEvent [] rets world)
-            | TargetSelect index -> just (World.publish index rets.TargetSelectEvent [] rets world)
+            | TargetCancel -> just (World.publish () rets.CancelEvent [] rets true world)
+            | TargetSelect index -> just (World.publish index rets.TargetSelectEvent [] rets true world)
 
         override this.Content (model, rets) =
             let buttonName = rets.Name + "+" + "Cancel"

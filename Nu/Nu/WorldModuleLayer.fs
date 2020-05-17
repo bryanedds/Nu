@@ -79,7 +79,7 @@ module WorldModuleLayer =
                 let layerNames = Address.getNames layer.LayerAddress
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; layerNames.[0]; layerNames.[1]|]
                 let eventTrace = EventTrace.record "World" "publishLayerChange" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy changeData changeEventAddress eventTrace layer false world
+                World.publishPlus changeData changeEventAddress eventTrace layer false world
             world
 
         static member private getLayerStateOpt layer world =
@@ -199,7 +199,7 @@ module WorldModuleLayer =
                 let dispatcher = World.getLayerDispatcher layer world
                 let world = dispatcher.Register (layer, world)
                 let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
-                World.publish () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer world)
+                World.publish () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer false world)
                 layer
                 world
 
@@ -207,7 +207,7 @@ module WorldModuleLayer =
             World.withEventContext (fun world ->
                 let dispatcher = World.getLayerDispatcher layer world
                 let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
-                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer world
+                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer false world
                 dispatcher.Unregister (layer, world))
                 layer
                 world
