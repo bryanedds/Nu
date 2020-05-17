@@ -1073,7 +1073,6 @@ module WorldTypes =
 #endif
                 this
 
-            [<DebuggerHidden; DebuggerStepThrough>]
             member this.PublishEventHook (simulant : Simulant) publisher eventData eventAddress eventTrace subscription world =
                 let (handling, world) =
                     match simulant with
@@ -1084,7 +1083,6 @@ module WorldTypes =
                     | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> simulant publisher eventData eventAddress eventTrace subscription world
                     | _ -> failwithumf ()
 #if DEBUG
-                // inlined choose
                 Debug.World.Chosen <- world :> obj
 #endif
                 (handling, world)

@@ -27,7 +27,7 @@ module WorldModuleGame =
                     | _ -> { Name = propertyName; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
                 let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy changeData changeEventAddress eventTrace game false world
+                World.publishPlus changeData changeEventAddress eventTrace game false world
             world
 
         static member internal getGameState world =

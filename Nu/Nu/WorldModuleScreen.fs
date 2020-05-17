@@ -69,7 +69,7 @@ module WorldModuleScreen =
                     | _ -> { Name = propertyName; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; screen.Name|]
                 let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy changeData changeEventAddress eventTrace screen false world
+                World.publishPlus changeData changeEventAddress eventTrace screen false world
             world
 
         static member private getScreenStateOpt screen world =
@@ -189,7 +189,7 @@ module WorldModuleScreen =
                 let dispatcher = World.getScreenDispatcher screen world
                 let world = dispatcher.Register (screen, world)
                 let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
-                World.publish () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen world)
+                World.publish () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen false world)
                 screen
                 world
 
@@ -197,7 +197,7 @@ module WorldModuleScreen =
             World.withEventContext (fun world ->
                 let dispatcher = World.getScreenDispatcher screen world
                 let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
-                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"; screen.Name|]) eventTrace screen world
+                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"; screen.Name|]) eventTrace screen false world
                 dispatcher.Unregister (screen, world))
                 screen
                 world

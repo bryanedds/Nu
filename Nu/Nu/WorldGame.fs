@@ -148,7 +148,7 @@ module WorldGameModule =
                     let dispatcher = game.GetDispatcher world
                     let world = dispatcher.Register (game, world)
                     let eventTrace = EventTrace.record "World" "registerGame" EventTrace.empty
-                    World.publish () (rtoa<unit> [|"Register"; "Event"|]) eventTrace game world)
+                    World.publish () (rtoa<unit> [|"Register"; "Event"|]) eventTrace game false world)
                     game
                     world
             World.choose world
@@ -159,7 +159,7 @@ module WorldGameModule =
                 World.withEventContext (fun world ->
                     let dispatcher = game.GetDispatcher world
                     let eventTrace = EventTrace.record "World" "unregisteringGame" EventTrace.empty
-                    let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game world
+                    let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game false world
                     dispatcher.Unregister (game, world))
                     game
                     world
@@ -175,7 +175,7 @@ module WorldGameModule =
 
                 // publish update event
                 let eventTrace = EventTrace.record "World" "updateGame" EventTrace.empty
-                let world = World.publishPlus World.sortSubscriptionsByHierarchy () Events.Update eventTrace game true world
+                let world = World.publishPlus () Events.Update eventTrace game false world
                 World.choose world)
                 game
                 world
@@ -190,7 +190,7 @@ module WorldGameModule =
 
                 // publish post-update event
                 let eventTrace = EventTrace.record "World" "postUpdateGame" EventTrace.empty
-                let world = World.publishPlus World.sortSubscriptionsByHierarchy () Events.PostUpdate eventTrace game true world
+                let world = World.publishPlus () Events.PostUpdate eventTrace game false world
                 World.choose world)
                 game
                 world

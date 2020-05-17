@@ -1396,7 +1396,7 @@ module ButtonDispatcherModule =
                     if button.GetEnabled world then
                         let world = button.SetDown true world
                         let eventTrace = EventTrace.record "ButtonDispatcher" "handleMouseLeftDown" EventTrace.empty
-                        let world = World.publish () (Events.Down --> button) eventTrace button world
+                        let world = World.publish () (Events.Down --> button) eventTrace button true world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -1413,9 +1413,9 @@ module ButtonDispatcherModule =
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world && wasDown then
                         let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
-                        let world = World.publish () (Events.Up --> button) eventTrace button world
+                        let world = World.publish () (Events.Up --> button) eventTrace button true world
                         let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
-                        let world = World.publish () (Events.Click --> button) eventTrace button world
+                        let world = World.publish () (Events.Click --> button) eventTrace button true world
                         let world =
                             match button.GetClickSoundOpt world with
                             | Some clickSound -> World.playSound (button.GetClickSoundVolume world) clickSound world
@@ -1619,9 +1619,9 @@ module ToggleDispatcherModule =
                         let world = toggle.SetOpen (not (toggle.GetOpen world)) world
                         let eventAddress = if toggle.GetOpen world then Events.Open else Events.Close
                         let eventTrace = EventTrace.record "ToggleDispatcher" "handleMouseLeftUp" EventTrace.empty
-                        let world = World.publish () (eventAddress --> toggle) eventTrace toggle world
+                        let world = World.publish () (eventAddress --> toggle) eventTrace toggle true world
                         let eventTrace = EventTrace.record4 "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
-                        let world = World.publish () (Events.Toggle --> toggle) eventTrace toggle world
+                        let world = World.publish () (Events.Toggle --> toggle) eventTrace toggle true world
                         let world =
                             match toggle.GetToggleSoundOpt world with
                             | Some toggleSound -> World.playSound (toggle.GetToggleSoundVolume world) toggleSound world
@@ -1745,7 +1745,7 @@ module FeelerDispatcherModule =
                     if feeler.GetEnabled world then
                         let world = feeler.SetTouched true world
                         let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
-                        let world = World.publish data.Position (Events.Touch --> feeler) eventTrace feeler world
+                        let world = World.publish data.Position (Events.Touch --> feeler) eventTrace feeler true world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
@@ -1758,7 +1758,7 @@ module FeelerDispatcherModule =
                 if feeler.GetEnabled world then
                     let world = feeler.SetTouched false world
                     let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
-                    let world = World.publish data.Position (Events.Untouch --> feeler) eventTrace feeler world
+                    let world = World.publish data.Position (Events.Untouch --> feeler) eventTrace feeler true world
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)
