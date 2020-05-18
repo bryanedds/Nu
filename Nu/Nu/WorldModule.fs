@@ -530,14 +530,14 @@ module WorldModule =
         /// Publish an event directly.
         static member publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant> evt (subscriber : Simulant) (subscription : obj) world =
             let callableSubscription = subscription :?> World BoxableSubscription
-            let oldEventContext = EventSystemDelegate.getEventContext world.EventSystemDelegate
+            let oldEventContext = EventSystemDelegate.getEventContext world
             EventSystemDelegate.setEventContext subscriber world.EventSystemDelegate
             let (handling, world) = callableSubscription evt world
             EventSystemDelegate.setEventContext oldEventContext world.EventSystemDelegate
             (handling, world)
 
         /// Publish an event with no subscription sorting.
-        /// NOTE: unrolled publishPlus here for speed.
+        /// OPTIMIZATION: unrolled publishPlus here for speed.
         static member publishPlus<'a, 'p when 'p :> Simulant>
             (eventData : 'a)
             (eventAddress : 'a Address)
@@ -565,7 +565,7 @@ module WorldModule =
                     match UMap.tryFind eventAddressObj subscriptions with Some subscriptions -> subscriptions | None -> [||]
 
             // publish to each subscription
-            // NOTE: inlined foldWhile here in order to compact the call stack.
+            // OPTIMIZATION: inlined foldWhile here in order to compact the call stack.
             let (_, world) =
                 let mutable lastState = (Cascade, world)
                 let mutable stateOpt = Some lastState
@@ -607,7 +607,7 @@ module WorldModule =
                                           Address = eventAddressObj
                                           Trace = eventTrace }
                                     let (handling, world) =
-                                        // NOTE: unrolled PublishEventHook here for speed.
+                                        // OPTIMIZATION: unrolled PublishEventHook here for speed.
                                         // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
                                         match subscriber with
                                         | :? Entity -> World.publishEvent<'a, 'p, Entity> evt subscriber subscription.Callback world

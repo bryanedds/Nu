@@ -20,7 +20,7 @@ module WorldModuleEntity =
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
 
-    // avoids closure allocation in tight-loop
+    // OPTIMIZATION: avoids closure allocation in tight-loop.
     type private KeyEquality () =
         inherit OptimizedClosures.FSharpFunc<
             KeyValuePair<
@@ -38,7 +38,7 @@ module WorldModuleEntity =
             refEq entityStateKey.Value entityStateKey2.Value
     let private keyEquality = KeyEquality ()
 
-    // avoids closure allocation in tight-loop
+    // OPTIMIZATION: avoids closure allocation in tight-loop.
     let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
     let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
     let private getFreshKeyAndValue _ =
