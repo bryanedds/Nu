@@ -1176,7 +1176,7 @@ namespace Nu
         public int CompareTo(Vector2 other)
         {
             var result = X.CompareTo(other.X);
-            if (result == 0) return result;
+            if (result != 0) return result;
             result = Y.CompareTo(other.Y);
             return result;
         }

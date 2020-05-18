@@ -565,7 +565,7 @@ module WorldModule =
                     match UMap.tryFind eventAddressObj subscriptions with Some subscriptions -> subscriptions | None -> [||]
 
             // publish to each subscription
-            // NOTE: inlined foldWhite here in order to compact the call stack.
+            // NOTE: inlined foldWhile here in order to compact the call stack.
             let (_, world) =
                 let mutable lastState = (Cascade, world)
                 let mutable stateOpt = Some lastState
