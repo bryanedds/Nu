@@ -281,7 +281,7 @@ module OmniBattle =
                 | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome model
             (model, sigs)
 
-        override this.Channel (_, battle, _) =
+        override this.Channel (_, battle) =
             [battle.UpdateEvent => [msg Tick; cmd UpdateEye]]
 
         override this.Message (model, message, _, world) =

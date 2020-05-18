@@ -305,7 +305,7 @@ module GameplayModule =
         static let createScene gameplay world =
             World.readLayerFromFile Assets.SceneLayerFilePath (Some Simulants.Scene.Name) gameplay world |> snd
 
-        override this.Channel (_, gameplay, _) =
+        override this.Channel (_, gameplay) =
             [gameplay.SelectEvent => [cmd StartPlay]
              gameplay.DeselectEvent => [cmd StopPlay]]
 

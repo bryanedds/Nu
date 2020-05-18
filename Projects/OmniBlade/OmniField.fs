@@ -72,7 +72,7 @@ module OmniField =
             | Some prop -> tryGetInteraction3 dialogOpt advents prop
             | None -> None
 
-        override this.Channel (_, field, _) =
+        override this.Channel (_, field) =
             [field.UpdateEvent =|> fun _ ->
                 let force = v2Zero
                 let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.WalkForce 0.0f + force else force

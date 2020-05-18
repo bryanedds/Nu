@@ -24,7 +24,7 @@ type MyGameplayDispatcher () =
     inherit ScreenDispatcher<GameplayModel, GameplayMessage, GameplayCommand> ()
 
     // here we channel from events to signals
-    override this.Channel (_, _, _) =
+    override this.Channel (_, _) =
         [Simulants.Game.KeyboardKeyDownEvent =|> fun evt ->
             if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
             then [cmd Jump]
