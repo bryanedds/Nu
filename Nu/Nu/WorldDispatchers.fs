@@ -2142,14 +2142,14 @@ module ScreenDispatcherModule =
 
         override this.Register (screen, world) =
             let (model, world) = World.attachModel initial Property? Model screen world
-            let channels = this.Channel (model, screen, world)
+            let channels = this.Channel (model, screen)
             let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
             let content = this.Content (this.Model screen, screen)
             let world =
                 List.fold (fun world content ->
                     World.expandLayerContent None content (SimulantOrigin screen) screen world)
                     world content
-            let initializers = this.Initializers (this.Model screen, screen, world)
+            let initializers = this.Initializers (this.Model screen, screen)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
@@ -2177,11 +2177,11 @@ module ScreenDispatcherModule =
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> * Screen * World -> PropertyInitializer list
-        default this.Initializers (_, _, _) = []
+        abstract member Initializers : Lens<'model, World> * Screen -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
-        abstract member Channel : 'model * Screen * World -> Channel<'message, 'command, Screen, World> list
-        default this.Channel (_, _, _) = []
+        abstract member Channel : 'model * Screen -> Channel<'message, 'command, Screen, World> list
+        default this.Channel (_, _) = []
 
         abstract member Message : 'model * 'message * Screen * World -> 'model * Signal<'message, 'command> list
         default this.Message (model, _, _, _) = just model
