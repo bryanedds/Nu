@@ -530,7 +530,7 @@ module WorldModule =
         /// Publish an event directly.
         static member publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant> evt (subscriber : Simulant) (subscription : obj) world =
             let callableSubscription = subscription :?> World BoxableSubscription
-            let oldEventContext = EventSystemDelegate.getEventContext world
+            let oldEventContext = EventSystemDelegate.getEventContext world.EventSystemDelegate
             EventSystemDelegate.setEventContext subscriber world.EventSystemDelegate
             let (handling, world) = callableSubscription evt world
             EventSystemDelegate.setEventContext oldEventContext world.EventSystemDelegate
