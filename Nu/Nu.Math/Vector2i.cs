@@ -135,9 +135,8 @@ namespace Nu
 
         public int CompareTo(object obj)
         {
-            var other = obj as Vector2i?;
-            if (other == null) return -1;
-            return CompareTo(other.Value);
+            if (obj is Vector2i) return CompareTo((Vector2i)obj);
+            return -1;
         }
 
         public int X;

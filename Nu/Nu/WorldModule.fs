@@ -528,8 +528,8 @@ module WorldModule =
             EventSystem.qualifyEventContext address world
 
         /// Publish an event directly.
-        static member publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant> evt (subscriber : Simulant) subscription world =
-            let callableSubscription = unbox<World BoxableSubscription> subscription
+        static member publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant> evt (subscriber : Simulant) (subscription : obj) world =
+            let callableSubscription = subscription :?> World BoxableSubscription
             let oldEventContext = EventSystemDelegate.getEventContext world.EventSystemDelegate
             EventSystemDelegate.setEventContext subscriber world.EventSystemDelegate
             let (handling, world) = callableSubscription evt world

@@ -1183,9 +1183,8 @@ namespace Nu
 
         public int CompareTo(object obj)
         {
-            var other = obj as Vector2?;
-            if (other == null) return -1;
-            return CompareTo(other.Value);
+            if (obj is Vector2) return CompareTo((Vector2)obj);
+            return -1;
         }
 
         #endregion
