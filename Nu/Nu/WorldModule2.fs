@@ -955,10 +955,10 @@ module GameDispatcherModule =
         /// Send a signal to a simulant.
         static member signal<'model, 'message, 'command when 'model : equality> signal (simulant : Simulant) world =
             match simulant with
-            | :? Game as game -> World.signalGame<'model, 'message, 'command> signal game world
-            | :? Screen as screen -> World.signalScreen<'model, 'message, 'command> signal screen world
-            | :? Layer as layer -> World.signalLayer<'model, 'message, 'command> signal layer world
             | :? Entity as entity -> World.signalEntity<'model, 'message, 'command> signal entity world
+            | :? Layer as layer -> World.signalLayer<'model, 'message, 'command> signal layer world
+            | :? Screen as screen -> World.signalScreen<'model, 'message, 'command> signal screen world
+            | :? Game as game -> World.signalGame<'model, 'message, 'command> signal game world
             | _ -> failwithumf ()
 
     and Game with

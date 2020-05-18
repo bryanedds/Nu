@@ -100,50 +100,6 @@ module Nu =
                 match propertied with
                 | :? Simulant as simulant ->
                     match simulant with
-                    | :? Game ->
-                        match (valueOpt, WorldModuleGame.Setters.TryGetValue propertyName) with
-                        | (Some value, (true, setter)) ->
-                            let property = { PropertyValue = value; PropertyType = ty }
-                            setter property world |> snd |> box
-                        | (Some value, (false, _)) ->
-                            let property = { PropertyValue = value; PropertyType = ty }
-                            World.attachGameProperty propertyName property world |> box
-                        | (None, (true, _)) ->
-                            World.exit world |> box
-                        | (None, (false, _)) ->
-                            World.detachGameProperty propertyName world |> box
-                    | :? Screen as screen ->
-                        match (valueOpt, WorldModuleScreen.Setters.TryGetValue propertyName) with
-                        | (Some value, (true, setter)) ->
-                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let property = { PropertyValue = value; PropertyType = ty }
-                            setter property screen world |> snd |> box
-                        | (Some value, (false, _)) ->
-                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let property = { PropertyValue = value; PropertyType = ty }
-                            World.attachScreenProperty propertyName property screen world |> box
-                        | (None, (true, _)) ->
-                            World.destroyScreen screen world |> box
-                        | (None, (false, _)) ->
-                            World.detachScreenProperty propertyName screen world |> box
-                    | :? Layer as layer ->
-                        match (valueOpt, WorldModuleLayer.Setters.TryGetValue propertyName) with
-                        | (Some value, (true, setter)) ->
-                            let screen = layer.Parent
-                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
-                            let property = { PropertyValue = value; PropertyType = ty }
-                            setter property layer world |> snd |> box
-                        | (Some value, (false, _)) ->
-                            let screen = layer.Parent
-                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
-                            let property = { PropertyValue = value; PropertyType = ty }
-                            World.attachLayerProperty propertyName property layer world |> box
-                        | (None, (true, _)) ->
-                            World.destroyLayer layer world |> box
-                        | (None, (false, _)) ->
-                            World.detachLayerProperty propertyName layer world |> box
                     | :? Entity as entity ->
                         match (valueOpt, WorldModuleEntity.Setters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
@@ -168,6 +124,50 @@ module Nu =
                             World.destroyEntity entity world |> box
                         | (None, (false, _)) ->
                             World.detachEntityProperty propertyName entity world |> box
+                    | :? Layer as layer ->
+                        match (valueOpt, WorldModuleLayer.Setters.TryGetValue propertyName) with
+                        | (Some value, (true, setter)) ->
+                            let screen = layer.Parent
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            setter property layer world |> snd |> box
+                        | (Some value, (false, _)) ->
+                            let screen = layer.Parent
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            World.attachLayerProperty propertyName property layer world |> box
+                        | (None, (true, _)) ->
+                            World.destroyLayer layer world |> box
+                        | (None, (false, _)) ->
+                            World.detachLayerProperty propertyName layer world |> box
+                    | :? Screen as screen ->
+                        match (valueOpt, WorldModuleScreen.Setters.TryGetValue propertyName) with
+                        | (Some value, (true, setter)) ->
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            setter property screen world |> snd |> box
+                        | (Some value, (false, _)) ->
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            World.attachScreenProperty propertyName property screen world |> box
+                        | (None, (true, _)) ->
+                            World.destroyScreen screen world |> box
+                        | (None, (false, _)) ->
+                            World.detachScreenProperty propertyName screen world |> box
+                    | :? Game ->
+                        match (valueOpt, WorldModuleGame.Setters.TryGetValue propertyName) with
+                        | (Some value, (true, setter)) ->
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            setter property world |> snd |> box
+                        | (Some value, (false, _)) ->
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            World.attachGameProperty propertyName property world |> box
+                        | (None, (true, _)) ->
+                            World.exit world |> box
+                        | (None, (false, _)) ->
+                            World.detachGameProperty propertyName world |> box
                     | _ -> failwithumf ()
                 | _ -> box world
 
@@ -259,11 +259,10 @@ module Nu =
                 EventSystem.sortSubscriptionsBy
                     (fun (simulant : Simulant) _ ->
                         match simulant with
-                        | :? GlobalSimulantGeneralized
-                        | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
-                        | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
-                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
                         | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
+                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
+                        | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
+                        | :? Game | :? GlobalSimulantGeneralized -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
                         | _ -> failwithumf ())
                     subscriptions
                     world
