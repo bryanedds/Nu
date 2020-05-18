@@ -1480,9 +1480,9 @@ namespace Nu
         public int CompareTo(Vector3 other)
         {
             var result = X.CompareTo(other.X);
-            if (result == 0) return result;
+            if (result != 0) return result;
             result = Y.CompareTo(other.Y);
-            if (result == 0) return result;
+            if (result != 0) return result;
             result = Z.CompareTo(other.Z);
             return result;
         }
