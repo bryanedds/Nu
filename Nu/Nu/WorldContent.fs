@@ -30,45 +30,56 @@ module Content =
     let screen<'d when 'd :> ScreenDispatcher> screenName behavior initializers layers =
         ScreenFromInitializers (typeof<'d>.Name, screenName, behavior, initializers, layers)
 
-    /// Describe layers to be streamed from a lens.
-    let layersIndexed
+    /// Describe layers to be instantiated from a lens.
+    /// Allows the separation of sieve and unfold for efficiency.
+    /// Allows for indexing for insertion and removal in arbitrary order.
+    let layersPlus
         (lens : Lens<'a, World>)
         (sieve : 'a -> 'b)
-        (spread : 'b -> World -> 'c list)
+        (unfold : 'b -> World -> 'c list)
         (indexOpt : ('c -> int) option)
         (mapper : int -> Lens<'c, World> -> World -> LayerContent) =
         let lens = lens.Map box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
-        let spread = fun (b : obj) w -> spread (b :?> 'b) w |> Reflection.objToObjSeq
+        let unfold = fun (b : obj) w -> unfold (b :?> 'b) w |> Reflection.objToObjSeq
         let indexOpt =
             match indexOpt with
             | Some indexOpt -> Some (fun (o : obj) -> indexOpt (o :?> 'c))
             | None -> None
         let mapper = fun i (c : obj) world -> mapper i (c :?> Lens<obj, World> --> cast<'c>) world
-        LayersFromStream (lens, sieve, spread, indexOpt, mapper)
+        LayersFromStream (lens, sieve, unfold, indexOpt, mapper)
 
-    /// Describe layers to be streamed from a lens indexed by fst.
-    let layersIndexedByFst lens sieve spread mapper =
+    /// Describe layers to be instantiated from a lens.
+    /// Allows the separation of sieve and unfold for efficiency.
+    let layers lens sieve unfold mapper =
+        layersPlus lens sieve unfold None mapper
+
+    /// Describe layers to be instantiated from a lens.
+    /// Allows the separation of sieve and unfold for efficiency.
+    /// Allows for indexing for insertion and removal in arbitrary order.
+    let layersIndexedBy lens sieve unfold index mapper =
+        layersPlus lens sieve unfold (Some index) mapper
+
+    /// Describe layers to be instantiated from a lens indexed by fst.
+    /// Allows the separation of sieve and unfold for efficiency.
+    /// Allows for indexing by fst for insertion and removal in arbitrary order.
+    let layersIndexedByFst lens sieve unfold mapper =
         let mapper = (fun i lens world -> mapper i (lens --> snd) world)
-        layersIndexed lens sieve spread (Some (fun c -> fst c)) mapper
+        layersPlus lens sieve unfold (Some (fun c -> fst c)) mapper
 
-    /// Describe layers to be streamed from a lens.
-    let layers lens sieve spread mapper =
-        layersIndexed lens sieve spread None mapper
-
-    /// Describe a layer to be optionally streamed from a lens.
+    /// Describe a layer to be optionally instantiated from a lens.
     let layerIf lens predicate mapper =
-        layersIndexed lens id (fun a _ -> if predicate a then [a] else []) None (constant mapper)
+        layersPlus lens (fun a _ -> if predicate a then [a] else []) id None (constant mapper)
 
-    /// Describe a layer to be streamed when a screen is selected.
+    /// Describe a layer to be instantiated when a screen is selected.
     let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> LayerContent) =
-        let mapper = (fun lens world -> mapper (lens --> constant ()) world)
+        let mapper = (fun lens world -> mapper (Lens.map (constant ()) lens) world)
         layerIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
-    /// Describe a layer to be optionally streamed from a lens.
-    let layerOpt lens mapper =
+    /// Describe a layer to be optionally instantiated from a lens.
+    let layerOpt lens sieve mapper =
         let mapper = (fun i lens world -> mapper i (lens --> Option.get) world)
-        layersIndexed lens id (fun a _ -> if Option.isSome a then [a] else []) None mapper
+        layersPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) None mapper
 
     /// Describe a layer to be loaded from a file.
     let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
@@ -78,45 +89,56 @@ module Content =
     let layer<'d when 'd :> LayerDispatcher> layerName initializers entities =
         LayerFromInitializers (typeof<'d>.Name, layerName, initializers, entities)
 
-    /// Describe entities to be streamed from a lens.
-    let entitiesIndexed
+    /// Describe entities to be instantiated from a lens.
+    /// Allows the separation of sieve and unfold for efficiency.
+    /// Allows for indexing for insertion and removal in arbitrary order.
+    let entitiesPlus
         (lens : Lens<'a, World>)
         (sieve : 'a -> 'b)
-        (spread : 'b -> World -> 'c list)
+        (unfold : 'b -> World -> 'c list)
         (indexOpt : ('c -> int) option)
         (mapper : int -> Lens<'c, World> -> World -> EntityContent) =
         let lens = lens.Map box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
-        let spread = fun (b : obj) w -> spread (b :?> 'b) w |> Reflection.objToObjSeq
+        let unfold = fun (b : obj) w -> unfold (b :?> 'b) w |> Reflection.objToObjSeq
         let indexOpt =
             match indexOpt with
             | Some indexOpt -> Some (fun (o : obj) -> indexOpt (o :?> 'c))
             | None -> None
         let mapper = fun i (c : obj) world -> mapper i (c :?> Lens<obj, World> --> cast<'c>) world
-        EntitiesFromStream (lens, sieve, spread, indexOpt, mapper)
+        EntitiesFromStream (lens, sieve, unfold, indexOpt, mapper)
 
-    /// Describe entities to be streamed from a lens indexed by fst.
-    let entitiesIndexedByFst lens sieve spread mapper =
+    /// Describe entities to be instantiated from a lens.
+    /// Allows the separation of sieve and unfold for efficiency.
+    let entities lens sieve unfold mapper =
+        entitiesPlus lens sieve unfold None mapper
+
+    /// Describe entities to be instantiated from a lens.
+    /// Allows the separation of sieve and unfold for efficiency.
+    /// Allows for indexing for insertion and removal in arbitrary order.
+    let entitiesIndexedBy lens sieve unfold index mapper =
+        entitiesPlus lens sieve unfold (Some index) mapper
+
+    /// Describe entities to be instantiated from a lens indexed by fst.
+    /// Allows the separation of sieve and unfold for efficiency.
+    /// Allows for indexing by fst for insertion and removal in arbitrary order.
+    let entitiesIndexedByFst lens sieve unfold mapper =
         let mapper = (fun i lens world -> mapper i (lens --> snd) world)
-        entitiesIndexed lens sieve spread (Some (fun c -> fst c)) mapper
+        entitiesPlus lens sieve unfold (Some (fun c -> fst c)) mapper
 
-    /// Describe entities to be streamed from a lens.
-    let entities lens sieve spread mapper =
-        entitiesIndexed lens sieve spread None mapper
-
-    /// Describe an entity to be optionally streamed from a lens.
+    /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
-        entitiesIndexed lens id (fun a _ -> if predicate a then [a] else []) None (constant mapper)
+        entitiesPlus lens (fun a _ -> if predicate a then [a] else []) id None (constant mapper)
 
-    /// Describe an entity to be streamed when a screen is selected.
+    /// Describe an entity to be instantiated when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
         let mapper = (fun lens world -> mapper (Lens.map (constant ()) lens) world)
         entityIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
-    /// Describe an entity to be optionally streamed from a lens.
+    /// Describe an entity to be optionally instantiated from a lens.
     let entityOpt lens sieve mapper =
         let mapper = (fun i lens world -> mapper i (lens --> Option.get) world)
-        entitiesIndexed lens sieve (fun a _ -> if Option.isSome a then [a] else []) None mapper
+        entitiesPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) None mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
