@@ -15,40 +15,53 @@ module Reflection =
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
+    let private AlwaysPublishPropertyNames =
+        dictPlus
+            [("Model", true)
+             ("ParentNodeOpt", true)
+             ("ScriptOpt", true)
+             ("Script", true)
+             ("EffectsOpt", true)]
+
+    let private NonPersistentPropertyNames =
+        dictPlus
+            [("Dispatcher", true)
+             ("Facets", true)
+             ("TransitionState", true)
+             ("TransitionTicks", true)
+             ("EntityTree", true)
+             ("PublishUpdates", true)
+             ("PublishPostUpdates", true)
+             ("ScriptFrame", true)
+             ("ScriptUnsubscriptions", true)
+             ("CreationTimeStamp", true)
+             ("NodeUnsubscribe", true)
+             ("EffectPhysicsShapes", true)
+             ("EffectTags", true)
+             ("EffectHistory", true)]
+
     /// Check if a property with the given name should always publish a change event.
-    let isPropertyAlwaysPublishByName propertyName =
-        match propertyName with
-        | "Model" // always publish certain script properties 
-        | "ParentNodeOpt"
-        | "ScriptOpt"
-        | "Script"
-        | "EffectsOpt" -> true
-        | _ ->
-            propertyName.EndsWith "Model" ||
-            propertyName.EndsWith "Ap"
+    let isPropertyAlwaysPublishByName (propertyName : string) =
+        match AlwaysPublishPropertyNames.TryGetValue propertyName with
+        | (true, result) -> result
+        | (false, _) ->
+            let result =
+                propertyName.EndsWith ("Model", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Ap", StringComparison.Ordinal)
+            AlwaysPublishPropertyNames.Add (propertyName, result)
+            result
 
     /// Is a property with the given name not persistent?
     let isPropertyNonPersistentByName (propertyName : string) =
-        /// NOTE: we hard-code these property names to avoid as many Np suffixes as we can.
-        match propertyName with
-        | "Dispatcher"
-        | "Facets"
-        | "TransitionState"
-        | "TransitionTicks"
-        | "EntityTree"
-        | "PublishUpdates"
-        | "PublishPostUpdates"
-        | "ScriptFrame"
-        | "ScriptUnsubscriptions"
-        | "CreationTimeStamp"
-        | "NodeUnsubscribe"
-        | "EffectPhysicsShapes"
-        | "EffectTags"
-        | "EffectHistory" -> true
-        | _ ->
-            propertyName.EndsWith ("Np", StringComparison.Ordinal) || // don't write explicitly non-persistent properties
-            propertyName.EndsWith ("Id", StringComparison.Ordinal) || // don't write an Id
-            propertyName.EndsWith ("Ids", StringComparison.Ordinal) // don't write multiple Ids
+        match NonPersistentPropertyNames.TryGetValue propertyName with
+        | (true, result) -> result
+        | (false, _) ->
+            let result =
+                propertyName.EndsWith ("Np", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Id", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Ids", StringComparison.Ordinal)
+            NonPersistentPropertyNames.Add (propertyName, result)
+            result
 
     /// Is the property of the given target not persistent?
     let isPropertyNonPersistent (property : PropertyInfo) (target : 'a) =
