@@ -1039,11 +1039,11 @@ module WorldTypes =
 
             member this.SimulantExists simulant =
                 match simulant with
-                | :? GlobalSimulantGeneralized
-                | :? Game -> true
-                | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
-                | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
                 | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
+                | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
+                | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
+                | :? Game
+                | :? GlobalSimulantGeneralized -> true
                 | _  -> false
 
             member this.GetPropertyOpt<'a> propertyName simulant =
@@ -1076,11 +1076,11 @@ module WorldTypes =
             member this.PublishEventHook (simulant : Simulant) publisher eventData eventAddress eventTrace subscription world =
                 let (handling, world) =
                     match simulant with
-                    | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> simulant publisher eventData eventAddress eventTrace subscription world
-                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> simulant publisher eventData eventAddress eventTrace subscription world
-                    | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> simulant publisher eventData eventAddress eventTrace subscription world
-                    | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> simulant publisher eventData eventAddress eventTrace subscription world
                     | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> simulant publisher eventData eventAddress eventTrace subscription world
+                    | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> simulant publisher eventData eventAddress eventTrace subscription world
+                    | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> simulant publisher eventData eventAddress eventTrace subscription world
+                    | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> simulant publisher eventData eventAddress eventTrace subscription world
+                    | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> simulant publisher eventData eventAddress eventTrace subscription world
                     | _ -> failwithumf ()
 #if DEBUG
                 Debug.World.Chosen <- world :> obj

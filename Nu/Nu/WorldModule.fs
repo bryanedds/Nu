@@ -558,17 +558,18 @@ module WorldModule =
             // get subscriptions the fastest way possible
             let subscriptions =
                 if sorted then
-                    EventSystem.getSubscriptionsSorted sortSubscriptionsByDepth eventAddressObj world
+                    EventSystemDelegate.getSubscriptionsSorted
+                        sortSubscriptionsByDepth eventAddressObj world.EventSystemDelegate world
                 else
                     let subscriptions = EventSystemDelegate.getSubscriptions world.EventSystemDelegate
-                    match UMap.tryFind eventAddressObj subscriptions with Some subs -> subs | None -> [||]
+                    match UMap.tryFind eventAddressObj subscriptions with Some subscriptions -> subscriptions | None -> [||]
 
             // publish to each subscription
             // NOTE: inlined foldWhite here in order to compact the call stack.
             let (_, world) =
                 let mutable lastState = (Cascade, world)
                 let mutable stateOpt = Some lastState
-                use mutable enr = (subscriptions :> _ seq).GetEnumerator ()
+                let mutable enr = (subscriptions :> _ seq).GetEnumerator ()
                 while stateOpt.IsSome && enr.MoveNext () do
                     lastState <- stateOpt.Value
                     stateOpt <-
@@ -598,7 +599,6 @@ module WorldModule =
                             subscription.PreviousDataOpt <- Some mapped
                             let (handling, world) =
                                 if filtered then
-                                    // NOTE: unrolled PublishEventHook here for speed.
                                     let subscriber = subscription.SubscriberEntry
                                     let evt =
                                         { Data = eventDataObj
@@ -607,12 +607,14 @@ module WorldModule =
                                           Address = eventAddressObj
                                           Trace = eventTrace }
                                     let (handling, world) =
+                                        // NOTE: unrolled PublishEventHook here for speed.
+                                        // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
                                         match subscriber with
-                                        | :? GlobalSimulantGeneralized -> World.publishEvent<'a, 'p, Simulant> evt subscriber subscription.Callback world
-                                        | :? Game -> World.publishEvent<'a, 'p, Game> evt subscriber subscription.Callback world
-                                        | :? Screen -> World.publishEvent<'a, 'p, Screen> evt subscriber subscription.Callback world
-                                        | :? Layer -> World.publishEvent<'a, 'p, Layer> evt subscriber subscription.Callback world
                                         | :? Entity -> World.publishEvent<'a, 'p, Entity> evt subscriber subscription.Callback world
+                                        | :? Layer -> World.publishEvent<'a, 'p, Layer> evt subscriber subscription.Callback world
+                                        | :? Screen -> World.publishEvent<'a, 'p, Screen> evt subscriber subscription.Callback world
+                                        | :? Game -> World.publishEvent<'a, 'p, Game> evt subscriber subscription.Callback world
+                                        | :? GlobalSimulantGeneralized -> World.publishEvent<'a, 'p, Simulant> evt subscriber subscription.Callback world
                                         | _ -> failwithumf ()
 #if DEBUG
                                     let world = World.choose world
