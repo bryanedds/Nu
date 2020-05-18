@@ -23,8 +23,8 @@ type [<NoEquality; NoComparison>] EntityContent =
     /// Expand an entity content to its constituent parts.
     static member expand content (layer : Layer) (world : World) =
         match content with
-        | EntitiesFromStream (lens, sieve, spread, indexOpt, mapper) ->
-            Choice1Of3 (lens, sieve, spread, indexOpt, mapper)
+        | EntitiesFromStream (lens, sieve, unfold, indexOpt, mapper) ->
+            Choice1Of3 (lens, sieve, unfold, indexOpt, mapper)
         | EntityFromInitializers (dispatcherName, name, initializers, content) ->
             let (descriptor, handlersEntity, bindsEntity) = Describe.entity4 dispatcherName (Some name) initializers (layer / name) world
             Choice2Of3 (name, descriptor, handlersEntity, bindsEntity, (layer / name, content))
@@ -41,12 +41,12 @@ type [<NoEquality; NoComparison>] LayerContent =
     /// Expand a layer content to its constituent parts.
     static member expand content screen (world : World) =
         match content with
-        | LayersFromStream (lens, sieve, spread, indexOpt, mapper) ->
-            Choice1Of3 (lens, sieve, spread, indexOpt, mapper)
+        | LayersFromStream (lens, sieve, unfold, indexOpt, mapper) ->
+            Choice1Of3 (lens, sieve, unfold, indexOpt, mapper)
         | LayerFromInitializers (dispatcherName, name, initializers, content) ->
             let layer = screen / name
             let expansions = List.map (fun content -> EntityContent.expand content layer world) content
-            let streams = List.map (function Choice1Of3 (lens, sieve, spread, indexOpt, mapper) -> Some (layer, lens, sieve, spread, indexOpt, mapper) | _ -> None) expansions |> List.definitize
+            let streams = List.map (function Choice1Of3 (lens, sieve, unfold, indexOpt, mapper) -> Some (layer, lens, sieve, unfold, indexOpt, mapper) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (_, descriptor, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
             let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
             let binds = List.map (function Choice2Of3 (_, _, _, binds, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
@@ -70,7 +70,7 @@ type [<NoEquality; NoComparison>] ScreenContent =
         | ScreenFromInitializers (dispatcherName, name, behavior, initializers, content) ->
             let screen = Screen name
             let expansions = List.map (fun content -> LayerContent.expand content screen world) content
-            let streams = List.map (function Choice1Of3 (lens, sieve, spread, indexOpt, mapper) -> Some (screen, lens, sieve, spread, indexOpt, mapper) | _ -> None) expansions |> List.definitize
+            let streams = List.map (function Choice1Of3 (lens, sieve, unfold, indexOpt, mapper) -> Some (screen, lens, sieve, unfold, indexOpt, mapper) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (_, descriptor, _, _, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
             let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
             let binds = List.map (function Choice2Of3 (_, _, _, binds, _, _, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
@@ -168,7 +168,7 @@ module WorldDeclarative =
         static member expandSimulants
             (lens : Lens<obj, World>)
             (sieve : obj -> obj)
-            (spread : obj -> World -> obj seq)
+            (unfold : obj -> World -> obj seq)
             (indexOpt : (obj -> int) option)
             (mapper : int -> Lens<obj, World> -> World -> SimulantContent)
             (origin : ContentOrigin)
@@ -176,7 +176,7 @@ module WorldDeclarative =
             world =
             let guid = Gen.id
             let mutable previous = Set.empty
-            let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld spread
+            let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
             let lenses = Lens.explodeIndexedOpt indexOpt lensSeq
             let filter = fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true
             let mapper' = fun a (_ : obj option) (_ : World) -> sieve a.Value
