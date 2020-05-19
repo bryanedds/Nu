@@ -1171,8 +1171,7 @@ module EntityDispatcherModule =
             property.DesignerValue :?> 'model
 
         member this.SetModel<'model when 'model : equality> (value : 'model) world =
-            let model = this.Get<DesignerProperty> Property? Model world
-            this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
+            this.Set<DesignerProperty> Property? Model { DesignerType = typeof<'model>; DesignerValue = value } world
 
         member this.Model<'model when 'model : equality> () =
             lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
@@ -2023,8 +2022,7 @@ module LayerDispatcherModule =
             property.DesignerValue :?> 'model
 
         member this.SetModel<'model when 'model : equality> (value : 'model) world =
-            let model = this.Get<DesignerProperty> Property? Model world
-            this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
+            this.Set<DesignerProperty> Property? Model { DesignerType = typeof<'model>; DesignerValue = value } world
 
         member this.Model<'model when 'model : equality> () =
             lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
@@ -2123,8 +2121,7 @@ module ScreenDispatcherModule =
             property.DesignerValue :?> 'model
 
         member this.SetModel<'model when 'model : equality> (value : 'model) world =
-            let model = this.Get<DesignerProperty> Property? Model world
-            this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
+            this.Set<DesignerProperty> Property? Model { DesignerType = typeof<'model>; DesignerValue = value } world
 
         member this.Model<'model when 'model : equality> () =
             lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this

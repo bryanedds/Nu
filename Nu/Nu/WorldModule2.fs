@@ -970,10 +970,7 @@ module GameDispatcherModule =
             property.DesignerValue :?> 'model
 
         member this.SetModel<'model when 'model : equality> (value : 'model) world =
-            let model = this.Get<DesignerProperty> Property? Model world
-            if (model.DesignerValue :?> 'model) <> value // OPTIMIZATION: do not propagate change event if model remains the same
-            then this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
-            else world
+            this.Set<DesignerProperty> Property? Model { DesignerType = typeof<'model>; DesignerValue = value } world
 
         member this.Model<'model when 'model : equality> () =
             lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
