@@ -317,7 +317,7 @@ module WorldModule2 =
                 let world = splashLabel.SetLabelImage splashDescriptor.SplashImage world
                 let (unsub, world) = World.monitorPlus None None None (World.handleSplashScreenIdle splashDescriptor.IdlingTime screen) (Events.IncomingFinish --> screen) screen world
                 let (unsub2, world) = World.monitorPlus None None None (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish --> screen) screen world
-                let world = World.monitor (fun _ -> unsub >> unsub2) (Events.Unregistering --> splashLayer) screen world
+                let world = World.monitor (fun _ -> unsub >> unsub2 >> pair Cascade) (Events.Unregistering --> splashLayer) screen world
                 world
             | None -> world
 
@@ -361,14 +361,16 @@ module WorldModule2 =
                         Log.debug
                             ("Subscribing to entity update events with a wildcard is not supported. " +
                              "This will cause a bug where some entity update events are not published.")
-                    World.updateEntityPublishUpdateFlag entity world
+                    let world = World.updateEntityPublishUpdateFlag entity world
+                    (Cascade, world)
                 | "PostUpdate" ->
                     if Array.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug
                             ("Subscribing to entity post-update events with a wildcard is not supported. " +
                              "This will cause a bug where some entity post-update events are not published.")
-                    World.updateEntityPublishPostUpdateFlag entity world
-                | _ -> world
+                    let world = World.updateEntityPublishPostUpdateFlag entity world
+                    (Cascade, world)
+                | _ -> (Cascade, world)
             | eventNames when eventNames.Length >= 3 ->
                 let eventFirstName = eventNames.[0]
                 let eventSecondName = eventNames.[1]
@@ -376,9 +378,9 @@ module WorldModule2 =
                 | "Change" when eventSecondName <> "ParentNodeOpt" ->
                     if Array.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug "Subscribing to change events with a wildcard is not supported."
-                    world
-                | _ -> world
-            | _ -> world
+                    (Cascade, world)
+                | _ -> (Cascade, world)
+            | _ -> (Cascade, world)
 
         static member internal makeIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
@@ -1016,7 +1018,8 @@ module GameDispatcherModule =
                 | EventHandlerDefinition (handler, partialAddress) ->
                     let eventAddress = partialAddress --> game
                     World.monitor (fun (evt : Event) world ->
-                        WorldModule.trySignal (handler evt) game world)
+                        let world = WorldModule.trySignal (handler evt) game world
+                        (Cascade, world))
                         eventAddress (game :> Simulant) world
                 | BindDefinition (left, right) ->
                     WorldModule.bind5 game left right world)

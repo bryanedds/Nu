@@ -370,9 +370,12 @@ module WorldScripting =
                     | Some evtImported ->
                         let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
                         let application = Apply ([|subscription; evtImported|], breakpoint, None)
-                        World.evalWithLogging application scriptFrame subscriber world |> snd'
-                    | None -> Log.info "Event data could not be imported into scripting environment."; world
-                | None -> world)
+                        let world = World.evalWithLogging application scriptFrame subscriber world |> snd'
+                        (Cascade, world)
+                    | None ->
+                        Log.info "Event data could not be imported into scripting environment."
+                        (Cascade, world)
+                | None -> (Cascade, world))
                 eventAddress
                 (subscriber :> Simulant)
                 world

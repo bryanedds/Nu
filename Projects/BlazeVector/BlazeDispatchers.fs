@@ -23,15 +23,19 @@ module BulletModule =
         static let handleUpdate evt world =
             let bullet = evt.Subscriber : Entity
             let world = bullet.SetAge (inc (bullet.GetAge world)) world
-            if bullet.GetAge world > BulletLifetime
-            then World.destroyEntity bullet world
-            else world
+            let world =
+                if bullet.GetAge world > BulletLifetime
+                then World.destroyEntity bullet world
+                else world
+            (Cascade, world)
 
         static let handleCollision evt world =
             let bullet = evt.Subscriber : Entity
-            if World.isTicking world
-            then World.destroyEntity bullet world
-            else world
+            let world =
+                if World.isTicking world
+                then World.destroyEntity bullet world
+                else world
+            (Cascade, world)
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -81,19 +85,22 @@ module EnemyModule =
         static let handleUpdate evt world =
             let enemy = evt.Subscriber : Entity
             let world = if enemy.IsOnScreen world then move enemy world else world
-            if enemy.GetHealth world <= 0 then die enemy world else world
+            let world = if enemy.GetHealth world <= 0 then die enemy world else world
+            (Cascade, world)
 
         static let handleCollision evt world =
             let enemy = evt.Subscriber : Entity
-            if World.isTicking world then
-                let collidee = evt.Data.Collidee.Entity
-                let isBullet = collidee.Is<BulletDispatcher> world
-                if isBullet then
-                    let world = enemy.SetHealth (enemy.GetHealth world - 1) world
-                    let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.HitSound world
-                    world
+            let world =
+                if World.isTicking world then
+                    let collidee = evt.Data.Collidee.Entity
+                    let isBullet = collidee.Is<BulletDispatcher> world
+                    if isBullet then
+                        let world = enemy.SetHealth (enemy.GetHealth world - 1) world
+                        let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.HitSound world
+                        world
+                    else world
                 else world
-            else world
+            (Cascade, world)
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -157,13 +164,15 @@ module PlayerModule =
 
         static let handleSpawnBullet evt world =
             let player = evt.Subscriber : Entity
-            if World.isTicking world then
-                if not (player.HasFallen world) then
-                    if World.getTickTime world % 5L = 0L
-                    then shootBullet player world
+            let world =
+                if World.isTicking world then
+                    if not (player.HasFallen world) then
+                        if World.getTickTime world % 5L = 0L
+                        then shootBullet player world
+                        else world
                     else world
                 else world
-            else world
+            (Cascade, world)
 
         static let getLastTimeOnGround (player : Entity) world =
             if not (World.isBodyOnGround (player.GetPhysicsId world) world)
@@ -182,7 +191,8 @@ module PlayerModule =
                     let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
                     Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
                 | None -> Vector2 (WalkForce, FallForce)
-            World.applyBodyForce force physicsId world
+            let world = World.applyBodyForce force physicsId world
+            (Cascade, world)
 
         static let handleJump evt world =
             let player = evt.Subscriber : Entity
@@ -192,15 +202,15 @@ module PlayerModule =
                 let world = player.SetLastTimeJumpNp tickTime world
                 let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 2000.0f)) (player.GetPhysicsId world) world
                 let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.JumpSound world
-                world
-            else world
+                (Cascade, world)
+            else (Cascade, world)
 
         static let handleJumpByKeyboardKey evt world =
             if World.isSelectedScreenIdling world then
                 match (evt.Data.KeyboardKey, evt.Data.Repeated) with
                 | (KeyboardKey.Space, false) -> handleJump evt world
-                | _ -> world
-            else world
+                | _ -> (Cascade, world)
+            else (Cascade, world)
 
         static member Facets =
             [typeof<RigidBodyFacet>
