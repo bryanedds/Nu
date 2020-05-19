@@ -17,11 +17,11 @@ type MyGameDispatcher () =
 
     // here we channel from events to signals
     override this.Channel (_, _) =
-        [Simulants.TitleCredits.ClickEvent => [cmd ShowCredits]
-         Simulants.TitlePlay.ClickEvent => [cmd ShowGameplay]
-         Simulants.TitleExit.ClickEvent => [cmd ExitGame]
-         Simulants.CreditsBack.ClickEvent => [cmd ShowTitle]
-         Simulants.Back.ClickEvent => [cmd ShowTitle]]
+        [Simulants.TitleCredits.ClickEvent => cmd ShowCredits
+         Simulants.TitlePlay.ClickEvent => cmd ShowGameplay
+         Simulants.TitleExit.ClickEvent => cmd ExitGame
+         Simulants.CreditsBack.ClickEvent => cmd ShowTitle
+         Simulants.Back.ClickEvent => cmd ShowTitle]
 
     // here we handle the above commands
     override this.Command (_, command, _, world) =

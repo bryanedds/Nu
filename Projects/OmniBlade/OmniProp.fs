@@ -29,7 +29,7 @@ module PropDispatcherModule =
              define Entity.BodyShape (BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None })]
 
         override this.Channel (_, entity) =
-            [entity.UpdateEvent => [msg Update]]
+            [entity.UpdateEvent => msg Update]
 
         override this.Initializers (model, entity) =
             [entity.Bounds <== model --> fun model -> model.Bounds

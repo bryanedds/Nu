@@ -79,10 +79,11 @@ module OmniField =
                 let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.WalkForce 0.0f + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Up then v2 0.0f Constants.Field.WalkForce + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.WalkForce + force else force
-                [msg UpdateDialog; cmd (Move force)]
-             field.PostUpdateEvent => [cmd UpdateEye]
-             Simulants.FieldInteract.ClickEvent => [msg Interact]
-             Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> [msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))]]
+                cmd (Move force)
+             field.UpdateEvent => msg UpdateDialog
+             field.PostUpdateEvent => cmd UpdateEye
+             Simulants.FieldInteract.ClickEvent => msg Interact
+             Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))]
 
         override this.Message (model, message, _, world) =
 

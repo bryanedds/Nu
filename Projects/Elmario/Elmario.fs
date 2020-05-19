@@ -22,13 +22,12 @@ type ElmarioDispatcher () =
     // here we channel from events to signals
     override this.Channel (_, game) =
         [game.KeyboardKeyDownEvent =|> fun evt ->
-            if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated
-            then [cmd Jump]
-            else [cmd Nop]
+            if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump
+            else cmd Nop
          game.UpdateEvent =|> fun _ ->
-            if KeyboardState.isKeyDown KeyboardKey.Left then [cmd MoveLeft]
-            elif KeyboardState.isKeyDown KeyboardKey.Right then [cmd MoveRight]
-            else [cmd Nop]]
+            if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
+            elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
+            else cmd Nop]
 
     // here we handle the Elm-style commands
     override this.Command (_, command, _, world) =
