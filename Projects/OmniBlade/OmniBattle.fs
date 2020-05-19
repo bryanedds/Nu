@@ -282,7 +282,8 @@ module OmniBattle =
             (model, sigs)
 
         override this.Channel (_, battle) =
-            [battle.UpdateEvent => [msg Tick; cmd UpdateEye]]
+            [battle.UpdateEvent => msg Tick
+             battle.PostUpdateEvent => cmd UpdateEye]
 
         override this.Message (model, message, _, world) =
 

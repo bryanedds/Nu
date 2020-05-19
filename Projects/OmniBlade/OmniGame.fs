@@ -41,14 +41,14 @@ module OmniGame =
             base.Register (game, world)
 
         override this.Channel (_, _) =
-            [Simulants.Game.UpdateEvent => [msg Update]
-             Simulants.TitleCredits.ClickEvent => [msg (UpdateModel (Gui Credits))]
-             Simulants.CreditsBack.ClickEvent => [msg (UpdateModel (Gui Title))]
-             Simulants.FieldBack.ClickEvent => [msg (UpdateModel (Gui Title))]
-             Simulants.TitlePlay.ClickEvent => [msg (UpdateModel (Field FieldModel.empty))]
-             Simulants.Field.FieldModel.ChangeEvent =|> fun evt -> [msg (UpdateFieldModel (evt.Data.Value :?> FieldModel))]
-             Simulants.Battle.BattleModel.ChangeEvent =|> fun evt -> [msg (UpdateBattleModel (evt.Data.Value :?> BattleModel))]
-             Simulants.TitleExit.ClickEvent => [cmd Exit]]
+            [Simulants.Game.UpdateEvent => msg Update
+             Simulants.TitleCredits.ClickEvent => msg (UpdateModel (Gui Credits))
+             Simulants.CreditsBack.ClickEvent => msg (UpdateModel (Gui Title))
+             Simulants.FieldBack.ClickEvent => msg (UpdateModel (Gui Title))
+             Simulants.TitlePlay.ClickEvent => msg (UpdateModel (Field FieldModel.empty))
+             Simulants.Field.FieldModel.ChangeEvent =|> fun evt -> msg (UpdateFieldModel (evt.Data.Value :?> FieldModel))
+             Simulants.Battle.BattleModel.ChangeEvent =|> fun evt -> msg (UpdateBattleModel (evt.Data.Value :?> BattleModel))
+             Simulants.TitleExit.ClickEvent => cmd Exit]
 
         override this.Message (model, message, _, world) =
 

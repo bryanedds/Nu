@@ -21,12 +21,12 @@ module BlazeDispatcherModule =
 
         // here we channel from events to signals
         override this.Channel (_, _) =
-            [Simulants.Splash.SelectEvent => [cmd PlaySplashSound]
-             Simulants.TitleCredits.ClickEvent => [cmd ShowCredits]
-             Simulants.TitlePlay.ClickEvent => [cmd ShowGameplay]
-             Simulants.TitleExit.ClickEvent => [cmd ExitGame]
-             Simulants.CreditsBack.ClickEvent => [cmd ShowTitle]
-             Simulants.GameplayBack.ClickEvent => [cmd ShowTitle]]
+            [Simulants.Splash.SelectEvent => cmd PlaySplashSound
+             Simulants.TitleCredits.ClickEvent => cmd ShowCredits
+             Simulants.TitlePlay.ClickEvent => cmd ShowGameplay
+             Simulants.TitleExit.ClickEvent => cmd ExitGame
+             Simulants.CreditsBack.ClickEvent => cmd ShowTitle
+             Simulants.GameplayBack.ClickEvent => cmd ShowTitle]
 
         // here we handle the above commands
         override this.Command (_, command, _, world) =

@@ -249,8 +249,8 @@ module SceneModule =
         inherit LayerDispatcher<unit, unit, SceneCommand> ()
 
         override this.Channel (_, scene) =
-            [scene.UpdateEvent => [cmd AdjustCamera]
-             scene.UpdateEvent => [cmd PlayerFall]]
+            [scene.UpdateEvent => cmd AdjustCamera
+             scene.UpdateEvent => cmd PlayerFall]
 
         override this.Command (_, command, _, world) =
             let world =
@@ -316,8 +316,8 @@ module GameplayModule =
             World.readLayerFromFile Assets.SceneLayerFilePath (Some Simulants.Scene.Name) gameplay world |> snd
 
         override this.Channel (_, gameplay) =
-            [gameplay.SelectEvent => [cmd StartPlay]
-             gameplay.DeselectEvent => [cmd StopPlay]]
+            [gameplay.SelectEvent => cmd StartPlay
+             gameplay.DeselectEvent => cmd StopPlay]
 
         override this.Command (_, command, gameplay, world) =
             let world =
