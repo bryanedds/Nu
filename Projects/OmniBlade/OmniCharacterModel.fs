@@ -1,4 +1,5 @@
 ﻿namespace OmniBlade
+open System
 open Prime
 open Nu
 
@@ -9,9 +10,10 @@ type [<StructuralEquality; NoComparison>] AutoBattle =
 [<RequireQualifiedAccess>]
 module CharacterModel =
 
-    type [<StructuralEquality; NoComparison>] CharacterModel =
+    type [<CustomEquality; NoComparison>] CharacterModel =
         private
-            { BoundsOriginal_ : Vector4
+            { Dirty_ : Guid
+              BoundsOriginal_ : Vector4
               Bounds_ : Vector4
               CharacterIndex_ : CharacterIndex
               CharacterState_ : CharacterState
@@ -78,6 +80,10 @@ module CharacterModel =
         (* Local Properties *)
         member this.AutoBattleOpt = this.AutoBattleOpt_
         member this.InputState = this.InputState_
+
+        (* Equals *)
+        override this.GetHashCode () = hash this.Dirty_
+        override this.Equals thatObj = match thatObj with :? CharacterModel as that -> this.Dirty_ = that.Dirty_ | _ -> false
 
     let isTeammate (character : CharacterModel) (character2 : CharacterModel) =
         CharacterIndex.isTeammate character.CharacterIndex character2.CharacterIndex
@@ -185,8 +191,8 @@ module CharacterModel =
     let getAnimationFinished time character =
         CharacterAnimationState.getFinished time character.AnimationState_
 
-    let updateActionTime updater state =
-        { state with ActionTime_ = updater state.ActionTime_ }
+    let updateActionTime updater character =
+        { character with Dirty_ = Gen.id; ActionTime_ = updater character.ActionTime_ }
 
     let updateHitPoints updater character =
         let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
@@ -195,28 +201,28 @@ module CharacterModel =
             match character.AutoBattleOpt_ with
             | Some autoBattle when cancel -> Some { autoBattle with AutoTechOpt = None }
             | _ -> None
-        { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
+        { character with Dirty_ = Gen.id; CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
 
     let updateTechPoints updater character =
-        { character with CharacterState_ = CharacterState.updateTechPoints updater character.CharacterState_ }
+        { character with Dirty_ = Gen.id; CharacterState_ = CharacterState.updateTechPoints updater character.CharacterState_ }
 
     let updateInputState updater character =
-        { character with InputState_ = updater character.InputState_ }
+        { character with Dirty_ = Gen.id; InputState_ = updater character.InputState_ }
 
     let updateAutoBattleOpt updater character =
-        { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
+        { character with Dirty_ = Gen.id; AutoBattleOpt_ = updater character.AutoBattleOpt_ }
 
     let updateBounds updater (character : CharacterModel) =
-        { character with Bounds_ = updater character.Bounds_ }
+        { character with Dirty_ = Gen.id; Bounds_ = updater character.Bounds_ }
 
     let updatePosition updater (character : CharacterModel) =
-        { character with Bounds_ = character.Position |> updater |> character.Bounds.WithPosition }
+        { character with Dirty_ = Gen.id; Bounds_ = character.Position |> updater |> character.Bounds.WithPosition }
 
     let updateCenter updater (character : CharacterModel) =
-        { character with Bounds_ = character.Center |> updater |> character.Bounds.WithCenter }
+        { character with Dirty_ = Gen.id; Bounds_ = character.Center |> updater |> character.Bounds.WithCenter }
 
     let updateBottom updater (character : CharacterModel) =
-        { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
+        { character with Dirty_ = Gen.id; Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
 
     let autoBattle (source : CharacterModel) (target : CharacterModel) =
         let sourceToTarget = target.Position - source.Position
@@ -233,7 +239,7 @@ module CharacterModel =
             then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff + Constants.Battle.DefendingCounterBuff) }
             else characterState
         let characterState = { characterState with Defending = true }
-        { character with CharacterState_ = characterState }
+        { character with Dirty_ = Gen.id; CharacterState_ = characterState }
 
     let undefend character =
         let characterState = character.CharacterState_
@@ -243,14 +249,15 @@ module CharacterModel =
             then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff - Constants.Battle.DefendingCounterBuff) }
             else characterState
         let characterState = { characterState with Defending = false }
-        { character with CharacterState_ = characterState }
+        { character with Dirty_ = Gen.id; CharacterState_ = characterState }
 
     let animate time cycle character =
-        { character with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState_ }
+        { character with Dirty_ = Gen.id; AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState_ }
 
     let make bounds characterIndex (characterState : CharacterState) animationSheet direction =
         let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = ReadyCycle; Direction = direction }
-        { BoundsOriginal_ = bounds
+        { Dirty_ = Gen.id
+          BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = characterIndex
           CharacterState_ = characterState
@@ -273,7 +280,8 @@ module CharacterModel =
     let empty =
         let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
         let animationState = { TimeStart = 0L; AnimationSheet = Assets.FinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Downward }
-        { BoundsOriginal_ = bounds
+        { Dirty_ = Gen.idEmpty
+          BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = AllyIndex 0
           CharacterState_ = CharacterState.empty

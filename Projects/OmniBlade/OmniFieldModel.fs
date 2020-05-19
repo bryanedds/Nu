@@ -1,4 +1,5 @@
 ﻿namespace OmniBlade
+open System
 open FSharpx.Collections
 open Prime
 open Nu
@@ -34,9 +35,10 @@ type [<StructuralEquality; NoComparison>] DialogModel =
 [<RequireQualifiedAccess>]
 module FieldModel =
 
-    type [<StructuralEquality; NoComparison>] FieldModel =
+    type [<CustomEquality; NoComparison>] FieldModel =
         private
-            { FieldType_ : FieldType
+            { Dirty_ : Guid
+              FieldType_ : FieldType
               Avatar_ : AvatarModel
               Legion_ : Map<int, Legionnaire>
               Advents_ : Advent Set
@@ -53,6 +55,10 @@ module FieldModel =
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
 
+        (* Equals *)
+        override this.GetHashCode () = hash this.Dirty_
+        override this.Equals thatObj = match thatObj with :? FieldModel as that -> this.Dirty_ = that.Dirty_ | _ -> false
+
     let getParty fieldModel =
         fieldModel.Legion_ |>
         Map.filter (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt) |>
@@ -61,22 +67,23 @@ module FieldModel =
         Map.ofSeq
 
     let updateAvatar updater fieldModel =
-        { fieldModel with Avatar_ = updater fieldModel.Avatar_ }
+        { fieldModel with Dirty_ = Gen.id; Avatar_ = updater fieldModel.Avatar_ }
 
-    let updateAdvents updater model =
-        { model with Advents_ = updater model.Advents_ }
+    let updateAdvents updater fieldModel =
+        { fieldModel with Dirty_ = Gen.id; Advents_ = updater fieldModel.Advents_ }
 
-    let updateInventory updater model =
-        { model with Inventory_ = updater model.Inventory_ }
+    let updateInventory updater fieldModel =
+        { fieldModel with Dirty_ = Gen.id; Inventory_ = updater fieldModel.Inventory_ }
 
-    let updateDialogOpt updater model =
-        { model with DialogOpt_ = updater model.DialogOpt_ }
+    let updateDialogOpt updater fieldModel =
+        { fieldModel with Dirty_ = Gen.id; DialogOpt_ = updater fieldModel.DialogOpt_ }
 
-    let updateBattleOpt updater model =
-        { model with BattleOpt_ = updater model.BattleOpt_ }
+    let updateBattleOpt updater fieldModel =
+        { fieldModel with Dirty_ = Gen.id; BattleOpt_ = updater fieldModel.BattleOpt_ }
 
     let make fieldType avatarModel legion advents inventory =
-        { FieldType_ = fieldType
+        { Dirty_ = Gen.id
+          FieldType_ = fieldType
           Avatar_ = avatarModel
           Legion_ = legion
           Advents_ = advents
@@ -85,7 +92,8 @@ module FieldModel =
           BattleOpt_ = None }
 
     let empty =
-        { FieldType_ = DebugField
+        { Dirty_ = Gen.idEmpty
+          FieldType_ = DebugField
           Avatar_ = AvatarModel.empty
           Legion_ = Map.singleton 0 Legionnaire.empty
           Advents_ = Set.empty
