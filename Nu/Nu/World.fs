@@ -438,12 +438,12 @@ module WorldModule3 =
 
             // make the world's event delegate
             let eventDelegate =
-                let eventTracer = Log.remark "Event"
                 let eventTracing = Core.getEventTracing ()
+                let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None // NOTE: lambda expression is duplicated in multiple places...
                 let eventFilter = Core.getEventFilter ()
                 let globalSimulant = Simulants.Game
                 let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
-                EventSystemDelegate.make eventTracer eventTracing eventFilter globalSimulant globalSimulantGeneralized
+                EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized
 
             // make the game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
@@ -511,12 +511,12 @@ module WorldModule3 =
 
                 // make the world's event system
                 let eventSystem =
-                    let eventTracer = Log.remark "Event"
                     let eventTracing = Core.getEventTracing ()
+                    let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None
                     let eventFilter = Core.getEventFilter ()
                     let globalSimulant = Simulants.Game
                     let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
-                    EventSystemDelegate.make eventTracer eventTracing eventFilter globalSimulant globalSimulantGeneralized
+                    EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized
                     
                 // make plug-in facets and dispatchers
                 let pluginFacets = plugin.Birth<Facet> ()

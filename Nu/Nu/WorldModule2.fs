@@ -471,12 +471,6 @@ module WorldModule2 =
         /// Thaw the state of a world.
         static member thaw world =
 
-            // because there is an optimization that makes event context mutable, operations
-            // on the exist current world may affect past and future ones if the containing event
-            // world incidentally isn't copied. Therefore, we restore the initial event context
-            // here.
-            World.continueEventSystemHack world
-
             // clear existing physics messages
             let world = World.updatePhysicsEngine Subsystem.clearMessages world
 

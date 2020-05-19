@@ -49,8 +49,6 @@ module WorldModuleScreen =
 #if DEBUG
             if not (UMap.containsKey screen.ScreenAddress world.ScreenStates) then
                 failwith ("Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'")
-            if not (World.qualifyEventContext (atooa screen.ScreenAddress) world) then
-                failwith "Cannot set the state of a screen in an unqualifed event context."
 #endif
             let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenStates = screenStates }
@@ -185,22 +183,16 @@ module WorldModuleScreen =
             else failwith ("Cannot detach screen property '" + propertyName + "'; screen '" + screen.Name + "' is not found.")
 
         static member internal registerScreen screen world =
-            World.withEventContext (fun world ->
-                let dispatcher = World.getScreenDispatcher screen world
-                let world = dispatcher.Register (screen, world)
-                let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
-                World.publish () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen false world)
-                screen
-                world
+            let dispatcher = World.getScreenDispatcher screen world
+            let world = dispatcher.Register (screen, world)
+            let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
+            World.publish () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen false world
 
         static member internal unregisterScreen screen world =
-            World.withEventContext (fun world ->
-                let dispatcher = World.getScreenDispatcher screen world
-                let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
-                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"; screen.Name|]) eventTrace screen false world
-                dispatcher.Unregister (screen, world))
-                screen
-                world
+            let dispatcher = World.getScreenDispatcher screen world
+            let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
+            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"; screen.Name|]) eventTrace screen false world
+            dispatcher.Unregister (screen, world)
 
         static member internal addScreen mayReplace screenState screen world =
             let isNew = not (World.getScreenExists screen world)

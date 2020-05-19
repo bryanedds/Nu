@@ -106,8 +106,6 @@ module WorldModuleEntity =
 #if DEBUG
             if not (UMap.containsKey entity.EntityAddress world.EntityStates) then
                 failwith ("Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'")
-            if not (World.qualifyEventContext (atooa entity.EntityAddress) world) then
-                failwith "Cannot set the state of an entity in an unqualifed event context."
 #endif
             let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
             World.choose { world with EntityStates = entityStates }
@@ -485,13 +483,11 @@ module WorldModuleEntity =
                     match entityOpt with
                     | Some entity ->
                         let world = World.setEntityState entityState entity world
+                        let world = facet.Register (entity, world)
                         let world =
-                            World.withEventContext (fun world ->
-                                let world = facet.Register (entity, world)
-                                if WorldModule.isSelected entity world
-                                then facet.UnregisterPhysics (entity, world)
-                                else world)
-                                entity world
+                            if WorldModule.isSelected entity world
+                            then facet.UnregisterPhysics (entity, world)
+                            else world
                         let entityState = World.getEntityState entity world
                         (entityState, world)
                     | None -> (entityState, world)
@@ -541,13 +537,11 @@ module WorldModuleEntity =
                         let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                         let world = World.setEntityState entityState entity world
                         let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                        let world = facet.Register (entity, world)
                         let world =
-                            World.withEventContext (fun world ->
-                                let world = facet.Register (entity, world)
-                                if WorldModule.isSelected entity world
-                                then facet.RegisterPhysics (entity, world)
-                                else world)
-                                entity world
+                            if WorldModule.isSelected entity world
+                            then facet.RegisterPhysics (entity, world)
+                            else world
                         Right (World.getEntityState entity world, world)
                     | None -> Right (entityState, world)
                 else let _ = World.choose world in Left ("Facet '" + getTypeName facet + "' is incompatible with entity '" + scstring entityState.Name + "'.")
@@ -739,48 +733,40 @@ module WorldModuleEntity =
             flip3 World.setEntityState entity world
 
         static member internal registerEntity entity world =
-            World.withEventContext (fun world ->
-                let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
-                let facets = World.getEntityFacets entity world
-                let world = dispatcher.Register (entity, world)
-                let world =
-                    Array.fold (fun world (facet : Facet) ->
-                        let world = facet.Register (entity, world)
-                        if WorldModule.isSelected entity world
-                        then facet.RegisterPhysics (entity, world)
-                        else world)
-                        world facets
-                let world = World.updateEntityPublishFlags entity world
-                let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-                World.publish () (rtoa<unit> [|"Register"; "Event"|] --> entity) eventTrace entity false world)
-                entity world
+            let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+            let facets = World.getEntityFacets entity world
+            let world = dispatcher.Register (entity, world)
+            let world =
+                Array.fold (fun world (facet : Facet) ->
+                    let world = facet.Register (entity, world)
+                    if WorldModule.isSelected entity world
+                    then facet.RegisterPhysics (entity, world)
+                    else world)
+                    world facets
+            let world = World.updateEntityPublishFlags entity world
+            let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
+            World.publish () (rtoa<unit> [|"Register"; "Event"|] --> entity) eventTrace entity false world
 
         static member internal unregisterEntity entity world =
-            World.withEventContext (fun world ->
-                let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
-                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> entity) eventTrace entity false world
-                let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
-                let facets = World.getEntityFacets entity world
-                let world = dispatcher.Unregister (entity, world)
-                Array.fold (fun world (facet : Facet) ->
-                    let world = facet.Unregister (entity, world)
-                    if WorldModule.isSelected entity world
-                    then facet.UnregisterPhysics (entity, world)
-                    else world)
-                    world facets)
-                entity world
+            let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
+            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> entity) eventTrace entity false world
+            let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+            let facets = World.getEntityFacets entity world
+            let world = dispatcher.Unregister (entity, world)
+            Array.fold (fun world (facet : Facet) ->
+                let world = facet.Unregister (entity, world)
+                if WorldModule.isSelected entity world
+                then facet.UnregisterPhysics (entity, world)
+                else world)
+                world facets
 
         static member internal registerEntityPhysics entity world =
-            World.withEventContext (fun world ->
-                let facets = World.getEntityFacets entity world
-                Array.fold (fun world (facet : Facet) -> facet.RegisterPhysics (entity, world)) world facets)
-                entity world
+            let facets = World.getEntityFacets entity world
+            Array.fold (fun world (facet : Facet) -> facet.RegisterPhysics (entity, world)) world facets
 
         static member internal unregisterEntityPhysics entity world =
-            World.withEventContext (fun world ->
-                let facets = World.getEntityFacets entity world
-                Array.fold (fun world (facet : Facet) -> facet.UnregisterPhysics (entity, world)) world facets)
-                entity world
+            let facets = World.getEntityFacets entity world
+            Array.fold (fun world (facet : Facet) -> facet.UnregisterPhysics (entity, world)) world facets
 
         static member internal propagateEntityPhysics entity world =
             let world = World.unregisterEntityPhysics entity world
