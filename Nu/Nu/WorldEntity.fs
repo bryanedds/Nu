@@ -180,11 +180,9 @@ module WorldEntityModule =
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
-            World.withEventContext (fun world ->
-                if WorldModule.isSelected this world
-                then World.propagateEntityPhysics this world
-                else world)
-                this world
+            if WorldModule.isSelected this world
+            then World.propagateEntityPhysics this world
+            else world
 
         /// Check that an entity uses a facet of the given type.
         member this.Has (facetType, world) = Array.exists (fun facet -> getType facet = facetType) (this.GetFacets world)
@@ -216,49 +214,40 @@ module WorldEntityModule =
     type World with
 
         static member internal updateEntity (entity : Entity) world =
-            World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcher world
-                let facets = entity.GetFacets world
-                let world = dispatcher.Update (entity, world)
-                let world =
-                    // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                    if Array.isEmpty facets then world
-                    else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
-                if World.getEntityPublishUpdates entity world then
-                    let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
-                    World.publishPlus () entity.UpdateEventCached eventTrace Simulants.Game false world
-                else world)
-                entity
-                world
+            let dispatcher = entity.GetDispatcher world
+            let facets = entity.GetFacets world
+            let world = dispatcher.Update (entity, world)
+            let world =
+                // OPTIMIZATION: elide Array.fold overhead for empty arrays
+                if Array.isEmpty facets then world
+                else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
+            if World.getEntityPublishUpdates entity world then
+                let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
+                World.publishPlus () entity.UpdateEventCached eventTrace Simulants.Game false world
+            else world
 
         static member internal postUpdateEntity (entity : Entity) world =
-            World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcher world
-                let facets = entity.GetFacets world
-                let world = dispatcher.PostUpdate (entity, world)
-                let world =
-                    // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                    if Array.isEmpty facets then world
-                    else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
-                if World.getEntityPublishPostUpdates entity world then
-                    let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
-                    World.publishPlus () entity.PostUpdateEventCached eventTrace Simulants.Game false world
-                else world)
-                entity
-                world
+            let dispatcher = entity.GetDispatcher world
+            let facets = entity.GetFacets world
+            let world = dispatcher.PostUpdate (entity, world)
+            let world =
+                // OPTIMIZATION: elide Array.fold overhead for empty arrays
+                if Array.isEmpty facets then world
+                else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
+            if World.getEntityPublishPostUpdates entity world then
+                let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
+                World.publishPlus () entity.PostUpdateEventCached eventTrace Simulants.Game false world
+            else world
 
         static member internal actualizeEntity (entity : Entity) world =
-            World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcher world
-                let facets = entity.GetFacets world
-                let world = dispatcher.Actualize (entity, world)
-                let world =
-                    // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                    if Array.isEmpty facets then world
-                    else Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
-                world)
-                entity
-                world
+            let dispatcher = entity.GetDispatcher world
+            let facets = entity.GetFacets world
+            let world = dispatcher.Actualize (entity, world)
+            let world =
+                // OPTIMIZATION: elide Array.fold overhead for empty arrays
+                if Array.isEmpty facets then world
+                else Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
+            world
 
         /// Get all the entities contained by a layer.
         [<FunctionBinding>]

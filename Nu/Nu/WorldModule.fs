@@ -486,13 +486,13 @@ module WorldModule =
         static member internal getUnsubscriptions world =
             EventSystem.getUnsubscriptions<World> world
 
-        /// Get whether events are being traced.
-        static member getEventTracing (world : World) =
-            EventSystem.getEventTracing world
+        /// Get how events are being traced.
+        static member getEventTracerOpt (world : World) =
+            EventSystem.getEventTracerOpt world
 
-        /// Set whether events are being traced.
-        static member setEventTracing tracing (world : World) =
-            World.choose (EventSystem.setEventTracing tracing world)
+        /// Set how events are being traced.
+        static member setEventTracerOpt tracerOpt (world : World) =
+            World.choose (EventSystem.setEventTracerOpt tracerOpt world)
 
         /// Get the state of the event filter.
         static member getEventFilter (world : World) =
@@ -501,31 +501,6 @@ module WorldModule =
         /// Set the state of the event filter.
         static member setEventFilter filter (world : World) =
             World.choose (EventSystem.setEventFilter filter world)
-
-        /// Get the context of the event system.
-        static member getEventContext (world : World) =
-            EventSystem.getEventContext world
-
-        /// A hack to allow a sidelined event system to be continued by resetting its mutable state.
-        static member internal continueEventSystemHack (world : World) =
-            EventSystem.setEventContext (Game ()) world
-
-        /// Set the context of the event system.
-#if DEBUG
-        static member internal withEventContext operation (context : Simulant) (world : World) =
-            let oldContext = World.getEventContext world
-            EventSystem.setEventContext context world
-            let world = operation world
-            EventSystem.setEventContext oldContext world
-            world
-#else
-        static member inline internal withEventContext operation _ (world : World) =
-            // NOTE: inlined to hopefully get rid of the lambda
-            operation world
-#endif
-
-        static member internal qualifyEventContext address (world : World) =
-            EventSystem.qualifyEventContext address world
 
         /// Publish an event with no subscription sorting.
         /// OPTIMIZATION: unrolled publishPlus here for speed.

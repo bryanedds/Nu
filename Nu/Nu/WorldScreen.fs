@@ -105,37 +105,28 @@ module WorldScreenModule =
     type World with
 
         static member internal updateScreen (screen : Screen) world =
-            World.withEventContext (fun world ->
                 
-                // update via dispatcher
-                let dispatcher = World.getScreenDispatcher screen world
-                let world = dispatcher.Update (screen, world)
+            // update via dispatcher
+            let dispatcher = World.getScreenDispatcher screen world
+            let world = dispatcher.Update (screen, world)
 
-                // publish update event
-                let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
-                World.publishPlus () (Events.Update --> screen) eventTrace Simulants.Game false world)
-                screen
-                world
+            // publish update event
+            let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
+            World.publishPlus () (Events.Update --> screen) eventTrace Simulants.Game false world
 
         static member internal postUpdateScreen (screen : Screen) world =
-            World.withEventContext (fun world ->
                 
-                // post-update via dispatcher
-                let dispatcher = World.getScreenDispatcher screen world
-                let world = dispatcher.PostUpdate (screen, world)
+            // post-update via dispatcher
+            let dispatcher = World.getScreenDispatcher screen world
+            let world = dispatcher.PostUpdate (screen, world)
 
-                // publish post-update event
-                let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
-                World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false world)
-                screen
-                world
+            // publish post-update event
+            let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
+            World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false world
 
         static member internal actualizeScreen (screen : Screen) world =
-            World.withEventContext (fun world ->
-                let dispatcher = screen.GetDispatcher world
-                dispatcher.Actualize (screen, world))
-                screen
-                world
+            let dispatcher = screen.GetDispatcher world
+            dispatcher.Actualize (screen, world)
 
         /// Get all the world's screens.
         [<FunctionBinding>]

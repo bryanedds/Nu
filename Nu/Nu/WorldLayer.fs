@@ -90,37 +90,28 @@ module WorldLayerModule =
     type World with
 
         static member internal updateLayer (layer : Layer) world =
-            World.withEventContext (fun world ->
-                
-                // update via dispatcher
-                let dispatcher = layer.GetDispatcher world
-                let world = dispatcher.Update (layer, world)
 
-                // publish update event
-                let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
-                World.publishPlus () (Events.Update --> layer) eventTrace Simulants.Game false world)
-                layer
-                world
+            // update via dispatcher
+            let dispatcher = layer.GetDispatcher world
+            let world = dispatcher.Update (layer, world)
+
+            // publish update event
+            let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
+            World.publishPlus () (Events.Update --> layer) eventTrace Simulants.Game false world
 
         static member internal postUpdateLayer (layer : Layer) world =
-            World.withEventContext (fun world ->
 
-                // post-update via dispatcher
-                let dispatcher = layer.GetDispatcher world
-                let world = dispatcher.PostUpdate (layer, world)
+            // post-update via dispatcher
+            let dispatcher = layer.GetDispatcher world
+            let world = dispatcher.PostUpdate (layer, world)
 
-                // publish post-update event
-                let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
-                World.publishPlus () (Events.PostUpdate --> layer) eventTrace Simulants.Game false world)
-                layer
-                world
+            // publish post-update event
+            let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
+            World.publishPlus () (Events.PostUpdate --> layer) eventTrace Simulants.Game false world
 
         static member internal actualizeLayer (layer : Layer) world =
-            World.withEventContext (fun world ->
-                let dispatcher = layer.GetDispatcher world
-                dispatcher.Actualize (layer, world))
-                layer
-                world
+            let dispatcher = layer.GetDispatcher world
+            dispatcher.Actualize (layer, world)
 
         /// Get all the layers in a screen.
         [<FunctionBinding>]

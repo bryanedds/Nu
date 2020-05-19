@@ -1096,7 +1096,11 @@ module Gaia =
 
     let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            World.setEventTracing form.traceEventsCheckBox.Checked world
+            let eventTracerOpt =
+                if form.traceEventsCheckBox.Checked
+                then Some (Log.remark "Event")
+                else None
+            World.setEventTracerOpt eventTracerOpt world
 
     let private handleApplyEventFilterClick (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->

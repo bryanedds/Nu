@@ -58,8 +58,6 @@ module WorldModuleLayer =
 #if DEBUG
             if not (UMap.containsKey layer.LayerAddress world.LayerStates) then
                 failwith ("Cannot set the state of a non-existent layer '" + scstring layer.LayerAddress + "'")
-            if not (World.qualifyEventContext (atooa layer.LayerAddress) world) then
-                failwith "Cannot set the state of a layer in an unqualifed event context."
 #endif
             let layerStates = UMap.add layer.LayerAddress layerState world.LayerStates
             World.choose { world with LayerStates = layerStates }
@@ -195,22 +193,16 @@ module WorldModuleLayer =
             else failwith ("Cannot detach layer property '" + propertyName + "'; layer '" + layer.Name + "' is not found.")
 
         static member internal registerLayer layer world =
-            World.withEventContext (fun world ->
-                let dispatcher = World.getLayerDispatcher layer world
-                let world = dispatcher.Register (layer, world)
-                let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
-                World.publish () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer false world)
-                layer
-                world
+            let dispatcher = World.getLayerDispatcher layer world
+            let world = dispatcher.Register (layer, world)
+            let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
+            World.publish () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer false world
 
         static member internal unregisterLayer layer world =
-            World.withEventContext (fun world ->
-                let dispatcher = World.getLayerDispatcher layer world
-                let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
-                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer false world
-                dispatcher.Unregister (layer, world))
-                layer
-                world
+            let dispatcher = World.getLayerDispatcher layer world
+            let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
+            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer false world
+            dispatcher.Unregister (layer, world)
 
         static member internal addLayer mayReplace layerState layer world =
             let isNew = not (World.getLayerExists layer world)
