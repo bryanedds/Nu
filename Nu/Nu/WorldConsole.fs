@@ -66,9 +66,11 @@ module WorldConsole =
         | PlatformID.Win32Windows ->
             let world =
                 World.subscribe (fun keyEvent world ->
-                    if keyEvent.Data.KeyboardKey = KeyboardKey.Grave
-                    then run (getActiveWindowTitle ()) world
-                    else world)
+                    let world =
+                        if keyEvent.Data.KeyboardKey = KeyboardKey.Grave
+                        then run (getActiveWindowTitle ()) world
+                        else world
+                    (Cascade, world))
                     Events.KeyboardKeyDown
                     Simulants.Game
                     world

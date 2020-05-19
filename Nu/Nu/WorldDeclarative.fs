@@ -175,7 +175,7 @@ module WorldDeclarative =
             (parent : Simulant)
             world =
             let guid = Gen.id
-            let mutable previous = Set.empty
+            let mutable previous = Set.empty // TODO: P1: consider if a USet or HashSet would be more efficient now that HashSet has property cloning in its ctor
             let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
             let lenses = Lens.explodeIndexedOpt indexOpt lensSeq
             let filter = fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true

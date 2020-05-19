@@ -371,7 +371,7 @@ module WorldEntityModule =
                                 else world
                             | _ -> world
                         World.monitor
-                            (constant $ World.destroyEntity entity)
+                            (fun _ world -> (Cascade, World.destroyEntity entity world))
                             (Events.Unregistering --> simulant.SimulantAddress)
                             entity
                             world
@@ -383,9 +383,11 @@ module WorldEntityModule =
                     List.fold (fun world (handler, address, simulant) ->
                         World.monitor (fun (evt : Event) world ->
                             let signal = handler evt
-                            match origin with
-                            | SimulantOrigin owner -> WorldModule.trySignal signal owner world
-                            | FacetOrigin (owner, facetName) -> WorldModule.trySignalFacet signal facetName owner world)
+                            let world =
+                                match origin with
+                                | SimulantOrigin owner -> WorldModule.trySignal signal owner world
+                                | FacetOrigin (owner, facetName) -> WorldModule.trySignalFacet signal facetName owner world
+                            (Cascade, world))
                             address simulant world)
                         world handlers
                 let world =
@@ -405,7 +407,7 @@ module WorldEntityModule =
                     | SimulantOrigin simulant
                     | FacetOrigin (simulant, _) ->
                         World.monitor
-                            (constant $ World.destroyEntity entity)
+                            (fun _ world -> (Cascade, World.destroyEntity entity world))
                             (Events.Unregistering --> simulant.SimulantAddress)
                             entity
                             world

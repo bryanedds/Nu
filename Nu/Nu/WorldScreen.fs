@@ -294,7 +294,8 @@ module WorldScreenModule =
                         World.monitor (fun (evt : Event) world ->
                             let signal = handler evt
                             let owner = match origin with SimulantOrigin simulant -> simulant | FacetOrigin (simulant, _) -> simulant
-                            WorldModule.trySignal signal owner world)
+                            let world = WorldModule.trySignal signal owner world
+                            (Cascade, world))
                             address simulant world)
                         world handlers
                 let world =

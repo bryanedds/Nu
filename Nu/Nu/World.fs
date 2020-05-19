@@ -17,8 +17,7 @@ module Nu =
 
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
-    /// Propagate lensed property directly.
-    let private tryPropagateByLens (left : World Lens) (right : World Lens) (_ : Event) world =
+    let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
         if right.Validate world then
             let value =
                 match right.GetWithoutValidation world with
@@ -33,8 +32,7 @@ module Nu =
             (Cascade, world)
         else (Cascade, world)
 
-    /// Propagate lensed property by property name.
-    let private tryPropagateByName simulant leftName (right : World Lens) (_ : Event) world =
+    let private tryPropagateByName simulant leftName (right : World Lens) world =
         let nonPersistent = Reflection.isPropertyNonPersistentByName leftName
         let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
         if right.Validate world then
@@ -57,6 +55,11 @@ module Nu =
                     world
             (Cascade, world)
         else (Cascade, world)
+
+    let private tryPropagate simulant (left : World Lens) (right : World Lens) world =
+        if notNull (left.This :> obj)
+        then tryPropagateByLens left right world
+        else tryPropagateByName simulant left.Name right world
 
     /// Initialize the Nu game engine.
     let init nuConfig =
@@ -186,6 +189,16 @@ module Nu =
                         (Simulants.Game :> Simulant)
                         (world :?> World)
                 (box unsubscribe, box world)
+
+            // init handleUserDefinedCallback F# reach-around
+            WorldTypes.handleUserDefinedCallback <- fun userDefined _ worldObj ->
+                let world = worldObj :?> World
+                let (simulant, left, right) = userDefined :?> Simulant * World Lens * World Lens
+                let (handling, world) =
+                    if notNull (left.This :> obj)
+                    then tryPropagateByLens left right world
+                    else tryPropagateByName simulant left.Name right world
+                (handling, world :> obj)
 
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
@@ -317,26 +330,21 @@ module Nu =
 
             // init bind5 F# reach-around
             WorldModule.bind5 <- fun simulant left right world ->
-                let tryPropagate =
-                    if notNull (left.This :> obj)
-                    then tryPropagateByLens left right
-                    else tryPropagateByName simulant left.Name right
+                // propagate immediately to start things out synchronized
+                let (_, world) = tryPropagate simulant left right world
                 let (_, world) =
-                    // propagate immediately to start things out synchronized
-                    tryPropagate Unchecked.defaultof<_> world
-                let (_, world) =
-                    World.monitorPlus
+                    World.monitorSpecial
                         None None None
-                        tryPropagate
+                        (Right (box (simulant, left, right)))
                         (Events.Register --> right.This.SimulantAddress)
                         right.This
                         world
                 let (_, world) =
-                    World.monitorPlus
+                    World.monitorSpecial
                         (match right.PayloadOpt with Some payload -> Some (payload :?> (ChangeData -> obj option -> World -> obj)) | None -> None)
                         (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true))
                         None
-                        tryPropagate
+                        (Right (box (simulant, left, right)))
                         (Events.Change right.Name --> right.This.SimulantAddress)
                         right.This
                         world
