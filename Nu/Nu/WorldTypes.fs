@@ -1045,8 +1045,7 @@ module WorldTypes =
                 | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
                 | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
                 | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
-                | :? Game
-                | :? GlobalSimulantGeneralized -> true
+                | :? Game | :? GlobalSimulantGeneralized -> true
                 | _  -> false
 
             member this.GetPropertyOpt<'a> propertyName simulant =

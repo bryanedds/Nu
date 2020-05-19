@@ -527,15 +527,6 @@ module WorldModule =
         static member internal qualifyEventContext address (world : World) =
             EventSystem.qualifyEventContext address world
 
-        /// Publish an event directly.
-        static member publishEvent<'a, 'p, 's when 'p :> Simulant and 's :> Simulant> evt (subscriber : Simulant) (subscription : obj) world =
-            let callableSubscription = subscription :?> World BoxableSubscription
-            let oldEventContext = EventSystemDelegate.getEventContext world.EventSystemDelegate
-            EventSystemDelegate.setEventContext subscriber world.EventSystemDelegate
-            let (handling, world) = callableSubscription evt world
-            EventSystemDelegate.setEventContext oldEventContext world.EventSystemDelegate
-            (handling, world)
-
         /// Publish an event with no subscription sorting.
         /// OPTIMIZATION: unrolled publishPlus here for speed.
         static member publishPlus<'a, 'p when 'p :> Simulant>
@@ -604,21 +595,15 @@ module WorldModule =
                                     (handling, worldObj :?> World)
                                 | FunctionCallback callback ->
                                     let subscriber = subscription.SubscriberEntry
-                                    let evt =
-                                        { Data = eventDataObj
-                                          Subscriber = subscriber
-                                          Publisher = publisher
-                                          Address = eventAddressObj
-                                          Trace = eventTrace }
                                     let (handling, world) =
                                         // OPTIMIZATION: unrolled PublishEventHook here for speed.
                                         // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
                                         match subscriber with
-                                        | :? Entity -> World.publishEvent<'a, 'p, Entity> evt subscriber callback world
-                                        | :? Layer -> World.publishEvent<'a, 'p, Layer> evt subscriber callback world
-                                        | :? Screen -> World.publishEvent<'a, 'p, Screen> evt subscriber callback world
-                                        | :? Game -> World.publishEvent<'a, 'p, Game> evt subscriber callback world
-                                        | :? GlobalSimulantGeneralized -> World.publishEvent<'a, 'p, Simulant> evt subscriber callback world
+                                        | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                        | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                        | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                        | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                        | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callback world
                                         | _ -> failwithumf ()
 #if DEBUG
                                     let world = World.choose world
