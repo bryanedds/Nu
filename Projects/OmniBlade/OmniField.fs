@@ -27,7 +27,7 @@ module OmniField =
         member this.FieldModel = this.Model<FieldModel> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand> (FieldModel.empty)
+        inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand> (FieldModel.initial)
 
         static let isFacingBodyShape bodyShape (avatar : AvatarModel) world =
             if bodyShape.Entity.Is<PropDispatcher> world then

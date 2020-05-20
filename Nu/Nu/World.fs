@@ -330,18 +330,24 @@ module Nu =
 
             // init bind5 F# reach-around
             WorldModule.bind5 <- fun simulant left right world ->
-                // propagate immediately to start things out synchronized
-                let (_, world) = tryPropagate simulant left right world
+                let (_, world) = tryPropagate simulant left right world // propagate immediately to start things out synchronized
+                let (compressionArtifact, mapperOpt) =
+                    match right.PayloadOpt with
+                    | Some payload ->
+                        let (compressionArtifact, mapper) = payload :?> Guid * (ChangeData -> obj option -> World -> obj)
+                        (compressionArtifact, Some mapper)
+                    | None -> (Gen.idEmpty, None)
                 let (_, world) =
                     World.monitorSpecial
-                        None None None
+                        Gen.id None None None
                         (Right (box (simulant, left, right)))
                         (Events.Register --> right.This.SimulantAddress)
                         right.This
                         world
                 let (_, world) =
                     World.monitorSpecial
-                        (match right.PayloadOpt with Some payload -> Some (payload :?> (ChangeData -> obj option -> World -> obj)) | None -> None)
+                        compressionArtifact
+                        mapperOpt
                         (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true))
                         None
                         (Right (box (simulant, left, right)))

@@ -13,10 +13,19 @@ type Legionnaire =
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list }
 
-    static member empty =
+    static member finn =
         { LegionIndex = 0
           PartyIndexOpt = Some 0
           CharacterType = Ally Finn
+          ExpPoints = 15
+          WeaponOpt = None
+          ArmorOpt = None
+          Accessories = [] }
+
+    static member glenn =
+        { LegionIndex = 1
+          PartyIndexOpt = Some 1
+          CharacterType = Ally Glenn
           ExpPoints = 15
           WeaponOpt = None
           ArmorOpt = None
@@ -91,11 +100,11 @@ module FieldModel =
           DialogOpt_ = None
           BattleOpt_ = None }
 
-    let empty =
+    let initial =
         { Dirty_ = Gen.idEmpty
           FieldType_ = DebugField
           Avatar_ = AvatarModel.empty
-          Legion_ = Map.singleton 0 Legionnaire.empty
+          Legion_ = Map.ofList [(0, Legionnaire.finn); (1, Legionnaire.glenn)]
           Advents_ = Set.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
           DialogOpt_ = None
