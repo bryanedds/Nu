@@ -6,11 +6,10 @@ open Nu
 module AvatarModel =
 
     type [<StructuralEquality; NoComparison>] AvatarModel =
-        private
-            { BoundsOriginal_ : Vector4
-              Bounds_ : Vector4
-              AnimationState : CharacterAnimationState
-              IntersectedBodyShapes_ : BodyShapeSource list }
+        { BoundsOriginal_ : Vector4
+          Bounds_ : Vector4
+          AnimationState_ : CharacterAnimationState
+          IntersectedBodyShapes_ : BodyShapeSource list }
 
         (* Bounds Original Properties *)
         member this.BoundsOriginal = this.BoundsOriginal_
@@ -27,22 +26,22 @@ module AvatarModel =
         member this.Size = this.Bounds_.Size
 
         (* AnimationState Properties *)
-        member this.TimeStart = this.AnimationState.TimeStart
-        member this.AnimationSheet = this.AnimationState.AnimationSheet
-        member this.AnimationCycle = this.AnimationState.AnimationCycle
-        member this.Direction = this.AnimationState.Direction
+        member this.TimeStart = this.AnimationState_.TimeStart
+        member this.AnimationSheet = this.AnimationState_.AnimationSheet
+        member this.AnimationCycle = this.AnimationState_.AnimationCycle
+        member this.Direction = this.AnimationState_.Direction
 
         (* Local Properties *)
         member this.IntersectedBodyShapes = this.IntersectedBodyShapes_
 
     let getAnimationIndex time avatar =
-        CharacterAnimationState.index time avatar.AnimationState
+        CharacterAnimationState.index time avatar.AnimationState_
 
     let getAnimationProgressOpt time avatar =
-        CharacterAnimationState.progressOpt time avatar.AnimationState
+        CharacterAnimationState.progressOpt time avatar.AnimationState_
 
     let getAnimationFinished time avatar =
-        CharacterAnimationState.getFinished time avatar.AnimationState
+        CharacterAnimationState.getFinished time avatar.AnimationState_
 
     let updateIntersectedBodyShapes updater (avatar : AvatarModel) =
         { avatar with IntersectedBodyShapes_ = updater avatar.IntersectedBodyShapes_ }
@@ -60,23 +59,23 @@ module AvatarModel =
         { avatar with Bounds_ = avatar.Bottom |> updater |> avatar.Bounds.WithBottom }
 
     let updateDirection updater (avatar : AvatarModel) =
-        { avatar with AnimationState = { avatar.AnimationState with Direction = updater avatar.AnimationState.Direction }}
+        { avatar with AnimationState_ = { avatar.AnimationState_ with Direction = updater avatar.AnimationState_.Direction }}
 
     let animate time cycle avatar =
-        { avatar with AnimationState = CharacterAnimationState.setCycle (Some time) cycle avatar.AnimationState }
+        { avatar with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle avatar.AnimationState_ }
 
     let make bounds animationSheet direction =
         let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = IdleCycle; Direction = direction }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
-          AnimationState = animationState
+          AnimationState_ = animationState
           IntersectedBodyShapes_ = [] }
 
     let empty =
         let bounds = v4Bounds (v2Dup 128.0f) Constants.Gameplay.CharacterSize
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
-          AnimationState = CharacterAnimationState.empty
+          AnimationState_ = CharacterAnimationState.empty
           IntersectedBodyShapes_ = [] }
 
 type AvatarModel = AvatarModel.AvatarModel

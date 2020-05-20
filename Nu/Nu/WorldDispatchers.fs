@@ -14,16 +14,13 @@ module DeclarativeOperators2 =
 
     type World with
 
-        static member internal attachModel modelValue modelName (simulant : Simulant) world =
+        static member internal tryAttachModel modelValue modelName (simulant : Simulant) world =
             match World.tryGetProperty modelName simulant world with
-            | Some property ->
-                let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
-                (model, world)
             | None ->
                 let property = { DesignerType = typeof<'model>; DesignerValue = modelValue }
                 let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
-                let world = World.attachProperty modelName true false property simulant world
-                (modelValue, world)
+                World.attachProperty modelName true false property simulant world
+            | Some property -> world
 
         static member internal actualizeViews views world =
             Seq.fold (fun world view ->
@@ -51,7 +48,7 @@ module FacetModule =
                 | _ -> Log.info "Incorrect signal type returned from event binding."; world
             | _ -> Log.info "Failed to send signal to entity."; world
 
-        static member internal signalEntityFacet<'model, 'message, 'command when 'model : equality> signal facetName (entity : Entity) world =
+        static member internal signalEntityFacet<'model, 'message, 'command> signal facetName (entity : Entity) world =
             let facets = entity.GetFacets world
             match Array.tryFind (fun facet -> getTypeName facet = facetName) facets with
             | Some (:? Facet<'model, 'message, 'command> as facet) ->
@@ -60,29 +57,29 @@ module FacetModule =
 
     and Entity with
     
-        member this.GetFacetModel<'model when 'model : equality> modelName world =
+        member this.GetFacetModel<'model> modelName world =
             let property = this.Get<DesignerProperty> modelName world
             property.DesignerValue :?> 'model
 
-        member this.SetFacetModel<'model when 'model : equality> modelName (value : 'model) world =
+        member this.SetFacetModel<'model> modelName (value : 'model) world =
             let model = this.Get<DesignerProperty> modelName world
             if this.GetImperative world
             then model.DesignerValue <- value; world
-            else this.Set<DesignerProperty> modelName { model with DesignerValue = value } world
+            else this.Set<DesignerProperty> modelName { DesignerType = typeof<'model>; DesignerValue = value } world
 
-        member this.UpdateFacetModel<'model when 'model : equality> modelName updater world =
+        member this.UpdateFacetModel<'model> modelName updater world =
             this.SetFacetModel<'model> modelName (updater this.GetFacetModel<'model> modelName world) world
 
-        member this.FacetModel<'model when 'model : equality> modelName =
+        member this.FacetModel<'model> modelName =
             lens<'model> modelName (this.GetFacetModel<'model> modelName) (this.SetFacetModel<'model> modelName) this
 
-        member this.TrySignalEntityFacet<'model, 'message, 'command when 'model : equality> signal facetName world =
+        member this.TrySignalEntityFacet<'model, 'message, 'command> signal facetName world =
             World.trySignalEntityFacet signal facetName this world
 
-        member this.SignalEntityFacet<'model, 'message, 'command when 'model : equality> signal facetName world =
+        member this.SignalEntityFacet<'model, 'message, 'command> signal facetName world =
             World.signalEntityFacet<'model, 'message, 'command> signal facetName this world
 
-    and [<AbstractClass>] Facet<'model, 'message, 'command when 'model : equality> (initial : 'model) =
+    and [<AbstractClass>] Facet<'model, 'message, 'command> (initial : 'model) =
         inherit Facet ()
 
         let mutable modelNameOpt =
@@ -102,7 +99,7 @@ module FacetModule =
             lens this.ModelName (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let (_, world) = World.attachModel initial this.ModelName entity world
+            let world = World.tryAttachModel initial this.ModelName entity world
             let channels = this.Channel (this.Model entity, entity)
             let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
             let content = this.Content (this.Model entity, entity)
@@ -1156,7 +1153,7 @@ module EntityDispatcherModule =
 
     type World with
 
-        static member internal signalEntity<'model, 'message, 'command when 'model : equality> signal (entity : Entity) world =
+        static member internal signalEntity<'model, 'message, 'command> signal (entity : Entity) world =
             match entity.GetDispatcher world with
             | :? EntityDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (entity.Model<'model> ()) signal entity world
@@ -1166,23 +1163,13 @@ module EntityDispatcherModule =
 
     and Entity with
 
-        member this.GetModel<'model when 'model : equality> world =
-            let property = this.Get<DesignerProperty> Property? Model world
-            property.DesignerValue :?> 'model
-
-        member this.SetModel<'model when 'model : equality> (value : 'model) world =
-            this.Set<DesignerProperty> Property? Model { DesignerType = typeof<'model>; DesignerValue = value } world
-
-        member this.Model<'model when 'model : equality> () =
-            lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
-
-        member this.UpdateModel<'model when 'model : equality> updater world =
+        member this.UpdateModel<'model> updater world =
             this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
-        member this.Signal<'model, 'message, 'command when 'model : equality> signal world =
+        member this.Signal<'model, 'message, 'command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command when 'model : equality> (initial : 'model) =
+    and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit EntityDispatcher ()
 
         member this.GetModel (entity : Entity) world : 'model =
@@ -1195,7 +1182,10 @@ module EntityDispatcherModule =
             lens Property? Model (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let (_, world) = World.attachModel initial Property? Model entity world
+            let world =
+                if getType (entity.GetModel world) = typeof<obj>
+                then entity.SetModel<'model> initial world
+                else world
             let channels = this.Channel (this.Model entity, entity)
             let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
             let content = this.Content (this.Model entity, entity)
@@ -1278,7 +1268,7 @@ module NodeDispatcherModule =
         static member Properties =
             [define Entity.PublishChanges true]
 
-    type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command when 'model : equality> (model) =
+    type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
 
         static member Facets =
@@ -1331,7 +1321,7 @@ module GuiDispatcherModule =
             let world = World.monitorPlus None None None handleMouseLeft Events.MouseLeftUp gui world |> snd
             world
 
-    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'model : equality> (model) =
+    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
 
         static let handleMouseLeft evt world =
@@ -2007,7 +1997,7 @@ module LayerDispatcherModule =
 
     type World with
 
-        static member internal signalLayer<'model, 'message, 'command when 'model : equality> signal (layer : Layer) world =
+        static member internal signalLayer<'model, 'message, 'command> signal (layer : Layer) world =
             match layer.GetDispatcher world with
             | :? LayerDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (layer.Model<'model> ()) signal layer world
@@ -2016,24 +2006,14 @@ module LayerDispatcherModule =
                 world
 
     and Layer with
-    
-        member this.GetModel<'model when 'model : equality> world =
-            let property = this.Get<DesignerProperty> Property? Model world
-            property.DesignerValue :?> 'model
 
-        member this.SetModel<'model when 'model : equality> (value : 'model) world =
-            this.Set<DesignerProperty> Property? Model { DesignerType = typeof<'model>; DesignerValue = value } world
-
-        member this.Model<'model when 'model : equality> () =
-            lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
-
-        member this.UpdateModel<'model when 'model : equality> updater world =
+        member this.UpdateModel<'model> updater world =
             this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
-        member this.Signal<'model, 'message, 'command when 'model : equality> signal world =
+        member this.Signal<'model, 'message, 'command> signal world =
             World.signalLayer<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] LayerDispatcher<'model, 'message, 'command when 'model : equality> (initial : 'model) =
+    and [<AbstractClass>] LayerDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit LayerDispatcher ()
 
         member this.GetModel (layer : Layer) world : 'model =
@@ -2046,7 +2026,10 @@ module LayerDispatcherModule =
             lens Property? Model (this.GetModel layer) (flip this.SetModel layer) layer
 
         override this.Register (layer, world) =
-            let (_, world) = World.attachModel initial Property? Model layer world
+            let world =
+                if getType (layer.GetModel world) = typeof<obj>
+                then layer.SetModel<'model> initial world
+                else world
             let channels = this.Channel (this.Model layer, layer)
             let world = Signal.processChannels this.Message this.Command (this.Model layer) channels layer world
             let content = this.Content (this.Model layer, layer)
@@ -2106,7 +2089,7 @@ module ScreenDispatcherModule =
 
     type World with
 
-        static member internal signalScreen<'model, 'message, 'command when 'model : equality> signal (screen : Screen) world =
+        static member internal signalScreen<'model, 'message, 'command> signal (screen : Screen) world =
             match screen.GetDispatcher world with
             | :? ScreenDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (screen.Model<'model> ()) signal screen world
@@ -2115,24 +2098,14 @@ module ScreenDispatcherModule =
                 world
 
     and Screen with
-    
-        member this.GetModel<'model> world =
-            let property = this.Get<DesignerProperty> Property? Model world
-            property.DesignerValue :?> 'model
 
-        member this.SetModel<'model when 'model : equality> (value : 'model) world =
-            this.Set<DesignerProperty> Property? Model { DesignerType = typeof<'model>; DesignerValue = value } world
-
-        member this.Model<'model when 'model : equality> () =
-            lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
-
-        member this.UpdateModel<'model when 'model : equality> updater world =
+        member this.UpdateModel<'model> updater world =
             this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
-        member this.Signal<'model, 'message, 'command when 'model : equality> signal world =
+        member this.Signal<'model, 'message, 'command> signal world =
             World.signalScreen<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command when 'model : equality> (initial : 'model) =
+    and [<AbstractClass>] ScreenDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit ScreenDispatcher ()
 
         member this.GetModel (screen : Screen) world : 'model =
@@ -2145,8 +2118,11 @@ module ScreenDispatcherModule =
             lens Property? Model (this.GetModel screen) (flip this.SetModel screen) screen
 
         override this.Register (screen, world) =
-            let (model, world) = World.attachModel initial Property? Model screen world
-            let channels = this.Channel (model, screen)
+            let world =
+                if getType (screen.GetModel world) = typeof<obj>
+                then screen.SetModel<'model> initial world
+                else world
+            let channels = this.Channel (this.Model screen, screen)
             let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
             let content = this.Content (this.Model screen, screen)
             let world =
@@ -2185,7 +2161,7 @@ module ScreenDispatcherModule =
         abstract member Initializers : Lens<'model, World> * Screen -> PropertyInitializer list
         default this.Initializers (_, _) = []
 
-        abstract member Channel : 'model * Screen -> Channel<'message, 'command, Screen, World> list
+        abstract member Channel : Lens<'model, World> * Screen -> Channel<'message, 'command, Screen, World> list
         default this.Channel (_, _) = []
 
         abstract member Message : 'model * 'message * Screen * World -> 'model * Signal<'message, 'command> list

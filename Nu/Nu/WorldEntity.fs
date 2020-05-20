@@ -14,6 +14,9 @@ module WorldEntityModule =
 
         member this.GetDispatcher world = World.getEntityDispatcher this world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
+        member this.GetModel<'a> world = World.getEntityModel<'a> this world
+        member this.SetModel<'a> value world = World.setEntityModel<'a> value this world
+        member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = lensReadOnly Property? Facets this.GetFacets this
         member this.GetTransform world = World.getEntityTransform this world
@@ -84,7 +87,7 @@ module WorldEntityModule =
         member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getEntityId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
-        
+
         member this.GetStaticData<'a> world = World.getEntityStaticData<'a> this world
         member this.SetStaticData<'a> value world = World.setEntityStaticData<'a> value this world
         member this.UpdateStaticData<'a> updater world = this.SetStaticData<'a> (updater this.GetStaticData<'a> world) world

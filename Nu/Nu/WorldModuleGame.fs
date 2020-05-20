@@ -51,8 +51,27 @@ module WorldModuleGame =
         static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
+        static member internal getGameModelProperty world = (World.getGameState world).Model
+        static member internal getGameModel<'a> world = (World.getGameState world).Model.DesignerValue :?> 'a
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
         static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> if value <> gameState.ScriptFrame then Some { gameState with ScriptFrame = value } else None) Property? ScriptFrame value world
+
+        static member internal setGameModelProperty (value : DesignerProperty) world =
+            World.updateGameState
+                (fun gameState ->
+                    if value.DesignerValue <> gameState.Model.DesignerValue
+                    then Some { gameState with Model = { gameState.Model with DesignerValue = value.DesignerValue }}
+                    else None)
+                Property? Model value.DesignerValue world
+
+        static member internal setGameModel<'a> (value : 'a) world =
+            World.updateGameState
+                (fun gameState ->
+                    let valueObj = value :> obj
+                    if valueObj <> gameState.Model.DesignerValue
+                    then Some { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
+                    else None)
+                Property? Model value world
 
         /// Get the current eye center.
         [<FunctionBinding>]
@@ -368,6 +387,7 @@ module WorldModuleGame =
     /// Initialize property getters.
     let private initGetters () =
         Getters.Add ("Dispatcher", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher world })
+        Getters.Add ("Model", fun world -> let designerProperty = World.getGameModelProperty world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         Getters.Add ("OmniScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
         Getters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
         Getters.Add ("ScreenTransitionDestinationOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
@@ -380,6 +400,7 @@ module WorldModuleGame =
     /// Initialize property setters.
     let private initSetters () =
         Setters.Add ("Dispatcher", fun _ world -> (false, world))
+        Setters.Add ("Model", fun property world -> (true, World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world))
         Setters.Add ("OmniScreenOpt", fun property world -> (true, World.setOmniScreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("SelectedScreenOpt", fun property world -> (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("ScreenTransitionDestinationOpt", fun property world -> (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world))
