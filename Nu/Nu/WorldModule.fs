@@ -538,46 +538,37 @@ module WorldModule =
                 let mutable enr = (subscriptions :> IEnumerable<SubscriptionEntry>).GetEnumerator ()
                 while going && enr.MoveNext () do
                     let subscription = enr.Current
-                    let (handling, world) = result
-                    if  (match handling with Cascade -> true | Resolve -> false) &&
-                        (match World.getLiveness world with Running -> true | Exiting -> false) then
+                    if fst result = Cascade && World.getLiveness (snd result) = Running then
                         let mapped =
                             match subscription.MapperOpt with
-                            | Some mapper -> mapper eventDataObj subscription.PreviousDataOpt world
+                            | Some mapper -> mapper eventDataObj subscription.PreviousDataOpt (snd result)
                             | None -> eventData :> obj
                         let filtered =
                             match subscription.FilterOpt with
-                            | Some filter -> filter mapped subscription.PreviousDataOpt world
+                            | Some filter -> filter mapped subscription.PreviousDataOpt (snd result)
                             | None -> true
                         subscription.PreviousDataOpt <- Some mapped
-                        let (handling, world) =
-                            if filtered then
-                                Array.fold (fun (handling, world) (_, subscriber : Simulant, callback) ->
-                                    match handling with
-                                    | Cascade ->
-                                        match callback with
-                                        | UserDefinedCallback callback ->
-                                            // OPTIMIZATION: avoids the dynamic dispatch and go straight to the user-defined callback
-                                            let (handling, worldObj) = WorldTypes.handleUserDefinedCallback callback mapped world
-                                            (handling, worldObj :?> World)
-                                        | FunctionCallback callback ->
-                                            let (handling, world) =
-                                                // OPTIMIZATION: unrolled PublishEventHook here for speed.
-                                                // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
-                                                match subscriber with
-                                                | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callback world
-                                                | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> subscriber publisher eventData eventAddress eventTrace callback world
-                                                | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callback world
-                                                | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callback world
-                                                | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callback world
-                                                | _ -> failwithumf ()
-                                            let world = World.choose world
-                                            (handling, world)
-                                    | Resolve -> (handling, world))
-                                    (handling, world)
-                                    subscription.Callbacks
-                            else (Cascade, world)
-                        result <- (handling, world)
+                        if filtered then
+                            // OPTIMIZATION: inlined fold for speed.
+                            let mutable enr2 = (subscription.Callbacks :> IEnumerable<Guid * Simulant * Callback>).GetEnumerator ()
+                            while fst result = Cascade && enr2.MoveNext () do
+                                let (_, subscriber, callback) = enr2.Current
+                                match callback with
+                                | UserDefinedCallback callback ->
+                                    // OPTIMIZATION: avoids the dynamic dispatch and go straight to the user-defined callback
+                                    result <- WorldTypes.handleUserDefinedCallback callback mapped (snd result) |> mapSnd cast<World>
+                                | FunctionCallback callback ->
+                                    result <-
+                                        // OPTIMIZATION: unrolled PublishEventHook here for speed.
+                                        // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
+                                        match subscriber with
+                                        | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | _ -> failwithumf ()
+                                    result |> snd |> World.choose |> ignore
                     else going <- false
                 result
             world
