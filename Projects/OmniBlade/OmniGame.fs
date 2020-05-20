@@ -45,7 +45,7 @@ module OmniGame =
              Simulants.TitleCredits.ClickEvent => msg (UpdateModel (Gui Credits))
              Simulants.CreditsBack.ClickEvent => msg (UpdateModel (Gui Title))
              Simulants.FieldBack.ClickEvent => msg (UpdateModel (Gui Title))
-             Simulants.TitlePlay.ClickEvent => msg (UpdateModel (Field FieldModel.empty))
+             Simulants.TitlePlay.ClickEvent => msg (UpdateModel (Field FieldModel.initial))
              Simulants.Field.FieldModel.ChangeEvent =|> fun evt -> msg (UpdateFieldModel (evt.Data.Value :?> FieldModel))
              Simulants.Battle.BattleModel.ChangeEvent =|> fun evt -> msg (UpdateBattleModel (evt.Data.Value :?> BattleModel))
              Simulants.TitleExit.ClickEvent => cmd Exit]
@@ -108,7 +108,7 @@ module OmniGame =
              Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.FieldSong)))
                 [Screen.FieldModel <== model --> fun model ->
                     match model with
-                    | Gui _ -> FieldModel.empty
+                    | Gui _ -> FieldModel.initial
                     | Field field -> field] []
 
              // battle

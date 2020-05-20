@@ -1,2 +1,2 @@
 Type,BattleAllyPositions,BattleEnemies,BattleSongOpt
-DebugBattle,[[-160 -160] [-160 -80] [80 160]],[[Goblin [-240 0]] [Goblin [-80 40]] [Goblin [120 -80]]],[Some [Battle Battle]]
+DebugBattle,[[-240 -180] [80 -140] [80 160]],[[Goblin [-240 0]] [Goblin [-80 40]] [Goblin [120 80]]],[Some [Battle Battle]]

@@ -34,11 +34,6 @@ module WorldModuleGame =
             world.GameState
 
         static member private setGameState gameState world =
-#if DEBUG
-            // NOTE: this check will always succeed!
-            if not (World.qualifyEventContext Address.empty world) then
-                failwith "Cannot set the state of a game in an unqualifed event context."
-#endif
             World.choose { world with GameState = gameState }
 
         static member private updateGameStateWithoutEvent updater world =

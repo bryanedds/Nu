@@ -539,19 +539,8 @@ module WorldModule =
                 while going && enr.MoveNext () do
                     let subscription = enr.Current
                     let (handling, world) = result
-#if DEBUG
-                    let eventAddresses = EventSystemDelegate.getEventAddresses world.EventSystemDelegate
-                    let cycleDetected = List.containsTriplicates eventAddresses
-                    if cycleDetected then Trace.WriteLine ("Event cycle detected in '" + scstring eventAddresses + "'.")
-#else
-                    let cycleDetected = false
-#endif
-                    if  not cycleDetected &&
-                        (match handling with Cascade -> true | Resolve -> false) &&
+                    if  (match handling with Cascade -> true | Resolve -> false) &&
                         (match World.getLiveness world with Running -> true | Exiting -> false) then
-#if DEBUG
-                        let world = World.choose { world with EventSystemDelegate = EventSystemDelegate.pushEventAddress eventAddressObj world.EventSystemDelegate }
-#endif
                         let mapped =
                             match subscription.MapperOpt with
                             | Some mapper -> mapper eventDataObj subscription.PreviousDataOpt world
@@ -563,31 +552,36 @@ module WorldModule =
                         subscription.PreviousDataOpt <- Some mapped
                         let (handling, world) =
                             if filtered then
-                                match subscription.Callback with
-                                | UserDefinedCallback callback ->
-                                    // OPTIMIZATION: avoid the dynamic dispatch and go straight to the user-defined callback
-                                    let (handling, worldObj) = WorldTypes.handleUserDefinedCallback callback mapped world
-                                    (handling, worldObj :?> World)
-                                | FunctionCallback callback ->
-                                    let subscriber = subscription.SubscriberEntry
-                                    let (handling, world) =
-                                        // OPTIMIZATION: unrolled PublishEventHook here for speed.
-                                        // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
-                                        match subscriber with
-                                        | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callback world
-                                        | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> subscriber publisher eventData eventAddress eventTrace callback world
-                                        | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callback world
-                                        | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callback world
-                                        | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callback world
-                                        | _ -> failwithumf ()
+                                if subscription.Callbacks.Length > 1 then
+                                    Log.trace "TEST"
+                                Array.fold (fun (handling, world) (_, callback) ->
+                                    match handling with
+                                    | Cascade ->
+                                        match callback with
+                                        | UserDefinedCallback callback ->
+                                            // OPTIMIZATION: avoids the dynamic dispatch and go straight to the user-defined callback
+                                            let (handling, worldObj) = WorldTypes.handleUserDefinedCallback callback mapped world
+                                            (handling, worldObj :?> World)
+                                        | FunctionCallback callback ->
+                                            let subscriber = subscription.SubscriberValue
+                                            let (handling, world) =
+                                                // OPTIMIZATION: unrolled PublishEventHook here for speed.
+                                                // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
+                                                match subscriber with
+                                                | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                                | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                                | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                                | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                                | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callback world
+                                                | _ -> failwithumf ()
 #if DEBUG
-                                    let world = World.choose world
+                                            let world = World.choose world
 #endif
+                                            (handling, world)
+                                    | Resolve -> (handling, world))
                                     (handling, world)
+                                    subscription.Callbacks
                             else (Cascade, world)
-#if DEBUG
-                        let world = World.choose { world with EventSystemDelegate = EventSystemDelegate.popEventAddress world.EventSystemDelegate }
-#endif
                         result <- (handling, world)
                     else going <- false
                 result
@@ -604,8 +598,8 @@ module WorldModule =
 
         /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
         static member subscribeSpecial<'a, 'b, 's when 's :> Simulant>
-            subscriptionKey mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.subscribeSpecial<'a, 'b, 's, World> subscriptionKey mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
+            compressionArtifact subscriptionKey mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
+            mapSnd World.choose (EventSystem.subscribeSpecial<'a, 'b, 's, World> compressionArtifact subscriptionKey mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
 
         /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
         static member subscribePlus<'a, 'b, 's when 's :> Simulant>
@@ -619,8 +613,8 @@ module WorldModule =
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
         static member monitorSpecial<'a, 'b, 's when 's :> Simulant>
-            mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.monitorSpecial<'a, 'b, 's, World> mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
+            compressionArtifact mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
+            mapSnd World.choose (EventSystem.monitorSpecial<'a, 'b, 's, World> compressionArtifact mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
         static member monitorPlus<'a, 'b, 's when 's :> Simulant>
