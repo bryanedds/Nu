@@ -8,6 +8,7 @@ module Assets =
     let BattlePackageName = "Battle"
 
     // gui assets
+    let Font = asset<Font> GuiPackageName "Font"
     let DialogThin = asset<Image> GuiPackageName "DialogThin"
     let DialogMedium = asset<Image> GuiPackageName "DialogMedium"
     let DialogLarge = asset<Image> GuiPackageName "DialogLarge"

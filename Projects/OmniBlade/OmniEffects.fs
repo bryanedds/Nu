@@ -47,7 +47,7 @@ module Effects =
           Definitions = Map.empty
           Content =
             TextSprite
-                (Resource (Assets.DefaultPackageName, Assets.DefaultFontName),
+                (Resource (Assets.Font.PackageName, Assets.Font.AssetName),
                  scstring (abs delta),
                  [|Position
                     (Sum, Linear, Bounce,
