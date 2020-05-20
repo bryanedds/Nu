@@ -45,15 +45,14 @@ type [<StructuralEquality; NoComparison>] DialogModel =
 module FieldModel =
 
     type [<CustomEquality; NoComparison>] FieldModel =
-        private
-            { Dirty_ : Guid
-              FieldType_ : FieldType
-              Avatar_ : AvatarModel
-              Legion_ : Map<int, Legionnaire>
-              Advents_ : Advent Set
-              Inventory_ : Inventory
-              DialogOpt_ : DialogModel option
-              BattleOpt_ : BattleModel option}
+        { Dirty_ : Guid
+          FieldType_ : FieldType
+          Avatar_ : AvatarModel
+          Legion_ : Map<int, Legionnaire>
+          Advents_ : Advent Set
+          Inventory_ : Inventory
+          DialogOpt_ : DialogModel option
+          BattleOpt_ : BattleModel option}
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_

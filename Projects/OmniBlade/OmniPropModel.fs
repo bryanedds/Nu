@@ -6,11 +6,10 @@ open Nu
 module PropModel =
 
     type [<StructuralEquality; NoComparison>] PropModel =
-        private
-            { Bounds_ : Vector4
-              Depth_ : single
-              Advents_ : Advent Set
-              PropData_ : PropData }
+        { Bounds_ : Vector4
+          Depth_ : single
+          Advents_ : Advent Set
+          PropData_ : PropData }
 
         (* Bounds Properties *)
         member this.Bounds = this.Bounds_

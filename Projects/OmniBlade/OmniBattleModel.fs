@@ -30,14 +30,13 @@ type [<StructuralEquality; NoComparison>] CurrentCommand =
 module BattleModel =
 
     type [<CustomEquality; NoComparison>] BattleModel =
-        private
-            { Dirty_ : Guid
-              BattleState_ : BattleState
-              Characters_ : Map<CharacterIndex, CharacterModel>
-              Inventory_ : Inventory
-              BonusItemOpt_ : ItemType option
-              CurrentCommandOpt_ : CurrentCommand option
-              ActionCommands_ : ActionCommand Queue }
+        { Dirty_ : Guid
+          BattleState_ : BattleState
+          Characters_ : Map<CharacterIndex, CharacterModel>
+          Inventory_ : Inventory
+          BonusItemOpt_ : ItemType option
+          CurrentCommandOpt_ : CurrentCommand option
+          ActionCommands_ : ActionCommand Queue }
 
         (* Local Properties *)
         member this.BattleState = this.BattleState_

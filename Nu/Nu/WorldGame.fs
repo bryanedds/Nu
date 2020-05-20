@@ -14,6 +14,9 @@ module WorldGameModule =
 
         member this.GetDispatcher world = World.getGameDispatcher world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
+        member this.GetModel<'a> world = World.getGameModel<'a> world
+        member this.SetModel<'a> value world = World.setGameModel<'a> value world
+        member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
         member this.GetOmniScreenOpt world = World.getOmniScreenOpt world
         member this.SetOmniScreenOpt value world = World.setOmniScreenOpt value world
         member this.OmniScreenOpt = lens Property? OmniScreenOpt this.GetOmniScreenOpt this.SetOmniScreenOpt this

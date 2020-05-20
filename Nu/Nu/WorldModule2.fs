@@ -940,7 +940,7 @@ module GameDispatcherModule =
 
     type World with
 
-        static member internal signalGame<'model, 'message, 'command when 'model : equality> signal (game : Game) world =
+        static member internal signalGame<'model, 'message, 'command> signal (game : Game) world =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (game.Model<'model> ()) signal game world
@@ -949,7 +949,7 @@ module GameDispatcherModule =
                 world
 
         /// Send a signal to a simulant.
-        static member signal<'model, 'message, 'command when 'model : equality> signal (simulant : Simulant) world =
+        static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.signalEntity<'model, 'message, 'command> signal entity world
             | :? Layer as layer -> World.signalLayer<'model, 'message, 'command> signal layer world
@@ -958,24 +958,14 @@ module GameDispatcherModule =
             | _ -> failwithumf ()
 
     and Game with
-    
-        member this.GetModel<'model when 'model : equality> world =
-            let property = this.Get<DesignerProperty> Property? Model world
-            property.DesignerValue :?> 'model
 
-        member this.SetModel<'model when 'model : equality> (value : 'model) world =
-            this.Set<DesignerProperty> Property? Model { DesignerType = typeof<'model>; DesignerValue = value } world
-
-        member this.Model<'model when 'model : equality> () =
-            lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
-
-        member this.UpdateModel<'model when 'model : equality> updater world =
+        member this.UpdateModel<'model> updater world =
             this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
-        member this.Signal<'model, 'message, 'command when 'model : equality> signal world =
+        member this.Signal<'model, 'message, 'command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] GameDispatcher<'model, 'message, 'command when 'model : equality> (initial : 'model) =
+    and [<AbstractClass>] GameDispatcher<'model, 'message, 'command> (initial : 'model) =
         inherit GameDispatcher ()
 
         member this.GetModel (game : Game) world : 'model =
@@ -988,7 +978,10 @@ module GameDispatcherModule =
             lens Property? Model (this.GetModel game) (flip this.SetModel game) game
 
         override this.Register (game, world) =
-            let (_, world) = World.attachModel initial Property? Model game world
+            let world =
+                if getType (game.GetModel world) = typeof<obj>
+                then game.SetModel<'model> initial world
+                else world
             let channels = this.Channel (this.Model game, game)
             let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
             let content = this.Content (this.Model game, game)
@@ -1056,7 +1049,7 @@ module WorldModule2' =
             | _ -> failwithumf ()
 
         /// Send a signal to a simulant.
-        static member signalFacet<'model, 'message, 'command when 'model : equality> signal facetName (simulant : Simulant) world =
+        static member signalFacet<'model, 'message, 'command> signal facetName (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> entity.SignalEntityFacet<'model, 'message, 'command> signal facetName world
             | _ -> failwithumf ()
@@ -1071,7 +1064,7 @@ module WorldModule2' =
             | _ -> failwithumf ()
 
         /// Send a signal to a simulant.
-        static member signal<'model, 'message, 'command when 'model : equality> signal (simulant : Simulant) world =
+        static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> entity.Signal<'model, 'message, 'command> signal world
             | :? Layer as layer -> layer.Signal<'model, 'message, 'command> signal world

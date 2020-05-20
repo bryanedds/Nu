@@ -11,16 +11,15 @@ type [<StructuralEquality; NoComparison>] AutoBattle =
 module CharacterModel =
 
     type [<CustomEquality; NoComparison>] CharacterModel =
-        private
-            { Dirty_ : Guid
-              BoundsOriginal_ : Vector4
-              Bounds_ : Vector4
-              CharacterIndex_ : CharacterIndex
-              CharacterState_ : CharacterState
-              AnimationState_ : CharacterAnimationState
-              AutoBattleOpt_ : AutoBattle option
-              ActionTime_ : int
-              InputState_ : CharacterInputState }
+        { Dirty_ : Guid
+          BoundsOriginal_ : Vector4
+          Bounds_ : Vector4
+          CharacterIndex_ : CharacterIndex
+          CharacterState_ : CharacterState
+          AnimationState_ : CharacterAnimationState
+          AutoBattleOpt_ : AutoBattle option
+          ActionTime_ : int
+          InputState_ : CharacterInputState }
 
         (* Bounds Original Properties *)
         member this.BoundsOriginal = this.BoundsOriginal_

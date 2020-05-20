@@ -121,11 +121,10 @@ module Describe =
             match valueOpt with
             | Some value ->
                 let property =
-                    match name with
-                    | "StaticData"  | "Model" | _ when name.EndsWith "Model" ->
-                        // HACK: need to convert these to designer properties...
+                    if String.length name > 5 && name.EndsWith "Model" then
+                        // HACK: needed to convert these facet models to designer properties...
                         { PropertyType = typeof<DesignerProperty>; PropertyValue = { DesignerType = ty; DesignerValue = value }}
-                    | _ -> { PropertyType = ty; PropertyValue = value }
+                    else { PropertyType = ty; PropertyValue = value }
                 Some (name, property)
             | None -> None) |>
         List.definitize

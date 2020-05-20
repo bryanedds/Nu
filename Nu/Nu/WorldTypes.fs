@@ -409,8 +409,9 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleGame that exist
     /// for performance that must be kept in sync.
     and [<NoEquality; NoComparison; CLIMutable>] GameState =
-        { Xtension : Xtension
-          Dispatcher : GameDispatcher
+        { Dispatcher : GameDispatcher
+          Xtension : Xtension
+          Model : DesignerProperty
           OmniScreenOpt : Screen option
           SelectedScreenOpt : Screen option
           ScreenTransitionDestinationOpt : Screen option
@@ -424,8 +425,9 @@ module WorldTypes =
         static member make (dispatcher : GameDispatcher) =
             let eyeCenter = Vector2.Zero
             let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
-            { Xtension = Xtension.makeSafe ()
-              Dispatcher = dispatcher
+            { Dispatcher = dispatcher
+              Xtension = Xtension.makeSafe ()
+              Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
               OmniScreenOpt = None
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
@@ -476,6 +478,7 @@ module WorldTypes =
     and [<NoEquality; NoComparison; CLIMutable>] ScreenState =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
+          Model : DesignerProperty
           TransitionState : TransitionState
           TransitionTicks : int64
           Incoming : Transition
@@ -491,6 +494,7 @@ module WorldTypes =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
+              Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
               TransitionState = IdlingState
               TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
@@ -542,6 +546,7 @@ module WorldTypes =
     and [<NoEquality; NoComparison; CLIMutable>] LayerState =
         { Dispatcher : LayerDispatcher
           Xtension : Xtension
+          Model : DesignerProperty
           Depth : single
           Visible : bool
           Persistent : bool
@@ -555,6 +560,7 @@ module WorldTypes =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
+              Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
               Depth = 0.0f
               Visible = true
               Persistent = true
@@ -615,10 +621,11 @@ module WorldTypes =
           mutable Xtension : Xtension
           mutable Transform : Transform
           mutable StaticData : DesignerProperty
-          mutable Overflow : Vector2
+          mutable Model : DesignerProperty
           mutable Flags : int
-          // 2 free cache line bytes here
+          // 4 free cache line bytes here
           // cache line end
+          mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable ScriptFrame : Scripting.DeclarationFrame
@@ -640,8 +647,9 @@ module WorldTypes =
                   ViewType = Relative
                   Omnipresent = false }
               StaticData = { DesignerType = typeof<string>; DesignerValue = "" }
-              Overflow = Vector2.Zero
+              Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
               Flags = 0b0100011000
+              Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural

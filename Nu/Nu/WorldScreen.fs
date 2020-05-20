@@ -14,6 +14,9 @@ module WorldScreenModule =
     
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
+        member this.GetModel<'a> world = World.getScreenModel<'a> this world
+        member this.SetModel<'a> value world = World.setScreenModel<'a> value this world
+        member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
         member this.GetTransitionState world = World.getScreenTransitionState this world
         member this.SetTransitionState value world = World.setScreenTransitionState value this world
         member this.TransitionState = lens Property? TransitionState this.GetTransitionState this.SetTransitionState this
