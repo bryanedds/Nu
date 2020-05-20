@@ -336,7 +336,7 @@ module Nu =
                     | Some payload ->
                         let (compressionArtifact, mapper) = payload :?> Guid * (ChangeData -> obj option -> World -> obj)
                         (compressionArtifact, Some mapper)
-                    | None -> (Gen.idEmpty, None)
+                    | None -> (Gen.id, None)
                 let (_, world) =
                     World.monitorSpecial
                         Gen.id None None None

@@ -552,9 +552,7 @@ module WorldModule =
                         subscription.PreviousDataOpt <- Some mapped
                         let (handling, world) =
                             if filtered then
-                                if subscription.Callbacks.Length > 1 then
-                                    Log.trace "TEST"
-                                Array.fold (fun (handling, world) (_, callback) ->
+                                Array.fold (fun (handling, world) (_, subscriber : Simulant, callback) ->
                                     match handling with
                                     | Cascade ->
                                         match callback with
@@ -563,7 +561,6 @@ module WorldModule =
                                             let (handling, worldObj) = WorldTypes.handleUserDefinedCallback callback mapped world
                                             (handling, worldObj :?> World)
                                         | FunctionCallback callback ->
-                                            let subscriber = subscription.SubscriberValue
                                             let (handling, world) =
                                                 // OPTIMIZATION: unrolled PublishEventHook here for speed.
                                                 // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
@@ -574,9 +571,7 @@ module WorldModule =
                                                 | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callback world
                                                 | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callback world
                                                 | _ -> failwithumf ()
-#if DEBUG
                                             let world = World.choose world
-#endif
                                             (handling, world)
                                     | Resolve -> (handling, world))
                                     (handling, world)
