@@ -10,6 +10,7 @@ open System.Linq
 open System.Reflection
 open System.Runtime.InteropServices
 open System.Windows.Forms
+open FSharp.Reflection
 open Prime
 open Nu
 open Nu.Gaia
@@ -522,7 +523,7 @@ module Gaia =
                     form.propertyEditor.Enabled <- not selectedGridItem.PropertyDescriptor.IsReadOnly
                     form.propertyNameLabel.Text <- selectedGridItem.Label
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                    if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || isNullTrueValue ty) then
+                    if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
                         let (keywords0, keywords1, prettyPrinter) =
                             match selectedGridItem.Label with
                             | "OverlayNameOpt" ->
@@ -579,7 +580,7 @@ module Gaia =
                     form.propertyEditor.Enabled <- true
                     form.propertyNameLabel.Text <- selectedGridItem.Label
                     form.propertyDescriptionTextBox.Text <- selectedGridItem.PropertyDescriptor.Description
-                    if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || isNullTrueValue ty) then
+                    if ty <> typeof<ComputedProperty> && (notNull selectedGridItem.Value || FSharpType.isNullTrueValue ty) then
                         let (keywords0, keywords1, prettyPrinter) =
                             let syntax = SyntaxAttribute.getOrDefault ty
                             let keywords0 =
