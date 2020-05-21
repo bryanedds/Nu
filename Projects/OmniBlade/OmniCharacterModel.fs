@@ -11,15 +11,16 @@ type [<StructuralEquality; NoComparison>] AutoBattle =
 module CharacterModel =
 
     type [<CustomEquality; NoComparison>] CharacterModel =
-        { Dirty_ : Guid
-          BoundsOriginal_ : Vector4
-          Bounds_ : Vector4
-          CharacterIndex_ : CharacterIndex
-          CharacterState_ : CharacterState
-          AnimationState_ : CharacterAnimationState
-          AutoBattleOpt_ : AutoBattle option
-          ActionTime_ : int
-          InputState_ : CharacterInputState }
+        private
+            { Dirty_ : Guid
+              BoundsOriginal_ : Vector4
+              Bounds_ : Vector4
+              CharacterIndex_ : CharacterIndex
+              CharacterState_ : CharacterState
+              AnimationState_ : CharacterAnimationState
+              AutoBattleOpt_ : AutoBattle option
+              ActionTime_ : int
+              InputState_ : CharacterInputState }
 
         (* Bounds Original Properties *)
         member this.BoundsOriginal = this.BoundsOriginal_
@@ -279,7 +280,7 @@ module CharacterModel =
     let empty =
         let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
         let animationState = { TimeStart = 0L; AnimationSheet = Assets.FinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Downward }
-        { Dirty_ = Gen.idEmpty
+        { Dirty_ = Gen.id
           BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = AllyIndex 0

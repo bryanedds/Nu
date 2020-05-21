@@ -30,13 +30,14 @@ type [<StructuralEquality; NoComparison>] CurrentCommand =
 module BattleModel =
 
     type [<CustomEquality; NoComparison>] BattleModel =
-        { Dirty_ : Guid
-          BattleState_ : BattleState
-          Characters_ : Map<CharacterIndex, CharacterModel>
-          Inventory_ : Inventory
-          BonusItemOpt_ : ItemType option
-          CurrentCommandOpt_ : CurrentCommand option
-          ActionCommands_ : ActionCommand Queue }
+        private
+            { Dirty_ : Guid
+              BattleState_ : BattleState
+              Characters_ : Map<CharacterIndex, CharacterModel>
+              Inventory_ : Inventory
+              BonusItemOpt_ : ItemType option
+              CurrentCommandOpt_ : CurrentCommand option
+              ActionCommands_ : ActionCommand Queue }
 
         (* Local Properties *)
         member this.BattleState = this.BattleState_
@@ -176,7 +177,7 @@ module BattleModel =
         model
 
     let empty =
-        { Dirty_ = Gen.idEmpty
+        { Dirty_ = Gen.id
           BattleState_ = BattleReady 0L
           Characters_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }

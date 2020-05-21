@@ -45,14 +45,15 @@ type [<StructuralEquality; NoComparison>] DialogModel =
 module FieldModel =
 
     type [<CustomEquality; NoComparison>] FieldModel =
-        { Dirty_ : Guid
-          FieldType_ : FieldType
-          Avatar_ : AvatarModel
-          Legion_ : Map<int, Legionnaire>
-          Advents_ : Advent Set
-          Inventory_ : Inventory
-          DialogOpt_ : DialogModel option
-          BattleOpt_ : BattleModel option}
+        private
+            { Dirty_ : Guid
+              FieldType_ : FieldType
+              Avatar_ : AvatarModel
+              Legion_ : Map<int, Legionnaire>
+              Advents_ : Advent Set
+              Inventory_ : Inventory
+              DialogOpt_ : DialogModel option
+              BattleOpt_ : BattleModel option}
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
@@ -100,7 +101,7 @@ module FieldModel =
           BattleOpt_ = None }
 
     let initial =
-        { Dirty_ = Gen.idEmpty
+        { Dirty_ = Gen.id
           FieldType_ = DebugField
           Avatar_ = AvatarModel.empty
           Legion_ = Map.ofList [(0, Legionnaire.finn); (1, Legionnaire.glenn)]
