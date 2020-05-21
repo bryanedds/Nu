@@ -545,6 +545,57 @@ module WorldScripting =
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2i target, a keyword index of X or Y, and an Int value.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
+        static member internal evalV4iExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|x; y; z; w|], world) ->
+                let xOpt = match x with Int x -> Some x | _ -> None
+                let yOpt = match y with Int y -> Some y | _ -> None
+                let zOpt = match z with Int z -> Some z | _ -> None
+                let wOpt = match w with Int w -> Some w | _ -> None
+                match (xOpt, yOpt, zOpt, wOpt) with
+                | (Some x, Some y, Some z, Some w) -> struct (Pluggable { Vector4i = Vector4i (x, y, z, w) }, world)
+                | (_, _, _, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires Int for all arguments.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 4 arguments required.", originOpt), world)
+
+        static member internal evalIndexV4iExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? Vector4iPluggable as v4i ->
+                    match indexer with
+                    | "X" -> struct (Int v4i.Vector4i.X, world)
+                    | "Y" -> struct (Int v4i.Vector4i.Y, world)
+                    | "Z" -> struct (Int v4i.Vector4i.Z, world)
+                    | "W" -> struct (Int v4i.Vector4i.W, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V4i.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V4i index.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalUpdateV4iExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Int i; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? Vector4iPluggable as v4i ->
+                    match indexer with
+                    | "X" -> struct (Pluggable { Vector4i = Vector4i (i, v4i.Vector4i.Y, v4i.Vector4i.Z, v4i.Vector4i.W) }, world)
+                    | "Y" -> struct (Pluggable { Vector4i = Vector4i (v4i.Vector4i.X, i, v4i.Vector4i.Z, v4i.Vector4i.W) }, world)
+                    | "Z" -> struct (Pluggable { Vector4i = Vector4i (v4i.Vector4i.X, v4i.Vector4i.Y, i, v4i.Vector4i.W) }, world)
+                    | "W" -> struct (Pluggable { Vector4i = Vector4i (v4i.Vector4i.X, v4i.Vector4i.Y, v4i.Vector4i.Z, i) }, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V4i.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V4i target, a keyword index of X, Y, Z, or W, and an Int value.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
         static member internal evalGetExtrinsic fnName exprs originOpt world =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
@@ -729,6 +780,9 @@ module WorldScripting =
                  ("v2i", { Fn = World.evalV2iExtrinsic; Pars = [|"x"; "y"|]; DocOpt = Some "Construct a Vector2i." })
                  ("index_Vector2i", { Fn = World.evalIndexV2iExtrinsic; Pars = [||]; DocOpt = None })
                  ("alter_Vector2i", { Fn = World.evalUpdateV2iExtrinsic; Pars = [||]; DocOpt = None })
+                 ("v4i", { Fn = World.evalV4iExtrinsic; Pars = [|"x"; "y"; "w"; "z"|]; DocOpt = Some "Construct a Vector4i." })
+                 ("index_Vector4i", { Fn = World.evalIndexV4iExtrinsic; Pars = [||]; DocOpt = None })
+                 ("alter_Vector4i", { Fn = World.evalUpdateV4iExtrinsic; Pars = [||]; DocOpt = None })
                  ("get", { Fn = World.evalGetExtrinsic; Pars = [|"simulant?"; "property"|]; DocOpt = Some "Get a simulant's property." })
                  ("getAsStream", { Fn = World.evalGetAsStreamExtrinsic; Pars = [|"simulant?"; "property"|]; DocOpt = Some "Get a simulant's property as a Stream." })
                  ("set", { Fn = World.evalSetExtrinsic; Pars = [|"simulant?"; "property"; "value"|]; DocOpt = Some "Set a simulant's property." })
