@@ -14,13 +14,13 @@ module DeclarativeOperators2 =
 
     type World with
 
-        static member internal tryAttachModel modelValue modelName (simulant : Simulant) world =
+        static member internal tryAttachModel (modelValue : 'model) modelName (simulant : Simulant) world =
             match World.tryGetProperty modelName simulant world with
             | None ->
                 let property = { DesignerType = typeof<'model>; DesignerValue = modelValue }
                 let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
                 World.attachProperty modelName true false property simulant world
-            | Some property -> world
+            | Some _ -> world
 
         static member internal actualizeViews views world =
             Seq.fold (fun world view ->

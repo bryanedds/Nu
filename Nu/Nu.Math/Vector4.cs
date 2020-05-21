@@ -1540,7 +1540,11 @@ namespace Nu
 
         #endregion
 
-        #region public override int GetHashCode()
+        #endregion
+
+        #endregion
+
+        #region Equatable and Comparable Members
 
         /// <summary>
         /// Returns the hashcode for this instance.
@@ -1550,10 +1554,6 @@ namespace Nu
         {
             return X.GetHashCode() ^ Y.GetHashCode() ^ Z.GetHashCode() ^ W.GetHashCode();
         }
-
-        #endregion
-
-        #region public override bool Equals(object obj)
 
         /// <summary>
         /// Indicates whether this instance and a specified object are equal.
@@ -1567,14 +1567,6 @@ namespace Nu
 
             return this.Equals((Vector4)obj);
         }
-
-        #endregion
-
-        #endregion
-
-        #endregion
-
-        #region Equatable and Comparable Members
 
         /// <summary>Indicates whether the current vector is equal to another vector.</summary>
         /// <param name="other">A vector to compare with this vector.</param>

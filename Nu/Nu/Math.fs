@@ -98,6 +98,25 @@ type [<CustomEquality; CustomComparison>] Vector2Pluggable =
             let y = Symbol.Number (scstring this.Vector2.Y, None)
             Symbol.Symbols ([v2; x; y], None)
 
+[<AutoOpen>]
+module Vector3 =
+
+    type Vector3 with
+        member this.MapX mapper = Vector3 (mapper this.X, this.Y, this.Z)
+        member this.MapY mapper = Vector3 (this.X, mapper this.Y, this.Z)
+        member this.MapZ mapper = Vector3 (this.X, this.Y, mapper this.Z)
+        member this.WithX x = Vector3 (x, this.Y, this.Z)
+        member this.WithY y = Vector3 (this.X, y, this.Z)
+        member this.WithZ z = Vector3 (this.X, this.Y, z)
+
+    let inline v3 x y z = Vector3 (x, y, z)
+    let inline v3Dup a = v3 a a a
+    let v3One = Vector3.One
+    let v3Zero = Vector3.Zero
+    let v3UnitX = Vector3.UnitX
+    let v3UnitY = Vector3.UnitY
+    let v3UnitZ = Vector3.UnitZ
+
 /// Converts Vector2 types.
 type Vector2Converter () =
     inherit TypeConverter ()
@@ -127,25 +146,6 @@ type Vector2Converter () =
             | _ -> failconv "Invalid Vector2Converter conversion from source." (Some symbol)
         | :? Vector2 -> source
         | _ -> failconv "Invalid Vector2Converter conversion from source." None
-
-[<AutoOpen>]
-module Vector3 =
-
-    type Vector3 with
-        member this.MapX mapper = Vector3 (mapper this.X, this.Y, this.Z)
-        member this.MapY mapper = Vector3 (this.X, mapper this.Y, this.Z)
-        member this.MapZ mapper = Vector3 (this.X, this.Y, mapper this.Z)
-        member this.WithX x = Vector3 (x, this.Y, this.Z)
-        member this.WithY y = Vector3 (this.X, y, this.Z)
-        member this.WithZ z = Vector3 (this.X, this.Y, z)
-
-    let inline v3 x y z = Vector3 (x, y, z)
-    let inline v3Dup a = v3 a a a
-    let v3One = Vector3.One
-    let v3Zero = Vector3.Zero
-    let v3UnitX = Vector3.UnitX
-    let v3UnitY = Vector3.UnitY
-    let v3UnitZ = Vector3.UnitZ
 
 /// Converts Vector3 types.
 type Vector3Converter () =
@@ -179,6 +179,43 @@ type Vector3Converter () =
                 failconv "Invalid Vector3Converter conversion from source." (Some symbol)
         | :? Vector3 -> source
         | _ -> failconv "Invalid Vector3Converter conversion from source." None
+
+[<AutoOpen>]
+module Vector4 =
+
+    type Vector4 with
+        member this.Translate (translation : Vector2) = Vector4 (this.X + translation.X, this.Y + translation.Y, this.Z + translation.X, this.W + translation.Y)
+        member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
+        member this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
+        member this.MapZ mapper = Vector4 (this.X, this.Y, mapper this.Z, this.W)
+        member this.MapW mapper = Vector4 (this.X, this.Y, this.Z, mapper this.W)
+        member this.WithX x = Vector4 (x, this.Y, this.Z, this.W)
+        member this.WithY y = Vector4 (this.X, y, this.Z, this.W)
+        member this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
+        member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
+        member this.WithPosition position = this.Translate (position - this.Position)
+        member this.WithCenter center = this.Translate (center - this.Center)
+        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
+        member this.WithTop top = this.Translate (top - this.Top)
+        member this.WithLeft left = this.Translate (left - this.Left)
+        member this.WithRight right = this.Translate (right - this.Right)
+
+    let inline v4 x y z w = Vector4 (x, y, z, w)
+    let inline v4Dup a = v4 a a a a
+    let v4One = Vector4.One
+    let v4Zero = Vector4.Zero
+    let v4UnitX = Vector4.UnitX
+    let v4UnitY = Vector4.UnitY
+    let v4UnitZ = Vector4.UnitZ
+    let v4UnitW = Vector4.UnitW
+    let v4Bounds (position : Vector2) (size : Vector2) = v4 position.X position.Y (position.X + size.X) (position.Y + size.Y)
+    let v4BoundsOverflow (position : Vector2) (size : Vector2) (overflow : Vector2) =
+        let sizeHalf = size * 0.5f
+        let center = position + sizeHalf
+        let sizeHalfOverflow = Vector2.Multiply (sizeHalf, overflow + Vector2.One)
+        let xy = center - sizeHalfOverflow
+        let x2y2 = center + sizeHalfOverflow
+        v4 xy.X xy.Y x2y2.X x2y2.Y
 
 /// The Vector4 value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector4Pluggable =
@@ -222,43 +259,6 @@ type [<CustomEquality; CustomComparison>] Vector4Pluggable =
             let z = Symbol.Number (scstring this.Vector4.Z, None)
             let w = Symbol.Number (scstring this.Vector4.W, None)
             Symbol.Symbols ([v4; x; y; z; w], None)
-
-[<AutoOpen>]
-module Vector4 =
-
-    type Vector4 with
-        member this.Translate (translation : Vector2) = Vector4 (this.X + translation.X, this.Y + translation.Y, this.Z + translation.X, this.W + translation.Y)
-        member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
-        member this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
-        member this.MapZ mapper = Vector4 (this.X, this.Y, mapper this.Z, this.W)
-        member this.MapW mapper = Vector4 (this.X, this.Y, this.Z, mapper this.W)
-        member this.WithX x = Vector4 (x, this.Y, this.Z, this.W)
-        member this.WithY y = Vector4 (this.X, y, this.Z, this.W)
-        member this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
-        member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
-        member this.WithPosition position = this.Translate (position - this.Position)
-        member this.WithCenter center = this.Translate (center - this.Center)
-        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
-        member this.WithTop top = this.Translate (top - this.Top)
-        member this.WithLeft left = this.Translate (left - this.Left)
-        member this.WithRight right = this.Translate (right - this.Right)
-
-    let inline v4 x y z w = Vector4 (x, y, z, w)
-    let inline v4Dup a = v4 a a a a
-    let v4One = Vector4.One
-    let v4Zero = Vector4.Zero
-    let v4UnitX = Vector4.UnitX
-    let v4UnitY = Vector4.UnitY
-    let v4UnitZ = Vector4.UnitZ
-    let v4UnitW = Vector4.UnitW
-    let v4Bounds (position : Vector2) (size : Vector2) = v4 position.X position.Y (position.X + size.X) (position.Y + size.Y)
-    let v4BoundsOverflow (position : Vector2) (size : Vector2) (overflow : Vector2) =
-        let sizeHalf = size * 0.5f
-        let center = position + sizeHalf
-        let sizeHalfOverflow = Vector2.Multiply (sizeHalf, overflow + Vector2.One)
-        let xy = center - sizeHalfOverflow
-        let x2y2 = center + sizeHalfOverflow
-        v4 xy.X xy.Y x2y2.X x2y2.Y
 
 /// Converts Vector4 types.
 type Vector4Converter () =
@@ -378,6 +378,172 @@ type Vector2iConverter () =
             | _ -> failconv "Invalid Vector2iConverter conversion from source." (Some symbol)
         | :? Vector2i -> source
         | _ -> failconv "Invalid Vector2iConverter conversion from source." None
+
+[<AutoOpen>]
+module Vector3i =
+
+    type Vector3i with
+        member this.MapX mapper = Vector3i (mapper this.X, this.Y, this.Z)
+        member this.MapY mapper = Vector3i (this.X, mapper this.Y, this.Z)
+        member this.MapZ mapper = Vector3i (this.X, this.Y, mapper this.Z)
+        member this.WithX x = Vector3i (x, this.Y, this.Z)
+        member this.WithY y = Vector3i (this.X, y, this.Z)
+        member this.WithZ z = Vector3i (this.X, this.Y, z)
+
+    let inline v3i x y z = Vector3i (x, y, z)
+    let inline v3iDup a = v3i a a a
+    let v3iOne = Vector3i.One
+    let v3iZero = Vector3i.Zero
+    let v3iUnitX = Vector3i.UnitX
+    let v3iUnitY = Vector3i.UnitY
+    let v3iUnitZ = Vector3i.UnitZ
+
+/// Converts Vector4 types.
+type Vector3iConverter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Vector3i>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let v3i = source :?> Vector3i
+            Symbols
+                ([Number (scstring v3i.X, None)
+                  Number (scstring v3i.Y, None)
+                  Number (scstring v3i.Z, None)], None) :> obj
+        elif destType = typeof<Vector3i> then source
+        else failconv "Invalid Vector3iConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Vector3i>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([Number (x, _); Number (y, _); Number (z, _)], _) ->
+                Vector3i (scvalue x, scvalue y, scvalue z) :> obj
+            | _ ->
+                failconv "Invalid Vector4Converter conversion from source." (Some symbol)
+        | :? Vector3i -> source
+        | _ -> failconv "Invalid Vector4Converter conversion from source." None
+
+[<AutoOpen>]
+module Vector4i =
+
+    type Vector4i with
+        member this.Translate (translation : Vector2i) = Vector4i (this.X + translation.X, this.Y + translation.Y, this.Z + translation.X, this.W + translation.Y)
+        member this.MapX mapper = Vector4i (mapper this.X, this.Y, this.Z, this.W)
+        member this.MapY mapper = Vector4i (this.X, mapper this.Y, this.Z, this.W)
+        member this.MapZ mapper = Vector4i (this.X, this.Y, mapper this.Z, this.W)
+        member this.MapW mapper = Vector4i (this.X, this.Y, this.Z, mapper this.W)
+        member this.WithX x = Vector4i (x, this.Y, this.Z, this.W)
+        member this.WithY y = Vector4i (this.X, y, this.Z, this.W)
+        member this.WithZ z = Vector4i (this.X, this.Y, z, this.W)
+        member this.WithW w = Vector4i (this.X, this.Y, this.Z, w)
+        member this.WithPosition position = this.Translate (position - this.Position)
+        member this.WithCenter center = this.Translate (center - this.Center)
+        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
+        member this.WithTop top = this.Translate (top - this.Top)
+        member this.WithLeft left = this.Translate (left - this.Left)
+        member this.WithRight right = this.Translate (right - this.Right)
+
+    let inline v4i x y z w = Vector4i (x, y, z, w)
+    let inline v4iDup a = v4 a a a a
+    let v4iOne = Vector4i.One
+    let v4iZero = Vector4i.Zero
+    let v4iUnitX = Vector4i.UnitX
+    let v4iUnitY = Vector4i.UnitY
+    let v4iUnitZ = Vector4i.UnitZ
+    let v4iUnitW = Vector4i.UnitW
+    let v4iBounds (position : Vector2i) (size : Vector2i) = v4i position.X position.Y (position.X + size.X) (position.Y + size.Y)
+    let v4iBoundsOverflow (position : Vector2i) (size : Vector2i) (overflow : Vector2i) =
+        let sizeHalf = size / 2
+        let center = position + sizeHalf
+        let sizeHalfOverflow = Vector2i.Multiply (sizeHalf, overflow + Vector2i.One)
+        let xy = center - sizeHalfOverflow
+        let x2y2 = center + sizeHalfOverflow
+        v4i xy.X xy.Y x2y2.X x2y2.Y
+
+/// The Vector4 value that can be plugged into the scripting language.
+type [<CustomEquality; CustomComparison>] Vector4iPluggable =
+    { Vector4i : Vector4i }
+
+    static member equals left right =
+        left.Vector4i = right.Vector4i
+
+    static member compare left right =
+        compare (left.Vector4i.X, left.Vector4i.Y) (right.Vector4i.X, right.Vector4i.Y)
+
+    override this.GetHashCode () =
+        hash this.Vector4i
+
+    override this.Equals that =
+        match that with
+        | :? Vector4iPluggable as that -> Vector4iPluggable.equals this that
+        | _ -> failwithumf ()
+
+    interface Vector4iPluggable IComparable with
+        member this.CompareTo that =
+            Vector4iPluggable.compare this that
+
+    interface Scripting.Pluggable with
+
+        member this.CompareTo that =
+            match that with
+            | :? Vector4iPluggable as that -> (this :> Vector4iPluggable IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+        member this.TypeName =
+            "Vector4i"
+
+        member this.FSharpType =
+            getType this.Vector4i
+
+        member this.ToSymbol () =
+            let v4i = Symbol.Atom ("v4i", None)
+            let x = Symbol.Number (scstring this.Vector4i.X, None)
+            let y = Symbol.Number (scstring this.Vector4i.Y, None)
+            let z = Symbol.Number (scstring this.Vector4i.Z, None)
+            let w = Symbol.Number (scstring this.Vector4i.W, None)
+            Symbol.Symbols ([v4i; x; y; z; w], None)
+
+/// Converts Vector4 types.
+type Vector4iConverter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Vector4i>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let v4i = source :?> Vector4i
+            Symbols
+                ([Number (scstring v4i.X, None)
+                  Number (scstring v4i.Y, None)
+                  Number (scstring v4i.Z, None)
+                  Number (scstring v4i.W, None)], None) :> obj
+        elif destType = typeof<Vector4i> then source
+        else failconv "Invalid Vector4iConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Vector4i>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([Number (x, _); Number (y, _); Number (z, _); Number (w, _)], _) ->
+                Vector4i (scvalue x, scvalue y, scvalue z, scvalue w) :> obj
+            | _ ->
+                failconv "Invalid Vector4Converter conversion from source." (Some symbol)
+        | :? Vector4i -> source
+        | _ -> failconv "Invalid Vector4Converter conversion from source." None
 
 [<AutoOpen>]
 module Matrix3 =
