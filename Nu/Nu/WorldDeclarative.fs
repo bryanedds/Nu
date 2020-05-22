@@ -179,8 +179,8 @@ module WorldDeclarative =
             let sieve' = fun a ->
                 match lens.PayloadOpt with
                 | Some payload ->
-                    let (index, _, _) = payload :?> (int * Guid * (ChangeData -> obj option -> World -> obj))
-                    let item = a |> Reflection.objToObjSeq |> Seq.item index
+                    let (indices, _, _) = payload :?> Payload
+                    let item = Array.fold (fun current index -> current |> Reflection.objToObjSeq |> Seq.item index) a indices
                     sieve item
                 | None -> a |> sieve
             let mapper' = fun a (_ : obj option) (_ : World) -> sieve' a.Value
@@ -208,7 +208,12 @@ module WorldDeclarative =
                         let world =
                             Seq.fold (fun world guidAndContent ->
                                 let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
-                                let payloadOpt = (index, Gen.id, mapper') :> obj |> Some
+                                let payloadOpt =
+                                    match lens.PayloadOpt with
+                                    | Some payload ->
+                                        let (indices, _, _) = payload :?> Payload
+                                        (Array.add index indices, Gen.id, mapper') :> obj |> Some
+                                    | None -> ([|index|], Gen.id, mapper') :> obj |> Some
                                 let lens = { lens with PayloadOpt = payloadOpt }
                                 let content = mapper index lens world
                                 match World.tryGetKeyedValue (scstring guid) world with
