@@ -176,9 +176,15 @@ module WorldDeclarative =
             world =
             let mutable previous = Set.empty // TODO: P1: consider if a USet or HashSet would be more efficient now that HashSet has property cloning in its ctor
             let guid = Gen.id
+            let sieve' = fun a ->
+                match lens.PayloadOpt with
+                | Some payload ->
+                    let (index, _, _) = payload :?> (int * Guid * (ChangeData -> obj option -> World -> obj))
+                    let item = a |> Reflection.objToObjSeq |> Seq.item index
+                    sieve item
+                | None -> a |> sieve
+            let mapper' = fun a (_ : obj option) (_ : World) -> sieve' a.Value
             let filter = fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true
-            let mapper' = fun a (_ : obj option) (_ : World) -> sieve a.Value
-            let payloadOpt = Some ((Gen.id, mapper') :> obj)
             let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
             let lenses = Lens.explodeIndexedOpt indexOpt lensSeq
             let subscription = fun _ world ->
@@ -202,6 +208,7 @@ module WorldDeclarative =
                         let world =
                             Seq.fold (fun world guidAndContent ->
                                 let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
+                                let payloadOpt = (index, Gen.id, mapper') :> obj |> Some
                                 let lens = { lens with PayloadOpt = payloadOpt }
                                 let content = mapper index lens world
                                 match World.tryGetKeyedValue (scstring guid) world with
