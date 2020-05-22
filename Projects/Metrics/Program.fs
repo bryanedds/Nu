@@ -96,12 +96,8 @@ type ElmishGameDispatcher () =
     override this.Content (model, _) =
         [Content.screen "Screen" Vanilla []
             [Content.layers model id (constant >> id) (fun i ints world ->
-                let intsValue = ints.Get world
-                ignore intsValue
                 Content.layer (scstring i) []
                     [Content.entities ints id (constant >> id) (fun j int world ->
-                        let intValue = int.Get world
-                        ignore intValue
                         Content.text (scstring j)
                             [Entity.Text <== int --> string
                              Entity.Position == v2 (single i * 16.0f - 480.0f) (single j * 16.0f - 272.0f)])])
