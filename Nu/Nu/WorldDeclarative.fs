@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections
 open Prime
 open Nu
 
@@ -165,6 +166,7 @@ module WorldDeclarative =
     type World with
 
         /// Turn an entity lens into a series of live simulants.
+        /// OPTIMIZATION: lots of optimizations going on in here including inlining and mutation!
         static member expandSimulants
             (lens : Lens<obj, World>)
             (sieve : obj -> obj)
@@ -180,7 +182,7 @@ module WorldDeclarative =
                 match lens.PayloadOpt with
                 | Some payload ->
                     let (indices, _, _) = payload :?> Payload
-                    let item = Array.fold (fun current index -> current |> Reflection.objToObjSeq |> Seq.item index) a indices
+                    let item = Array.fold (fun current index -> IEnumerable.item index (current :?> IEnumerable)) a indices
                     sieve item
                 | None -> a |> sieve
             let mapper' = fun a (_ : obj option) (_ : World) -> sieve' a.Value
@@ -188,17 +190,18 @@ module WorldDeclarative =
             let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
             let lenses = Lens.explodeIndexedOpt indexOpt lensSeq
             let subscription = fun _ world ->
-                let current =
-                    lenses |>
-                    Seq.map (fun lens -> (Lens.get lens world, { Lens.dereference lens with Validate = fun world -> Option.isSome (lens.Get world) })) |>
-                    Seq.filter (fst >> Option.isSome) |>
-                    Seq.take (Lens.get lensSeq world |> Seq.length) |>
-                    Seq.map (fun (opt, lens) ->
-                        let (index, _) = Option.get opt
+                let mutable current = Set.empty
+                let mutable count = world |> Lens.get lensSeq |> Seq.length
+                let mutable enr = lenses.GetEnumerator ()
+                while count > 0 && enr.MoveNext () do
+                    let lens' = enr.Current
+                    match lens'.Get world with
+                    | Some (index, _) -> 
                         let guid = Gen.idDeterministic index guid
-                        let lens = lens.Map snd
-                        PartialComparable.make guid (index, lens)) |>
-                    Set.ofSeq
+                        let lens = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) } --> snd
+                        current <- Set.add (PartialComparable.make guid (index, lens)) current
+                        count <- count - 1
+                    | None -> ()
                 let added = Set.difference current previous
                 let removed = Set.difference previous current
                 let changed = Set.notEmpty added || Set.notEmpty removed
