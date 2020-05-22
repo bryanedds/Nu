@@ -191,15 +191,16 @@ module WorldDeclarative =
             let lenses = Lens.explodeIndexedOpt indexOpt lensSeq
             let subscription = fun _ world ->
                 let mutable current = Set.empty
-                let mutable count = world |> Lens.get lensSeq |> Seq.length
+                let mutable count = Lens.get lensSeq world |> Seq.length
                 let mutable enr = lenses.GetEnumerator ()
                 while count > 0 && enr.MoveNext () do
                     let lens' = enr.Current
                     match lens'.Get world with
                     | Some (index, _) -> 
                         let guid = Gen.idDeterministic index guid
-                        let lens = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) } --> snd
-                        current <- Set.add (PartialComparable.make guid (index, lens)) current
+                        let lens'' = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) } --> snd
+                        let item = PartialComparable.make guid (index, lens'')
+                        current <- Set.add item current
                         count <- count - 1
                     | None -> ()
                 let added = Set.difference current previous
