@@ -177,6 +177,7 @@ module WorldDeclarative =
             (parent : Simulant)
             world =
             let guid = Gen.id
+            let guid2 = Gen.id
             let sieve' = fun a ->
                 match lens.PayloadOpt with
                 | Some payload ->
@@ -216,13 +217,13 @@ module WorldDeclarative =
                         count <- count - 1
                     | None -> ()
                 let previous =
-                    match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> Set> guid world with
+                    match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> Set> guid2 world with
                     | Some previous -> previous
                     | None -> Set.empty
                 let added = Set.difference current previous
                 let removed = Set.difference previous current
                 let changed = Set.notEmpty added || Set.notEmpty removed
-                let world = World.addKeyedValue guid current world
+                let world = World.addKeyedValue guid2 current world
                 let world =
                     if changed then
                         let world =
