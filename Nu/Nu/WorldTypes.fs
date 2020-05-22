@@ -1158,7 +1158,7 @@ module WorldTypes =
         default this.MakeOverlayRoutes () = []
 
         /// Make a list of keyed values to hook into the engine.
-        abstract MakeKeyedValues : World -> ((string * obj) list) * World
+        abstract MakeKeyedValues : World -> ((Guid * obj) list) * World
         default this.MakeKeyedValues world = ([], world)
 
         /// A call-back at the beginning of each frame.

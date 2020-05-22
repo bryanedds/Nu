@@ -31,7 +31,7 @@ module AmbientStateModule =
               UpdateCount : int64
               Liveness : Liveness
               Metadata : Metadata
-              KeyValueStore : UMap<string, obj>
+              KeyValueStore : UMap<Guid, obj>
               Tasklets : 'w Tasklet UList
               SdlDepsOpt : SdlDeps option
               // cache line end

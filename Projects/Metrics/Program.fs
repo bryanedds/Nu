@@ -81,7 +81,7 @@ type MyGameDispatcher () =
         World.selectScreen Simulants.DefaultScreen world
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<int list list, int, unit> (List.init 27 (fun _ -> List.init 28 id))
+    inherit GameDispatcher<int list list, int, unit> (List.init 33 (fun _ -> List.init 33 id)) // 990 Elmish entities
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
