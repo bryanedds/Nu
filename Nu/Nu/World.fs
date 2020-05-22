@@ -331,11 +331,11 @@ module Nu =
             // init bind5 F# reach-around
             WorldModule.bind5 <- fun simulant left right world ->
                 let (_, world) = tryPropagate simulant left right world // propagate immediately to start things out synchronized
-                let (compressionArtifact, mapperOpt) =
+                let (compressionId, mapperOpt) =
                     match right.PayloadOpt with
                     | Some payload ->
-                        let (_, compressionArtifact, mapper) = payload :?> int * Guid * (ChangeData -> obj option -> World -> obj)
-                        (compressionArtifact, Some mapper)
+                        let (_, compressionId, mapper) = payload :?> Payload
+                        (compressionId, Some mapper)
                     | None -> (Gen.id, None)
                 let (_, world) =
                     World.monitorSpecial
@@ -346,7 +346,7 @@ module Nu =
                         world
                 let (_, world) =
                     World.monitorSpecial
-                        compressionArtifact
+                        compressionId
                         mapperOpt
                         (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true))
                         None
