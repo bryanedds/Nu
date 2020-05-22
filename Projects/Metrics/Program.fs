@@ -103,7 +103,7 @@ type ElmishGameDispatcher () =
                         let intValue = int.Get world
                         ignore intValue
                         Content.text (scstring j)
-                            [Entity.Text <== int --> scstring
+                            [Entity.Text <== int --> string
                              Entity.Position == v2 (single i * 16.0f - 480.0f) (single j * 16.0f - 272.0f)])])
              Content.layer "Layer" []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
