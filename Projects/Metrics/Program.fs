@@ -80,9 +80,41 @@ type MyGameDispatcher () =
                 world indices
         World.selectScreen Simulants.DefaultScreen world
 
+type ElmishGameDispatcher () =
+    inherit GameDispatcher<int list list, int, unit> (List.init 22 (fun _ -> List.init 23 id))
+
+    override this.Channel (_, game) =
+        [game.UpdateEvent => msg 0]
+
+    override this.Message (model, message, _, _) =
+        match message with
+        | 0 ->
+            let model = List.map (List.map inc) model
+            just model
+        | _ -> just model
+
+    override this.Content (model, _) =
+        [Content.screen "Screen" Vanilla []
+            [Content.layers model id (constant >> id) (fun i ints world ->
+                let intsValue = ints.Get world
+                ignore intsValue
+                Content.layer (scstring i) []
+                    [Content.entities ints id (constant >> id) (fun j int world ->
+                        let intValue = int.Get world
+                        ignore intValue
+                        Content.text (scstring j)
+                            [Entity.Text <== int --> scstring
+                             Entity.Position == v2 (single i * 16.0f - 480.0f) (single j * 16.0f - 272.0f)])])
+             Content.layer "Layer" []
+                [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
+
 type MetricsPlugin () =
     inherit NuPlugin ()
+#if ELMISH
+    override this.GetGameDispatcher () = typeof<ElmishGameDispatcher>
+#else
     override this.GetGameDispatcher () = typeof<MyGameDispatcher>
+#endif
 
 /// This program exists to take metrics on Nu's performance.
 module Program =

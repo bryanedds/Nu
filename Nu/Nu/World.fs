@@ -334,7 +334,7 @@ module Nu =
                 let (compressionArtifact, mapperOpt) =
                     match right.PayloadOpt with
                     | Some payload ->
-                        let (compressionArtifact, mapper) = payload :?> Guid * (ChangeData -> obj option -> World -> obj)
+                        let (_, compressionArtifact, mapper) = payload :?> int * Guid * (ChangeData -> obj option -> World -> obj)
                         (compressionArtifact, Some mapper)
                     | None -> (Gen.id, None)
                 let (_, world) =
