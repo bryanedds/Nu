@@ -388,7 +388,7 @@ module WorldEntityModule =
                         world (snd content)
                 let world =
                     match guidOpt with
-                    | Some guid -> World.addKeyedValue (scstring guid) entity world
+                    | Some guid -> World.addKeyedValue (guid.ToString ()) entity world
                     | None -> world
                 world
             | Choice3Of3 (entityName, filePath) ->
