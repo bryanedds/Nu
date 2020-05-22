@@ -388,12 +388,12 @@ module WorldEntityModule =
                         world (snd content)
                 let world =
                     match guidOpt with
-                    | Some guid -> World.addKeyedValue (guid.ToString ()) entity world
+                    | Some guid -> World.addKeyedValue guid entity world
                     | None -> world
                 world
             | Choice3Of3 (entityName, filePath) ->
                 let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world
-                let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
+                let world = match guidOpt with Some guid -> World.addKeyedValue guid entity world | None -> world
                 let world =
                     match origin with
                     | SimulantOrigin simulant

@@ -216,16 +216,16 @@ module WorldDeclarative =
                                     | None -> ([|index|], Gen.id, mapper') :> obj |> Some
                                 let lens = { lens with PayloadOpt = payloadOpt }
                                 let content = mapper index lens world
-                                match World.tryGetKeyedValue (guid.ToString ()) world with
+                                match World.tryGetKeyedValue guid world with
                                 | None -> WorldModule.expandContent Unchecked.defaultof<_> (Some guid) content origin parent world
                                 | Some _ -> world)
                                 world added
                         let world =
                             Seq.fold (fun world guidAndContent ->
                                 let (guid, _) = PartialComparable.unmake guidAndContent
-                                match World.tryGetKeyedValue (guid.ToString ()) world with
+                                match World.tryGetKeyedValue guid world with
                                 | Some simulant ->
-                                    let world = World.removeKeyedValue (guid.ToString ()) world
+                                    let world = World.removeKeyedValue guid world
                                     WorldModule.destroy simulant world
                                 | None -> failwithumf ())
                                 world removed

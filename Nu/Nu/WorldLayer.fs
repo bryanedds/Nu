@@ -281,12 +281,12 @@ module WorldLayerModule =
                         world entityContents
                 let world =
                     match guidOpt with
-                    | Some guid -> World.addKeyedValue (scstring guid) layer world
+                    | Some guid -> World.addKeyedValue guid layer world
                     | None -> world
                 world
             | Choice3Of3 (layerName, filePath) ->
                 let (layer, world) = World.readLayerFromFile filePath (Some layerName) screen world
-                match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
+                match guidOpt with Some guid -> World.addKeyedValue guid layer world | None -> world
 
 namespace Debug
 open Nu
