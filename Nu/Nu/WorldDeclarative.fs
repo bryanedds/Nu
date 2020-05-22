@@ -176,7 +176,6 @@ module WorldDeclarative =
             (origin : ContentOrigin)
             (parent : Simulant)
             world =
-            let mutable previous = Set.empty // TODO: P1: consider if a USet or HashSet would be more efficient now that HashSet has property cloning in its ctor
             let guid = Gen.id
             let sieve' = fun a ->
                 match lens.PayloadOpt with
@@ -190,6 +189,10 @@ module WorldDeclarative =
             let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
             let lenses = Lens.explodeIndexedOpt indexOpt lensSeq
             let subscription = fun _ world ->
+                let previous =
+                    match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> Set> guid world with
+                    | Some previous -> previous
+                    | None -> Set.empty
                 let mutable current = Set.empty
                 let mutable count = Lens.get lensSeq world |> Seq.length
                 let mutable enr = lenses.GetEnumerator ()
@@ -206,7 +209,7 @@ module WorldDeclarative =
                 let added = Set.difference current previous
                 let removed = Set.difference previous current
                 let changed = Set.notEmpty added || Set.notEmpty removed
-                previous <- current
+                let world = World.addKeyedValue guid current world
                 let world =
                     if changed then
                         let world =
