@@ -189,14 +189,23 @@ module WorldDeclarative =
             let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
             let lenses = Lens.explodeIndexedOpt indexOpt lensSeq
             let subscription = fun _ world ->
-                let previous =
-                    match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> Set> guid world with
-                    | Some previous -> previous
-                    | None -> Set.empty
+                //let items = Lens.get lensSeq world
+                //let mutable current = Set.empty
+                //let mutable enr = items.GetEnumerator ()
+                //let mutable i = 0
+                //while enr.MoveNext () do
+                //    let item = enr.Current
+                //    let index = match indexOpt with Some indexer -> indexer item | None -> i
+                //    let guidDet = Gen.idDeterministic index guid
+                //    let lensOpt = lenses |> Seq.item index
+                //    let lensItem = { Lens.dereference lensOpt with Validate = fun world -> Option.isSome (lensOpt.Get world) } --> snd
+                //    current <- Set.add (PartialComparable.make guidDet (index, lensItem)) current
+                //    i <- i + 1
+                let items = Lens.get lensSeq world
                 let mutable current = Set.empty
-                let mutable count = Lens.get lensSeq world |> Seq.length
+                let mutable count = Seq.length items
                 let mutable enr = lenses.GetEnumerator ()
-                while count > 0 && enr.MoveNext () do
+                while count <> 0 && enr.MoveNext () do
                     let lens' = enr.Current
                     match lens'.Get world with
                     | Some (index, _) -> 
@@ -206,6 +215,10 @@ module WorldDeclarative =
                         current <- Set.add item current
                         count <- count - 1
                     | None -> ()
+                let previous =
+                    match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> Set> guid world with
+                    | Some previous -> previous
+                    | None -> Set.empty
                 let added = Set.difference current previous
                 let removed = Set.difference previous current
                 let changed = Set.notEmpty added || Set.notEmpty removed
