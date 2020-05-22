@@ -176,8 +176,8 @@ module WorldDeclarative =
             (origin : ContentOrigin)
             (parent : Simulant)
             world =
-            let guid = Gen.id
-            let guid2 = Gen.id
+            let expansionId = Gen.id
+            let previousSetKey = Gen.id
             let sieve' = fun a ->
                 match lens.PayloadOpt with
                 | Some payload ->
@@ -190,6 +190,8 @@ module WorldDeclarative =
             let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
             let lenses = Lens.explodeIndexedOpt indexOpt lensSeq
             let subscription = fun _ world ->
+                // NOTE: this is an alternative implementation that I thought would be faster but is not yet seeming to be.
+                // Perhaps it will be faster in that cases where there are large gaps in the indices.
                 //let items = Lens.get lensSeq world
                 //let mutable current = Set.empty
                 //let mutable enr = items.GetEnumerator ()
@@ -197,10 +199,10 @@ module WorldDeclarative =
                 //while enr.MoveNext () do
                 //    let item = enr.Current
                 //    let index = match indexOpt with Some indexer -> indexer item | None -> i
-                //    let guidDet = Gen.idDeterministic index guid
+                //    let expansionIdDet = Gen.idDeterministic index expansionId
                 //    let lensOpt = lenses |> Seq.item index
                 //    let lensItem = { Lens.dereference lensOpt with Validate = fun world -> Option.isSome (lensOpt.Get world) } --> snd
-                //    current <- Set.add (PartialComparable.make guidDet (index, lensItem)) current
+                //    current <- Set.add (PartialComparable.make expansionIdDet (index, lensItem)) current
                 //    i <- i + 1
                 let items = Lens.get lensSeq world
                 let mutable current = Set.empty
@@ -210,20 +212,20 @@ module WorldDeclarative =
                     let lens' = enr.Current
                     match lens'.Get world with
                     | Some (index, _) -> 
-                        let guid = Gen.idDeterministic index guid
+                        let guid = Gen.idDeterministic index expansionId
                         let lens'' = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) } --> snd
                         let item = PartialComparable.make guid (index, lens'')
                         current <- Set.add item current
                         count <- count - 1
                     | None -> ()
                 let previous =
-                    match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> Set> guid2 world with
+                    match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> Set> previousSetKey world with
                     | Some previous -> previous
                     | None -> Set.empty
                 let added = Set.difference current previous
                 let removed = Set.difference previous current
                 let changed = Set.notEmpty added || Set.notEmpty removed
-                let world = World.addKeyedValue guid2 current world
+                let world = World.addKeyedValue previousSetKey current world
                 let world =
                     if changed then
                         let world =
