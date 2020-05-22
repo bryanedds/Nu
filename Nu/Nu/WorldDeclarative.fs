@@ -180,7 +180,7 @@ module WorldDeclarative =
                 match lens.PayloadOpt with
                 | Some payload ->
                     let (index, _, _) = payload :?> (int * Guid * (ChangeData -> obj option -> World -> obj))
-                    let item = a |> Reflection.objToObjList |> List.item index
+                    let item = a |> Reflection.objToObjSeq |> Seq.item index
                     sieve item
                 | None -> a |> sieve
             let mapper' = fun a (_ : obj option) (_ : World) -> sieve' a.Value

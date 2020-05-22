@@ -81,7 +81,7 @@ type MyGameDispatcher () =
         World.selectScreen Simulants.DefaultScreen world
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<int list list, int, unit> (List.init 22 (fun _ -> List.init 23 id))
+    inherit GameDispatcher<int list list, int, unit> (List.init 27 (fun _ -> List.init 28 id))
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -98,8 +98,8 @@ type ElmishGameDispatcher () =
             [Content.layers model id (constant >> id) (fun i ints world ->
                 Content.layer (scstring i) []
                     [Content.entities ints id (constant >> id) (fun j int world ->
-                        Content.text (scstring j)
-                            [Entity.Text <== int --> string
+                        Content.label (scstring j)
+                            [Entity.Size <== int --> fun int -> v2 (single int) (single int)
                              Entity.Position == v2 (single i * 16.0f - 480.0f) (single j * 16.0f - 272.0f)])])
              Content.layer "Layer" []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
