@@ -245,10 +245,11 @@ module WorldLayerModule =
             World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin screen world
 
         /// Turn layer content into a live layer.
-        static member expandLayerContent guidOpt content origin screen world =
+        static member expandLayerContent content origin screen world =
             match LayerContent.expand content screen world with
             | Choice1Of3 (lens, sieve, spread, indexOpt, mapper) ->
-                World.expandLayers lens sieve spread indexOpt mapper origin screen world
+                let world = World.expandLayers lens sieve spread indexOpt mapper origin screen world
+                (None, world)
             | Choice2Of3 (_, descriptor, handlers, binds, streams, entityFilePaths, entityContents) ->
                 let (layer, world) =
                     World.createLayer3 descriptor screen world
@@ -276,17 +277,13 @@ module WorldLayerModule =
                 let world =
                     List.fold (fun world (owner, entityContents) ->
                         List.fold (fun world entityContent ->
-                            World.expandEntityContent (Some Gen.id) entityContent (SimulantOrigin owner) layer world)
+                            World.expandEntityContent entityContent (SimulantOrigin owner) layer world |> snd)
                             world entityContents)
                         world entityContents
-                let world =
-                    match guidOpt with
-                    | Some guid -> World.addKeyedValue guid layer world
-                    | None -> world
-                world
+                (Some layer, world)
             | Choice3Of3 (layerName, filePath) ->
                 let (layer, world) = World.readLayerFromFile filePath (Some layerName) screen world
-                match guidOpt with Some guid -> World.addKeyedValue guid layer world | None -> world
+                (Some layer, world)
 
 namespace Debug
 open Nu

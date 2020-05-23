@@ -105,7 +105,7 @@ module FacetModule =
             let content = this.Content (this.Model entity, entity)
             let world =
                 List.fold (fun world content ->
-                    World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) entity.Parent world)
+                    World.expandEntityContent content (FacetOrigin (entity, getTypeName this)) entity.Parent world |> snd)
                     world content
             let initializers = this.Initializers (this.Model entity, entity)
             List.fold (fun world initializer ->
@@ -1191,7 +1191,7 @@ module EntityDispatcherModule =
             let content = this.Content (this.Model entity, entity)
             let world =
                 List.fold (fun world content ->
-                    World.expandEntityContent None content (SimulantOrigin entity) entity.Parent world)
+                    World.expandEntityContent content (SimulantOrigin entity) entity.Parent world |> snd)
                     world content
             let initializers = this.Initializers (this.Model entity, entity)
             List.fold (fun world initializer ->
@@ -2035,7 +2035,7 @@ module LayerDispatcherModule =
             let content = this.Content (this.Model layer, layer)
             let world =
                 List.fold (fun world content ->
-                    World.expandEntityContent None content (SimulantOrigin layer) layer world)
+                    World.expandEntityContent content (SimulantOrigin layer) layer world |> snd)
                     world content
             let initializers = this.Initializers (this.Model layer, layer)
             List.fold (fun world initializer ->
@@ -2127,7 +2127,7 @@ module ScreenDispatcherModule =
             let content = this.Content (this.Model screen, screen)
             let world =
                 List.fold (fun world content ->
-                    World.expandLayerContent None content (SimulantOrigin screen) screen world)
+                    World.expandLayerContent content (SimulantOrigin screen) screen world |> snd)
                     world content
             let initializers = this.Initializers (this.Model screen, screen)
             List.fold (fun world initializer ->

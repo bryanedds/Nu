@@ -211,7 +211,7 @@ module WorldDeclarative =
                 while count <> 0 && enr.MoveNext () do
                     let lens' = enr.Current
                     match lens'.Get world with
-                    | Some (index, _) -> 
+                    | Some (index, _) ->
                         let guid = Gen.idDeterministic index expansionId
                         let lens'' = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) } --> snd
                         let item = PartialComparable.make guid (index, lens'')
@@ -240,7 +240,11 @@ module WorldDeclarative =
                                 let lens = { lens with PayloadOpt = payloadOpt }
                                 let content = mapper index lens world
                                 match World.tryGetKeyedValue guid world with
-                                | None -> WorldModule.expandContent Unchecked.defaultof<_> (Some guid) content origin parent world
+                                | None ->
+                                    let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin parent world
+                                    match simulantOpt with
+                                    | Some simulant -> World.addKeyedValue guid simulant world
+                                    | None -> world
                                 | Some _ -> world)
                                 world added
                         let world =

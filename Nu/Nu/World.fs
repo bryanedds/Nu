@@ -359,7 +359,7 @@ module Nu =
             // init remaining reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
-            WorldModule.expandContent <- fun setScreenSplash guidOpt content origin parent world -> World.expandContent setScreenSplash guidOpt content origin parent world
+            WorldModule.expandContent <- fun setScreenSplash content origin parent world -> World.expandContent setScreenSplash content origin parent world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
             WorldModule.trySignalFacet <- fun signalObj facetName simulant world -> World.trySignalFacet signalObj facetName simulant world
             WorldModule.trySignal <- fun signalObj simulant world -> World.trySignal signalObj simulant world
