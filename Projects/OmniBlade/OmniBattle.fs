@@ -703,9 +703,9 @@ module OmniBattle =
 
         override this.Content (model, screen) =
 
-            [// scene layer
-             let background = Simulants.BattleScene / "Background"
-             Content.layer Simulants.BattleScene.Name []
+            // scene layer
+            let background = Simulants.BattleScene / "Background"
+            [Content.layer Simulants.BattleScene.Name []
 
                 [// background
                  Content.label background.Name
