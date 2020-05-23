@@ -342,10 +342,11 @@ module WorldEntityModule =
             World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin layer world
 
         /// Turn entity content into a live entity.
-        static member expandEntityContent guidOpt content origin layer world =
+        static member expandEntityContent content origin layer world =
             match EntityContent.expand content layer world with
             | Choice1Of3 (lens, sieve, spread, indexOpt, mapper) ->
-                World.expandEntities lens sieve spread indexOpt mapper origin layer world
+                let world = World.expandEntities lens sieve spread indexOpt mapper origin layer world
+                (None, world)
             | Choice2Of3 (_, descriptor, handlers, binds, content) ->
                 let (entity, world) =
                     World.createEntity4 DefaultOverlay descriptor layer world
@@ -384,16 +385,11 @@ module WorldEntityModule =
                         world handlers
                 let world =
                     List.fold (fun world content ->
-                        World.expandEntityContent (Some Gen.id) content origin layer world)
+                        World.expandEntityContent content origin layer world |> snd)
                         world (snd content)
-                let world =
-                    match guidOpt with
-                    | Some guid -> World.addKeyedValue guid entity world
-                    | None -> world
-                world
+                (Some entity, world)
             | Choice3Of3 (entityName, filePath) ->
                 let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world
-                let world = match guidOpt with Some guid -> World.addKeyedValue guid entity world | None -> world
                 let world =
                     match origin with
                     | SimulantOrigin simulant
@@ -403,7 +399,7 @@ module WorldEntityModule =
                             (Events.Unregistering --> simulant.SimulantAddress)
                             entity
                             world
-                world
+                (Some entity, world)
 
 namespace Debug
 open Nu

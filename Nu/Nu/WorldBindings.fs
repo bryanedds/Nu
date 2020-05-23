@@ -1101,41 +1101,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isKeyboardKeyDown' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let expandContent setScreenSplash guidOpt content origin parent world =
-        let oldWorld = world
-        try
-            let setScreenSplash =
-                match ScriptingSystem.tryExport typeof<FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>> setScreenSplash world with
-                | Some value -> value :?> FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>
-                | None -> failwith "Invalid argument type for 'setScreenSplash'; expecting a value convertable to FSharpFunc`2."
-            let guidOpt =
-                match ScriptingSystem.tryExport typeof<FSharpOption<Guid>> guidOpt world with
-                | Some value -> value :?> FSharpOption<Guid>
-                | None -> failwith "Invalid argument type for 'guidOpt'; expecting a value convertable to FSharpOption`1."
-            let content =
-                match ScriptingSystem.tryExport typeof<SimulantContent> content world with
-                | Some value -> value :?> SimulantContent
-                | None -> failwith "Invalid argument type for 'content'; expecting a value convertable to SimulantContent."
-            let origin =
-                match ScriptingSystem.tryExport typeof<ContentOrigin> origin world with
-                | Some value -> value :?> ContentOrigin
-                | None -> failwith "Invalid argument type for 'origin'; expecting a value convertable to ContentOrigin."
-            let struct (parent, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal parent world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (World.derive address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.expandContent setScreenSplash guidOpt content origin parent world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'expandContent' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
     let destroy simulant world =
         let oldWorld = world
         try
@@ -3059,17 +3024,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalExpandContentBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|setScreenSplash; guidOpt; content; origin; parent|] -> expandContent setScreenSplash guidOpt content origin parent world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalDestroyBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3930,7 +3884,6 @@ module WorldBindings =
              ("getMousePosition", { Fn = evalGetMousePositionBinding; Pars = [||]; DocOpt = None })
              ("getMousePositionF", { Fn = evalGetMousePositionFBinding; Pars = [||]; DocOpt = None })
              ("isKeyboardKeyDown", { Fn = evalIsKeyboardKeyDownBinding; Pars = [|"key"|]; DocOpt = None })
-             ("expandContent", { Fn = evalExpandContentBinding; Pars = [|"setScreenSplash"; "guidOpt"; "content"; "origin"; "parent"|]; DocOpt = None })
              ("destroy", { Fn = evalDestroyBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("getSelected", { Fn = evalGetSelectedBinding; Pars = [|"simulant"|]; DocOpt = None })
              ("tryGetParent", { Fn = evalTryGetParentBinding; Pars = [|"simulant"|]; DocOpt = None })
