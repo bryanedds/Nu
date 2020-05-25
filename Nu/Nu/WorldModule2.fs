@@ -903,8 +903,7 @@ module WorldModule2 =
 
                                                     // update counters and recur
                                                     TotalTimer.Stop ()
-                                                    let world = World.updateTickTime world
-                                                    let world = World.incrementUpdateCount world
+                                                    let world = World.updateTime world
                                                     World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
 
                                                 | Exiting -> world

@@ -217,11 +217,8 @@ module WorldModule =
         static member internal updateAmbientState updater world =
             World.choose { world with AmbientState = updater world.AmbientState }
 
-        static member internal updateTickTime world =
-            World.updateAmbientState AmbientState.updateTickTime world
-
-        static member internal incrementUpdateCount world =
-            World.updateAmbientState AmbientState.incrementUpdateCount world
+        static member internal updateTime world =
+            World.updateAmbientState AmbientState.updateTime world
     
         /// Get the tick rate.
         [<FunctionBinding>]
@@ -267,6 +264,16 @@ module WorldModule =
         [<FunctionBinding>]
         static member getUpdateCount world =
             World.getAmbientStateBy AmbientState.getUpdateCount world
+
+        /// Get the world's clock time.
+        /// No script function binding due to lack of a DateTimeOffset script conversion.
+        static member getClockTime world =
+            World.getAmbientStateBy AmbientState.getClockTime world
+
+        /// Get the world's clock delta time.
+        /// No script function binding due to lack of a TimeSpan script conversion.
+        static member getClockDelta world =
+            World.getAmbientStateBy AmbientState.getClockDelta world
 
         /// Get the the liveness state of the engine.
         [<FunctionBinding>]
