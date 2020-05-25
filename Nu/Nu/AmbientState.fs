@@ -29,7 +29,7 @@ module AmbientStateModule =
               TickRate : int64 // NOTE: might be better to make this accessible from World to avoid cache misses
               TickTime : int64
               UpdateCount : int64
-              ClockDelta : TimeSpan  // NOTE: might be better to make this accessible from World to avoid cache misses
+              ClockDelta : single // NOTE: might be better to make this accessible from World to avoid cache misses
               Liveness : Liveness
               Metadata : Metadata
               KeyValueStore : UMap<Guid, obj>
@@ -80,7 +80,7 @@ module AmbientStateModule =
         let getUpdateCount state =
             state.UpdateCount
 
-        /// Get the clock delta.
+        /// Get the clock delta as a floating point number.
         let getClockDelta state =
             state.ClockDelta
 
@@ -91,10 +91,11 @@ module AmbientStateModule =
         /// Update the tick and clock times.
         let updateTime state =
             let now = DateTimeOffset.UtcNow
+            let delta = now - state.ClockTime
             { state with
                 TickTime = state.TickTime + state.TickRate
                 UpdateCount = inc state.UpdateCount
-                ClockDelta = now - state.ClockTime
+                ClockDelta = single delta.TotalMilliseconds / (16.666666667f * single state.TickRate)
                 ClockTime = now }
 
         /// Get the the liveness state of the engine.
@@ -208,7 +209,7 @@ module AmbientStateModule =
         let make tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
             { TickRate = tickRate
               TickTime = 0L
-              ClockDelta = TimeSpan.Zero
+              ClockDelta = 1.0f
               ClockTime = DateTimeOffset.Now
               UpdateCount = 0L
               Liveness = Running

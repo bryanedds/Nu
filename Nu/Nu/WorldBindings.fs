@@ -18,37 +18,37 @@ module WorldBindings =
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i v4i get getAsStream set setAsStream update streamEvent stream bind self parent grandparent game toData monitor " +
         "resolve relate reloadAssets tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning selectScreen tryTransitionScreen " +
-        "transitionScreen setScreenSplash createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile " +
-        "createSplashScreen6 createSplashScreen getEntitiesInView2 getEntitiesInBounds3 " +
-        "getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds getEntitiesAtPoint " +
-        "playSong playSong4 playSound playSound3 " +
-        "fadeOutSong stopSong hintAudioPackageUse hintAudioPackageDisuse " +
-        "reloadAudioAssets hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets " +
-        "bodyExists getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals " +
-        "getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt isBodyOnGround createBody " +
-        "createBodies destroyBody destroyBodies createJoint " +
-        "createJoints destroyJoint destroyJoints setBodyPosition " +
-        "setBodyRotation setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse " +
-        "applyBodyLinearImpulse applyBodyForce localizeBodyShape isMouseButtonDown " +
-        "getMousePosition getMousePositionF isKeyboardKeyDown expandContent " +
-        "destroy getSelected tryGetParent getParent " +
-        "tryGetGrandparent getGrandparent getChildren getExists " +
-        "getEntities0 getLayers0 isSelected writeGameToFile " +
-        "readGameFromFile getScreens setScreenDissolve destroyScreen " +
-        "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
-        "getLayers createLayer destroyLayer destroyLayers " +
-        "writeLayerToFile readLayerFromFile getEntities destroyEntity " +
-        "destroyEntities tryPickEntity writeEntityToFile createEntity " +
-        "readEntityFromFile reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
-        "getEyeCenter setEyeCenter getEyeSize setEyeSize " +
-        "getOmniScreenOpt setOmniScreenOpt getOmniScreen setOmniScreen " +
-        "getSelectedScreenOpt setSelectedScreenOpt getSelectedScreen setSelectedScreen " +
-        "getScreenTransitionDestinationOpt getViewBoundsRelative getViewBoundsAbsolute getViewBounds " +
-        "isBoundsInView mouseToScreen mouseToWorld mouseToEntity " +
-        "getTickRate getTickRateF setTickRate resetTickTime " +
-        "incTickTime decTickTime getTickTime isTicking " +
-        "getUpdateCount getLiveness exit tryGetTextureSize " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning selectScreen tryTransitionScreen transitionScreen " +
+        "setScreenSplash createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile createSplashScreen6 " +
+        "createSplashScreen getEntitiesInView2 getEntitiesInBounds3 getEntitiesAtPoint3 " +
+        "getEntitiesInView getEntitiesInBounds getEntitiesAtPoint playSong " +
+        "playSong4 playSound playSound3 fadeOutSong " +
+        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
+        "hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets bodyExists " +
+        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
+        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
+        "destroyBody destroyBodies createJoint createJoints " +
+        "destroyJoint destroyJoints setBodyPosition setBodyRotation " +
+        "setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse applyBodyLinearImpulse " +
+        "applyBodyForce localizeBodyShape isMouseButtonDown getMousePosition " +
+        "getMousePositionF isKeyboardKeyDown expandContent destroy " +
+        "getSelected tryGetParent getParent tryGetGrandparent " +
+        "getGrandparent getChildren getExists getEntities0 " +
+        "getLayers0 isSelected writeGameToFile readGameFromFile " +
+        "getScreens setScreenDissolve destroyScreen createScreen " +
+        "createDissolveScreen writeScreenToFile readScreenFromFile getLayers " +
+        "createLayer destroyLayer destroyLayers writeLayerToFile " +
+        "readLayerFromFile getEntities destroyEntity destroyEntities " +
+        "tryPickEntity writeEntityToFile createEntity readEntityFromFile " +
+        "reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames getEyeCenter " +
+        "setEyeCenter getEyeSize setEyeSize getOmniScreenOpt " +
+        "setOmniScreenOpt getOmniScreen setOmniScreen getSelectedScreenOpt " +
+        "setSelectedScreenOpt getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt " +
+        "getViewBoundsRelative getViewBoundsAbsolute getViewBounds isBoundsInView " +
+        "mouseToScreen mouseToWorld mouseToEntity getTickRate " +
+        "getTickRateF setTickRate resetTickTime incTickTime " +
+        "decTickTime getTickTime isTicking getUpdateCount " +
+        "getClockDelta getLiveness exit tryGetTextureSize " +
         "getTextureSize tryGetTextureSizeF getTextureSizeF reloadSymbols"
 
     let resolve relation world =
@@ -2306,6 +2306,17 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getUpdateCount' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let getClockDelta world =
+        let oldWorld = world
+        try
+            let result = World.getClockDelta world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Single> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getClockDelta' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let getLiveness world =
         let oldWorld = world
         try
@@ -2424,7 +2435,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> reloadAssets  world
+            | [||] -> reloadAssets world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2435,7 +2446,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> tryGetIsSelectedScreenIdling  world
+            | [||] -> tryGetIsSelectedScreenIdling world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2446,7 +2457,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> tryGetIsSelectedScreenTransitioning  world
+            | [||] -> tryGetIsSelectedScreenTransitioning world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2457,7 +2468,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> isSelectedScreenIdling  world
+            | [||] -> isSelectedScreenIdling world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2468,7 +2479,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> isSelectedScreenTransitioning  world
+            | [||] -> isSelectedScreenTransitioning world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2567,7 +2578,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getEntitiesInView2  world
+            | [||] -> getEntitiesInView2 world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2600,7 +2611,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getEntitiesInView  world
+            | [||] -> getEntitiesInView world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2688,7 +2699,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> stopSong  world
+            | [||] -> stopSong world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2721,7 +2732,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> reloadAudioAssets  world
+            | [||] -> reloadAudioAssets world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2754,7 +2765,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> reloadRenderAssets  world
+            | [||] -> reloadRenderAssets world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3029,7 +3040,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getMousePosition  world
+            | [||] -> getMousePosition world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3040,7 +3051,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getMousePositionF  world
+            | [||] -> getMousePositionF world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3161,7 +3172,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getEntities0  world
+            | [||] -> getEntities0 world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3172,7 +3183,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getLayers0  world
+            | [||] -> getLayers0 world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3216,7 +3227,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getScreens  world
+            | [||] -> getScreens world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3469,7 +3480,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getEyeCenter  world
+            | [||] -> getEyeCenter world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3491,7 +3502,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getEyeSize  world
+            | [||] -> getEyeSize world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3513,7 +3524,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getOmniScreenOpt  world
+            | [||] -> getOmniScreenOpt world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3535,7 +3546,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getOmniScreen  world
+            | [||] -> getOmniScreen world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3557,7 +3568,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getSelectedScreenOpt  world
+            | [||] -> getSelectedScreenOpt world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3579,7 +3590,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getSelectedScreen  world
+            | [||] -> getSelectedScreen world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3601,7 +3612,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getScreenTransitionDestinationOpt  world
+            | [||] -> getScreenTransitionDestinationOpt world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3612,7 +3623,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getViewBoundsRelative  world
+            | [||] -> getViewBoundsRelative world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3623,7 +3634,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getViewBoundsAbsolute  world
+            | [||] -> getViewBoundsAbsolute world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3689,7 +3700,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getTickRate  world
+            | [||] -> getTickRate world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3700,7 +3711,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getTickRateF  world
+            | [||] -> getTickRateF world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3722,7 +3733,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> resetTickTime  world
+            | [||] -> resetTickTime world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3733,7 +3744,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> incTickTime  world
+            | [||] -> incTickTime world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3744,7 +3755,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> decTickTime  world
+            | [||] -> decTickTime world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3755,7 +3766,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getTickTime  world
+            | [||] -> getTickTime world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3766,7 +3777,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> isTicking  world
+            | [||] -> isTicking world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3777,7 +3788,18 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getUpdateCount  world
+            | [||] -> getUpdateCount world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetClockDeltaBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getClockDelta world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3788,7 +3810,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> getLiveness  world
+            | [||] -> getLiveness world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3799,7 +3821,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> exit  world
+            | [||] -> exit world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3854,7 +3876,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [||] -> reloadSymbols  world
+            | [||] -> reloadSymbols world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3994,6 +4016,7 @@ module WorldBindings =
              ("getTickTime", { Fn = evalGetTickTimeBinding; Pars = [||]; DocOpt = None })
              ("isTicking", { Fn = evalIsTickingBinding; Pars = [||]; DocOpt = None })
              ("getUpdateCount", { Fn = evalGetUpdateCountBinding; Pars = [||]; DocOpt = None })
+             ("getClockDelta", { Fn = evalGetClockDeltaBinding; Pars = [||]; DocOpt = None })
              ("getLiveness", { Fn = evalGetLivenessBinding; Pars = [||]; DocOpt = None })
              ("exit", { Fn = evalExitBinding; Pars = [||]; DocOpt = None })
              ("tryGetTextureSize", { Fn = evalTryGetTextureSizeBinding; Pars = [|"assetTag"|]; DocOpt = None })
