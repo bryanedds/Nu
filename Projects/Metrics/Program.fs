@@ -7,7 +7,7 @@ open Nu.Declarative
 type MetricsEntityDispatcher () =
     inherit EntityDispatcher ()
 
-#if !OPTIMIZE
+#if !OPTIMIZED
     static member Facets =
         [typeof<StaticSpriteFacet>]
 #endif
@@ -17,7 +17,7 @@ type MetricsEntityDispatcher () =
         [define Entity.PublishChanges true]
 #endif
 
-#if OPTIMIZE
+#if OPTIMIZED
     static member Properties =
         [define Entity.Imperative true // makes updates faster by using mutation
          define Entity.Omnipresent true // makes updates faster by not touching the entity tree
@@ -30,7 +30,7 @@ type MetricsEntityDispatcher () =
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
 
-#if OPTIMIZE
+#if OPTIMIZED
     override this.Actualize (entity, world) =
         let position = entity.GetPosition world
         let image = entity.GetStaticData world

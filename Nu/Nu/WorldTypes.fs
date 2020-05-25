@@ -142,16 +142,17 @@ module WorldTypes =
     let mutable internal handleUserDefinedCallback = Unchecked.defaultof<obj -> obj -> obj -> Handling * obj>
 
     // OPTIMIZATION: Entity flag bit-masks; only for use by internal reflection facilities.
-    let [<Literal>] internal ImperativeMask =            0b0000000001
-    let [<Literal>] internal PublishChangesMask =        0b0000000010
-    let [<Literal>] internal IgnoreLayerMask =           0b0000000100
-    let [<Literal>] internal EnabledMask =               0b0000001000
-    let [<Literal>] internal VisibleMask =               0b0000010000
-    let [<Literal>] internal AlwaysUpdateMask =          0b0000100000
-    let [<Literal>] internal PublishUpdatesMask =        0b0001000000
-    let [<Literal>] internal PublishPostUpdatesMask =    0b0010000000
-    let [<Literal>] internal PersistentMask =            0b0100000000
-    let [<Literal>] internal UnusedMask =                0b1000000000
+    let [<Literal>] internal ImperativeMask =            0b00000000001
+    let [<Literal>] internal PublishChangesMask =        0b00000000010
+    let [<Literal>] internal IgnoreLayerMask =           0b00000000100
+    let [<Literal>] internal EnabledMask =               0b00000001000
+    let [<Literal>] internal VisibleMask =               0b00000010000
+    let [<Literal>] internal AlwaysUpdateMask =          0b00000100000
+    let [<Literal>] internal PublishUpdatesMask =        0b00001000000
+    let [<Literal>] internal PublishPostUpdatesMask =    0b00010000000
+    let [<Literal>] internal PersistentMask =            0b00100000000
+    let [<Literal>] internal InvalidatedMask =           0b01000000000
+    let [<Literal>] internal UnusedMask =                0b10000000000
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription =
@@ -725,6 +726,7 @@ module WorldTypes =
         member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
         member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
         member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
+        member this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension

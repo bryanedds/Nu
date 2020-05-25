@@ -25,7 +25,7 @@ module DeclarativeOperators2 =
         static member internal actualizeViews views world =
             Seq.fold (fun world view ->
                 match view with
-                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
+                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorMessage descriptor) world
                 | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
                 | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
                 | FadeOutSong fade -> World.fadeOutSong fade world
@@ -413,8 +413,8 @@ module TextFacetModule =
             let textStr = text.GetText world
             if text.GetVisibleLayered world && not (String.IsNullOrWhiteSpace textStr) then
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
+                    (RenderDescriptorMessage
+                        (LayerableDescriptor
                             { Depth = text.GetDepth world + 0.5f
                               AssetTag = text.GetFont world
                               PositionY = (text.GetPosition world).Y
@@ -426,7 +426,7 @@ module TextFacetModule =
                                       ViewType = Absolute
                                       Font = text.GetFont world
                                       Color = text.GetTextColor world
-                                      Justification = text.GetJustification world }}|])
+                                      Justification = text.GetJustification world }}))
                     world
             else world
 
@@ -800,8 +800,8 @@ module TileMapFacetModule =
                                         Seq.toArray
                                     if World.isBoundsInView viewType (Math.makeBounds parallaxPosition size) world then
                                         World.enqueueRenderMessage
-                                            (RenderDescriptorsMessage
-                                                [|LayerableDescriptor 
+                                            (RenderDescriptorMessage
+                                                (LayerableDescriptor 
                                                     { Depth = depth
                                                       AssetTag = image
                                                       PositionY = parallaxPosition.Y
@@ -816,7 +816,7 @@ module TileMapFacetModule =
                                                               TileSourceSize = tileSourceSize
                                                               TileSize = tileSize
                                                               TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                                              TileSetImage = image }}|])
+                                                              TileSetImage = image }}))
                                             world
                                     else world)
                                 world [|0 .. dec map.Height|])
@@ -1051,8 +1051,8 @@ module StaticSpriteFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
+                    (RenderDescriptorMessage
+                        (LayerableDescriptor
                             { Depth = entity.GetDepth world
                               AssetTag = entity.GetStaticImage world
                               PositionY = (entity.GetPosition world).Y
@@ -1067,7 +1067,7 @@ module StaticSpriteFacetModule =
                                       Image = entity.GetStaticImage world
                                       Color = Vector4.One
                                       Glow = Vector4.Zero
-                                      Flip = entity.GetFlip world }}|])
+                                      Flip = entity.GetFlip world }}))
                     world
             else world
 
@@ -1125,8 +1125,8 @@ module AnimatedSpriteFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
+                    (RenderDescriptorMessage
+                        (LayerableDescriptor
                             { Depth = entity.GetDepth world
                               AssetTag = entity.GetAnimationSheet world
                               PositionY = (entity.GetPosition world).Y
@@ -1141,7 +1141,7 @@ module AnimatedSpriteFacetModule =
                                       Image = entity.GetAnimationSheet world
                                       Color = Vector4.One
                                       Glow = Vector4.Zero
-                                      Flip = entity.GetFlip world }}|])
+                                      Flip = entity.GetFlip world }}))
                     world
             else world
 
@@ -1441,8 +1441,8 @@ module ButtonDispatcherModule =
             if button.GetVisibleLayered world then
                 let image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
+                    (RenderDescriptorMessage
+                        (LayerableDescriptor
                             { Depth = button.GetDepth world
                               AssetTag = image
                               PositionY = (button.GetPosition world).Y
@@ -1457,7 +1457,7 @@ module ButtonDispatcherModule =
                                       Image = image
                                       Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world
                                       Glow = Vector4.Zero
-                                      Flip = FlipNone }}|])
+                                      Flip = FlipNone }}))
                     world
             else world
 
@@ -1486,8 +1486,8 @@ module LabelDispatcherModule =
         override this.Actualize (label, world) =
             if label.GetVisibleLayered world then
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
+                    (RenderDescriptorMessage
+                        (LayerableDescriptor
                             { Depth = label.GetDepth world
                               AssetTag = label.GetLabelImage world
                               PositionY = (label.GetPosition world).Y
@@ -1502,7 +1502,7 @@ module LabelDispatcherModule =
                                       Image = label.GetLabelImage world
                                       Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world
                                       Glow = Vector4.Zero
-                                      Flip = FlipNone }}|])
+                                      Flip = FlipNone }}))
                     world
             else world
 
@@ -1534,8 +1534,8 @@ module TextDispatcherModule =
         override this.Actualize (text, world) =
             if text.GetVisibleLayered world then
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
+                    (RenderDescriptorMessage
+                        (LayerableDescriptor
                             { Depth = text.GetDepth world
                               AssetTag = text.GetBackgroundImage world
                               PositionY = (text.GetPosition world).Y
@@ -1550,7 +1550,7 @@ module TextDispatcherModule =
                                       Image = text.GetBackgroundImage world
                                       Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world
                                       Glow = Vector4.Zero
-                                      Flip = FlipNone }}|])
+                                      Flip = FlipNone }}))
                     world
             else world
 
@@ -1651,8 +1651,8 @@ module ToggleDispatcherModule =
                     then toggle.GetOpenImage world
                     else toggle.GetClosedImage world
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
+                    (RenderDescriptorMessage
+                        (LayerableDescriptor
                             { Depth = toggle.GetDepth world
                               AssetTag = image
                               PositionY = (toggle.GetPosition world).Y
@@ -1667,7 +1667,7 @@ module ToggleDispatcherModule =
                                       Image = image
                                       Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world
                                       Glow = Vector4.Zero
-                                      Flip = FlipNone }}|])
+                                      Flip = FlipNone }}))
                     world
             else world
 
@@ -1954,8 +1954,8 @@ module CharacterDispatcherModule =
                         let image = entity.GetCharacterWalkSheet world
                         (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
+                    (RenderDescriptorMessage
+                        (LayerableDescriptor
                             { Depth = entity.GetDepth world
                               AssetTag = image
                               PositionY = (entity.GetPosition world).Y
@@ -1970,7 +1970,7 @@ module CharacterDispatcherModule =
                                       Image = image
                                       Color = Vector4.One
                                       Glow = Vector4.Zero
-                                      Flip = if facingLeft then FlipH else FlipNone }}|])
+                                      Flip = if facingLeft then FlipH else FlipNone }}))
                     world
             else world
 
