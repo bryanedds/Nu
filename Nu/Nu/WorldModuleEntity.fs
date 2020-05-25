@@ -50,7 +50,7 @@ module WorldModuleEntity =
         static member private entityStateFinder (entity : Entity) world =
             // OPTIMIZATION: a ton of optimization has gone down in here...!
             let entityStateOpt = entity.EntityStateOpt
-            if isNull (entityStateOpt :> obj) then
+            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated then
                 getFreshKeyAndValueEntity <- entity
                 getFreshKeyAndValueWorld <- world
                 let entityStateOpt =
@@ -868,7 +868,12 @@ module WorldModuleEntity =
                 EventSystemDelegate.cleanEventAddressCache entity.EntityAddress
 
                 // remove the entity from the world
-                World.removeEntityState entity world
+                let world = World.removeEntityState entity world
+
+                // invalidate entity state
+                let entityState = World.getEntityState entity world
+                entityState.Invalidated <- true
+                world
 
             // pass
             else world
