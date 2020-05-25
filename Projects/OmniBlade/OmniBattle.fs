@@ -716,18 +716,18 @@ module OmniBattle =
 
                  // allies
                  Content.entitiesIndexedBy model
-                    (fun model -> BattleModel.getAllies model) (constant >> id)
+                    (fun model -> BattleModel.getAllies model) constant
                     (fun model -> model.PartyIndex)
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstringm index) [Entity.CharacterModel <== model])
 
                  // enemies
                  Content.entitiesIndexedBy model
-                    (fun model -> BattleModel.getEnemies model) (constant >> id)
+                    (fun model -> BattleModel.getEnemies model) constant
                     (fun model -> model.PartyIndex)
                     (fun index model _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstringm index) [Entity.CharacterModel <== model])]
 
              // input layers
-             Content.layers model (fun model -> BattleModel.getAllies model) (constant >> id) $ fun index ally _ ->
+             Content.layers model (fun model -> BattleModel.getAllies model) constant $ fun index ally _ ->
 
                 // input layer
                 let allyIndex = AllyIndex index
