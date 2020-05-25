@@ -9,7 +9,7 @@ open Prime
 module Gen =
 
     let private Lock = obj ()
-    let private random = Random ()
+    let private Random = Random ()
     let mutable private Counter = -1L
 
     /// Generates engine-specific values on-demand.
@@ -18,15 +18,15 @@ module Gen =
 
         /// Get the next random number integer.
         static member random =
-            lock Lock (fun () -> random.Next)
+            lock Lock (fun () -> Random.Next)
             
         /// Get the next random number integer below maxValue.
         static member random1 maxValue =
-            lock Lock (fun () -> random.Next maxValue)
+            lock Lock (fun () -> Random.Next maxValue)
 
         /// Get the next random number integer GTE minValue and LT maxValue.
         static member random2 minValue maxValue =
-            lock Lock (fun () -> random.Next (minValue, maxValue))
+            lock Lock (fun () -> Random.Next (minValue, maxValue))
 
         /// Generate a unique counter.
         static member counter =

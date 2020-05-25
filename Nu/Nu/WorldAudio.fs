@@ -7,8 +7,8 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-[<AutoOpen; ModuleBinding>]
-module WorldAudioModule =
+[<RequireQualifiedAccess>]
+module AudioPlayerSubsystem =
 
     /// The subsystem for the world's audio player.
     type [<ReferenceEquality; NoComparison>] AudioPlayerSubsystem =
@@ -40,6 +40,12 @@ module WorldAudioModule =
 
         static member make audioPlayer =
             { AudioPlayer = audioPlayer }
+
+/// The subsystem for the world's audio player.
+type AudioPlayerSubsystem = AudioPlayerSubsystem.AudioPlayerSubsystem
+
+[<AutoOpen; ModuleBinding>]
+module WorldAudio =
 
     type World with
 
@@ -110,6 +116,3 @@ module WorldAudioModule =
         static member reloadAudioAssets world =
             let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
             World.enqueueAudioMessage reloadAudioAssetsMessage world
-
-/// The subsystem for the world's audio player.
-type AudioPlayerSubsystem = WorldAudioModule.AudioPlayerSubsystem

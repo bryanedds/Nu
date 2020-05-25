@@ -61,26 +61,23 @@ module Subsystem =
     let cleanUp (subsystem : 'w Subsystem) world =
         subsystem.CleanUp world
 
-[<AutoOpen>]
-module SubsystemsModule =
-
-    /// The subsystems of a world.
-    type [<ReferenceEquality; NoComparison>] 'w Subsystems =
-        { PhysicsEngine : 'w Subsystem
-          Renderer : 'w Subsystem
-          AudioPlayer : 'w Subsystem }
-
-        static member make physicsEngine renderer audioPlayer =
-            { PhysicsEngine = physicsEngine
-              Renderer = renderer 
-              AudioPlayer = audioPlayer }
-
-        static member cleanUp subsystems world =
-            let (physicsEngine, world) = Subsystem.cleanUp subsystems.PhysicsEngine world
-            let (renderer, world) = Subsystem.cleanUp subsystems.Renderer world
-            let (audioPlayer, world) = Subsystem.cleanUp subsystems.AudioPlayer world
-            let subsystems = Subsystems<_>.make physicsEngine renderer audioPlayer
-            (subsystems, world)
-
 /// The subsystems of a world.
-type 'w Subsystems = 'w SubsystemsModule.Subsystems
+type [<ReferenceEquality; NoComparison>] 'w Subsystems =
+    { PhysicsEngine : 'w Subsystem
+      Renderer : 'w Subsystem
+      AudioPlayer : 'w Subsystem }
+
+[<RequireQualifiedAccess>]
+module Subsystems =
+
+    let make physicsEngine renderer audioPlayer =
+        { PhysicsEngine = physicsEngine
+          Renderer = renderer 
+          AudioPlayer = audioPlayer }
+
+    let cleanUp subsystems world =
+        let (physicsEngine, world) = Subsystem.cleanUp subsystems.PhysicsEngine world
+        let (renderer, world) = Subsystem.cleanUp subsystems.Renderer world
+        let (audioPlayer, world) = Subsystem.cleanUp subsystems.AudioPlayer world
+        let subsystems = make physicsEngine renderer audioPlayer
+        (subsystems, world)

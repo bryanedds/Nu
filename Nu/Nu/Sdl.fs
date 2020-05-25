@@ -44,7 +44,7 @@ type [<StructuralEquality; NoComparison>] SdlConfig =
           AudioChunkSize = Constants.Audio.DefaultBufferSize }
 
 [<AutoOpen>]
-module SdlDepsModule =
+module SdlDeps =
 
     /// The dependencies needed to initialize SDL.
     type [<ReferenceEquality; NoComparison>] SdlDeps =
@@ -58,92 +58,89 @@ module SdlDepsModule =
             member this.Dispose () =
                 this.Destroy ()
 
-    [<RequireQualifiedAccess>]
-    module SdlDeps =
-    
-        /// An empty SdlDeps.
-        let empty =
-            { RenderContextOpt = None
-              WindowOpt = None
-              Config = SdlConfig.defaultConfig
-              Destroy = id }
-    
-        /// Get an sdlDep's optional render context.
-        let getRenderContextOpt sdlDeps =
-            sdlDeps.RenderContextOpt
-    
-        /// Get an sdlDep's optional window.
-        let getWindowOpt sdlDeps =
-            sdlDeps.WindowOpt
-    
-        /// Get an sdlDep's config.
-        let getConfig sdlDeps =
-            sdlDeps.Config
-    
-        /// Attempt to initalize an SDL module.
-        let internal attemptPerformSdlInit create destroy =
-            let initResult = create ()
-            let error = SDL.SDL_GetError ()
-            if initResult = 0 then Right ((), destroy)
-            else Left error
-    
-        /// Attempt to initalize an SDL resource.
-        let internal attemptMakeSdlResource create destroy =
-            let resource = create ()
-            if resource <> IntPtr.Zero then Right (resource, destroy)
-            else
-                let error = "SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'."
-                Left error
-    
-        /// Attempt to initalize a global SDL resource.
-        let internal attemptMakeSdlGlobalResource create destroy =
-            let resource = create ()
-            if resource = 0 then Right ((), destroy)
-            else
-                let error = "SDL2# global resource creation failed due to '" + SDL.SDL_GetError () + "'."
-                Left error
-    
-        /// Attempt to make an SdlDeps instance.
-        let attemptMake sdlConfig =
-            match attemptPerformSdlInit
-                (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
-                (fun () -> SDL.SDL_Quit ()) with
+    /// An empty SdlDeps.
+    let empty =
+        { RenderContextOpt = None
+          WindowOpt = None
+          Config = SdlConfig.defaultConfig
+          Destroy = id }
+
+    /// Get an sdlDep's optional render context.
+    let getRenderContextOpt sdlDeps =
+        sdlDeps.RenderContextOpt
+
+    /// Get an sdlDep's optional window.
+    let getWindowOpt sdlDeps =
+        sdlDeps.WindowOpt
+
+    /// Get an sdlDep's config.
+    let getConfig sdlDeps =
+        sdlDeps.Config
+
+    /// Attempt to initalize an SDL module.
+    let internal attemptPerformSdlInit create destroy =
+        let initResult = create ()
+        let error = SDL.SDL_GetError ()
+        if initResult = 0 then Right ((), destroy)
+        else Left error
+
+    /// Attempt to initalize an SDL resource.
+    let internal attemptMakeSdlResource create destroy =
+        let resource = create ()
+        if resource <> IntPtr.Zero then Right (resource, destroy)
+        else
+            let error = "SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'."
+            Left error
+
+    /// Attempt to initalize a global SDL resource.
+    let internal attemptMakeSdlGlobalResource create destroy =
+        let resource = create ()
+        if resource = 0 then Right ((), destroy)
+        else
+            let error = "SDL2# global resource creation failed due to '" + SDL.SDL_GetError () + "'."
+            Left error
+
+    /// Attempt to make an SdlDeps instance.
+    let attemptMake sdlConfig =
+        match attemptPerformSdlInit
+            (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
+            (fun () -> SDL.SDL_Quit ()) with
+        | Left error -> Left error
+        | Right ((), destroy) ->
+            match attemptMakeSdlResource
+                (fun () ->
+                    match sdlConfig.ViewConfig with
+                    | NewWindow windowConfig -> SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
+                    | ExistingWindow hwindow -> SDL.SDL_CreateWindowFrom hwindow)
+                (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
             | Left error -> Left error
-            | Right ((), destroy) ->
+            | Right (window, destroy) ->
                 match attemptMakeSdlResource
-                    (fun () ->
-                        match sdlConfig.ViewConfig with
-                        | NewWindow windowConfig -> SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
-                        | ExistingWindow hwindow -> SDL.SDL_CreateWindowFrom hwindow)
-                    (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
+                    (fun () -> SDL.SDL_CreateRenderer (window, -1, sdlConfig.RendererFlags))
+                    (fun renderContext -> SDL.SDL_DestroyRenderer renderContext; destroy window) with
                 | Left error -> Left error
-                | Right (window, destroy) ->
-                    match attemptMakeSdlResource
-                        (fun () -> SDL.SDL_CreateRenderer (window, -1, sdlConfig.RendererFlags))
-                        (fun renderContext -> SDL.SDL_DestroyRenderer renderContext; destroy window) with
+                | Right (renderContext, destroy) ->
+                    match attemptMakeSdlGlobalResource
+                        (fun () -> SDL_ttf.TTF_Init ())
+                        (fun () -> SDL_ttf.TTF_Quit (); destroy renderContext) with
                     | Left error -> Left error
-                    | Right (renderContext, destroy) ->
+                    | Right ((), destroy) ->
                         match attemptMakeSdlGlobalResource
-                            (fun () -> SDL_ttf.TTF_Init ())
-                            (fun () -> SDL_ttf.TTF_Quit (); destroy renderContext) with
+#if MIX_INIT_OGG
+                            (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
+#else
+                            (fun () -> SDL_mixer.Mix_Init (enum<SDL_mixer.MIX_InitFlags> 0))
+#endif
+                            (fun () -> SDL_mixer.Mix_Quit (); destroy ()) with
                         | Left error -> Left error
                         | Right ((), destroy) ->
                             match attemptMakeSdlGlobalResource
-#if MIX_INIT_OGG
-                                (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
-#else
-                                (fun () -> SDL_mixer.Mix_Init (enum<SDL_mixer.MIX_InitFlags> 0))
-#endif
-                                (fun () -> SDL_mixer.Mix_Quit (); destroy ()) with
+                                (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.Frequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
+                                (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
                             | Left error -> Left error
                             | Right ((), destroy) ->
-                                match attemptMakeSdlGlobalResource
-                                    (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.Frequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
-                                    (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
-                                | Left error -> Left error
-                                | Right ((), destroy) ->
-                                    GamepadState.init ()
-                                    SDL.SDL_RaiseWindow window
-                                    Right { RenderContextOpt = Some renderContext; WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
+                                GamepadState.init ()
+                                SDL.SDL_RaiseWindow window
+                                Right { RenderContextOpt = Some renderContext; WindowOpt = Some window; Config = sdlConfig; Destroy = destroy }
                                     
-type SdlDeps = SdlDepsModule.SdlDeps
+type SdlDeps = SdlDeps.SdlDeps
