@@ -7,8 +7,8 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-[<AutoOpen; ModuleBinding>]
-module WorldPhysicsModule =
+[<RequireQualifiedAccess>]
+module WorldPhysicsSubsystem =
 
     /// The subsystem for the world's physics system.
     type [<ReferenceEquality; NoComparison>] PhysicsEngineSubsystem =
@@ -94,6 +94,12 @@ module WorldPhysicsModule =
 
         static member make physicsEngine =
             { PhysicsEngine = physicsEngine }
+
+/// The subsystem for the world's physics system.
+type PhysicsEngineSubsystem = WorldPhysicsSubsystem.PhysicsEngineSubsystem
+
+[<AutoOpen; ModuleBinding>]
+module WorldPhysics =
 
     type World with
 
@@ -240,6 +246,3 @@ module WorldPhysicsModule =
         static member localizeBodyShape (extent : Vector2) (bodyShape : BodyShape) (world : World) =
             ignore world // for world parameter for scripting
             PhysicsEngine.localizeBodyShape extent bodyShape
-
-/// The subsystem for the world's physics system.
-type PhysicsEngineSubsystem = WorldPhysicsModule.PhysicsEngineSubsystem

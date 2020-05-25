@@ -114,8 +114,8 @@ type AssetDescriptor =
 type PackageDescriptor =
     AssetDescriptor list
 
-[<AutoOpen>]
-module AssetGraphModule =
+[<RequireQualifiedAccess>]
+module AssetGraph =
 
     /// A graph of all the assets used in a game.
     [<Syntax
@@ -131,204 +131,201 @@ module AssetGraphModule =
             { FilePathOpt : string option
               PackageDescriptors : Map<string, PackageDescriptor> }
     
-    [<RequireQualifiedAccess>]
-    module AssetGraph =
-    
-        let private getAssetExtension2 rawAssetExtension refinement =
-            match refinement with
-            | PsdToPng -> "png"
-            | Retro -> rawAssetExtension
+    let private getAssetExtension2 rawAssetExtension refinement =
+        match refinement with
+        | PsdToPng -> "png"
+        | Retro -> rawAssetExtension
 
-        let private getAssetExtension usingRawAssets rawAssetExtension refinements =
-            if usingRawAssets then List.fold getAssetExtension2 rawAssetExtension refinements
-            else rawAssetExtension
+    let private getAssetExtension usingRawAssets rawAssetExtension refinements =
+        if usingRawAssets then List.fold getAssetExtension2 rawAssetExtension refinements
+        else rawAssetExtension
 
-        let private writeMagickImageAsPng psdHack filePath (image : MagickImage) =
-            match Path.GetExtension filePath with
-            | ".png" ->
-                use stream = File.OpenWrite filePath
-                if psdHack then
-                    // HACK: this is a shite ass hack that deals with an image magick bug that causes the transparent
-                    // pixels of an image to be turned pure white or black. The side-effect of this hack is that your
-                    // psd images cannot contain full white or black as a color.
-                    image.ColorFuzz <- Percentage 0.0
-                    image.Opaque (MagickColor.FromRgba (byte 255, byte 255, byte 255, byte 255), MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0))
-                    image.Opaque (MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 255), MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0))
-                image.Write (stream, MagickFormat.Png32)
-            | _ -> Log.info ("Invalid image file format for scaling refinement; must be of *.png format.")
+    let private writeMagickImageAsPng psdHack filePath (image : MagickImage) =
+        match Path.GetExtension filePath with
+        | ".png" ->
+            use stream = File.OpenWrite filePath
+            if psdHack then
+                // HACK: this is a shite ass hack that deals with an image magick bug that causes the transparent
+                // pixels of an image to be turned pure white or black. The side-effect of this hack is that your
+                // psd images cannot contain full white or black as a color.
+                image.ColorFuzz <- Percentage 0.0
+                image.Opaque (MagickColor.FromRgba (byte 255, byte 255, byte 255, byte 255), MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0))
+                image.Opaque (MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 255), MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0))
+            image.Write (stream, MagickFormat.Png32)
+        | _ -> Log.info ("Invalid image file format for scaling refinement; must be of *.png format.")
 
-        /// Apply a single refinement to an asset.
-        let private refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
+    /// Apply a single refinement to an asset.
+    let private refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement =
 
-            // build the intermediate file path
-            let intermediateFileExtension = Path.GetExtension intermediateFileSubpath
-            let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
+        // build the intermediate file path
+        let intermediateFileExtension = Path.GetExtension intermediateFileSubpath
+        let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
 
-            // build the refinement file path
-            let refinementFileExtension = getAssetExtension2 intermediateFileExtension refinement
-            let refinementFileSubpath = Path.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
-            let refinementFilePath = refinementDirectory + "/" + refinementFileSubpath
+        // build the refinement file path
+        let refinementFileExtension = getAssetExtension2 intermediateFileExtension refinement
+        let refinementFileSubpath = Path.ChangeExtension (intermediateFileSubpath, refinementFileExtension)
+        let refinementFilePath = refinementDirectory + "/" + refinementFileSubpath
 
-            // refine the asset
-            Directory.CreateDirectory (Path.GetDirectoryName refinementFilePath) |> ignore
-            match refinement with
-            | PsdToPng ->
-                //Diagnostics.Debugger.Launch ()
-                use image = new MagickImage (intermediateFilePath)
-                writeMagickImageAsPng true refinementFilePath image
-            | Retro ->
-                use image = new MagickImage (intermediateFilePath)
-                image.Scale (Percentage 400)
-                writeMagickImageAsPng false refinementFilePath image
+        // refine the asset
+        Directory.CreateDirectory (Path.GetDirectoryName refinementFilePath) |> ignore
+        match refinement with
+        | PsdToPng ->
+            //Diagnostics.Debugger.Launch ()
+            use image = new MagickImage (intermediateFilePath)
+            writeMagickImageAsPng true refinementFilePath image
+        | Retro ->
+            use image = new MagickImage (intermediateFilePath)
+            image.Scale (Percentage 400)
+            writeMagickImageAsPng false refinementFilePath image
 
-            // return the latest refinement localities
-            (refinementFileSubpath, refinementDirectory)
+        // return the latest refinement localities
+        (refinementFileSubpath, refinementDirectory)
 
-        /// Apply all refinements to an asset.
-        let private refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
-            List.fold
-                (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
-                    refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
-                (inputFileSubpath, inputDirectory)
-                refinements
+    /// Apply all refinements to an asset.
+    let private refineAsset inputFileSubpath inputDirectory refinementDirectory refinements =
+        List.fold
+            (fun (intermediateFileSubpath, intermediateDirectory) refinement ->
+                refineAssetOnce intermediateFileSubpath intermediateDirectory refinementDirectory refinement)
+            (inputFileSubpath, inputDirectory)
+            refinements
 
-        /// Build all the assets.
-        let private buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets =
+    /// Build all the assets.
+    let private buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets =
 
-            // build assets
-            for asset in assets do
+        // build assets
+        for asset in assets do
 
-                // build input file path
-                let inputFileSubpath = asset.FilePath
-                let inputFileExtension = Path.GetExtension inputFileSubpath
-                let inputFilePath = inputDirectory + "/" + inputFileSubpath
+            // build input file path
+            let inputFileSubpath = asset.FilePath
+            let inputFileExtension = Path.GetExtension inputFileSubpath
+            let inputFilePath = inputDirectory + "/" + inputFileSubpath
 
-                // build the output file path
-                let outputFileExtension = getAssetExtension true inputFileExtension asset.Refinements
-                let outputFileSubpath = Path.ChangeExtension (asset.FilePath, outputFileExtension)
-                let outputFilePath = outputDirectory + "/" + outputFileSubpath
+            // build the output file path
+            let outputFileExtension = getAssetExtension true inputFileExtension asset.Refinements
+            let outputFileSubpath = Path.ChangeExtension (asset.FilePath, outputFileExtension)
+            let outputFilePath = outputDirectory + "/" + outputFileSubpath
 
-                // build the asset if fully building or if it's out of date
-                if  fullBuild ||
-                    not (File.Exists outputFilePath) ||
-                    File.GetLastWriteTimeUtc inputFilePath > File.GetLastWriteTimeUtc outputFilePath then
+            // build the asset if fully building or if it's out of date
+            if  fullBuild ||
+                not (File.Exists outputFilePath) ||
+                File.GetLastWriteTimeUtc inputFilePath > File.GetLastWriteTimeUtc outputFilePath then
 
-                    // refine the asset
-                    let (intermediateFileSubpath, intermediateDirectory) =
-                        if List.isEmpty asset.Refinements then (inputFileSubpath, inputDirectory)
-                        else refineAsset inputFileSubpath inputDirectory refinementDirectory asset.Refinements
+                // refine the asset
+                let (intermediateFileSubpath, intermediateDirectory) =
+                    if List.isEmpty asset.Refinements then (inputFileSubpath, inputDirectory)
+                    else refineAsset inputFileSubpath inputDirectory refinementDirectory asset.Refinements
 
-                    // attempt to copy the intermediate asset if output file is out of date
-                    let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
-                    let outputFilePath = outputDirectory + "/" + intermediateFileSubpath
-                    Directory.CreateDirectory (Path.GetDirectoryName outputFilePath) |> ignore
-                    try File.Copy (intermediateFilePath, outputFilePath, true)
-                    with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
+                // attempt to copy the intermediate asset if output file is out of date
+                let intermediateFilePath = intermediateDirectory + "/" + intermediateFileSubpath
+                let outputFilePath = outputDirectory + "/" + intermediateFileSubpath
+                Directory.CreateDirectory (Path.GetDirectoryName outputFilePath) |> ignore
+                try File.Copy (intermediateFilePath, outputFilePath, true)
+                with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
-        /// Load all the assets from a package descriptor.
-        let private loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor =
-            let assets =
-                List.fold (fun assetsRev assetDescriptor ->
-                    match assetDescriptor with
-                    | Asset (assetName, filePath, associations, refinements) ->
-                        let assetTag = AssetTag.make<obj> packageName assetName
-                        let asset = Asset.make assetTag filePath refinements associations
-                        asset :: assetsRev
-                    | Assets (directory, rawExtension, associations, refinements) ->
-                        let extension = getAssetExtension usingRawAssets rawExtension refinements
-                        try let filePaths = Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories)
-                            let assets =
-                                Array.map
-                                    (fun filePath ->
-                                        let assetTag = AssetTag.make<obj> packageName (Path.GetFileNameWithoutExtension filePath)
-                                        let asset = Asset.make assetTag filePath refinements associations
-                                        asset)
-                                    filePaths |>
-                                List.ofArray
-                            assets @ assetsRev
-                        with _ -> Log.info ("Invalid directory '" + directory + "'."); [])
-                    [] packageDescriptor |>
-                List.rev
-            match associationOpt with
-            | Some association -> List.filter (fun asset -> Set.contains association asset.Associations) assets
-            | None -> assets
+    /// Load all the assets from a package descriptor.
+    let private loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor =
+        let assets =
+            List.fold (fun assetsRev assetDescriptor ->
+                match assetDescriptor with
+                | Asset (assetName, filePath, associations, refinements) ->
+                    let assetTag = AssetTag.make<obj> packageName assetName
+                    let asset = Asset.make assetTag filePath refinements associations
+                    asset :: assetsRev
+                | Assets (directory, rawExtension, associations, refinements) ->
+                    let extension = getAssetExtension usingRawAssets rawExtension refinements
+                    try let filePaths = Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories)
+                        let assets =
+                            Array.map
+                                (fun filePath ->
+                                    let assetTag = AssetTag.make<obj> packageName (Path.GetFileNameWithoutExtension filePath)
+                                    let asset = Asset.make assetTag filePath refinements associations
+                                    asset)
+                                filePaths |>
+                            List.ofArray
+                        assets @ assetsRev
+                    with _ -> Log.info ("Invalid directory '" + directory + "'."); [])
+                [] packageDescriptor |>
+            List.rev
+        match associationOpt with
+        | Some association -> List.filter (fun asset -> Set.contains association asset.Associations) assets
+        | None -> assets
 
-        /// Get package descriptors.
-        let getPackageDescriptors assetGraph =
-            assetGraph.PackageDescriptors
+    /// Get package descriptors.
+    let getPackageDescriptors assetGraph =
+        assetGraph.PackageDescriptors
 
-        /// Get package names.
-        let getPackageNames assetGraph =
-            Map.toKeyList assetGraph.PackageDescriptors
+    /// Get package names.
+    let getPackageNames assetGraph =
+        Map.toKeyList assetGraph.PackageDescriptors
 
-        /// Attempt to load all the available assets from a package.
-        let tryLoadAssetsFromPackage usingRawAssets associationOpt packageName assetGraph =
-            match Map.tryFind packageName assetGraph.PackageDescriptors with
-            | Some packageDescriptor ->
-                let assets = loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor
-                Right assets
-            | None -> Left ("Could not find package '" + packageName + "' in asset graph.")
+    /// Attempt to load all the available assets from a package.
+    let tryLoadAssetsFromPackage usingRawAssets associationOpt packageName assetGraph =
+        match Map.tryFind packageName assetGraph.PackageDescriptors with
+        | Some packageDescriptor ->
+            let assets = loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor
+            Right assets
+        | None -> Left ("Could not find package '" + packageName + "' in asset graph.")
 
-        /// Load all the available assets from an asset graph document.
-        let loadAssets usingRawAssets associationOpt assetGraph =
-            Map.fold (fun assetListsRev packageName packageDescriptor ->
-                let assets = loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor
-                assets :: assetListsRev)
-                [] assetGraph.PackageDescriptors |>
-            List.rev |>
-            List.concat
-    
-        /// Build all the available assets found in the given asset graph.
-        let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
+    /// Load all the available assets from an asset graph document.
+    let loadAssets usingRawAssets associationOpt assetGraph =
+        Map.fold (fun assetListsRev packageName packageDescriptor ->
+            let assets = loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor
+            assets :: assetListsRev)
+            [] assetGraph.PackageDescriptors |>
+        List.rev |>
+        List.concat
 
-            // compute the asset graph's tracker file path
-            let outputFilePathOpt =
-                Option.map
-                    (fun filePath -> outputDirectory + "/" + Path.ChangeExtension(Path.GetFileName filePath, ".tracker"))
-                    assetGraph.FilePathOpt
+    /// Build all the available assets found in the given asset graph.
+    let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
 
-            // check if the output assetGraph file is newer than the current
-            let fullBuild =
-                fullBuild ||
-                match (assetGraph.FilePathOpt, outputFilePathOpt) with
-                | (Some filePath, Some outputFilePath) -> File.GetLastWriteTimeUtc filePath > File.GetLastWriteTimeUtc outputFilePath
-                | (None, None) -> false
-                | (_, _) -> failwithumf ()
+        // compute the asset graph's tracker file path
+        let outputFilePathOpt =
+            Option.map
+                (fun filePath -> outputDirectory + "/" + Path.ChangeExtension(Path.GetFileName filePath, ".tracker"))
+                assetGraph.FilePathOpt
 
-            // load assets
-            let currentDirectory = Directory.GetCurrentDirectory ()
-            let assets =
-                try Directory.SetCurrentDirectory inputDirectory
-                    loadAssets false None assetGraph
-                finally
-                    Directory.SetCurrentDirectory currentDirectory
-    
-            // build assets
-            buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets
+        // check if the output assetGraph file is newer than the current
+        let fullBuild =
+            fullBuild ||
+            match (assetGraph.FilePathOpt, outputFilePathOpt) with
+            | (Some filePath, Some outputFilePath) -> File.GetLastWriteTimeUtc filePath > File.GetLastWriteTimeUtc outputFilePath
+            | (None, None) -> false
+            | (_, _) -> failwithumf ()
 
-            // output the asset graph tracker file
-            match outputFilePathOpt with
-            | Some outputFilePath -> File.WriteAllText (outputFilePath, "")
-            | None -> ()
+        // load assets
+        let currentDirectory = Directory.GetCurrentDirectory ()
+        let assets =
+            try Directory.SetCurrentDirectory inputDirectory
+                loadAssets false None assetGraph
+            finally
+                Directory.SetCurrentDirectory currentDirectory
 
-        /// The empty asset graph.
-        let empty =
-            { FilePathOpt = None
-              PackageDescriptors = Map.empty }
+        // build assets
+        buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets
 
-        /// Make an asset graph.
-        let make filePathOpt packageDescriptors =
-            { FilePathOpt = filePathOpt
-              PackageDescriptors = packageDescriptors }
+        // output the asset graph tracker file
+        match outputFilePathOpt with
+        | Some outputFilePath -> File.WriteAllText (outputFilePath, "")
+        | None -> ()
 
-        /// Attempt to make an asset graph.
-        let tryMakeFromFile filePath =
-            try File.ReadAllText filePath |>
-                String.unescape |>
-                scvalue<Map<string, PackageDescriptor>> |>
-                make (Some filePath) |>
-                Right
-            with exn -> Left ("Could not make asset graph from file '" + filePath + "' due to: " + scstring exn)
+    /// The empty asset graph.
+    let empty =
+        { FilePathOpt = None
+          PackageDescriptors = Map.empty }
+
+    /// Make an asset graph.
+    let make filePathOpt packageDescriptors =
+        { FilePathOpt = filePathOpt
+          PackageDescriptors = packageDescriptors }
+
+    /// Attempt to make an asset graph.
+    let tryMakeFromFile filePath =
+        try File.ReadAllText filePath |>
+            String.unescape |>
+            scvalue<Map<string, PackageDescriptor>> |>
+            make (Some filePath) |>
+            Right
+        with exn -> Left ("Could not make asset graph from file '" + filePath + "' due to: " + scstring exn)
 
 /// A graph of all the assets used in a game.
-type AssetGraph = AssetGraphModule.AssetGraph
+type AssetGraph = AssetGraph.AssetGraph

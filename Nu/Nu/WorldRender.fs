@@ -7,8 +7,8 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-[<AutoOpen; ModuleBinding>]
-module WorldRenderModule =
+[<RequireQualifiedAccess>]
+module WorldRendererSubsystem =
 
     /// The subsystem for the world's renderer.
     type [<ReferenceEquality; NoComparison>] RendererSubsystem =
@@ -42,6 +42,12 @@ module WorldRenderModule =
         static member make renderer =
             { Renderer = renderer }
 
+/// The subsystem for the world's renderer.
+type RendererSubsystem = WorldRendererSubsystem.RendererSubsystem
+
+[<AutoOpen; ModuleBinding>]
+module WorldRender =
+
     type World with
 
         static member internal getRenderer world =
@@ -55,8 +61,7 @@ module WorldRenderModule =
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage (message : RenderMessage) world =
-            (World.getRenderer world).Renderer.EnqueueMessage message
-            world
+            World.updateRenderer (fun renderer -> renderer.EnqueueMessage message) world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
@@ -77,6 +82,3 @@ module WorldRenderModule =
         static member reloadRenderAssets world =
             let reloadRenderAssetsMessage = ReloadRenderAssetsMessage
             World.enqueueRenderMessage reloadRenderAssetsMessage world
-
-/// The subsystem for the world's renderer.
-type RendererSubsystem = WorldRenderModule.RendererSubsystem

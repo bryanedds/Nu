@@ -1183,6 +1183,9 @@ module WorldTypes =
 /// Represents an unsubscription operation for an event.
 type Unsubscription = WorldTypes.Unsubscription
 
+/// The payload that is passed with the lens as a hack to performance from the Elmish implementation.
+type internal Payload = WorldTypes.Payload
+
 /// The data for a change in the world's ambient state.
 type AmbientChangeData = WorldTypes.AmbientChangeData
 
