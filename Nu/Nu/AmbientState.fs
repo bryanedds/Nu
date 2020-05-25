@@ -26,15 +26,17 @@ module AmbientStateModule =
     type [<ReferenceEquality; NoComparison>] 'w AmbientState =
         private
             { // cache line begin
-              TickRate : int64 // NOTE: might be better to make this accessible from World to avoid the cache misses
+              TickRate : int64 // NOTE: might be better to make this accessible from World to avoid cache misses
               TickTime : int64
               UpdateCount : int64
+              ClockDelta : TimeSpan  // NOTE: might be better to make this accessible from World to avoid cache misses
               Liveness : Liveness
               Metadata : Metadata
               KeyValueStore : UMap<Guid, obj>
+              // cache line ends here (actually, half-way through ClockTime below)
+              ClockTime : DateTimeOffset // moved down here because it's 16 bytes according to - https://stackoverflow.com/a/38731608
               Tasklets : 'w Tasklet UList
               SdlDepsOpt : SdlDeps option
-              // cache line end
               SymbolStore : SymbolStore
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter }
@@ -74,17 +76,26 @@ module AmbientStateModule =
         let isTicking state =
             getTickRate state <> 0L
 
-        /// Update the tick time by the tick rate.
-        let updateTickTime state =
-            { state with TickTime = getTickTime state + getTickRate state }
-
         /// Get the world's update count.
         let getUpdateCount state =
             state.UpdateCount
 
-        /// Increment the update count.
-        let incrementUpdateCount state =
-            { state with UpdateCount = inc (getUpdateCount state) }
+        /// Get the clock delta.
+        let getClockDelta state =
+            state.ClockDelta
+
+        /// Get the clock time.
+        let getClockTime state =
+            state.ClockTime
+
+        /// Update the tick and clock times.
+        let updateTime state =
+            let now = DateTimeOffset.UtcNow
+            { state with
+                TickTime = state.TickTime + state.TickRate
+                UpdateCount = inc state.UpdateCount
+                ClockDelta = now - state.ClockTime
+                ClockTime = now }
 
         /// Get the the liveness state of the engine.
         let getLiveness state =
@@ -197,6 +208,8 @@ module AmbientStateModule =
         let make tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
             { TickRate = tickRate
               TickTime = 0L
+              ClockDelta = TimeSpan.Zero
+              ClockTime = DateTimeOffset.Now
               UpdateCount = 0L
               Liveness = Running
               Tasklets = UList.makeEmpty Constants.Engine.TaskletListConfig
