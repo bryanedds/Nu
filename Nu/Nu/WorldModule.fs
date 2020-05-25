@@ -270,8 +270,8 @@ module WorldModule =
         static member getClockTime world =
             World.getAmbientStateBy AmbientState.getClockTime world
 
-        /// Get the world's clock delta time.
-        /// No script function binding due to lack of a TimeSpan script conversion.
+        /// Get the world's clock delta time in normalized floating point units.
+        [<FunctionBinding>]
         static member getClockDelta world =
             World.getAmbientStateBy AmbientState.getClockDelta world
 

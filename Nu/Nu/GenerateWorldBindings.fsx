@@ -283,6 +283,9 @@ let generateBindingFunction' binding =
         binding.FunctionParameters |>
         Array.filter (function (_, WorldParameter) -> false | _ -> true) |>
         Array.map fst
+
+    let argsStr =
+        if args.Length <> 0 then String.Join (" ", args) + " " else ""
     
     let argArray = "[|" + String.Join ("; ", args) + "|]"
     
@@ -291,7 +294,7 @@ let generateBindingFunction' binding =
     "        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with\n" +
     "        | None ->\n" +
     "            match evaleds with\n" +
-    "            | " + argArray + " -> " + binding.FunctionBindingName + " " + String.Join (" ", args) + " world\n" +
+    "            | " + argArray + " -> " + binding.FunctionBindingName + " " + argsStr + "world\n" +
     "            | _ ->\n" +
     "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '\" + fnName + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
     "                struct (violation, world)\n" +
