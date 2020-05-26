@@ -654,7 +654,7 @@ module WorldTypes =
                   Omnipresent = false }
               StaticData = { DesignerType = typeof<string>; DesignerValue = "" }
               Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
-              Flags = 0b0100011000
+              Flags = 0b01000110000
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
