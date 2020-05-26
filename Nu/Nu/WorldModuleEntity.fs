@@ -868,7 +868,7 @@ module WorldModuleEntity =
                 EventSystemDelegate.cleanEventAddressCache entity.EntityAddress
                 
                 // invalidate entity state
-                World.getEntityState entity world
+                let entityState = World.getEntityState entity world
                 entityState.Invalidated <- true
 
                 // remove the entity from the world
