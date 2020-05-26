@@ -17,7 +17,7 @@
 #r "../../Nu/Nu.Dependencies/SDL2-CS/Debug/SDL2-CS.dll"
 #r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
-#r "../../Nu/Nu.Gaia.Design/bin/Debug/Nu.Gaia.Design.exe"
+#r "../../Nu/Nu.Gaia.Design/bin/x64/Debug/Nu.Gaia.Design.exe"
 #r "../../Nu/Nu.Gaia/bin/Debug/Nu.Gaia.exe"
 
 open System
@@ -32,7 +32,7 @@ open Nu.Declarative
 open Nu.Gaia
 
 // set current directly to local for execution in VS F# interactive
-Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "../bin/Debug")
+Directory.SetCurrentDirectory (__SOURCE_DIRECTORY__ + "/bin/Debug")
 
 // initialize Gaia
 Gaia.init NuConfig.defaultConfig
@@ -53,5 +53,5 @@ let sdlDeps = Gaia.tryMakeSdlDeps form |> Either.getRightValue
 // make world ready for use in Gaia
 let world = Gaia.tryMakeWorld false sdlDeps WorldConfig.defaultConfig plugin |> Either.getRightValue
 
-// example of running Nu in Gaia for 60 frames from repl
-Gaia.runFromRepl (fun world -> World.getTickTime world < 60L) targetDir sdlDeps form world
+//run Gaia from repl
+Gaia.runFromRepl tautology targetDir sdlDeps form world

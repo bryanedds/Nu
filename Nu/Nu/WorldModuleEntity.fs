@@ -866,13 +866,13 @@ module WorldModuleEntity =
 
                 // remove cached entity event addresses
                 EventSystemDelegate.cleanEventAddressCache entity.EntityAddress
+                
+                // invalidate entity state
+                World.getEntityState entity world
+                entityState.Invalidated <- true
 
                 // remove the entity from the world
                 let world = World.removeEntityState entity world
-
-                // invalidate entity state
-                let entityState = World.getEntityState entity world
-                entityState.Invalidated <- true
                 world
 
             // pass
