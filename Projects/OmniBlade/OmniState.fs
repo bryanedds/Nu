@@ -4,6 +4,11 @@ open FSharpx.Collections
 open Prime
 open Nu
 
+type PropState =
+    | DoorState of bool
+    | SwitchState of bool
+    | NilState
+
 type [<CustomEquality; CustomComparison>] Advent =
     | Opened of Guid
     | KilledFinalBoss

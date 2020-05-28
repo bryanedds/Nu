@@ -17,10 +17,13 @@ module Assets =
 
     // field assets
     let DebugFieldTileMap = asset<TileMap> FieldPackageName "DebugField"
-    let WoodenChestImageOpened = asset<Image> FieldPackageName "WoodenChestOpened"
-    let WoodenChestImageClosed = asset<Image> FieldPackageName "WoodenChestClosed"
-    let BrassChestImageOpened = asset<Image> FieldPackageName "BrassChestOpened"
-    let BrassChestImageClosed = asset<Image> FieldPackageName "BrassChestClosed"
+    let WoodenChestOpenedImage = asset<Image> FieldPackageName "WoodenChestOpened"
+    let WoodenChestClosedImage = asset<Image> FieldPackageName "WoodenChestClosed"
+    let BrassChestOpenedImage = asset<Image> FieldPackageName "BrassChestOpened"
+    let BrassChestClosedImage = asset<Image> FieldPackageName "BrassChestClosed"
+    let WoodenDoorOpenedImage = asset<Image> FieldPackageName "WoodenDoorOpened"
+    let WoodenDoorClosedImage = asset<Image> FieldPackageName "WoodenDoorClosed"
+    let NpcAnimationSheet = asset<Image> FieldPackageName "Npcs"
     let FinnAnimationSheet = asset<Image> FieldPackageName "Finn"
     let GlennAnimationSheet = asset<Image> FieldPackageName "Glenn"
     let GoblinAnimationSheet = asset<Image> FieldPackageName "Goblin"
