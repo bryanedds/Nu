@@ -17,7 +17,6 @@ module OmniField =
 
     type [<NoComparison>] FieldCommand =
         | PlaySound of int64 * single * AssetTag<Sound>
-        | Move of Vector2
         | UpdateEye
 
     type Screen with
@@ -73,14 +72,7 @@ module OmniField =
             | None -> None
 
         override this.Channel (_, field) =
-            [field.UpdateEvent =|> fun _ ->
-                let force = v2Zero
-                let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.WalkForce 0.0f + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.WalkForce 0.0f + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Up then v2 0.0f Constants.Field.WalkForce + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.WalkForce + force else force
-                cmd (Move force)
-             field.UpdateEvent => msg UpdateDialog
+            [field.UpdateEvent => msg UpdateDialog
              field.PostUpdateEvent => cmd UpdateEye
              Simulants.FieldInteract.ClickEvent => msg Interact
              Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))]
@@ -145,20 +137,13 @@ module OmniField =
                         | _ -> just model
                     | None -> just model
 
-        override this.Command (model, command, _, world) =
+        override this.Command (_, command, _, world) =
 
             match command with
             | UpdateEye ->
                 let avatarModel = Simulants.FieldAvatar.GetAvatarModel world
                 let world = World.setEyeCenter avatarModel.Center world
                 just world
-
-            | Move force ->
-                if Option.isNone model.DialogOpt then
-                    let physicsId = Simulants.FieldAvatar.GetPhysicsId world
-                    let world = World.applyBodyForce force physicsId world
-                    just world
-                else just world
 
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
@@ -183,6 +168,7 @@ module OmniField =
                     [Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Position == v2 256.0f 256.0f
                      Entity.Depth == Constants.Field.ForgroundDepth
+                     Entity.Enabled <== model --> fun model -> Option.isNone model.DialogOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
                      Entity.AvatarModel <== model --> fun model -> model.Avatar]
                  
@@ -199,7 +185,7 @@ module OmniField =
                         | Some interaction -> interaction
                         | None -> ""
                      Entity.ClickSoundOpt == None]
-                 
+
                  // dialog
                  Content.text Simulants.FieldDialog.Name
                     [Entity.Bounds <== model --> fun model ->
