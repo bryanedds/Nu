@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open FSharp.Reflection
 open Prime
 open Nu
 
