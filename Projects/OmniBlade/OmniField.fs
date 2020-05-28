@@ -134,7 +134,12 @@ module OmniField =
                                 let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
                                 let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
                                 withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
-                        | _ -> just model
+                        | Door (lockType, doorType) -> just model
+                        | Portal -> just model
+                        | Switch -> just model
+                        | Sensor -> just model
+                        | Npc (npcType, direction, dialog) -> just model
+                        | Shopkeep shopkeepType -> just model
                     | None -> just model
 
         override this.Command (_, command, _, world) =
@@ -150,7 +155,7 @@ module OmniField =
                 just world
 
         override this.Content (model, _) =
-            
+
             [// main layer
              Content.layer Simulants.FieldScene.Name []
 
@@ -162,7 +167,7 @@ module OmniField =
                         | Some fieldData -> fieldData.FieldTileMap
                         | None -> Assets.DebugFieldTileMap
                      Entity.TileLayerClearance == 10.0f]
-                 
+
                  // avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
                     [Entity.Size == Constants.Gameplay.CharacterSize
@@ -171,7 +176,7 @@ module OmniField =
                      Entity.Enabled <== model --> fun model -> Option.isNone model.DialogOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
                      Entity.AvatarModel <== model --> fun model -> model.Avatar]
-                 
+
                  // interact button
                  Content.button Simulants.FieldInteract.Name
                     [Entity.Size == v2Dup 92.0f
@@ -234,7 +239,8 @@ module OmniField =
                     (fun _ model _ ->
                         let propModel = model.Map (fun (object, group, tileMap, advents) ->
                             let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
-                            let propBounds = v4Bounds propPosition Constants.Gameplay.TileSize
+                            let propSize = v2 (single object.Width) (single object.Height) * 4.0f
+                            let propBounds = v4Bounds propPosition propSize
                             let propDepth =
                                 match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
                                 | (true, depthStr) -> Constants.Field.ForgroundDepth + scvaluem depthStr
@@ -243,5 +249,10 @@ module OmniField =
                                 match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
                                 | (true, propDataStr) -> scvaluem propDataStr
                                 | (false, _) -> PropData.empty
-                            PropModel.make propBounds propDepth advents propData)
+                            let propState =
+                                match propData with
+                                | Door _ -> DoorState false
+                                | Switch _ -> SwitchState false
+                                | _ -> NilState
+                            PropModel.make propBounds propDepth advents propData propState)
                         Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]]

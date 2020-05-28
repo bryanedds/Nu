@@ -18,15 +18,14 @@ module PropDispatcherModule =
 
     type PropDispatcher () =
         inherit EntityDispatcher<PropModel, PropMessage, unit>
-            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f Set.empty PropData.empty)
+            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f Set.empty PropData.empty NilState)
 
         static member Facets =
             [typeof<RigidBodyFacet>]
 
         static member Properties =
             [define Entity.FixedRotation true
-             define Entity.GravityScale 0.0f
-             define Entity.BodyShape (BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None })]
+             define Entity.GravityScale 0.0f]
 
         override this.Channel (_, entity) =
             [entity.UpdateEvent => msg Update]
@@ -36,7 +35,11 @@ module PropDispatcherModule =
              entity.IsSensor <== model --> fun model -> match model.PropData with Sensor -> true | _ -> false
              entity.BodyType == Static
              entity.LinearDamping == 0.0f
-             entity.GravityScale == 0.0f]
+             entity.GravityScale == 0.0f
+             entity.BodyShape <== model --> fun model ->
+                match model.PropData with
+                | Npc _ -> BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
 
         override this.Register (entity, world) =
             base.Register (entity, world)
@@ -49,19 +52,50 @@ module PropDispatcherModule =
 
         override this.View (model, entity, world) =
             if entity.GetVisibleLayered world && entity.GetInView world then
-                let image =
+                let (image, insetOpt) =
                     match model.PropData with
                     | Chest (_, chestType, chestId, _, _) ->
-                        match chestType with
-                        | WoodenChest ->
-                            if Set.contains (Opened chestId) model.Advents
-                            then Assets.WoodenChestImageOpened
-                            else Assets.WoodenChestImageClosed
-                        | BrassChest ->
-                            if Set.contains (Opened chestId) model.Advents
-                            then Assets.BrassChestImageOpened
-                            else Assets.BrassChestImageClosed
-                    | _ -> Assets.CancelImage
+                        let image =
+                            match chestType with
+                            | WoodenChest ->
+                                if Set.contains (Opened chestId) model.Advents
+                                then Assets.WoodenChestOpenedImage
+                                else Assets.WoodenChestClosedImage
+                            | BrassChest ->
+                                if Set.contains (Opened chestId) model.Advents
+                                then Assets.BrassChestOpenedImage
+                                else Assets.BrassChestClosedImage
+                        (image, None)
+                    | Door (_, doorType) ->
+                        let image =
+                            match doorType with
+                            | WoodenDoor ->
+                                match model.PropState with
+                                | DoorState opened -> if opened then Assets.WoodenDoorOpenedImage else Assets.WoodenDoorClosedImage
+                                | _ -> failwithumf ()
+                        (image, None)
+                    | Portal -> (Assets.CancelImage, None)
+                    | Switch -> (Assets.CancelImage, None)
+                    | Sensor -> (Assets.CancelImage, None)
+                    | Npc (npcType, direction, _) ->
+                        let image = Assets.NpcAnimationSheet
+                        let row =
+                            match npcType with
+                            | VillageMan -> 0
+                            | VillageWoman -> 1
+                            | VillageBoy -> 2
+                            | VillageGirl -> 3
+                        let column =
+                            match direction with
+                            | Downward -> 0
+                            | Leftward -> 1
+                            | Upward -> 2
+                            | Rightward -> 3
+                        let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
+                        let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
+                        (image, Some inset)
+                    | Shopkeep shopkeepType ->
+                        (Assets.CancelImage, None)
                 [Render
                     (LayerableDescriptor
                         { Depth = entity.GetDepth world
@@ -74,7 +108,7 @@ module PropDispatcherModule =
                               Rotation = entity.GetRotation world
                               Offset = Vector2.Zero
                               ViewType = entity.GetViewType world
-                              InsetOpt = None
+                              InsetOpt = insetOpt
                               Image = image
                               Color = v4One
                               Glow = v4Zero
