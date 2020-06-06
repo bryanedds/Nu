@@ -264,9 +264,10 @@ module Nu =
                 struct (evaleds, world)
 
             // init isSelected F# reach-around
-            WorldModule.isSelected <- fun simulant world ->
-                World.isSelected simulant world
+            WorldModule.isSelected <- 
+                World.isSelected
 
+            // init sortSubscriptionByDepth F# reach-around
             WorldModule.sortSubscriptionsByDepth <- fun subscriptions worldObj ->
                 let world = worldObj :?> World
                 EventSystem.sortSubscriptionsBy
@@ -316,14 +317,22 @@ module Nu =
 
             // init registerScreenPhysics F# reach-around
             WorldModule.registerScreenPhysics <- fun screen world ->
-                let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                let entities =
+                    World.getLayers screen world |>
+                    Seq.map (flip World.getEntities world) |>
+                    Seq.concat |>
+                    Seq.toArray
                 Array.fold (fun world (entity : Entity) ->
                     World.registerEntityPhysics entity world)
                     world entities
 
             // init unregisterScreenPhysics F# reach-around
             WorldModule.unregisterScreenPhysics <- fun screen world ->
-                let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                let entities =
+                    World.getLayers screen world |>
+                    Seq.map (flip World.getEntities world) |>
+                    Seq.concat |>
+                    Seq.toArray
                 Array.fold (fun world (entity : Entity) ->
                     World.unregisterEntityPhysics entity world)
                     world entities
@@ -356,7 +365,7 @@ module Nu =
                         world
                 world
 
-            // init remaining reach-arounds
+            // init miscellaneous reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
             WorldModule.expandContent <- fun setScreenSplash content origin parent world -> World.expandContent setScreenSplash content origin parent world
@@ -364,15 +373,15 @@ module Nu =
             WorldModule.trySignalFacet <- fun signalObj facetName simulant world -> World.trySignalFacet signalObj facetName simulant world
             WorldModule.trySignal <- fun signalObj simulant world -> World.trySignal signalObj simulant world
 
-            // init scripting
-            World.initScripting ()
-            WorldBindings.initBindings ()
-
             // init debug view F# reach-arounds
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
             Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)
             Debug.World.viewLayer <- fun layer world -> Debug.Layer.view (layer :?> Layer) (world :?> World)
             Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
+
+            // init scripting
+            World.initScripting ()
+            WorldBindings.initBindings ()
 
             // init vsync
             Vsync.Init nuConfig.RunSynchronously
@@ -451,7 +460,7 @@ module WorldModule3 =
                 let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
                 EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized
 
-            // make the game dispatcher
+            // make the default game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
 
             // make the world's dispatchers
