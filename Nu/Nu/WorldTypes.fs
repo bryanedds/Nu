@@ -145,14 +145,13 @@ module WorldTypes =
     let [<Literal>] internal InvalidatedMask =           0b00000000001
     let [<Literal>] internal ImperativeMask =            0b00000000010
     let [<Literal>] internal PublishChangesMask =        0b00000000100
-    let [<Literal>] internal IgnoreLayerMask =           0b00000001000
-    let [<Literal>] internal EnabledMask =               0b00000010000
-    let [<Literal>] internal VisibleMask =               0b00000100000
-    let [<Literal>] internal AlwaysUpdateMask =          0b00001000000
-    let [<Literal>] internal PublishUpdatesMask =        0b00010000000
-    let [<Literal>] internal PublishPostUpdatesMask =    0b00100000000
-    let [<Literal>] internal PersistentMask =            0b01000000000
-    let [<Literal>] internal UnusedMask =                0b10000000000
+    let [<Literal>] internal EnabledMask =               0b00000001000
+    let [<Literal>] internal VisibleMask =               0b00000010000
+    let [<Literal>] internal AlwaysUpdateMask =          0b00000100000
+    let [<Literal>] internal PublishUpdatesMask =        0b00001000000
+    let [<Literal>] internal PublishPostUpdatesMask =    0b00010000000
+    let [<Literal>] internal PersistentMask =            0b00100000000
+    let [<Literal>] internal UnusedMask =                0b01000000000
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription =
@@ -325,7 +324,6 @@ module WorldTypes =
              Define? Overflow Vector2.Zero
              Define? Imperative false
              Define? PublishChanges false
-             Define? IgnoreLayer false
              Define? Visible true
              Define? Enabled true
              Define? AlwaysUpdate false
@@ -427,6 +425,9 @@ module WorldTypes =
           CreationTimeStamp : int64
           Id : Guid }
 
+        interface SimulantState with
+            member this.GetXtension () = this.Xtension
+
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
             let eyeCenter = Vector2.Zero
@@ -474,9 +475,6 @@ module WorldTypes =
         static member copy this =
             { this with GameState.Id = this.Id }
 
-        interface SimulantState with
-            member this.GetXtension () = this.Xtension
-
     /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     /// NOTE: The properties here have duplicated representations in WorldModuleScreen that exist
@@ -494,7 +492,10 @@ module WorldTypes =
           CreationTimeStamp : int64
           Name : string
           Id : Guid }
-          
+
+        interface SimulantState with
+            member this.GetXtension () = this.Xtension
+
         /// Make a screen state value.
         static member make nameOpt (dispatcher : ScreenDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
@@ -541,9 +542,6 @@ module WorldTypes =
         /// Copy a screen such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
             { this with ScreenState.Id = this.Id }
-
-        interface SimulantState with
-            member this.GetXtension () = this.Xtension
     
     /// Hosts the ongoing state of a layer. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
@@ -553,7 +551,6 @@ module WorldTypes =
         { Dispatcher : LayerDispatcher
           Xtension : Xtension
           Model : DesignerProperty
-          Depth : single
           Visible : bool
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
@@ -561,13 +558,15 @@ module WorldTypes =
           Name : string
           Id : Guid }
 
+        interface SimulantState with
+            member this.GetXtension () = this.Xtension
+
         /// Make a layer state value.
         static member make nameOpt (dispatcher : LayerDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
               Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
-              Depth = 0.0f
               Visible = true
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
@@ -606,17 +605,6 @@ module WorldTypes =
         static member copy this =
             { this with LayerState.Id = this.Id }
 
-        interface SimulantState with
-            member this.GetXtension () = this.Xtension
-
-    /// A prototype component for an entity-component-system implementation of Nu's backend.
-    /// See here for the related C++ prototype - https://github.com/bryanedds/ax/blob/5bb53b6985ee1cd07f869cb88ed4e333749fd118/src/hpp/ax/impl/system.hpp#L55-L64
-    and [<NoEquality; NoComparison; CLIMutable; Struct>] EntityCore =
-        { mutable Transform : Transform
-          mutable StaticData : DesignerProperty
-          mutable Overflow : Vector2
-          mutable Flags : int }
-
     /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     /// OPTIMIZATION: Booleans are packed into the Flags field.
@@ -638,6 +626,9 @@ module WorldTypes =
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Name : string
           Id : Guid }
+
+        interface SimulantState with
+            member this.GetXtension () = this.Xtension
 
         /// Make an entity state value.
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
@@ -720,16 +711,12 @@ module WorldTypes =
         member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
         member this.Imperative with get () = this.Flags &&& ImperativeMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ImperativeMask else this.Flags &&& ~~~ImperativeMask
         member this.PublishChanges with get () = this.Flags &&& PublishChangesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishChangesMask else this.Flags &&& ~~~PublishChangesMask
-        member this.IgnoreLayer with get () = this.Flags &&& IgnoreLayerMask <> 0 and set value = this.Flags <- if value then this.Flags ||| IgnoreLayerMask else this.Flags &&& ~~~IgnoreLayerMask
         member this.Enabled with get () = this.Flags &&& EnabledMask <> 0 and set value = this.Flags <- if value then this.Flags ||| EnabledMask else this.Flags &&& ~~~EnabledMask
         member this.Visible with get () = this.Flags &&& VisibleMask <> 0 and set value = this.Flags <- if value then this.Flags ||| VisibleMask else this.Flags &&& ~~~VisibleMask
         member this.AlwaysUpdate with get () = this.Flags &&& AlwaysUpdateMask <> 0 and set value = this.Flags <- if value then this.Flags ||| AlwaysUpdateMask else this.Flags &&& ~~~AlwaysUpdateMask
         member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
         member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
         member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
-
-        interface SimulantState with
-            member this.GetXtension () = this.Xtension
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

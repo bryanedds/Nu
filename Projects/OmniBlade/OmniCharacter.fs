@@ -54,22 +54,15 @@ module OmniCharacter =
             [Entity.Bounds <== model --> fun (model : CharacterModel) -> model.Bounds]
 
         override this.View (model, character, world) =
-            if character.GetVisibleLayered world && character.GetInView world then
-                [Render
-                    (LayerableDescriptor
-                        { Depth = character.GetDepth world
-                          PositionY = (character.GetPosition world).Y
-                          AssetTag = model.AnimationSheet
-                          LayeredDescriptor =
-                          SpriteDescriptor
-                            { Position = character.GetPosition world
-                              Size = character.GetSize world
-                              Rotation = character.GetRotation world
-                              Offset = Vector2.Zero
-                              ViewType = character.GetViewType world
-                              InsetOpt = Some (getSpriteInset character world)
-                              Image = model.AnimationSheet
-                              Color = getSpriteColor character world
-                              Glow = getSpriteGlow character world
-                              Flip = FlipNone }})]
+            if character.GetVisible world && character.GetInView world then
+                let transform = character.GetTransform world
+                [Render (transform.Depth, transform.Position.Y, model.AnimationSheet,
+                     SpriteDescriptor
+                       { Transform = transform
+                         Offset = Vector2.Zero
+                         InsetOpt = Some (getSpriteInset character world)
+                         Image = model.AnimationSheet
+                         Color = getSpriteColor character world
+                         Glow = getSpriteGlow character world
+                         Flip = FlipNone })]
             else []

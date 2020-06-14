@@ -49,6 +49,7 @@ type [<StructuralEquality; NoComparison>] SeparationData =
     { Separator : BodyShapeSource
       Separatee : BodyShapeSource }
 
+[<RequireQualifiedAccess>]
 module Events =
 
     let Wildcard = Prime.Events.Wildcard

@@ -135,22 +135,15 @@ module AvatarDispatcherModule =
                 else just world
 
         override this.View (model, entity, world) =
-            if entity.GetVisibleLayered world && entity.GetInView world then
-                [Render
-                    (LayerableDescriptor
-                        { Depth = entity.GetDepth world
-                          PositionY = (entity.GetPosition world).Y
-                          AssetTag = model.AnimationSheet
-                          LayeredDescriptor =
-                          SpriteDescriptor
-                            { Position = entity.GetPosition world
-                              Size = entity.GetSize world
-                              Rotation = entity.GetRotation world
-                              Offset = Vector2.Zero
-                              ViewType = entity.GetViewType world
-                              InsetOpt = Some (getSpriteInset entity world)
-                              Image = model.AnimationSheet
-                              Color = v4One
-                              Glow = v4Zero
-                              Flip = FlipNone }})]
+            if entity.GetVisible world && entity.GetInView world then
+                let transform = entity.GetTransform world
+                [Render (transform.Depth, transform.Position.Y, model.AnimationSheet,
+                     SpriteDescriptor
+                        { Transform = transform
+                          Offset = Vector2.Zero
+                          InsetOpt = Some (getSpriteInset entity world)
+                          Image = model.AnimationSheet
+                          Color = v4One
+                          Glow = v4Zero
+                          Flip = FlipNone })]
             else []
