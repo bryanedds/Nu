@@ -706,24 +706,21 @@ module WorldModule2 =
                 let color = Vector4 (Vector3.One, alpha)
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
+                let transform = { Position = position; Size = size; Rotation = 0.0f; Depth = Single.MaxValue; ViewType = Absolute; Omnipresent = true }
                 World.enqueueRenderMessage
-                    (RenderDescriptorMessage
-                        (LayerableDescriptor
-                            { Depth = Single.MaxValue
-                              AssetTag = dissolveImage
-                              PositionY = position.Y
-                              LayeredDescriptor =
-                                SpriteDescriptor
-                                    { Position = position
-                                      Size = size
-                                      Rotation = 0.0f
-                                      Offset = Vector2.Zero
-                                      ViewType = Absolute
-                                      InsetOpt = None
-                                      Image = dissolveImage
-                                      Color = color
-                                      Glow = Vector4.Zero
-                                      Flip = FlipNone }}))
+                    (LayeredDescriptorMessage
+                        { Depth = transform.Depth
+                          PositionY = transform.Position.Y
+                          AssetTag = dissolveImage
+                          RenderDescriptor =
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Offset = Vector2.Zero
+                                  InsetOpt = None
+                                  Image = dissolveImage
+                                  Color = color
+                                  Glow = Vector4.Zero
+                                  Flip = FlipNone }})
                     world
             | None -> world
 
@@ -747,9 +744,18 @@ module WorldModule2 =
             let world = List.fold (fun world screen -> World.actualizeScreen screen world) world screens
             let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.actualizeScreenTransition selectedScreen world | None -> world
             let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
+#if DEBUG
+            // layer visibility only has an effect on entities in debug mode
+            let world =
+                Seq.fold (fun world (entity : Entity) ->
+                    let layer = entity.Parent
+                    if layer.GetVisible world
+                    then World.actualizeEntity entity world
+                    else world)
+                    world entities
+#else
             let world = Seq.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
-
-            // fin
+#endif
             world
 
         static member private processInput world =

@@ -273,8 +273,8 @@ module Nu =
                 EventSystem.sortSubscriptionsBy
                     (fun (simulant : Simulant) _ ->
                         match simulant with
-                        | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
-                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
+                        | :? Entity as entity -> { SortDepth = entity.GetDepth world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
+                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
                         | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
                         | :? Game | :? GlobalSimulantGeneralized -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
                         | _ -> failwithumf ())

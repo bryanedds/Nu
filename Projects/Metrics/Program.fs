@@ -21,7 +21,6 @@ type MetricsEntityDispatcher () =
     static member Properties =
         [define Entity.Imperative true // makes updates faster by using mutation
          define Entity.Omnipresent true // makes updates faster by not touching the entity tree
-         define Entity.IgnoreLayer true // makes actualization faster by not querying the containing layer
          define (Entity.StaticData ()) // makes user-defined properties faster by using local data
             { DesignerType = typeof<Image AssetTag>
               DesignerValue = asset<Image> Assets.DefaultPackageName "Image4" }]
@@ -32,26 +31,22 @@ type MetricsEntityDispatcher () =
 
 #if OPTIMIZED
     override this.Actualize (entity, world) =
-        let position = entity.GetPosition world
+        let transform = entity.GetTransform world
         let image = entity.GetStaticData world
         World.enqueueRenderMessage
-            (RenderDescriptorMessage
-                (LayerableDescriptor
-                    { Depth = entity.GetDepthLayered world
-                      AssetTag = image
-                      PositionY = position.Y
-                      LayeredDescriptor =
+            (LayeredDescriptorMessage
+                { Depth = transform.Depth
+                  PositionY = transform.Position.Y
+                  AssetTag = image
+                  RenderDescriptor =
                       SpriteDescriptor
-                        { Position = position
-                          Size = entity.GetSize world
-                          Rotation = entity.GetRotation world
+                        { Transform = transform
                           Offset = Vector2.Zero
-                          ViewType = entity.GetViewType world
                           InsetOpt = None
                           Image = image
                           Color = Vector4.One
                           Glow = Vector4.Zero
-                          Flip = FlipNone }}))
+                          Flip = FlipNone }})
             world
 #endif
 

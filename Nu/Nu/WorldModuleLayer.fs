@@ -114,8 +114,6 @@ module WorldModuleLayer =
         static member internal getLayerModelProperty layer world = (World.getLayerState layer world).Model
         static member internal getLayerModel<'a> layer world = (World.getLayerState layer world).Model.DesignerValue :?> 'a
         static member internal getLayerDispatcher layer world = (World.getLayerState layer world).Dispatcher
-        static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth
-        static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Depth then Some { layerState with Depth = value } else None) Property? Depth value layer world
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
         static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Visible then Some { layerState with Visible = value } else None) Property? Visible value layer world
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
@@ -287,7 +285,6 @@ module WorldModuleLayer =
     let private initGetters () =
         Getters.Add ("Dispatcher", fun layer world -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcher layer world })
         Getters.Add ("Model", fun layer world -> let designerProperty = World.getLayerModelProperty layer world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-        Getters.Add ("Depth", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerDepth layer world })
         Getters.Add ("Visible", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world })
         Getters.Add ("Persistent", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world })
         Getters.Add ("ScriptFrame", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScriptFrame layer world })
@@ -299,7 +296,6 @@ module WorldModuleLayer =
     let private initSetters () =
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Model", fun property layer world -> (true, World.setLayerModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } layer world))
-        Setters.Add ("Depth", fun property layer world -> (true, World.setLayerDepth (property.PropertyValue :?> single) layer world))
         Setters.Add ("Visible", fun property layer world -> (true, World.setLayerVisible (property.PropertyValue :?> bool) layer world))
         Setters.Add ("Persistent", fun property layer world -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))

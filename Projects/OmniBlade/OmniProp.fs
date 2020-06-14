@@ -51,8 +51,9 @@ module PropDispatcherModule =
                 just model
 
         override this.View (model, entity, world) =
-            if entity.GetVisibleLayered world && entity.GetInView world then
-                let (image, insetOpt) =
+            if entity.GetVisible world && entity.GetInView world then
+                let transform = entity.GetTransform world
+                let (insetOpt, image) =
                     match model.PropData with
                     | Chest (_, chestType, chestId, _, _) ->
                         let image =
@@ -65,7 +66,7 @@ module PropDispatcherModule =
                                 if Set.contains (Opened chestId) model.Advents
                                 then Assets.BrassChestOpenedImage
                                 else Assets.BrassChestClosedImage
-                        (image, None)
+                        (None, image)
                     | Door (_, doorType) ->
                         let image =
                             match doorType with
@@ -73,10 +74,10 @@ module PropDispatcherModule =
                                 match model.PropState with
                                 | DoorState opened -> if opened then Assets.WoodenDoorOpenedImage else Assets.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
-                        (image, None)
-                    | Portal -> (Assets.CancelImage, None)
-                    | Switch -> (Assets.CancelImage, None)
-                    | Sensor -> (Assets.CancelImage, None)
+                        (None, image)
+                    | Portal -> (None, Assets.CancelImage)
+                    | Switch -> (None, Assets.CancelImage)
+                    | Sensor -> (None, Assets.CancelImage)
                     | Npc (npcType, direction, _) ->
                         let image = Assets.NpcAnimationSheet
                         let row =
@@ -93,24 +94,17 @@ module PropDispatcherModule =
                             | Rightward -> 3
                         let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                         let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
-                        (image, Some inset)
+                        (Some inset, image)
                     | Shopkeep shopkeepType ->
-                        (Assets.CancelImage, None)
+                        (None, Assets.CancelImage)
                 [Render
-                    (LayerableDescriptor
-                        { Depth = entity.GetDepth world
-                          PositionY = (entity.GetPosition world).Y
-                          AssetTag = image
-                          LayeredDescriptor =
-                          SpriteDescriptor
-                            { Position = entity.GetPosition world
-                              Size = entity.GetSize world
-                              Rotation = entity.GetRotation world
-                              Offset = Vector2.Zero
-                              ViewType = entity.GetViewType world
-                              InsetOpt = insetOpt
-                              Image = image
-                              Color = v4One
-                              Glow = v4Zero
-                              Flip = FlipNone }})]
+                    (transform.Depth, transform.Position.Y, image,
+                     SpriteDescriptor
+                        { Transform = transform
+                          Offset = Vector2.Zero
+                          InsetOpt = insetOpt
+                          Image = image
+                          Color = v4One
+                          Glow = v4Zero
+                          Flip = FlipNone })]
             else []
