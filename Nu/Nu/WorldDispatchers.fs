@@ -420,7 +420,7 @@ module TextFacetModule =
                       Rotation = 0.0f
                       Depth = text.GetDepth world + 0.5f
                       ViewType = text.GetViewType world
-                      Omnipresent = text.GetOmnipresent world }
+                      Flags = text.GetFlags world }
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
@@ -804,7 +804,7 @@ module TileMapFacetModule =
                                           Rotation = rotation
                                           Depth = depth
                                           ViewType = viewType
-                                          Omnipresent = tileMap.GetOmnipresent world }
+                                          Flags = tileMap.GetFlags world }
                                     let image = List.head images // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                     let tiles =
                                         layer.Tiles |>
@@ -1808,7 +1808,7 @@ module FillBarDispatcherModule =
                       Rotation = 0.0f
                       Depth = fillBar.GetDepth world + 0.5f
                       ViewType = fillBar.GetViewType world
-                      Omnipresent = fillBar.GetOmnipresent world }
+                      Flags = fillBar.GetFlags world }
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
                 let fillBarSpriteTransform =
                     { Position = fillBarSpritePosition
@@ -1816,7 +1816,7 @@ module FillBarDispatcherModule =
                       Rotation = 0.0f
                       Depth = fillBar.GetDepth world
                       ViewType = fillBar.GetViewType world
-                      Omnipresent = fillBar.GetOmnipresent world }
+                      Flags = fillBar.GetFlags world }
                 let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
                 World.enqueueRenderMessage
                     (LayeredDescriptorsMessage

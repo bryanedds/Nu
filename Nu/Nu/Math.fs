@@ -21,14 +21,14 @@ type ViewType =
 
 /// Carries transformation data specific to an Entity.
 /// NOTE: This type is exactly the size of a 64-bit cache line.
-type [<StructuralEquality; NoComparison>] Transform =
+type [<StructuralEquality; NoComparison; Struct>] Transform =
     { // cache line begin
-      mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-      mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3d capabilities
-      mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3d capabilities
-      mutable Depth : single // NOTE: will become part of position if Nu gets 3d capabilities
+      mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
+      mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
+      mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3D capabilities
+      mutable Depth : single // NOTE: will become part of position if Nu gets 3D capabilities
       mutable ViewType : ViewType
-      mutable Omnipresent : bool }
+      mutable Flags : int }
       // cache line end
 
     /// Assign a transform in-place.
@@ -38,7 +38,7 @@ type [<StructuralEquality; NoComparison>] Transform =
         this.Rotation <- that.Rotation
         this.Depth <- that.Depth
         this.ViewType <- that.ViewType
-        this.Omnipresent <- that.Omnipresent
+        this.Flags <- that.Flags
 
 [<AutoOpen>]
 module Vector2 =

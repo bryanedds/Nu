@@ -493,7 +493,7 @@ module EffectSystem =
                       Rotation = slice.Rotation
                       Depth = slice.Depth
                       ViewType = effectSystem.ViewType
-                      Omnipresent = false }
+                      Flags = 0 }
                 let spriteView =
                     Render (transform.Depth, transform.Position.Y, image,
                         SpriteDescriptor 
@@ -537,7 +537,7 @@ module EffectSystem =
                           Rotation = slice.Rotation
                           Depth = slice.Depth
                           ViewType = effectSystem.ViewType
-                          Omnipresent = false }
+                          Flags = 0 }
                     let animatedSpriteView =
                         Render (transform.Depth, transform.Position.Y, image,
                             SpriteDescriptor
@@ -574,7 +574,7 @@ module EffectSystem =
                       Rotation = slice.Rotation
                       Depth = slice.Depth
                       ViewType = effectSystem.ViewType
-                      Omnipresent = false }
+                      Flags = 0 }
                 let spriteView =
                     Render (transform.Depth, transform.Position.Y, font,
                         TextDescriptor 
