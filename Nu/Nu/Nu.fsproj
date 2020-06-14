@@ -85,6 +85,7 @@
     <Compile Include="InputBindings.fs" />
     <Compile Include="Input.fs" />
     <Compile Include="Sdl.fs" />
+    <Compile Include="Systems.fs" />
     <Compile Include="Subsystems.fs" />
     <Compile Include="AmbientState.fs" />
     <Compile Include="WorldTypes.fs" />

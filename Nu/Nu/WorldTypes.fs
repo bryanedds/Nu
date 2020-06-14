@@ -142,16 +142,16 @@ module WorldTypes =
     let mutable internal handleUserDefinedCallback = Unchecked.defaultof<obj -> obj -> obj -> Handling * obj>
 
     // OPTIMIZATION: Entity flag bit-masks; only for use by internal reflection facilities.
-    let [<Literal>] internal InvalidatedMask =           0b00000000001
-    let [<Literal>] internal ImperativeMask =            0b00000000010
-    let [<Literal>] internal PublishChangesMask =        0b00000000100
-    let [<Literal>] internal EnabledMask =               0b00000001000
-    let [<Literal>] internal VisibleMask =               0b00000010000
-    let [<Literal>] internal AlwaysUpdateMask =          0b00000100000
-    let [<Literal>] internal PublishUpdatesMask =        0b00001000000
-    let [<Literal>] internal PublishPostUpdatesMask =    0b00010000000
-    let [<Literal>] internal PersistentMask =            0b00100000000
-    let [<Literal>] internal UnusedMask =                0b01000000000
+    let [<Literal>] internal InvalidatedMask =           0b000000000001
+    let [<Literal>] internal OmnipresentMask =           0b000000000010
+    let [<Literal>] internal ImperativeMask =            0b000000000100
+    let [<Literal>] internal PublishChangesMask =        0b000000001000
+    let [<Literal>] internal EnabledMask =               0b000000010000
+    let [<Literal>] internal VisibleMask =               0b000000100000
+    let [<Literal>] internal AlwaysUpdateMask =          0b000001000000
+    let [<Literal>] internal PublishUpdatesMask =        0b000010000000
+    let [<Literal>] internal PublishPostUpdatesMask =    0b000100000000
+    let [<Literal>] internal PersistentMask =            0b001000000000
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription =
@@ -607,25 +607,25 @@ module WorldTypes =
 
     /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
     /// type, and it's public _only_ to make [<CLIMutable>] work.
-    /// OPTIMIZATION: Booleans are packed into the Flags field.
+    /// OPTIMIZATION: Booleans are packed into the Transform's Flags field.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
-        { // cache line begin
+        { // cache line 0
+          mutable Transform : Transform
+          // cache line 1
           Dispatcher : EntityDispatcher
           mutable Facets : Facet array
           mutable Xtension : Xtension
-          mutable Transform : Transform
           mutable StaticData : DesignerProperty
           mutable Model : DesignerProperty
-          mutable Flags : int
-          // 4 free cache line bytes here
-          // cache line end
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
+          // cache line 2
           mutable FacetNames : string Set
           mutable ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Name : string
           Id : Guid }
+          /// 8 free cache line bytes here
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
@@ -642,10 +642,9 @@ module WorldTypes =
                   Rotation = 0.0f
                   Depth = 0.0f
                   ViewType = Relative
-                  Omnipresent = false }
+                  Flags = 0b001000110000 }
               StaticData = { DesignerType = typeof<string>; DesignerValue = "" }
               Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
-              Flags = 0b01000110000
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
@@ -707,16 +706,16 @@ module WorldTypes =
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Depth with get () = this.Transform.Depth and set value = this.Transform.Depth <- value
         member this.ViewType with get () = this.Transform.ViewType and set value = this.Transform.ViewType <- value
-        member internal this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
-        member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
-        member this.Imperative with get () = this.Flags &&& ImperativeMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ImperativeMask else this.Flags &&& ~~~ImperativeMask
-        member this.PublishChanges with get () = this.Flags &&& PublishChangesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishChangesMask else this.Flags &&& ~~~PublishChangesMask
-        member this.Enabled with get () = this.Flags &&& EnabledMask <> 0 and set value = this.Flags <- if value then this.Flags ||| EnabledMask else this.Flags &&& ~~~EnabledMask
-        member this.Visible with get () = this.Flags &&& VisibleMask <> 0 and set value = this.Flags <- if value then this.Flags ||| VisibleMask else this.Flags &&& ~~~VisibleMask
-        member this.AlwaysUpdate with get () = this.Flags &&& AlwaysUpdateMask <> 0 and set value = this.Flags <- if value then this.Flags ||| AlwaysUpdateMask else this.Flags &&& ~~~AlwaysUpdateMask
-        member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
-        member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
-        member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
+        member internal this.Invalidated with get () = this.Transform.Flags &&& InvalidatedMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| InvalidatedMask else this.Transform.Flags &&& ~~~InvalidatedMask
+        member this.Omnipresent with get () = this.Transform.Flags &&& OmnipresentMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| OmnipresentMask else this.Transform.Flags &&& ~~~OmnipresentMask
+        member this.Imperative with get () = this.Transform.Flags &&& ImperativeMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| ImperativeMask else this.Transform.Flags &&& ~~~ImperativeMask
+        member this.PublishChanges with get () = this.Transform.Flags &&& PublishChangesMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| PublishChangesMask else this.Transform.Flags &&& ~~~PublishChangesMask
+        member this.Enabled with get () = this.Transform.Flags &&& EnabledMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| EnabledMask else this.Transform.Flags &&& ~~~EnabledMask
+        member this.Visible with get () = this.Transform.Flags &&& VisibleMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| VisibleMask else this.Transform.Flags &&& ~~~VisibleMask
+        member this.AlwaysUpdate with get () = this.Transform.Flags &&& AlwaysUpdateMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| AlwaysUpdateMask else this.Transform.Flags &&& ~~~AlwaysUpdateMask
+        member this.PublishUpdates with get () = this.Transform.Flags &&& PublishUpdatesMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| PublishUpdatesMask else this.Transform.Flags &&& ~~~PublishUpdatesMask
+        member this.PublishPostUpdates with get () = this.Transform.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| PublishPostUpdatesMask else this.Transform.Flags &&& ~~~PublishPostUpdatesMask
+        member this.Persistent with get () = this.Transform.Flags &&& PersistentMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| PersistentMask else this.Transform.Flags &&& ~~~PersistentMask
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

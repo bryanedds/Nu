@@ -143,9 +143,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         if depthCompare <> 0 then depthCompare else
         let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
         if positionYCompare <> 0 then positionYCompare else
-        let packageCompare = strCmp left.AssetTag.PackageName right.AssetTag.PackageName
-        if packageCompare <> 0 then packageCompare else
-        strCmp left.AssetTag.AssetName right.AssetTag.AssetName
+        let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
+        if assetNameCompare <> 0 then assetNameCompare else
+        strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
     static member private freeRenderAsset renderAsset =
         match renderAsset with
@@ -458,7 +458,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             { RenderContext = renderContext
               RenderPackages = dictPlus []
               RenderMessages = List ()
-              LayeredDescriptors = List<LayeredDescriptor> () }
+              LayeredDescriptors = List () }
         renderer
 
     interface Renderer with

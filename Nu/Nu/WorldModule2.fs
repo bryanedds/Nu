@@ -706,7 +706,7 @@ module WorldModule2 =
                 let color = Vector4 (Vector3.One, alpha)
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
-                let transform = { Position = position; Size = size; Rotation = 0.0f; Depth = Single.MaxValue; ViewType = Absolute; Omnipresent = true }
+                let transform = { Position = position; Size = size; Rotation = 0.0f; Depth = Single.MaxValue; ViewType = Absolute; Flags = -1 }
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
