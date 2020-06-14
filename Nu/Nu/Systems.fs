@@ -49,14 +49,13 @@ type [<NoEquality; NoComparison>] VanillaSystem =
             if this.FreeIndex < this.Components.Length - 1 then
                 this.Components.[this.FreeIndex] <- comp
                 this.FreeIndex <- inc this.FreeIndex
-                this.FreeIndex - 1
             else
                 let arr = Array.zeroCreate (this.Components.Length * 2)
                 this.Components.CopyTo (arr, 0)
                 this.Components <- arr
                 this.Components.[this.FreeIndex] <- comp
                 this.FreeIndex <- inc this.FreeIndex
-                this.FreeIndex - 1
+            this.FreeIndex - 1
 
         member this.RemoveComponent index =
             if index <> this.FreeIndex then
@@ -65,7 +64,7 @@ type [<NoEquality; NoComparison>] VanillaSystem =
             this.FreeIndex <- dec this.FreeIndex
             index
 
-type [<NoEquality; NoComparison>] 't RotationSystem =
+type [<NoEquality; NoComparison>] RotationSystem =
     private
         { mutable Components : Transform array
           mutable FreeIndex : int
@@ -95,14 +94,13 @@ type [<NoEquality; NoComparison>] 't RotationSystem =
             if this.FreeIndex < this.Components.Length - 1 then
                 this.Components.[this.FreeIndex] <- comp
                 this.FreeIndex <- inc this.FreeIndex
-                this.FreeIndex - 1
             else
                 let arr = Array.zeroCreate (this.Components.Length * 2)
                 this.Components.CopyTo (arr, 0)
                 this.Components <- arr
                 this.Components.[this.FreeIndex] <- comp
                 this.FreeIndex <- inc this.FreeIndex
-                this.FreeIndex - 1
+            this.FreeIndex - 1
 
         member this.RemoveComponent index =
             if index <> this.FreeIndex then
