@@ -9,15 +9,15 @@ open Prime
 type [<AbstractClass>] System () =
     abstract Update : Systems -> obj
 
-and [<AbstractClass>] SystemOne<'t when 't : struct> (comp : 't) =
+and [<AbstractClass>] SystemSingleton<'t when 't : struct> (comp : 't) =
     inherit System ()
     let mutable comp = comp
     member this.GetComponent () = &comp
 
-and [<AbstractClass>] SystemMany<'t when 't : struct> () =
+and [<AbstractClass>] SystemUncorrelated<'t when 't : struct> () =
     inherit System ()
 
-    let mutable components = [||] : Transform array
+    let mutable components = [||] : 't array
     let mutable freeIndex = 0
     member this.Components with get () = components
     member this.FreeIndex with get () = freeIndex
@@ -45,12 +45,53 @@ and [<AbstractClass>] SystemMany<'t when 't : struct> () =
         freeIndex <- dec freeIndex
         index
 
+and [<AbstractClass>] SystemCorrelated<'t when 't : struct> () =
+    inherit System ()
+
+    let correlations = dictPlus [] : Dictionary<Guid, int>
+    let mutable components = [||] : 't array
+    let mutable freeIndex = 0
+    member this.Components with get () = components
+    member this.FreeIndex with get () = freeIndex
+
+    member this.GetComponent guid =
+        let (found, index) = correlations.TryGetValue guid
+        if not found then raise (InvalidOperationException "guid")
+        &components.[index]
+
+    member this.AddComponent guid comp =
+        if not (correlations.ContainsKey guid) then
+            let index =
+                if freeIndex < components.Length - 1 then
+                    components.[freeIndex] <- comp
+                    freeIndex <- inc freeIndex
+                else
+                    let arr = Array.zeroCreate (components.Length * 2)
+                    components.CopyTo (arr, 0)
+                    components <- arr
+                    components.[freeIndex] <- comp
+                    freeIndex <- inc freeIndex
+                freeIndex - 1
+            correlations.Add (guid, index)
+            true
+        else false
+
+    member this.RemoveComponent guid =
+        match correlations.TryGetValue guid with
+        | (true, index) ->
+            if index <> freeIndex then
+                let last = components.[components.Length - 1]
+                components.[index] <- last
+            freeIndex <- dec freeIndex
+            true
+        | (false, _) -> false
+
 and VanillaSystem () =
-    inherit SystemMany<Transform> ()
+    inherit SystemCorrelated<Transform> ()
     override this.Update _ = () :> obj // vanilla components have no ECS update
 
 and RotationSystem (rotation) =
-    inherit SystemMany<Transform> ()
+    inherit SystemUncorrelated<Transform> ()
     override this.Update _ =
         let count = this.Components.Length
         let mutable i = 0
@@ -61,29 +102,78 @@ and RotationSystem (rotation) =
         () :> obj
 
 and [<NoEquality; NoComparison>] Systems =
-    { Systems : Dictionary<string, System> }
+    { Systems : Dictionary<string, System>
+      Correlations : Dictionary<Guid, string List> }
 
     static member update systems =
         Seq.map
             (fun (system : KeyValuePair<string, System>) -> system.Value.Update systems)
             systems.Systems
 
-    static member addSystem name system systems =
-        systems.Systems.Add (name, system)
+    static member addSystem systemName system systems =
+        systems.Systems.Add (systemName, system)
 
-    static member removeSystem name systems =
-        systems.Systems.Remove name |> ignore
+    static member removeSystem systemName systems =
+        systems.Systems.Remove systemName |> ignore
 
-    static member tryGetSystem name systems =
-        match systems.Systems.TryGetValue name with
+    static member tryGetSystem systemName systems =
+        match systems.Systems.TryGetValue systemName with
         | (true, system) -> Some system
         | (false, _) -> None
 
-    static member getSystem name systems =
-        Systems.tryGetSystem name systems |> Option.get
+    static member getSystem systemName systems =
+        Systems.tryGetSystem systemName systems |> Option.get
+
+    static member addComponent<'t when 't : struct> systemName (comp : 't) systems =
+        match Systems.tryGetSystem systemName systems with
+        | Some system ->
+            match system with
+            | :? ('t SystemUncorrelated) as systemUnc -> systemUnc.AddComponent comp
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of type '" + typeof<'t>.Name + " SystemUncorrelated'.")
+        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    static member removeComponent<'t when 't : struct> systemName index systems =
+        match Systems.tryGetSystem systemName systems with
+        | Some system ->
+            match system with
+            | :? ('t SystemUncorrelated) as systemUnc -> systemUnc.RemoveComponent index
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of type '" + typeof<'t>.Name + " SystemUncorrelated'.")
+        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    static member addComponentCorrelated<'t when 't : struct> systemName guid (comp : 't) systems =
+        match Systems.tryGetSystem systemName systems with
+        | Some system ->
+            match system with
+            | :? ('t SystemCorrelated) as systemCorr ->
+                if systemCorr.AddComponent guid comp then
+                    match systems.Correlations.TryGetValue guid with
+                    | (true, correlation) -> correlation.Add systemName
+                    | (false, _) -> systems.Correlations.Add (guid, List [systemName])
+                else ()
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of type '" + typeof<'t>.Name + " SystemCorrelated'.")
+        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    static member removeComponentCorrelated<'t when 't : struct> systemName guid systems =
+        match Systems.tryGetSystem systemName systems with
+        | Some system ->
+            match system with
+            | :? ('t SystemCorrelated) as systemCorr ->
+                if systemCorr.RemoveComponent guid then
+                    match systems.Correlations.TryGetValue guid with
+                    | (true, correlation) -> correlation.Add systemName
+                    | (false, _) -> systems.Correlations.Add (guid, List [systemName])
+                else ()
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of type '" + typeof<'t>.Name + " SystemCorrelated'.")
+        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    static member correlateComponent guid systems =
+        systems.Correlations.[guid] |>
+        Seq.map (fun systemName -> Systems.getSystem systemName systems) |>
+        Array.ofSeq
 
     static member make () =
         let systems = 
             [("Vanilla", VanillaSystem () :> System)
              ("Rotation", RotationSystem 0.01f :> System)]
-        { Systems = dictPlus systems }
+        { Systems = dictPlus systems
+          Correlations = dictPlus [] }
