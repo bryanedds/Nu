@@ -10,7 +10,7 @@ type Component =
     abstract Active : bool with get, set
 
 type [<AbstractClass>] System () =
-    abstract Update : EntityComponentSystem -> obj
+    abstract Update : Ecs -> obj
 
 and [<AbstractClass>] SystemSingleton<'t when 't : struct and 't :> Component> (comp : 't) =
     inherit System ()
@@ -23,8 +23,12 @@ and [<AbstractClass>] SystemUncorrelated<'t when 't : struct and 't :> Component
     let mutable components = [||] : 't array
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
-    member this.Components with get () = components
-    member this.FreeIndex with get () = freeIndex
+
+    member this.Components
+        with get () = components
+    
+    member this.FreeIndex
+        with get () = freeIndex
 
     member this.GetComponent index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
@@ -52,12 +56,16 @@ and [<AbstractClass>] SystemUncorrelated<'t when 't : struct and 't :> Component
 and [<AbstractClass>] SystemCorrelated<'t when 't : struct and 't :> Component> () =
     inherit System ()
 
-    let correlations = dictPlus [] : Dictionary<Guid, int>
     let mutable components = [||] : 't array
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
-    member this.Components with get () = components
-    member this.FreeIndex with get () = freeIndex
+    let correlations = dictPlus [] : Dictionary<Guid, int>
+    
+    member this.Components
+        with get () = components
+    
+    member this.FreeIndex
+        with get () = freeIndex
 
     member this.GetComponent guid =
         let (found, index) = correlations.TryGetValue guid
@@ -92,8 +100,8 @@ and [<AbstractClass>] SystemCorrelated<'t when 't : struct and 't :> Component> 
             true
         | (false, _) -> false
 
-/// NOTE: Uncorrelated system can update in parallel.
-and [<NoEquality; NoComparison>] EntityComponentSystem =
+/// NOTE: Uncorrelated systems can update in parallel.
+and [<NoEquality; NoComparison>] Ecs =
     { Systems : Dictionary<string, System>
       Correlations : Dictionary<Guid, string List> }
 
@@ -114,10 +122,10 @@ and [<NoEquality; NoComparison>] EntityComponentSystem =
         | (false, _) -> None
 
     static member getSystem systemName ecs =
-        EntityComponentSystem.tryGetSystem systemName ecs |> Option.get
+        Ecs.tryGetSystem systemName ecs |> Option.get
 
     static member getComponent<'t when 't : struct and 't :> Component> systemName index ecs =
-        match EntityComponentSystem.tryGetSystem systemName ecs with
+        match Ecs.tryGetSystem systemName ecs with
         | Some system ->
             match system with
             | :? ('t SystemUncorrelated) as systemUnc -> systemUnc.GetComponent index
@@ -125,7 +133,7 @@ and [<NoEquality; NoComparison>] EntityComponentSystem =
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
     static member addComponent<'t when 't : struct and 't :> Component> systemName (comp : 't) ecs =
-        match EntityComponentSystem.tryGetSystem systemName ecs with
+        match Ecs.tryGetSystem systemName ecs with
         | Some system ->
             match system with
             | :? ('t SystemUncorrelated) as systemUnc -> systemUnc.AddComponent comp
@@ -133,7 +141,7 @@ and [<NoEquality; NoComparison>] EntityComponentSystem =
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
     static member removeComponent<'t when 't : struct and 't :> Component> systemName index ecs =
-        match EntityComponentSystem.tryGetSystem systemName ecs with
+        match Ecs.tryGetSystem systemName ecs with
         | Some system ->
             match system with
             | :? ('t SystemUncorrelated) as systemUnc -> systemUnc.RemoveComponent index
@@ -141,7 +149,7 @@ and [<NoEquality; NoComparison>] EntityComponentSystem =
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
     static member getComponentCorrelated<'t when 't : struct and 't :> Component> systemName guid ecs =
-        match EntityComponentSystem.tryGetSystem systemName ecs with
+        match Ecs.tryGetSystem systemName ecs with
         | Some system ->
             match system with
             | :? ('t SystemCorrelated) as systemCorr -> systemCorr.GetComponent guid
@@ -149,7 +157,7 @@ and [<NoEquality; NoComparison>] EntityComponentSystem =
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
     static member addComponentCorrelated<'t when 't : struct and 't :> Component> systemName guid (comp : 't) ecs =
-        match EntityComponentSystem.tryGetSystem systemName ecs with
+        match Ecs.tryGetSystem systemName ecs with
         | Some system ->
             match system with
             | :? ('t SystemCorrelated) as systemCorr ->
@@ -162,7 +170,7 @@ and [<NoEquality; NoComparison>] EntityComponentSystem =
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
     static member removeComponentCorrelated<'t when 't : struct and 't :> Component> systemName guid ecs =
-        match EntityComponentSystem.tryGetSystem systemName ecs with
+        match Ecs.tryGetSystem systemName ecs with
         | Some system ->
             match system with
             | :? ('t SystemCorrelated) as systemCorr ->
@@ -176,8 +184,8 @@ and [<NoEquality; NoComparison>] EntityComponentSystem =
 
     static member correlateComponent guid ecs =
         ecs.Correlations.[guid] |>
-        Seq.map (fun systemName -> EntityComponentSystem.getSystem systemName ecs) |>
-        Array.ofSeq
+        Seq.map (fun systemName -> (systemName, Ecs.getSystem systemName ecs)) |>
+        dictPlus
 
     static member make () =
         { Systems = dictPlus []
