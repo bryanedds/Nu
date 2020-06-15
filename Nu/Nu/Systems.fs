@@ -9,11 +9,12 @@ open Prime
 type [<AbstractClass>] System () =
     abstract Update : unit -> obj
 
-type [<AbstractClass>] 't SystemOne () =
+type [<AbstractClass>] SystemOne<'t when 't : struct> (comp : 't) =
     inherit System ()
-    abstract GetComponent : unit -> 't
+    let mutable comp = comp
+    member this.GetComponent () = &comp
 
-type [<AbstractClass>] 't SystemMany () =
+type [<AbstractClass>] SystemMany<'t when 't : struct> () =
     inherit System ()
 
     let mutable components = [||] : Transform array
