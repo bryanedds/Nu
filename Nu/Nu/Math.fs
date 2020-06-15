@@ -31,6 +31,11 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
       mutable Flags : int }
       // cache line end
 
+    interface Component with
+        member this.Active
+          with get () = this.Flags &&& 0b1 <> 0
+          and set value = this.Flags <- if value then this.Flags ||| 0b1 else this.Flags &&& ~~~0b1
+
     /// Assign a transform in-place.
     member this.Assign that =
         this.Position <- that.Position
