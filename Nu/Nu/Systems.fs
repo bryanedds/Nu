@@ -6,108 +6,58 @@ open System
 open System.Collections.Generic
 open Prime
 
-type System =
+type [<AbstractClass>] System () =
     abstract Update : unit -> obj
 
-type 't SystemOne =
-    inherit System
+type [<AbstractClass>] 't SystemOne () =
+    inherit System ()
     abstract GetComponent : unit -> 't
 
-type 't SystemMany =
-    inherit System
-    abstract GetComponent : int -> 't byref
-    abstract GetComponents : unit -> 't array
-    abstract AddComponent : 't -> int
-    abstract RemoveComponent : int -> int
+type [<AbstractClass>] 't SystemMany () =
+    inherit System ()
 
-type 't SystemStreamed =
-    inherit System
-    abstract GetComponent : int -> 't byref
-    abstract AddComponents : byte array -> int array
-    abstract ClearComponents : unit -> unit
+    let mutable components = [||] : Transform array
+    let mutable freeIndex = 0
+    member this.Components with get () = components
+    member this.FreeIndex with get () = freeIndex
 
-type [<NoEquality; NoComparison>] VanillaSystem =
-    private
-        { mutable Components : Transform array
-          mutable FreeIndex : int }
+    member this.GetComponent index =
+        if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
+        &components.[index]
 
-    interface Transform SystemMany with
+    member this.AddComponent comp =
+        if freeIndex < components.Length - 1 then
+            components.[freeIndex] <- comp
+            freeIndex <- inc freeIndex
+        else
+            let arr = Array.zeroCreate (components.Length * 2)
+            components.CopyTo (arr, 0)
+            components <- arr
+            components.[freeIndex] <- comp
+            freeIndex <- inc freeIndex
+        freeIndex - 1
 
-        member this.Update () =
-            () :> obj // vanilla components have no ECS update
+    member this.RemoveComponent index =
+        if index <> freeIndex then
+            let last = components.[components.Length - 1]
+            components.[index] <- last
+        freeIndex <- dec freeIndex
+        index
 
-        member this.GetComponent index =
-            if index >= this.FreeIndex then raise (ArgumentOutOfRangeException "index")
-            &this.Components.[index]
+type VanillaSystem () =
+    inherit SystemMany<Transform> ()
+    override this.Update () = () :> obj // vanilla components have no ECS update
 
-        member this.GetComponents () =
-            let components = Array.zeroCreate this.FreeIndex
-            this.Components.CopyTo (components, 0)
-            components
-
-        member this.AddComponent comp =
-            if this.FreeIndex < this.Components.Length - 1 then
-                this.Components.[this.FreeIndex] <- comp
-                this.FreeIndex <- inc this.FreeIndex
-            else
-                let arr = Array.zeroCreate (this.Components.Length * 2)
-                this.Components.CopyTo (arr, 0)
-                this.Components <- arr
-                this.Components.[this.FreeIndex] <- comp
-                this.FreeIndex <- inc this.FreeIndex
-            this.FreeIndex - 1
-
-        member this.RemoveComponent index =
-            if index <> this.FreeIndex then
-                let last = this.Components.[this.Components.Length - 1]
-                this.Components.[index] <- last
-            this.FreeIndex <- dec this.FreeIndex
-            index
-
-type [<NoEquality; NoComparison>] RotationSystem =
-    private
-        { mutable Components : Transform array
-          mutable FreeIndex : int
-          mutable Rotation : single }
-
-    interface Transform SystemMany with
-
-        member this.Update () =
-            let count = this.Components.Length
-            let mutable i = 0
-            while i < count do
-                let transform = &this.Components.[i]
-                transform.Rotation <- transform.Rotation + this.Rotation
-                i <- inc i
-            () :> obj
-
-        member this.GetComponent index =
-            if index >= this.FreeIndex then raise (ArgumentOutOfRangeException "index")
-            &this.Components.[index]
-
-        member this.GetComponents () =
-            let components = Array.zeroCreate this.FreeIndex
-            this.Components.CopyTo (components, 0)
-            components
-
-        member this.AddComponent comp =
-            if this.FreeIndex < this.Components.Length - 1 then
-                this.Components.[this.FreeIndex] <- comp
-                this.FreeIndex <- inc this.FreeIndex
-            else
-                let arr = Array.zeroCreate (this.Components.Length * 2)
-                this.Components.CopyTo (arr, 0)
-                this.Components <- arr
-                this.Components.[this.FreeIndex] <- comp
-                this.FreeIndex <- inc this.FreeIndex
-            this.FreeIndex - 1
-
-        member this.RemoveComponent index =
-            if index <> this.FreeIndex then
-                let last = this.Components.[this.Components.Length - 1]
-                this.Components.[index] <- last
-            this.FreeIndex <- dec this.FreeIndex
-            index
+type RotationSystem (rotation) =
+    inherit SystemMany<Transform> ()
+    override this.Update () =
+        let count = this.Components.Length
+        let mutable i = 0
+        while i < count do
+            let transform = &this.Components.[i]
+            transform.Rotation <- transform.Rotation + rotation
+            i <- inc i
+        () :> obj
 
 type [<NoEquality; NoComparison>] Systems =
     { Systems : Dictionary<string, System> }
@@ -121,6 +71,7 @@ type [<NoEquality; NoComparison>] Systems =
         systems.Systems.Add (name, system)
 
     static member make () =
-        let vanilla = { Components = [||]; FreeIndex = 0 }
-        let rotation = { Components = [||]; FreeIndex = 0; Rotation = 0.01f }
-        { Systems = dictPlus [("Vanilla", vanilla :> System); ("Rotation", rotation :> System)] }
+        let systems = 
+            [("Vanilla", VanillaSystem () :> System)
+             ("Rotation", RotationSystem 0.01f :> System)]
+        { Systems = dictPlus systems }
