@@ -7,14 +7,14 @@ open System.Collections.Generic
 open Prime
 
 type [<AbstractClass>] System () =
-    abstract Update : unit -> obj
+    abstract Update : Systems -> obj
 
-type [<AbstractClass>] SystemOne<'t when 't : struct> (comp : 't) =
+and [<AbstractClass>] SystemOne<'t when 't : struct> (comp : 't) =
     inherit System ()
     let mutable comp = comp
     member this.GetComponent () = &comp
 
-type [<AbstractClass>] SystemMany<'t when 't : struct> () =
+and [<AbstractClass>] SystemMany<'t when 't : struct> () =
     inherit System ()
 
     let mutable components = [||] : Transform array
@@ -45,13 +45,13 @@ type [<AbstractClass>] SystemMany<'t when 't : struct> () =
         freeIndex <- dec freeIndex
         index
 
-type VanillaSystem () =
+and VanillaSystem () =
     inherit SystemMany<Transform> ()
-    override this.Update () = () :> obj // vanilla components have no ECS update
+    override this.Update _ = () :> obj // vanilla components have no ECS update
 
-type RotationSystem (rotation) =
+and RotationSystem (rotation) =
     inherit SystemMany<Transform> ()
-    override this.Update () =
+    override this.Update _ =
         let count = this.Components.Length
         let mutable i = 0
         while i < count do
@@ -60,16 +60,27 @@ type RotationSystem (rotation) =
             i <- inc i
         () :> obj
 
-type [<NoEquality; NoComparison>] Systems =
+and [<NoEquality; NoComparison>] Systems =
     { Systems : Dictionary<string, System> }
 
     static member update systems =
         Seq.map
-            (fun (system : KeyValuePair<string, System>) -> system.Value.Update ())
+            (fun (system : KeyValuePair<string, System>) -> system.Value.Update systems)
             systems.Systems
 
-    static member add name system systems =
+    static member addSystem name system systems =
         systems.Systems.Add (name, system)
+
+    static member removeSystem name systems =
+        systems.Systems.Remove name |> ignore
+
+    static member tryGetSystem name systems =
+        match systems.Systems.TryGetValue name with
+        | (true, system) -> Some system
+        | (false, _) -> None
+
+    static member getSystem name systems =
+        Systems.tryGetSystem name systems |> Option.get
 
     static member make () =
         let systems = 
