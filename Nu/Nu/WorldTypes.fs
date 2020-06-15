@@ -484,7 +484,7 @@ module WorldTypes =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
           Model : DesignerProperty
-          EntityComponentSystem : EntityComponentSystem
+          Ecs : Ecs
           TransitionState : TransitionState
           TransitionTicks : int64
           Incoming : Transition
@@ -504,7 +504,7 @@ module WorldTypes =
             { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
               Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
-              EntityComponentSystem = EntityComponentSystem.make () 
+              Ecs = Ecs.make () 
               TransitionState = IdlingState
               TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
