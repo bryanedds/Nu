@@ -142,16 +142,17 @@ module WorldTypes =
     let mutable internal handleUserDefinedCallback = Unchecked.defaultof<obj -> obj -> obj -> Handling * obj>
 
     // OPTIMIZATION: Entity flag bit-masks; only for use by internal reflection facilities.
-    let [<Literal>] internal InvalidatedMask =           0b000000000001
-    let [<Literal>] internal OmnipresentMask =           0b000000000010
-    let [<Literal>] internal ImperativeMask =            0b000000000100
-    let [<Literal>] internal PublishChangesMask =        0b000000001000
-    let [<Literal>] internal EnabledMask =               0b000000010000
-    let [<Literal>] internal VisibleMask =               0b000000100000
-    let [<Literal>] internal AlwaysUpdateMask =          0b000001000000
-    let [<Literal>] internal PublishUpdatesMask =        0b000010000000
-    let [<Literal>] internal PublishPostUpdatesMask =    0b000100000000
-    let [<Literal>] internal PersistentMask =            0b001000000000
+    let [<Literal>] internal OccupationMask =           0b000000000001
+    let [<Literal>] internal InvalidatedMask =          0b000000000010
+    let [<Literal>] internal OmnipresentMask =          0b000000000100
+    let [<Literal>] internal ImperativeMask =           0b000000001000
+    let [<Literal>] internal PublishChangesMask =       0b000000010000
+    let [<Literal>] internal EnabledMask =              0b000000100000
+    let [<Literal>] internal VisibleMask =              0b000001000000
+    let [<Literal>] internal AlwaysUpdateMask =         0b000010000000
+    let [<Literal>] internal PublishUpdatesMask =       0b000100000000
+    let [<Literal>] internal PublishPostUpdatesMask =   0b001000000000
+    let [<Literal>] internal PersistentMask =           0b010000000000
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription =
@@ -483,7 +484,7 @@ module WorldTypes =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
           Model : DesignerProperty
-          Systems : Systems
+          EntityComponentSystem : EntityComponentSystem
           TransitionState : TransitionState
           TransitionTicks : int64
           Incoming : Transition
@@ -503,7 +504,7 @@ module WorldTypes =
             { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
               Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
-              Systems = Systems.make () 
+              EntityComponentSystem = EntityComponentSystem.make () 
               TransitionState = IdlingState
               TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
@@ -644,7 +645,7 @@ module WorldTypes =
                   Rotation = 0.0f
                   Depth = 0.0f
                   ViewType = Relative
-                  Flags = 0b001000110000 }
+                  Flags = 0b010001100001 }
               StaticData = { DesignerType = typeof<string>; DesignerValue = "" }
               Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
               Overflow = Vector2.Zero
