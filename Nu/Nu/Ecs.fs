@@ -9,18 +9,18 @@ open Prime
 type Component =
     abstract Occupied : bool with get, set
 
-type [<AbstractClass>] System () =
-    abstract Update : Ecs -> obj
-    abstract PostUpdate : Ecs -> obj
-    abstract Actualize : Ecs -> obj
+type [<AbstractClass>] 'w System () =
+    abstract Update : 'w Ecs -> obj
+    abstract PostUpdate : 'w Ecs -> obj
+    abstract Actualize : 'w Ecs -> obj
 
-and [<AbstractClass>] SystemSingleton<'t when 't : struct and 't :> Component> (comp : 't) =
-    inherit System ()
+and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
+    inherit System<'w> ()
     let mutable comp = comp
     member this.GetComponent () = &comp
 
-and [<AbstractClass>] SystemUncorrelated<'t when 't : struct and 't :> Component> () =
-    inherit System ()
+and [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component> () =
+    inherit System<'w> ()
 
     let mutable components = [||] : 't array
     let mutable freeIndex = 0
@@ -55,8 +55,8 @@ and [<AbstractClass>] SystemUncorrelated<'t when 't : struct and 't :> Component
             freeList.Enqueue index
         else freeIndex <- dec freeIndex
 
-and [<AbstractClass>] SystemCorrelated<'t when 't : struct and 't :> Component> () =
-    inherit System ()
+and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Component> () =
+    inherit System<'w> ()
 
     let mutable components = [||] : 't array
     let mutable freeIndex = 0
@@ -103,102 +103,124 @@ and [<AbstractClass>] SystemCorrelated<'t when 't : struct and 't :> Component> 
         | (false, _) -> false
 
 /// NOTE: Uncorrelated systems can update in parallel.
-and [<NoEquality; NoComparison>] Ecs =
-    { Systems : Dictionary<string, System>
+and [<NoEquality; NoComparison>] 'w Ecs =
+    { Systems : Dictionary<string, 'w System>
       Correlations : Dictionary<Guid, string List> }
 
-    static member update ecs =
+[<RequireQualifiedAccess>]
+module Ecs =
+
+    let update ecs =
         ecs.Systems |>
-        Seq.map (fun (system : KeyValuePair<string, System>) -> (system.Key, system.Value.Update ecs)) |>
+        Seq.map (fun (system : KeyValuePair<string, 'w System>) -> (system.Key, system.Value.Update ecs)) |>
         dictPlus
 
-    static member postUpdate ecs =
+    let postUpdate ecs =
         ecs.Systems |>
-        Seq.map (fun (system : KeyValuePair<string, System>) -> (system.Key, system.Value.PostUpdate ecs)) |>
+        Seq.map (fun (system : KeyValuePair<string, 'w System>) -> (system.Key, system.Value.PostUpdate ecs)) |>
         dictPlus
 
-    static member actualize ecs =
+    let actualize ecs =
         ecs.Systems |>
-        Seq.map (fun (system : KeyValuePair<string, System>) -> (system.Key, system.Value.Actualize ecs)) |>
+        Seq.map (fun (system : KeyValuePair<string, 'w System>) -> (system.Key, system.Value.Actualize ecs)) |>
         dictPlus
 
-    static member addSystem systemName system ecs =
+    let addSystem systemName system ecs =
         ecs.Systems.Add (systemName, system)
 
-    static member removeSystem systemName ecs =
+    let removeSystem systemName ecs =
         ecs.Systems.Remove systemName |> ignore
 
-    static member tryGetSystem systemName ecs =
+    let tryGetSystem systemName ecs =
         match ecs.Systems.TryGetValue systemName with
         | (true, system) -> Some system
         | (false, _) -> None
 
-    static member getSystem systemName ecs =
-        Ecs.tryGetSystem systemName ecs |> Option.get
+    let getSystem systemName ecs =
+        tryGetSystem systemName ecs |> Option.get
 
-    static member getComponent<'t when 't : struct and 't :> Component> systemName index ecs =
-        match Ecs.tryGetSystem systemName ecs with
+    let getComponent<'t, 'w when 't : struct and 't :> Component> systemName index ecs =
+        match tryGetSystem systemName ecs with
         | Some system ->
             match system with
-            | :? ('t SystemUncorrelated) as systemUnc -> systemUnc.GetComponent index
-            | _ -> failwith ("Could not find expected system '" + systemName + "' of type '" + typeof<'t>.Name + " SystemUncorrelated'.")
+            | :? SystemUncorrelated<'t, 'w> as systemUnc -> systemUnc.GetComponent index
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    static member addComponent<'t when 't : struct and 't :> Component> systemName (comp : 't) ecs =
-        match Ecs.tryGetSystem systemName ecs with
+    let addComponent<'t, 'w when 't : struct and 't :> Component> systemName (comp : 't) ecs =
+        match tryGetSystem systemName ecs with
         | Some system ->
             match system with
-            | :? ('t SystemUncorrelated) as systemUnc -> systemUnc.AddComponent comp
-            | _ -> failwith ("Could not find expected system '" + systemName + "' of type '" + typeof<'t>.Name + " SystemUncorrelated'.")
+            | :? SystemUncorrelated<'t, 'w> as systemUnc -> systemUnc.AddComponent comp
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    static member removeComponent<'t when 't : struct and 't :> Component> systemName index ecs =
-        match Ecs.tryGetSystem systemName ecs with
+    let removeComponent<'t, 'w when 't : struct and 't :> Component> systemName index ecs =
+        match tryGetSystem systemName ecs with
         | Some system ->
             match system with
-            | :? ('t SystemUncorrelated) as systemUnc -> systemUnc.RemoveComponent index
-            | _ -> failwith ("Could not find expected system '" + systemName + "' of type '" + typeof<'t>.Name + " SystemUncorrelated'.")
+            | :? SystemUncorrelated<'t, 'w> as systemUnc -> systemUnc.RemoveComponent index
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    static member getComponentCorrelated<'t when 't : struct and 't :> Component> systemName guid ecs =
-        match Ecs.tryGetSystem systemName ecs with
+    let getComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName guid ecs =
+        match tryGetSystem systemName ecs with
         | Some system ->
             match system with
-            | :? ('t SystemCorrelated) as systemCorr -> systemCorr.GetComponent guid
-            | _ -> failwith ("Could not find expected system '" + systemName + "' of type '" + typeof<'t>.Name + " SystemCorrelated'.")
+            | :? SystemCorrelated<'t, 'w> as systemCorr -> systemCorr.GetComponent guid
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    static member addComponentCorrelated<'t when 't : struct and 't :> Component> systemName guid (comp : 't) ecs =
-        match Ecs.tryGetSystem systemName ecs with
+    let addComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName guid (comp : 't) ecs =
+        match tryGetSystem systemName ecs with
         | Some system ->
             match system with
-            | :? ('t SystemCorrelated) as systemCorr ->
+            | :? SystemCorrelated<'t, 'w> as systemCorr ->
                 if systemCorr.AddComponent guid comp then
                     match ecs.Correlations.TryGetValue guid with
                     | (true, correlation) -> correlation.Add systemName
                     | (false, _) -> ecs.Correlations.Add (guid, List [systemName])
                 else ()
-            | _ -> failwith ("Could not find expected system '" + systemName + "' of type '" + typeof<'t>.Name + " SystemCorrelated'.")
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    static member removeComponentCorrelated<'t when 't : struct and 't :> Component> systemName guid ecs =
-        match Ecs.tryGetSystem systemName ecs with
+    let removeComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName guid ecs =
+        match tryGetSystem systemName ecs with
         | Some system ->
             match system with
-            | :? ('t SystemCorrelated) as systemCorr ->
+            | :? SystemCorrelated<'t, 'w> as systemCorr ->
                 if systemCorr.RemoveComponent guid then
                     match ecs.Correlations.TryGetValue guid with
                     | (true, correlation) -> correlation.Add systemName
                     | (false, _) -> ecs.Correlations.Add (guid, List [systemName])
                 else ()
-            | _ -> failwith ("Could not find expected system '" + systemName + "' of type '" + typeof<'t>.Name + " SystemCorrelated'.")
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    static member correlateComponent guid ecs =
+    let correlateComponent guid ecs =
         ecs.Correlations.[guid] |>
-        Seq.map (fun systemName -> (systemName, Ecs.getSystem systemName ecs)) |>
+        Seq.map (fun systemName -> (systemName, getSystem systemName ecs)) |>
         dictPlus
 
-    static member make () =
+    let make () =
         { Systems = dictPlus []
           Correlations = dictPlus [] }
+
+type [<NoEquality; NoComparison>] ComponentSource =
+    | ComponentSimulant of Simulant
+    | ComponentUncorrelated of string * int
+    | ComponentCorrelated of string * Guid
+
+type SystemCorrelator =
+    interface end
+
+type [<NoEquality; NoComparison>] SystemCorrelator<'i, 'd, 'w when 'i :> Component and 'd :> Component> =
+    { SourcesToIntersection : ComponentSource array -> 'i
+      IntersectionToDestination : 'i -> 'w -> 'd
+      SystemSourceNames : string array
+      SystemIntersectionName : string
+      SystemDestinationName : string }
+    interface SystemCorrelator
+
+type [<NoEquality; NoComparison>] SystemCorrelators =
+  { Correlators : SystemCorrelator array }
