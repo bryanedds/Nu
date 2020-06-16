@@ -487,12 +487,13 @@ module EffectSystem =
         // build sprite views
         let effectSystem =
             if slice.Enabled then
-                let transform =
+                let mutable transform =
                     { Position = slice.Position
                       Size = slice.Size
                       Rotation = slice.Rotation
                       Depth = slice.Depth
                       Flags = 0 }
+                transform.Absolute <- effectSystem.Absolute
                 let spriteView =
                     Render (transform.Depth, transform.Position.Y, image,
                         SpriteDescriptor 
@@ -530,12 +531,13 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let transform =
+                    let mutable transform =
                         { Position = slice.Position
                           Size = slice.Size
                           Rotation = slice.Rotation
                           Depth = slice.Depth
                           Flags = 0 }
+                    transform.Absolute <- effectSystem.Absolute
                     let animatedSpriteView =
                         Render (transform.Depth, transform.Position.Y, image,
                             SpriteDescriptor
@@ -566,12 +568,13 @@ module EffectSystem =
         // build sprite views
         let effectSystem =
             if slice.Enabled then
-                let transform =
+                let mutable transform =
                     { Position = slice.Position - slice.Size * 0.5f
                       Size = slice.Size
                       Rotation = slice.Rotation
                       Depth = slice.Depth
                       Flags = 0 }
+                transform.Absolute <- effectSystem.Absolute
                 let spriteView =
                     Render (transform.Depth, transform.Position.Y, font,
                         TextDescriptor 

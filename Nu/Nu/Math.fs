@@ -11,10 +11,10 @@ open Nu
 module TransformFlags =
 
     // OPTIMIZATION: Entity flag bit-masks; only for use by internal reflection facilities.
-    let [<Literal>] internal OccupationMask =           0b000000000001
+    let [<Literal>] internal OccupiedMask =             0b000000000001
     let [<Literal>] internal InvalidatedMask =          0b000000000010
-    let [<Literal>] internal OmnipresentMask =          0b000000001000
-    let [<Literal>] internal AbsoluteMask =             0b000000000100
+    let [<Literal>] internal OmnipresentMask =          0b000000000100
+    let [<Literal>] internal AbsoluteMask =             0b000000001000
     let [<Literal>] internal ImperativeMask =           0b000000010000
     let [<Literal>] internal PublishChangesMask =       0b000000100000
     let [<Literal>] internal EnabledMask =              0b000001000000
@@ -35,11 +35,11 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
       // 4 free cache line bytes
 
     interface Component with
-        member this.Active
+        member this.Occupied
           with get () = this.Flags &&& 0b1 <> 0
           and set value = this.Flags <- if value then this.Flags ||| 0b1 else this.Flags &&& ~~~0b1
 
-    member internal this.Occupation with get () = this.Flags &&& OccupationMask <> 0 and set value = this.Flags <- if value then this.Flags ||| OccupationMask else this.Flags &&& ~~~OccupationMask
+    member internal this.Occupied with get () = this.Flags &&& OccupiedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| OccupiedMask else this.Flags &&& ~~~OccupiedMask
     member internal this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
     member this.Omnipresent with get () = this.Flags &&& OmnipresentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| OmnipresentMask else this.Flags &&& ~~~OmnipresentMask
     member this.Absolute with get () = this.Flags &&& AbsoluteMask <> 0 and set value = this.Flags <- if value then this.Flags ||| AbsoluteMask else this.Flags &&& ~~~AbsoluteMask

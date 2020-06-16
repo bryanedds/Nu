@@ -694,7 +694,7 @@ module WorldTypes =
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Depth with get () = this.Transform.Depth and set value = this.Transform.Depth <- value
-        member internal this.Occupation with get () = this.Transform.Occupation and set value = this.Transform.Occupation <- value
+        member internal this.Occupied with get () = this.Transform.Occupied and set value = this.Transform.Occupied <- value
         member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
         member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
         member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value

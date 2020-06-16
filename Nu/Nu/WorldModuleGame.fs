@@ -237,8 +237,8 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getViewBounds absolute world =
             if absolute
-            then World.getViewBoundsRelative world
-            else World.getViewBoundsAbsolute world
+            then World.getViewBoundsAbsolute world
+            else World.getViewBoundsRelative world
 
         /// Check that the given bounds is within the eye's sight.
         [<FunctionBinding>]
@@ -262,8 +262,8 @@ module WorldModuleGame =
             let positionScreen = World.mouseToScreen mousePosition world
             let view =
                 if absolute
-                then World.getViewRelative world
-                else World.getViewAbsolute world
+                then World.getViewAbsolute world
+                else World.getViewRelative world
             let positionWorld = positionScreen * view
             positionWorld
 
