@@ -284,7 +284,7 @@ module Gaia =
         match form.entityPropertyGrid.SelectedObject with
         | :? EntityTypeDescriptorSource as entityTds ->
             let entity = entityTds.DescribedEntity
-            let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
+            let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) mousePosition world
             if Math.isPointInBounds mousePositionWorld (entity.GetBounds world)
             then (Some entity, world)
             else tryMousePickInner form mousePosition world
@@ -333,7 +333,7 @@ module Gaia =
                 let world = if entity.GetImperative world then World.divergeEntity entity world else world
                 let world =
                     updateEditorState (fun editorState ->
-                        let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
+                        let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) mousePosition world
                         let entityPosition =
                             if entity.Has<NodeFacet> world && entity.ParentNodeExists world
                             then entity.GetPositionLocal world
@@ -854,15 +854,14 @@ module Gaia =
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
                     if atMouse
-                    then World.mouseToWorld (entity.GetViewType world) mousePosition world
-                    else World.mouseToWorld (entity.GetViewType world) (World.getEyeSize world * 0.5f) world
+                    then World.mouseToWorld (entity.GetAbsolute world) mousePosition world
+                    else World.mouseToWorld (entity.GetAbsolute world) (World.getEyeSize world * 0.5f) world
                 let entityTransform =
                     { Position = entityPosition
                       Size = entity.GetQuickSize world
                       Rotation = entity.GetRotation world
                       Depth = getCreationDepth form
-                      ViewType = entity.GetViewType world
-                      Omnipresent = entity.GetOmnipresent world }
+                      Flags = entity.GetFlags world }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 let world = entity.PropagatePhysics world
                 selectEntity entity form world
@@ -1340,7 +1339,7 @@ module Gaia =
                 if entity.Exists world then
                     let (positionSnap, _) = getSnaps form
                     let mousePosition = World.getMousePositionF world
-                    let mousePositionWorld = World.mouseToWorld (entity.GetViewType world) mousePosition world
+                    let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) mousePosition world
                     let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                     let entityPositionSnapped = Math.snap2F positionSnap entityPosition
                     let world =

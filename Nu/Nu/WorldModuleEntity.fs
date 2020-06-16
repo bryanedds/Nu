@@ -185,12 +185,12 @@ module WorldModuleEntity =
                 if oldOmnipresent
                 then World.updateEntityStateInternal updater oldEntityState entity world
                 else
-                    let oldViewType = oldEntityState.ViewType
+                    let oldAbsolute = oldEntityState.Absolute
                     let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                     let (changed, entityState, world) = World.updateEntityStateInternal updater oldEntityState entity world
                     let world =
                         if changed
-                        then World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                        then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                         else world
                     (changed, entityState, world)
 
@@ -318,9 +318,9 @@ module WorldModuleEntity =
         static member internal getEntitySize entity world = (World.getEntityState entity world).Transform.Size
         static member internal getEntityRotation entity world = (World.getEntityState entity world).Transform.Rotation
         static member internal getEntityDepth entity world = (World.getEntityState entity world).Transform.Depth
-        static member internal getEntityViewType entity world = (World.getEntityState entity world).ViewType
         static member internal getEntityFlags entity world = (World.getEntityTransform entity world).Flags
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
+        static member internal getEntityAbsolute entity world = (World.getEntityState entity world).Absolute
         static member internal getEntityPublishChanges entity world = (World.getEntityState entity world).PublishChanges
         static member internal getEntityEnabled entity world = (World.getEntityState entity world).Enabled
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
@@ -339,8 +339,8 @@ module WorldModuleEntity =
         static member internal setEntitySize value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Transform.Size then Some (if entityState.Imperative then entityState.Transform.Size <- value; entityState else { entityState with Transform = { entityState.Transform with Size = value }}) else None) false false Property? Size value entity world
         static member internal setEntityRotation value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Transform.Rotation then Some (if entityState.Imperative then entityState.Transform.Rotation <- value; entityState else { entityState with Transform = { entityState.Transform with Rotation = value }}) else None) false false Property? Rotation value entity world
         static member internal setEntityDepth value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Transform.Depth then Some (if entityState.Imperative then entityState.Transform.Depth <- value; entityState else { entityState with Transform = { entityState.Transform with Depth = value }}) else None) false false Property? Depth value entity world
-        static member internal setEntityViewType value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Transform.ViewType then Some (if entityState.Imperative then entityState.Transform.ViewType <- value; entityState else { entityState with Transform = { entityState.Transform with ViewType = value }}) else None) false false Property? ViewType value entity world
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then Some (if entityState.Imperative then entityState.Omnipresent <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Omnipresent <- value; entityState)) else None) false false Property? Omnipresent value entity world
+        static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then Some (if entityState.Imperative then entityState.Absolute <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Absolute <- value; entityState)) else None) false false Property? Absolute value entity world
         static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChanges then Some (if entityState.Imperative then entityState.PublishChanges <- value; entityState else (let entityState = EntityState.copy entityState in entityState.PublishChanges <- value; entityState)) else None) false false Property? PublishChanges value entity world
         static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Enabled then Some (if entityState.Imperative then entityState.Enabled <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Enabled <- value; entityState)) else None) false false Property? Enabled value entity world
         static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Visible then Some (if entityState.Imperative then entityState.Visible <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Visible <- value; entityState)) else None) false false Property? Visible value entity world
@@ -358,7 +358,7 @@ module WorldModuleEntity =
             let oldWorld = world
             let oldEntityState = World.getEntityState entity world
             let oldOmnipresent = oldEntityState.Omnipresent
-            let oldViewType = oldEntityState.ViewType
+            let oldAbsolute = oldEntityState.Absolute
             let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
             let (changed, world) =
                 World.updateEntityStateWithoutEvent
@@ -368,7 +368,7 @@ module WorldModuleEntity =
                         else None)
                     entity world
             if changed then
-                let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 if World.getEntityPublishChanges entity world then
                     let world = World.publishEntityChange Property? Transform value entity world
                     let world = World.publishEntityChange Property? Bounds (v4 value.Position.X value.Position.Y (value.Position.X + value.Size.X) (value.Position.Y + value.Size.Y)) entity world
@@ -533,10 +533,10 @@ module WorldModuleEntity =
                     let oldWorld = world
                     let oldEntityState = entityState
                     let oldOmnipresent = oldEntityState.Omnipresent
-                    let oldViewType = oldEntityState.ViewType
+                    let oldAbsolute = oldEntityState.Absolute
                     let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                     let world = World.setEntityState entityState entity world
-                    let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                    let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                     Right (World.getEntityState entity world, world)
                 | None -> Right (entityState, world)
             | None -> let _ = World.choose world in Left ("Failure to remove facet '" + facetName + "' from entity.")
@@ -560,10 +560,10 @@ module WorldModuleEntity =
                         let oldWorld = world
                         let oldEntityState = entityState
                         let oldOmnipresent = oldEntityState.Omnipresent
-                        let oldViewType = oldEntityState.ViewType
+                        let oldAbsolute = oldEntityState.Absolute
                         let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                         let world = World.setEntityState entityState entity world
-                        let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                        let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                         let world = facet.Register (entity, world)
                         let world =
                             if WorldModule.isSelected entity world
@@ -636,12 +636,12 @@ module WorldModuleEntity =
                     let oldWorld = world
                     let oldEntityState = entityState
                     let oldOmnipresent = oldEntityState.Omnipresent
-                    let oldViewType = oldEntityState.ViewType
+                    let oldAbsolute = oldEntityState.Absolute
                     let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
-                    World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                    World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
             | None -> world
 
@@ -821,7 +821,7 @@ module WorldModuleEntity =
                                 (fun entityTree ->
                                     let entityState = World.getEntityState entity world
                                     let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                                    SpatialTree.addElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                                    SpatialTree.addElement (entityState.Omnipresent || entityState.Absolute) entityMaxBounds entity entityTree
                                     entityTree)
                                 (World.getEntityTree world)
                         World.setEntityTree entityTree world
@@ -857,7 +857,7 @@ module WorldModuleEntity =
                                 (fun entityTree ->
                                     let entityState = World.getEntityState entity oldWorld
                                     let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                                    SpatialTree.removeElement (entityState.Omnipresent || entityState.ViewType = Absolute) entityMaxBounds entity entityTree
+                                    SpatialTree.removeElement (entityState.Omnipresent || entityState.Absolute) entityMaxBounds entity entityTree
                                     entityTree)
                                 (World.getEntityTree world)
                         World.setEntityTree entityTree world
@@ -1109,10 +1109,10 @@ module WorldModuleEntity =
                 let oldWorld = world
                 let oldEntityState = entityState
                 let oldOmnipresent = oldEntityState.Omnipresent
-                let oldViewType = oldEntityState.ViewType
+                let oldAbsolute = oldEntityState.Absolute
                 let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 let world =
                     if World.getEntityPublishChanges entity world
                     then World.publishEntityChanges entity world
@@ -1138,10 +1138,10 @@ module WorldModuleEntity =
                 let oldWorld = world
                 let oldEntityState = entityState
                 let oldOmnipresent = oldEntityState.Omnipresent
-                let oldViewType = oldEntityState.ViewType
+                let oldAbsolute = oldEntityState.Absolute
                 let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
                 let world = World.setEntityState entityState entity world
-                let world = World.updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax entity oldWorld world
+                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 let world =
                     if World.getEntityPublishChanges entity world
                     then World.publishEntityChanges entity world
@@ -1173,15 +1173,15 @@ module WorldModuleEntity =
                 | Some omniScreen when omniScreen.Name = Array.head (Address.getNames entity.EntityAddress) -> omniScreen
                 | Some _ | None -> Screen (Array.head (entity.EntityAddress.Names))
 
-        static member internal updateEntityInEntityTree oldOmnipresent oldViewType oldBoundsMax (entity : Entity) oldWorld world =
+        static member internal updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax (entity : Entity) oldWorld world =
 
             // only need to do this when entity is selected
             if WorldModule.isSelected entity world then
 
                 // OPTIMIZATION: work with the entity state directly to avoid function call overheads
                 let entityState = World.getEntityState entity world
-                let oldOmnipresent = oldOmnipresent || oldViewType = Absolute
-                let newOmnipresent = entityState.Omnipresent || entityState.ViewType = Absolute
+                let oldOmnipresent = oldOmnipresent || oldAbsolute
+                let newOmnipresent = entityState.Omnipresent || entityState.Absolute
                 if newOmnipresent <> oldOmnipresent then
 
                     // remove and add entity in entity tree
@@ -1236,8 +1236,8 @@ module WorldModuleEntity =
                 let entityState = { entityState with Id = id; Name = name }
                 let position =
                     if atMouse
-                    then World.mouseToWorld entityState.ViewType rightClickPosition world
-                    else World.mouseToWorld entityState.ViewType (World.getEyeSize world * 0.5f) world
+                    then World.mouseToWorld entityState.Absolute rightClickPosition world
+                    else World.mouseToWorld entityState.Absolute (World.getEyeSize world * 0.5f) world
                 let transform = { EntityState.getTransform entityState with Position = position }
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransform transform entityState
@@ -1260,8 +1260,8 @@ module WorldModuleEntity =
         Getters.Add ("Size", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world })
         Getters.Add ("Rotation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world })
         Getters.Add ("Depth", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityDepth entity world })
-        Getters.Add ("ViewType", fun entity world -> { PropertyType = typeof<ViewType>; PropertyValue = World.getEntityViewType entity world })
         Getters.Add ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
+        Getters.Add ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
         Getters.Add ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         Getters.Add ("StaticData", fun entity world -> let designerProperty = World.getEntityStaticDataProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         Getters.Add ("Overflow", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world })
@@ -1289,8 +1289,8 @@ module WorldModuleEntity =
         Setters.Add ("Size", fun property entity world -> (true, World.setEntitySize (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("Rotation", fun property entity world -> (true, World.setEntityRotation (property.PropertyValue :?> single) entity world))
         Setters.Add ("Depth", fun property entity world -> (true, World.setEntityDepth (property.PropertyValue :?> single) entity world))
-        Setters.Add ("ViewType", fun property entity world -> (true, World.setEntityViewType (property.PropertyValue :?> ViewType) entity world))
         Setters.Add ("Omnipresent", fun property entity world -> (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world))
+        Setters.Add ("Absolute", fun property entity world -> (true, World.setEntityAbsolute (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Model", fun property entity world -> (true, World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world))
         Setters.Add ("StaticData", fun property entity world -> (true, World.setEntityStaticDataProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world))
         Setters.Add ("Overflow", fun property entity world -> (true, World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world))

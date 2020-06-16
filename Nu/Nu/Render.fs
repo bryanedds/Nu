@@ -238,23 +238,24 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         (viewRelative : Matrix3)
         (_ : Vector2)
         (eyeSize : Vector2)
-        (sprite : SpriteDescriptor)
+        (descriptor : SpriteDescriptor)
         renderer =
-        let view = match sprite.Transform.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-        let position = sprite.Transform.Position - Vector2.Multiply (sprite.Offset, sprite.Transform.Size)
+        let mutable transform = descriptor.Transform
+        let view = if transform.Absolute then viewAbsolute else viewRelative
+        let position = transform.Position - Vector2.Multiply (descriptor.Offset, transform.Size)
         let positionView = position * view
-        let sizeView = sprite.Transform.Size * view.ExtractScaleMatrix ()
-        let color = sprite.Color
-        let glow = sprite.Glow
-        let image = AssetTag.generalize sprite.Image
-        let flip = Flip.toSdlFlip sprite.Flip
+        let sizeView = transform.Size * view.ExtractScaleMatrix ()
+        let color = descriptor.Color
+        let glow = descriptor.Glow
+        let image = AssetTag.generalize descriptor.Image
+        let flip = Flip.toSdlFlip descriptor.Flip
         match SdlRenderer.tryLoadRenderAsset image renderer with
         | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
                 let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
                 let mutable sourceRect = SDL.SDL_Rect ()
-                match sprite.InsetOpt with
+                match descriptor.InsetOpt with
                 | Some inset ->
                     sourceRect.x <- int inset.X
                     sourceRect.y <- int inset.Y
@@ -270,7 +271,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f - sizeView.Y) // negation for right-handedness
                 destRect.w <- int sizeView.X
                 destRect.h <- int sizeView.Y
-                let rotation = double -sprite.Transform.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
+                let rotation = double -transform.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
                 let mutable rotationCenter = SDL.SDL_Point ()
                 rotationCenter.x <- int (sizeView.X * 0.5f)
                 rotationCenter.y <- int (sizeView.Y * 0.5f)
@@ -299,10 +300,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         (eyeSize : Vector2)
         (descriptor : TileLayerDescriptor)
         renderer =
-        let view = match descriptor.Transform.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-        let positionView = descriptor.Transform.Position * view
-        let sizeView = descriptor.Transform.Size * view.ExtractScaleMatrix ()
-        let tileRotation = descriptor.Transform.Rotation
+        let mutable transform = descriptor.Transform
+        let view = if transform.Absolute then viewAbsolute else viewRelative
+        let positionView = transform.Position * view
+        let sizeView = transform.Size * view.ExtractScaleMatrix ()
+        let tileRotation = transform.Rotation
         let mapSize = descriptor.MapSize
         let tiles = descriptor.Tiles
         let tileSourceSize = descriptor.TileSourceSize
@@ -365,9 +367,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         (eyeSize : Vector2)
         (descriptor : TextDescriptor)
         renderer =
-        let view = match descriptor.Transform.ViewType with Absolute -> viewAbsolute | Relative -> viewRelative
-        let positionView = descriptor.Transform.Position * view
-        let sizeView = descriptor.Transform.Size * view.ExtractScaleMatrix ()
+        let mutable transform = descriptor.Transform
+        let view = if transform.Absolute then viewAbsolute else viewRelative
+        let positionView = transform.Position * view
+        let sizeView = transform.Size * view.ExtractScaleMatrix ()
         let text = String.textualize descriptor.Text
         let color = descriptor.Color
         let font = AssetTag.generalize descriptor.Font
