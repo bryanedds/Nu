@@ -12,6 +12,7 @@ type Component =
 type [<AbstractClass>] System () =
     abstract Update : Ecs -> obj
     abstract PostUpdate : Ecs -> obj
+    abstract Actualize : Ecs -> obj
 
 and [<AbstractClass>] SystemSingleton<'t when 't : struct and 't :> Component> (comp : 't) =
     inherit System ()
@@ -114,6 +115,11 @@ and [<NoEquality; NoComparison>] Ecs =
     static member postUpdate ecs =
         ecs.Systems |>
         Seq.map (fun (system : KeyValuePair<string, System>) -> (system.Key, system.Value.PostUpdate ecs)) |>
+        dictPlus
+
+    static member actualize ecs =
+        ecs.Systems |>
+        Seq.map (fun (system : KeyValuePair<string, System>) -> (system.Key, system.Value.Actualize ecs)) |>
         dictPlus
 
     static member addSystem systemName system ecs =
