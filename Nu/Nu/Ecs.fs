@@ -7,7 +7,7 @@ open System.Collections.Generic
 open Prime
 
 type Component =
-    abstract Active : bool with get, set
+    abstract Occupied : bool with get, set
 
 type [<AbstractClass>] System () =
     abstract Update : Ecs -> obj
@@ -49,7 +49,7 @@ and [<AbstractClass>] SystemUncorrelated<'t when 't : struct and 't :> Component
 
     member this.RemoveComponent index =
         if index <> freeIndex then
-            components.[index].Active <- false
+            components.[index].Occupied <- false
             freeList.Enqueue index
         else freeIndex <- dec freeIndex
 
@@ -94,7 +94,7 @@ and [<AbstractClass>] SystemCorrelated<'t when 't : struct and 't :> Component> 
         match correlations.TryGetValue guid with
         | (true, index) ->
             if index <> freeIndex then
-                components.[index].Active <- false
+                components.[index].Occupied <- false
                 freeList.Enqueue index
             else freeIndex <- dec freeIndex
             true
