@@ -211,16 +211,16 @@ type [<NoEquality; NoComparison>] ComponentSource =
     | ComponentUncorrelated of string * int
     | ComponentCorrelated of string * Guid
 
-type SystemCorrelator =
+type SystemMapper =
     interface end
 
-type [<NoEquality; NoComparison>] SystemCorrelator<'i, 'd, 'w when 'i :> Component and 'd :> Component> =
+type [<NoEquality; NoComparison>] SystemMapper<'i, 'd, 'w when 'i :> Component and 'd :> Component> =
     { SourcesToIntersection : ComponentSource array -> 'i
       IntersectionToDestination : 'i -> 'w -> 'd
       SystemSourceNames : string array
       SystemIntersectionName : string
       SystemDestinationName : string }
-    interface SystemCorrelator
+    interface SystemMapper
 
-type [<NoEquality; NoComparison>] SystemCorrelators =
-  { Correlators : SystemCorrelator array }
+type [<NoEquality; NoComparison>] SystemMappers =
+  { Mappers : SystemMapper array }
