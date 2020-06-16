@@ -2120,97 +2120,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewBoundsAbsolute' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getViewBounds viewType world =
-        let oldWorld = world
-        try
-            let viewType =
-                match ScriptingSystem.tryExport typeof<ViewType> viewType world with
-                | Some value -> value :?> ViewType
-                | None -> failwith "Invalid argument type for 'viewType'; expecting a value convertable to ViewType."
-            let result = World.getViewBounds viewType world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Vector4> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getViewBounds' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let isBoundsInView viewType bounds world =
-        let oldWorld = world
-        try
-            let viewType =
-                match ScriptingSystem.tryExport typeof<ViewType> viewType world with
-                | Some value -> value :?> ViewType
-                | None -> failwith "Invalid argument type for 'viewType'; expecting a value convertable to ViewType."
-            let bounds =
-                match ScriptingSystem.tryExport typeof<Vector4> bounds world with
-                | Some value -> value :?> Vector4
-                | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Vector4."
-            let result = World.isBoundsInView viewType bounds world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isBoundsInView' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let mouseToScreen mousePosition world =
-        let oldWorld = world
-        try
-            let mousePosition =
-                match ScriptingSystem.tryExport typeof<Vector2> mousePosition world with
-                | Some value -> value :?> Vector2
-                | None -> failwith "Invalid argument type for 'mousePosition'; expecting a value convertable to Vector2."
-            let result = World.mouseToScreen mousePosition world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Vector2> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'mouseToScreen' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let mouseToWorld viewType mousePosition world =
-        let oldWorld = world
-        try
-            let viewType =
-                match ScriptingSystem.tryExport typeof<ViewType> viewType world with
-                | Some value -> value :?> ViewType
-                | None -> failwith "Invalid argument type for 'viewType'; expecting a value convertable to ViewType."
-            let mousePosition =
-                match ScriptingSystem.tryExport typeof<Vector2> mousePosition world with
-                | Some value -> value :?> Vector2
-                | None -> failwith "Invalid argument type for 'mousePosition'; expecting a value convertable to Vector2."
-            let result = World.mouseToWorld viewType mousePosition world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Vector2> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'mouseToWorld' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let mouseToEntity viewType entityPosition mousePosition world =
-        let oldWorld = world
-        try
-            let viewType =
-                match ScriptingSystem.tryExport typeof<ViewType> viewType world with
-                | Some value -> value :?> ViewType
-                | None -> failwith "Invalid argument type for 'viewType'; expecting a value convertable to ViewType."
-            let entityPosition =
-                match ScriptingSystem.tryExport typeof<Vector2> entityPosition world with
-                | Some value -> value :?> Vector2
-                | None -> failwith "Invalid argument type for 'entityPosition'; expecting a value convertable to Vector2."
-            let mousePosition =
-                match ScriptingSystem.tryExport typeof<Vector2> mousePosition world with
-                | Some value -> value :?> Vector2
-                | None -> failwith "Invalid argument type for 'mousePosition'; expecting a value convertable to Vector2."
-            let result = World.mouseToEntity viewType entityPosition mousePosition world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Vector2> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'mouseToEntity' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
     let getTickRate world =
         let oldWorld = world
         try
@@ -3640,61 +3549,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetViewBoundsBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|viewType|] -> getViewBounds viewType world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalIsBoundsInViewBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|viewType; bounds|] -> isBoundsInView viewType bounds world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalMouseToScreenBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|mousePosition|] -> mouseToScreen mousePosition world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalMouseToWorldBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|viewType; mousePosition|] -> mouseToWorld viewType mousePosition world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalMouseToEntityBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|viewType; entityPosition; mousePosition|] -> mouseToEntity viewType entityPosition mousePosition world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalGetTickRateBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4002,11 +3856,6 @@ module WorldBindings =
              ("getScreenTransitionDestinationOpt", { Fn = evalGetScreenTransitionDestinationOptBinding; Pars = [||]; DocOpt = None })
              ("getViewBoundsRelative", { Fn = evalGetViewBoundsRelativeBinding; Pars = [||]; DocOpt = None })
              ("getViewBoundsAbsolute", { Fn = evalGetViewBoundsAbsoluteBinding; Pars = [||]; DocOpt = None })
-             ("getViewBounds", { Fn = evalGetViewBoundsBinding; Pars = [|"viewType"|]; DocOpt = None })
-             ("isBoundsInView", { Fn = evalIsBoundsInViewBinding; Pars = [|"viewType"; "bounds"|]; DocOpt = None })
-             ("mouseToScreen", { Fn = evalMouseToScreenBinding; Pars = [|"mousePosition"|]; DocOpt = None })
-             ("mouseToWorld", { Fn = evalMouseToWorldBinding; Pars = [|"viewType"; "mousePosition"|]; DocOpt = None })
-             ("mouseToEntity", { Fn = evalMouseToEntityBinding; Pars = [|"viewType"; "entityPosition"; "mousePosition"|]; DocOpt = None })
              ("getTickRate", { Fn = evalGetTickRateBinding; Pars = [||]; DocOpt = None })
              ("getTickRateF", { Fn = evalGetTickRateFBinding; Pars = [||]; DocOpt = None })
              ("setTickRate", { Fn = evalSetTickRateBinding; Pars = [|"tickRate"|]; DocOpt = None })

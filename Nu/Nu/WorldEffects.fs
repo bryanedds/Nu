@@ -192,7 +192,7 @@ module EffectSystem =
     /// An abstract data type for executing effects.
     type [<StructuralEquality; NoComparison>] EffectSystem =
         private
-            { ViewType : ViewType
+            { Absolute : bool
               Views : View List
               History : Slice seq
               ProgressOffset : single
@@ -492,7 +492,6 @@ module EffectSystem =
                       Size = slice.Size
                       Rotation = slice.Rotation
                       Depth = slice.Depth
-                      ViewType = effectSystem.ViewType
                       Flags = 0 }
                 let spriteView =
                     Render (transform.Depth, transform.Position.Y, image,
@@ -536,7 +535,6 @@ module EffectSystem =
                           Size = slice.Size
                           Rotation = slice.Rotation
                           Depth = slice.Depth
-                          ViewType = effectSystem.ViewType
                           Flags = 0 }
                     let animatedSpriteView =
                         Render (transform.Depth, transform.Position.Y, image,
@@ -573,7 +571,6 @@ module EffectSystem =
                       Size = slice.Size
                       Rotation = slice.Rotation
                       Depth = slice.Depth
-                      ViewType = effectSystem.ViewType
                       Flags = 0 }
                 let spriteView =
                     Render (transform.Depth, transform.Position.Y, font,
@@ -755,8 +752,8 @@ module EffectSystem =
               Content = Contents (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
         effectCombined
 
-    let make viewType history effectTime globalEnv = 
-        { ViewType = viewType
+    let make absolute history effectTime globalEnv = 
+        { Absolute = absolute
           Views = List<View> ()
           History = history
           ProgressOffset = 0.0f

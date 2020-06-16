@@ -141,19 +141,6 @@ module WorldTypes =
     // EventSystem reach-arounds.
     let mutable internal handleUserDefinedCallback = Unchecked.defaultof<obj -> obj -> obj -> Handling * obj>
 
-    // OPTIMIZATION: Entity flag bit-masks; only for use by internal reflection facilities.
-    let [<Literal>] internal OccupationMask =           0b000000000001
-    let [<Literal>] internal InvalidatedMask =          0b000000000010
-    let [<Literal>] internal OmnipresentMask =          0b000000000100
-    let [<Literal>] internal ImperativeMask =           0b000000001000
-    let [<Literal>] internal PublishChangesMask =       0b000000010000
-    let [<Literal>] internal EnabledMask =              0b000000100000
-    let [<Literal>] internal VisibleMask =              0b000001000000
-    let [<Literal>] internal AlwaysUpdateMask =         0b000010000000
-    let [<Literal>] internal PublishUpdatesMask =       0b000100000000
-    let [<Literal>] internal PublishPostUpdatesMask =   0b001000000000
-    let [<Literal>] internal PersistentMask =           0b010000000000
-
     /// Represents an unsubscription operation for an event.
     type Unsubscription =
         World -> World
@@ -319,8 +306,8 @@ module WorldTypes =
              Define? Size Constants.Engine.DefaultEntitySize
              Define? Rotation 0.0f
              Define? Depth 0.0f
-             Define? ViewType Relative
              Define? Omnipresent false
+             Define? Absolute false
              Define? StaticData { DesignerType = typeof<string>; DesignerValue = "" }
              Define? Overflow Vector2.Zero
              Define? Imperative false
@@ -644,8 +631,7 @@ module WorldTypes =
                   Size = Constants.Engine.DefaultEntitySize
                   Rotation = 0.0f
                   Depth = 0.0f
-                  ViewType = Relative
-                  Flags = 0b010001100001 }
+                  Flags = 0b100011000001 }
               StaticData = { DesignerType = typeof<string>; DesignerValue = "" }
               Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
               Overflow = Vector2.Zero
@@ -708,17 +694,18 @@ module WorldTypes =
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Depth with get () = this.Transform.Depth and set value = this.Transform.Depth <- value
-        member this.ViewType with get () = this.Transform.ViewType and set value = this.Transform.ViewType <- value
-        member internal this.Invalidated with get () = this.Transform.Flags &&& InvalidatedMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| InvalidatedMask else this.Transform.Flags &&& ~~~InvalidatedMask
-        member this.Omnipresent with get () = this.Transform.Flags &&& OmnipresentMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| OmnipresentMask else this.Transform.Flags &&& ~~~OmnipresentMask
-        member this.Imperative with get () = this.Transform.Flags &&& ImperativeMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| ImperativeMask else this.Transform.Flags &&& ~~~ImperativeMask
-        member this.PublishChanges with get () = this.Transform.Flags &&& PublishChangesMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| PublishChangesMask else this.Transform.Flags &&& ~~~PublishChangesMask
-        member this.Enabled with get () = this.Transform.Flags &&& EnabledMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| EnabledMask else this.Transform.Flags &&& ~~~EnabledMask
-        member this.Visible with get () = this.Transform.Flags &&& VisibleMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| VisibleMask else this.Transform.Flags &&& ~~~VisibleMask
-        member this.AlwaysUpdate with get () = this.Transform.Flags &&& AlwaysUpdateMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| AlwaysUpdateMask else this.Transform.Flags &&& ~~~AlwaysUpdateMask
-        member this.PublishUpdates with get () = this.Transform.Flags &&& PublishUpdatesMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| PublishUpdatesMask else this.Transform.Flags &&& ~~~PublishUpdatesMask
-        member this.PublishPostUpdates with get () = this.Transform.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| PublishPostUpdatesMask else this.Transform.Flags &&& ~~~PublishPostUpdatesMask
-        member this.Persistent with get () = this.Transform.Flags &&& PersistentMask <> 0 and set value = this.Transform.Flags <- if value then this.Transform.Flags ||| PersistentMask else this.Transform.Flags &&& ~~~PersistentMask
+        member internal this.Occupation with get () = this.Transform.Occupation and set value = this.Transform.Occupation <- value
+        member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
+        member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
+        member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
+        member this.Imperative with get () = this.Transform.Imperative and set value = this.Transform.Imperative <- value
+        member this.PublishChanges with get () = this.Transform.PublishChanges and set value = this.Transform.PublishChanges <- value
+        member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
+        member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
+        member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
+        member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
+        member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
+        member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
@@ -1000,7 +987,7 @@ module WorldTypes =
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
           TryGetExtrinsic : string -> World ScriptingTrinsic option
-          UpdateEntityInEntityTree : bool -> ViewType -> Vector4 -> Entity -> World -> World -> World
+          UpdateEntityInEntityTree : bool -> bool -> Vector4 -> Entity -> World -> World -> World
           RebuildEntityTree : World -> Entity SpatialTree }
 
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed

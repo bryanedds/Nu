@@ -235,15 +235,15 @@ module WorldModuleGame =
 
         /// Get the bounds of the eye's sight.
         [<FunctionBinding>]
-        static member getViewBounds viewType world =
-            match viewType with
-            | Relative -> World.getViewBoundsRelative world
-            | Absolute -> World.getViewBoundsAbsolute world
+        static member getViewBounds absolute world =
+            if absolute
+            then World.getViewBoundsRelative world
+            else World.getViewBoundsAbsolute world
 
         /// Check that the given bounds is within the eye's sight.
         [<FunctionBinding>]
-        static member isBoundsInView viewType (bounds : Vector4) world =
-            let viewBounds = World.getViewBounds viewType world
+        static member isBoundsInView absolute (bounds : Vector4) world =
+            let viewBounds = World.getViewBounds absolute world
             Math.isBoundsIntersectingBounds bounds viewBounds
 
         /// Transform the given mouse position to screen space.
@@ -258,19 +258,19 @@ module WorldModuleGame =
 
         /// Transform the given mouse position to world space.
         [<FunctionBinding>]
-        static member mouseToWorld viewType mousePosition world =
+        static member mouseToWorld absolute mousePosition world =
             let positionScreen = World.mouseToScreen mousePosition world
             let view =
-                match viewType with
-                | Relative -> World.getViewRelative world
-                | Absolute -> World.getViewAbsolute world
+                if absolute
+                then World.getViewRelative world
+                else World.getViewAbsolute world
             let positionWorld = positionScreen * view
             positionWorld
 
         /// Transform the given mouse position to entity space.
         [<FunctionBinding>]
-        static member mouseToEntity viewType entityPosition mousePosition world =
-            let mousePositionWorld = World.mouseToWorld viewType mousePosition world
+        static member mouseToEntity absolute entityPosition mousePosition world =
+            let mousePositionWorld = World.mouseToWorld absolute mousePosition world
             entityPosition - mousePositionWorld
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.

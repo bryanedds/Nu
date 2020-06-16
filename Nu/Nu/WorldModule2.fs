@@ -64,7 +64,7 @@ module WorldModule2 =
             let tree = World.makeEntityTree ()
             for entity in entities do
                 let boundsMax = entity.GetBoundsMax world
-                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) boundsMax entity tree
+                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) boundsMax entity tree
             tree
 
         /// Resolve a relation to an address in the current script context.
@@ -706,7 +706,7 @@ module WorldModule2 =
                 let color = Vector4 (Vector3.One, alpha)
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
-                let transform = { Position = position; Size = size; Rotation = 0.0f; Depth = Single.MaxValue; ViewType = Absolute; Flags = -1 }
+                let transform = { Position = position; Size = size; Rotation = 0.0f; Depth = Single.MaxValue; Flags = -1 }
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth

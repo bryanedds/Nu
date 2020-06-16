@@ -110,19 +110,19 @@ module WorldGameModule =
         member this.GetViewBoundsAbsolute world = World.getViewAbsolute world
 
         /// Get the bounds of the eye's sight.
-        member this.GetViewBounds viewType world = World.getViewBounds viewType world
+        member this.GetViewBounds absolute world = World.getViewBounds absolute world
 
         /// Check that the given bounds is within the eye's sight.
-        member this.GetInView viewType bounds world = World.isBoundsInView viewType bounds world
+        member this.GetInView absolute bounds world = World.isBoundsInView absolute bounds world
 
         /// Transform the given mouse position to screen space.
         member this.MouseToScreen mousePosition world = World.mouseToScreen mousePosition world
 
         /// Transform the given mouse position to world space.
-        member this.MouseToWorld viewType mousePosition world = World.mouseToWorld viewType mousePosition world
+        member this.MouseToWorld absolute mousePosition world = World.mouseToWorld absolute mousePosition world
 
         /// Transform the given mouse position to entity space.
-        member this.MouseToEntity viewType entityPosition mousePosition world = World.mouseToEntity viewType entityPosition mousePosition world
+        member this.MouseToEntity absolute entityPosition mousePosition world = World.mouseToEntity absolute entityPosition mousePosition world
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)

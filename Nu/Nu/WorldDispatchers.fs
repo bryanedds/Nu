@@ -254,7 +254,7 @@ module EffectFacetModule =
                 let world = entity.SetEffectTags Map.empty world
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
-                let effectViewType = entity.GetViewType world
+                let effectAbsolute = entity.GetAbsolute world
                 let effectSlice =
                     { Effects.Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
                       Effects.Size = entity.GetSize world
@@ -268,7 +268,7 @@ module EffectFacetModule =
                       Effects.Volume = Constants.Audio.DefaultSoundVolume }
                 let effectHistory = entity.GetEffectHistory world
                 let effectEnv = entity.GetEffectDefinitions world
-                let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
+                let effectSystem = EffectSystem.make effectAbsolute effectHistory effectTime effectEnv
 
                 // evaluate effect with effect system
                 let (artifacts, _) = EffectSystem.eval effect effectSlice effectSystem
@@ -419,7 +419,6 @@ module TextFacetModule =
                       Size = text.GetSize world - text.GetMargins world * 2.0f
                       Rotation = 0.0f
                       Depth = text.GetDepth world + 0.5f
-                      ViewType = text.GetViewType world
                       Flags = text.GetFlags world }
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
@@ -775,7 +774,7 @@ module TileMapFacetModule =
             if tileMap.GetVisible world then
                 match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
                 | Some (_, images, map) ->
-                    let viewType = tileMap.GetViewType world
+                    let absolute = tileMap.GetAbsolute world
                     let layers = List.ofSeq map.Layers
                     let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
                     let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
@@ -792,9 +791,9 @@ module TileMapFacetModule =
                                         | (false, _) -> single i * tileLayerClearance
                                     let depth = tileMap.GetDepth world + depthOffset
                                     let parallaxTranslation =
-                                        match viewType with
-                                        | Absolute -> Vector2.Zero
-                                        | Relative -> tileMap.GetParallax world * depth * -World.getEyeCenter world
+                                        if absolute
+                                        then Vector2.Zero
+                                        else tileMap.GetParallax world * depth * -World.getEyeCenter world
                                     let parallaxPosition = position + parallaxTranslation
                                     let size = Vector2 (tileSize.X * single map.Width, tileSize.Y)
                                     let rotation = tileMap.GetRotation world
@@ -803,7 +802,6 @@ module TileMapFacetModule =
                                           Size = size
                                           Rotation = rotation
                                           Depth = depth
-                                          ViewType = viewType
                                           Flags = tileMap.GetFlags world }
                                     let image = List.head images // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                     let tiles =
@@ -812,7 +810,7 @@ module TileMapFacetModule =
                                         Seq.skip (j * map.Width) |>
                                         Seq.take map.Width |>
                                         Seq.toArray
-                                    if World.isBoundsInView viewType (Math.makeBounds parallaxPosition size) world then
+                                    if World.isBoundsInView absolute (Math.makeBounds parallaxPosition size) world then
                                         World.enqueueRenderMessage
                                             (LayeredDescriptorMessage
                                                 { Depth = transform.Depth
@@ -1301,7 +1299,7 @@ module GuiDispatcherModule =
             let data = evt.Data : MouseButtonData
             let handling =
                 if gui.GetSelected world && gui.GetVisible world then
-                    let mousePositionWorld = World.mouseToWorld (gui.GetViewType world) data.Position world
+                    let mousePositionWorld = World.mouseToWorld (gui.GetAbsolute world) data.Position world
                     if data.Down &&
                        gui.GetSwallowMouseLeft world &&
                        Math.isPointInBounds mousePositionWorld (gui.GetBounds world) then
@@ -1314,8 +1312,8 @@ module GuiDispatcherModule =
             [typeof<NodeFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.ViewType Absolute
+            [define Entity.Absolute true
+             define Entity.PublishChanges true
              define Entity.AlwaysUpdate true
              define Entity.DisabledColor (Vector4 0.75f)
              define Entity.SwallowMouseLeft true]
@@ -1333,7 +1331,7 @@ module GuiDispatcherModule =
             let data = evt.Data : MouseButtonData
             let handling =
                 if gui.GetSelected world && gui.GetVisible world then
-                    let mousePositionWorld = World.mouseToWorld (gui.GetViewType world) data.Position world
+                    let mousePositionWorld = World.mouseToWorld (gui.GetAbsolute world) data.Position world
                     if data.Down &&
                        gui.GetSwallowMouseLeft world &&
                        Math.isPointInBounds mousePositionWorld (gui.GetBounds world) then
@@ -1346,8 +1344,8 @@ module GuiDispatcherModule =
             [typeof<NodeFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.ViewType Absolute
+            [define Entity.Absolute true
+             define Entity.PublishChanges true
              define Entity.AlwaysUpdate true
              define Entity.DisabledColor (Vector4 0.75f)
              define Entity.SwallowMouseLeft true]
@@ -1389,7 +1387,7 @@ module ButtonDispatcherModule =
             let button = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             if button.GetSelected world then
-                let mousePositionWorld = World.mouseToWorld (button.GetViewType world) data.Position world
+                let mousePositionWorld = World.mouseToWorld (button.GetAbsolute world) data.Position world
                 if  button.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world then
@@ -1407,7 +1405,7 @@ module ButtonDispatcherModule =
             if button.GetSelected world then
                 let wasDown = button.GetDown world
                 let world = button.SetDown false world
-                let mousePositionWorld = World.mouseToWorld (button.GetViewType world) data.Position world
+                let mousePositionWorld = World.mouseToWorld (button.GetAbsolute world) data.Position world
                 if  button.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
                     if button.GetEnabled world && wasDown then
@@ -1586,7 +1584,7 @@ module ToggleDispatcherModule =
             let toggle = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             if toggle.GetSelected world then
-                let mousePositionWorld = World.mouseToWorld (toggle.GetViewType world) data.Position world
+                let mousePositionWorld = World.mouseToWorld (toggle.GetAbsolute world) data.Position world
                 if  toggle.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world then
@@ -1602,7 +1600,7 @@ module ToggleDispatcherModule =
             if toggle.GetSelected world then
                 let wasPressed = toggle.GetPressed world
                 let world = toggle.SetPressed false world
-                let mousePositionWorld = World.mouseToWorld (toggle.GetViewType world) data.Position world
+                let mousePositionWorld = World.mouseToWorld (toggle.GetAbsolute world) data.Position world
                 if  toggle.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
                     if toggle.GetEnabled world && wasPressed then
@@ -1726,7 +1724,7 @@ module FeelerDispatcherModule =
             let feeler = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             if feeler.GetSelected world then
-                let mousePositionWorld = World.mouseToWorld (feeler.GetViewType world) data.Position world
+                let mousePositionWorld = World.mouseToWorld (feeler.GetAbsolute world) data.Position world
                 if  feeler.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (feeler.GetBounds world) then
                     if feeler.GetEnabled world then
@@ -1807,7 +1805,6 @@ module FillBarDispatcherModule =
                       Size = fillBar.GetSize world
                       Rotation = 0.0f
                       Depth = fillBar.GetDepth world + 0.5f
-                      ViewType = fillBar.GetViewType world
                       Flags = fillBar.GetFlags world }
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
                 let fillBarSpriteTransform =
@@ -1815,7 +1812,6 @@ module FillBarDispatcherModule =
                       Size = fillBarSpriteSize
                       Rotation = 0.0f
                       Depth = fillBar.GetDepth world
-                      ViewType = fillBar.GetViewType world
                       Flags = fillBar.GetFlags world }
                 let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
                 World.enqueueRenderMessage
