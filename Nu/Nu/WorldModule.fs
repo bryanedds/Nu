@@ -549,7 +549,7 @@ module WorldModule =
                         let mapped =
                             match subscription.MapperOpt with
                             | Some mapper -> mapper eventDataObj subscription.PreviousDataOpt (snd result)
-                            | None -> eventData :> obj
+                            | None -> eventDataObj
                         let filtered =
                             match subscription.FilterOpt with
                             | Some filter -> filter mapped subscription.PreviousDataOpt (snd result)
@@ -562,7 +562,7 @@ module WorldModule =
                                 let (_, subscriber, callback) = enr2.Current
                                 match callback with
                                 | UserDefinedCallback callback ->
-                                    // OPTIMIZATION: avoids the dynamic dispatch and go straight to the user-defined callback
+                                    // OPTIMIZATION: avoids the dynamic dispatch and goes straight to the user-defined callback
                                     result <- WorldTypes.handleUserDefinedCallback callback mapped (snd result) |> mapSnd cast<World>
                                 | FunctionCallback callback ->
                                     result <-
