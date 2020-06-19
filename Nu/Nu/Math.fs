@@ -8,21 +8,21 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module TransformFlags =
+module internal TransformMasks =
 
     // OPTIMIZATION: Entity flag bit-masks; only for use by internal reflection facilities.
-    let [<Literal>] internal OccupiedMask =             0b000000000001
-    let [<Literal>] internal InvalidatedMask =          0b000000000010
-    let [<Literal>] internal OmnipresentMask =          0b000000000100
-    let [<Literal>] internal AbsoluteMask =             0b000000001000
-    let [<Literal>] internal ImperativeMask =           0b000000010000
-    let [<Literal>] internal PublishChangesMask =       0b000000100000
-    let [<Literal>] internal EnabledMask =              0b000001000000
-    let [<Literal>] internal VisibleMask =              0b000010000000
-    let [<Literal>] internal AlwaysUpdateMask =         0b000100000000
-    let [<Literal>] internal PublishUpdatesMask =       0b001000000000
-    let [<Literal>] internal PublishPostUpdatesMask =   0b010000000000
-    let [<Literal>] internal PersistentMask =           0b100000000000
+    let [<Literal>] OccupiedMask =             0b000000000001
+    let [<Literal>] InvalidatedMask =          0b000000000010
+    let [<Literal>] OmnipresentMask =          0b000000000100
+    let [<Literal>] AbsoluteMask =             0b000000001000
+    let [<Literal>] ImperativeMask =           0b000000010000
+    let [<Literal>] PublishChangesMask =       0b000000100000
+    let [<Literal>] EnabledMask =              0b000001000000
+    let [<Literal>] VisibleMask =              0b000010000000
+    let [<Literal>] AlwaysUpdateMask =         0b000100000000
+    let [<Literal>] PublishUpdatesMask =       0b001000000000
+    let [<Literal>] PublishPostUpdatesMask =   0b010000000000
+    let [<Literal>] PersistentMask =           0b100000000000
 
 /// Carries transformation data specific to an Entity.
 type [<StructuralEquality; NoComparison; Struct>] Transform =

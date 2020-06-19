@@ -69,13 +69,13 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
     member this.FreeIndex
         with get () = freeIndex
 
-    member this.GetComponent guid =
-        let (found, index) = correlations.TryGetValue guid
-        if not found then raise (InvalidOperationException "guid")
+    member this.GetComponent entityId =
+        let (found, index) = correlations.TryGetValue entityId
+        if not found then raise (InvalidOperationException "entityId")
         &components.[index]
 
-    member this.AddComponent guid comp =
-        if not (correlations.ContainsKey guid) then
+    member this.AddComponent entityId comp =
+        if not (correlations.ContainsKey entityId) then
             if freeList.Count = 0 then
                 if freeIndex < components.Length - 1 then
                     components.[freeIndex] <- comp
@@ -87,13 +87,13 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
                     components.[freeIndex] <- comp
                     freeIndex <- inc freeIndex
                 let index = dec freeIndex
-                correlations.Add (guid, index)
+                correlations.Add (entityId, index)
             else components.[freeList.Dequeue ()] <- comp
             true
         else false
 
-    member this.RemoveComponent guid =
-        match correlations.TryGetValue guid with
+    member this.RemoveComponent entityId =
+        match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
                 components.[index].Occupied <- false
@@ -163,42 +163,42 @@ module Ecs =
             | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    let getComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName guid ecs =
+    let getComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
         match tryGetSystem systemName ecs with
         | Some system ->
             match system with
-            | :? SystemCorrelated<'t, 'w> as systemCorr -> systemCorr.GetComponent guid
+            | :? SystemCorrelated<'t, 'w> as systemCorr -> systemCorr.GetComponent entityId
             | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    let addComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName guid (comp : 't) ecs =
-        match tryGetSystem systemName ecs with
-        | Some system ->
-            match system with
-            | :? SystemCorrelated<'t, 'w> as systemCorr ->
-                if systemCorr.AddComponent guid comp then
-                    match ecs.Correlations.TryGetValue guid with
-                    | (true, correlation) -> correlation.Add systemName
-                    | (false, _) -> ecs.Correlations.Add (guid, List [systemName])
-                else ()
-            | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
-        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
-
-    let removeComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName guid ecs =
+    let addComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName entityId (comp : 't) ecs =
         match tryGetSystem systemName ecs with
         | Some system ->
             match system with
             | :? SystemCorrelated<'t, 'w> as systemCorr ->
-                if systemCorr.RemoveComponent guid then
-                    match ecs.Correlations.TryGetValue guid with
+                if systemCorr.AddComponent entityId comp then
+                    match ecs.Correlations.TryGetValue entityId with
                     | (true, correlation) -> correlation.Add systemName
-                    | (false, _) -> ecs.Correlations.Add (guid, List [systemName])
+                    | (false, _) -> ecs.Correlations.Add (entityId, List [systemName])
                 else ()
             | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    let correlateComponent guid ecs =
-        ecs.Correlations.[guid] |>
+    let removeComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
+        match tryGetSystem systemName ecs with
+        | Some system ->
+            match system with
+            | :? SystemCorrelated<'t, 'w> as systemCorr ->
+                if systemCorr.RemoveComponent entityId then
+                    match ecs.Correlations.TryGetValue entityId with
+                    | (true, correlation) -> correlation.Add systemName
+                    | (false, _) -> ecs.Correlations.Add (entityId, List [systemName])
+                else ()
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
+        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    let correlateComponent entityId ecs =
+        ecs.Correlations.[entityId] |>
         Seq.map (fun systemName -> (systemName, getSystem systemName ecs)) |>
         dictPlus
 

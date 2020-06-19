@@ -472,7 +472,7 @@ module WorldTypes =
           Dispatcher : ScreenDispatcher
           Xtension : Xtension
           Model : DesignerProperty
-          Ecs : Ecs
+          Ecs : World Ecs
           TransitionState : TransitionState
           TransitionTicks : int64
           Incoming : Transition
