@@ -60,14 +60,10 @@ module FacetModule =
     and Entity with
     
         member this.GetFacetModel<'model> modelName world =
-            let property = this.Get<DesignerProperty> modelName world
-            property.DesignerValue :?> 'model
+            this.Get<'model> modelName world
 
         member this.SetFacetModel<'model> modelName (value : 'model) world =
-            let model = this.Get<DesignerProperty> modelName world
-            if this.GetImperative world
-            then model.DesignerValue <- value; world
-            else this.Set<DesignerProperty> modelName { DesignerType = typeof<'model>; DesignerValue = value } world
+            this.Set<'model> modelName value world
 
         member this.UpdateFacetModel<'model> modelName updater world =
             this.SetFacetModel<'model> modelName (updater this.GetFacetModel<'model> modelName world) world
@@ -1185,7 +1181,8 @@ module EntityDispatcherModule =
 
         override this.Register (entity, world) =
             let world =
-                if getType (entity.GetModel world) = typeof<obj>
+                let property = World.getEntityModelProperty entity world
+                if property.DesignerType = typeof<unit>
                 then entity.SetModel<'model> initial world
                 else world
             let channels = this.Channel (this.Model entity, entity)
@@ -2018,7 +2015,8 @@ module LayerDispatcherModule =
 
         override this.Register (layer, world) =
             let world =
-                if getType (layer.GetModel world) = typeof<obj>
+                let property = World.getLayerModelProperty layer world
+                if property.DesignerType = typeof<unit>
                 then layer.SetModel<'model> initial world
                 else world
             let channels = this.Channel (this.Model layer, layer)
@@ -2110,7 +2108,8 @@ module ScreenDispatcherModule =
 
         override this.Register (screen, world) =
             let world =
-                if getType (screen.GetModel world) = typeof<obj>
+                let property = World.getScreenModelProperty screen world
+                if property.DesignerType = typeof<unit>
                 then screen.SetModel<'model> initial world
                 else world
             let channels = this.Channel (this.Model screen, screen)

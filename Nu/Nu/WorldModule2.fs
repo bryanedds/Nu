@@ -984,7 +984,8 @@ module GameDispatcherModule =
 
         override this.Register (game, world) =
             let world =
-                if getType (game.GetModel world) = typeof<obj>
+                let property = World.getGameModelProperty world
+                if property.DesignerType = typeof<unit>
                 then game.SetModel<'model> initial world
                 else world
             let channels = this.Channel (this.Model game, game)

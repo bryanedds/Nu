@@ -61,10 +61,7 @@ module WorldModuleScreen =
 
         static member private publishScreenChange (propertyName : string) (propertyValue : obj) (screen : Screen) world =
             let world =
-                let changeData =
-                    match propertyValue with
-                    | :? DesignerProperty as dp -> { Name = propertyName; Value = dp.DesignerValue }
-                    | _ -> { Name = propertyName; Value = propertyValue }
+                let changeData = { Name = propertyName; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; screen.Name|]
                 let eventTrace = EventTrace.record "World" "publishScreenChange" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace screen false world
@@ -205,12 +202,12 @@ module WorldModuleScreen =
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.Register (screen, world)
             let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
-            World.publish () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen false world
+            World.publish () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen true world
 
         static member internal unregisterScreen screen world =
             let dispatcher = World.getScreenDispatcher screen world
             let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
-            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"; screen.Name|]) eventTrace screen false world
+            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"; screen.Name|]) eventTrace screen true world
             dispatcher.Unregister (screen, world)
 
         static member internal addScreen mayReplace screenState screen world =

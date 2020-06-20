@@ -259,24 +259,13 @@ module PropertyDescriptor =
     let tryGetValue propertyDescriptor simulant world =
         let propertyName = propertyDescriptor.PropertyName
         match World.tryGetProperty propertyName simulant world with
-        | Some property ->
-            match property.PropertyValue with
-            | :? DesignerProperty as dp -> Some dp.DesignerValue
-            | value -> Some value
+        | Some property -> Some property.PropertyValue
         | None -> None
 
     /// Attempt to set the simulant's property value.
     let trySetValue alwaysPublish nonPersistent propertyDescriptor propertyValue simulant world =
         let (propertyName, propertyType) = (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
-        let property =
-            match World.tryGetProperty propertyName simulant world with
-            | Some propertyOld ->
-                match propertyOld.PropertyValue with
-                | :? DesignerProperty as dp ->
-                    let designerProperty = { dp with DesignerType = propertyType; DesignerValue = propertyValue }
-                    { PropertyType = typeof<DesignerProperty>; PropertyValue = designerProperty }
-                | _ -> { PropertyType = propertyType; PropertyValue = propertyValue }
-            | None -> { PropertyType = propertyType; PropertyValue = propertyValue }
+        let property = { PropertyType = propertyType; PropertyValue = propertyValue }
         World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
 
     /// Get the property descriptors as constructed from the given function in the given context.
@@ -294,12 +283,8 @@ module PropertyDescriptor =
             let propertyDescriptors =
                 Seq.map (fun (property : PropertyInfo) ->
                     let propertyName = property.Name
-                    let property = World.getProperty property.Name simulant world
-                    let propertyType =
-                        match property.PropertyValue with
-                        | :? DesignerProperty as designerProperty -> designerProperty.DesignerType
-                        | _ -> property.PropertyType
-                    let property = { PropertyType = propertyType; PropertyName = propertyName }
+                    let property = World.getProperty propertyName simulant world
+                    let property = { PropertyType = property.PropertyType; PropertyName = propertyName }
                     makePropertyDescriptor (property, [|typeConverterAttribute|]))
                     properties
             let propertyDescriptors =
@@ -312,10 +297,7 @@ module PropertyDescriptor =
                                 if property.PropertyType = typeof<ComputedProperty> then
                                     propertyDescriptors'
                                 elif not (Reflection.isPropertyNonPersistentByName propertyName) then
-                                    let propertyType =
-                                        match property.PropertyValue with
-                                        | :? DesignerProperty as designerProperty -> designerProperty.DesignerType
-                                        | _ -> property.PropertyType
+                                    let propertyType = property.PropertyType
                                     let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
                                     let propertyDescriptor = makePropertyDescriptor (propertyDescriptor, [|typeConverterAttribute|]) : System.ComponentModel.PropertyDescriptor
                                     propertyDescriptor :: propertyDescriptors'

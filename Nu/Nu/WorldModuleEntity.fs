@@ -121,10 +121,7 @@ module WorldModuleEntity =
 
         static member private publishEntityChange propertyName (propertyValue : obj) (entity : Entity) world =
             let world =
-                let changeData =
-                    match propertyValue with
-                    | :? DesignerProperty as dp -> { Name = propertyName; Value = dp.DesignerValue }
-                    | _ -> { Name = propertyName; Value = propertyValue }
+                let changeData = { Name = propertyName; Value = propertyValue }
                 let entityNames = Address.getNames entity.EntityAddress
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
                 let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
@@ -295,7 +292,7 @@ module WorldModuleEntity =
                         if entityState.Imperative then
                             entityState.StaticData.DesignerValue <- value.DesignerValue
                             Some entityState
-                        else Some { entityState with StaticData = { entityState.StaticData with DesignerValue = value }}
+                        else Some { entityState with StaticData = value }
                     else None)
                 true false Property? StaticData value.DesignerValue entity world
 
@@ -652,11 +649,12 @@ module WorldModuleEntity =
                 | Some property as some ->
                     match property.PropertyValue with
                     | :? ComputedProperty as cp -> Some { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }
+                    | :? DesignerProperty as dp -> Some { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }
                     | _ -> some
                 | None ->
                     match Getters.TryGetValue propertyName with
-                    | (false, _) -> None
                     | (true, getter) -> Some (getter entity world)
+                    | (false, _) -> None
             | None -> None
 
         static member internal getEntityProperty propertyName entity world =
@@ -681,6 +679,13 @@ module WorldModuleEntity =
                                     then (true, true, computedSet property.PropertyValue entity world :?> World)
                                     else (true, false, world)
                                 | None -> (false, false, world)
+                            | :? DesignerProperty as dp ->
+                                if property.PropertyValue <> dp.DesignerValue then
+                                    let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
+                                    match EntityState.trySetProperty propertyName property entityState with
+                                    | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
+                                    | (false, _) -> (false, false, world)
+                                else (true, false, world)
                             | _ ->
                                 if property.PropertyValue <> propertyOld.PropertyValue then
                                     match EntityState.trySetProperty propertyName property entityState with
@@ -772,11 +777,11 @@ module WorldModuleEntity =
                     world facets
             let world = World.updateEntityPublishFlags entity world
             let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-            World.publish () (rtoa<unit> [|"Register"; "Event"|] --> entity) eventTrace entity false world
+            World.publish () (rtoa<unit> [|"Register"; "Event"|] --> entity) eventTrace entity true world
 
         static member internal unregisterEntity entity world =
             let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
-            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> entity) eventTrace entity false world
+            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> entity) eventTrace entity true world
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             let facets = World.getEntityFacets entity world
             let world = dispatcher.Unregister (entity, world)

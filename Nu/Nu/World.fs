@@ -19,41 +19,25 @@ module Nu =
 
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
         if right.Validate world then
-            let value =
-                match right.GetWithoutValidation world with
-                | :? DesignerProperty as property -> property.DesignerValue
-                | value -> value
-            let world =
-                if World.getExists left.This world then
-                    match left.GetWithoutValidation world with
-                    | :? DesignerProperty as designerProperty -> (Option.get left.SetOpt) ({ designerProperty with DesignerValue = value } :> obj) world
-                    | _ -> (Option.get left.SetOpt) value world
-                else world
-            (Cascade, world)
+            let value = right.GetWithoutValidation world
+            if World.getExists left.This world
+            then (Cascade, (Option.get left.SetOpt) value world)
+            else (Cascade, world)
         else (Cascade, world)
 
     let private tryPropagateByName simulant leftName (right : World Lens) world =
         let nonPersistent = Reflection.isPropertyNonPersistentByName leftName
         let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
         if right.Validate world then
-            let value =
-                match right.GetWithoutValidation world with
-                | :? DesignerProperty as property -> property.DesignerValue
-                | value -> value
-            let world =
-                match World.tryGetProperty leftName simulant world with
-                | Some property ->
-                    if property.PropertyType = typeof<DesignerProperty> then
-                        let designerProperty = property.PropertyValue :?> DesignerProperty
-                        let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = { designerProperty with DesignerValue = value }}
-                        World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
-                    else
-                        let property = { property with PropertyValue = value }
-                        World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
-                | None ->
-                    Log.debug "Property propagation failed. You have used a composed lens on a faux simulant reference, which is not supported."
-                    world
-            (Cascade, world)
+            let value = right.GetWithoutValidation world
+            match World.tryGetProperty leftName simulant world with
+            | Some property ->
+                let property = { property with PropertyValue = value }
+                let world = World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
+                (Cascade, world)
+            | None ->
+                Log.debug "Property propagation failed. You have used a composed lens on a faux simulant reference, which is not supported."
+                (Cascade, world)
         else (Cascade, world)
 
     let private tryPropagate simulant (left : World Lens) (right : World Lens) world =

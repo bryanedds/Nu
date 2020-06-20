@@ -34,7 +34,6 @@ and LayerPropertyDescriptor (propertyDescriptor, attributes) =
         if propertyName.EndsWith "Script" then "Scripts"
         elif propertyName = "Name" then "\rAmbient Properties"
         elif propertyName = "Persistent" || propertyName = "Script" || propertyName = "ScriptOpt" || propertyName = "Depth" || propertyName = "Visible" then "\rScene Properties"
-        elif propertyType = typeof<DesignerProperty> then "\rDesigner Properties"
         else "\rXtension Properties"
 
     override this.Description =

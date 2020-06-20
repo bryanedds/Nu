@@ -118,15 +118,9 @@ module WorldScripting =
             | Right struct (simulant, world) ->
                 match World.tryGetProperty propertyName simulant world with
                 | Some property ->
-                    match property.PropertyValue with
-                    | :? DesignerProperty as dp ->
-                        match ScriptingSystem.tryImport dp.DesignerType dp.DesignerValue world with
-                        | Some propertyValue -> struct (propertyValue, world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
-                    | _ ->
-                        match ScriptingSystem.tryImport property.PropertyType property.PropertyValue world with
-                        | Some propertyValue -> struct (propertyValue, world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
+                    match ScriptingSystem.tryImport property.PropertyType property.PropertyValue world with
+                    | Some propertyValue -> struct (propertyValue, world)
+                    | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
                 | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
@@ -138,11 +132,8 @@ module WorldScripting =
                     Stream.make (Events.Change propertyName --> simulant.SimulantAddress) |>
                     Stream.mapEvent (fun (evt : Event<ChangeData, _>) world ->
                         match World.tryGetProperty evt.Data.Name simulant world with
-                        | Some property ->
-                            match property.PropertyValue with
-                            | :? DesignerProperty as dp -> ScriptingSystem.tryImport dp.DesignerType dp.DesignerValue world |> box
-                            | _ -> ScriptingSystem.tryImport property.PropertyType property.PropertyValue world |> box
-                        | None -> None |> box)
+                        | Some property -> ScriptingSystem.tryImport property.PropertyType property.PropertyValue world |> box
+                        | None -> None :> obj)
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
 
@@ -155,24 +146,13 @@ module WorldScripting =
                     let struct (propertyValue, world) = World.evalInternal propertyValueExpr world
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                     let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
-                    match property.PropertyValue with
-                    | :? DesignerProperty as dp ->
-                        match ScriptingSystem.tryExport dp.DesignerType propertyValue world with
-                        | Some propertyValue ->
-                            let propertyValue = { dp with DesignerValue = propertyValue }
-                            let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                            match World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world with
-                            | (true, world) -> struct (Unit, world)
-                            | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
-                    | _ ->
-                        match ScriptingSystem.tryExport property.PropertyType propertyValue world with
-                        | Some propertyValue ->
-                            let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                            match World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world with
-                            | (true, world) -> struct (Unit, world)
-                            | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
+                    match ScriptingSystem.tryExport property.PropertyType propertyValue world with
+                    | Some propertyValue ->
+                        let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
+                        match World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world with
+                        | (true, world) -> struct (Unit, world)
+                        | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
+                    | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
                 | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
@@ -194,22 +174,12 @@ module WorldScripting =
                                         | Some property ->
                                             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                                             let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
-                                            match property.PropertyValue with
-                                            | :? DesignerProperty as dp ->
-                                                match ScriptingSystem.tryExport dp.DesignerType expr world with
-                                                | Some propertyValue ->
-                                                    let propertyValue = { dp with DesignerValue = propertyValue }
-                                                    let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                                                    let (_, world) = World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
-                                                    (Cascade, world)
-                                                | None -> (Cascade, world)
-                                            | _ ->
-                                                match ScriptingSystem.tryExport property.PropertyType expr world with
-                                                | Some propertyValue ->
-                                                    let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                                                    let (_, world) = World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
-                                                    (Cascade, world)
-                                                | None -> (Cascade, world)
+                                            match ScriptingSystem.tryExport property.PropertyType expr world with
+                                            | Some propertyValue ->
+                                                let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
+                                                let (_, world) = World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
+                                                (Cascade, world)
+                                            | None -> (Cascade, world)
                                         | None -> (Cascade, world)
                                     | None -> (Cascade, world)
                                 | _ -> (Cascade, world))
