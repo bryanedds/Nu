@@ -90,9 +90,9 @@ type ElmishGameDispatcher () =
 
     override this.Content (model, _) =
         [Content.screen "Screen" Vanilla []
-            [Content.layers model id constant (fun i ints world ->
+            [Content.layers model id constant (fun i ints _ ->
                 Content.layer (scstring i) []
-                    [Content.entities ints id constant (fun j int world ->
+                    [Content.entities ints id constant (fun j int _ ->
                         Content.label (scstring j)
                             [Entity.Size <== int --> fun int -> v2 (single int) (single int)
                              Entity.Position == v2 (single i * 16.0f - 480.0f) (single j * 16.0f - 272.0f)])])
