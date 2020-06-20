@@ -70,10 +70,7 @@ module WorldModuleLayer =
 
         static member private publishLayerChange propertyName (propertyValue : obj) (layer : Layer) world =
             let world =
-                let changeData =
-                    match propertyValue with
-                    | :? DesignerProperty as dp -> { Name = propertyName; Value = dp.DesignerValue }
-                    | _ -> { Name = propertyName; Value = propertyValue }
+                let changeData = { Name = propertyName; Value = propertyValue }
                 let layerNames = Address.getNames layer.LayerAddress
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; layerNames.[0]; layerNames.[1]|]
                 let eventTrace = EventTrace.record "World" "publishLayerChange" EventTrace.empty
@@ -213,12 +210,12 @@ module WorldModuleLayer =
             let dispatcher = World.getLayerDispatcher layer world
             let world = dispatcher.Register (layer, world)
             let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
-            World.publish () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer false world
+            World.publish () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer true world
 
         static member internal unregisterLayer layer world =
             let dispatcher = World.getLayerDispatcher layer world
             let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
-            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer false world
+            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer true world
             dispatcher.Unregister (layer, world)
 
         static member internal addLayer mayReplace layerState layer world =

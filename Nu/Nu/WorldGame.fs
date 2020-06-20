@@ -149,14 +149,14 @@ module WorldGameModule =
             let dispatcher = game.GetDispatcher world
             let world = dispatcher.Register (game, world)
             let eventTrace = EventTrace.record "World" "registerGame" EventTrace.empty
-            let world = World.publish () (rtoa<unit> [|"Register"; "Event"|]) eventTrace game false world
+            let world = World.publish () (rtoa<unit> [|"Register"; "Event"|]) eventTrace game true world
             World.choose world
 
         static member internal unregisterGame world =
             let game = Simulants.Game
             let dispatcher = game.GetDispatcher world
             let eventTrace = EventTrace.record "World" "unregisteringGame" EventTrace.empty
-            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game false world
+            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game true world
             let world =
                     dispatcher.Unregister (game, world)
             World.choose world

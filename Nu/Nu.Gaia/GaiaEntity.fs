@@ -94,8 +94,8 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                 else
                     MessageBox.Show
                         ("Invalid name '" + name + "'; must have no whitespace and none of the following characters: '" + (String.escape Symbol.IllegalNameChars) + "'.",
-                            "Invalid Name",
-                            MessageBoxButtons.OK) |>
+                         "Invalid Name",
+                         MessageBoxButtons.OK) |>
                         ignore
                     world
 

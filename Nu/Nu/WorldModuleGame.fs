@@ -21,10 +21,7 @@ module WorldModuleGame =
         static member private publishGameChange propertyName (propertyValue : obj) world =
             let game = Game ()
             let world =
-                let changeData =
-                    match propertyValue with
-                    | :? DesignerProperty as dp -> { Name = propertyName; Value = dp.DesignerValue }
-                    | _ -> { Name = propertyName; Value = propertyValue }
+                let changeData = { Name = propertyName; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
                 let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace game false world

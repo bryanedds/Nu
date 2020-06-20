@@ -119,13 +119,7 @@ module Describe =
                 | VariableExpr fn -> Some (fn world)
                 | ComputedExpr _ -> None // computed property cannot be an initializer...
             match valueOpt with
-            | Some value ->
-                let property =
-                    if String.length name > 5 && name.EndsWith "Model" then
-                        // HACK: needed to convert these facet models to designer properties...
-                        { PropertyType = typeof<DesignerProperty>; PropertyValue = { DesignerType = ty; DesignerValue = value }}
-                    else { PropertyType = ty; PropertyValue = value }
-                Some (name, property)
+            | Some value -> Some (name, { PropertyType = ty; PropertyValue = value })
             | None -> None) |>
         List.definitize
 

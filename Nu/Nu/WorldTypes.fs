@@ -309,6 +309,7 @@ module WorldTypes =
              Define? Omnipresent false
              Define? Absolute false
              Define? StaticData { DesignerType = typeof<string>; DesignerValue = "" }
+             Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
              Define? Imperative false
              Define? PublishChanges false
@@ -423,7 +424,7 @@ module WorldTypes =
             { Id = Gen.id
               Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
-              Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
+              Model = { DesignerType = typeof<unit>; DesignerValue = () }
               OmniScreenOpt = None
               SelectedScreenOpt = None
               ScreenTransitionDestinationOpt = None
@@ -491,7 +492,7 @@ module WorldTypes =
             { Id = id
               Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
-              Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
+              Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Ecs = Ecs.make () 
               TransitionState = IdlingState
               TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
@@ -557,7 +558,7 @@ module WorldTypes =
             { Id = id
               Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
-              Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
+              Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Visible = true
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
@@ -633,7 +634,7 @@ module WorldTypes =
                   Depth = 0.0f
                   Flags = 0b100011000001 }
               StaticData = { DesignerType = typeof<string>; DesignerValue = "" }
-              Model = { DesignerType = typeof<obj>; DesignerValue = obj () }
+              Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
