@@ -217,6 +217,11 @@ module WorldModule =
         static member internal updateAmbientState updater world =
             World.choose { world with AmbientState = updater world.AmbientState }
 
+        /// Get the the liveness state of the engine.
+        [<FunctionBinding>]
+        static member getLiveness world =
+            World.getAmbientStateBy AmbientState.getLiveness world
+
         static member internal updateTime world =
             World.updateAmbientState AmbientState.updateTime world
     
@@ -274,11 +279,6 @@ module WorldModule =
         [<FunctionBinding>]
         static member getClockDelta world =
             World.getAmbientStateBy AmbientState.getClockDelta world
-
-        /// Get the the liveness state of the engine.
-        [<FunctionBinding>]
-        static member getLiveness world =
-            World.getAmbientStateBy AmbientState.getLiveness world
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         [<FunctionBinding>]
