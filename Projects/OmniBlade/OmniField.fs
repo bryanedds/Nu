@@ -239,7 +239,7 @@ module OmniField =
                     (fun _ model _ ->
                         let propModel = model.Map (fun (object, group, tileMap, advents) ->
                             let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
-                            let propSize = v2 (single object.Width) (single object.Height) * 4.0f
+                            let propSize = v2 (single object.Width) (single object.Height)
                             let propBounds = v4Bounds propPosition propSize
                             let propDepth =
                                 match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
