@@ -184,7 +184,7 @@ module WorldDeclarative =
                     let (indices, _, _) = payload :?> Payload
                     let item = Array.fold (fun current index -> IEnumerable.item index (current :?> IEnumerable)) a indices
                     sieve item
-                | None -> a |> sieve
+                | None -> sieve a
             let mapper' = fun a (_ : obj option) (_ : World) -> sieve' a.Value
             let filter = fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true
             let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
