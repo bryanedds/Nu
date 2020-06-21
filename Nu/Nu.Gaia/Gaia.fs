@@ -371,9 +371,9 @@ module Gaia =
         | DragCameraNone -> (Resolve, world)
 
     let private monitorEntityEvents (layer : Layer) form world =
-        let world = World.monitorPlus None None None (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> layer --> Events.Wildcard) layer world |> snd
-        let world = World.monitorPlus None None None (handleNuEntityRegister form) (Events.Register --> layer --> Events.Wildcard) layer world |> snd
-        let world = World.monitorPlus None None None (handleNuEntityUnregistering form) (Events.Unregistering --> layer --> Events.Wildcard) layer world |> snd
+        let world = World.monitor (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> layer --> Events.Wildcard) layer world
+        let world = World.monitor (handleNuEntityRegister form) (Events.Register --> layer --> Events.Wildcard) layer world
+        let world = World.monitor (handleNuEntityUnregistering form) (Events.Unregistering --> layer --> Events.Wildcard) layer world
         world
 
     let private trySaveSelectedLayer filePath world =
@@ -1419,11 +1419,11 @@ module Gaia =
                               SelectedLayer = defaultLayer
                               FilePaths = Map.empty }
                         let world = World.addKeyedValue Globals.EditorGuid editorState world
-                        let world = World.subscribePlus Gen.id None None None (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world |> snd
-                        let world = World.subscribePlus Gen.id None None None (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world |> snd
-                        let world = World.subscribePlus Gen.id None None None (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world |> snd
-                        let world = World.subscribePlus Gen.id None None None (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world |> snd
-                        let world = World.subscribePlus Gen.id None None None (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world |> snd
+                        let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
+                        let world = World.subscribe (handleNuEntityDragBegin form) Events.MouseLeftDown Simulants.Game world
+                        let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
+                        let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
+                        let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
                         (defaultLayer, world)
                     | Some _ -> (defaultLayer, world) // NOTE: conclude world is already attached
                 | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.DefaultScreen + "' screen.")

@@ -163,8 +163,7 @@ module Nu =
                 let simulant = propertied :?> Simulant
                 let handler = handler :?> World PropertyChangeHandler
                 let (unsubscribe, world) =
-                    World.subscribePlus
-                        Gen.id None None None
+                    World.subscribeWith Gen.id
                         (fun (event : Event<obj, _>) world ->
                             let data = event.Data :?> ChangeData
                             let world = handler data.Value world
@@ -331,14 +330,14 @@ module Nu =
                         (compressionId, Some mapper)
                     | None -> (Gen.id, None)
                 let (_, world) =
-                    World.monitorSpecial
+                    World.monitorCompressed
                         Gen.id None None None
                         (Right (box (simulant, left, right)))
                         (Events.Register --> right.This.SimulantAddress)
                         right.This
                         world
                 let (_, world) =
-                    World.monitorSpecial
+                    World.monitorCompressed
                         compressionId
                         mapperOpt
                         (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true))

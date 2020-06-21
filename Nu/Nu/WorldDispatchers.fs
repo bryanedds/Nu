@@ -992,10 +992,10 @@ module NodeFacetModule =
                     Log.trace "Cannot mount a rigid body entity onto another entity. Instead, consider using physics constraints."
                     World.choose oldWorld
                 else
-                    let (unsubscribe, world) = World.monitorPlus None None None handleNodePropertyChange node.Position.ChangeEvent entity world
-                    let (unsubscribe2, world) = World.monitorPlus None None None handleNodePropertyChange node.Depth.ChangeEvent entity world
-                    let (unsubscribe3, world) = World.monitorPlus None None None handleNodePropertyChange node.Visible.ChangeEvent entity world
-                    let (unsubscribe4, world) = World.monitorPlus None None None handleNodePropertyChange node.Enabled.ChangeEvent entity world
+                    let (unsubscribe, world) = World.monitorPlus handleNodePropertyChange node.Position.ChangeEvent entity world
+                    let (unsubscribe2, world) = World.monitorPlus handleNodePropertyChange node.Depth.ChangeEvent entity world
+                    let (unsubscribe3, world) = World.monitorPlus handleNodePropertyChange node.Visible.ChangeEvent entity world
+                    let (unsubscribe4, world) = World.monitorPlus handleNodePropertyChange node.Enabled.ChangeEvent entity world
                     entity.SetNodeUnsubscribe (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
             | None -> world
 
@@ -1022,10 +1022,10 @@ module NodeFacetModule =
         override this.Register (entity, world) =
             let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...
             let world = World.monitor handleNodeChange entity.ParentNodeOpt.ChangeEvent entity world
-            let world = World.monitorPlus None None None handleLocalPropertyChange entity.PositionLocal.ChangeEvent entity world |> snd
-            let world = World.monitorPlus None None None handleLocalPropertyChange entity.DepthLocal.ChangeEvent entity world |> snd
-            let world = World.monitorPlus None None None handleLocalPropertyChange entity.VisibleLocal.ChangeEvent entity world |> snd
-            let world = World.monitorPlus None None None handleLocalPropertyChange entity.EnabledLocal.ChangeEvent entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.ChangeEvent entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.ChangeEvent entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.ChangeEvent entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.ChangeEvent entity world |> snd
             let world = tryUpdateFromNode entity world
             let world = trySubscribeToNodePropertyChanges entity world
             world
@@ -1316,8 +1316,8 @@ module GuiDispatcherModule =
              define Entity.SwallowMouseLeft true]
 
         override this.Register (gui, world) =
-            let world = World.monitorPlus None None None handleMouseLeft Events.MouseLeftDown gui world |> snd
-            let world = World.monitorPlus None None None handleMouseLeft Events.MouseLeftUp gui world |> snd
+            let world = World.monitor handleMouseLeft Events.MouseLeftDown gui world
+            let world = World.monitor handleMouseLeft Events.MouseLeftUp gui world
             world
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
@@ -1349,8 +1349,8 @@ module GuiDispatcherModule =
 
         override this.Register (gui, world) =
             let world = base.Register (gui, world)
-            let world = World.monitorPlus None None None handleMouseLeft Events.MouseLeftDown gui world |> snd
-            let world = World.monitorPlus None None None handleMouseLeft Events.MouseLeftUp gui world |> snd
+            let world = World.monitor handleMouseLeft Events.MouseLeftDown gui world
+            let world = World.monitor handleMouseLeft Events.MouseLeftUp gui world
             world
 
 [<AutoOpen>]
@@ -1432,8 +1432,8 @@ module ButtonDispatcherModule =
              define Entity.ClickSoundVolume Constants.Audio.DefaultSoundVolume]
 
         override this.Register (button, world) =
-            let world = World.monitorPlus None None None handleMouseLeftDown Events.MouseLeftDown button world |> snd
-            let world = World.monitorPlus None None None handleMouseLeftUp Events.MouseLeftUp button world |> snd
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown button world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp button world
             world
 
         override this.Actualize (button, world) =
@@ -1630,8 +1630,8 @@ module ToggleDispatcherModule =
              define Entity.ToggleSoundVolume Constants.Audio.DefaultSoundVolume]
 
         override this.Register (toggle, world) =
-            let world = World.monitorPlus None None None handleMouseLeftDown Events.MouseLeftDown toggle world |> snd
-            let world = World.monitorPlus None None None handleMouseLeftUp Events.MouseLeftUp toggle world |> snd
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown toggle world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp toggle world
             world
 
         override this.Actualize (toggle, world) =
@@ -1751,8 +1751,8 @@ module FeelerDispatcherModule =
              define Entity.Touched false]
 
         override this.Register (feeler, world) =
-            let world = World.monitorPlus None None None handleMouseLeftDown Events.MouseLeftDown feeler world |> snd
-            let world = World.monitorPlus None None None handleMouseLeftUp Events.MouseLeftUp feeler world |> snd
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown feeler world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp feeler world
             world
 
         override this.GetQuickSize (_, _) =

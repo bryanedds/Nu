@@ -610,9 +610,9 @@ module WorldTypes =
           mutable Xtension : Xtension
           mutable StaticData : DesignerProperty
           mutable Model : DesignerProperty
-          // cache line 3
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
+          // cache line 3
           mutable FacetNames : string Set
           mutable ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
@@ -741,11 +741,11 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Game as that -> this.GameAddress.Equals that.GameAddress
+            | :? Game as that -> this.GameAddress = that.GameAddress
             | _ -> false
 
         override this.GetHashCode () =
-            this.GameAddress.GetHashCode ()
+            Address.hash this.GameAddress
 
         interface Simulant with
             member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
@@ -803,11 +803,11 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Screen as that -> this.ScreenAddress.Equals that.ScreenAddress
+            | :? Screen as that -> this.ScreenAddress = that.ScreenAddress
             | _ -> false
 
         override this.GetHashCode () =
-            this.ScreenAddress.GetHashCode ()
+            Address.hash this.ScreenAddress
 
         interface Simulant with
             member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
@@ -873,11 +873,11 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Layer as that -> this.LayerAddress.Equals that.LayerAddress
+            | :? Layer as that -> this.LayerAddress = that.LayerAddress
             | _ -> false
 
         override this.GetHashCode () =
-            this.LayerAddress.GetHashCode ()
+            Address.hash this.LayerAddress
 
         interface Simulant with
             member this.SimulantAddress = atoa<Layer, Simulant> this.LayerAddress
@@ -966,11 +966,11 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Entity as that -> this.EntityAddress.Equals that.EntityAddress
+            | :? Entity as that -> this.EntityAddress = that.EntityAddress
             | _ -> false
 
         override this.GetHashCode () =
-            this.EntityAddress.GetHashCode ()
+            Address.hash this.EntityAddress
 
         interface Simulant with
             member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress

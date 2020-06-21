@@ -586,18 +586,18 @@ module WorldModule =
             World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher sorted world
 
         /// Unsubscribe from an event.
-        static member unsubscribe subscriptionKey world =
-            World.choose (EventSystem.unsubscribe<World> subscriptionKey world)
+        static member unsubscribe subscriptionId world =
+            World.choose (EventSystem.unsubscribe<World> subscriptionId world)
 
-        /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-        static member subscribeSpecial<'a, 'b, 's when 's :> Simulant>
-            compressionId subscriptionKey mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.subscribeSpecial<'a, 'b, 's, World> compressionId subscriptionKey mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
+        /// Subscribe to an event using the given subscriptionId, and be provided with an unsubscription callback.
+        static member subscribeCompressed<'a, 'b, 's when 's :> Simulant>
+            compressionId subscriptionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
+            mapSnd World.choose (EventSystem.subscribeCompressed<'a, 'b, 's, World> compressionId subscriptionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
 
-        /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-        static member subscribePlus<'a, 'b, 's when 's :> Simulant>
-            subscriptionKey mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.subscribePlus<'a, 'b, 's, World> subscriptionKey mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
+        /// Subscribe to an event using the given subscriptionId, and be provided with an unsubscription callback.
+        static member subscribeWith<'a, 's when 's :> Simulant>
+            subscriptionId callback eventAddress subscriber world =
+            mapSnd World.choose (EventSystem.subscribePlus<'a, 's, World> subscriptionId callback eventAddress subscriber world)
 
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Simulant>
@@ -605,17 +605,17 @@ module WorldModule =
             World.choose (EventSystem.subscribe<'a, 's, World> callback eventAddress subscriber world)
 
         /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
-        static member monitorSpecial<'a, 'b, 's when 's :> Simulant>
+        static member monitorCompressed<'a, 'b, 's when 's :> Simulant>
             compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.monitorSpecial<'a, 'b, 's, World> compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
-
-        /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
-        static member monitorPlus<'a, 'b, 's when 's :> Simulant>
-            mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.monitorPlus<'a, 'b, 's, World> mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
+            mapSnd World.choose (EventSystem.monitorCompressed<'a, 'b, 's, World> compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
 
         /// Keep active a subscription for the lifetime of a simulant.
-        static member monitor<'a, 'b, 's when 's :> Simulant>
+        static member monitorPlus<'a, 's when 's :> Simulant>
+            callback eventAddress subscriber world =
+            mapSnd World.choose (EventSystem.monitorPlus<'a, 's, World> callback eventAddress subscriber world)
+
+        /// Keep active a subscription for the lifetime of a simulant.
+        static member monitor<'a, 's when 's :> Simulant>
             callback eventAddress subscriber world =
             World.choose (EventSystem.monitor<'a, 's, World> callback eventAddress subscriber world)
 
