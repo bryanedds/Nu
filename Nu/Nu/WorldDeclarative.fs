@@ -260,5 +260,5 @@ module WorldDeclarative =
                     else world
                 (Cascade, world)
             let (_, world) = subscription (Unchecked.defaultof<_>) world // expand simulants immediately rather than waiting for parent registration
-            let (_, world) = World.monitorPlus (Some mapper') (Some filter) None subscription lens.ChangeEvent lens.This world
+            let (_, world) = World.monitorCompressed Gen.id (Some mapper') (Some filter) None (Left subscription) lens.ChangeEvent lens.This world
             world
