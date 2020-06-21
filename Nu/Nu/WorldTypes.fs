@@ -404,8 +404,7 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleGame that exist
     /// for performance that must be kept in sync.
     and [<NoEquality; NoComparison; CLIMutable>] GameState =
-        { Id : Guid
-          Dispatcher : GameDispatcher
+        { Dispatcher : GameDispatcher
           Xtension : Xtension
           Model : DesignerProperty
           OmniScreenOpt : Screen option
@@ -414,7 +413,8 @@ module WorldTypes =
           EyeCenter : Vector2
           EyeSize : Vector2
           ScriptFrame : Scripting.DeclarationFrame
-          CreationTimeStamp : int64 }
+          CreationTimeStamp : int64
+          Id : Guid }
 
         interface SimulantState with
             member this.GetXtension () = this.Xtension
@@ -471,8 +471,7 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleScreen that exist
     /// for performance that must be kept in sync.
     and [<NoEquality; NoComparison; CLIMutable>] ScreenState =
-        { Id : Guid
-          Dispatcher : ScreenDispatcher
+        { Dispatcher : ScreenDispatcher
           Xtension : Xtension
           Model : DesignerProperty
           Ecs : World Ecs
@@ -483,6 +482,7 @@ module WorldTypes =
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64
+          Id : Guid
           Name : string }
 
         interface SimulantState with
@@ -491,8 +491,7 @@ module WorldTypes =
         /// Make a screen state value.
         static member make nameOpt (dispatcher : ScreenDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
-            { Id = id
-              Dispatcher = dispatcher
+            { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Ecs = Ecs.make () 
@@ -503,6 +502,7 @@ module WorldTypes =
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
               CreationTimeStamp = Core.getUniqueTimeStamp ()
+              Id = id
               Name = name }
 
         /// Try to get an xtension property and its type information.
@@ -541,14 +541,14 @@ module WorldTypes =
     /// NOTE: The properties here have duplicated representations in WorldModuleLayer that exist
     /// for performance that must be kept in sync.
     and [<NoEquality; NoComparison; CLIMutable>] LayerState =
-        { Id : Guid
-          Dispatcher : LayerDispatcher
+        { Dispatcher : LayerDispatcher
           Xtension : Xtension
           Model : DesignerProperty
           Visible : bool
           Persistent : bool
           ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64
+          Id : Guid
           Name : string }
 
         interface SimulantState with
@@ -557,14 +557,14 @@ module WorldTypes =
         /// Make a layer state value.
         static member make nameOpt (dispatcher : LayerDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
-            { Id = id
-              Dispatcher = dispatcher
+            { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Visible = true
               Persistent = true
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
               CreationTimeStamp = Core.getUniqueTimeStamp ()
+              Id = id
               Name = name }
 
         /// Try to get an xtension property and its type information.
@@ -603,10 +603,9 @@ module WorldTypes =
     /// OPTIMIZATION: Booleans are packed into the Transform's Flags field.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
         { // cache line 1
-          mutable Transform : Transform
-          // cache line 2 starts 4 bytes into Id
-          Id : Guid
           Dispatcher : EntityDispatcher
+          mutable Transform : Transform
+          // cache line 2
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable StaticData : DesignerProperty
@@ -617,6 +616,7 @@ module WorldTypes =
           mutable FacetNames : string Set
           mutable ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
+          Id : Guid
           Name : string }
 
         interface SimulantState with
@@ -641,8 +641,8 @@ module WorldTypes =
               FacetNames = Set.empty
               ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
               CreationTimeStamp = Core.getUniqueTimeStamp ()
-              Name = name
-              Id = id }
+              Id = id
+              Name = name }
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
