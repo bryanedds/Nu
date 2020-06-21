@@ -26,20 +26,24 @@ module AmbientState =
     type [<ReferenceEquality; NoComparison>] 'w AmbientState =
         private
             { // cache line begin
+              Liveness : Liveness
               TickRate : int64 // NOTE: might be better to make this accessible from World to avoid cache misses
               TickTime : int64
               UpdateCount : int64
               ClockDelta : single // NOTE: might be better to make this accessible from World to avoid cache misses
-              Liveness : Liveness
+              // cache line ends here
               Metadata : Metadata
               KeyValueStore : UMap<Guid, obj>
-              // cache line ends here (actually, half-way through ClockTime below)
               ClockTime : DateTimeOffset // moved down here because it's 16 bytes according to - https://stackoverflow.com/a/38731608
               Tasklets : 'w Tasklet UList
               SdlDepsOpt : SdlDeps option
               SymbolStore : SymbolStore
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter }
+
+    /// Get the the liveness state of the engine.
+    let getLiveness state =
+        state.Liveness
 
     /// Get the tick rate.
     let getTickRate state =
@@ -94,10 +98,6 @@ module AmbientState =
             UpdateCount = inc state.UpdateCount
             ClockDelta = single delta.TotalMilliseconds / (16.666666667f * single state.TickRate)
             ClockTime = now }
-
-    /// Get the the liveness state of the engine.
-    let getLiveness state =
-        state.Liveness
 
     /// Place the engine into a state such that the app will exit at the end of the current update.
     let exit state =
@@ -204,12 +204,12 @@ module AmbientState =
 
     /// Make an ambient state value.
     let make tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
-        { TickRate = tickRate
+        { Liveness = Running
+          TickRate = tickRate
           TickTime = 0L
           ClockDelta = 1.0f
           ClockTime = DateTimeOffset.Now
           UpdateCount = 0L
-          Liveness = Running
           Tasklets = UList.makeEmpty Constants.Engine.TaskletListConfig
           Metadata = assetMetadataMap
           OverlayRouter = overlayRouter

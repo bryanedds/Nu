@@ -199,8 +199,7 @@ module Reflection =
             | None -> ()
         elif property.Name = Property? Transform &&
              property.PropertyType = typeof<Transform> then
-            // nothing to do here since the custom .NET properties will take care of this...
-            ()
+             () // nothing to do here since the custom .NET properties will take care of this...
         else
             match Map.tryFind property.Name propertyDescriptors with
             | Some (propertySymbol : Symbol) ->

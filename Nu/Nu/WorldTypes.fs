@@ -6,7 +6,9 @@ open System
 module internal World =
 
     /// The value of the world currently chosen for debugging in an IDE. Not to be used for anything else.
+#if DEBUG
     let mutable internal Chosen = obj ()
+#endif
     let mutable internal viewGame = fun (_ : obj) -> Array.create 0 (String.Empty, obj ())
     let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
     let mutable internal viewLayer = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
@@ -600,22 +602,21 @@ module WorldTypes =
     /// type, and it's public _only_ to make [<CLIMutable>] work.
     /// OPTIMIZATION: Booleans are packed into the Transform's Flags field.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
-        { // cache line
+        { // cache line 1
           mutable Transform : Transform
-          // cache line 2
+          // cache line 2 starts 4 bytes into Id
           Id : Guid
           Dispatcher : EntityDispatcher
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable StaticData : DesignerProperty
-          // cache line 3
           mutable Model : DesignerProperty
+          // cache line 3
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
-          // cache line 4
           Name : string }
 
         interface SimulantState with
@@ -720,9 +721,11 @@ module WorldTypes =
         /// The address of the game.
         member this.GameAddress = gameAddress
 
+#if DEBUG
         /// Get the latest value of a game's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewGame Debug.World.Chosen
+#endif
         
         /// Helper for accessing game lenses.
         static member Lens = Unchecked.defaultof<Game>
@@ -777,9 +780,11 @@ module WorldTypes =
         /// Get the name of a screen.
         member this.Name = this.ScreenAddress.Names.[0]
 
+#if DEBUG
         /// Get the latest value of a screen's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewScreen (this :> obj) Debug.World.Chosen
+#endif
 
         /// Helper for accessing screen lenses.
         static member Lens = Unchecked.defaultof<Screen>
@@ -845,9 +850,11 @@ module WorldTypes =
         /// Get the name of a layer.
         member this.Name = Address.getName this.LayerAddress
 
+#if DEBUG
         /// Get the latest value of a layer's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
+#endif
 
         /// Derive an entity from its layer.
         static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
@@ -939,9 +946,11 @@ module WorldTypes =
         /// Get the name of an entity.
         member this.Name = Address.getName this.EntityAddress
 
+#if DEBUG
         /// Get the latest value of an entity's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
         member private this.View = Debug.World.viewEntity (this :> obj) Debug.World.Chosen
+#endif
 
         /// Helper for accessing entity lenses.
         static member Lens = Unchecked.defaultof<Entity>
@@ -1062,8 +1071,7 @@ module WorldTypes =
             member this.UpdateEventSystemDelegateHook updater =
                 let this = { this with EventSystemDelegate = updater this.EventSystemDelegate }
 #if DEBUG
-                // inlined choose
-                Debug.World.Chosen <- this :> obj
+                Debug.World.Chosen <- this
 #endif
                 this
 
@@ -1081,7 +1089,7 @@ module WorldTypes =
                     | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> simulant publisher eventData eventAddress eventTrace subscription world
                     | _ -> failwithumf ()
 #if DEBUG
-                Debug.World.Chosen <- world :> obj
+                Debug.World.Chosen <- world
 #endif
                 (handling, world)
 
