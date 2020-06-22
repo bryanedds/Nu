@@ -1167,7 +1167,7 @@ module WorldTypes =
         member internal this.Birth<'a> () =
             let assembly = (this.GetType ()).Assembly;
             let types = (assembly.GetTypes ()) |> Array.filter (fun ty -> ty.IsSubclassOf typeof<'a>) |> Array.filter (fun ty -> not ty.IsAbstract)
-            let instances = types |> Array.map (fun (ty : Type) -> (ty.Name, Activator.CreateInstance ty :?> 'a)) 
+            let instances = types |> Array.map (fun ty -> (ty.Name, Activator.CreateInstance ty :?> 'a)) 
             Array.toList instances
 
 /// Represents an unsubscription operation for an event.
