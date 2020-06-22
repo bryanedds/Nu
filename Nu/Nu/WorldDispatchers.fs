@@ -1309,7 +1309,8 @@ module GuiDispatcherModule =
             [typeof<NodeFacet>]
 
         static member Properties =
-            [define Entity.Absolute true
+            [define Entity.Omnipresent true
+             define Entity.Absolute true
              define Entity.PublishChanges true
              define Entity.AlwaysUpdate true
              define Entity.DisabledColor (Vector4 0.75f)
