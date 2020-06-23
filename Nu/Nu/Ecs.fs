@@ -102,6 +102,25 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
             true
         | (false, _) -> false
 
+and [<NoEquality; NoComparison>] ComponentSource =
+    | ComponentUncorrelated of string * int
+    | ComponentCorrelated of string * Guid
+    | ComponentSimulant of Simulant
+
+and SystemMapper =
+    interface end
+
+and [<NoEquality; NoComparison>] SystemMapper<'i, 'd, 'w when 'i :> Component and 'd :> Component> =
+    { SourcesToIntersection : ComponentSource array -> 'i
+      IntersectionToDestination : 'i -> 'w -> 'd
+      SystemSourceNames : string array
+      SystemIntersectionName : string
+      SystemDestinationName : string }
+    interface SystemMapper
+
+and [<NoEquality; NoComparison>] SystemMappers =
+  { Mappers : SystemMapper array }
+
 /// NOTE: Uncorrelated systems can update in parallel.
 and [<NoEquality; NoComparison>] 'w Ecs =
     { Systems : Dictionary<string, 'w System>
@@ -205,22 +224,3 @@ module Ecs =
     let make () =
         { Systems = dictPlus []
           Correlations = dictPlus [] }
-
-type [<NoEquality; NoComparison>] ComponentSource =
-    | ComponentSimulant of Simulant
-    | ComponentUncorrelated of string * int
-    | ComponentCorrelated of string * Guid
-
-type SystemMapper =
-    interface end
-
-type [<NoEquality; NoComparison>] SystemMapper<'i, 'd, 'w when 'i :> Component and 'd :> Component> =
-    { SourcesToIntersection : ComponentSource array -> 'i
-      IntersectionToDestination : 'i -> 'w -> 'd
-      SystemSourceNames : string array
-      SystemIntersectionName : string
-      SystemDestinationName : string }
-    interface SystemMapper
-
-type [<NoEquality; NoComparison>] SystemMappers =
-  { Mappers : SystemMapper array }
