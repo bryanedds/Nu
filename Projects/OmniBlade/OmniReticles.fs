@@ -48,7 +48,7 @@ module OmniReticles =
              Content.entities model
                 (fun model -> (model.AimType, model.BattleModel))
                 (fun (aimType, battleModel) _ -> BattleModel.getTargets aimType battleModel) $ fun index character world ->
-                let buttonName = rets.Name + "+" + "Reticle" + "+" + scstringm index
+                let buttonName = rets.Name + "+" + "Reticle" + "+" + scstring index
                 let button = rets.Parent / buttonName
                 Content.button button.Name
                     [Entity.ParentNodeOpt == None
