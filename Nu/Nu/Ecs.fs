@@ -7,7 +7,7 @@ open System.Collections.Generic
 open Prime
 
 type Component =
-    abstract RefCount : int with get, set
+    abstract Occupied : bool with get, set
 
 type [<AbstractClass>] 'w System () =
     abstract Update : 'w Ecs -> obj
@@ -49,7 +49,7 @@ and [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Compo
 
     member this.RemoveComponent index =
         if index <> freeIndex then
-            components.[index].RefCount <- dec components.[index].RefCount
+            components.[index].Occupied <- false
             freeList.Enqueue index
         else freeIndex <- dec freeIndex
 
@@ -98,7 +98,7 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
         match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
-                components.[index].RefCount <- dec components.[index].RefCount
+                components.[index].Occupied <- false
                 freeList.Enqueue index
             else freeIndex <- dec freeIndex
             true
@@ -160,7 +160,7 @@ and [<AbstractClass>] SystemIntersection<'t, 'w when 't : struct and 't :> Compo
         match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
-                components.[index].RefCount <- dec components.[index].RefCount
+                components.[index].Occupied <- false
                 freeList.Enqueue index
             else freeIndex <- dec freeIndex
             true
