@@ -63,7 +63,7 @@ module OmniRingMenu =
                      Entity.DownImage == asset Assets.BattlePackageName (itemValue + "Down")
                      Entity.ClickEvent ==> cmd (ItemSelect itemValue)
                      Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
-             Content.entityOpt model (fun model -> model.ItemCancelOpt) $ fun _ itemCancel world ->
+             Content.entityOpt model (fun model -> model.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
                 let buttonName = menu.Name + "+" + itemCancelValue
                 let button = menu.Parent / buttonName

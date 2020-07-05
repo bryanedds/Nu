@@ -77,7 +77,7 @@ module Content =
 
     /// Describe a layer to be optionally instantiated from a lens.
     let layerOpt lens sieve mapper =
-        let mapper = (fun i lens world -> mapper i (lens --> Option.get) world)
+        let mapper = (fun _ lens world -> mapper (lens --> Option.get) world)
         layersPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) None mapper
 
     /// Describe a layer to be loaded from a file.
@@ -136,7 +136,7 @@ module Content =
 
     /// Describe an entity to be optionally instantiated from a lens.
     let entityOpt lens sieve mapper =
-        let mapper = (fun i lens world -> mapper i (lens --> Option.get) world)
+        let mapper = (fun _ lens world -> mapper (lens --> Option.get) world)
         entitiesPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) None mapper
 
     /// Describe an entity to be loaded from a file.
@@ -162,7 +162,7 @@ module Content =
 
     /// Describe a label with the given initializers.
     let label entityName initializers = entity<LabelDispatcher> entityName initializers
-    
+
     /// Describe a panel with the given initializers and content.
     let panel entityName initializers content = entityWithContent<LabelDispatcher> entityName initializers content
 
