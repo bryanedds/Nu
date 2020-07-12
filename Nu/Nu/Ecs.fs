@@ -27,24 +27,23 @@ type [<Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
 type [<AbstractClass>] 'w System () =
     abstract Update : 'w Ecs -> obj
 
-and [<AbstractClass>] SystemGeneric<'t, 'w> () =
+and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
+    inherit System<'w> ()
+    let mutable comp = comp
+    member this.Component with get () = &comp
+
+and [<AbstractClass>] SystemMany<'t, 'w> () =
     inherit System<'w> ()
     abstract Components : 't array
 
-and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
-    inherit SystemGeneric<'t, 'w> ()
-    let mutable comp = [|comp|]
-    override this.Components with get () = comp
-    member this.Component with get () = &comp.[0]
-
 and [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component> () =
-    inherit System<'w> ()
+    inherit SystemMany<'t, 'w> ()
 
     let mutable components = [||] : 't array
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
 
-    member this.Components
+    override this.Components
         with get () = components
     
     member this.FreeIndex
@@ -96,7 +95,8 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
         let index = this.GetComponentIndex entityId
         &components.[index]
 
-    member this.Register entityId =
+    abstract member Register : Guid -> (string -> 'w Ecs -> 'w System) -> 'w Ecs -> int
+    default this.Register entityId _ _ =
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
             let comp = Unchecked.defaultof<'t>
@@ -122,7 +122,8 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
             comp.RefCount <- inc comp.RefCount
             index
 
-    member this.Unregister entityId =
+    abstract member Unregister : Guid -> bool
+    default this.Unregister entityId =
         match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
@@ -134,19 +135,13 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
 
 and [<AbstractClass>] SystemIntersection<'t, 'w when 't : struct and 't :> Component>
     (correlatedSystemNames : string array) =
-    inherit System<'w> ()
+    inherit SystemCorrelated<'t, 'w> ()
 
     let mutable components = [||] : 't array
     let mutable freeIndex = 0
     let mutable intersectionsOpt = None : Dictionary<string, 'w System> option
     let freeList = Queue<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
-
-    member this.Components
-        with get () = components
-
-    member this.FreeIndex
-        with get () = freeIndex
 
     member this.GetIntersections getSystem (ecs : 'w Ecs) =
         match intersectionsOpt with
@@ -156,12 +151,7 @@ and [<AbstractClass>] SystemIntersection<'t, 'w when 't : struct and 't :> Compo
             intersectionsOpt <- Some intersections
             intersections
 
-    member this.GetComponent entityId =
-        let (found, index) = correlations.TryGetValue entityId
-        if not found then raise (InvalidOperationException "entityId")
-        &components.[index]
-
-    member this.Register entityId getSystem ecs =
+    override this.Register entityId getSystem ecs =
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
             let intersections = this.GetIntersections getSystem ecs
@@ -188,7 +178,7 @@ and [<AbstractClass>] SystemIntersection<'t, 'w when 't : struct and 't :> Compo
             comp.RefCount <- inc comp.RefCount
             index
 
-    member this.Unregister entityId =
+    override this.Unregister entityId =
         match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
@@ -199,6 +189,7 @@ and [<AbstractClass>] SystemIntersection<'t, 'w when 't : struct and 't :> Compo
         | (false, _) -> false
 
     abstract Intersect : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
+
     abstract Separate : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
 
 /// NOTE: Uncorrelated systems can update in parallel.
@@ -269,11 +260,6 @@ module Ecs =
                 match ecs.Correlations.TryGetValue entityId with
                 | (true, correlation) -> correlation.Add systemName
                 | (false, _) -> ecs.Correlations.Add (entityId, List [systemName])
-            | :? SystemIntersection<'t, 'w> as systemInter ->
-                let _ = systemInter.Register entityId getSystem ecs
-                match ecs.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add systemName
-                | (false, _) -> ecs.Correlations.Add (entityId, List [systemName])
             | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
@@ -304,9 +290,10 @@ module EcsOperators =
 
     let intersect<'t, 'w when 't : struct and 't :> Component>
         (intersections : Dictionary<string, 'w System>)
-        (entityId : Guid) =
+        (entityId : Guid)
+        (ecs : 'w Ecs) =
         let system = intersections.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
-        let index = system.Register entityId
+        let index = system.Register entityId Ecs.getSystem ecs
         ComponentRef<'t>.make index system.Components
 
     let separate<'t, 'w when 't : struct and 't :> Component>

@@ -853,7 +853,8 @@ module Gaia =
                     then World.mouseToWorld (entity.GetAbsolute world) mousePosition world
                     else World.mouseToWorld (entity.GetAbsolute world) (World.getEyeSize world * 0.5f) world
                 let entityTransform =
-                    { Position = entityPosition
+                    { RefCount = 0
+                      Position = entityPosition
                       Size = entity.GetQuickSize world
                       Rotation = entity.GetRotation world
                       Depth = getCreationDepth form
