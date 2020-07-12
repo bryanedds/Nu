@@ -12,9 +12,12 @@ type Component =
 type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
     { ComponentIndex : int
       ComponentArr : 't array }
-      
-    member this.Value
+
+    member this.Index
         with get () = &this.ComponentArr.[this.ComponentIndex]
+
+    member this.Assign value =
+        this.ComponentArr.[this.ComponentIndex] <- value
 
     static member (<!) (componentRef, value) =
         componentRef.ComponentArr.[componentRef.ComponentIndex] <- value
