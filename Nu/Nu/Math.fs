@@ -686,9 +686,7 @@ type [<NoEquality; NoComparison; Struct>] private TransformIntersection =
     { mutable RefCount : int
       Transform : Transform ComponentRef }
     interface Component with
-        member this.RefCount
-          with get () = this.RefCount
-          and set value = this.RefCount <- value
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
 
 type private ExampleJunctioned () =
     inherit SystemJunctioned<TransformIntersection, unit>
@@ -697,10 +695,11 @@ type private ExampleJunctioned () =
     override this.Junction junctions entityId ecs =
         { RefCount = 0; Transform = junction<Transform, _> junctions entityId ecs }
 
-    override this.Disjunction junctions entityId _ =
+    override this.Disjunction junctions entityId =
         disjunction<Transform, _> junctions entityId
 
     override this.Update _ =
-        for comp in this.Components do
-            comp.Transform<! !>comp.Transform
+        for i = 0 to this.Components.Length - 1 do
+            let comp = &this.Components.[i]
+            comp.Transform <! comp.Transform.Value
         () :> obj
