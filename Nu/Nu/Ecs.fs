@@ -13,7 +13,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and '
     { ComponentIndex : int
       ComponentArr : 't array }
 
-    member this.Index
+    member this.Value
         with get () = &this.ComponentArr.[this.ComponentIndex]
 
     member this.Assign value =
