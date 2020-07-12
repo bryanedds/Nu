@@ -701,5 +701,7 @@ type private ExampleJunctioned () =
     override this.Update _ =
         for i = 0 to this.Components.Length - 1 do
             let comp = &this.Components.[i]
-            comp.Transform <! comp.Transform.Value
+            let transform = &comp.Transform.Index
+            transform.Enabled <- false
+            transform.Absolute <- false
         () :> obj
