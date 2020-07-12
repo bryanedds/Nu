@@ -694,8 +694,8 @@ type private Intersection () =
     inherit SystemIntersection<TransformIntersection, unit>
         [|typeof<Transform>.Name|]
 
-    override this.Intersect intersections entityId _ =
-        { RefCount = 0; Transform = intersect<Transform, _> intersections entityId }
+    override this.Intersect intersections entityId ecs =
+        { RefCount = 0; Transform = intersect<Transform, _> intersections entityId ecs }
 
     override this.Separate intersections entityId _ =
         separate<Transform, _> intersections entityId
