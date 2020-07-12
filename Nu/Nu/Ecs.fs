@@ -9,13 +9,32 @@ open Prime
 type Component =
     abstract Occupied : bool with get, set
 
+type [<Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
+    { ComponentArr : 't array
+      ComponentIndex : int }
+
+    static member (<!) (componentRef, value) =
+        let mutable ref = &componentRef.ComponentArr.[componentRef.ComponentIndex]
+        ref <- value
+
+    static member (!>) componentRef =
+        &componentRef.ComponentArr.[componentRef.ComponentIndex]
+
+    static member make arr index =
+        { ComponentArr = arr; ComponentIndex = index }
+
 type [<AbstractClass>] 'w System () =
     abstract Update : 'w Ecs -> obj
 
-and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
+and [<AbstractClass>] SystemGeneric<'t, 'w> () =
     inherit System<'w> ()
-    let mutable comp = comp
-    member this.GetComponent () = &comp
+    abstract Components : 't array
+
+and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
+    inherit SystemGeneric<'t, 'w> ()
+    let mutable comp = [|comp|]
+    override this.Components with get () = comp
+    member this.Component with get () = &comp.[0]
 
 and [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component> () =
     inherit System<'w> ()
@@ -67,9 +86,13 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
     member this.FreeIndex
         with get () = freeIndex
 
-    member this.GetComponent entityId =
+    member this.GetComponentIndex entityId =
         let (found, index) = correlations.TryGetValue entityId
         if not found then raise (InvalidOperationException "entityId")
+        index
+
+    member this.GetComponent entityId =
+        let index = this.GetComponentIndex entityId
         &components.[index]
 
     member this.Register entityId : 't byref =
@@ -113,10 +136,10 @@ and [<AbstractClass>] SystemIntersection<'t, 'w when 't : struct and 't :> Compo
     let mutable intersectionsOpt = None : Dictionary<string, 'w System> option
     let freeList = Queue<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
-    
+
     member this.Components
         with get () = components
-    
+
     member this.FreeIndex
         with get () = freeIndex
 
@@ -217,13 +240,13 @@ module Ecs =
             | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    let inline getComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
+    let getComponentCorrelated<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
         let systemOpt = tryGetSystem systemName ecs
         if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
         let system = Option.get systemOpt
         if not (system :? SystemCorrelated<'t, 'w>) then failwith ("Could not find expected system '" + systemName + "' of required type.")
-        let systemUnc = system :?> SystemCorrelated<'t, 'w>
-        &systemUnc.GetComponent entityId
+        let systemCorr = system :?> SystemCorrelated<'t, 'w>
+        &systemCorr.GetComponent entityId
 
     let registerEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
         match tryGetSystem systemName ecs with
@@ -263,3 +286,14 @@ module Ecs =
     let make () =
         { Systems = dictPlus []
           Correlations = dictPlus [] }
+
+[<AutoOpen>]
+module EcsOperators =
+
+    let intersect<'t, 'w when 't : struct and 't :> Component>
+        (intersections : Dictionary<string, 'w System>)
+        (entityId : Guid) =
+        let system = intersections.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
+        let arr = system.Components
+        let index = system.GetComponentIndex entityId
+        ComponentRef<'t>.make arr index
