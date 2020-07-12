@@ -488,7 +488,8 @@ module EffectSystem =
         let effectSystem =
             if slice.Enabled then
                 let mutable transform =
-                    { Position = slice.Position
+                    { RefCount = 0
+                      Position = slice.Position
                       Size = slice.Size
                       Rotation = slice.Rotation
                       Depth = slice.Depth
@@ -532,7 +533,8 @@ module EffectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
                     let mutable transform =
-                        { Position = slice.Position
+                        { RefCount = 0
+                          Position = slice.Position
                           Size = slice.Size
                           Rotation = slice.Rotation
                           Depth = slice.Depth
@@ -569,7 +571,8 @@ module EffectSystem =
         let effectSystem =
             if slice.Enabled then
                 let mutable transform =
-                    { Position = slice.Position - slice.Size * 0.5f
+                    { RefCount = 0
+                      Position = slice.Position - slice.Size * 0.5f
                       Size = slice.Size
                       Rotation = slice.Rotation
                       Depth = slice.Depth

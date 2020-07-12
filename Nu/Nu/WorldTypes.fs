@@ -603,9 +603,9 @@ module WorldTypes =
     /// OPTIMIZATION: Booleans are packed into the Transform's Flags field.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
         { // cache line 1
-          Dispatcher : EntityDispatcher
           mutable Transform : Transform
           // cache line 2
+          Dispatcher : EntityDispatcher
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable StaticData : DesignerProperty
@@ -625,15 +625,16 @@ module WorldTypes =
         /// Make an entity state value.
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
-            { Dispatcher = dispatcher
-              Facets = [||]
-              Xtension = Xtension.makeSafe ()
-              Transform =
-                { Position = Vector2.Zero
+            { Transform =
+                { RefCount = 0
+                  Position = Vector2.Zero
                   Size = Constants.Engine.DefaultEntitySize
                   Rotation = 0.0f
                   Depth = 0.0f
-                  Flags = 0b100011000001 }
+                  Flags = 0b010001100000 }
+              Dispatcher = dispatcher
+              Facets = [||]
+              Xtension = Xtension.makeSafe ()
               StaticData = { DesignerType = typeof<string>; DesignerValue = "" }
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
@@ -696,7 +697,6 @@ module WorldTypes =
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Depth with get () = this.Transform.Depth and set value = this.Transform.Depth <- value
-        member internal this.Occupied with get () = this.Transform.Occupied and set value = this.Transform.Occupied <- value
         member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
         member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
         member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
