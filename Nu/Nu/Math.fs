@@ -690,15 +690,15 @@ type [<NoEquality; NoComparison; Struct>] private TransformIntersection =
           with get () = this.RefCount
           and set value = this.RefCount <- value
 
-type private Intersection () =
-    inherit SystemIntersection<TransformIntersection, unit>
+type private ExampleJunctioned () =
+    inherit SystemJunctioned<TransformIntersection, unit>
         [|typeof<Transform>.Name|]
 
-    override this.Intersect intersections entityId ecs =
-        { RefCount = 0; Transform = intersect<Transform, _> intersections entityId ecs }
+    override this.Junction junctions entityId ecs =
+        { RefCount = 0; Transform = junction<Transform, _> junctions entityId ecs }
 
-    override this.Separate intersections entityId _ =
-        separate<Transform, _> intersections entityId
+    override this.Disjunction junctions entityId _ =
+        disjunction<Transform, _> junctions entityId
 
     override this.Update _ =
         for comp in this.Components do
