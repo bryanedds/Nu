@@ -87,11 +87,10 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
     let freeList = Queue<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
     
-    member this.Components
-        with get () = components
-    
-    member this.FreeIndex
-        with get () = freeIndex
+    member this.Components with get () = components and internal set value = components <- value
+    member this.FreeIndex with get () = freeIndex and internal set value = freeIndex <- value
+    member internal this.FreeList with get () = freeList
+    member internal this.Correlations with get () = correlations
 
     member this.GetComponentIndex entityId =
         let (found, index) = correlations.TryGetValue entityId
@@ -144,11 +143,7 @@ and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compone
     (correlatedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
 
-    let mutable components = [||] : 't array
-    let mutable freeIndex = 0
     let mutable junctionsOpt = None : Dictionary<string, 'w System> option
-    let freeList = Queue<int> ()
-    let correlations = dictPlus [] : Dictionary<Guid, int>
 
     member this.GetJunctions getSystem (ecs : 'w Ecs) =
         match junctionsOpt with
@@ -159,39 +154,39 @@ and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compone
             junctions
 
     override this.Register entityId getSystem ecs =
-        match Dictionary.tryGetValue entityId correlations with
+        match Dictionary.tryGetValue entityId this.Correlations with
         | (false, _) ->
             let junctions = this.GetJunctions getSystem ecs
             let comp = this.Junction junctions entityId ecs
-            if freeList.Count = 0 then
-                if freeIndex < components.Length - 1 then
-                    components.[freeIndex] <- comp
-                    freeIndex <- inc freeIndex
+            if this.FreeList.Count = 0 then
+                if this.FreeIndex < this.Components.Length - 1 then
+                    this.Components.[this.FreeIndex] <- comp
+                    this.FreeIndex <- inc this.FreeIndex
                 else
-                    let arr = Array.zeroCreate (components.Length * 2)
-                    components.CopyTo (arr, 0)
-                    components <- arr
-                    components.[freeIndex] <- comp
-                    freeIndex <- inc freeIndex
-                let index = dec freeIndex
-                correlations.Add (entityId, index)
+                    let arr = Array.zeroCreate (this.Components.Length * 2)
+                    this.Components.CopyTo (arr, 0)
+                    this.Components <- arr
+                    this.Components.[this.FreeIndex] <- comp
+                    this.FreeIndex <- inc this.FreeIndex
+                let index = dec this.FreeIndex
+                this.Correlations.Add (entityId, index)
                 index
             else
-                let index = freeList.Dequeue ()
-                components.[index] <- comp
+                let index = this.FreeList.Dequeue ()
+                this.Components.[index] <- comp
                 index
         | (true, index) ->
-            let mutable comp = components.[index]
+            let mutable comp = this.Components.[index]
             comp.RefCount <- inc comp.RefCount
             index
 
     override this.Unregister entityId =
-        match correlations.TryGetValue entityId with
+        match this.Correlations.TryGetValue entityId with
         | (true, index) ->
-            if index <> freeIndex then
-                components.[index].RefCount <- dec components.[index].RefCount
-                if components.[index].RefCount = 0 then freeList.Enqueue index
-            else freeIndex <- dec freeIndex
+            if index <> this.FreeIndex then
+                this.Components.[index].RefCount <- dec this.Components.[index].RefCount
+                if this.Components.[index].RefCount = 0 then this.FreeList.Enqueue index
+            else this.FreeIndex <- dec this.FreeIndex
             true
         | (false, _) -> false
 
