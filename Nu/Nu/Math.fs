@@ -10,7 +10,7 @@ open Nu
 [<AutoOpen>]
 module internal TransformMasks =
 
-    // OPTIMIZATION: Entity flag bit-masks; only for use by internal reflection facilities.
+    // OPTIMIZATION: Transform flag bit-masks for performance.
     let [<Literal>] OccupiedMask =             0b000000000001
     let [<Literal>] InvalidatedMask =          0b000000000010
     let [<Literal>] OmnipresentMask =          0b000000000100
@@ -682,3 +682,22 @@ module Math =
         let translation = eyeCenter
         let translationI = Vector2 (single (int translation.X), single (int translation.Y))
         Matrix3.CreateFromTranslation translationI
+
+type [<NoEquality; NoComparison; Struct>] private TransformIntersection =
+    { Transform : Transform ComponentRef
+      mutable Occupied : bool }
+    interface Component with
+        member this.Occupied
+          with get () = this.Occupied
+          and set value = this.Occupied <- value
+
+type private Intersection () =
+    inherit SystemIntersection<TransformIntersection, unit>
+        ([|typeof<Transform>.Name|],
+         fun intersections entityId _ -> { Transform = intersect<Transform, _> intersections entityId; Occupied = true })
+
+    override this.Update _ =
+        for comp in this.Components do
+            comp.Transform<! !>comp.Transform
+            Console.WriteLine (scstring !>comp.Transform)
+        () :> obj
