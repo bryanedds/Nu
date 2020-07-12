@@ -7,11 +7,11 @@ open System.Collections.Generic
 open Prime
 
 type Component =
-    abstract Occupied : bool with get, set
+    abstract RefCount : int with get, set
 
 type [<Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
-    { ComponentArr : 't array
-      ComponentIndex : int }
+    { ComponentIndex : int
+      ComponentArr : 't array }
 
     static member (<!) (componentRef, value) =
         let mutable ref = &componentRef.ComponentArr.[componentRef.ComponentIndex]
@@ -20,8 +20,9 @@ type [<Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
     static member (!>) componentRef =
         &componentRef.ComponentArr.[componentRef.ComponentIndex]
 
-    static member make arr index =
-        { ComponentArr = arr; ComponentIndex = index }
+    static member make index arr =
+        { ComponentIndex = index
+          ComponentArr = arr }
 
 type [<AbstractClass>] 'w System () =
     abstract Update : 'w Ecs -> obj
@@ -68,8 +69,8 @@ and [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Compo
 
     member this.RemoveComponent index =
         if index <> freeIndex then
-            components.[index].Occupied <- false
-            freeList.Enqueue index
+            components.[index].RefCount <- dec components.[index].RefCount
+            if components.[index].RefCount = 0 then freeList.Enqueue index
         else freeIndex <- dec freeIndex
 
 and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Component> () =
@@ -95,40 +96,44 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
         let index = this.GetComponentIndex entityId
         &components.[index]
 
-    member this.Register entityId : 't byref =
-        if correlations.ContainsKey entityId then
-            failwith ("Entity '" + scstring entityId + "' already registered.")
-        let comp = Unchecked.defaultof<'t>
-        if freeList.Count = 0 then
-            if freeIndex < components.Length - 1 then
-                components.[freeIndex] <- comp
-                freeIndex <- inc freeIndex
+    member this.Register entityId =
+        match Dictionary.tryGetValue entityId correlations with
+        | (false, _) ->
+            let comp = Unchecked.defaultof<'t>
+            if freeList.Count = 0 then
+                if freeIndex < components.Length - 1 then
+                    components.[freeIndex] <- comp
+                    freeIndex <- inc freeIndex
+                else
+                    let arr = Array.zeroCreate (components.Length * 2)
+                    components.CopyTo (arr, 0)
+                    components <- arr
+                    components.[freeIndex] <- comp
+                    freeIndex <- inc freeIndex
+                let index = dec freeIndex
+                correlations.Add (entityId, index)
+                index
             else
-                let arr = Array.zeroCreate (components.Length * 2)
-                components.CopyTo (arr, 0)
-                components <- arr
-                components.[freeIndex] <- comp
-                freeIndex <- inc freeIndex
-            let index = dec freeIndex
-            correlations.Add (entityId, index)
-            &components.[index]
-        else
-            let index = freeList.Dequeue ()
-            components.[index] <- comp
-            &components.[index]
+                let index = freeList.Dequeue ()
+                components.[index] <- comp
+                index
+        | (true, index) ->
+            let mutable comp = components.[index]
+            comp.RefCount <- inc comp.RefCount
+            index
 
     member this.Unregister entityId =
         match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
-                components.[index].Occupied <- false
-                freeList.Enqueue index
+                components.[index].RefCount <- dec components.[index].RefCount
+                if components.[index].RefCount = 0 then freeList.Enqueue index
             else freeIndex <- dec freeIndex
             true
         | (false, _) -> false
 
 and [<AbstractClass>] SystemIntersection<'t, 'w when 't : struct and 't :> Component>
-    (correlatedSystemNames : string array, mapper : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't) =
+    (correlatedSystemNames : string array) =
     inherit System<'w> ()
 
     let mutable components = [||] : 't array
@@ -157,37 +162,44 @@ and [<AbstractClass>] SystemIntersection<'t, 'w when 't : struct and 't :> Compo
         &components.[index]
 
     member this.Register entityId getSystem ecs =
-        if correlations.ContainsKey entityId then
-            failwith ("Entity '" + scstring entityId + "' already registered.")
-        let intersections = this.GetIntersections getSystem ecs
-        let comp = mapper intersections entityId ecs
-        if freeList.Count = 0 then
-            if freeIndex < components.Length - 1 then
-                components.[freeIndex] <- comp
-                freeIndex <- inc freeIndex
+        match Dictionary.tryGetValue entityId correlations with
+        | (false, _) ->
+            let intersections = this.GetIntersections getSystem ecs
+            let comp = this.Intersect intersections entityId ecs
+            if freeList.Count = 0 then
+                if freeIndex < components.Length - 1 then
+                    components.[freeIndex] <- comp
+                    freeIndex <- inc freeIndex
+                else
+                    let arr = Array.zeroCreate (components.Length * 2)
+                    components.CopyTo (arr, 0)
+                    components <- arr
+                    components.[freeIndex] <- comp
+                    freeIndex <- inc freeIndex
+                let index = dec freeIndex
+                correlations.Add (entityId, index)
+                index
             else
-                let arr = Array.zeroCreate (components.Length * 2)
-                components.CopyTo (arr, 0)
-                components <- arr
-                components.[freeIndex] <- comp
-                freeIndex <- inc freeIndex
-            let index = dec freeIndex
-            correlations.Add (entityId, index)
-            &components.[index]
-        else
-            let index = freeList.Dequeue ()
-            components.[index] <- comp
-            &components.[index]
+                let index = freeList.Dequeue ()
+                components.[index] <- comp
+                index
+        | (true, index) ->
+            let mutable comp = components.[index]
+            comp.RefCount <- inc comp.RefCount
+            index
 
     member this.Unregister entityId =
         match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
-                components.[index].Occupied <- false
-                freeList.Enqueue index
+                components.[index].RefCount <- dec components.[index].RefCount
+                if components.[index].RefCount = 0 then freeList.Enqueue index
             else freeIndex <- dec freeIndex
             true
         | (false, _) -> false
+
+    abstract Intersect : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
+    abstract Separate : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
 
 /// NOTE: Uncorrelated systems can update in parallel.
 and [<NoEquality; NoComparison>] 'w Ecs =
@@ -294,6 +306,11 @@ module EcsOperators =
         (intersections : Dictionary<string, 'w System>)
         (entityId : Guid) =
         let system = intersections.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
-        let arr = system.Components
-        let index = system.GetComponentIndex entityId
-        ComponentRef<'t>.make arr index
+        let index = system.Register entityId
+        ComponentRef<'t>.make index system.Components
+
+    let separate<'t, 'w when 't : struct and 't :> Component>
+        (intersections : Dictionary<string, 'w System>)
+        (entityId : Guid) =
+        let system = intersections.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
+        system.Unregister entityId |> ignore
