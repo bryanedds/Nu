@@ -133,29 +133,29 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
             true
         | (false, _) -> false
 
-and [<AbstractClass>] SystemIntersection<'t, 'w when 't : struct and 't :> Component>
+and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component>
     (correlatedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
 
     let mutable components = [||] : 't array
     let mutable freeIndex = 0
-    let mutable intersectionsOpt = None : Dictionary<string, 'w System> option
+    let mutable junctionsOpt = None : Dictionary<string, 'w System> option
     let freeList = Queue<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
 
-    member this.GetIntersections getSystem (ecs : 'w Ecs) =
-        match intersectionsOpt with
-        | Some intersections -> intersections
+    member this.GetJunctions getSystem (ecs : 'w Ecs) =
+        match junctionsOpt with
+        | Some junctions -> junctions
         | None ->
-            let intersections = correlatedSystemNames |> Array.map (fun sourceName -> (sourceName, getSystem sourceName ecs)) |> dictPlus
-            intersectionsOpt <- Some intersections
-            intersections
+            let junctions = correlatedSystemNames |> Array.map (fun sourceName -> (sourceName, getSystem sourceName ecs)) |> dictPlus
+            junctionsOpt <- Some junctions
+            junctions
 
     override this.Register entityId getSystem ecs =
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
-            let intersections = this.GetIntersections getSystem ecs
-            let comp = this.Intersect intersections entityId ecs
+            let junctions = this.GetJunctions getSystem ecs
+            let comp = this.Junction junctions entityId ecs
             if freeList.Count = 0 then
                 if freeIndex < components.Length - 1 then
                     components.[freeIndex] <- comp
@@ -188,9 +188,9 @@ and [<AbstractClass>] SystemIntersection<'t, 'w when 't : struct and 't :> Compo
             true
         | (false, _) -> false
 
-    abstract Intersect : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
+    abstract Junction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
 
-    abstract Separate : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
+    abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
 
 /// NOTE: Uncorrelated systems can update in parallel.
 and [<NoEquality; NoComparison>] 'w Ecs =
@@ -288,16 +288,16 @@ module Ecs =
 [<AutoOpen>]
 module EcsOperators =
 
-    let intersect<'t, 'w when 't : struct and 't :> Component>
-        (intersections : Dictionary<string, 'w System>)
+    let junction<'t, 'w when 't : struct and 't :> Component>
+        (junctions : Dictionary<string, 'w System>)
         (entityId : Guid)
         (ecs : 'w Ecs) =
-        let system = intersections.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
+        let system = junctions.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
         let index = system.Register entityId Ecs.getSystem ecs
         ComponentRef<'t>.make index system.Components
 
-    let separate<'t, 'w when 't : struct and 't :> Component>
-        (intersections : Dictionary<string, 'w System>)
+    let disjunction<'t, 'w when 't : struct and 't :> Component>
+        (junctions : Dictionary<string, 'w System>)
         (entityId : Guid) =
-        let system = intersections.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
+        let system = junctions.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
         system.Unregister entityId |> ignore
