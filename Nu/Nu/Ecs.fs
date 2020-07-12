@@ -9,18 +9,22 @@ open Prime
 type Component =
     abstract RefCount : int with get, set
 
-type [<Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
+type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
     { ComponentIndex : int
       ComponentArr : 't array }
+      
+    member this.Value
+        with get () = &this.ComponentArr.[this.ComponentIndex]
 
     static member (<!) (componentRef, value) =
-        let mutable ref = &componentRef.ComponentArr.[componentRef.ComponentIndex]
-        ref <- value
+        componentRef.ComponentArr.[componentRef.ComponentIndex] <- value
 
     static member (!>) componentRef =
         &componentRef.ComponentArr.[componentRef.ComponentIndex]
 
-    static member make index arr =
+module ComponentRef =
+
+    let make index arr =
         { ComponentIndex = index
           ComponentArr = arr }
 
@@ -190,7 +194,7 @@ and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compone
 
     abstract Junction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
 
-    abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
+    abstract Disjunction : Dictionary<string, 'w System> -> Guid -> unit
 
 /// NOTE: Uncorrelated systems can update in parallel.
 and [<NoEquality; NoComparison>] 'w Ecs =
@@ -294,7 +298,7 @@ module EcsOperators =
         (ecs : 'w Ecs) =
         let system = junctions.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
         let index = system.Register entityId Ecs.getSystem ecs
-        ComponentRef<'t>.make index system.Components
+        ComponentRef.make index system.Components
 
     let disjunction<'t, 'w when 't : struct and 't :> Component>
         (junctions : Dictionary<string, 'w System>)
