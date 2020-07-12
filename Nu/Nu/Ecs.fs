@@ -265,18 +265,17 @@ module Ecs =
             | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    //let unregisterEntity systemName entityId ecs =
-    //    match tryGetSystem systemName ecs with
-    //    | Some system ->
-    //        match system with
-    //        | :? SystemCorrelated<'t, 'w> as systemCorr ->
-    //            if systemCorr.Unregister entityId then
-    //                match ecs.Correlations.TryGetValue entityId with
-    //                | (true, correlation) -> correlation.Add systemName
-    //                | (false, _) -> ecs.Correlations.Add (entityId, List [systemName])
-    //            else ()
-    //        | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
-    //    | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+    let unregisterEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
+        match tryGetSystem systemName ecs with
+        | Some system ->
+            match system with
+            | :? SystemCorrelated<'t, 'w> as systemCorr ->
+                if systemCorr.Unregister entityId then
+                    match ecs.Correlations.TryGetValue entityId with
+                    | (true, correlation) -> correlation.Add systemName
+                    | (false, _) -> ecs.Correlations.Add (entityId, List [systemName])
+            | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
+        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
     let correlateEntity entityId ecs =
         ecs.Correlations.[entityId] |>
