@@ -199,6 +199,13 @@ and [<NoEquality; NoComparison>] 'w Ecs =
     { Systems : Dictionary<string, 'w System>
       Correlations : Dictionary<Guid, string List> }
 
+/// Nu's custom Entity-Component-System implementation.
+///
+/// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
+/// modern caches, most cache hits will be of the L1 variety for junctioned components. Uncorrelated components will be
+/// L0-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
+/// components are very chaotically unregistered in a use-case scenario that the I, the library author, have trouble
+/// even imagining.
 [<RequireQualifiedAccess>]
 module Ecs =
 
