@@ -17,6 +17,8 @@ module WorldScreenModule =
         member this.GetModel<'a> world = World.getScreenModel<'a> this world
         member this.SetModel<'a> value world = World.setScreenModel<'a> value this world
         member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
+        member this.GetEcs world = World.getScreenEcs this world
+        member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
         member this.GetTransitionState world = World.getScreenTransitionState this world
         member this.SetTransitionState value world = World.setScreenTransitionState value this world
         member this.TransitionState = lens Property? TransitionState this.GetTransitionState this.SetTransitionState this
@@ -112,6 +114,11 @@ module WorldScreenModule =
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.Update (screen, world)
+
+            // update ecs
+            let ecs = World.getScreenEcs screen world
+            let ecsResults = Ecs.update ecs
+            let world = world.Plugin.ProcessEcsResults ecsResults world
 
             // publish update event
             let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
