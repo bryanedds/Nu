@@ -32,10 +32,12 @@ module ComponentRef =
           ComponentArr = arr }
 
 type [<AbstractClass>] 'w System () =
-    abstract Update : 'w Ecs -> obj
-    default this.Update _ = () :> obj
-    abstract PostUpdate : 'w Ecs -> obj
-    default this.PostUpdate _ = () :> obj
+    abstract Update : 'w Ecs -> 'w -> 'w
+    default this.Update _ world = world
+    abstract PostUpdate : 'w Ecs -> 'w -> 'w
+    default this.PostUpdate _ world = world
+    abstract Actualize : 'w Ecs -> 'w -> 'w
+    default this.Actualize _ world = world
 
 and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
     inherit System<'w> ()
@@ -197,11 +199,6 @@ and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compone
 
     abstract Disjunction : Dictionary<string, 'w System> -> Guid -> unit
 
-/// NOTE: Uncorrelated systems can update in parallel.
-and [<NoEquality; NoComparison>] 'w Ecs =
-    { Systems : Dictionary<string, 'w System>
-      Correlations : Dictionary<Guid, string List> }
-
 /// Nu's custom Entity-Component-System implementation.
 ///
 /// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
@@ -209,27 +206,42 @@ and [<NoEquality; NoComparison>] 'w Ecs =
 /// L0-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
 /// components are very chaotically unregistered in a use-case scenario that the I, the library author, have trouble
 /// even imagining.
+///
+/// NOTE: Uncorrelated systems could update in parallel.
+and [<NoEquality; NoComparison>] 'w Ecs =
+    internal
+        { SystemsUnordered : Dictionary<string, 'w System>
+          SystemsOrdered : (string * 'w System) List
+          Correlations : Dictionary<Guid, string List> }
+
 [<RequireQualifiedAccess>]
 module Ecs =
 
-    let update ecs =
-        ecs.Systems |>
-        Seq.map (fun (system : KeyValuePair<string, 'w System>) -> (system.Key, system.Value.Update ecs)) |>
-        dictPlus
+    let update ecs world =
+        Seq.fold
+            (fun world (_, system : 'w System) -> system.Update ecs world)
+            world ecs.SystemsOrdered
 
-    let postUpdate ecs =
-        ecs.Systems |>
-        Seq.map (fun (system : KeyValuePair<string, 'w System>) -> (system.Key, system.Value.PostUpdate ecs)) |>
-        dictPlus
+    let postUpdate ecs world =
+        Seq.fold
+            (fun world (_, system : 'w System) -> system.PostUpdate ecs world)
+            world ecs.SystemsOrdered
+
+    let actualize ecs world =
+        Seq.fold
+            (fun world (_, system : 'w System) -> system.Actualize ecs world)
+            world ecs.SystemsOrdered
 
     let addSystem systemName system ecs =
-        ecs.Systems.Add (systemName, system)
+        ecs.SystemsUnordered.Add (systemName, system)
+        ecs.SystemsOrdered.Add (systemName, system)
 
     let removeSystem systemName ecs =
-        ecs.Systems.Remove systemName |> ignore
+        ecs.SystemsOrdered.RemoveAll (fun (systemName', _) -> systemName' = systemName) |> ignore
+        ecs.SystemsUnordered.Remove systemName |> ignore
 
     let tryGetSystem systemName ecs =
-        match ecs.Systems.TryGetValue systemName with
+        match ecs.SystemsUnordered.TryGetValue systemName with
         | (true, system) -> Some system
         | (false, _) -> None
 
@@ -298,7 +310,8 @@ module Ecs =
         dictPlus
 
     let make () =
-        { Systems = dictPlus []
+        { SystemsOrdered = List ()
+          SystemsUnordered = dictPlus []
           Correlations = dictPlus [] }
 
 [<AutoOpen>]

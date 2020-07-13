@@ -44,3 +44,30 @@ module WorldTests =
         let world = Bob.SetVisible false world
         Assert.False (Bob.GetVisible world)
         Assert.True (Jim.GetVisible world)
+
+// TODO: move this to its own file.
+module EcsTests =
+
+    type [<NoEquality; NoComparison; Struct>] private TransformIntersection =
+        { mutable RefCount : int
+          Transform : Transform ComponentRef }
+        interface Component with
+            member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+
+    type private ExampleJunctioned () =
+        inherit SystemJunctioned<TransformIntersection, World>
+            [|typeof<Transform>.Name|]
+
+        override this.Junction junctions entityId ecs =
+            { RefCount = 0; Transform = junction<Transform, _> junctions entityId ecs }
+
+        override this.Disjunction junctions entityId =
+            disjunction<Transform, _> junctions entityId
+
+        override this.Update _ world =
+            for i = 0 to this.Components.Length - 1 do
+                let comp = &this.Components.[i]
+                let transform = &comp.Transform.Value
+                transform.Enabled <- false
+                transform.Absolute <- false
+            world
