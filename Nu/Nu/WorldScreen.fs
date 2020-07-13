@@ -110,36 +110,40 @@ module WorldScreenModule =
     type World with
 
         static member internal updateScreen (screen : Screen) world =
+
+            // update ecs
+            let ecs = World.getScreenEcs screen world
+            let world = Ecs.update ecs world
                 
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.Update (screen, world)
-
-            // update ecs
-            let ecs = World.getScreenEcs screen world
-            let ecsResults = Ecs.update ecs
-            let world = world.Plugin.ProcessEcsUpdate ecsResults world
 
             // publish update event
             let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
             World.publishPlus () (Events.Update --> screen) eventTrace Simulants.Game false world
 
         static member internal postUpdateScreen (screen : Screen) world =
+
+            // post-update ecs
+            let ecs = World.getScreenEcs screen world
+            let world = Ecs.postUpdate ecs world
                 
             // post-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.PostUpdate (screen, world)
-
-            // post-update ecs
-            let ecs = World.getScreenEcs screen world
-            let ecsResults = Ecs.postUpdate ecs
-            let world = world.Plugin.ProcessEcsPostUpdate ecsResults world
 
             // publish post-update event
             let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
             World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false world
 
         static member internal actualizeScreen (screen : Screen) world =
+
+            // actualize ecs
+            let ecs = World.getScreenEcs screen world
+            let world = Ecs.actualize ecs world
+            
+            // actualize via dispatcher
             let dispatcher = screen.GetDispatcher world
             dispatcher.Actualize (screen, world)
 
