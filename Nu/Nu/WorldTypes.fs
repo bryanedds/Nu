@@ -1151,6 +1151,10 @@ module WorldTypes =
         abstract MakeKeyedValues : World -> ((Guid * obj) list) * World
         default this.MakeKeyedValues world = ([], world)
 
+        /// Process the results of an Ecs update.
+        abstract ProcessEcsResults : Dictionary<string, obj> -> World -> World
+        default this.ProcessEcsResults _ world = world
+
         /// A call-back at the beginning of each frame.
         abstract PreFrame : World -> World
         default this.PreFrame world = world

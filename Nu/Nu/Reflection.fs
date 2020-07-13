@@ -27,6 +27,7 @@ module Reflection =
         dictPlus
             [("Dispatcher", true)
              ("Facets", true)
+             ("Ecs", true)
              ("TransitionState", true)
              ("TransitionTicks", true)
              ("EntityTree", true)
