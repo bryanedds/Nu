@@ -118,7 +118,7 @@ module WorldScreenModule =
             // update ecs
             let ecs = World.getScreenEcs screen world
             let ecsResults = Ecs.update ecs
-            let world = world.Plugin.ProcessEcsResults ecsResults world
+            let world = world.Plugin.ProcessEcsUpdate ecsResults world
 
             // publish update event
             let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
@@ -129,6 +129,11 @@ module WorldScreenModule =
             // post-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.PostUpdate (screen, world)
+
+            // post-update ecs
+            let ecs = World.getScreenEcs screen world
+            let ecsResults = Ecs.postUpdate ecs
+            let world = world.Plugin.ProcessEcsPostUpdate ecsResults world
 
             // publish post-update event
             let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty

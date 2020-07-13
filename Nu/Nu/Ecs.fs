@@ -33,6 +33,9 @@ module ComponentRef =
 
 type [<AbstractClass>] 'w System () =
     abstract Update : 'w Ecs -> obj
+    default this.Update _ = () :> obj
+    abstract PostUpdate : 'w Ecs -> obj
+    default this.PostUpdate _ = () :> obj
 
 and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
     inherit System<'w> ()
@@ -212,6 +215,11 @@ module Ecs =
     let update ecs =
         ecs.Systems |>
         Seq.map (fun (system : KeyValuePair<string, 'w System>) -> (system.Key, system.Value.Update ecs)) |>
+        dictPlus
+
+    let postUpdate ecs =
+        ecs.Systems |>
+        Seq.map (fun (system : KeyValuePair<string, 'w System>) -> (system.Key, system.Value.PostUpdate ecs)) |>
         dictPlus
 
     let addSystem systemName system ecs =
