@@ -97,6 +97,9 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
     member internal this.FreeList with get () = freeList
     member internal this.Correlations with get () = correlations
 
+    member this.HasComponent entityId =
+        correlations.ContainsKey entityId
+
     member this.GetComponentIndex entityId =
         let (found, index) = correlations.TryGetValue entityId
         if not found then raise (InvalidOperationException "entityId")
@@ -145,7 +148,7 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
         | (false, _) -> false
 
 and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component>
-    (correlatedSystemNames : string array) =
+    (junctionedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
 
     let mutable junctionsOpt = None : Dictionary<string, 'w System> option
@@ -154,7 +157,7 @@ and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compone
         match junctionsOpt with
         | Some junctions -> junctions
         | None ->
-            let junctions = correlatedSystemNames |> Array.map (fun sourceName -> (sourceName, getSystem sourceName ecs)) |> dictPlus
+            let junctions = junctionedSystemNames |> Array.map (fun sourceName -> (sourceName, getSystem sourceName ecs)) |> dictPlus
             junctionsOpt <- Some junctions
             junctions
 
@@ -271,6 +274,14 @@ module Ecs =
             | :? SystemUncorrelated<'t, 'w> as systemUnc -> systemUnc.RemoveComponent index
             | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    let inspectEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
+        let systemOpt = tryGetSystem systemName ecs
+        if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+        let system = Option.get systemOpt
+        if not (system :? SystemCorrelated<'t, 'w>) then failwith ("Could not find expected system '" + systemName + "' of required type.")
+        let systemCorr = system :?> SystemCorrelated<'t, 'w>
+        systemCorr.HasComponent entityId
 
     let indexEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
         let systemOpt = tryGetSystem systemName ecs
