@@ -113,7 +113,7 @@ module WorldScreenModule =
 
             // update ecs
             let ecs = World.getScreenEcs screen world
-            let world = Ecs.update ecs world
+            let world = ecs.Update world
                 
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
@@ -127,7 +127,7 @@ module WorldScreenModule =
 
             // post-update ecs
             let ecs = World.getScreenEcs screen world
-            let world = Ecs.postUpdate ecs world
+            let world = ecs.PostUpdate world
                 
             // post-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
@@ -141,7 +141,7 @@ module WorldScreenModule =
 
             // actualize ecs
             let ecs = World.getScreenEcs screen world
-            let world = Ecs.actualize ecs world
+            let world = ecs.Actualize world
             
             // actualize via dispatcher
             let dispatcher = screen.GetDispatcher world
@@ -183,9 +183,9 @@ module WorldScreenModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?")
-            let screenState = ScreenState.make nameOpt dispatcher
+            let ecs = world.Plugin.MakeEcs ()
+            let screenState = ScreenState.make nameOpt dispatcher ecs
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
-            do world.Plugin.InitializeEcs screenState.Ecs
             let screen = ntos screenState.Name
             let world =
                 if World.getScreenExists screen world then

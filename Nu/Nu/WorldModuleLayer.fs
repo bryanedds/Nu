@@ -242,7 +242,7 @@ module WorldModuleLayer =
 
         static member internal readLayer5 readEntities layerDescriptor nameOpt (screen : Screen) world =
 
-            // create the dispatcher
+            // make the dispatcher
             let dispatcherName = layerDescriptor.LayerDispatcherName
             let dispatchers = World.getLayerDispatchers world
             let dispatcher =

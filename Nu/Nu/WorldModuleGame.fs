@@ -350,7 +350,7 @@ module WorldModuleGame =
 
         static member internal readGame3 readScreens gameDescriptor world =
 
-            // create the dispatcher
+            // make the dispatcher
             let dispatcherName = gameDescriptor.GameDispatcherName
             let dispatchers = World.getGameDispatchers world
             let dispatcher =

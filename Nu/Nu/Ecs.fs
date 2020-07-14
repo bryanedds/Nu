@@ -147,7 +147,107 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
             true
         | (false, _) -> false
 
-and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component>
+/// Nu's custom Entity-Component-System implementation.
+///
+/// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
+/// modern caches, most cache hits will be of the L1 variety for junctioned components. Uncorrelated components will be
+/// L0-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
+/// components are very chaotically unregistered in a use-case scenario that the I, the library author, have trouble
+/// even imagining.
+///
+/// NOTE: Uncorrelated systems could update in parallel.
+and [<NoEquality; NoComparison>] 'w Ecs () =
+
+    let systemsUnordered : Dictionary<string, 'w System> = dictPlus []
+    let systemsOrdered : (string * 'w System) List = List ()
+    let correlations : Dictionary<Guid, string List> = dictPlus []
+
+    member this.Update world =
+        Seq.fold
+            (fun world (_, system : 'w System) -> system.Update this world)
+            world systemsOrdered
+
+    member this.PostUpdate world =
+        Seq.fold
+            (fun world (_, system : 'w System) -> system.PostUpdate this world)
+            world systemsOrdered
+
+    member this.Actualize world =
+        Seq.fold
+            (fun world (_, system : 'w System) -> system.Actualize this world)
+            world systemsOrdered
+
+    member this.AddSystem systemName system =
+        systemsUnordered.Add (systemName, system)
+        systemsOrdered.Add (systemName, system)
+
+    member this.RemoveSystem systemName =
+        systemsOrdered.RemoveAll (fun (systemName', _) -> systemName' = systemName) |> ignore
+        systemsUnordered.Remove systemName |> ignore
+
+    member this.TryGetSystem<'s when 's :> 'w System> systemName =
+        match systemsUnordered.TryGetValue systemName with
+        | (true, system) ->
+            match system with
+            | :? 's as systemAsS -> Some systemAsS
+            | _ -> None
+        | (false, _) -> None
+
+    member this.GetSystem<'s when 's :> 'w System> systemName =
+        this.TryGetSystem<'s> systemName |> Option.get
+
+    member this.GetComponent<'t when 't : struct and 't :> Component> systemName index =
+        let systemOpt = this.TryGetSystem<SystemUncorrelated<'t, 'w>> systemName
+        if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+        let system = Option.get systemOpt
+        &system.GetComponent index
+
+    member this.AddComponent<'t when 't : struct and 't :> Component> systemName (comp : 't) =
+        match this.TryGetSystem<SystemUncorrelated<'t, 'w>> systemName with
+        | Some system -> system.AddComponent comp
+        | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    member this.RemoveComponent<'t when 't : struct and 't :> Component> systemName index =
+        match this.TryGetSystem<SystemUncorrelated<'t, 'w>> systemName with
+        | Some system -> system.RemoveComponent index
+        | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    member this.CheckEntity<'t when 't : struct and 't :> Component> systemName entityId =
+        let systemOpt = this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName
+        if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+        let system = Option.get systemOpt
+        system.HasComponent entityId
+
+    member this.IndexEntity<'t when 't : struct and 't :> Component> systemName entityId =
+        let systemOpt = this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName
+        if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+        let system = Option.get systemOpt
+        &system.GetComponent entityId
+
+    member this.RegisterEntity<'t when 't : struct and 't :> Component> systemName entityId =
+        match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
+        | Some system ->
+            let _ = system.Register entityId
+            match correlations.TryGetValue entityId with
+            | (true, correlation) -> correlation.Add systemName
+            | (false, _) -> correlations.Add (entityId, List [systemName])
+        | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    member this.UnregisterEntity<'t when 't : struct and 't :> Component> systemName entityId =
+        match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
+        | Some system ->
+            if system.Unregister entityId this then
+                match correlations.TryGetValue entityId with
+                | (true, correlation) -> correlation.Add systemName
+                | (false, _) -> correlations.Add (entityId, List [systemName])
+        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    member this.CorrelateEntity entityId =
+        correlations.[entityId] |>
+        Seq.map (fun systemName -> (systemName, this.GetSystem<'w System> systemName)) |>
+        dictPlus
+
+type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component>
     (junctionedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
 
@@ -159,7 +259,7 @@ and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compone
         | None ->
             let junctions =
                 junctionedSystemNames |>
-                Array.map (fun sourceName -> (sourceName, ecs.SystemsUnordered.[sourceName])) |>
+                Array.map (fun sourceName -> (sourceName, ecs.GetSystem<'w System> sourceName)) |>
                 dictPlus
             junctionsOpt <- Some junctions
             junctions
@@ -204,114 +304,6 @@ and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compone
     abstract Junction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
 
     abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
-
-/// Nu's custom Entity-Component-System implementation.
-///
-/// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
-/// modern caches, most cache hits will be of the L1 variety for junctioned components. Uncorrelated components will be
-/// L0-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
-/// components are very chaotically unregistered in a use-case scenario that the I, the library author, have trouble
-/// even imagining.
-///
-/// NOTE: Uncorrelated systems could update in parallel.
-and [<NoEquality; NoComparison>] 'w Ecs =
-    internal
-        { SystemsUnordered : Dictionary<string, 'w System>
-          SystemsOrdered : (string * 'w System) List
-          Correlations : Dictionary<Guid, string List> }
-
-[<RequireQualifiedAccess>]
-module Ecs =
-
-    let update ecs world =
-        Seq.fold
-            (fun world (_, system : 'w System) -> system.Update ecs world)
-            world ecs.SystemsOrdered
-
-    let postUpdate ecs world =
-        Seq.fold
-            (fun world (_, system : 'w System) -> system.PostUpdate ecs world)
-            world ecs.SystemsOrdered
-
-    let actualize ecs world =
-        Seq.fold
-            (fun world (_, system : 'w System) -> system.Actualize ecs world)
-            world ecs.SystemsOrdered
-
-    let addSystem systemName system ecs =
-        ecs.SystemsUnordered.Add (systemName, system)
-        ecs.SystemsOrdered.Add (systemName, system)
-
-    let removeSystem systemName ecs =
-        ecs.SystemsOrdered.RemoveAll (fun (systemName', _) -> systemName' = systemName) |> ignore
-        ecs.SystemsUnordered.Remove systemName |> ignore
-
-    let tryGetSystem<'s, 'w when 's :> 'w System> systemName (ecs : 'w Ecs) =
-        match ecs.SystemsUnordered.TryGetValue systemName with
-        | (true, system) ->
-            match system with
-            | :? 's as systemAsS -> Some systemAsS
-            | _ -> None
-        | (false, _) -> None
-
-    let getSystem<'s, 'w when 's :> 'w System> systemName (ecs : 'w Ecs) =
-        tryGetSystem<'s, 'w> systemName ecs |> Option.get
-
-    let getComponent<'t, 'w when 't : struct and 't :> Component> systemName index ecs =
-        let systemOpt = tryGetSystem<SystemUncorrelated<'t, 'w>, 'w> systemName ecs
-        if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
-        let system = Option.get systemOpt
-        &system.GetComponent index
-
-    let addComponent<'t, 'w when 't : struct and 't :> Component> systemName (comp : 't) ecs =
-        match tryGetSystem<SystemUncorrelated<'t, 'w>, 'w> systemName ecs with
-        | Some system -> system.AddComponent comp
-        | None -> failwith ("Could not find expected system '" + systemName + "'.")
-
-    let removeComponent<'t, 'w when 't : struct and 't :> Component> systemName index ecs =
-        match tryGetSystem<SystemUncorrelated<'t, 'w>, 'w> systemName ecs with
-        | Some system -> system.RemoveComponent index
-        | None -> failwith ("Could not find expected system '" + systemName + "'.")
-
-    let checkEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
-        let systemOpt = tryGetSystem<SystemCorrelated<'t, 'w>, 'w> systemName ecs
-        if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
-        let system = Option.get systemOpt
-        system.HasComponent entityId
-
-    let indexEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
-        let systemOpt = tryGetSystem<SystemCorrelated<'t, 'w>, 'w> systemName ecs
-        if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
-        let system = Option.get systemOpt
-        &system.GetComponent entityId
-
-    let registerEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
-        match tryGetSystem<SystemCorrelated<'t, 'w>, 'w> systemName ecs with
-        | Some system ->
-            let _ = system.Register entityId
-            match ecs.Correlations.TryGetValue entityId with
-            | (true, correlation) -> correlation.Add systemName
-            | (false, _) -> ecs.Correlations.Add (entityId, List [systemName])
-        | None -> failwith ("Could not find expected system '" + systemName + "'.")
-
-    let unregisterEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
-        match tryGetSystem<SystemCorrelated<'t, 'w>, 'w> systemName ecs with
-        | Some system ->
-            if system.Unregister entityId ecs then
-                match ecs.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add systemName
-                | (false, _) -> ecs.Correlations.Add (entityId, List [systemName])
-        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
-
-    let correlateEntity entityId ecs =
-        ecs.Correlations.[entityId] |>
-        Seq.map (fun systemName -> (systemName, getSystem systemName ecs)) |>
-        dictPlus
-
-    let make () =
-        { SystemsOrdered = List ()
-          SystemsUnordered = dictPlus []
-          Correlations = dictPlus [] }
 
 [<AutoOpen>]
 module EcsOperators =
