@@ -1151,6 +1151,10 @@ module WorldTypes =
         abstract MakeKeyedValues : World -> ((Guid * obj) list) * World
         default this.MakeKeyedValues world = ([], world)
 
+        /// Initialize the Ecs of each screen.
+        abstract InitializeEcs : World Ecs -> unit
+        default this.InitializeEcs _ = ()
+
         /// A call-back at the beginning of each frame.
         abstract PreFrame : World -> World
         default this.PreFrame world = world
