@@ -61,8 +61,8 @@ module EcsTests =
         override this.Junction junctions entityId ecs =
             { RefCount = 0; Transform = junction<Transform, _> junctions entityId ecs }
 
-        override this.Disjunction junctions entityId =
-            disjunction<Transform, _> junctions entityId
+        override this.Disjunction junctions entityId ecs =
+            disjunction<Transform, _> junctions entityId ecs
 
         override this.Update _ world =
             for i = 0 to this.Components.Length - 1 do

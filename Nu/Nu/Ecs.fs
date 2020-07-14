@@ -136,8 +136,8 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
             comp.RefCount <- inc comp.RefCount
             index
 
-    abstract member Unregister : Guid -> bool
-    default this.Unregister entityId =
+    abstract member Unregister : Guid -> 'w Ecs -> bool
+    default this.Unregister entityId _ =
         match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
@@ -191,7 +191,7 @@ and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compone
             comp.RefCount <- inc comp.RefCount
             index
 
-    override this.Unregister entityId =
+    override this.Unregister entityId _ =
         match this.Correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> this.FreeIndex then
@@ -203,7 +203,7 @@ and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compone
 
     abstract Junction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
 
-    abstract Disjunction : Dictionary<string, 'w System> -> Guid -> unit
+    abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
 
 /// Nu's custom Entity-Component-System implementation.
 ///
@@ -311,7 +311,7 @@ module Ecs =
         | Some system ->
             match system with
             | :? SystemCorrelated<'t, 'w> as systemCorr ->
-                if systemCorr.Unregister entityId then
+                if systemCorr.Unregister entityId ecs then
                     match ecs.Correlations.TryGetValue entityId with
                     | (true, correlation) -> correlation.Add systemName
                     | (false, _) -> ecs.Correlations.Add (entityId, List [systemName])
@@ -341,6 +341,7 @@ module EcsOperators =
 
     let disjunction<'t, 'w when 't : struct and 't :> Component>
         (junctions : Dictionary<string, 'w System>)
-        (entityId : Guid) =
+        (entityId : Guid)
+        (ecs : 'w Ecs) =
         let system = junctions.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
-        system.Unregister entityId |> ignore
+        system.Unregister entityId ecs |> ignore
