@@ -9,6 +9,25 @@ open Prime
 type Component =
     abstract RefCount : int with get, set
 
+/// Allows an entity to contain multiple of the same component.
+/// However, it uses a dictionary without a small-object optimization, so this functionality won't get the typical
+/// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
+/// anything else (which is good enough in almost all cases where multi-components are used).
+type [<NoEquality; NoComparison; Struct>] ComponentMulti<'t when 't : struct> =
+    internal
+        { mutable RefCount : int
+          Entries : Dictionary<Guid, 't> }
+    interface Component with
+        member this.RefCount
+            with get () = this.RefCount
+            and set value = this.RefCount <- value
+    member this.Components
+        with get () = this.Entries.Values :> 't IEnumerable
+    member this.RegisterComponent compId =
+        this.Entries.Add (compId, Unchecked.defaultof<'t>)
+    member this.UnregisterComponent compId =
+        this.Entries.Remove compId
+
 type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
     { ComponentIndex : int
       ComponentArr : 't array }
@@ -330,3 +349,18 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
                 dictPlus
             junctionsOpt <- Some junctions
             junctions
+
+type [<AbstractClass>] SystemMulti<'t, 'w when 't : struct and 't :> Component> () =
+    inherit SystemCorrelated<'t ComponentMulti, 'w> ()
+
+    member this.RegisterEntity3 compId entityId ecs =
+        let _ = this.RegisterEntity entityId ecs
+        let componentMulti = &this.GetComponent entityId
+        do componentMulti.RegisterComponent compId
+        &componentMulti
+
+    member this.UnregisterEntity3 compId entityId ecs =
+        let componentMulti = &this.GetComponent entityId
+        let result = componentMulti.UnregisterComponent compId
+        let _ = this.UnregisterEntity entityId ecs
+        result
