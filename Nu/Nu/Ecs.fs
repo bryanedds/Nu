@@ -16,7 +16,7 @@ type Component =
 /// However, it uses a dictionary without a small-object optimization, so this functionality won't get the typical
 /// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
 /// anything else (which is good enough in almost all cases where multi-components are used).
-type [<NoEquality; NoComparison; Struct>] ComponentMulti<'t when 't : struct> =
+type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'t when 't : struct> =
     internal
         { mutable RefCount : int
           Entries : Dictionary<Guid, 't OneOf> }
@@ -171,28 +171,28 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
             true
         | (false, _) -> false
 
-and [<AbstractClass>] SystemMulti<'t, 'w when 't : struct and 't :> Component> () =
-    inherit SystemCorrelated<'t ComponentMulti, 'w> ()
+and [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Component> () =
+    inherit SystemCorrelated<'t ComponentMultiplexed, 'w> ()
 
-    member this.HasMulti multiId entityId =
+    member this.HasMultiplexed multiId entityId =
         if this.HasComponent entityId then
             let comp = this.GetComponent entityId
             comp.Entries.ContainsKey multiId
         else false
 
-    member this.GetMulti multiId entityId =
-        let componentMulti = &this.GetComponent entityId
-        componentMulti.Entries.[multiId]
+    member this.GetMultiplexed multiId entityId =
+        let componentMultiplexed = &this.GetComponent entityId
+        componentMultiplexed.Entries.[multiId]
 
-    member this.RegisterMulti multiId entityId comp ecs =
+    member this.RegisterMultiplexed multiId entityId comp ecs =
         let _ = this.RegisterEntity entityId ecs
-        let componentMulti = &this.GetComponent entityId
-        do componentMulti.RegisterComponent (multiId, comp)
+        let componentMultiplexed = &this.GetComponent entityId
+        do componentMultiplexed.RegisterComponent (multiId, comp)
         multiId
 
-    member this.UnregisterMulti multiId entityId ecs =
-        let componentMulti = &this.GetComponent entityId
-        let _ = componentMulti.UnregisterComponent multiId
+    member this.UnregisterMultiplexed multiId entityId ecs =
+        let componentMultiplexed = &this.GetComponent entityId
+        let _ = componentMultiplexed.UnregisterComponent multiId
         this.UnregisterEntity entityId ecs
 
 /// Nu's custom Entity-Component-System implementation.
@@ -310,34 +310,34 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         | Some system -> system.GetEntities ()
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    (* Multi *)
+    (* Multiplexed *)
 
-    member this.QualifyMulti<'t when 't : struct and 't :> Component> systemName multiId entityId =
-        let systemOpt = this.TryGetSystem<SystemMulti<'t, 'w>> systemName
+    member this.QualifyMultiplexed<'t when 't : struct and 't :> Component> systemName multiId entityId =
+        let systemOpt = this.TryGetSystem<SystemMultiplexed<'t, 'w>> systemName
         if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
         let system = Option.get systemOpt
-        system.HasMulti multiId entityId
+        system.HasMultiplexed multiId entityId
 
-    member this.IndexMulti<'t when 't : struct and 't :> Component> systemName multiId entityId =
-        let systemOpt = this.TryGetSystem<SystemMulti<'t, 'w>> systemName
+    member this.IndexMultiplexed<'t when 't : struct and 't :> Component> systemName multiId entityId =
+        let systemOpt = this.TryGetSystem<SystemMultiplexed<'t, 'w>> systemName
         if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
         let system = Option.get systemOpt
-        let oneOf = system.GetMulti multiId entityId
+        let oneOf = system.GetMultiplexed multiId entityId
         &oneOf.OneOf
 
-    member this.RegisterMulti<'t when 't : struct and 't :> Component> systemName entityId comp =
-        match this.TryGetSystem<SystemMulti<'t, 'w>> systemName with
+    member this.RegisterMultiplexed<'t when 't : struct and 't :> Component> systemName entityId comp =
+        match this.TryGetSystem<SystemMultiplexed<'t, 'w>> systemName with
         | Some system ->
-            let _ = system.RegisterMulti entityId comp
+            let _ = system.RegisterMultiplexed entityId comp
             match correlations.TryGetValue entityId with
             | (true, correlation) -> correlation.Add systemName
             | (false, _) -> correlations.Add (entityId, List [systemName])
         | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    member this.UnregisterMulti<'t when 't : struct and 't :> Component> systemName multiId entityId =
-        match this.TryGetSystem<SystemMulti<'t, 'w>> systemName with
+    member this.UnregisterMultiplexed<'t when 't : struct and 't :> Component> systemName multiId entityId =
+        match this.TryGetSystem<SystemMultiplexed<'t, 'w>> systemName with
         | Some system ->
-            if system.UnregisterMulti multiId entityId this then
+            if system.UnregisterMultiplexed multiId entityId this then
                 match correlations.TryGetValue entityId with
                 | (true, correlation) -> correlation.Add systemName
                 | (false, _) -> correlations.Add (entityId, List [systemName])
