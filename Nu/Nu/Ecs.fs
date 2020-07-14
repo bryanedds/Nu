@@ -6,6 +6,9 @@ open System
 open System.Collections.Generic
 open Prime
 
+type OneOf<'t when 't : struct> =
+    { mutable OneOf : 't }
+
 type Component =
     abstract RefCount : int with get, set
 
@@ -16,17 +19,17 @@ type Component =
 type [<NoEquality; NoComparison; Struct>] ComponentMulti<'t when 't : struct> =
     internal
         { mutable RefCount : int
-          Entries : Dictionary<Guid, 't> }
+          Entries : Dictionary<Guid, 't OneOf> }
     interface Component with
         member this.RefCount
             with get () = this.RefCount
             and set value = this.RefCount <- value
     member this.Components
-        with get () = this.Entries.Values :> 't IEnumerable
-    member this.RegisterComponent compId =
-        this.Entries.Add (compId, Unchecked.defaultof<'t>)
-    member this.UnregisterComponent compId =
-        this.Entries.Remove compId
+        with get () = this.Entries.Values :> 't OneOf IEnumerable
+    member this.RegisterComponent multiId =
+        this.Entries.Add (multiId, { OneOf = Unchecked.defaultof<'t> })
+    member this.UnregisterComponent multiId =
+        this.Entries.Remove multiId
 
 type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
     { ComponentIndex : int
@@ -169,6 +172,24 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
             true
         | (false, _) -> false
 
+and [<AbstractClass>] SystemMulti<'t, 'w when 't : struct and 't :> Component> () =
+    inherit SystemCorrelated<'t ComponentMulti, 'w> ()
+
+    member this.GetMulti multiId entityId =
+        let componentMulti = &this.GetComponent entityId
+        componentMulti.Entries.[multiId]
+
+    member this.RegisterMulti multiId entityId ecs =
+        let _ = this.RegisterEntity entityId ecs
+        let componentMulti = &this.GetComponent entityId
+        do componentMulti.RegisterComponent multiId
+        multiId
+
+    member this.UnregisterMulti multiId entityId ecs =
+        let componentMulti = &this.GetComponent entityId
+        let _ = componentMulti.UnregisterComponent multiId
+        this.UnregisterEntity entityId ecs
+
 /// Nu's custom Entity-Component-System implementation.
 ///
 /// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
@@ -240,16 +261,16 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         let system = Option.get systemOpt
         system.HasComponent entityId
 
+    member this.CorrelateEntity entityId =
+        correlations.[entityId] |>
+        Seq.map (fun systemName -> (systemName, this.GetSystem<'w System> systemName)) |>
+        dictPlus
+
     member this.IndexEntity<'t when 't : struct and 't :> Component> systemName entityId =
         let systemOpt = this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName
         if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
         let system = Option.get systemOpt
         &system.GetComponent entityId
-
-    member this.CorrelateEntity entityId =
-        correlations.[entityId] |>
-        Seq.map (fun systemName -> (systemName, this.GetSystem<'w System> systemName)) |>
-        dictPlus
 
     member this.RegisterEntity<'t when 't : struct and 't :> Component> systemName entityId =
         match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
@@ -264,6 +285,31 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
         | Some system ->
             if system.UnregisterEntity entityId this then
+                match correlations.TryGetValue entityId with
+                | (true, correlation) -> correlation.Add systemName
+                | (false, _) -> correlations.Add (entityId, List [systemName])
+        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    member this.IndexMulti<'t when 't : struct and 't :> Component> systemName multiId entityId =
+        let systemOpt = this.TryGetSystem<SystemMulti<'t, 'w>> systemName
+        if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+        let system = Option.get systemOpt
+        let oneOf = system.GetMulti multiId entityId
+        &oneOf.OneOf
+
+    member this.RegisterMulti<'t when 't : struct and 't :> Component> systemName entityId =
+        match this.TryGetSystem<SystemMulti<'t, 'w>> systemName with
+        | Some system ->
+            let _ = system.RegisterMulti entityId
+            match correlations.TryGetValue entityId with
+            | (true, correlation) -> correlation.Add systemName
+            | (false, _) -> correlations.Add (entityId, List [systemName])
+        | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+    member this.UnregisterMulti<'t when 't : struct and 't :> Component> systemName multiId entityId =
+        match this.TryGetSystem<SystemMulti<'t, 'w>> systemName with
+        | Some system ->
+            if system.UnregisterMulti multiId entityId this then
                 match correlations.TryGetValue entityId with
                 | (true, correlation) -> correlation.Add systemName
                 | (false, _) -> correlations.Add (entityId, List [systemName])
@@ -349,18 +395,3 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
                 dictPlus
             junctionsOpt <- Some junctions
             junctions
-
-type [<AbstractClass>] SystemMulti<'t, 'w when 't : struct and 't :> Component> () =
-    inherit SystemCorrelated<'t ComponentMulti, 'w> ()
-
-    member this.RegisterEntity3 compId entityId ecs =
-        let _ = this.RegisterEntity entityId ecs
-        let componentMulti = &this.GetComponent entityId
-        do componentMulti.RegisterComponent compId
-        &componentMulti
-
-    member this.UnregisterEntity3 compId entityId ecs =
-        let componentMulti = &this.GetComponent entityId
-        let result = componentMulti.UnregisterComponent compId
-        let _ = this.UnregisterEntity entityId ecs
-        result
