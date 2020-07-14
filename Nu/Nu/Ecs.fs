@@ -109,8 +109,11 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
         let index = this.GetComponentIndex entityId
         &components.[index]
 
-    abstract member Register : Guid -> 'w Ecs -> int
-    default this.Register entityId _ =
+    member this.GetEntities () =
+        correlations.Keys :> _ IEnumerable
+
+    abstract member RegisterEntity : Guid -> 'w Ecs -> int
+    default this.RegisterEntity entityId _ =
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
             let comp = Unchecked.defaultof<'t>
@@ -136,8 +139,8 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
             comp.RefCount <- inc comp.RefCount
             index
 
-    abstract member Unregister : Guid -> 'w Ecs -> bool
-    default this.Unregister entityId _ =
+    abstract member UnregisterEntity : Guid -> 'w Ecs -> bool
+    default this.UnregisterEntity entityId _ =
         match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
@@ -232,7 +235,7 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
     member this.RegisterEntity<'t when 't : struct and 't :> Component> systemName entityId =
         match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
         | Some system ->
-            let _ = system.Register entityId
+            let _ = system.RegisterEntity entityId
             match correlations.TryGetValue entityId with
             | (true, correlation) -> correlation.Add systemName
             | (false, _) -> correlations.Add (entityId, List [systemName])
@@ -241,19 +244,23 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
     member this.UnregisterEntity<'t when 't : struct and 't :> Component> systemName entityId =
         match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
         | Some system ->
-            if system.Unregister entityId this then
+            if system.UnregisterEntity entityId this then
                 match correlations.TryGetValue entityId with
                 | (true, correlation) -> correlation.Add systemName
                 | (false, _) -> correlations.Add (entityId, List [systemName])
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component>
-    (junctionedSystemNames : string array) =
+    member this.GetEntities<'t when 't : struct and 't :> Component> systemName =
+        match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
+        | Some system -> system.GetEntities ()
+        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component> (junctionedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
 
     let mutable junctionsOpt = None : Dictionary<string, 'w System> option
 
-    override this.Register entityId ecs =
+    override this.RegisterEntity entityId ecs =
         match Dictionary.tryGetValue entityId this.Correlations with
         | (false, _) ->
             let junctions = this.GetJunctions ecs
@@ -280,7 +287,7 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
             comp.RefCount <- inc comp.RefCount
             index
 
-    override this.Unregister entityId _ =
+    override this.UnregisterEntity entityId _ =
         match this.Correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> this.FreeIndex then
@@ -312,7 +319,7 @@ module EcsOperators =
         (entityId : Guid)
         (ecs : 'w Ecs) =
         let system = junctions.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
-        let index = system.Register entityId ecs
+        let index = system.RegisterEntity entityId ecs
         ComponentRef.make index system.Components
 
     let disjunction<'t, 'w when 't : struct and 't :> Component>
@@ -320,4 +327,4 @@ module EcsOperators =
         (entityId : Guid)
         (ecs : 'w Ecs) =
         let system = junctions.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
-        system.Unregister entityId ecs |> ignore
+        system.UnregisterEntity entityId ecs |> ignore
