@@ -109,8 +109,8 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
         let index = this.GetComponentIndex entityId
         &components.[index]
 
-    abstract member Register : Guid -> (string -> 'w Ecs -> 'w System) -> 'w Ecs -> int
-    default this.Register entityId _ _ =
+    abstract member Register : Guid -> 'w Ecs -> int
+    default this.Register entityId _ =
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
             let comp = Unchecked.defaultof<'t>
@@ -153,18 +153,21 @@ and [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compone
 
     let mutable junctionsOpt = None : Dictionary<string, 'w System> option
 
-    member this.GetJunctions getSystem (ecs : 'w Ecs) =
+    member this.GetJunctions (ecs : 'w Ecs) =
         match junctionsOpt with
         | Some junctions -> junctions
         | None ->
-            let junctions = junctionedSystemNames |> Array.map (fun sourceName -> (sourceName, getSystem sourceName ecs)) |> dictPlus
+            let junctions =
+                junctionedSystemNames |>
+                Array.map (fun sourceName -> (sourceName, ecs.SystemsUnordered.[sourceName])) |>
+                dictPlus
             junctionsOpt <- Some junctions
             junctions
 
-    override this.Register entityId getSystem ecs =
+    override this.Register entityId ecs =
         match Dictionary.tryGetValue entityId this.Correlations with
         | (false, _) ->
-            let junctions = this.GetJunctions getSystem ecs
+            let junctions = this.GetJunctions ecs
             let comp = this.Junction junctions entityId ecs
             if this.FreeList.Count = 0 then
                 if this.FreeIndex < this.Components.Length - 1 then
@@ -275,7 +278,7 @@ module Ecs =
             | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    let queryEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
+    let checkEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
         let systemOpt = tryGetSystem systemName ecs
         if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
         let system = Option.get systemOpt
@@ -333,7 +336,7 @@ module EcsOperators =
         (entityId : Guid)
         (ecs : 'w Ecs) =
         let system = junctions.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
-        let index = system.Register entityId Ecs.getSystem ecs
+        let index = system.Register entityId ecs
         ComponentRef.make index system.Components
 
     let disjunction<'t, 'w when 't : struct and 't :> Component>
