@@ -275,7 +275,7 @@ module Ecs =
             | _ -> failwith ("Could not find expected system '" + systemName + "' of required type.")
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    let inspectEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
+    let queryEntity<'t, 'w when 't : struct and 't :> Component> systemName entityId ecs =
         let systemOpt = tryGetSystem systemName ecs
         if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
         let system = Option.get systemOpt

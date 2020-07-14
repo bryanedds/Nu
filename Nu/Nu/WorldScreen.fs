@@ -185,6 +185,7 @@ module WorldScreenModule =
                 | None -> failwith ("Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?")
             let screenState = ScreenState.make nameOpt dispatcher
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
+            do world.Plugin.InitializeEcs screenState.Ecs
             let screen = ntos screenState.Name
             let world =
                 if World.getScreenExists screen world then

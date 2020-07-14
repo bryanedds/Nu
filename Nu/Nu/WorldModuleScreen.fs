@@ -257,6 +257,9 @@ module WorldModuleScreen =
                 | Some name -> { screenState with Name = name }
                 | None -> screenState
 
+            // initialize the screen's ecs
+            do world.Plugin.InitializeEcs screenState.Ecs
+
             // add the screen's state to the world
             let screen = Screen (ntoa screenState.Name)
             let world = World.addScreen true screenState screen world
