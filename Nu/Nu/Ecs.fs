@@ -26,8 +26,8 @@ type [<NoEquality; NoComparison; Struct>] ComponentMulti<'t when 't : struct> =
             and set value = this.RefCount <- value
     member this.Components
         with get () = this.Entries.Values :> 't OneOf IEnumerable
-    member this.RegisterComponent multiId =
-        this.Entries.Add (multiId, { OneOf = Unchecked.defaultof<'t> })
+    member this.RegisterComponent (multiId, comp) =
+        this.Entries.Add (multiId, { OneOf = comp })
     member this.UnregisterComponent multiId =
         this.Entries.Remove multiId
 
@@ -134,11 +134,10 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
     member this.GetEntities () =
         correlations.Keys :> _ IEnumerable
 
-    abstract member RegisterEntity : Guid -> 'w Ecs -> int
-    default this.RegisterEntity entityId _ =
+    abstract member RegisterEntity : Guid -> 't -> 'w Ecs -> int
+    default this.RegisterEntity entityId comp _ =
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
-            let comp = Unchecked.defaultof<'t>
             if freeList.Count = 0 then
                 if freeIndex < components.Length - 1 then
                     components.[freeIndex] <- comp
@@ -185,10 +184,10 @@ and [<AbstractClass>] SystemMulti<'t, 'w when 't : struct and 't :> Component> (
         let componentMulti = &this.GetComponent entityId
         componentMulti.Entries.[multiId]
 
-    member this.RegisterMulti multiId entityId ecs =
+    member this.RegisterMulti multiId entityId comp ecs =
         let _ = this.RegisterEntity entityId ecs
         let componentMulti = &this.GetComponent entityId
-        do componentMulti.RegisterComponent multiId
+        do componentMulti.RegisterComponent (multiId, comp)
         multiId
 
     member this.UnregisterMulti multiId entityId ecs =
@@ -283,10 +282,10 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         let system = Option.get systemOpt
         &system.GetComponent entityId
 
-    member this.RegisterEntity<'t when 't : struct and 't :> Component> systemName entityId =
+    member this.RegisterEntity<'t when 't : struct and 't :> Component> systemName entityId comp =
         match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
         | Some system ->
-            let _ = system.RegisterEntity entityId
+            let _ = system.RegisterEntity entityId comp
             match correlations.TryGetValue entityId with
             | (true, correlation) -> correlation.Add systemName
             | (false, _) -> correlations.Add (entityId, List [systemName])
@@ -326,10 +325,10 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         let oneOf = system.GetMulti multiId entityId
         &oneOf.OneOf
 
-    member this.RegisterMulti<'t when 't : struct and 't :> Component> systemName entityId =
+    member this.RegisterMulti<'t when 't : struct and 't :> Component> systemName entityId comp =
         match this.TryGetSystem<SystemMulti<'t, 'w>> systemName with
         | Some system ->
-            let _ = system.RegisterMulti entityId
+            let _ = system.RegisterMulti entityId comp
             match correlations.TryGetValue entityId with
             | (true, correlation) -> correlation.Add systemName
             | (false, _) -> correlations.Add (entityId, List [systemName])
@@ -349,7 +348,7 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
     member this.JunctionEntityExplicit<'t, 'w when 't : struct and 't :> Component>
         (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
         let system = junctions.[systemName] :?> SystemCorrelated<'t, 'w>
-        let index = system.RegisterEntity entityId this
+        let index = system.RegisterEntity entityId Unchecked.defaultof<'t> this
         ComponentRef.make index system.Components
 
     member this.JunctionEntity<'t, 'w when 't : struct and 't :> Component>
@@ -374,7 +373,7 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
 
     abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
 
-    override this.RegisterEntity entityId ecs =
+    override this.RegisterEntity entityId _ ecs =
         match Dictionary.tryGetValue entityId this.Correlations with
         | (false, _) ->
             let junctions = this.GetJunctions ecs
