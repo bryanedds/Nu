@@ -224,6 +224,11 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         let system = Option.get systemOpt
         &system.GetComponent entityId
 
+    member this.CorrelateEntity entityId =
+        correlations.[entityId] |>
+        Seq.map (fun systemName -> (systemName, this.GetSystem<'w System> systemName)) |>
+        dictPlus
+
     member this.RegisterEntity<'t when 't : struct and 't :> Component> systemName entityId =
         match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
         | Some system ->
@@ -242,27 +247,11 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
                 | (false, _) -> correlations.Add (entityId, List [systemName])
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    member this.CorrelateEntity entityId =
-        correlations.[entityId] |>
-        Seq.map (fun systemName -> (systemName, this.GetSystem<'w System> systemName)) |>
-        dictPlus
-
 type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component>
     (junctionedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
 
     let mutable junctionsOpt = None : Dictionary<string, 'w System> option
-
-    member this.GetJunctions (ecs : 'w Ecs) =
-        match junctionsOpt with
-        | Some junctions -> junctions
-        | None ->
-            let junctions =
-                junctionedSystemNames |>
-                Array.map (fun sourceName -> (sourceName, ecs.GetSystem<'w System> sourceName)) |>
-                dictPlus
-            junctionsOpt <- Some junctions
-            junctions
 
     override this.Register entityId ecs =
         match Dictionary.tryGetValue entityId this.Correlations with
@@ -301,8 +290,18 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
             true
         | (false, _) -> false
 
-    abstract Junction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
+    member this.GetJunctions (ecs : 'w Ecs) =
+        match junctionsOpt with
+        | Some junctions -> junctions
+        | None ->
+            let junctions =
+                junctionedSystemNames |>
+                Array.map (fun sourceName -> (sourceName, ecs.GetSystem<'w System> sourceName)) |>
+                dictPlus
+            junctionsOpt <- Some junctions
+            junctions
 
+    abstract Junction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
     abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
 
 [<AutoOpen>]
