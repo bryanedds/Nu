@@ -255,10 +255,33 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         | Some system -> system.GetEntities ()
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
+    member this.Junction3<'t, 'w when 't : struct and 't :> Component>
+        (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
+        let system = junctions.[systemName] :?> SystemCorrelated<'t, 'w>
+        let index = system.RegisterEntity entityId this
+        ComponentRef.make index system.Components
+
+    member this.Junction<'t, 'w when 't : struct and 't :> Component>
+        (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
+        this.Junction3<'t, 'w> typeof<'t>.Name junctions entityId
+
+    member this.Disjunction3<'t, 'w when 't : struct and 't :> Component>
+        (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
+        let system = junctions.[systemName] :?> SystemCorrelated<'t, 'w>
+        system.UnregisterEntity entityId this |> ignore
+
+    member this.Disjunction<'t, 'w when 't : struct and 't :> Component>
+        (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
+        this.Disjunction3<'t, 'w> typeof<'t>.Name junctions entityId
+
 type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component> (junctionedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
 
     let mutable junctionsOpt = None : Dictionary<string, 'w System> option
+
+    abstract Junction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
+
+    abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
 
     override this.RegisterEntity entityId ecs =
         match Dictionary.tryGetValue entityId this.Correlations with
@@ -307,24 +330,3 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
                 dictPlus
             junctionsOpt <- Some junctions
             junctions
-
-    abstract Junction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
-    abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
-
-[<AutoOpen>]
-module EcsOperators =
-
-    let junction<'t, 'w when 't : struct and 't :> Component>
-        (junctions : Dictionary<string, 'w System>)
-        (entityId : Guid)
-        (ecs : 'w Ecs) =
-        let system = junctions.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
-        let index = system.RegisterEntity entityId ecs
-        ComponentRef.make index system.Components
-
-    let disjunction<'t, 'w when 't : struct and 't :> Component>
-        (junctions : Dictionary<string, 'w System>)
-        (entityId : Guid)
-        (ecs : 'w Ecs) =
-        let system = junctions.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>
-        system.UnregisterEntity entityId ecs |> ignore
