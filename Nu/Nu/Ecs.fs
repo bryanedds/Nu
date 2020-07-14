@@ -215,7 +215,7 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         | Some system -> system.RemoveComponent index
         | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    member this.CheckEntity<'t when 't : struct and 't :> Component> systemName entityId =
+    member this.QualifyEntity<'t when 't : struct and 't :> Component> systemName entityId =
         let systemOpt = this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName
         if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
         let system = Option.get systemOpt
@@ -250,29 +250,29 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
                 | (false, _) -> correlations.Add (entityId, List [systemName])
         | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-    member this.GetEntities<'t when 't : struct and 't :> Component> systemName =
-        match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
-        | Some system -> system.GetEntities ()
-        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
-
-    member this.Junction3<'t, 'w when 't : struct and 't :> Component>
+    member this.JunctionEntityExplicit<'t, 'w when 't : struct and 't :> Component>
         (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
         let system = junctions.[systemName] :?> SystemCorrelated<'t, 'w>
         let index = system.RegisterEntity entityId this
         ComponentRef.make index system.Components
 
-    member this.Junction<'t, 'w when 't : struct and 't :> Component>
+    member this.JunctionEntity<'t, 'w when 't : struct and 't :> Component>
         (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
-        this.Junction3<'t, 'w> typeof<'t>.Name junctions entityId
+        this.JunctionEntityExplicit<'t, 'w> typeof<'t>.Name junctions entityId
 
-    member this.Disjunction3<'t, 'w when 't : struct and 't :> Component>
+    member this.DisjunctionEntityExplicit<'t, 'w when 't : struct and 't :> Component>
         (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
         let system = junctions.[systemName] :?> SystemCorrelated<'t, 'w>
         system.UnregisterEntity entityId this |> ignore
 
-    member this.Disjunction<'t, 'w when 't : struct and 't :> Component>
+    member this.DisjunctionEntity<'t, 'w when 't : struct and 't :> Component>
         (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
-        this.Disjunction3<'t, 'w> typeof<'t>.Name junctions entityId
+        this.DisjunctionEntityExplicit<'t, 'w> typeof<'t>.Name junctions entityId
+
+    member this.GetEntities<'t when 't : struct and 't :> Component> systemName =
+        match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
+        | Some system -> system.GetEntities ()
+        | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
 type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component> (junctionedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
