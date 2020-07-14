@@ -489,12 +489,12 @@ module WorldTypes =
             member this.GetXtension () = this.Xtension
 
         /// Make a screen state value.
-        static member make nameOpt (dispatcher : ScreenDispatcher) =
+        static member make nameOpt (dispatcher : ScreenDispatcher) ecs =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
-              Ecs = Ecs.make () 
+              Ecs = ecs
               TransitionState = IdlingState
               TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
@@ -1151,9 +1151,9 @@ module WorldTypes =
         abstract MakeKeyedValues : World -> ((Guid * obj) list) * World
         default this.MakeKeyedValues world = ([], world)
 
-        /// Initialize the Ecs of each screen.
-        abstract InitializeEcs : World Ecs -> unit
-        default this.InitializeEcs _ = ()
+        /// Make the Ecs for each screen.
+        abstract MakeEcs : unit -> World Ecs
+        default this.MakeEcs () = Ecs ()
 
         /// A call-back at the beginning of each frame.
         abstract PreFrame : World -> World

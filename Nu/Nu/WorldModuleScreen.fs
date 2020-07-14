@@ -235,7 +235,7 @@ module WorldModuleScreen =
 
         static member internal readScreen4 readLayers screenDescriptor nameOpt world =
             
-            // create the dispatcher
+            // make the dispatcher
             let dispatcherName = screenDescriptor.ScreenDispatcherName
             let dispatchers = World.getScreenDispatchers world
             let dispatcher =
@@ -246,8 +246,11 @@ module WorldModuleScreen =
                     let dispatcherName = typeof<ScreenDispatcher>.Name
                     Map.find dispatcherName dispatchers
 
+            // make the ecs
+            let ecs = world.Plugin.MakeEcs ()
+
             // make the screen state and populate its properties
-            let screenState = ScreenState.make None dispatcher
+            let screenState = ScreenState.make None dispatcher ecs
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screenState = Reflection.readPropertiesToTarget ScreenState.copy screenDescriptor.ScreenProperties screenState
 
@@ -256,9 +259,6 @@ module WorldModuleScreen =
                 match nameOpt with
                 | Some name -> { screenState with Name = name }
                 | None -> screenState
-
-            // initialize the screen's ecs
-            do world.Plugin.InitializeEcs screenState.Ecs
 
             // add the screen's state to the world
             let screen = Screen (ntoa screenState.Name)

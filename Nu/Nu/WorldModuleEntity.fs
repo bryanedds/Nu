@@ -969,7 +969,7 @@ module WorldModuleEntity =
         /// Read an entity from an entity descriptor.
         static member readEntity entityDescriptor nameOpt (layer : Layer) world =
 
-            // create the dispatcher
+            // make the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcherName
             let dispatchers = World.getEntityDispatchers world
             let (dispatcherName, dispatcher) =

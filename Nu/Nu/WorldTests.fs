@@ -59,7 +59,8 @@ module EcsTests =
             [|typeof<Transform>.Name|]
 
         override this.Junction junctions entityId ecs =
-            { RefCount = 0; Transform = junction<Transform, _> junctions entityId ecs }
+            { RefCount = 0
+              Transform = junction<Transform, _> junctions entityId ecs }
 
         override this.Disjunction junctions entityId ecs =
             disjunction<Transform, _> junctions entityId ecs
