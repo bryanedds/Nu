@@ -6,9 +6,11 @@ open System
 open System.Collections.Generic
 open Prime
 
+/// Handle to one of an array of multiplexed components.
 type OneOf<'t when 't : struct> =
     { mutable OneOf : 't }
 
+/// The base component type of an Ecs.
 type Component =
     abstract RefCount : int with get, set
 
@@ -31,6 +33,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'t when 't : stru
     member this.UnregisterComponent multiId =
         this.Entries.Remove multiId
 
+/// A storable reference to a component in its containing array.
 type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
     { ComponentIndex : int
       ComponentArr : 't array }
@@ -47,12 +50,14 @@ type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and '
     static member (!>) componentRef =
         &componentRef.ComponentArr.[componentRef.ComponentIndex]
 
+[<RequireQualifiedAccess>]
 module ComponentRef =
 
     let make index arr =
         { ComponentIndex = index
           ComponentArr = arr }
 
+/// A base system type of an Ecs.
 type [<AbstractClass>] 'w System () =
     abstract Update : 'w Ecs -> 'w -> 'w
     default this.Update _ world = world
@@ -61,11 +66,14 @@ type [<AbstractClass>] 'w System () =
     abstract Actualize : 'w Ecs -> 'w -> 'w
     default this.Actualize _ world = world
 
+/// An Ecs system with just a single component.
 and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
     inherit System<'w> ()
     let mutable comp = comp
     member this.Component with get () = &comp
 
+/// An Ecs system with components stored by a raw index.
+/// Uncorrelated systems could potentially be processed in parallel.
 and [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component> () =
     inherit System<'w> ()
 
@@ -102,6 +110,7 @@ and [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Compo
             if components.[index].RefCount = 0 then freeList.Enqueue index
         else freeIndex <- dec freeIndex
 
+/// An Ecs system with components stored by entity id.
 and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Component> () =
     inherit System<'w> ()
 
@@ -167,6 +176,7 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
             true
         | (false, _) -> false
 
+/// An Ecs system that stores multiple components per entity id.
 and [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Component> () =
     inherit SystemCorrelated<'t ComponentMultiplexed, 'w> ()
 
@@ -194,19 +204,17 @@ and [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compon
 /// Nu's custom Entity-Component-System implementation.
 ///
 /// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
-/// modern caches, most cache hits will be of the L1 variety for junctioned components. Uncorrelated components will be
-/// L0-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
+/// modern caches, most cache hits will be of the L2 variety for junctioned components. Uncorrelated components will be
+/// L2-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
 /// components are very chaotically unregistered in a use-case scenario that the I, the library author, have trouble
 /// even imagining.
-///
-/// NOTE: Uncorrelated systems could update in parallel.
 and [<NoEquality; NoComparison>] 'w Ecs () =
 
     (* Locals *)
 
-    let systemsUnordered : Dictionary<string, 'w System> = dictPlus []
-    let systemsOrdered : (string * 'w System) List = List ()
-    let correlations : Dictionary<Guid, string List> = dictPlus []
+    let systemsUnordered = dictPlus [] : Dictionary<string, 'w System>
+    let systemsOrdered = List () : (string * 'w System) List
+    let correlations = dictPlus [] : Dictionary<Guid, string List>
 
     (* Processing *)
 
@@ -360,6 +368,7 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
         this.DisjunctionEntityExplicit<'t, 'w> typeof<'t>.Name junctions entityId
 
+/// An Ecs system that explicitly associates components by entity id.
 type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component> (junctionedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
 
