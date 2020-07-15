@@ -66,18 +66,14 @@ and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Componen
     let mutable comp = comp
     member this.Component with get () = &comp
 
-and [<AbstractClass>] SystemMany<'t, 'w> () =
-    inherit System<'w> ()
-    abstract Components : 't array
-
 and [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component> () =
-    inherit SystemMany<'t, 'w> ()
+    inherit System<'w> ()
 
     let mutable components = [||] : 't array
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
 
-    override this.Components
+    member this.Components
         with get () = components
     
     member this.FreeIndex
