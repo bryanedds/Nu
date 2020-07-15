@@ -77,7 +77,7 @@ and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Componen
 and [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component> () =
     inherit System<'w> ()
 
-    let mutable components = [||] : 't array
+    let mutable components = Array.zeroCreate 32 : 't array
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
 
@@ -114,7 +114,7 @@ and [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Compo
 and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Component> () =
     inherit System<'w> ()
 
-    let mutable components = [||] : 't array
+    let mutable components = Array.zeroCreate 32 : 't array
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
@@ -202,7 +202,6 @@ and [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compon
         this.UnregisterEntity entityId ecs
 
 /// Nu's custom Entity-Component-System implementation.
-///
 /// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
 /// modern caches, most cache hits will be of the L2 variety for junctioned components. Uncorrelated components will be
 /// L2-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
