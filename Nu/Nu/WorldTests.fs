@@ -58,11 +58,11 @@ module EcsTests =
         inherit SystemJunctioned<TransformIntersection, World>
             [|typeof<Transform>.Name|]
 
-        override this.Junction junctions entityId ecs =
+        override this.Junction junctions entityId _ ecs =
             { RefCount = 0
               Transform = ecs.JunctionEntity<Transform, World> junctions entityId }
 
-        override this.Disjunction junctions entityId ecs =
+        override this.Disjunction junctions entityId _ ecs =
             ecs.DisjunctionEntity<Transform, World> junctions entityId
 
         override this.Update _ world =
