@@ -60,12 +60,12 @@ module EcsTests =
 
         override this.Junction junctions entityId _ ecs =
             { RefCount = 0
-              Transform = ecs.JunctionEntity<Transform, World> junctions entityId }
+              Transform = ecs.Junction<Transform, World> junctions entityId }
 
         override this.Disjunction junctions entityId _ ecs =
-            ecs.DisjunctionEntity<Transform, World> junctions entityId
+            ecs.Disjunction<Transform, World> junctions entityId
 
-        override this.Update _ world =
+        override this.ProcessUpdate _ world =
             for i = 0 to this.Components.Length - 1 do
                 let comp = &this.Components.[i]
                 let transform = &comp.Transform.Value
