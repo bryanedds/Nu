@@ -43,19 +43,16 @@ type Simplex<'t when 't : struct> =
 /// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
 /// anything else (which is good enough in almost all cases where multi-components are used).
 type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'t when 't : struct> =
-    internal
-        { mutable RefCount : int
-          Entries : Dictionary<Guid, 't Simplex> }
+    { mutable RefCount : int
+      Simplexes : Dictionary<Guid, 't Simplex> }
     interface Component with
         member this.RefCount
             with get () = this.RefCount
             and set value = this.RefCount <- value
-    member this.Components
-        with get () = this.Entries.Values :> 't Simplex IEnumerable
     member this.RegisterMultiplexed (multiId, comp) =
-        this.Entries.Add (multiId, { Simplex = comp })
+        this.Simplexes.Add (multiId, { Simplex = comp })
     member this.UnregisterMultiplexed multiId =
-        this.Entries.Remove multiId
+        this.Simplexes.Remove multiId
 
 /// A base system type of an Ecs.
 type [<AbstractClass>] 'w System () =
@@ -118,9 +115,13 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
 /// An Ecs system with just a single component.
 and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
     inherit System<'w> ()
+
     let mutable comp = comp
+
     member this.Component with get () = &comp
+
     type 'w Ecs with
+
         member this.IndexSingleton<'t, 'w when 't : struct and 't :> Component> systemName =
             let systemOpt = this.TryIndexSystem<SystemSingleton<'t, 'w>> systemName 
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
@@ -138,7 +139,7 @@ type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Comp
 
     member this.Components
         with get () = components
-    
+
     member this.FreeIndex
         with get () = freeIndex
 
@@ -380,12 +381,12 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
     member this.QualifyMultiplexed multiId entityId =
         if this.QualifyCorrelated entityId then
             let comp = this.IndexCorrelated entityId
-            comp.Entries.ContainsKey multiId
+            comp.Simplexes.ContainsKey multiId
         else false
 
     member this.IndexMultiplexed multiId entityId =
         let componentMultiplexed = &this.IndexCorrelated entityId
-        componentMultiplexed.Entries.[multiId]
+        componentMultiplexed.Simplexes.[multiId]
 
     member this.RegisterMultiplexed multiId entityId comp ecs =
         let _ = this.RegisterCorrelated entityId ecs
