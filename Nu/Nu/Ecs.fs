@@ -139,10 +139,11 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
     member this.GetEntities () =
         correlations.Keys :> _ IEnumerable
 
-    abstract member RegisterEntity : Guid -> 't -> 'w Ecs -> int
-    default this.RegisterEntity entityId comp _ =
+    abstract member RegisterEntity : Guid -> 't option -> 'w Ecs -> int
+    default this.RegisterEntity entityId compOpt _ =
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
+            let comp = Option.getOrDefault Unchecked.defaultof<'t> compOpt
             if freeList.Count = 0 then
                 if freeIndex < components.Length - 1 then
                     components.[freeIndex] <- comp
@@ -285,10 +286,10 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         let system = Option.get systemOpt
         &system.GetComponent entityId
 
-    member this.RegisterEntity<'t when 't : struct and 't :> Component> systemName entityId comp =
+    member this.RegisterEntity<'t when 't : struct and 't :> Component> systemName entityId compOpt =
         match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
         | Some system ->
-            let _ = system.RegisterEntity entityId comp
+            let _ = system.RegisterEntity entityId compOpt
             match correlations.TryGetValue entityId with
             | (true, correlation) -> correlation.Add systemName
             | (false, _) -> correlations.Add (entityId, List [systemName])
@@ -351,7 +352,7 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
     member this.JunctionEntityExplicit<'t, 'w when 't : struct and 't :> Component>
         (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
         let system = junctions.[systemName] :?> SystemCorrelated<'t, 'w>
-        let index = system.RegisterEntity entityId Unchecked.defaultof<'t> this
+        let index = system.RegisterEntity entityId None this
         ComponentRef.make index system.Components
 
     member this.JunctionEntity<'t, 'w when 't : struct and 't :> Component>
@@ -377,7 +378,9 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
 
     abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
 
-    override this.RegisterEntity entityId _ ecs =
+    override this.RegisterEntity entityId compOpt ecs =
+        if Option.isSome compOpt then
+            Log.debug "Component value provided to SystemJunctioned.RegisterEntity is (and will always be) ignored."
         match Dictionary.tryGetValue entityId this.Correlations with
         | (false, _) ->
             let junctions = this.GetJunctions ecs
