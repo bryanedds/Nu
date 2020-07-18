@@ -139,11 +139,10 @@ and [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compone
     member this.GetEntities () =
         correlations.Keys :> _ IEnumerable
 
-    abstract member RegisterEntity : Guid -> 't option -> 'w Ecs -> int
-    default this.RegisterEntity entityId compOpt _ =
+    abstract member RegisterEntity : Guid -> 't -> 'w Ecs -> int
+    default this.RegisterEntity entityId comp _ =
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
-            let comp = Option.getOrDefault Unchecked.defaultof<'t> compOpt
             if freeList.Count = 0 then
                 if freeIndex < components.Length - 1 then
                     components.[freeIndex] <- comp
@@ -286,10 +285,10 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         let system = Option.get systemOpt
         &system.GetComponent entityId
 
-    member this.RegisterEntity<'t when 't : struct and 't :> Component> systemName entityId compOpt =
+    member this.RegisterEntity<'t when 't : struct and 't :> Component> systemName entityId comp =
         match this.TryGetSystem<SystemCorrelated<'t, 'w>> systemName with
         | Some system ->
-            let _ = system.RegisterEntity entityId compOpt
+            let _ = system.RegisterEntity entityId comp
             match correlations.TryGetValue entityId with
             | (true, correlation) -> correlation.Add systemName
             | (false, _) -> correlations.Add (entityId, List [systemName])
@@ -349,24 +348,24 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
 
     (* Junctioned *)
 
-    member this.JunctionEntityExplicit<'t, 'w when 't : struct and 't :> Component>
-        (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
+    member this.JunctionEntityPlus<'t, 'w when 't : struct and 't :> Component>
+        (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) (comp : 't) =
         let system = junctions.[systemName] :?> SystemCorrelated<'t, 'w>
-        let index = system.RegisterEntity entityId None this
+        let index = system.RegisterEntity entityId comp this
         ComponentRef.make index system.Components
 
     member this.JunctionEntity<'t, 'w when 't : struct and 't :> Component>
         (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
-        this.JunctionEntityExplicit<'t, 'w> typeof<'t>.Name junctions entityId
+        this.JunctionEntityPlus<'t, 'w> typeof<'t>.Name junctions entityId Unchecked.defaultof<'t>
 
-    member this.DisjunctionEntityExplicit<'t, 'w when 't : struct and 't :> Component>
+    member this.DisjunctionEntityPlus<'t, 'w when 't : struct and 't :> Component>
         (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
         let system = junctions.[systemName] :?> SystemCorrelated<'t, 'w>
         system.UnregisterEntity entityId this |> ignore
 
     member this.DisjunctionEntity<'t, 'w when 't : struct and 't :> Component>
         (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
-        this.DisjunctionEntityExplicit<'t, 'w> typeof<'t>.Name junctions entityId
+        this.DisjunctionEntityPlus<'t, 'w> typeof<'t>.Name junctions entityId
 
 /// An Ecs system that explicitly associates components by entity id.
 type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component> (junctionedSystemNames : string array) =
@@ -374,17 +373,26 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
 
     let mutable junctionsOpt = None : Dictionary<string, 'w System> option
 
-    abstract Junction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
+    abstract Junction : Dictionary<string, 'w System> -> Guid -> 't -> 'w Ecs -> 't
 
-    abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
+    abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 't -> 'w Ecs -> unit
 
-    override this.RegisterEntity entityId compOpt ecs =
-        if Option.isSome compOpt then
-            Log.debug "Component value provided to SystemJunctioned.RegisterEntity is (and will always be) ignored."
+    member this.GetJunctions (ecs : 'w Ecs) =
+        match junctionsOpt with
+        | Some junctions -> junctions
+        | None ->
+            let junctions =
+                junctionedSystemNames |>
+                Array.map (fun sourceName -> (sourceName, ecs.GetSystem<'w System> sourceName)) |>
+                dictPlus
+            junctionsOpt <- Some junctions
+            junctions
+
+    override this.RegisterEntity entityId comp ecs =
         match Dictionary.tryGetValue entityId this.Correlations with
         | (false, _) ->
             let junctions = this.GetJunctions ecs
-            let comp = this.Junction junctions entityId ecs
+            let comp = this.Junction junctions entityId comp ecs
             if this.FreeList.Count = 0 then
                 if this.FreeIndex < this.Components.Length - 1 then
                     this.Components.[this.FreeIndex] <- comp
@@ -407,23 +415,15 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
             comp.RefCount <- inc comp.RefCount
             index
 
-    override this.UnregisterEntity entityId _ =
+    override this.UnregisterEntity entityId ecs =
         match this.Correlations.TryGetValue entityId with
         | (true, index) ->
+            let comp = this.Components.[index]
+            let junctions = this.GetJunctions ecs
             if index <> this.FreeIndex then
                 this.Components.[index].RefCount <- dec this.Components.[index].RefCount
                 if this.Components.[index].RefCount = 0 then this.FreeList.Enqueue index
             else this.FreeIndex <- dec this.FreeIndex
+            this.Disjunction junctions entityId comp ecs
             true
         | (false, _) -> false
-
-    member this.GetJunctions (ecs : 'w Ecs) =
-        match junctionsOpt with
-        | Some junctions -> junctions
-        | None ->
-            let junctions =
-                junctionedSystemNames |>
-                Array.map (fun sourceName -> (sourceName, ecs.GetSystem<'w System> sourceName)) |>
-                dictPlus
-            junctionsOpt <- Some junctions
-            junctions
