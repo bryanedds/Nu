@@ -183,7 +183,7 @@ module OmniField =
                  // interact button
                  Content.button Simulants.FieldInteract.Name
                     [Entity.Size == v2Dup 92.0f
-                     Entity.Position == v2 360.0f 160.0f
+                     Entity.Position == v2 360.0f -252.0f
                      Entity.Depth == Constants.Field.GuiDepth
                      Entity.Visible <== model ->> fun model world ->
                         let interactionOpt = tryGetInteraction model.DialogOpt model.Advents model.Avatar world
@@ -215,7 +215,7 @@ module OmniField =
                      Entity.Text <== model --> fun model ->
                         match model.DialogOpt with
                         | Some dialog ->
-                            let text = String.Join ("\n", dialog.DialogText)
+                            let text = String.Join (" ", dialog.DialogText)
                             let textToShow = String.tryTake dialog.DialogProgress text
                             textToShow
                         | None -> ""
