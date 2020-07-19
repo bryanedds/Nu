@@ -34,26 +34,6 @@ module ComponentRef =
         { ComponentIndex = index
           ComponentArr = arr }
 
-/// Handle to one of an array of multiplexed components.
-type Simplex<'t when 't : struct> =
-    { mutable Simplex : 't }
-
-/// Allows an entity to contain multiple of the same component.
-/// However, it uses a dictionary without a small-object optimization, so this functionality won't get the typical
-/// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
-/// anything else (which is good enough in almost all cases where multi-components are used).
-type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'t when 't : struct> =
-    { mutable RefCount : int
-      Simplexes : Dictionary<Guid, 't Simplex> }
-    interface Component with
-        member this.RefCount
-            with get () = this.RefCount
-            and set value = this.RefCount <- value
-    member this.RegisterMultiplexed (multiId, comp) =
-        this.Simplexes.Add (multiId, { Simplex = comp })
-    member this.UnregisterMultiplexed multiId =
-        this.Simplexes.Remove multiId
-
 /// A base system type of an Ecs.
 type [<AbstractClass>] 'w System () =
     abstract ProcessUpdate : 'w Ecs -> 'w -> 'w
@@ -373,6 +353,26 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
         member this.Disjunction<'t, 'w when 't : struct and 't :> Component>
             (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
             this.DisjunctionPlus<'t, 'w> typeof<'t>.Name junctions entityId
+
+/// Handle to one of an array of multiplexed components.
+type Simplex<'t when 't : struct> =
+    { mutable Simplex : 't }
+
+/// Allows an entity to contain multiple of the same component.
+/// However, it uses a dictionary without a small-object optimization, so this functionality won't get the typical
+/// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
+/// anything else (which is good enough in almost all cases where multi-components are used).
+type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'t when 't : struct> =
+    { mutable RefCount : int
+      Simplexes : Dictionary<Guid, 't Simplex> }
+    interface Component with
+        member this.RefCount
+            with get () = this.RefCount
+            and set value = this.RefCount <- value
+    member this.RegisterMultiplexed (multiId, comp) =
+        this.Simplexes.Add (multiId, { Simplex = comp })
+    member this.UnregisterMultiplexed multiId =
+        this.Simplexes.Remove multiId
 
 /// An Ecs system that stores multiple components per entity id.
 type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Component> () =

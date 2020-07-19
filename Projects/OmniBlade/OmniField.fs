@@ -138,7 +138,10 @@ module OmniField =
                         | Portal -> just model
                         | Switch -> just model
                         | Sensor -> just model
-                        | Npc (npcType, direction, dialog) -> just model
+                        | Npc (_, _, dialog) ->
+                            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0 }
+                            let model = FieldModel.updateDialogOpt (constant (Some dialogForm)) model
+                            just model
                         | Shopkeep shopkeepType -> just model
                     | None -> just model
 
@@ -198,8 +201,8 @@ module OmniField =
                         | Some dialog ->
                             match dialog.DialogForm with
                             | DialogThin -> v4Bounds (v2 -448.0f 128.0f) (v2 896.0f 112.0f)
-                            | DialogMedium -> v4Bounds (v2 -448.0f 128.0f) (v2 640.0f 320.0f)
-                            | DialogLarge -> v4Bounds (v2 -448.0f 128.0f) (v2 896.0f 320.0f)
+                            | DialogMedium -> v4Bounds (v2 -448.0f 0.0f) (v2 640.0f 256.0f)
+                            | DialogLarge -> v4Bounds (v2 -448.0f 0.0f) (v2 896.0f 256.0f)
                         | None -> v4Zero
                      Entity.BackgroundImage <== model --> fun model ->
                         match model.DialogOpt with
