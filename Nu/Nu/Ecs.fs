@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.IO
 open System.Collections.Generic
 open Prime
 
@@ -42,6 +43,15 @@ type [<AbstractClass>] 'w System () =
     default this.ProcessPostUpdate _ world = world
     abstract ProcessActualize : 'w Ecs -> 'w -> 'w
     default this.ProcessActualize _ world = world
+
+/// A system with zero to many components.
+and [<AbstractClass>] 'w SystemMany () =
+    inherit System<'w> ()
+    abstract SizeOfComponent : int
+    abstract ComponentsLength : int
+    abstract ComponentsToBytes : unit -> char array
+    abstract BytesToComponents : char array -> unit
+    abstract Pad : int -> unit
 
 /// Nu's custom Entity-Component-System implementation.
 /// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
@@ -111,11 +121,37 @@ and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Componen
 /// An Ecs system with components stored by a raw index.
 /// Uncorrelated systems could potentially be processed in parallel.
 type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component> () =
-    inherit System<'w> ()
+    inherit SystemMany<'w> ()
 
     let mutable components = Array.zeroCreate 32 : 't array
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
+
+    abstract ComponentToBytes : 't -> char array
+    default this.ComponentToBytes _ = failwithnie ()
+    abstract BytesToComponent : char array -> 't
+    default this.BytesToComponent _ = failwithnie ()
+
+    override this.SizeOfComponent with get () =
+        sizeof<'t>
+
+    override this.ComponentsLength with get () =
+        components.Length
+
+    override this.ComponentsToBytes () =
+        let byteArrays = Array.map this.ComponentToBytes components
+        Array.concat byteArrays
+
+    override this.BytesToComponents (bytes : char array) =
+        let byteArrays = Array.chunkBySize this.SizeOfComponent bytes
+        if bytes.Length <> components.Length then
+            failwith "Incoming bytes array must have the same number of elements as target system has components."
+        let components' = Array.map this.BytesToComponent byteArrays
+        components <- components'
+
+    override this.Pad length =
+        let arr = Array.zeroCreate (components.Length + length)
+        components.CopyTo (arr, 0)
 
     member this.Components
         with get () = components
@@ -164,9 +200,21 @@ type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Comp
             | Some system -> system.UnregisterUncorrelated index
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
+        member this.ReadUncorrelated (readers : Dictionary<string, StreamReader>) (count : int) =
+            for readerEntry in readers do
+                let (systemName, reader) = (readerEntry.Key, readerEntry.Value)
+                match this.TryIndexSystem<'w SystemMany> systemName with
+                | Some system ->
+                    let length = system.ComponentsLength
+                    system.Pad count
+                    let bytes = system.ComponentsToBytes ()
+                    let _ = reader.ReadBlock (bytes, system.SizeOfComponent * length, system.SizeOfComponent * count)
+                    system.BytesToComponents bytes
+                | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
 /// An Ecs system with components stored by entity id.
 type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Component> () =
-    inherit System<'w> ()
+    inherit SystemMany<'w> ()
 
     let mutable components = Array.zeroCreate 32 : 't array
     let mutable freeIndex = 0
@@ -178,7 +226,33 @@ type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compon
     member internal this.FreeList with get () = freeList
     member internal this.Correlations with get () = correlations
 
-    member this.CorrelateEntities () =
+    abstract ComponentToBytes : 't -> char array
+    default this.ComponentToBytes _ = failwithnie ()
+    abstract BytesToComponent : char array -> 't
+    default this.BytesToComponent _ = failwithnie ()
+
+    override this.SizeOfComponent with get () =
+        sizeof<'t>
+
+    override this.ComponentsLength with get () =
+        components.Length
+
+    override this.ComponentsToBytes () =
+        let byteArrays = Array.map this.ComponentToBytes components
+        Array.concat byteArrays
+
+    override this.BytesToComponents (bytes : char array) =
+        let byteArrays = Array.chunkBySize this.SizeOfComponent bytes
+        if bytes.Length <> components.Length then
+            failwith "Incoming bytes array must have the same number of elements as target system has components."
+        let components' = Array.map this.BytesToComponent byteArrays
+        components <- components'
+
+    override this.Pad length =
+        let arr = Array.zeroCreate (components.Length + length)
+        components.CopyTo (arr, 0)
+
+    member this.GetEntitiesCorrelated () =
         correlations.Keys :> _ IEnumerable
 
     member this.QualifyCorrelated entityId =
@@ -232,14 +306,14 @@ type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compon
 
     type 'w Ecs with
 
-        member this.CorrelateSystems entityId =
+        member this.GetSystemsCorrelated entityId =
             this.Correlations.[entityId] |>
             Seq.map (fun systemName -> (systemName, this.IndexSystem<'w System> systemName)) |>
             dictPlus
 
-        member this.CorrelateEntities<'t when 't : struct and 't :> Component> systemName =
+        member this.GetEntitiesCorrelated<'t when 't : struct and 't :> Component> systemName =
             match this.TryIndexSystem<SystemCorrelated<'t, 'w>> systemName with
-            | Some system -> system.CorrelateEntities ()
+            | Some system -> system.GetEntitiesCorrelated ()
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
         member this.QualifyCorrelated<'t when 't : struct and 't :> Component> systemName entityId =
@@ -270,7 +344,8 @@ type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compon
                     match this.Correlations.TryGetValue entityId with
                     | (true, correlation) -> correlation.Add systemName
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
-            | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+                
 
 /// An Ecs system that explicitly associates components by entity id.
 type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component> (junctionedSystemNames : string array) =
