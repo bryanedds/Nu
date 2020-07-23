@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="64" tileheight="64" infinite="0" nextlayerid="5" nextobjectid="24">
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="64" tileheight="64" infinite="0" nextlayerid="5" nextobjectid="27">
  <tileset firstgid="1" source="Colloseum.tsx"/>
  <layer id="2" name="Floor" width="32" height="16">
   <properties>
    <property name="D" value="0"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2BgAQ8TAwMvnTEfE8J+HSBbl85YbwjY3wjETXhwMxF6sKkh1v6FQLwID15MhB5saoi1/yAQH8KDD9PYfnIwupuxuXGopD962e8DZPvSGfsh2T+QAABpXkyQ
+   eJxjYBgFo2BgAQ8TAwMvnTEfE8J+HSBbl85YbwjY3wjETXhwMxF6sKkh1v6FQLwID15MhB5saoi1/yAQH8KDD9PYfnIwupuxuXGwpT8fINuXDIxuJil6/ZDsn8pEHkY3k1T91ACUmgUAWyhYTg==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="16">
@@ -14,7 +14,7 @@
    <property name="D" value="10"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJzN1VtqwkAUxvEzpirtLkQQ9MFFWJC2L91DvVEvuIeq7UPbTbRa9+F1Hyp2G/5DRjJNTSo1Ggd+zCHnMN9AAkmJSApFlFHRyiHs3mfb+lpnbnOrqKGLHiwlcokr5dQ9o+c34+13A855QEnf4wbPeEEfA6SZzSKnnHpg9PxmvP1+wDlP6KCg878wxART+17M3uJOOfXU6PnNePuTgHM+8GnkzzDHSisx+4i6cuqV/HbIzAhjI3+Nb3FXR+2uJaSZBZZGflTrmPn3VrT5bevve/wnP2/93HetBu+6iZZy7xFW/j7rldw3vPt8l8fO33edQ34GCSRPmBuD/Vmkxf0P2fe4QPwEu5kbtQ2syl4S
+   eJzN1XtKAlEUx/FzHVNsFyIE+YeLMBDzn/agZqSGe8jXH+UmzMc+SmsfKbWNvsNcmdvojK/xceHDHDzH+zvggEkRSSKHMu61cghP72eL+kZnLnIreEALbVhKJIFL5dRto+c34+23Au4poqT3yKODLgYYIsXsNdLKqYdGz2/G2x8E3POMJrI6f4QxJpjaezF7i4Jy6qnR85vx9icB9/TxZuR/4gtzrcTsI6rKqeeybJ+Zd3wY+T/4Ffc01epaQpr5xszIP9U5ZP6dddr8hrV+j13yM9b/56pT47eu40m5e4SVv8l5IfcVPZ/38tD5m55zyL9CDPEj5kZgvxYpcf+H7D2iuNjiae+stMgW3zNz95E38rM73vEHqc5eEw==
   </data>
  </layer>
  <objectgroup id="4" name="Props">
@@ -34,6 +34,16 @@
   <object id="23" gid="488" x="448" y="448" width="160" height="160">
    <properties>
     <property name="I" value="[Npc VillageMan Downward [&quot;Hello, NPC!&quot; &quot;Aye aye aye!&quot;]]"/>
+   </properties>
+  </object>
+  <object id="25" gid="488" x="1024" y="1024" width="128" height="32">
+   <properties>
+    <property name="I" value="[Portal 0 DebugRoom 1 Upward]"/>
+   </properties>
+  </object>
+  <object id="26" gid="488" x="1952" y="640" width="32" height="128">
+   <properties>
+    <property name="I" value="[Portal 1 DebugRoom 0 Leftward]"/>
    </properties>
   </object>
  </objectgroup>

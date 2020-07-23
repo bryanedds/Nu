@@ -27,8 +27,8 @@ module AvatarDispatcherModule =
         inherit EntityDispatcher<AvatarModel, AvatarMessage, AvatarCommand>
             (AvatarModel.make (v4Bounds (v2 128.0f 128.0f) Constants.Gameplay.CharacterSize) Assets.FinnAnimationSheet Downward)
 
-        static let sensorShapeId =
-            Gen.id
+        static let coreShapeId = Gen.id
+        static let sensorShapeId = Gen.id
 
         static let getSpriteInset (avatar : Entity) world =
             let model = avatar.GetAvatarModel world
@@ -37,13 +37,28 @@ module AvatarDispatcherModule =
             let inset = v4Bounds offset Constants.Gameplay.CharacterSize
             inset
 
+        static let isIntersectedBodyShape collider collidee world =
+            if (collider.BodyShapeId = coreShapeId &&
+                collidee.Entity.Is<PropDispatcher> world &&
+                match (collidee.Entity.GetPropModel world).PropData with
+                | Portal _ -> true
+                | _ -> false) then
+                true
+            elif (collider.BodyShapeId = sensorShapeId &&
+                  collidee.Entity.Is<PropDispatcher> world &&
+                  match (collidee.Entity.GetPropModel world).PropData with
+                  | Portal _ -> false
+                  | _ -> true) then
+                true
+            else false
+
         static member Facets =
             [typeof<RigidBodyFacet>]
 
         override this.Initializers (model, entity) =
             let bodyShapes =
                 BodyShapes
-                    [BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                    [BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
                      BodyCircle { Radius = 0.33f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
             [entity.Bounds <== model.Map (fun model -> model.Bounds)
              entity.FixedRotation == true
@@ -106,7 +121,7 @@ module AvatarDispatcherModule =
 
                 // remove separated body shape
                 let model =
-                    if separation.Separator.BodyShapeId = sensorShapeId
+                    if isIntersectedBodyShape separation.Separator separation.Separatee world
                     then AvatarModel.updateIntersectedBodyShapes (List.remove ((=) separation.Separatee)) model
                     else model
                 just model
@@ -115,7 +130,7 @@ module AvatarDispatcherModule =
 
                 // add collidee shape
                 let model =
-                    if collision.Collider.BodyShapeId = sensorShapeId
+                    if isIntersectedBodyShape collision.Collider collision.Collidee world
                     then AvatarModel.updateIntersectedBodyShapes (fun shapes -> collision.Collidee :: shapes) model
                     else model
                 just model

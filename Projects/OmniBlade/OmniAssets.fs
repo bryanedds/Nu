@@ -16,7 +16,7 @@ module Assets =
     let TitleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> GuiPackageName "Title" }
 
     // field assets
-    let DebugFieldTileMap = asset<TileMap> FieldPackageName "DebugField"
+    let DebugRoomTileMap = asset<TileMap> FieldPackageName "DebugRoom"
     let WoodenChestOpenedImage = asset<Image> FieldPackageName "WoodenChestOpened"
     let WoodenChestClosedImage = asset<Image> FieldPackageName "WoodenChestClosed"
     let BrassChestOpenedImage = asset<Image> FieldPackageName "BrassChestOpened"
