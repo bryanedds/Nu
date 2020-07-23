@@ -102,7 +102,7 @@ module FieldModel =
 
     let initial =
         { Dirty_ = Gen.id
-          FieldType_ = DebugField
+          FieldType_ = DebugRoom
           Avatar_ = AvatarModel.empty
           Legion_ = Map.ofList [(0, Legionnaire.finn); (1, Legionnaire.glenn)]
           Advents_ = Set.empty

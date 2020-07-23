@@ -11,9 +11,10 @@ open OmniBlade
 module OmniField =
 
     type [<NoComparison>] FieldMessage =
-        | Interact
         | UpdateAvatar of AvatarModel
         | UpdateDialog
+        | TouchPortal
+        | Interact
 
     type [<NoComparison>] FieldCommand =
         | PlaySound of int64 * single * AssetTag<Sound>
@@ -60,7 +61,7 @@ module OmniField =
                     if Set.contains (Opened chestId) advents then None
                     else Some "Open"
                 | Door _ -> Some "Open"
-                | Portal -> None
+                | Portal -> Some "Enter"
                 | Switch -> Some "Use"
                 | Sensor -> None
                 | Npc _ -> Some "Talk"
@@ -93,6 +94,9 @@ module OmniField =
                             Some { dialog with DialogProgress = dialog.DialogProgress + increment }
                          | None -> None)
                         model
+                just model
+
+            | TouchPortal ->
                 just model
 
             | Interact ->
@@ -168,7 +172,7 @@ module OmniField =
                      Entity.TileMapAsset <== model --> fun model ->
                         match Map.tryFind model.FieldType data.Value.Fields with
                         | Some fieldData -> fieldData.FieldTileMap
-                        | None -> Assets.DebugFieldTileMap
+                        | None -> Assets.DebugRoomTileMap
                      Entity.TileLayerClearance == 10.0f]
 
                  // avatar
