@@ -75,7 +75,7 @@ module EnemyModule =
         inherit EntityDispatcher ()
         
         static let move (enemy : Entity) world =
-            let force = Vector2 (-750.0f, -2500.0f)
+            let force = Vector2 (-500.0f, -2500.0f)
             World.applyBodyForce force (enemy.GetPhysicsId world) world
 
         static let die (enemy : Entity) world =
