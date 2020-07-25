@@ -41,6 +41,8 @@ module ComponentRef =
 type [<AbstractClass>] 'w System () =
     let pipedKey = Gen.id
     member this.PipedKey with get () = pipedKey
+    abstract PipedInit : obj
+    default this.PipedInit with get () = () :> obj
     abstract ProcessUpdate : 'w Ecs -> 'w -> 'w
     default this.ProcessUpdate _ world = world
     abstract ProcessPostUpdate : 'w Ecs -> 'w -> 'w
@@ -529,18 +531,14 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-/// A collection of subsystems that can be run in parallel.
-/// NOTE: Because 'w is not a monoid (no mappend), null is passed in to all subsystems instead.
-type 'w SystemParallel () =
+/// A collection of systems that can be run in parallel.
+/// Because 'w is not a monoid (no mappend), null is passed in to all subsystems. Any information that affects the
+/// world has to use a piped value and the related process lambda.
+type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processActualizeResults) =
     inherit System<'w> ()
 
     let subsystems =
         dictPlus [] : Dictionary<string, 'w System>
-
-    let processParallel fn =
-        subsystems |>
-        Seq.map (fun entry -> Task.Run (fun () -> fn entry.Value Unchecked.defaultof<'w> : 'w) |> Vsync.AwaitTask) |>
-        Vsync.Parallel
 
     member this.RegisterSubsystem subsystemName subsystem =
         subsystems.[subsystemName] <- subsystem
@@ -549,16 +547,37 @@ type 'w SystemParallel () =
         subsystems.Remove subsystemName
 
     override this.ProcessUpdate ecs world =
-        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessUpdate ecs))
-        world
+        let results =
+            subsystems |>
+            Seq.map (fun entry -> Task.Run (fun () ->
+                let system = entry.Value
+                do ecs.RegisterPipedValue system.PipedKey system.PipedInit
+                let _ = system.ProcessUpdate ecs Unchecked.defaultof<'w>
+                ecs.IndexPipedValue<obj> system.PipedKey) |> Vsync.AwaitTaskT) |>
+            Vsync.Parallel
+        processUpdateResults results world
 
     override this.ProcessPostUpdate ecs world =
-        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessPostUpdate ecs))
-        world
+        let results =
+            subsystems |>
+            Seq.map (fun entry -> Task.Run (fun () ->
+                let system = entry.Value
+                do ecs.RegisterPipedValue system.PipedKey system.PipedInit
+                let _ = system.ProcessPostUpdate ecs Unchecked.defaultof<'w>
+                ecs.IndexPipedValue<obj> system.PipedKey) |> Vsync.AwaitTaskT) |>
+            Vsync.Parallel
+        processPostUpdateResults results world
 
     override this.ProcessActualize ecs world =
-        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessActualize ecs))
-        world
+        let results =
+            subsystems |>
+            Seq.map (fun entry -> Task.Run (fun () ->
+                let system = entry.Value
+                do ecs.RegisterPipedValue system.PipedKey system.PipedInit
+                let _ = system.ProcessActualize ecs Unchecked.defaultof<'w>
+                ecs.IndexPipedValue<obj> system.PipedKey) |> Vsync.AwaitTaskT) |>
+            Vsync.Parallel
+        processActualizeResults results world
 
     type 'w Ecs with
 
