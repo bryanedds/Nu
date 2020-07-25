@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Threading
@@ -66,22 +67,26 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
     let systemsUnordered = dictPlus [] : Dictionary<string, 'w System>
     let systemsOrdered = List () : (string * 'w System) List
     let correlations = dictPlus [] : Dictionary<Guid, string List>
-    let pipedValues = dictPlus [] : Dictionary<Guid, obj>
+    let pipedValues = ConcurrentDictionary<Guid, obj> ()
 
     member internal this.Correlations 
         with get () = correlations
 
+    /// Thread-safe.
     member this.RegisterPipedValue<'a> key (value : 'a) =
-        pipedValues.[key] <- (value :> obj)
+        pipedValues.[key] <- value :> obj
 
+    /// Thread-safe.
     member this.UnregisterPipedValue key =
-        pipedValues.Remove key
+        pipedValues.TryRemove key
 
+    /// Thread-safe.
     member this.TryIndexPipedValue<'a> key =
         match pipedValues.TryGetValue key with
         | (true, value) -> Some (value :?> 'a)
         | (false, _) -> None
 
+    /// Thread-safe.
     member this.IndexPipedValue<'a> key =
         pipedValues.[key] :?> 'a
 
@@ -525,6 +530,7 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// A collection of subsystems that can be run in parallel.
+/// NOTE: Because 'w is not a monoid (no mappend), null is passed in to all subsystems instead.
 type 'w SystemParallel () =
     inherit System<'w> ()
 
