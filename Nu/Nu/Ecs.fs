@@ -50,15 +50,6 @@ type [<AbstractClass>] 'w System () =
     abstract ProcessActualize : 'w Ecs -> 'w -> 'w
     default this.ProcessActualize _ world = world
 
-/// A system with zero to many components.
-and [<AbstractClass>] 'w SystemMany () =
-    inherit System<'w> ()
-    abstract SizeOfComponent : int
-    abstract ComponentsLength : int
-    abstract ComponentsToBytes : unit -> char array
-    abstract BytesToComponents : char array -> unit
-    abstract Pad : int -> unit
-
 /// Nu's custom Entity-Component-System implementation.
 /// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
 /// modern caches, most cache hits will be of the L2 variety for junctioned components. Uncorrelated components will be
@@ -81,7 +72,7 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
 
     /// Thread-safe.
     member this.UnregisterPipedValue key =
-        pipedValues.TryRemove key
+        pipedValues.TryRemove (key, ref (obj ()))
 
     /// Thread-safe.
     member this.TryIndexPipedValue<'a> key =
@@ -96,8 +87,10 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
     member this.RegisterSystem systemName system =
         systemsUnordered.Add (systemName, system)
         systemsOrdered.Add (systemName, system)
+        //system.RegisterPipedValue this
 
-    member this.UnregisterSystem systemName =
+    member this.UnregisterSystem systemName (_ : 'w System) =
+        //system.UnregisterPipedValue this
         systemsOrdered.RemoveAll (fun (systemName', _) -> systemName' = systemName) |> ignore
         systemsUnordered.Remove systemName |> ignore
 
@@ -133,7 +126,7 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
         member this.IndexPipedValue<'a> (ecs : 'w Ecs) = ecs.IndexPipedValue<'a> this.PipedKey
 
 /// An Ecs system with just a single component.
-and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
+type [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
     inherit System<'w> ()
 
     let mutable comp = comp
@@ -147,6 +140,15 @@ and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Componen
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
             &system.Component
+
+/// A system with zero to many components.
+type [<AbstractClass>] 'w SystemMany () =
+    inherit System<'w> ()
+    abstract SizeOfComponent : int
+    abstract ComponentsLength : int
+    abstract ComponentsToBytes : unit -> char array
+    abstract BytesToComponents : char array -> unit
+    abstract Pad : int -> unit
 
 /// An Ecs system with components stored by a raw index.
 type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component> () =
@@ -537,7 +539,7 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
 
 /// A collection of systems that can be run in parallel.
 /// Because 'w is not a monoid (no mappend), null is passed in to all subsystems. Any information that affects the
-/// world has to use piped values and the related process lambda.
+/// world has to use piped values and the related abstract methods.
 type 'w SystemParallel () =
     inherit System<'w> ()
 
@@ -553,7 +555,7 @@ type 'w SystemParallel () =
     member this.RegisterSubsystem subsystemName subsystem =
         subsystems.[subsystemName] <- subsystem
 
-    member this.UnregisterSubsystem subsystemName =
+    member this.UnregisterSubsystem subsystemName (_ : 'w System) =
         subsystems.Remove subsystemName
 
     override this.ProcessUpdate ecs world =
@@ -599,10 +601,14 @@ type 'w SystemParallel () =
 
         member this.RegisterSubsystem systemName subsystemName subsystem =
             match this.TryIndexSystem<'w SystemParallel> systemName with
-            | Some system -> system.RegisterSubsystem subsystemName subsystem
+            | Some system ->
+                system.RegisterSubsystem subsystemName subsystem
+                subsystem.RegisterPipedValue this
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.UnregisterSubsystem systemName subsystemName =
+        member this.UnregisterSubsystem systemName subsystemName (subsystem : 'w System) =
             match this.TryIndexSystem<'w SystemParallel> systemName with
-            | Some system -> system.UnregisterSubsystem subsystemName
+            | Some system ->
+                let _ = subsystem.UnregisterPipedValue this
+                system.UnregisterSubsystem subsystemName subsystem
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
