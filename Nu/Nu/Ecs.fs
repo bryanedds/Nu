@@ -553,8 +553,10 @@ type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processA
                 let system = entry.Value
                 do ecs.RegisterPipedValue system.PipedKey system.PipedInit
                 let _ = system.ProcessUpdate ecs Unchecked.defaultof<'w>
-                ecs.IndexPipedValue<obj> system.PipedKey) |> Vsync.AwaitTaskT) |>
-            Vsync.Parallel
+                (entry.Key, ecs.IndexPipedValue<obj> system.PipedKey)) |> Vsync.AwaitTaskT) |>
+            Vsync.Parallel |>
+            Vsync.RunSynchronously |>
+            dictPlus
         processUpdateResults results world
 
     override this.ProcessPostUpdate ecs world =
@@ -564,8 +566,10 @@ type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processA
                 let system = entry.Value
                 do ecs.RegisterPipedValue system.PipedKey system.PipedInit
                 let _ = system.ProcessPostUpdate ecs Unchecked.defaultof<'w>
-                ecs.IndexPipedValue<obj> system.PipedKey) |> Vsync.AwaitTaskT) |>
-            Vsync.Parallel
+                (entry.Key, ecs.IndexPipedValue<obj> system.PipedKey)) |> Vsync.AwaitTaskT) |>
+            Vsync.Parallel |>
+            Vsync.RunSynchronously |>
+            dictPlus
         processPostUpdateResults results world
 
     override this.ProcessActualize ecs world =
@@ -575,8 +579,10 @@ type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processA
                 let system = entry.Value
                 do ecs.RegisterPipedValue system.PipedKey system.PipedInit
                 let _ = system.ProcessActualize ecs Unchecked.defaultof<'w>
-                ecs.IndexPipedValue<obj> system.PipedKey) |> Vsync.AwaitTaskT) |>
-            Vsync.Parallel
+                (entry.Key, ecs.IndexPipedValue<obj> system.PipedKey)) |> Vsync.AwaitTaskT) |>
+            Vsync.Parallel |>
+            Vsync.RunSynchronously |>
+            dictPlus
         processActualizeResults results world
 
     type 'w Ecs with
