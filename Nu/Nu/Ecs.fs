@@ -3,8 +3,10 @@
 
 namespace Nu
 open System
-open System.IO
 open System.Collections.Generic
+open System.IO
+open System.Threading
+open System.Threading.Tasks
 open Prime
 
 /// The base component type of an Ecs.
@@ -44,6 +46,36 @@ type [<AbstractClass>] 'w System () =
     abstract ProcessActualize : 'w Ecs -> 'w -> 'w
     default this.ProcessActualize _ world = world
 
+/// A collection of subsystems that can be run in parallel.
+and 'w SystemParallel () =
+    inherit System<'w> ()
+
+    let subsystems =
+        dictPlus [] : Dictionary<string, 'w System>
+
+    let processParallel fn =
+        subsystems |>
+        Seq.map (fun entry -> Task.Run (fun () -> fn entry.Value Unchecked.defaultof<'w> : 'w) |> Vsync.AwaitTask) |>
+        Vsync.Parallel
+
+    member this.RegisterSubsystem subsystemName subsystem =
+        subsystems.[subsystemName] <- subsystem
+
+    member this.UnregisterSubsystem subsystemName =
+        subsystems.Remove subsystemName
+
+    override this.ProcessUpdate ecs world =
+        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessUpdate ecs))
+        world
+
+    override this.ProcessPostUpdate ecs world =
+        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessPostUpdate ecs))
+        world
+
+    override this.ProcessActualize ecs world =
+        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessPostUpdate ecs))
+        world
+
 /// A system with zero to many components.
 and [<AbstractClass>] 'w SystemMany () =
     inherit System<'w> ()
@@ -64,24 +96,24 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
     let systemsUnordered = dictPlus [] : Dictionary<string, 'w System>
     let systemsOrdered = List () : (string * 'w System) List
     let correlations = dictPlus [] : Dictionary<Guid, string List>
+    let pipedValues = dictPlus [] : Dictionary<Guid, obj>
 
     member internal this.Correlations 
         with get () = correlations
 
-    member this.ProcessUpdate world =
-        Seq.fold
-            (fun world (_, system : 'w System) -> system.ProcessUpdate this world)
-            world systemsOrdered
+    member this.RegisterPipedValue<'a> key (value : 'a) =
+        pipedValues.[key] <- (value :> obj)
 
-    member this.ProcessPostUpdate world =
-        Seq.fold
-            (fun world (_, system : 'w System) -> system.ProcessPostUpdate this world)
-            world systemsOrdered
+    member this.UnregisterPipedValue key =
+        pipedValues.Remove key
 
-    member this.ProcessActualize world =
-        Seq.fold
-            (fun world (_, system : 'w System) -> system.ProcessActualize this world)
-            world systemsOrdered
+    member this.TryIndexPipedValue<'a> key =
+        match pipedValues.TryGetValue key with
+        | (true, value) -> Some (value :?> 'a)
+        | (false, _) -> None
+
+    member this.IndexPipedValue<'a> key =
+        pipedValues.[key] :?> 'a
 
     member this.RegisterSystem systemName system =
         systemsUnordered.Add (systemName, system)
@@ -101,6 +133,21 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
 
     member this.IndexSystem<'s when 's :> 'w System> systemName =
         this.TryIndexSystem<'s> systemName |> Option.get
+
+    member this.ProcessUpdate world =
+        Seq.fold
+            (fun world (_, system : 'w System) -> system.ProcessUpdate this world)
+            world systemsOrdered
+
+    member this.ProcessPostUpdate world =
+        Seq.fold
+            (fun world (_, system : 'w System) -> system.ProcessPostUpdate this world)
+            world systemsOrdered
+
+    member this.ProcessActualize world =
+        Seq.fold
+            (fun world (_, system : 'w System) -> system.ProcessActualize this world)
+            world systemsOrdered
 
 /// An Ecs system with just a single component.
 and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
