@@ -127,6 +127,11 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
             (fun world (_, system : 'w System) -> system.ProcessActualize this world)
             world systemsOrdered
 
+    type 'w System with
+        member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
+        member this.UnregisterPipedValue (ecs : 'w Ecs) = ecs.UnregisterPipedValue this.PipedKey
+        member this.IndexPipedValue<'a> (ecs : 'w Ecs) = ecs.IndexPipedValue<'a> this.PipedKey
+
 /// An Ecs system with just a single component.
 and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
     inherit System<'w> ()
@@ -369,7 +374,6 @@ type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compon
                     | (true, correlation) -> correlation.Add systemName
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
-                
 
 /// An Ecs system that explicitly associates components by entity id.
 type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component> (junctionedSystemNames : string array) =
@@ -551,9 +555,9 @@ type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processA
             subsystems |>
             Seq.map (fun entry -> Task.Run (fun () ->
                 let system = entry.Value
-                do ecs.RegisterPipedValue system.PipedKey system.PipedInit
+                do system.RegisterPipedValue ecs
                 let _ = system.ProcessUpdate ecs Unchecked.defaultof<'w>
-                (entry.Key, ecs.IndexPipedValue<obj> system.PipedKey)) |> Vsync.AwaitTaskT) |>
+                (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
             Vsync.Parallel |>
             Vsync.RunSynchronously |>
             dictPlus
@@ -564,9 +568,9 @@ type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processA
             subsystems |>
             Seq.map (fun entry -> Task.Run (fun () ->
                 let system = entry.Value
-                do ecs.RegisterPipedValue system.PipedKey system.PipedInit
+                do system.RegisterPipedValue ecs
                 let _ = system.ProcessPostUpdate ecs Unchecked.defaultof<'w>
-                (entry.Key, ecs.IndexPipedValue<obj> system.PipedKey)) |> Vsync.AwaitTaskT) |>
+                (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
             Vsync.Parallel |>
             Vsync.RunSynchronously |>
             dictPlus
@@ -577,9 +581,9 @@ type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processA
             subsystems |>
             Seq.map (fun entry -> Task.Run (fun () ->
                 let system = entry.Value
-                do ecs.RegisterPipedValue system.PipedKey system.PipedInit
+                do system.RegisterPipedValue ecs
                 let _ = system.ProcessActualize ecs Unchecked.defaultof<'w>
-                (entry.Key, ecs.IndexPipedValue<obj> system.PipedKey)) |> Vsync.AwaitTaskT) |>
+                (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
             Vsync.Parallel |>
             Vsync.RunSynchronously |>
             dictPlus
