@@ -46,36 +46,6 @@ type [<AbstractClass>] 'w System () =
     abstract ProcessActualize : 'w Ecs -> 'w -> 'w
     default this.ProcessActualize _ world = world
 
-/// A collection of subsystems that can be run in parallel.
-and 'w SystemParallel () =
-    inherit System<'w> ()
-
-    let subsystems =
-        dictPlus [] : Dictionary<string, 'w System>
-
-    let processParallel fn =
-        subsystems |>
-        Seq.map (fun entry -> Task.Run (fun () -> fn entry.Value Unchecked.defaultof<'w> : 'w) |> Vsync.AwaitTask) |>
-        Vsync.Parallel
-
-    member this.RegisterSubsystem subsystemName subsystem =
-        subsystems.[subsystemName] <- subsystem
-
-    member this.UnregisterSubsystem subsystemName =
-        subsystems.Remove subsystemName
-
-    override this.ProcessUpdate ecs world =
-        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessUpdate ecs))
-        world
-
-    override this.ProcessPostUpdate ecs world =
-        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessPostUpdate ecs))
-        world
-
-    override this.ProcessActualize ecs world =
-        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessPostUpdate ecs))
-        world
-
 /// A system with zero to many components.
 and [<AbstractClass>] 'w SystemMany () =
     inherit System<'w> ()
@@ -536,10 +506,10 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
             let simplex = system.IndexMultiplexed multiId entityId
             &simplex.Simplex
 
-        member this.RegisterMultiplexed<'t when 't : struct and 't :> Component> systemName entityId comp =
+        member this.RegisterMultiplexed<'t when 't : struct and 't :> Component> systemName multiId entityId comp =
             match this.TryIndexSystem<SystemMultiplexed<'t, 'w>> systemName with
             | Some system ->
-                let _ = system.RegisterMultiplexed entityId comp
+                let _ = system.RegisterMultiplexed multiId entityId comp
                 match this.Correlations.TryGetValue entityId with
                 | (true, correlation) -> correlation.Add systemName
                 | (false, _) -> this.Correlations.Add (entityId, List [systemName])
@@ -553,3 +523,45 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
                     | (true, correlation) -> correlation.Add systemName
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+/// A collection of subsystems that can be run in parallel.
+type 'w SystemParallel () =
+    inherit System<'w> ()
+
+    let subsystems =
+        dictPlus [] : Dictionary<string, 'w System>
+
+    let processParallel fn =
+        subsystems |>
+        Seq.map (fun entry -> Task.Run (fun () -> fn entry.Value Unchecked.defaultof<'w> : 'w) |> Vsync.AwaitTask) |>
+        Vsync.Parallel
+
+    member this.RegisterSubsystem subsystemName subsystem =
+        subsystems.[subsystemName] <- subsystem
+
+    member this.UnregisterSubsystem subsystemName =
+        subsystems.Remove subsystemName
+
+    override this.ProcessUpdate ecs world =
+        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessUpdate ecs))
+        world
+
+    override this.ProcessPostUpdate ecs world =
+        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessPostUpdate ecs))
+        world
+
+    override this.ProcessActualize ecs world =
+        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessPostUpdate ecs))
+        world
+
+    type 'w Ecs with
+
+        member this.RegisterSubsystem<'t when 't : struct and 't :> Component> systemName subsystemName subsystem =
+            match this.TryIndexSystem<'w SystemParallel> systemName with
+            | Some system -> system.RegisterSubsystem subsystemName subsystem
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.UnregisterSubsystem<'t when 't : struct and 't :> Component> systemName subsystemName =
+            match this.TryIndexSystem<'w SystemParallel> systemName with
+            | Some system -> system.UnregisterSubsystem subsystemName
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
