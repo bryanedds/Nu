@@ -6,7 +6,6 @@ open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
-open System.Threading
 open System.Threading.Tasks
 open Prime
 
@@ -40,6 +39,8 @@ module ComponentRef =
 
 /// A base system type of an Ecs.
 type [<AbstractClass>] 'w System () =
+    let pipedKey = Gen.id
+    member this.PipedKey with get () = pipedKey
     abstract ProcessUpdate : 'w Ecs -> 'w -> 'w
     default this.ProcessUpdate _ world = world
     abstract ProcessPostUpdate : 'w Ecs -> 'w -> 'w
@@ -141,7 +142,6 @@ and [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Componen
             &system.Component
 
 /// An Ecs system with components stored by a raw index.
-/// Uncorrelated systems could potentially be processed in parallel.
 type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component> () =
     inherit SystemMany<'w> ()
 
@@ -557,17 +557,17 @@ type 'w SystemParallel () =
         world
 
     override this.ProcessActualize ecs world =
-        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessPostUpdate ecs))
+        let _ = Vsync.RunSynchronously (processParallel (fun system -> system.ProcessActualize ecs))
         world
 
     type 'w Ecs with
 
-        member this.RegisterSubsystem<'t when 't : struct and 't :> Component> systemName subsystemName subsystem =
+        member this.RegisterSubsystem systemName subsystemName subsystem =
             match this.TryIndexSystem<'w SystemParallel> systemName with
             | Some system -> system.RegisterSubsystem subsystemName subsystem
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.UnregisterSubsystem<'t when 't : struct and 't :> Component> systemName subsystemName =
+        member this.UnregisterSubsystem systemName subsystemName =
             match this.TryIndexSystem<'w SystemParallel> systemName with
             | Some system -> system.UnregisterSubsystem subsystemName
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
