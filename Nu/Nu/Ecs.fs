@@ -59,7 +59,7 @@ and [<AbstractClass>] 'w SystemMany () =
 /// Nu's custom Entity-Component-System implementation.
 /// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
 /// modern caches, most cache hits will be of the L2 variety for junctioned components. Uncorrelated components will be
-/// L2-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
+/// L1-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
 /// components are very chaotically unregistered in a use-case scenario that the I, the library author, have trouble
 /// even imagining.
 and [<NoEquality; NoComparison>] 'w Ecs () =
