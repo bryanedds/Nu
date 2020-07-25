@@ -537,12 +537,18 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
 
 /// A collection of systems that can be run in parallel.
 /// Because 'w is not a monoid (no mappend), null is passed in to all subsystems. Any information that affects the
-/// world has to use a piped value and the related process lambda.
-type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processActualizeResults) =
+/// world has to use piped values and the related process lambda.
+type 'w SystemParallel () =
     inherit System<'w> ()
 
-    let subsystems =
-        dictPlus [] : Dictionary<string, 'w System>
+    let subsystems = dictPlus [] : Dictionary<string, 'w System>
+
+    abstract ProcessUpdateResults : Dictionary<string, obj> -> 'w -> 'w
+    default this.ProcessUpdateResults _ world = world
+    abstract ProcessPostUpdateResults : Dictionary<string, obj> -> 'w -> 'w
+    default this.ProcessPostUpdateResults _ world = world
+    abstract ProcessActualizeResults : Dictionary<string, obj> -> 'w -> 'w
+    default this.ProcessActualizeResults _ world = world
 
     member this.RegisterSubsystem subsystemName subsystem =
         subsystems.[subsystemName] <- subsystem
@@ -561,7 +567,7 @@ type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processA
             Vsync.Parallel |>
             Vsync.RunSynchronously |>
             dictPlus
-        processUpdateResults results world
+        this.ProcessUpdateResults results world
 
     override this.ProcessPostUpdate ecs world =
         let results =
@@ -574,7 +580,7 @@ type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processA
             Vsync.Parallel |>
             Vsync.RunSynchronously |>
             dictPlus
-        processPostUpdateResults results world
+        this.ProcessPostUpdateResults results world
 
     override this.ProcessActualize ecs world =
         let results =
@@ -587,7 +593,7 @@ type 'w SystemParallel (processUpdateResults, processPostUpdateResults, processA
             Vsync.Parallel |>
             Vsync.RunSynchronously |>
             dictPlus
-        processActualizeResults results world
+        this.ProcessActualizeResults results world
 
     type 'w Ecs with
 
