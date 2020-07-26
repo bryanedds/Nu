@@ -157,8 +157,7 @@ module WorldGameModule =
             let dispatcher = game.GetDispatcher world
             let eventTrace = EventTrace.record "World" "unregisteringGame" EventTrace.empty
             let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|]) eventTrace game true world
-            let world =
-                    dispatcher.Unregister (game, world)
+            let world = dispatcher.Unregister (game, world)
             World.choose world
 
         static member internal updateGame world =

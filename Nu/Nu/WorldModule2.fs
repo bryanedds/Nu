@@ -462,14 +462,14 @@ module WorldModule2 =
              let world = World.updateAudioPlayer Subsystem.clearMessages world
              world
         
-        /// Freeze the state of a world.
-        static member freeze world =
-            // not sure if we really want to also clear physics messages here - we didn't
-            // used to
+        /// Shelve the a world for background storage.
+        static member shelve world =
+
+            // not sure if we really want to also clear physics messages here - we didn't used to
             World.clearMessages world
 
         /// Thaw the state of a world.
-        static member thaw world =
+        static member unshelve world =
 
             // clear existing physics messages
             let world = World.updatePhysicsEngine Subsystem.clearMessages world

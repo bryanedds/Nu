@@ -45,6 +45,6 @@ module Globals =
     let mutable SelectEntity : Entity -> GaiaForm -> World -> unit = Unchecked.defaultof<_>
 
     let pushPastWorld pastWorld =
-        let pastWorld = Nu.World.freeze pastWorld
+        let pastWorld = Nu.World.shelve pastWorld
         PastWorlds <- pastWorld :: PastWorlds
         FutureWorlds <- []
