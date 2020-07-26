@@ -121,10 +121,20 @@ module WorldModule =
 
     type World with // Construction
 
+        static member frozen (world : World) =
+            (world :> Freezable).Frozen
+
+        static member freeze (world : World) =
+            (world :> Freezable).Freeze ()
+
+        static member thaw (world : World) =
+            (world :> Freezable).Thaw ()
+
         /// Choose a world to be used for debugging. Call this whenever the most recently constructed
         /// world value is to be discarded in favor of the given world value.
         static member choose (world : World) =
 #if DEBUG
+            if Debug.World.Frozen > 0 then failwith "Invalid operation on a frozen world (cannot invoke any operation that results in choosing a world)."
             Debug.World.Chosen <- world :> obj
 #endif
             world

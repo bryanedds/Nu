@@ -9,6 +9,15 @@ open System.IO
 open System.Threading.Tasks
 open Prime
 
+/// A freezable type.
+/// TODO: move to Prime?
+type Freezable =
+    interface
+        abstract Frozen : bool
+        abstract Freeze : unit -> unit
+        abstract Thaw : unit -> unit
+        end
+
 /// The base component type of an Ecs.
 type Component =
     abstract RefCount : int with get, set
@@ -38,7 +47,7 @@ module ComponentRef =
           ComponentArr = arr }
 
 /// A base system type of an Ecs.
-type [<AbstractClass>] 'w System () =
+type [<AbstractClass>] System<'w when 'w :> Freezable> () =
     let pipedKey = Gen.id
     member this.PipedKey with get () = pipedKey
     abstract PipedInit : obj
@@ -55,8 +64,8 @@ type [<AbstractClass>] 'w System () =
 /// modern caches, most cache hits will be of the L2 variety for junctioned components. Uncorrelated components will be
 /// L1-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
 /// components are very chaotically unregistered in a use-case scenario that the I, the library author, have trouble
-/// even imagining.
-and [<NoEquality; NoComparison>] 'w Ecs () =
+/// imagining for the intended use cases.
+and [<NoEquality; NoComparison>] Ecs<'w when 'w :> Freezable> () =
 
     let systemsUnordered = dictPlus [] : Dictionary<string, 'w System>
     let systemsOrdered = List () : (string * 'w System) List
@@ -120,20 +129,20 @@ and [<NoEquality; NoComparison>] 'w Ecs () =
             (fun world (_, system : 'w System) -> system.ProcessActualize this world)
             world systemsOrdered
 
-    type 'w System with
+    type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
         member this.UnregisterPipedValue (ecs : 'w Ecs) = ecs.UnregisterPipedValue this.PipedKey
         member this.IndexPipedValue<'a> (ecs : 'w Ecs) = ecs.IndexPipedValue<'a> this.PipedKey
 
 /// An Ecs system with just a single component.
-type [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component> (comp : 't) =
+type [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> (comp : 't) =
     inherit System<'w> ()
 
     let mutable comp = comp
 
     member this.Component with get () = &comp
 
-    type 'w Ecs with
+    type Ecs<'w when 'w :> Freezable> with
 
         member this.IndexSingleton<'t, 'w when 't : struct and 't :> Component> systemName =
             let systemOpt = this.TryIndexSystem<SystemSingleton<'t, 'w>> systemName 
@@ -142,16 +151,16 @@ type [<AbstractClass>] SystemSingleton<'t, 'w when 't : struct and 't :> Compone
             &system.Component
 
 /// A system with zero to many components.
-type [<AbstractClass>] 'w SystemMany () =
+type [<AbstractClass>] SystemMany<'w when 'w :> Freezable> () =
     inherit System<'w> ()
     abstract SizeOfComponent : int
     abstract ComponentsLength : int
     abstract ComponentsToBytes : unit -> char array
     abstract BytesToComponents : char array -> unit
-    abstract Pad : int -> unit
+    abstract PadComponents : int -> unit
 
 /// An Ecs system with components stored by a raw index.
-type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component> () =
+type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> () =
     inherit SystemMany<'w> ()
 
     let mutable components = Array.zeroCreate 32 : 't array
@@ -180,7 +189,7 @@ type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Comp
         let components' = Array.map this.BytesToComponent byteArrays
         components <- components'
 
-    override this.Pad length =
+    override this.PadComponents length =
         let arr = Array.zeroCreate (components.Length + length)
         components.CopyTo (arr, 0)
 
@@ -213,7 +222,7 @@ type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Comp
             if components.[index].RefCount = 0 then freeList.Enqueue index
         else freeIndex <- dec freeIndex
 
-    type 'w Ecs with
+    type Ecs<'w when 'w :> Freezable> with
 
         member this.IndexUncorrelated<'t when 't : struct and 't :> Component> systemName index =
             let systemOpt = this.TryIndexSystem<SystemUncorrelated<'t, 'w>> systemName
@@ -237,14 +246,14 @@ type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Comp
                 match this.TryIndexSystem<'w SystemMany> systemName with
                 | Some system ->
                     let length = system.ComponentsLength
-                    system.Pad count
+                    system.PadComponents count
                     let bytes = system.ComponentsToBytes ()
                     let _ = reader.ReadBlock (bytes, system.SizeOfComponent * length, system.SizeOfComponent * count)
                     system.BytesToComponents bytes
                 | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system with components stored by entity id.
-type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Component> () =
+type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> () =
     inherit SystemMany<'w> ()
 
     let mutable components = Array.zeroCreate 32 : 't array
@@ -279,7 +288,7 @@ type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compon
         let components' = Array.map this.BytesToComponent byteArrays
         components <- components'
 
-    override this.Pad length =
+    override this.PadComponents length =
         let arr = Array.zeroCreate (components.Length + length)
         components.CopyTo (arr, 0)
 
@@ -335,7 +344,7 @@ type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compon
             true
         | (false, _) -> false
 
-    type 'w Ecs with
+    type Ecs<'w when 'w :> Freezable> with
 
         member this.GetSystemsCorrelated entityId =
             this.Correlations.[entityId] |>
@@ -378,7 +387,7 @@ type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compon
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system that explicitly associates components by entity id.
-type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component> (junctionedSystemNames : string array) =
+type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> (junctionedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
 
     let mutable junctionsOpt = None : Dictionary<string, 'w System> option
@@ -438,7 +447,7 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
             true
         | (false, _) -> false
 
-    type 'w Ecs with
+    type Ecs<'w when 'w :> Freezable> with
 
         member this.JunctionPlus<'t, 'w when 't : struct and 't :> Component>
             (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) (comp : 't) =
@@ -480,7 +489,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'t when 't : stru
         this.Simplexes.Remove multiId
 
 /// An Ecs system that stores multiple components per entity id.
-type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Component> () =
+type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> () =
     inherit SystemCorrelated<'t ComponentMultiplexed, 'w> ()
 
     member this.QualifyMultiplexed multiId entityId =
@@ -504,7 +513,7 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
         let _ = componentMultiplexed.UnregisterMultiplexed multiId
         this.UnregisterCorrelated entityId ecs
 
-    type 'w Ecs with
+    type Ecs<'w when 'w :> Freezable> with
 
         member this.QualifyMultiplexed<'t when 't : struct and 't :> Component> systemName multiId entityId =
             let systemOpt = this.TryIndexSystem<SystemMultiplexed<'t, 'w>> systemName
@@ -540,7 +549,7 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
 /// A collection of systems that can be run in parallel.
 /// Because 'w is not a monoid (no mappend), null is passed in to all subsystems. Any information that affects the
 /// world has to use piped values and the related abstract methods.
-type 'w SystemParallel () =
+type SystemParallel<'w when 'w :> Freezable> () =
     inherit System<'w> ()
 
     let subsystems = dictPlus [] : Dictionary<string, 'w System>
@@ -560,44 +569,50 @@ type 'w SystemParallel () =
 
     override this.ProcessUpdate ecs world =
         let results =
-            subsystems |>
-            Seq.map (fun entry -> Task.Run (fun () ->
-                let system = entry.Value
-                do system.RegisterPipedValue ecs
-                let _ = system.ProcessUpdate ecs Unchecked.defaultof<'w>
-                (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
-            Vsync.Parallel |>
-            Vsync.RunSynchronously |>
-            dictPlus
+            world.Freeze ()
+            try subsystems |>
+                Seq.map (fun entry -> Task.Run (fun () ->
+                    let system = entry.Value
+                    do system.RegisterPipedValue ecs
+                    let _ = system.ProcessUpdate ecs world
+                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
+                Vsync.Parallel |>
+                Vsync.RunSynchronously |>
+                dictPlus
+            finally world.Thaw ()
         this.ProcessUpdateResults results world
 
     override this.ProcessPostUpdate ecs world =
         let results =
-            subsystems |>
-            Seq.map (fun entry -> Task.Run (fun () ->
-                let system = entry.Value
-                do system.RegisterPipedValue ecs
-                let _ = system.ProcessPostUpdate ecs Unchecked.defaultof<'w>
-                (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
-            Vsync.Parallel |>
-            Vsync.RunSynchronously |>
-            dictPlus
-        this.ProcessPostUpdateResults results world
+            world.Freeze ()
+            try subsystems |>
+                Seq.map (fun entry -> Task.Run (fun () ->
+                    let system = entry.Value
+                    do system.RegisterPipedValue ecs
+                    let _ = system.ProcessPostUpdate ecs world
+                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
+                Vsync.Parallel |>
+                Vsync.RunSynchronously |>
+                dictPlus
+            finally world.Thaw ()
+        this.ProcessUpdateResults results world
 
     override this.ProcessActualize ecs world =
         let results =
-            subsystems |>
-            Seq.map (fun entry -> Task.Run (fun () ->
-                let system = entry.Value
-                do system.RegisterPipedValue ecs
-                let _ = system.ProcessActualize ecs Unchecked.defaultof<'w>
-                (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
-            Vsync.Parallel |>
-            Vsync.RunSynchronously |>
-            dictPlus
-        this.ProcessActualizeResults results world
+            world.Freeze ()
+            try subsystems |>
+                Seq.map (fun entry -> Task.Run (fun () ->
+                    let system = entry.Value
+                    do system.RegisterPipedValue ecs
+                    let _ = system.ProcessActualize ecs world
+                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
+                Vsync.Parallel |>
+                Vsync.RunSynchronously |>
+                dictPlus
+            finally world.Thaw ()
+        this.ProcessUpdateResults results world
 
-    type 'w Ecs with
+    type Ecs<'w when 'w :> Freezable> with
 
         member this.RegisterSubsystem systemName subsystemName subsystem =
             match this.TryIndexSystem<'w SystemParallel> systemName with
