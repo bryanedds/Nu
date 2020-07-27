@@ -19,7 +19,7 @@ type GameplayCommand =
     | EyeTrack
     | Nop
 
-// this is the screen dispatcher that defines the screen where gameplay takes place.
+// this is the screen dispatcher that defines the screen where gameplay takes place
 type MyGameplayDispatcher () =
     inherit ScreenDispatcher<GameplayModel, GameplayMessage, GameplayCommand> ()
 
@@ -62,16 +62,17 @@ type MyGameplayDispatcher () =
         just world
 
     // here we describe the content of the game including the player and the level
-    override this.Content (_, _) =
-        [Content.layer Simulants.Hud.Name []
-            [Content.button Simulants.Back.Name
-                [Entity.Text == "Back"
-                 Entity.Position == v2 220.0f -260.0f
-                 Entity.Depth == 10.0f]]
-         Content.layerIfScreenSelected Simulants.Gameplay $ fun _ _ ->
+    override this.Content (_, screen) =
+        [Content.layerIfScreenSelected screen $ fun _ _ ->
+            Content.layer Simulants.Hud.Name []
+                [Content.button Simulants.Back.Name
+                    [Entity.Text == "Back"
+                     Entity.Position == v2 220.0f -260.0f
+                     Entity.Depth == 10.0f]]
+         Content.layerIfScreenSelected screen $ fun _ _ ->
             Content.layer Simulants.Scene.Name []
                 [Content.character Simulants.Player.Name
                     [Entity.Position == v2 0.0f 0.0f
                      Entity.Size == v2 144.0f 144.0f]]
-         Content.layerIfScreenSelected Simulants.Gameplay $ fun _ _ ->
+         Content.layerIfScreenSelected screen $ fun _ _ ->
             Content.layerFromFile Simulants.Level.Name "Assets/Gameplay/Level.nulyr"]
