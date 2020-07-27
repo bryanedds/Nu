@@ -603,9 +603,9 @@ module WorldTypes =
     /// OPTIMIZATION: Booleans are packed into the Transform's Flags field.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
         { // cache line 1
-          mutable Transform : Transform
-          // cache line 2
           Dispatcher : EntityDispatcher
+          mutable Transform : Transform
+          // cache line 2 start at second-to-last field of Transform
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable StaticData : DesignerProperty
@@ -626,12 +626,12 @@ module WorldTypes =
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Transform =
-                { RefCount = 0
-                  Position = Vector2.Zero
+                { Position = Vector2.Zero
                   Size = Constants.Engine.DefaultEntitySize
                   Rotation = 0.0f
                   Depth = 0.0f
-                  Flags = 0b100011000000 }
+                  Flags = 0b100011000000
+                  RefCount = 0 }
               Dispatcher = dispatcher
               Facets = [||]
               Xtension = Xtension.makeSafe ()
