@@ -27,12 +27,12 @@ module internal TransformMasks =
 /// Carries transformation data specific to an Entity.
 type [<StructuralEquality; NoComparison; Struct>] Transform =
     { // cache line begin
-      mutable RefCount : int
       mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Depth : single // NOTE: will become part of position if Nu gets 3D capabilities
-      mutable Flags : int }
+      mutable Flags : int
+      mutable RefCount : int }
       // cache line end
 
     interface Component with

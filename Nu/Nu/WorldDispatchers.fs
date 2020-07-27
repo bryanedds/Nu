@@ -411,12 +411,12 @@ module TextFacetModule =
             let textStr = text.GetText world
             if text.GetVisible world && not (String.IsNullOrWhiteSpace textStr) then
                 let transform =
-                    { RefCount = 0
-                      Position = text.GetPosition world + text.GetMargins world
+                    { Position = text.GetPosition world + text.GetMargins world
                       Size = text.GetSize world - text.GetMargins world * 2.0f
                       Rotation = 0.0f
                       Depth = text.GetDepth world + 0.5f
-                      Flags = text.GetFlags world }
+                      Flags = text.GetFlags world
+                      RefCount = 0 }
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
@@ -795,12 +795,12 @@ module TileMapFacetModule =
                                     let size = Vector2 (tileSize.X * single map.Width, tileSize.Y)
                                     let rotation = tileMap.GetRotation world
                                     let transform =
-                                        { RefCount = 0
-                                          Position = parallaxPosition
+                                        { Position = parallaxPosition
                                           Size = size
                                           Rotation = rotation
                                           Depth = depth
-                                          Flags = tileMap.GetFlags world }
+                                          Flags = tileMap.GetFlags world
+                                          RefCount = 0 }
                                     let image = List.head images // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                     let tiles =
                                         layer.Tiles |>
@@ -1801,20 +1801,20 @@ module FillBarDispatcherModule =
         override this.Actualize (fillBar, world) =
             if fillBar.GetVisible world then
                 let borderSpriteTransform =
-                    { RefCount = 0
-                      Position = fillBar.GetPosition world
+                    { Position = fillBar.GetPosition world
                       Size = fillBar.GetSize world
                       Rotation = 0.0f
                       Depth = fillBar.GetDepth world + 0.5f
-                      Flags = fillBar.GetFlags world }
+                      Flags = fillBar.GetFlags world
+                      RefCount = 0 }
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
                 let fillBarSpriteTransform =
-                    { RefCount = 0
-                      Position = fillBarSpritePosition
+                    { Position = fillBarSpritePosition
                       Size = fillBarSpriteSize
                       Rotation = 0.0f
                       Depth = fillBar.GetDepth world
-                      Flags = fillBar.GetFlags world }
+                      Flags = fillBar.GetFlags world
+                      RefCount = 0 }
                 let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
                 World.enqueueRenderMessage
                     (LayeredDescriptorsMessage
