@@ -12,16 +12,14 @@ module EcsTests =
         { mutable RefCount : int
           mutable Color : Vector4 }
         interface Component with
-            member this.RefCount
-                with get () = this.RefCount and set value = this.RefCount <- value
+            member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
 
     type [<NoEquality; NoComparison; Struct>] Airship =
         { mutable RefCount : int
           Transform : Transform ComponentRef
           Skin : Skin ComponentRef }
         interface Airship Junction with
-            member this.RefCount
-                with get () = this.RefCount and set value = this.RefCount <- value
+            member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
             member this.Junction junctions entityId ecs =
                 { RefCount = 0
                   Transform = ecs.Junction junctions entityId
@@ -33,7 +31,7 @@ module EcsTests =
     let example (world : World) =
 
         // create our ecs
-        let ecs = Ecs<World> (System<World> ())
+        let ecs = Ecs<World> ()
 
         // create and register our transform system
         let transformSystem = ecs.RegisterSystem (SystemCorrelated<Transform, World> ())
