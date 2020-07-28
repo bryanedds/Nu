@@ -459,26 +459,25 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
 type Junction<'t when 't :> 't Junction and 't : struct> =
     interface
         inherit Component
-        abstract Junction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> 't
-        abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 'w Ecs -> unit
+        abstract SystemNames : string array
+        abstract Junction : 'w System array -> Guid -> 'w Ecs -> 't
+        abstract Disjunction : 'w System array -> Guid -> 'w Ecs -> unit
         end
 
 /// An Ecs system that explicitly associates components by entity id.
-type SystemJunctioned<'t, 'w when 't : struct and 't :> 't Junction and 'w :> Freezable> (name, junctionedSystemNames : string array) =
+type SystemJunctioned<'t, 'w when 't : struct and 't :> 't Junction and 'w :> Freezable> (name) =
     inherit SystemCorrelated<'t, 'w> (name)
 
-    let mutable junctionsOpt = None : Dictionary<string, 'w System> option
-    
-    new (junctionedSystemNames) = SystemJunctioned (typeof<'t>.Name, junctionedSystemNames)
+    let junctionedSystemNames = Unchecked.defaultof<'t>.SystemNames
+    let mutable junctionsOpt = None : 'w System array option
+
+    new () = SystemJunctioned (typeof<'t>.Name)
 
     member this.GetJunctions (ecs : 'w Ecs) =
         match junctionsOpt with
         | Some junctions -> junctions
         | None ->
-            let junctions =
-                junctionedSystemNames |>
-                Array.map (fun sourceName -> (sourceName, ecs.IndexSystem<'w System> sourceName)) |>
-                dictPlus
+            let junctions = Array.map (fun sourceName -> ecs.IndexSystem<'w System> sourceName) junctionedSystemNames
             junctionsOpt <- Some junctions
             junctions
 
@@ -538,23 +537,23 @@ type SystemJunctioned<'t, 'w when 't : struct and 't :> 't Junction and 'w :> Fr
             this.UnregisterCorrelated<'t> systemName entityId
 
         member this.JunctionPlus<'t when 't : struct and 't :> Component>
-            (systemName : string) (junctions : Dictionary<string, 'w System>) (comp : 't) (entityId : Guid) =
-            let system = junctions.[systemName] :?> SystemCorrelated<'t, 'w>
+            (system : 'w System) (comp : 't) (entityId : Guid) =
+            let system = system :?> SystemCorrelated<'t, 'w>
             let index = system.RegisterCorrelated comp entityId this
             ComponentRef.make index system.Components
 
         member this.Junction<'t when 't : struct and 't :> Component>
-            (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
-            this.JunctionPlus<'t> typeof<'t>.Name junctions Unchecked.defaultof<'t> entityId
+            (system : 'w System) (entityId : Guid) =
+            this.JunctionPlus<'t> system Unchecked.defaultof<'t> entityId
 
         member this.DisjunctionPlus<'t when 't : struct and 't :> Component>
-            (systemName : string) (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
-            let system = junctions.[systemName] :?> SystemCorrelated<'t, 'w>
+            (system : 'w System) (entityId : Guid) =
+            let system = system :?> SystemCorrelated<'t, 'w>
             system.UnregisterCorrelated entityId this |> ignore
 
         member this.Disjunction<'t when 't : struct and 't :> Component>
-            (junctions : Dictionary<string, 'w System>) (entityId : Guid) =
-            this.DisjunctionPlus<'t> typeof<'t>.Name junctions entityId
+            (system : 'w System) (entityId : Guid) =
+            this.DisjunctionPlus<'t> system entityId
 
 /// Handle to one of an array of multiplexed components.
 type Simplex<'t when 't : struct> =
