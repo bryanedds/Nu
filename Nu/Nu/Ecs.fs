@@ -28,7 +28,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and '
     { ComponentIndex : int
       ComponentArr : 't array }
 
-    member this.Value
+    member this.Index
         with get () = &this.ComponentArr.[this.ComponentIndex]
 
     member this.Assign value =
@@ -465,6 +465,8 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
 and [<NoEquality; NoComparison; Struct>] CorrelatedRef<'w when 'w :> Freezable> =
     { CorrelatedEntity : Guid
       CorrelatedSystems : Dictionary<string, 'w System> }
+    member this.IndexPlus<'t when 't :> Component and 't : struct> systemName =
+        &(this.CorrelatedSystems.[systemName] :?> SystemCorrelated<'t, 'w>).IndexCorrelated this.CorrelatedEntity
     member this.Index<'t when 't :> Component and 't : struct> () =
         &(this.CorrelatedSystems.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>).IndexCorrelated this.CorrelatedEntity
 

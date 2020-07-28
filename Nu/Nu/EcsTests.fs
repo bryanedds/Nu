@@ -47,14 +47,14 @@ module EcsTests =
         let subscriptionId = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             for i = 0 to airshipSystem.Components.Length - 1 do
                 let comp = &airshipSystem.Components.[i]
-                comp.Transform.Value.Enabled <- i % 2 = 0
-                comp.Skin.Value.Color.Z <- 0.5f
+                comp.Transform.Index.Enabled <- i % 2 = 0
+                comp.Skin.Index.Color.Z <- 0.5f
             world)
 
         // create and register our airship
         let airship = ecs.RegisterJunctioned airshipSystem.Name Unchecked.defaultof<Airship> Gen.id
 
-        // update a specific airship component value
+        // update a specific airship component value (slow, but convenient)
         let airshipRef = ecs.GetCorrelatedRef airship
         let airshipTransform = &airshipRef.Index<Transform> ()
         do airshipTransform.Position.X <- 5.0f
