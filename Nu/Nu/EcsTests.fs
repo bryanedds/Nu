@@ -8,7 +8,7 @@ open Prime
 open Nu
 module EcsTests =
 
-    type [<Struct>] Skin =
+    type [<NoEquality; NoComparison; Struct>] Skin =
         { mutable RefCount : int
           mutable Color : Vector4 }
         interface Component with
@@ -26,9 +26,8 @@ module EcsTests =
                   Transform = ecs.Junction systems.[0] entityId
                   Skin = ecs.Junction systems.[1] entityId }
             member this.Disjunction systems entityId ecs =
-                do ecs.Disjunction<Transform> systems.[0] entityId
-                do ecs.Disjunction<Skin> systems.[1] entityId
-                
+                ecs.Disjunction<Transform> systems.[0] entityId
+                ecs.Disjunction<Skin> systems.[1] entityId
 
     let example (world : World) =
 
@@ -45,7 +44,7 @@ module EcsTests =
         let airshipSystem = ecs.RegisterSystem (SystemJunctioned<Airship, World> ())
 
         // define our airship system's update behavior
-        let subId = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
+        let subscriptionId = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             for i = 0 to airshipSystem.Components.Length - 1 do
                 let comp = &airshipSystem.Components.[i]
                 comp.Transform.Value.Enabled <- i % 2 = 0
@@ -56,7 +55,4 @@ module EcsTests =
         let airship = ecs.RegisterJunctioned airshipSystem.Name Unchecked.defaultof<Airship> Gen.id
 
         // invoke update behavior
-        let world = ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
-
-        // fin
-        world
+        ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
