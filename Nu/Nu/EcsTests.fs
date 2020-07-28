@@ -54,5 +54,10 @@ module EcsTests =
         // create and register our airship
         let airship = ecs.RegisterJunctioned airshipSystem.Name Unchecked.defaultof<Airship> Gen.id
 
+        // update a specific airship component value
+        let airshipRef = ecs.GetCorrelatedRef airship
+        let airshipTransform = &airshipRef.Index<Transform> ()
+        do airshipTransform.Position.X <- 5.0f
+
         // invoke update behavior
         ecs.Publish EcsEvents.Update () ecs.GlobalSystem world

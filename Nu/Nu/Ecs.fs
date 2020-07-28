@@ -419,6 +419,10 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
             Seq.map (fun systemName -> (systemName, this.IndexSystem<'w System> systemName)) |>
             dictPlus
 
+        member this.GetCorrelatedRef entityId =
+            let systems = this.GetSystemsCorrelated entityId
+            { CorrelatedEntity = entityId; CorrelatedSystems = systems }
+
         member this.GetEntitiesCorrelated<'t when 't : struct and 't :> Component> systemName =
             match this.TryIndexSystem<SystemCorrelated<'t, 'w>> systemName with
             | Some system -> system.GetEntitiesCorrelated ()
@@ -456,6 +460,15 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
                 result
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
+/// A correlated entity reference.
+/// Very slow, but convenient for one-off operations.
+and [<NoEquality; NoComparison; Struct>] CorrelatedRef<'w when 'w :> Freezable> =
+    { CorrelatedEntity : Guid
+      CorrelatedSystems : Dictionary<string, 'w System> }
+    member this.Index<'t when 't :> Component and 't : struct> () =
+        &(this.CorrelatedSystems.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>).IndexCorrelated this.CorrelatedEntity
+
+/// A junctioned component.
 type Junction<'t when 't :> 't Junction and 't : struct> =
     interface
         inherit Component
@@ -567,9 +580,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'t when 't : stru
     { mutable RefCount : int
       Simplexes : Dictionary<Guid, 't Simplex> }
     interface Component with
-        member this.RefCount
-            with get () = this.RefCount
-            and set value = this.RefCount <- value
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
     member this.RegisterMultiplexed (multiId, comp) =
         this.Simplexes.Add (multiId, { Simplex = comp })
     member this.UnregisterMultiplexed multiId =
