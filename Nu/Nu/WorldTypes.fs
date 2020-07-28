@@ -1178,7 +1178,7 @@ module WorldTypes =
 
         /// Make the Ecs for each screen.
         abstract MakeEcs : unit -> World Ecs
-        default this.MakeEcs () = Ecs (System<World> ())
+        default this.MakeEcs () = Ecs<World> ()
 
         /// A call-back at the beginning of each frame.
         abstract PreFrame : World -> World

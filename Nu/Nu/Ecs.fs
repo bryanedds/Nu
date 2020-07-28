@@ -64,7 +64,6 @@ and System<'w when 'w :> Freezable> (name : string) =
     abstract PipedInit : obj
     default this.PipedInit with get () = () :> obj
     member this.Name with get () = name
-    new () = System ""
 
 /// Nu's custom Entity-Component-System implementation.
 /// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
@@ -72,13 +71,14 @@ and System<'w when 'w :> Freezable> (name : string) =
 /// L1-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
 /// components are very chaotically unregistered in a scenario that the I, the library author, have trouble imagining
 /// for the intended use cases.
-and [<NoEquality; NoComparison>] Ecs<'w when 'w :> Freezable> (globalSystem : 'w System) as this =
+and [<NoEquality; NoComparison>] Ecs<'w when 'w :> Freezable> () as this =
 
     let systemSubscriptions = dictPlus [] : Dictionary<string, Dictionary<Guid, obj>>
     let systemsUnordered = dictPlus [] : Dictionary<string, 'w System>
     let systemsOrdered = List () : (string * 'w System) List
     let correlations = dictPlus [] : Dictionary<Guid, string List>
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
+    let globalSystem = System<'w> "Global"
 
     do this.RegisterSystemGeneralized globalSystem
 
