@@ -26,26 +26,26 @@ type Component =
 /// A storable reference to a component in its containing array.
 type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
     { ComponentIndex : int
-      ComponentArr : 't array }
+      ComponentArray : 't array }
 
     member this.Index
-        with get () = &this.ComponentArr.[this.ComponentIndex]
+        with get () = &this.ComponentArray.[this.ComponentIndex]
 
     member this.Assign value =
-        this.ComponentArr.[this.ComponentIndex] <- value
+        this.ComponentArray.[this.ComponentIndex] <- value
 
     static member (<!) (componentRef, value) =
-        componentRef.ComponentArr.[componentRef.ComponentIndex] <- value
+        componentRef.ComponentArray.[componentRef.ComponentIndex] <- value
 
     static member (!>) componentRef =
-        &componentRef.ComponentArr.[componentRef.ComponentIndex]
+        &componentRef.ComponentArray.[componentRef.ComponentIndex]
 
 [<RequireQualifiedAccess>]
 module ComponentRef =
 
     let make index arr =
         { ComponentIndex = index
-          ComponentArr = arr }
+          ComponentArray = arr }
 
 type [<NoEquality; NoComparison>] SystemEvent<'d, 'w when 'w :> Freezable> =
     { SystemEventData : 'd
@@ -419,14 +419,13 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
             Seq.map (fun systemName -> (systemName, this.IndexSystem<'w System> systemName)) |>
             dictPlus
 
-        member this.GetCorrelatedRef entityId =
-            let systems = this.GetSystemsCorrelated entityId
-            { CorrelatedEntity = entityId; CorrelatedSystems = systems }
-
         member this.GetEntitiesCorrelated<'t when 't : struct and 't :> Component> systemName =
             match this.TryIndexSystem<SystemCorrelated<'t, 'w>> systemName with
             | Some system -> system.GetEntitiesCorrelated ()
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.GetEntityRef entityId =
+            { EntityId = entityId; EntityEcs = this }
 
         member this.QualifyCorrelated<'t when 't : struct and 't :> Component> systemName entityId =
             let systemOpt = this.TryIndexSystem<SystemCorrelated<'t, 'w>> systemName
@@ -462,13 +461,15 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
 
 /// A correlated entity reference.
 /// Very slow, but convenient for one-off operations.
-and [<NoEquality; NoComparison; Struct>] CorrelatedRef<'w when 'w :> Freezable> =
-    { CorrelatedEntity : Guid
-      CorrelatedSystems : Dictionary<string, 'w System> }
+and [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
+    { EntityId : Guid
+      EntityEcs : 'w Ecs }
     member this.IndexPlus<'t when 't :> Component and 't : struct> systemName =
-        &(this.CorrelatedSystems.[systemName] :?> SystemCorrelated<'t, 'w>).IndexCorrelated this.CorrelatedEntity
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'t, 'w>> systemName
+        &system.IndexCorrelated this.EntityId
     member this.Index<'t when 't :> Component and 't : struct> () =
-        &(this.CorrelatedSystems.[typeof<'t>.Name] :?> SystemCorrelated<'t, 'w>).IndexCorrelated this.CorrelatedEntity
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'t, 'w>> typeof<'t>.Name
+        &system.IndexCorrelated this.EntityId
 
 /// A junctioned component.
 type Junction<'t when 't :> 't Junction and 't : struct> =

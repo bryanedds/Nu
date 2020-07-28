@@ -59,8 +59,8 @@ module EcsTests =
         airship.Transform.Index.Position.X <- 0.5f
         airship.Transform.Index.Visible <- false
 
-        // for non-junctioned entities, you can construct and use a much slower correlated reference
-        let airshipRef = ecs.GetCorrelatedRef airshipId
+        // for non-junctioned entities, you can alternatively construct and use a much slower entity reference
+        let airshipRef = ecs.GetEntityRef airshipId
         do airshipRef.Index<Transform>().Position.Y <- 5.0f
         do airshipRef.Index<Transform>().Enabled <- false
 
