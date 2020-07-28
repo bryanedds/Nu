@@ -13,17 +13,30 @@ module EcsTests =
           Transform : Transform ComponentRef }
         interface Airship Junction with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-            member this.Junction junctions entityId _ ecs = { RefCount = 0; Transform = ecs.Junction<Transform> junctions entityId }
-            member this.Disjunction junctions entityId _ ecs = ecs.Disjunction<Transform> junctions entityId
+            member this.Junction junctions entityId ecs = { RefCount = 0; Transform = ecs.Junction<Transform> junctions entityId }
+            member this.Disjunction junctions entityId ecs = ecs.Disjunction<Transform> junctions entityId
 
-    let example (ecs : World Ecs) =
-        let system = SystemJunctioned<Airship, World> [|typeof<Transform>.Name|]
-        do ecs.RegisterSystem "AirshipSystem" system
-        let subId = ecs.Subscribe "Update" (fun _ _ _ world ->
+    let example (ecs : World Ecs) (world : World) =
+
+        // create and register our system
+        let system = ecs.RegisterSystem "AirshipSystem" (SystemJunctioned<Airship, World> [|typeof<Transform>.Name|])
+
+        // create and register our entity with the system
+        let entity = ecs.RegisterJunctioned "AirshipSystem" Unchecked.defaultof<Airship> Gen.id
+
+        // subscribe to the update event
+        let subId = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             for i = 0 to system.Components.Length - 1 do
                 let comp = &system.Components.[i]
                 let transform = &comp.Transform.Value
-                transform.Enabled <- false
-                transform.Absolute <- false
+                transform.Enabled <- not transform.Enabled
             world)
-        ecs.Unsubscribe "Update" subId
+
+        // publish update event
+        let world = ecs.Publish EcsEvents.Update () Unchecked.defaultof<_> world
+
+        // unsubscribe to the update event
+        let _ = ecs.Unsubscribe EcsEvents.Update subId
+
+        // fin
+        world
