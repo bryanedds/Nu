@@ -33,7 +33,7 @@ module EcsTests =
             world)
 
         // publish update event
-        let world = ecs.Publish EcsEvents.Update () Unchecked.defaultof<_> world
+        let world = ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
 
         // unsubscribe to the update event
         let _ = ecs.Unsubscribe EcsEvents.Update subId
