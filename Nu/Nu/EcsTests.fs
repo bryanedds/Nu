@@ -52,12 +52,17 @@ module EcsTests =
             world)
 
         // create and register our airship
-        let airship = ecs.RegisterJunctioned airshipSystem.Name Unchecked.defaultof<Airship> Gen.id
+        let airshipId = ecs.RegisterJunctioned airshipSystem.Name Unchecked.defaultof<Airship> Gen.id
 
-        // update a specific airship component value (slow, but convenient)
-        let airshipRef = ecs.GetCorrelatedRef airship
-        let airshipTransform = &airshipRef.Index<Transform> ()
-        do airshipTransform.Position.X <- 5.0f
+        // change some airship properties
+        let airship = ecs.IndexJunctioned<Airship> airshipSystem.Name airshipId
+        airship.Transform.Index.Position.X <- 0.5f
+        airship.Transform.Index.Visible <- false
+
+        // for non-junctioned entities, you can construct and use a much slower correlated reference
+        let airshipRef = ecs.GetCorrelatedRef airshipId
+        do airshipRef.Index<Transform>().Position.Y <- 5.0f
+        do airshipRef.Index<Transform>().Enabled <- false
 
         // invoke update behavior
         ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
