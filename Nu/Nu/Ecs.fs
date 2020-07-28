@@ -649,6 +649,9 @@ type SystemMultiplexed<'t, 'w when 't : struct and 't :> Component and 'w :> Fre
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
+//type SystemHierarchical<'t, 'w> () =
+//    end
+
 [<RequireQualifiedAccess>]
 module EcsEvents =
 
