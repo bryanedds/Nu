@@ -46,31 +46,44 @@ module ComponentRef =
         { ComponentIndex = index
           ComponentArr = arr }
 
+type [<NoEquality; NoComparison>] SystemEvent<'d, 'w when 'w :> Freezable> =
+    { SystemEventData : 'd
+      SystemPublisher : 'w System }
+
+and SystemCallback<'d, 'w when 'w :> Freezable> =
+    SystemEvent<'d, 'w> -> 'w System -> 'w Ecs -> 'w -> 'w
+
+and SystemBoxedCallback<'w when 'w :> Freezable> =
+    SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w -> 'w
+
 /// A base system type of an Ecs.
-type [<AbstractClass>] System<'w when 'w :> Freezable> () =
+and [<AbstractClass>] System<'w when 'w :> Freezable> () =
     let pipedKey = Gen.id
     member this.PipedKey with get () = pipedKey
     abstract PipedInit : obj
     default this.PipedInit with get () = () :> obj
-    abstract ProcessUpdate : 'w Ecs -> 'w -> 'w
-    default this.ProcessUpdate _ world = world
-    abstract ProcessPostUpdate : 'w Ecs -> 'w -> 'w
-    default this.ProcessPostUpdate _ world = world
-    abstract ProcessActualize : 'w Ecs -> 'w -> 'w
-    default this.ProcessActualize _ world = world
 
 /// Nu's custom Entity-Component-System implementation.
 /// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
 /// modern caches, most cache hits will be of the L2 variety for junctioned components. Uncorrelated components will be
 /// L1-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
-/// components are very chaotically unregistered in a use-case scenario that the I, the library author, have trouble
-/// imagining for the intended use cases.
+/// components are very chaotically unregistered in a scenario that the I, the library author, have trouble imagining
+/// for the intended use cases.
 and [<NoEquality; NoComparison>] Ecs<'w when 'w :> Freezable> () =
 
+    let systemSubscriptions = dictPlus [] : Dictionary<string, Dictionary<Guid, obj>>
     let systemsUnordered = dictPlus [] : Dictionary<string, 'w System>
     let systemsOrdered = List () : (string * 'w System) List
     let correlations = dictPlus [] : Dictionary<Guid, string List>
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
+
+    member private this.BoxCallback<'a> (callback : SystemCallback<'a, 'w>) =
+        let boxableCallback = fun (evt : SystemEvent<obj, 'w>) world ->
+            let evt =
+                { SystemEventData = evt.SystemEventData :?> 'a
+                  SystemPublisher = evt.SystemPublisher }
+            callback evt world
+        boxableCallback :> obj
 
     member internal this.Correlations 
         with get () = correlations
@@ -114,20 +127,42 @@ and [<NoEquality; NoComparison>] Ecs<'w when 'w :> Freezable> () =
     member this.IndexSystem<'s when 's :> 'w System> systemName =
         this.TryIndexSystem<'s> systemName |> Option.get
 
+    member this.Subscribe<'d> eventName (callback : SystemCallback<'d, 'w>) =
+        let subscriptionId = Gen.id
+        match systemSubscriptions.TryGetValue eventName with
+        | (true, subscriptions) ->
+            subscriptions.Add (subscriptionId, this.BoxCallback<'d> callback)
+            subscriptionId
+        | (false, _) ->
+            let subscriptions = dictPlus [(subscriptionId, this.BoxCallback<'d> callback)]
+            systemSubscriptions.Add (eventName, subscriptions)
+            subscriptionId
+
+    member this.Unsubscribe eventName subscriptionId =
+        match systemSubscriptions.TryGetValue eventName with
+        | (true, subscriptions) -> subscriptions.Remove subscriptionId
+        | (false, _) -> false
+
+    member this.Publish<'d> eventName (eventData : 'd) publisher world =
+        match systemSubscriptions.TryGetValue eventName with
+        | (true, subscriptions) ->
+            Seq.fold (fun world (callback : obj) ->
+                match callback with
+                | :? SystemCallback<obj, 'w> as objCallback ->
+                    let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
+                    objCallback evt publisher this world
+                | _ -> failwithumf ())
+                world subscriptions.Values
+        | (false, _) -> world
+
     member this.ProcessUpdate world =
-        Seq.fold
-            (fun world (_, system : 'w System) -> system.ProcessUpdate this world)
-            world systemsOrdered
+        this.Publish "Update" () Unchecked.defaultof<_> world
 
     member this.ProcessPostUpdate world =
-        Seq.fold
-            (fun world (_, system : 'w System) -> system.ProcessPostUpdate this world)
-            world systemsOrdered
+        this.Publish "PostUpdate" () Unchecked.defaultof<_> world
 
     member this.ProcessActualize world =
-        Seq.fold
-            (fun world (_, system : 'w System) -> system.ProcessActualize this world)
-            world systemsOrdered
+        this.Publish "Actualize" () Unchecked.defaultof<_> world
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
@@ -253,7 +288,7 @@ type [<AbstractClass>] SystemUncorrelated<'t, 'w when 't : struct and 't :> Comp
                 | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system with components stored by entity id.
-type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> () =
+type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> () =
     inherit SystemMany<'w> ()
 
     let mutable components = Array.zeroCreate 32 : 't array
@@ -386,15 +421,18 @@ type [<AbstractClass>] SystemCorrelated<'t, 'w when 't : struct and 't :> Compon
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
+type Junction<'t when 't :> 't Junction and 't : struct> =
+    interface
+        inherit Component
+        abstract Junction : Dictionary<string, 'w System> -> Guid -> 't -> 'w Ecs -> 't
+        abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 't -> 'w Ecs -> unit
+        end
+
 /// An Ecs system that explicitly associates components by entity id.
-type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> (junctionedSystemNames : string array) =
+type SystemJunctioned<'t, 'w when 't : struct and 't :> 't Junction and 'w :> Freezable> (junctionedSystemNames : string array) =
     inherit SystemCorrelated<'t, 'w> ()
 
     let mutable junctionsOpt = None : Dictionary<string, 'w System> option
-
-    abstract Junction : Dictionary<string, 'w System> -> Guid -> 't -> 'w Ecs -> 't
-
-    abstract Disjunction : Dictionary<string, 'w System> -> Guid -> 't -> 'w Ecs -> unit
 
     member this.GetJunctions (ecs : 'w Ecs) =
         match junctionsOpt with
@@ -411,7 +449,7 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
         match Dictionary.tryGetValue entityId this.Correlations with
         | (false, _) ->
             let junctions = this.GetJunctions ecs
-            let comp = this.Junction junctions entityId comp ecs
+            let comp = comp.Junction junctions entityId comp ecs
             if this.FreeList.Count = 0 then
                 if this.FreeIndex < this.Components.Length - 1 then
                     this.Components.[this.FreeIndex] <- comp
@@ -443,7 +481,7 @@ type [<AbstractClass>] SystemJunctioned<'t, 'w when 't : struct and 't :> Compon
                 this.Components.[index].RefCount <- dec this.Components.[index].RefCount
                 if this.Components.[index].RefCount = 0 then this.FreeList.Enqueue index
             else this.FreeIndex <- dec this.FreeIndex
-            this.Disjunction junctions entityId comp ecs
+            comp.Disjunction junctions entityId comp ecs
             true
         | (false, _) -> false
 
@@ -549,81 +587,81 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
 /// A collection of systems that can be run in parallel.
 /// Because 'w is not a monoid (no mappend), null is passed in to all subsystems. Any information that affects the
 /// world has to use piped values and the related abstract methods.
-type SystemParallel<'w when 'w :> Freezable> () =
-    inherit System<'w> ()
-
-    let subsystems = dictPlus [] : Dictionary<string, 'w System>
-
-    abstract ProcessUpdateResults : Dictionary<string, obj> -> 'w -> 'w
-    default this.ProcessUpdateResults _ world = world
-    abstract ProcessPostUpdateResults : Dictionary<string, obj> -> 'w -> 'w
-    default this.ProcessPostUpdateResults _ world = world
-    abstract ProcessActualizeResults : Dictionary<string, obj> -> 'w -> 'w
-    default this.ProcessActualizeResults _ world = world
-
-    member this.RegisterSubsystem subsystemName subsystem =
-        subsystems.[subsystemName] <- subsystem
-
-    member this.UnregisterSubsystem subsystemName (_ : 'w System) =
-        subsystems.Remove subsystemName
-
-    override this.ProcessUpdate ecs world =
-        let results =
-            world.Freeze ()
-            try subsystems |>
-                Seq.map (fun entry -> Task.Run (fun () ->
-                    let system = entry.Value
-                    do system.RegisterPipedValue ecs
-                    let _ = system.ProcessUpdate ecs world
-                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
-                Vsync.Parallel |>
-                Vsync.RunSynchronously |>
-                dictPlus
-            finally world.Thaw ()
-        this.ProcessUpdateResults results world
-
-    override this.ProcessPostUpdate ecs world =
-        let results =
-            world.Freeze ()
-            try subsystems |>
-                Seq.map (fun entry -> Task.Run (fun () ->
-                    let system = entry.Value
-                    do system.RegisterPipedValue ecs
-                    let _ = system.ProcessPostUpdate ecs world
-                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
-                Vsync.Parallel |>
-                Vsync.RunSynchronously |>
-                dictPlus
-            finally world.Thaw ()
-        this.ProcessUpdateResults results world
-
-    override this.ProcessActualize ecs world =
-        let results =
-            world.Freeze ()
-            try subsystems |>
-                Seq.map (fun entry -> Task.Run (fun () ->
-                    let system = entry.Value
-                    do system.RegisterPipedValue ecs
-                    let _ = system.ProcessActualize ecs world
-                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
-                Vsync.Parallel |>
-                Vsync.RunSynchronously |>
-                dictPlus
-            finally world.Thaw ()
-        this.ProcessUpdateResults results world
-
-    type Ecs<'w when 'w :> Freezable> with
-
-        member this.RegisterSubsystem systemName subsystemName subsystem =
-            match this.TryIndexSystem<'w SystemParallel> systemName with
-            | Some system ->
-                system.RegisterSubsystem subsystemName subsystem
-                subsystem.RegisterPipedValue this
-            | None -> failwith ("Could not find expected system '" + systemName + "'.")
-
-        member this.UnregisterSubsystem systemName subsystemName (subsystem : 'w System) =
-            match this.TryIndexSystem<'w SystemParallel> systemName with
-            | Some system ->
-                let _ = subsystem.UnregisterPipedValue this
-                system.UnregisterSubsystem subsystemName subsystem
-            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+//type SystemParallel<'w when 'w :> Freezable> () =
+//    inherit System<'w> ()
+//
+//    let subsystems = dictPlus [] : Dictionary<string, 'w System>
+//
+//    abstract ProcessUpdateResults : Dictionary<string, obj> -> 'w -> 'w
+//    default this.ProcessUpdateResults _ world = world
+//    abstract ProcessPostUpdateResults : Dictionary<string, obj> -> 'w -> 'w
+//    default this.ProcessPostUpdateResults _ world = world
+//    abstract ProcessActualizeResults : Dictionary<string, obj> -> 'w -> 'w
+//    default this.ProcessActualizeResults _ world = world
+//
+//    member this.RegisterSubsystem subsystemName subsystem =
+//        subsystems.[subsystemName] <- subsystem
+//
+//    member this.UnregisterSubsystem subsystemName (_ : 'w System) =
+//        subsystems.Remove subsystemName
+//
+//    override this.ProcessUpdate ecs world =
+//        let results =
+//            world.Freeze ()
+//            try subsystems |>
+//                Seq.map (fun entry -> Task.Run (fun () ->
+//                    let system = entry.Value
+//                    do system.RegisterPipedValue ecs
+//                    let _ = system.ProcessUpdate ecs world
+//                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
+//                Vsync.Parallel |>
+//                Vsync.RunSynchronously |>
+//                dictPlus
+//            finally world.Thaw ()
+//        this.ProcessUpdateResults results world
+//
+//    override this.ProcessPostUpdate ecs world =
+//        let results =
+//            world.Freeze ()
+//            try subsystems |>
+//                Seq.map (fun entry -> Task.Run (fun () ->
+//                    let system = entry.Value
+//                    do system.RegisterPipedValue ecs
+//                    let _ = system.ProcessPostUpdate ecs world
+//                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
+//                Vsync.Parallel |>
+//                Vsync.RunSynchronously |>
+//                dictPlus
+//            finally world.Thaw ()
+//        this.ProcessUpdateResults results world
+//
+//    override this.ProcessActualize ecs world =
+//        let results =
+//            world.Freeze ()
+//            try subsystems |>
+//                Seq.map (fun entry -> Task.Run (fun () ->
+//                    let system = entry.Value
+//                    do system.RegisterPipedValue ecs
+//                    let _ = system.ProcessActualize ecs world
+//                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
+//                Vsync.Parallel |>
+//                Vsync.RunSynchronously |>
+//                dictPlus
+//            finally world.Thaw ()
+//        this.ProcessUpdateResults results world
+//
+//    type Ecs<'w when 'w :> Freezable> with
+//
+//        member this.RegisterSubsystem systemName subsystemName subsystem =
+//            match this.TryIndexSystem<'w SystemParallel> systemName with
+//            | Some system ->
+//                system.RegisterSubsystem subsystemName subsystem
+//                subsystem.RegisterPipedValue this
+//            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+//
+//        member this.UnregisterSubsystem systemName subsystemName (subsystem : 'w System) =
+//            match this.TryIndexSystem<'w SystemParallel> systemName with
+//            | Some system ->
+//                let _ = subsystem.UnregisterPipedValue this
+//                system.UnregisterSubsystem subsystemName subsystem
+//            | None -> failwith ("Could not find expected system '" + systemName + "'.")
