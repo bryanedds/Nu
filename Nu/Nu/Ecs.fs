@@ -155,14 +155,25 @@ and [<NoEquality; NoComparison>] Ecs<'w when 'w :> Freezable> () =
                 world subscriptions.Values
         | (false, _) -> world
 
-    member this.ProcessUpdate world =
-        this.Publish "Update" () Unchecked.defaultof<_> world
-
-    member this.ProcessPostUpdate world =
-        this.Publish "PostUpdate" () Unchecked.defaultof<_> world
-
-    member this.ProcessActualize world =
-        this.Publish "Actualize" () Unchecked.defaultof<_> world
+    member this.PublishParallel<'d> eventName (eventData : 'd) publisher (world : 'w) =
+        match systemSubscriptions.TryGetValue eventName with
+        | (true, subscriptions) ->
+            world.Freeze ()
+            try subscriptions |>
+                Seq.map (fun subscription ->
+                    Task.Run (fun () ->
+                        match subscription.Value with
+                        | :? SystemCallback<obj, 'w> as objCallback ->
+                            let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
+                            let _ = objCallback evt publisher this world // ignore returned world
+                            ()
+                        | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
+                Vsync.Parallel |>
+                Vsync.RunSynchronously |>
+                ignore
+            finally world.Thaw ()
+            world
+        | (false, _) -> world
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
@@ -584,84 +595,9 @@ type [<AbstractClass>] SystemMultiplexed<'t, 'w when 't : struct and 't :> Compo
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-/// A collection of systems that can be run in parallel.
-/// Because 'w is not a monoid (no mappend), null is passed in to all subsystems. Any information that affects the
-/// world has to use piped values and the related abstract methods.
-//type SystemParallel<'w when 'w :> Freezable> () =
-//    inherit System<'w> ()
-//
-//    let subsystems = dictPlus [] : Dictionary<string, 'w System>
-//
-//    abstract ProcessUpdateResults : Dictionary<string, obj> -> 'w -> 'w
-//    default this.ProcessUpdateResults _ world = world
-//    abstract ProcessPostUpdateResults : Dictionary<string, obj> -> 'w -> 'w
-//    default this.ProcessPostUpdateResults _ world = world
-//    abstract ProcessActualizeResults : Dictionary<string, obj> -> 'w -> 'w
-//    default this.ProcessActualizeResults _ world = world
-//
-//    member this.RegisterSubsystem subsystemName subsystem =
-//        subsystems.[subsystemName] <- subsystem
-//
-//    member this.UnregisterSubsystem subsystemName (_ : 'w System) =
-//        subsystems.Remove subsystemName
-//
-//    override this.ProcessUpdate ecs world =
-//        let results =
-//            world.Freeze ()
-//            try subsystems |>
-//                Seq.map (fun entry -> Task.Run (fun () ->
-//                    let system = entry.Value
-//                    do system.RegisterPipedValue ecs
-//                    let _ = system.ProcessUpdate ecs world
-//                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
-//                Vsync.Parallel |>
-//                Vsync.RunSynchronously |>
-//                dictPlus
-//            finally world.Thaw ()
-//        this.ProcessUpdateResults results world
-//
-//    override this.ProcessPostUpdate ecs world =
-//        let results =
-//            world.Freeze ()
-//            try subsystems |>
-//                Seq.map (fun entry -> Task.Run (fun () ->
-//                    let system = entry.Value
-//                    do system.RegisterPipedValue ecs
-//                    let _ = system.ProcessPostUpdate ecs world
-//                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
-//                Vsync.Parallel |>
-//                Vsync.RunSynchronously |>
-//                dictPlus
-//            finally world.Thaw ()
-//        this.ProcessUpdateResults results world
-//
-//    override this.ProcessActualize ecs world =
-//        let results =
-//            world.Freeze ()
-//            try subsystems |>
-//                Seq.map (fun entry -> Task.Run (fun () ->
-//                    let system = entry.Value
-//                    do system.RegisterPipedValue ecs
-//                    let _ = system.ProcessActualize ecs world
-//                    (entry.Key, system.IndexPipedValue ecs)) |> Vsync.AwaitTaskT) |>
-//                Vsync.Parallel |>
-//                Vsync.RunSynchronously |>
-//                dictPlus
-//            finally world.Thaw ()
-//        this.ProcessUpdateResults results world
-//
-//    type Ecs<'w when 'w :> Freezable> with
-//
-//        member this.RegisterSubsystem systemName subsystemName subsystem =
-//            match this.TryIndexSystem<'w SystemParallel> systemName with
-//            | Some system ->
-//                system.RegisterSubsystem subsystemName subsystem
-//                subsystem.RegisterPipedValue this
-//            | None -> failwith ("Could not find expected system '" + systemName + "'.")
-//
-//        member this.UnregisterSubsystem systemName subsystemName (subsystem : 'w System) =
-//            match this.TryIndexSystem<'w SystemParallel> systemName with
-//            | Some system ->
-//                let _ = subsystem.UnregisterPipedValue this
-//                system.UnregisterSubsystem subsystemName subsystem
-//            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+[<RequireQualifiedAccess>]
+module SystemEvents =
+
+    let [<Literal>] Update = "Update"
+    let [<Literal>] PostUpdate = "PostUpdate"
+    let [<Literal>] Actualize = "Actualize"

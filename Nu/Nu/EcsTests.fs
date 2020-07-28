@@ -18,6 +18,7 @@ module EcsTests =
 
     let example (ecs : World Ecs) =
         let system = SystemJunctioned<Airship, World> [|typeof<Transform>.Name|]
+        do ecs.RegisterSystem "AirshipSystem" system
         let subId = ecs.Subscribe "Update" (fun _ _ _ world ->
             for i = 0 to system.Components.Length - 1 do
                 let comp = &system.Components.[i]
