@@ -16,15 +16,18 @@ module EcsTests =
             member this.Junction junctions entityId ecs = { RefCount = 0; Transform = ecs.Junction<Transform> junctions entityId }
             member this.Disjunction junctions entityId ecs = ecs.Disjunction<Transform> junctions entityId
 
-    let example (ecs : World Ecs) (world : World) =
+    let example (world : World) =
+
+        // create our ecs
+        let ecs = Ecs<World> (System<World> ())
 
         // create and register our system
-        let system = ecs.RegisterSystem "AirshipSystem" (SystemJunctioned<Airship, World> [|typeof<Transform>.Name|])
+        let system = ecs.RegisterSystem "AirshipSystem" (SystemJunctioned<Airship, World> [|"Transform"|])
 
         // create and register our entity with the system
         let entity = ecs.RegisterJunctioned "AirshipSystem" Unchecked.defaultof<Airship> Gen.id
 
-        // subscribe to the update event
+        // define our system's update behavior
         let subId = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             for i = 0 to system.Components.Length - 1 do
                 let comp = &system.Components.[i]
@@ -32,11 +35,8 @@ module EcsTests =
                 transform.Enabled <- not transform.Enabled
             world)
 
-        // publish update event
+        // invoke update behavior
         let world = ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
-
-        // unsubscribe to the update event
-        let _ = ecs.Unsubscribe EcsEvents.Update subId
 
         // fin
         world
