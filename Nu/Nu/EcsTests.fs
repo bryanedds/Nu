@@ -8,31 +8,48 @@ open Prime
 open Nu
 module EcsTests =
 
-    type [<NoEquality; NoComparison; Struct>] private Airship =
+    type [<Struct>] Skin =
         { mutable RefCount : int
-          Transform : Transform ComponentRef }
+          mutable Color : Vector4 }
+        interface Component with
+            member this.RefCount
+                with get () = this.RefCount and set value = this.RefCount <- value
+
+    type [<NoEquality; NoComparison; Struct>] Airship =
+        { mutable RefCount : int
+          Transform : Transform ComponentRef
+          Skin : Skin ComponentRef }
         interface Airship Junction with
-            member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-            member this.Junction junctions entityId ecs = { RefCount = 0; Transform = ecs.Junction<Transform> junctions entityId }
-            member this.Disjunction junctions entityId ecs = ecs.Disjunction<Transform> junctions entityId
+            member this.RefCount
+                with get () = this.RefCount and set value = this.RefCount <- value
+            member this.Junction junctions entityId ecs =
+                { RefCount = 0
+                  Transform = ecs.Junction junctions entityId
+                  Skin = ecs.Junction junctions entityId }
+            member this.Disjunction junctions entityId ecs =
+                do ecs.Disjunction<Transform> junctions entityId
+                do ecs.Disjunction<Skin> junctions entityId
 
     let example (world : World) =
 
         // create our ecs
-        let ecs = Ecs<World> (System<World> "Global")
+        let ecs = Ecs<World> (System<World> ())
 
         // create and register our transform system
-        let transformSystem = ecs.RegisterSystem (SystemCorrelated<Transform, World> "Transform")
+        let transformSystem = ecs.RegisterSystem (SystemCorrelated<Transform, World> ())
+
+        // create and register our skin system
+        let skinSystem = ecs.RegisterSystem (SystemCorrelated<Skin, World> ())
 
         // create and register our airship system
-        let airshipSystem = ecs.RegisterSystem (SystemJunctioned<Airship, World> ("AirshipSystem", [|transformSystem.Name|]))
+        let airshipSystem = ecs.RegisterSystem (SystemJunctioned<Airship, World> [|transformSystem.Name; skinSystem.Name|])
 
         // define our airship system's update behavior
         let subId = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             for i = 0 to airshipSystem.Components.Length - 1 do
                 let comp = &airshipSystem.Components.[i]
-                let transform = &comp.Transform.Value
-                transform.Enabled <- not transform.Enabled
+                comp.Transform.Value.Enabled <- i % 2 = 0
+                comp.Skin.Value.Color.Z <- 0.5f
             world)
 
         // create and register our airship

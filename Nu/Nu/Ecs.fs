@@ -64,6 +64,7 @@ and System<'w when 'w :> Freezable> (name : string) =
     abstract PipedInit : obj
     default this.PipedInit with get () = () :> obj
     member this.Name with get () = name
+    new () = System ""
 
 /// Nu's custom Entity-Component-System implementation.
 /// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
@@ -200,6 +201,8 @@ type SystemSingleton<'t, 'w when 't : struct and 't :> Component and 'w :> Freez
     inherit System<'w> (name)
 
     let mutable comp = comp
+    
+    new (comp) = SystemSingleton (typeof<'t>.Name, comp)
 
     member this.Component with get () = &comp
 
@@ -227,6 +230,8 @@ type SystemUncorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Fr
     let mutable components = Array.zeroCreate 32 : 't array
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
+    
+    new () = SystemUncorrelated typeof<'t>.Name
 
     abstract ComponentToBytes : 't -> char array
     default this.ComponentToBytes _ = failwithnie ()
@@ -321,6 +326,8 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
+
+    new () = SystemCorrelated typeof<'t>.Name
 
     member this.Components with get () = components and internal set value = components <- value
     member this.FreeIndex with get () = freeIndex and internal set value = freeIndex <- value
@@ -461,6 +468,8 @@ type SystemJunctioned<'t, 'w when 't : struct and 't :> 't Junction and 'w :> Fr
     inherit SystemCorrelated<'t, 'w> (name)
 
     let mutable junctionsOpt = None : Dictionary<string, 'w System> option
+    
+    new (junctionedSystemNames) = SystemJunctioned (typeof<'t>.Name, junctionedSystemNames)
 
     member this.GetJunctions (ecs : 'w Ecs) =
         match junctionsOpt with
@@ -570,6 +579,8 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'t when 't : stru
 /// An Ecs system that stores multiple components per entity id.
 type SystemMultiplexed<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> (name) =
     inherit SystemCorrelated<'t ComponentMultiplexed, 'w> (name)
+    
+    new () = SystemMultiplexed typeof<'t>.Name
 
     member this.QualifyMultiplexed multiId entityId =
         if this.QualifyCorrelated entityId then
