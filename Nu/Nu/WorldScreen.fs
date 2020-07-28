@@ -113,7 +113,7 @@ module WorldScreenModule =
 
             // update ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.ProcessUpdate world
+            let world = ecs.Publish SystemEvents.Update () Unchecked.defaultof<_> world
                 
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
@@ -127,7 +127,7 @@ module WorldScreenModule =
 
             // post-update ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.ProcessPostUpdate world
+            let world = ecs.Publish SystemEvents.PostUpdate () Unchecked.defaultof<_> world
                 
             // post-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
@@ -141,7 +141,7 @@ module WorldScreenModule =
 
             // actualize ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.ProcessActualize world
+            let world = ecs.Publish SystemEvents.Actualize () Unchecked.defaultof<_> world
             
             // actualize via dispatcher
             let dispatcher = screen.GetDispatcher world
