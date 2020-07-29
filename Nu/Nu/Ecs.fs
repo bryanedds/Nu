@@ -20,31 +20,33 @@ type Freezable =
         end
 
 /// An array with additional indirection.
-type 't ArrayRef =
-    { mutable Arr : 't array }
-    static member make n =
-        { Arr = Array.zeroCreate n }
+/// TODO: move to Prime?
+type 'c ArrayRef =
+    { mutable Array : 'c array }
+    member this.Length with get () = this.Array.Length
+    member this.Item i = &this.Array.[i]
+    static member make n = { Array = Array.zeroCreate n }
 
 /// The base component type of an Ecs.
 type Component =
     abstract RefCount : int with get, set
 
 /// A storable reference to a component in its containing array.
-type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
+type [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c :> Component> =
     { ComponentIndex : int
-      ComponentArrRef : 't ArrayRef }
+      ComponentArrRef : 'c ArrayRef }
 
     member this.Index
-        with get () = &this.ComponentArrRef.Arr.[this.ComponentIndex]
+        with get () = &this.ComponentArrRef.[this.ComponentIndex]
 
     member this.Assign value =
-        this.ComponentArrRef.Arr.[this.ComponentIndex] <- value
+        this.ComponentArrRef.[this.ComponentIndex] <- value
 
     static member (<!) (componentRef, value) =
-        componentRef.ComponentArrRef.Arr.[componentRef.ComponentIndex] <- value
+        componentRef.ComponentArrRef.[componentRef.ComponentIndex] <- value
 
     static member (!>) componentRef =
-        &componentRef.ComponentArrRef.Arr.[componentRef.ComponentIndex]
+        &componentRef.ComponentArrRef.Array.[componentRef.ComponentIndex]
 
 [<RequireQualifiedAccess>]
 module ComponentRef =
@@ -203,19 +205,19 @@ type EcsExtensions =
         system
 
 /// An Ecs system with just a single component.
-type SystemSingleton<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> (name, comp : 't) =
+type SystemSingleton<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (name, comp : 'c) =
     inherit System<'w> (name)
 
     let mutable comp = comp
     
-    new (comp) = SystemSingleton (typeof<'t>.Name, comp)
+    new (comp) = SystemSingleton (typeof<'c>.Name, comp)
 
     member this.Component with get () = &comp
 
     type Ecs<'w when 'w :> Freezable> with
 
-        member this.IndexSingleton<'t, 'w when 't : struct and 't :> Component> systemName =
-            let systemOpt = this.TryIndexSystem<SystemSingleton<'t, 'w>> systemName 
+        member this.IndexSingleton<'c, 'w when 'c : struct and 'c :> Component> systemName =
+            let systemOpt = this.TryIndexSystem<SystemSingleton<'c, 'w>> systemName 
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
             &system.Component
@@ -230,41 +232,41 @@ type [<AbstractClass>] SystemMany<'w when 'w :> Freezable> (name) =
     abstract PadComponents : int -> unit
 
 /// An Ecs system with components stored by a raw index.
-type SystemUncorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> (name) =
+type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (name) =
     inherit SystemMany<'w> (name)
 
-    let mutable components = ArrayRef<'t>.make 32
+    let mutable components = ArrayRef<'c>.make 32
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
     
-    new () = SystemUncorrelated typeof<'t>.Name
+    new () = SystemUncorrelated typeof<'c>.Name
 
-    abstract ComponentToBytes : 't -> char array
+    abstract ComponentToBytes : 'c -> char array
     default this.ComponentToBytes _ = failwithnie ()
-    abstract BytesToComponent : char array -> 't
+    abstract BytesToComponent : char array -> 'c
     default this.BytesToComponent _ = failwithnie ()
 
     override this.SizeOfComponent with get () =
-        sizeof<'t>
+        sizeof<'c>
 
     override this.ComponentsLength with get () =
-        components.Arr.Length
+        components.Length
 
     override this.ComponentsToBytes () =
-        let byteArrays = Array.map this.ComponentToBytes components.Arr
+        let byteArrays = Array.map this.ComponentToBytes components.Array
         Array.concat byteArrays
 
     override this.BytesToComponents (bytes : char array) =
         let byteArrays = Array.chunkBySize this.SizeOfComponent bytes
-        if bytes.Length <> components.Arr.Length then
+        if bytes.Length <> components.Length then
             failwith "Incoming bytes array must have the same number of elements as target system has components."
         let arr = Array.map this.BytesToComponent byteArrays
-        components.Arr <- arr
+        components.Array <- arr
 
     override this.PadComponents length =
-        let arr = Array.zeroCreate (components.Arr.Length + length)
-        components.Arr.CopyTo (arr, 0)
-        components.Arr <- arr
+        let arr = Array.zeroCreate (components.Length + length)
+        components.Array.CopyTo (arr, 0)
+        components.Array <- arr
 
     member this.Components
         with get () = components
@@ -274,42 +276,42 @@ type SystemUncorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Fr
 
     member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
-        &components.Arr.[index]
+        &components.[index]
 
     member this.RegisterUncorrelated comp =
         if freeList.Count = 0 then
-            if freeIndex < components.Arr.Length - 1 then
-                components.Arr.[freeIndex] <- comp
+            if freeIndex < components.Length - 1 then
+                components.[freeIndex] <- comp
                 freeIndex <- inc freeIndex
             else
-                let arr = Array.zeroCreate (components.Arr.Length * 2)
-                components.Arr.CopyTo (arr, 0)
-                components.Arr <- arr
-                components.Arr.[freeIndex] <- comp
+                let arr = Array.zeroCreate (components.Length * 2)
+                components.Array.CopyTo (arr, 0)
+                components.Array <- arr
+                components.[freeIndex] <- comp
                 freeIndex <- inc freeIndex
-        else components.Arr.[freeList.Dequeue ()] <- comp
+        else components.[freeList.Dequeue ()] <- comp
 
     member this.UnregisterUncorrelated index =
         if index <> freeIndex then
-            components.Arr.[index].RefCount <- dec components.Arr.[index].RefCount
-            if components.Arr.[index].RefCount = 0 then freeList.Enqueue index
+            components.[index].RefCount <- dec components.[index].RefCount
+            if components.[index].RefCount = 0 then freeList.Enqueue index
         else freeIndex <- dec freeIndex
 
     type Ecs<'w when 'w :> Freezable> with
 
-        member this.IndexUncorrelated<'t when 't : struct and 't :> Component> systemName index =
-            let systemOpt = this.TryIndexSystem<SystemUncorrelated<'t, 'w>> systemName
+        member this.IndexUncorrelated<'c when 'c : struct and 'c :> Component> systemName index =
+            let systemOpt = this.TryIndexSystem<SystemUncorrelated<'c, 'w>> systemName
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
             &system.IndexUncorrelated index
 
-        member this.RegisterUncorrelated<'t when 't : struct and 't :> Component> systemName (comp : 't) =
-            match this.TryIndexSystem<SystemUncorrelated<'t, 'w>> systemName with
+        member this.RegisterUncorrelated<'c when 'c : struct and 'c :> Component> systemName (comp : 'c) =
+            match this.TryIndexSystem<SystemUncorrelated<'c, 'w>> systemName with
             | Some system -> system.RegisterUncorrelated comp
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.UnregisterUncorrelated<'t when 't : struct and 't :> Component> systemName index =
-            match this.TryIndexSystem<SystemUncorrelated<'t, 'w>> systemName with
+        member this.UnregisterUncorrelated<'c when 'c : struct and 'c :> Component> systemName index =
+            match this.TryIndexSystem<SystemUncorrelated<'c, 'w>> systemName with
             | Some system -> system.UnregisterUncorrelated index
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
@@ -326,47 +328,47 @@ type SystemUncorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Fr
                 | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system with components stored by entity id.
-type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> (name) =
+type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (name) =
     inherit SystemMany<'w> (name)
 
-    let mutable components = ArrayRef<'t>.make 32
+    let mutable components = ArrayRef<'c>.make 32
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
 
-    new () = SystemCorrelated typeof<'t>.Name
+    new () = SystemCorrelated typeof<'c>.Name
 
     member this.Components with get () = components
     member this.FreeIndex with get () = freeIndex and internal set value = freeIndex <- value
     member internal this.FreeList with get () = freeList
     member internal this.Correlations with get () = correlations
 
-    abstract ComponentToBytes : 't -> char array
+    abstract ComponentToBytes : 'c -> char array
     default this.ComponentToBytes _ = failwithnie ()
-    abstract BytesToComponent : char array -> 't
+    abstract BytesToComponent : char array -> 'c
     default this.BytesToComponent _ = failwithnie ()
 
     override this.SizeOfComponent with get () =
-        sizeof<'t>
+        sizeof<'c>
 
     override this.ComponentsLength with get () =
-        components.Arr.Length
+        components.Length
 
     override this.ComponentsToBytes () =
-        let byteArrays = Array.map this.ComponentToBytes components.Arr
+        let byteArrays = Array.map this.ComponentToBytes components.Array
         Array.concat byteArrays
 
     override this.BytesToComponents (bytes : char array) =
         let byteArrays = Array.chunkBySize this.SizeOfComponent bytes
-        if bytes.Length <> components.Arr.Length then
+        if bytes.Length <> components.Length then
             failwith "Incoming bytes array must have the same number of elements as target system has components."
         let arr = Array.map this.BytesToComponent byteArrays
-        components.Arr <- arr
+        components.Array <- arr
 
     override this.PadComponents length =
-        let arr = Array.zeroCreate (components.Arr.Length + length)
-        components.Arr.CopyTo (arr, 0)
-        components.Arr <- arr
+        let arr = Array.zeroCreate (components.Length + length)
+        components.Array.CopyTo (arr, 0)
+        components.Array <- arr
 
     member this.GetEntitiesCorrelated () =
         correlations.Keys :> _ IEnumerable
@@ -381,31 +383,31 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
 
     member this.IndexCorrelated entityId =
         let index = this.IndexCorrelatedI entityId
-        &components.Arr.[index]
+        &components.[index]
 
-    abstract member RegisterCorrelated : 't -> Guid -> 'w Ecs -> int
+    abstract member RegisterCorrelated : 'c -> Guid -> 'w Ecs -> int
     default this.RegisterCorrelated comp entityId _ =
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
             if freeList.Count = 0 then
-                if freeIndex < components.Arr.Length - 1 then
-                    components.Arr.[freeIndex] <- comp
+                if freeIndex < components.Length - 1 then
+                    components.[freeIndex] <- comp
                     freeIndex <- inc freeIndex
                 else
-                    let arr = Array.zeroCreate (components.Arr.Length * 2)
-                    components.Arr.CopyTo (arr, 0)
-                    components.Arr <- arr
-                    components.Arr.[freeIndex] <- comp
+                    let arr = Array.zeroCreate (components.Length * 2)
+                    components.Array.CopyTo (arr, 0)
+                    components.Array <- arr
+                    components.[freeIndex] <- comp
                     freeIndex <- inc freeIndex
                 let index = dec freeIndex
                 correlations.Add (entityId, index)
                 index
             else
                 let index = freeList.Dequeue ()
-                components.Arr.[index] <- comp
+                components.[index] <- comp
                 index
         | (true, index) ->
-            let mutable comp = components.Arr.[index]
+            let mutable comp = components.[index]
             comp.RefCount <- inc comp.RefCount
             index
 
@@ -414,8 +416,8 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
         match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
-                components.Arr.[index].RefCount <- dec components.Arr.[index].RefCount
-                if components.Arr.[index].RefCount = 0 then freeList.Enqueue index
+                components.[index].RefCount <- dec components.[index].RefCount
+                if components.[index].RefCount = 0 then freeList.Enqueue index
             else freeIndex <- dec freeIndex
             true
         | (false, _) -> false
@@ -427,28 +429,28 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
             Seq.map (fun systemName -> (systemName, this.IndexSystem<'w System> systemName)) |>
             dictPlus
 
-        member this.GetEntitiesCorrelated<'t when 't : struct and 't :> Component> systemName =
-            match this.TryIndexSystem<SystemCorrelated<'t, 'w>> systemName with
+        member this.GetEntitiesCorrelated<'c when 'c : struct and 'c :> Component> systemName =
+            match this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName with
             | Some system -> system.GetEntitiesCorrelated ()
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
         member this.GetEntityRef entityId =
             { EntityId = entityId; EntityEcs = this }
 
-        member this.QualifyCorrelated<'t when 't : struct and 't :> Component> systemName entityId =
-            let systemOpt = this.TryIndexSystem<SystemCorrelated<'t, 'w>> systemName
+        member this.QualifyCorrelated<'c when 'c : struct and 'c :> Component> systemName entityId =
+            let systemOpt = this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
             system.QualifyCorrelated entityId
 
-        member this.IndexCorrelated<'t when 't : struct and 't :> Component> systemName entityId =
-            let systemOpt = this.TryIndexSystem<SystemCorrelated<'t, 'w>> systemName
+        member this.IndexCorrelated<'c when 'c : struct and 'c :> Component> systemName entityId =
+            let systemOpt = this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
             &system.IndexCorrelated entityId
 
-        member this.RegisterCorrelated<'t when 't : struct and 't :> Component> systemName comp entityId =
-            match this.TryIndexSystem<SystemCorrelated<'t, 'w>> systemName with
+        member this.RegisterCorrelated<'c when 'c : struct and 'c :> Component> systemName comp entityId =
+            match this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName with
             | Some system ->
                 let _ = system.RegisterCorrelated comp entityId
                 match this.Correlations.TryGetValue entityId with
@@ -456,8 +458,8 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
                 | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.UnregisterCorrelated<'t when 't : struct and 't :> Component> systemName entityId =
-            match this.TryIndexSystem<SystemCorrelated<'t, 'w>> systemName with
+        member this.UnregisterCorrelated<'c when 'c : struct and 'c :> Component> systemName entityId =
+            match this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName with
             | Some system ->
                 let result = system.UnregisterCorrelated entityId this
                 if result then
@@ -472,30 +474,30 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
 and [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
     { EntityId : Guid
       EntityEcs : 'w Ecs }
-    member this.IndexPlus<'t when 't :> Component and 't : struct> systemName =
-        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'t, 'w>> systemName
+    member this.IndexPlus<'c when 'c : struct and 'c :> Component> systemName =
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> systemName
         &system.IndexCorrelated this.EntityId
-    member this.Index<'t when 't :> Component and 't : struct> () =
-        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'t, 'w>> typeof<'t>.Name
+    member this.Index<'c when 'c : struct and 'c :> Component> () =
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
         &system.IndexCorrelated this.EntityId
 
 /// A junctioned component.
-type Junction<'t when 't :> 't Junction and 't : struct> =
+type Junction<'c when 'c : struct and 'c :> 'c Junction> =
     interface
         inherit Component
         abstract SystemNames : string array
-        abstract Junction : 'w System array -> Guid -> 'w Ecs -> 't
+        abstract Junction : 'w System array -> Guid -> 'w Ecs -> 'c
         abstract Disjunction : 'w System array -> Guid -> 'w Ecs -> unit
         end
 
 /// An Ecs system that explicitly associates components by entity id.
-type SystemJunctioned<'t, 'w when 't : struct and 't :> 't Junction and 'w :> Freezable> (name) =
-    inherit SystemCorrelated<'t, 'w> (name)
+type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Freezable> (name) =
+    inherit SystemCorrelated<'c, 'w> (name)
 
-    let junctionedSystemNames = Unchecked.defaultof<'t>.SystemNames
+    let junctionedSystemNames = Unchecked.defaultof<'c>.SystemNames
     let mutable junctionsOpt = None : 'w System array option
 
-    new () = SystemJunctioned (typeof<'t>.Name)
+    new () = SystemJunctioned (typeof<'c>.Name)
 
     member this.GetJunctions (ecs : 'w Ecs) =
         match junctionsOpt with
@@ -511,35 +513,35 @@ type SystemJunctioned<'t, 'w when 't : struct and 't :> 't Junction and 'w :> Fr
             let junctions = this.GetJunctions ecs
             let comp = comp.Junction junctions entityId ecs
             if this.FreeList.Count = 0 then
-                if this.FreeIndex < this.Components.Arr.Length - 1 then
-                    this.Components.Arr.[this.FreeIndex] <- comp
+                if this.FreeIndex < this.Components.Length - 1 then
+                    this.Components.[this.FreeIndex] <- comp
                     this.FreeIndex <- inc this.FreeIndex
                 else
-                    let arr = Array.zeroCreate (this.Components.Arr.Length * 2)
-                    this.Components.Arr.CopyTo (arr, 0)
-                    this.Components.Arr <- arr
-                    this.Components.Arr.[this.FreeIndex] <- comp
+                    let arr = Array.zeroCreate (this.Components.Length * 2)
+                    this.Components.Array.CopyTo (arr, 0)
+                    this.Components.Array <- arr
+                    this.Components.[this.FreeIndex] <- comp
                     this.FreeIndex <- inc this.FreeIndex
                 let index = dec this.FreeIndex
                 this.Correlations.Add (entityId, index)
                 index
             else
                 let index = this.FreeList.Dequeue ()
-                this.Components.Arr.[index] <- comp
+                this.Components.[index] <- comp
                 index
         | (true, index) ->
-            let mutable comp = this.Components.Arr.[index]
+            let mutable comp = this.Components.[index]
             comp.RefCount <- inc comp.RefCount
             index
 
     override this.UnregisterCorrelated entityId ecs =
         match this.Correlations.TryGetValue entityId with
         | (true, index) ->
-            let comp = this.Components.Arr.[index]
+            let comp = this.Components.[index]
             let junctions = this.GetJunctions ecs
             if index <> this.FreeIndex then
-                this.Components.Arr.[index].RefCount <- dec this.Components.Arr.[index].RefCount
-                if this.Components.Arr.[index].RefCount = 0 then this.FreeList.Enqueue index
+                this.Components.[index].RefCount <- dec this.Components.[index].RefCount
+                if this.Components.[index].RefCount = 0 then this.FreeList.Enqueue index
             else this.FreeIndex <- dec this.FreeIndex
             comp.Disjunction junctions entityId ecs
             true
@@ -547,49 +549,49 @@ type SystemJunctioned<'t, 'w when 't : struct and 't :> 't Junction and 'w :> Fr
 
     type Ecs<'w when 'w :> Freezable> with
 
-        member this.QualifyJunctioned<'t when 't : struct and 't :> 't Junction> systemName entityId =
-            this.QualifyCorrelated<'t> systemName entityId
+        member this.QualifyJunctioned<'c when 'c : struct and 'c :> 'c Junction> systemName entityId =
+            this.QualifyCorrelated<'c> systemName entityId
 
-        member this.IndexJunctioned<'t when 't : struct and 't :> 't Junction> systemName entityId =
-            this.IndexCorrelated<'t> systemName entityId
+        member this.IndexJunctioned<'c when 'c : struct and 'c :> 'c Junction> systemName entityId =
+            this.IndexCorrelated<'c> systemName entityId
 
-        member this.RegisterJunctioned<'t when 't : struct and 't :> 't Junction> systemName comp entityId =
-            do this.RegisterCorrelated<'t> systemName comp entityId
+        member this.RegisterJunctioned<'c when 'c : struct and 'c :> 'c Junction> systemName comp entityId =
+            do this.RegisterCorrelated<'c> systemName comp entityId
             entityId
 
-        member this.UnregisterJunctioned<'t when 't : struct and 't :> 't Junction> systemName entityId =
-            this.UnregisterCorrelated<'t> systemName entityId
+        member this.UnregisterJunctioned<'c when 'c : struct and 'c :> 'c Junction> systemName entityId =
+            this.UnregisterCorrelated<'c> systemName entityId
 
-        member this.JunctionPlus<'t when 't : struct and 't :> Component>
-            (system : 'w System) (comp : 't) (entityId : Guid) =
-            let system = system :?> SystemCorrelated<'t, 'w>
+        member this.JunctionPlus<'c when 'c : struct and 'c :> Component>
+            (system : 'w System) (comp : 'c) (entityId : Guid) =
+            let system = system :?> SystemCorrelated<'c, 'w>
             let index = system.RegisterCorrelated comp entityId this
             ComponentRef.make index system.Components
 
-        member this.Junction<'t when 't : struct and 't :> Component>
+        member this.Junction<'c when 'c : struct and 'c :> Component>
             (system : 'w System) (entityId : Guid) =
-            this.JunctionPlus<'t> system Unchecked.defaultof<'t> entityId
+            this.JunctionPlus<'c> system Unchecked.defaultof<'c> entityId
 
-        member this.DisjunctionPlus<'t when 't : struct and 't :> Component>
+        member this.DisjunctionPlus<'c when 'c : struct and 'c :> Component>
             (system : 'w System) (entityId : Guid) =
-            let system = system :?> SystemCorrelated<'t, 'w>
+            let system = system :?> SystemCorrelated<'c, 'w>
             system.UnregisterCorrelated entityId this |> ignore
 
-        member this.Disjunction<'t when 't : struct and 't :> Component>
+        member this.Disjunction<'c when 'c : struct and 'c :> Component>
             (system : 'w System) (entityId : Guid) =
-            this.DisjunctionPlus<'t> system entityId
+            this.DisjunctionPlus<'c> system entityId
 
 /// Handle to one of an array of multiplexed components.
-type Simplex<'t when 't : struct> =
-    { mutable Simplex : 't }
+type Simplex<'c when 'c : struct> =
+    { mutable Simplex : 'c }
 
 /// Allows an entity to contain multiple of the same component.
 /// However, it uses a dictionary without a small-object optimization, so this functionality won't get the typical
 /// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
 /// anything else (which is good enough in almost all cases where multi-components are used).
-type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'t when 't : struct> =
+type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : struct> =
     { mutable RefCount : int
-      Simplexes : Dictionary<Guid, 't Simplex> }
+      Simplexes : Dictionary<Guid, 'c Simplex> }
     interface Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
     member this.RegisterMultiplexed (multiId, comp) =
@@ -598,10 +600,10 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'t when 't : stru
         this.Simplexes.Remove multiId
 
 /// An Ecs system that stores multiple components per entity id.
-type SystemMultiplexed<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> (name) =
-    inherit SystemCorrelated<'t ComponentMultiplexed, 'w> (name)
+type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (name) =
+    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (name)
     
-    new () = SystemMultiplexed typeof<'t>.Name
+    new () = SystemMultiplexed typeof<'c>.Name
 
     member this.QualifyMultiplexed multiId entityId =
         if this.QualifyCorrelated entityId then
@@ -626,21 +628,21 @@ type SystemMultiplexed<'t, 'w when 't : struct and 't :> Component and 'w :> Fre
 
     type Ecs<'w when 'w :> Freezable> with
 
-        member this.QualifyMultiplexed<'t when 't : struct and 't :> Component> systemName multiId entityId =
-            let systemOpt = this.TryIndexSystem<SystemMultiplexed<'t, 'w>> systemName
+        member this.QualifyMultiplexed<'c when 'c : struct and 'c :> Component> systemName multiId entityId =
+            let systemOpt = this.TryIndexSystem<SystemMultiplexed<'c, 'w>> systemName
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
             system.QualifyMultiplexed multiId entityId
 
-        member this.IndexMultiplexed<'t when 't : struct and 't :> Component> systemName multiId entityId =
-            let systemOpt = this.TryIndexSystem<SystemMultiplexed<'t, 'w>> systemName
+        member this.IndexMultiplexed<'c when 'c : struct and 'c :> Component> systemName multiId entityId =
+            let systemOpt = this.TryIndexSystem<SystemMultiplexed<'c, 'w>> systemName
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
             let simplex = system.IndexMultiplexed multiId entityId
             &simplex.Simplex
 
-        member this.RegisterMultiplexed<'t when 't : struct and 't :> Component> systemName comp multiId entityId =
-            match this.TryIndexSystem<SystemMultiplexed<'t, 'w>> systemName with
+        member this.RegisterMultiplexed<'c when 'c : struct and 'c :> Component> systemName comp multiId entityId =
+            match this.TryIndexSystem<SystemMultiplexed<'c, 'w>> systemName with
             | Some system ->
                 let _ = system.RegisterMultiplexed comp multiId entityId
                 match this.Correlations.TryGetValue entityId with
@@ -648,8 +650,8 @@ type SystemMultiplexed<'t, 'w when 't : struct and 't :> Component and 'w :> Fre
                 | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.UnregisterMultiplexed<'t when 't : struct and 't :> Component> systemName multiId entityId =
-            match this.TryIndexSystem<SystemMultiplexed<'t, 'w>> systemName with
+        member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> Component> systemName multiId entityId =
+            match this.TryIndexSystem<SystemMultiplexed<'c, 'w>> systemName with
             | Some system ->
                 if system.UnregisterMultiplexed multiId entityId this then
                     match this.Correlations.TryGetValue entityId with
@@ -657,7 +659,7 @@ type SystemMultiplexed<'t, 'w when 't : struct and 't :> Component and 'w :> Fre
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-//type SystemHierarchical<'t, 'w> () =
+//type SystemHierarchical<'c, 'w> () =
 //    end
 
 [<RequireQualifiedAccess>]
