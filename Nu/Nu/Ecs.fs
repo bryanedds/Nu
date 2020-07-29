@@ -665,18 +665,18 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
     let systemTree = List<List<SystemCorrelated<'c, 'w>>> ()
     let systemDict = dictPlus [] : Dictionary<Guid, SystemCorrelated<'c, 'w>>
 
-    member this.GetComponentsHierarchicalIndexed nodeId =
-        match systemDict.TryGetValue nodeId with
-        | (true, system) -> system.Components
-        | (false, _) -> failwith ("Node with id '" + scstring nodeId + "'not found.")
-
-    member this.GetComponentsHierarchical () : 'c ArrayRef [] [] =
+    member this.Components with get () =
         systemTree |>
         Seq.map (fun systems ->
             systems |>
             Seq.map (fun system -> system.Components) |>
             Seq.toArray) |>
         Seq.toArray
+
+    member this.IndexNode nodeId =
+        match systemDict.TryGetValue nodeId with
+        | (true, system) -> system.Components
+        | (false, _) -> failwith ("Node with id '" + scstring nodeId + "'not found.")
 
     member this.AddNode parentIdOpt =
         let nodeId = Gen.id
@@ -723,14 +723,14 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
 
     type Ecs<'w when 'w :> Freezable> with
 
-        member this.GetComponentsHierarchicalIndexed<'c when 'c : struct and 'c :> Component> systemName nodeId =
+        member this.IndexHierarchy<'c when 'c : struct and 'c :> Component> systemName =
             match this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName with
-            | Some system -> system.GetComponentsHierarchicalIndexed nodeId
+            | Some system -> system.Components
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.GetComponentsHierarchical<'c when 'c : struct and 'c :> Component> systemName =
+        member this.IndexNode<'c when 'c : struct and 'c :> Component> systemName nodeId =
             match this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName with
-            | Some system -> system.GetComponentsHierarchical ()
+            | Some system -> system.IndexNode nodeId
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
         member this.AddNode<'c when 'c : struct and 'c :> Component> systemName parentIdOpt =
