@@ -665,50 +665,39 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
     let systemTree = List<List<SystemCorrelated<'c, 'w>>> ()
     let systemDict = dictPlus [] : Dictionary<Guid, SystemCorrelated<'c, 'w>>
 
-    member this.GetComponentsIndexed nodeId =
+    member this.GetComponentsHierarchicalIndexed nodeId =
         match systemDict.TryGetValue nodeId with
-        | (true, system) -> system.Components.Array
+        | (true, system) -> system.Components
         | (false, _) -> failwith ("Node with id '" + scstring nodeId + "'not found.")
 
-    member this.GetComponentsHierarchical () : 'c [] [] [] =
+    member this.GetComponentsHierarchical () : 'c ArrayRef [] [] =
         systemTree |>
         Seq.map (fun systems ->
             systems |>
-            Seq.map (fun system -> system.Components.Array) |>
+            Seq.map (fun system -> system.Components) |>
             Seq.toArray) |>
         Seq.toArray
 
-    member this.GetComponents () : 'c [] =
-        this.GetComponentsHierarchical () |>
-        Array.concat |>
-        Array.concat
-
-    member this.TryAddNode parentIdOpt =
-        let childId = Gen.id
+    member this.AddNode parentIdOpt =
+        let nodeId = Gen.id
+        let system = SystemCorrelated<'c, 'w> (scstring nodeId)
         match parentIdOpt with
         | Some parentId ->
-            let mutable result = None
             let parentIdStr = scstring parentId
-            for parents in systemTree do
-                match Seq.tryLast parents with
-                | Some last ->
-                    if last.Name = parentIdStr then
-                        let system = SystemCorrelated<'c, 'w> (scstring id)
-                        do systemDict.Add (childId, system)
-                        do parents.Add system
-                        do result <- Some childId
-                | None -> ()
-            result
-        | None ->
-            let system = SystemCorrelated<'c, 'w> (scstring id)
-            do systemDict.Add (childId, system)
-            do systemTree.Add (List [system])
-            Some childId
+            for node in systemTree do
+                match node.FindIndex (fun system -> system.Name = parentIdStr) with
+                | -1 -> ()
+                | index -> node.Insert (inc index, system)
+        | None -> systemTree.Add (List [system])
+        do systemDict.Add (nodeId, system)
+        nodeId
 
-    member this.AddNode parentIdOpt =
-        match this.TryAddNode parentIdOpt with
-        | Some childId -> childId
-        | None -> failwith "Cannot add a node to a non-existent parent or parent with an existing child."
+    member this.RemoveNode nodeId =
+        let nodeIdStr = scstring nodeId
+        let result = systemDict.Remove nodeId
+        for node in systemTree do
+            node.RemoveAll (fun system -> system.Name = nodeIdStr) |> ignore
+        result
 
     member this.QualifyHierarchical nodeId entityId =
         match systemDict.TryGetValue nodeId with
@@ -733,6 +722,26 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
         | (false, _) -> false
 
     type Ecs<'w when 'w :> Freezable> with
+
+        member this.GetComponentsHierarchicalIndexed<'c when 'c : struct and 'c :> Component> systemName nodeId =
+            match this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName with
+            | Some system -> system.GetComponentsHierarchicalIndexed nodeId
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.GetComponentsHierarchical<'c when 'c : struct and 'c :> Component> systemName =
+            match this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName with
+            | Some system -> system.GetComponentsHierarchical ()
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.AddNode<'c when 'c : struct and 'c :> Component> systemName parentIdOpt =
+            match this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName with
+            | Some system -> system.AddNode parentIdOpt
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.RemoveNode<'c when 'c : struct and 'c :> Component> systemName parentIdOpt =
+            match this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName with
+            | Some system -> system.RemoveNode parentIdOpt
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
         member this.QualifyHierarchical<'c when 'c : struct and 'c :> Component> systemName nodeId entityId =
             let systemOpt = this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName
