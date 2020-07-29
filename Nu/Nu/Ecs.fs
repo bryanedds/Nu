@@ -615,7 +615,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fre
         let componentMultiplexed = &this.IndexCorrelated entityId
         componentMultiplexed.Simplexes.[multiId]
 
-    member this.RegisterMultiplexed multiId comp entityId ecs =
+    member this.RegisterMultiplexed comp multiId entityId ecs =
         let _ = this.RegisterCorrelated Unchecked.defaultof<_> entityId ecs
         let componentMultiplexed = &this.IndexCorrelated entityId
         do componentMultiplexed.RegisterMultiplexed (multiId, comp)
@@ -659,8 +659,78 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fre
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-//type SystemHierarchical<'c, 'w> () =
-//    end
+type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (name) =
+    inherit System<'w> (name)
+
+    let systemTree = List<List<SystemCorrelated<'c, 'w>>> ()
+    let systemDict = dictPlus [] : Dictionary<Guid, SystemCorrelated<'c, 'w>>
+
+    member this.GetComponentsIndexed nodeId =
+        match systemDict.TryGetValue nodeId with
+        | (true, system) -> system.Components.Array
+        | (false, _) -> failwith ("Node with id '" + scstring nodeId + "'not found.")
+
+    member this.GetComponentsHierarchical () : 'c [] [] [] =
+        systemTree |>
+        Seq.map (fun systems ->
+            systems |>
+            Seq.map (fun system -> system.Components.Array) |>
+            Seq.toArray) |>
+        Seq.toArray
+
+    member this.GetComponents () : 'c [] =
+        this.GetComponentsHierarchical () |>
+        Array.concat |>
+        Array.concat
+
+    member this.TryAddNode parentIdOpt =
+        let childId = Gen.id
+        match parentIdOpt with
+        | Some parentId ->
+            let mutable result = None
+            let parentIdStr = scstring parentId
+            for parents in systemTree do
+                match Seq.tryLast parents with
+                | Some last ->
+                    if last.Name = parentIdStr then
+                        let system = SystemCorrelated<'c, 'w> (scstring id)
+                        do systemDict.Add (childId, system)
+                        do parents.Add system
+                        do result <- Some childId
+                | None -> ()
+            result
+        | None ->
+            let system = SystemCorrelated<'c, 'w> (scstring id)
+            do systemDict.Add (childId, system)
+            do systemTree.Add (List [system])
+            Some childId
+
+    member this.AddNode parentIdOpt =
+        match this.TryAddNode parentIdOpt with
+        | Some childId -> childId
+        | None -> failwith "Cannot add a node to a non-existent parent or parent with an existing child."
+
+    member this.QualifyHierarchical nodeId entityId =
+        match systemDict.TryGetValue nodeId with
+        | (true, system) -> system.QualifyCorrelated entityId
+        | (false, _) -> false
+
+    member this.IndexHierarchical nodeId entityId =
+        let (found, system) = systemDict.TryGetValue nodeId
+        if not found then raise (InvalidOperationException "nodeId")
+        system.IndexCorrelated entityId
+
+    member this.RegisterHierarchical comp nodeId entityId ecs =
+        match systemDict.TryGetValue nodeId with
+        | (true, system) ->
+            let _ = system.RegisterCorrelated comp entityId ecs
+            true
+        | (false, _) -> false
+
+    member this.UnregisterHierarchical nodeId entityId ecs =
+        match systemDict.TryGetValue nodeId with
+        | (true, system) -> system.UnregisterCorrelated entityId ecs
+        | (false, _) -> false
 
 [<RequireQualifiedAccess>]
 module EcsEvents =
