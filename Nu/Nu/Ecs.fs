@@ -19,6 +19,12 @@ type Freezable =
         abstract Thaw : unit -> unit
         end
 
+/// An array with additional indirection.
+type 't ArrayRef =
+    { mutable Arr : 't array }
+    static member make n =
+        { Arr = Array.zeroCreate n }
+
 /// The base component type of an Ecs.
 type Component =
     abstract RefCount : int with get, set
@@ -26,26 +32,26 @@ type Component =
 /// A storable reference to a component in its containing array.
 type [<NoEquality; NoComparison; Struct>] ComponentRef<'t when 't : struct and 't :> Component> =
     { ComponentIndex : int
-      ComponentArray : 't array }
+      ComponentArrRef : 't ArrayRef }
 
     member this.Index
-        with get () = &this.ComponentArray.[this.ComponentIndex]
+        with get () = &this.ComponentArrRef.Arr.[this.ComponentIndex]
 
     member this.Assign value =
-        this.ComponentArray.[this.ComponentIndex] <- value
+        this.ComponentArrRef.Arr.[this.ComponentIndex] <- value
 
     static member (<!) (componentRef, value) =
-        componentRef.ComponentArray.[componentRef.ComponentIndex] <- value
+        componentRef.ComponentArrRef.Arr.[componentRef.ComponentIndex] <- value
 
     static member (!>) componentRef =
-        &componentRef.ComponentArray.[componentRef.ComponentIndex]
+        &componentRef.ComponentArrRef.Arr.[componentRef.ComponentIndex]
 
 [<RequireQualifiedAccess>]
 module ComponentRef =
 
     let make index arr =
         { ComponentIndex = index
-          ComponentArray = arr }
+          ComponentArrRef = arr }
 
 type [<NoEquality; NoComparison>] SystemEvent<'d, 'w when 'w :> Freezable> =
     { SystemEventData : 'd
@@ -227,7 +233,7 @@ type [<AbstractClass>] SystemMany<'w when 'w :> Freezable> (name) =
 type SystemUncorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> (name) =
     inherit SystemMany<'w> (name)
 
-    let mutable components = Array.zeroCreate 32 : 't array
+    let mutable components = ArrayRef<'t>.make 32
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
     
@@ -242,22 +248,23 @@ type SystemUncorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Fr
         sizeof<'t>
 
     override this.ComponentsLength with get () =
-        components.Length
+        components.Arr.Length
 
     override this.ComponentsToBytes () =
-        let byteArrays = Array.map this.ComponentToBytes components
+        let byteArrays = Array.map this.ComponentToBytes components.Arr
         Array.concat byteArrays
 
     override this.BytesToComponents (bytes : char array) =
         let byteArrays = Array.chunkBySize this.SizeOfComponent bytes
-        if bytes.Length <> components.Length then
+        if bytes.Length <> components.Arr.Length then
             failwith "Incoming bytes array must have the same number of elements as target system has components."
-        let components' = Array.map this.BytesToComponent byteArrays
-        components <- components'
+        let arr = Array.map this.BytesToComponent byteArrays
+        components.Arr <- arr
 
     override this.PadComponents length =
-        let arr = Array.zeroCreate (components.Length + length)
-        components.CopyTo (arr, 0)
+        let arr = Array.zeroCreate (components.Arr.Length + length)
+        components.Arr.CopyTo (arr, 0)
+        components.Arr <- arr
 
     member this.Components
         with get () = components
@@ -267,25 +274,25 @@ type SystemUncorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Fr
 
     member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
-        &components.[index]
+        &components.Arr.[index]
 
     member this.RegisterUncorrelated comp =
         if freeList.Count = 0 then
-            if freeIndex < components.Length - 1 then
-                components.[freeIndex] <- comp
+            if freeIndex < components.Arr.Length - 1 then
+                components.Arr.[freeIndex] <- comp
                 freeIndex <- inc freeIndex
             else
-                let arr = Array.zeroCreate (components.Length * 2)
-                components.CopyTo (arr, 0)
-                components <- arr
-                components.[freeIndex] <- comp
+                let arr = Array.zeroCreate (components.Arr.Length * 2)
+                components.Arr.CopyTo (arr, 0)
+                components.Arr <- arr
+                components.Arr.[freeIndex] <- comp
                 freeIndex <- inc freeIndex
-        else components.[freeList.Dequeue ()] <- comp
+        else components.Arr.[freeList.Dequeue ()] <- comp
 
     member this.UnregisterUncorrelated index =
         if index <> freeIndex then
-            components.[index].RefCount <- dec components.[index].RefCount
-            if components.[index].RefCount = 0 then freeList.Enqueue index
+            components.Arr.[index].RefCount <- dec components.Arr.[index].RefCount
+            if components.Arr.[index].RefCount = 0 then freeList.Enqueue index
         else freeIndex <- dec freeIndex
 
     type Ecs<'w when 'w :> Freezable> with
@@ -322,14 +329,14 @@ type SystemUncorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Fr
 type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Freezable> (name) =
     inherit SystemMany<'w> (name)
 
-    let mutable components = Array.zeroCreate 32 : 't array
+    let mutable components = ArrayRef<'t>.make 32
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
 
     new () = SystemCorrelated typeof<'t>.Name
 
-    member this.Components with get () = components and internal set value = components <- value
+    member this.Components with get () = components
     member this.FreeIndex with get () = freeIndex and internal set value = freeIndex <- value
     member internal this.FreeList with get () = freeList
     member internal this.Correlations with get () = correlations
@@ -343,22 +350,23 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
         sizeof<'t>
 
     override this.ComponentsLength with get () =
-        components.Length
+        components.Arr.Length
 
     override this.ComponentsToBytes () =
-        let byteArrays = Array.map this.ComponentToBytes components
+        let byteArrays = Array.map this.ComponentToBytes components.Arr
         Array.concat byteArrays
 
     override this.BytesToComponents (bytes : char array) =
         let byteArrays = Array.chunkBySize this.SizeOfComponent bytes
-        if bytes.Length <> components.Length then
+        if bytes.Length <> components.Arr.Length then
             failwith "Incoming bytes array must have the same number of elements as target system has components."
-        let components' = Array.map this.BytesToComponent byteArrays
-        components <- components'
+        let arr = Array.map this.BytesToComponent byteArrays
+        components.Arr <- arr
 
     override this.PadComponents length =
-        let arr = Array.zeroCreate (components.Length + length)
-        components.CopyTo (arr, 0)
+        let arr = Array.zeroCreate (components.Arr.Length + length)
+        components.Arr.CopyTo (arr, 0)
+        components.Arr <- arr
 
     member this.GetEntitiesCorrelated () =
         correlations.Keys :> _ IEnumerable
@@ -373,31 +381,31 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
 
     member this.IndexCorrelated entityId =
         let index = this.IndexCorrelatedI entityId
-        &components.[index]
+        &components.Arr.[index]
 
     abstract member RegisterCorrelated : 't -> Guid -> 'w Ecs -> int
     default this.RegisterCorrelated comp entityId _ =
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
             if freeList.Count = 0 then
-                if freeIndex < components.Length - 1 then
-                    components.[freeIndex] <- comp
+                if freeIndex < components.Arr.Length - 1 then
+                    components.Arr.[freeIndex] <- comp
                     freeIndex <- inc freeIndex
                 else
-                    let arr = Array.zeroCreate (components.Length * 2)
-                    components.CopyTo (arr, 0)
-                    components <- arr
-                    components.[freeIndex] <- comp
+                    let arr = Array.zeroCreate (components.Arr.Length * 2)
+                    components.Arr.CopyTo (arr, 0)
+                    components.Arr <- arr
+                    components.Arr.[freeIndex] <- comp
                     freeIndex <- inc freeIndex
                 let index = dec freeIndex
                 correlations.Add (entityId, index)
                 index
             else
                 let index = freeList.Dequeue ()
-                components.[index] <- comp
+                components.Arr.[index] <- comp
                 index
         | (true, index) ->
-            let mutable comp = components.[index]
+            let mutable comp = components.Arr.[index]
             comp.RefCount <- inc comp.RefCount
             index
 
@@ -406,8 +414,8 @@ type SystemCorrelated<'t, 'w when 't : struct and 't :> Component and 'w :> Free
         match correlations.TryGetValue entityId with
         | (true, index) ->
             if index <> freeIndex then
-                components.[index].RefCount <- dec components.[index].RefCount
-                if components.[index].RefCount = 0 then freeList.Enqueue index
+                components.Arr.[index].RefCount <- dec components.Arr.[index].RefCount
+                if components.Arr.[index].RefCount = 0 then freeList.Enqueue index
             else freeIndex <- dec freeIndex
             true
         | (false, _) -> false
@@ -503,35 +511,35 @@ type SystemJunctioned<'t, 'w when 't : struct and 't :> 't Junction and 'w :> Fr
             let junctions = this.GetJunctions ecs
             let comp = comp.Junction junctions entityId ecs
             if this.FreeList.Count = 0 then
-                if this.FreeIndex < this.Components.Length - 1 then
-                    this.Components.[this.FreeIndex] <- comp
+                if this.FreeIndex < this.Components.Arr.Length - 1 then
+                    this.Components.Arr.[this.FreeIndex] <- comp
                     this.FreeIndex <- inc this.FreeIndex
                 else
-                    let arr = Array.zeroCreate (this.Components.Length * 2)
-                    this.Components.CopyTo (arr, 0)
-                    this.Components <- arr
-                    this.Components.[this.FreeIndex] <- comp
+                    let arr = Array.zeroCreate (this.Components.Arr.Length * 2)
+                    this.Components.Arr.CopyTo (arr, 0)
+                    this.Components.Arr <- arr
+                    this.Components.Arr.[this.FreeIndex] <- comp
                     this.FreeIndex <- inc this.FreeIndex
                 let index = dec this.FreeIndex
                 this.Correlations.Add (entityId, index)
                 index
             else
                 let index = this.FreeList.Dequeue ()
-                this.Components.[index] <- comp
+                this.Components.Arr.[index] <- comp
                 index
         | (true, index) ->
-            let mutable comp = this.Components.[index]
+            let mutable comp = this.Components.Arr.[index]
             comp.RefCount <- inc comp.RefCount
             index
 
     override this.UnregisterCorrelated entityId ecs =
         match this.Correlations.TryGetValue entityId with
         | (true, index) ->
-            let comp = this.Components.[index]
+            let comp = this.Components.Arr.[index]
             let junctions = this.GetJunctions ecs
             if index <> this.FreeIndex then
-                this.Components.[index].RefCount <- dec this.Components.[index].RefCount
-                if this.Components.[index].RefCount = 0 then this.FreeList.Enqueue index
+                this.Components.Arr.[index].RefCount <- dec this.Components.Arr.[index].RefCount
+                if this.Components.Arr.[index].RefCount = 0 then this.FreeList.Enqueue index
             else this.FreeIndex <- dec this.FreeIndex
             comp.Disjunction junctions entityId ecs
             true
