@@ -732,6 +732,38 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
         | (true, system) -> system.UnregisterCorrelated entityId ecs
         | (false, _) -> false
 
+    type Ecs<'w when 'w :> Freezable> with
+
+        member this.QualifyHierarchical<'c when 'c : struct and 'c :> Component> systemName nodeId entityId =
+            let systemOpt = this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            system.QualifyHierarchical nodeId entityId
+
+        member this.IndexHierarchical<'c when 'c : struct and 'c :> Component> systemName nodeId entityId =
+            let systemOpt = this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            system.IndexHierarchical nodeId entityId
+
+        member this.RegisterHierarchical<'c when 'c : struct and 'c :> Component> systemName comp nodeId entityId =
+            match this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName with
+            | Some system ->
+                let _ = system.RegisterHierarchical comp nodeId entityId
+                match this.Correlations.TryGetValue entityId with
+                | (true, correlation) -> correlation.Add systemName
+                | (false, _) -> this.Correlations.Add (entityId, List [systemName])
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.UnregisterHierarchical<'c when 'c : struct and 'c :> Component> systemName nodeId entityId =
+            match this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName with
+            | Some system ->
+                if system.UnregisterHierarchical nodeId entityId this then
+                    match this.Correlations.TryGetValue entityId with
+                    | (true, correlation) -> correlation.Add systemName
+                    | (false, _) -> this.Correlations.Add (entityId, List [systemName])
+            | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
 [<RequireQualifiedAccess>]
 module EcsEvents =
 
