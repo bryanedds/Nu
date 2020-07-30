@@ -71,6 +71,7 @@
     <Compile Include="Constants.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Gen.fs" />
+    <Compile Include="ListTree.fs" />
     <Compile Include="Ecs.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="SpatialTree.fs" />

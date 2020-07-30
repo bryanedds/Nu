@@ -662,16 +662,11 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fre
 type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (name) =
     inherit System<'w> (name)
 
-    let systemTree = List<List<SystemCorrelated<'c, 'w>>> ()
+    let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
     let systemDict = dictPlus [] : Dictionary<Guid, SystemCorrelated<'c, 'w>>
 
     member this.Components with get () =
-        systemTree |>
-        Seq.map (fun systems ->
-            systems |>
-            Seq.map (fun system -> system.Components) |>
-            Seq.toArray) |>
-        Seq.toArray
+        systemTree |> ListTree.map (fun system -> system.Components)
 
     member this.IndexNode nodeId =
         match systemDict.TryGetValue nodeId with
@@ -681,23 +676,22 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
     member this.AddNode parentIdOpt =
         let nodeId = Gen.id
         let system = SystemCorrelated<'c, 'w> (scstring nodeId)
-        match parentIdOpt with
-        | Some parentId ->
-            let parentIdStr = scstring parentId
-            for node in systemTree do
-                match node.FindIndex (fun system -> system.Name = parentIdStr) with
-                | -1 -> ()
-                | index -> node.Insert (inc index, system)
-        | None -> systemTree.Add (List [system])
-        do systemDict.Add (nodeId, system)
-        nodeId
+        let added =
+            match parentIdOpt with
+            | Some parentId ->
+                let parentIdStr = scstring parentId
+                systemTree |> ListTree.tryInsert (fun system -> system.Name = parentIdStr) system
+            | None ->
+                systemTree |> ListTree.tryAdd tautology system
+        if Option.isSome added then
+            systemDict.Add (nodeId, system)
+            Some nodeId
+        else None
 
     member this.RemoveNode nodeId =
         let nodeIdStr = scstring nodeId
-        let result = systemDict.Remove nodeId
-        for node in systemTree do
-            node.RemoveAll (fun system -> system.Name = nodeIdStr) |> ignore
-        result
+        let _ = systemTree |> ListTree.remove (fun system -> system.Name = nodeIdStr)
+        systemDict.Remove nodeId
 
     member this.QualifyHierarchical nodeId entityId =
         match systemDict.TryGetValue nodeId with
