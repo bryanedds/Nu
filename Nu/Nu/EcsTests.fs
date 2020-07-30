@@ -21,13 +21,8 @@ module EcsTests =
         interface Airship Junction with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
             member this.SystemNames = [|"Transform"; "Skin"|]
-            member this.Junction systems entityId ecs =
-                { RefCount = 0
-                  Transform = ecs.Junction systems.[0] entityId
-                  Skin = ecs.Junction systems.[1] entityId }
-            member this.Disjunction systems entityId ecs =
-                ecs.Disjunction<Transform> systems.[0] entityId
-                ecs.Disjunction<Skin> systems.[1] entityId
+            member this.Junction systems entityId ecs = { RefCount = 0; Transform = ecs.Junction systems.[0] entityId; Skin = ecs.Junction systems.[1] entityId }
+            member this.Disjunction systems entityId ecs = ecs.Disjunction<Transform> systems.[0] entityId; ecs.Disjunction<Skin> systems.[1] entityId
 
     let example (world : World) =
 
