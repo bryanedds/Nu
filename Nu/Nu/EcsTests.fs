@@ -47,7 +47,7 @@ module EcsTests =
             world)
 
         // create and register our airship
-        let airshipId = ecs.RegisterJunctioned airshipSystem.Name Unchecked.defaultof<Airship> Gen.id
+        let airshipId = ecs.RegisterJunctioned Unchecked.defaultof<Airship> airshipSystem.Name Gen.id
 
         // change some airship properties
         let airship = ecs.IndexJunctioned<Airship> airshipSystem.Name airshipId
