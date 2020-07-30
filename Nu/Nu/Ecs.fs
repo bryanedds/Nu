@@ -43,7 +43,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and '
         this.ComponentArrRef.[this.ComponentIndex] <- value
 
     static member (<!) (componentRef, value) =
-        componentRef.ComponentArrRef.[componentRef.ComponentIndex] <- value
+        componentRef.ComponentArrRef.Array.[componentRef.ComponentIndex] <- value
 
     static member (!>) componentRef =
         &componentRef.ComponentArrRef.Array.[componentRef.ComponentIndex]
