@@ -449,7 +449,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
             let system = Option.get systemOpt
             &system.IndexCorrelated entityId
 
-        member this.RegisterCorrelated<'c when 'c : struct and 'c :> Component> systemName comp entityId =
+        member this.RegisterCorrelated<'c when 'c : struct and 'c :> Component> comp systemName entityId =
             match this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName with
             | Some system ->
                 let _ = system.RegisterCorrelated comp entityId
@@ -555,8 +555,8 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
         member this.IndexJunctioned<'c when 'c : struct and 'c :> 'c Junction> systemName entityId =
             this.IndexCorrelated<'c> systemName entityId
 
-        member this.RegisterJunctioned<'c when 'c : struct and 'c :> 'c Junction> systemName comp entityId =
-            do this.RegisterCorrelated<'c> systemName comp entityId
+        member this.RegisterJunctioned<'c when 'c : struct and 'c :> 'c Junction> comp systemName entityId =
+            do this.RegisterCorrelated<'c> comp systemName entityId
             entityId
 
         member this.UnregisterJunctioned<'c when 'c : struct and 'c :> 'c Junction> systemName entityId =
@@ -641,7 +641,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fre
             let simplex = system.IndexMultiplexed multiId entityId
             &simplex.Simplex
 
-        member this.RegisterMultiplexed<'c when 'c : struct and 'c :> Component> systemName comp multiId entityId =
+        member this.RegisterMultiplexed<'c when 'c : struct and 'c :> Component> comp systemName multiId entityId =
             match this.TryIndexSystem<SystemMultiplexed<'c, 'w>> systemName with
             | Some system ->
                 let _ = system.RegisterMultiplexed comp multiId entityId
@@ -749,7 +749,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
             let system = Option.get systemOpt
             system.IndexHierarchical nodeId entityId
 
-        member this.RegisterHierarchical<'c when 'c : struct and 'c :> Component> systemName comp nodeId entityId =
+        member this.RegisterHierarchical<'c when 'c : struct and 'c :> Component> comp systemName nodeId entityId =
             match this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName with
             | Some system ->
                 let _ = system.RegisterHierarchical comp nodeId entityId
