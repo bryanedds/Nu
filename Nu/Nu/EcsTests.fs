@@ -40,8 +40,9 @@ module EcsTests =
 
         // define our airship system's update behavior
         let subscriptionId = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            for i = 0 to airshipSystem.FreeIndex - 1 do
-                let comp = &airshipSystem.Components.[i]
+            let (arr, len) = (airshipSystem.Components.Array, airshipSystem.FreeIndex)
+            for i = 0 to len - 1 do
+                let comp = &arr.[i]
                 comp.Transform.Index.Enabled <- i % 2 = 0
                 comp.Skin.Index.Color.Z <- 0.5f
             world)
