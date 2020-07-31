@@ -370,6 +370,24 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
         components.Array.CopyTo (arr, 0)
         components.Array <- arr
 
+    member internal this.Compact () =
+        // TODO: P1: step-debug this.
+        let mutable i = 0
+        let mutable j = i
+        let liveCount = freeIndex - freeList.Count
+        let liveArray = Array.zeroCreate liveCount
+        while j < freeIndex do
+            if components.[i].RefCount = 0 then
+                while components.[j].RefCount = 0 &&
+                      j < freeIndex do
+                      j <- inc j
+                liveArray.[i] <- components.[j]
+                j <- inc j
+            i <- inc i
+        freeList.Clear ()
+        freeIndex <- j
+        components.Array <- liveArray
+
     member this.GetEntitiesCorrelated () =
         correlations.Keys :> _ IEnumerable
 
@@ -387,6 +405,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
 
     abstract member RegisterCorrelated : bool -> 'c -> Guid -> 'w Ecs -> int
     default this.RegisterCorrelated stable comp entityId _ =
+        if components.Length < freeList.Count * 2 then this.Compact ()
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
             if stable || freeList.Count = 0 then
@@ -508,6 +527,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
             junctions
 
     override this.RegisterCorrelated stable comp entityId ecs =
+        if this.Components.Length < this.FreeList.Count * 2 then this.Compact ()
         match Dictionary.tryGetValue entityId this.Correlations with
         | (false, _) ->
             let junctions = this.GetJunctions ecs
