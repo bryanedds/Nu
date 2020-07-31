@@ -406,6 +406,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
         if components.Length < freeList.Count * 2 then this.Compact ()
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
+            comp.RefCount <- inc comp.RefCount
             if freeIndex < components.Length - 1 then
                 components.[freeIndex] <- comp
                 freeIndex <- inc freeIndex
@@ -525,6 +526,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
         | (false, _) ->
             let junctions = this.GetJunctions ecs
             let comp = comp.Junction junctions entityId ecs
+            comp.RefCount <- inc comp.RefCount
             if this.FreeIndex < this.Components.Length - 1 then
                 this.Components.[this.FreeIndex] <- comp
                 this.FreeIndex <- inc this.FreeIndex
@@ -564,7 +566,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
             this.IndexCorrelated<'c> systemName entityId
 
         member this.RegisterJunctioned<'c when 'c : struct and 'c :> 'c Junction> comp systemName entityId =
-            do this.RegisterCorrelated<'c> comp systemName entityId
+            this.RegisterCorrelated<'c> comp systemName entityId
             entityId
 
         member this.UnregisterJunctioned<'c when 'c : struct and 'c :> 'c Junction> systemName entityId =
@@ -626,7 +628,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fre
     member this.RegisterMultiplexed comp multiId entityId ecs =
         let _ = this.RegisterCorrelated Unchecked.defaultof<_> entityId ecs
         let componentMultiplexed = &this.IndexCorrelated entityId
-        do componentMultiplexed.RegisterMultiplexed (multiId, comp)
+        componentMultiplexed.RegisterMultiplexed (multiId, comp)
         multiId
 
     member this.UnregisterMultiplexed multiId entityId ecs =
