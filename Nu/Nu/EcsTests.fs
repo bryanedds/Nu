@@ -21,7 +21,7 @@ module EcsTests =
         interface Airship Junction with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
             member this.SystemNames = [|"Transform"; "Skin"|]
-            member this.Junction systems entityId ecs = { RefCount = 0; Transform = ecs.Junction false entityId systems.[0]; Skin = ecs.Junction false entityId systems.[1] }
+            member this.Junction systems entityId ecs = { RefCount = 0; Transform = ecs.Junction entityId systems.[0]; Skin = ecs.Junction entityId systems.[1] }
             member this.Disjunction systems entityId ecs = ecs.Disjunction<Transform> entityId systems.[0]; ecs.Disjunction<Skin> entityId systems.[1]
 
     let example (world : World) =
@@ -40,14 +40,14 @@ module EcsTests =
 
         // define our airship system's update behavior
         let subscriptionId = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            for i = 0 to airshipSystem.Components.Length - 1 do
+            for i = 0 to airshipSystem.FreeIndex - 1 do
                 let comp = &airshipSystem.Components.[i]
                 comp.Transform.Index.Enabled <- i % 2 = 0
                 comp.Skin.Index.Color.Z <- 0.5f
             world)
 
         // create and register our airship
-        let airshipId = ecs.RegisterJunctioned false Unchecked.defaultof<Airship> airshipSystem.Name Gen.id
+        let airshipId = ecs.RegisterJunctioned Unchecked.defaultof<Airship> airshipSystem.Name Gen.id
 
         // change some airship properties
         let airship = ecs.IndexJunctioned<Airship> airshipSystem.Name airshipId
