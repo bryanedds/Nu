@@ -226,7 +226,7 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freez
 type [<AbstractClass>] SystemMany<'w when 'w :> Freezable> (name) =
     inherit System<'w> (name)
     abstract SizeOfComponent : int
-    abstract ComponentsLength : int
+    abstract ComponentsCount : int
     abstract ComponentsToBytes : unit -> char array
     abstract BytesToComponents : char array -> unit
     abstract PadComponents : int -> unit
@@ -249,8 +249,8 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
     override this.SizeOfComponent with get () =
         sizeof<'c>
 
-    override this.ComponentsLength with get () =
-        components.Length
+    override this.ComponentsCount with get () =
+        freeIndex - 1 - freeList.Count
 
     override this.ComponentsToBytes () =
         let byteArrays = Array.map this.ComponentToBytes components.Array
@@ -311,15 +311,14 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
             | Some system -> system.UnregisterUncorrelated index
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.ReadUncorrelated (readers : Dictionary<string, StreamReader>) (count : int) =
+        member this.ReadUncorrelated<'c when 'c : struct and 'c :> Component> (readers : Dictionary<string, StreamReader>) (count : int) =
             for readerEntry in readers do
                 let (systemName, reader) = (readerEntry.Key, readerEntry.Value)
-                match this.TryIndexSystem<'w SystemMany> systemName with
+                match this.TryIndexSystem<SystemUncorrelated<'c, 'w>> systemName with
                 | Some system ->
-                    let length = system.ComponentsLength
                     system.PadComponents count
                     let bytes = system.ComponentsToBytes ()
-                    let _ = reader.ReadBlock (bytes, system.SizeOfComponent * length, system.SizeOfComponent * count)
+                    let _ = reader.ReadBlock (bytes, system.SizeOfComponent * system.Components.Length, system.SizeOfComponent * count)
                     system.BytesToComponents bytes
                 | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
@@ -348,8 +347,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
     override this.SizeOfComponent with get () =
         sizeof<'c>
 
-    override this.ComponentsLength with get () =
-        components.Length
+    override this.ComponentsCount with get () =
+        freeIndex - 1 - freeList.Count
 
     override this.ComponentsToBytes () =
         let byteArrays = Array.map this.ComponentToBytes components.Array
@@ -374,7 +373,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
         let liveCount = freeIndex - freeList.Count
         let liveArray = Array.zeroCreate liveCount
         while j < freeIndex do
-            if components.[i].RefCount = 0 then
+            if components.[i].RefCount = 0 && freeList.Contains i then
                 while components.[j].RefCount = 0 &&
                       j < freeIndex do
                       j <- inc j
