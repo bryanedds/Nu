@@ -8,6 +8,12 @@ open System.IO
 open Prime
 open Nu
 
+type [<Struct>] EntityComponent =
+    { mutable RefCount : int
+      mutable Entity : Entity }
+    interface Component with
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+
 [<AutoOpen; ModuleBinding>]
 module WorldModuleEntity =
 
@@ -328,6 +334,7 @@ module WorldModuleEntity =
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
+        static member internal getEntitySystemNameOpt entity world = (World.getEntityState entity world).SystemNameOpt
         static member internal getEntityScriptFrame entity world = (World.getEntityState entity world).ScriptFrame
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
@@ -345,7 +352,7 @@ module WorldModuleEntity =
         static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then Some (if entityState.Imperative then entityState.PublishUpdates <- value; entityState else (let entityState = EntityState.copy entityState in entityState.PublishUpdates <- value; entityState)) else None) false true Property? PublishUpdates value entity world
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then Some (if entityState.Imperative then entityState.PublishPostUpdates <- value; entityState else (let entityState = EntityState.copy entityState in entityState.PublishPostUpdates <- value; entityState)) else None) false true Property? PublishPostUpdates value entity world
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then Some (if entityState.Imperative then entityState.Persistent <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Persistent <- value; entityState)) else None) false false Property? Persistent value entity world
-        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Overflow then Some (if entityState.Imperative then entityState.Overflow <- value; entityState else { entityState with EntityState.Overflow = value }) else None) false false Property? Overflow value entity world
+        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Overflow then Some (if entityState.Imperative then entityState.Overflow <- value; entityState else { entityState with Overflow = value }) else None) false false Property? Overflow value entity world
         static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> if value <> entityState.ScriptFrame then Some (if entityState.Imperative then entityState.ScriptFrame <- value; entityState else { entityState with ScriptFrame = value }) else None) false true Property? ScriptFrame value entity world
 
         static member internal getEntityTransform entity world =
@@ -440,6 +447,30 @@ module WorldModuleEntity =
                             Some entityState
                     else None)
                 false false Property? Position value entity world
+
+        static member internal setEntitySystemNameOpt value (entity : Entity) world =
+            World.updateEntityState
+                (fun entityState ->
+                    if value <> entityState.SystemNameOpt then
+                        let entityId = World.getEntityId entity world
+                        let screen = entity.Parent.Parent
+                        let ecs = World.getScreenEcs screen world
+                        let _ : bool =
+                            match value with
+                            | Some systemName -> ecs.UnregisterCorrelated<EntityComponent> systemName entityId
+                            | None -> false
+                        let _ : Guid =
+                            match entityState.SystemNameOpt with
+                            | Some systemName -> ecs.RegisterCorrelated { RefCount = 0; Entity = entity } systemName (Alloc entityId)
+                            | None -> entityId
+                        let entityState = 
+                            if entityState.Imperative then
+                                entityState.SystemNameOpt <- value
+                                entityState
+                            else { entityState with SystemNameOpt = value }
+                        Some entityState
+                    else None)
+                false false Property? SystemNameOpt value entity world
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
@@ -785,12 +816,14 @@ module WorldModuleEntity =
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             let facets = World.getEntityFacets entity world
             let world = dispatcher.Unregister (entity, world)
-            Array.fold (fun world (facet : Facet) ->
-                let world = facet.Unregister (entity, world)
-                if WorldModule.isSelected entity world
-                then facet.UnregisterPhysics (entity, world)
-                else world)
-                world facets
+            let world =
+                Array.fold (fun world (facet : Facet) ->
+                    let world = facet.Unregister (entity, world)
+                    if WorldModule.isSelected entity world
+                    then facet.UnregisterPhysics (entity, world)
+                    else world)
+                    world facets
+            World.setEntitySystemNameOpt None entity world
 
         static member internal registerEntityPhysics entity world =
             let facets = World.getEntityFacets entity world
@@ -831,6 +864,13 @@ module WorldModuleEntity =
                                 (World.getEntityTree world)
                         World.setEntityTree entityTree world
                     else world
+
+                // update ecs if needed
+                match entityState.SystemNameOpt with
+                | Some systemName ->
+                    let ecs = World.getScreenEcs entity.Parent.Parent world
+                    ecs.RegisterCorrelated { RefCount = 0; Entity = entity } systemName (Alloc entityState.Id) : Guid |> ignore
+                | None -> ()
 
                 // register entity if needed
                 if isNew
@@ -1278,6 +1318,7 @@ module WorldModuleEntity =
         Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
         Getters.Add ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
         Getters.Add ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })
+        Getters.Add ("SystemNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntitySystemNameOpt entity world })
         Getters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
         Getters.Add ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
         Getters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
@@ -1309,6 +1350,7 @@ module WorldModuleEntity =
         Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
         Setters.Add ("OverlayNameOpt", fun _ _ world -> (false, world))
         Setters.Add ("FacetNames", fun _ _ world -> (false, world))
+        Setters.Add ("SystemNameOpt", fun property entity world -> (true, World.setEntitySystemNameOpt (property.PropertyValue :?> string option) entity world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Id", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
