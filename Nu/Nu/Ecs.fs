@@ -11,10 +11,11 @@ open System.Threading.Tasks
 open Nito.Collections
 open Prime
 
+/// The manner in which a component is registered.
 type [<Struct>] Registration =
     | Prealloc
     | Alloc of AllocId : Guid
-    | Postalloc of PostallocId : Guid
+    | PostAlloc of PostAllocId : Guid
 
 /// A freezable type.
 /// TODO: move to Prime?
@@ -439,7 +440,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
             this.RegisterCorrelatedInner comp true Gen.id
         | Alloc entityId ->
             this.RegisterCorrelatedInner comp false entityId
-        | Postalloc entityId ->
+        | PostAlloc entityId ->
             if preDeque.Count > 0 then
                 let preallocId = preDeque.RemoveFromFront ()
                 let index = correlations.[preallocId]
@@ -582,7 +583,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
             this.RegisterCorrelatedInner comp registration true Gen.id ecs
         | Alloc entityId ->
             this.RegisterCorrelatedInner comp registration false entityId ecs
-        | Postalloc entityId ->
+        | PostAlloc entityId ->
             if preDeque.Count > 0 then
                 let preallocId = preDeque.RemoveFromFront ()
                 let index = this.Correlations.[preallocId]
