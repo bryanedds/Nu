@@ -25,12 +25,12 @@ type [<Struct>] EntityComponent =
 /// The static sprite component
 type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
     { mutable RefCount : int
-      mutable Entity : TransformComponent ComponentRef
+      mutable EntityComponent : EntityComponent ComponentRef
       mutable Sprite : Image AssetTag }
     interface StaticSpriteComponent Junction with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
         member this.SystemNames = [|"EntityComponent"|]
-        member this.Junction systems registration ecs = { id this with Entity = ecs.Junction registration systems.[0] }
+        member this.Junction systems registration ecs = { id this with EntityComponent = ecs.Junction registration systems.[0] }
         member this.Disjunction systems entityId ecs = ecs.Disjunction<EntityComponent> entityId systems.[0]
 
 [<AutoOpen; ModuleBinding>]
