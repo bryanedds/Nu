@@ -184,6 +184,9 @@ module WorldScreenModule =
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?")
             let ecs = world.Plugin.MakeEcs ()
+            let _ = ecs.RegisterSystem (SystemCorrelated<TransformComponent, World> ())
+            let _ = ecs.RegisterSystem (SystemCorrelated<EntityComponent, World> ())
+            let _ = ecs.RegisterSystem (SystemJunctioned<StaticSpriteComponent, World> ())
             let screenState = ScreenState.make nameOpt dispatcher ecs
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screen = ntos screenState.Name
