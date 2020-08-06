@@ -29,6 +29,18 @@ type MetricsEntityDispatcher () =
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
 
+#if ECS
+    override this.Register (entity, world) =
+        let ecs = entity.Parent.Parent.GetEcs world
+        let _ : Guid = ecs.RegisterJunctioned<StaticSpriteComponent> { RefCount = 0; EntityComponent = Unchecked.defaultof<_>; Sprite = AssetTag.make Assets.DefaultPackageName Assets.DefaultImageName } typeof<StaticSpriteComponent>.Name (Alloc (entity.GetId world))
+        world
+
+    override this.Unregister (entity, world) =
+        let ecs = entity.Parent.Parent.GetEcs world
+        let _ : bool = ecs.UnregisterJunctioned<StaticSpriteComponent> typeof<StaticSpriteComponent>.Name (entity.GetId world)
+        world
+#endif
+
 #if OPTIMIZED
     override this.Actualize (entity, world) =
         let transform = entity.GetTransform world
@@ -57,7 +69,7 @@ type MyGameDispatcher () =
 
     override this.Register (game, world) =
         let world = base.Register (game, world)
-        let world = World.createScreen (Some Simulants.DefaultScreen.Name) world |> snd
+        let (screen, world) = World.createScreen (Some Simulants.DefaultScreen.Name) world
         let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
@@ -73,7 +85,29 @@ type MyGameDispatcher () =
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 entity.SetSize (v2One * 8.0f) world)
                 world indices
-        World.selectScreen Simulants.DefaultScreen world
+        let world = World.selectScreen Simulants.DefaultScreen world
+#if ECS
+        let ecs = screen.GetEcs world
+        let _ = ecs.Subscribe EcsEvents.Actualize (fun _ system _ world ->
+            let world = ref world
+            let system = system :?> SystemCorrelated<StaticSpriteComponent, World>
+            let (arr, last) = system.Iter
+            for i = 0 to last do
+                let comp = arr.[i]
+                let entity = comp.EntityComponent.Index.Entity
+                let transform = entity.GetTransform world.Value
+                if transform.Visible && Math.isBoundsInBounds (v4Bounds transform.Position transform.Size) (World.getViewBounds false world.Value) then
+                    world :=
+                        World.enqueueRenderMessage
+                            (LayeredDescriptorMessage
+                                { Depth = transform.Depth
+                                  PositionY = transform.Position.Y
+                                  AssetTag = AssetTag.generalize comp.Sprite
+                                  RenderDescriptor = SpriteDescriptor { Transform = transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Vector4.One; Glow = Vector4.Zero; Flip = FlipNone }})
+                            world.Value
+            world.Value)
+#endif
+        world
 
 type ElmishGameDispatcher () =
     inherit GameDispatcher<int list list, int, unit> (List.init 33 (fun _ -> List.init 33 id)) // 990 Elmish entities
