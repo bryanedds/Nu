@@ -8,11 +8,31 @@ open System.IO
 open Prime
 open Nu
 
+/// A transform component.
+type [<NoEquality; NoComparison; Struct>] TransformComponent =
+    { mutable RefCount : int
+      mutable Transform : Transform }
+    interface Component with
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+
+/// The component that refers to an entity.
+/// TODO: move this somewhere more appropriate?
 type [<Struct>] EntityComponent =
     { mutable RefCount : int
       mutable Entity : Entity }
     interface Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+
+/// The static sprite component
+type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
+    { mutable RefCount : int
+      mutable Entity : TransformComponent ComponentRef
+      mutable Sprite : Image AssetTag }
+    interface StaticSpriteComponent Junction with
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+        member this.SystemNames = [|"EntityComponent"|]
+        member this.Junction systems registration ecs = { id this with Entity = ecs.Junction registration systems.[0] }
+        member this.Disjunction systems entityId ecs = ecs.Disjunction<EntityComponent> entityId systems.[0]
 
 [<AutoOpen; ModuleBinding>]
 module WorldModuleEntity =

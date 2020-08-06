@@ -84,7 +84,7 @@ type [<StructuralEquality; NoComparison>] RenderDescriptor =
 type [<StructuralEquality; NoComparison>] LayeredDescriptor =
     { Depth : single
       PositionY : single
-      AssetTag : AssetTag
+      AssetTag : obj AssetTag
       RenderDescriptor : RenderDescriptor }
 
 /// A message to the rendering system.

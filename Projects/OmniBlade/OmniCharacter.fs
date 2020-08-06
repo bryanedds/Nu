@@ -56,7 +56,7 @@ module OmniCharacter =
         override this.View (model, character, world) =
             if character.GetVisible world && character.GetInView world then
                 let transform = character.GetTransform world
-                [Render (transform.Depth, transform.Position.Y, model.AnimationSheet,
+                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize model.AnimationSheet,
                      SpriteDescriptor
                        { Transform = transform
                          Offset = Vector2.Zero

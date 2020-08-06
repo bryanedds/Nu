@@ -21,22 +21,10 @@ type Refinement =
         | "Retro" -> Retro
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
-/// A generalized asset tag.
-type AssetTag =
-    interface
-        abstract PackageName : string
-        abstract AssetName : string
-        end
-
 /// Describes a means for looking up an asset.
-type[<StructuralEquality; NoComparison>] 'a AssetTag =
+type[<StructuralEquality; NoComparison; Struct>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
-
-    interface AssetTag with
-        member this.PackageName = this.PackageName
-        member this.AssetName = this.AssetName
-        end
 
 [<RequireQualifiedAccess>]
 module AssetTag =

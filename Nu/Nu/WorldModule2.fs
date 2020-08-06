@@ -711,7 +711,7 @@ module WorldModule2 =
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
                           PositionY = transform.Position.Y
-                          AssetTag = dissolveImage
+                          AssetTag = AssetTag.generalize dissolveImage
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform

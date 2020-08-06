@@ -152,7 +152,7 @@ module AvatarDispatcherModule =
         override this.View (model, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Depth, transform.Position.Y, model.AnimationSheet,
+                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize model.AnimationSheet,
                      SpriteDescriptor
                         { Transform = transform
                           Offset = Vector2.Zero
