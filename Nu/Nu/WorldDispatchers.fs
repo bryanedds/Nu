@@ -26,7 +26,7 @@ module DeclarativeOperators2 =
             Seq.fold (fun world view ->
                 match view with
                 | Render (depth, positionY, assetTag, descriptor) ->
-                    let layeredDescriptor = { Depth = depth; PositionY = positionY; AssetTag = assetTag; RenderDescriptor = descriptor }
+                    let layeredDescriptor = { Depth = depth; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
                     World.enqueueRenderMessage (LayeredDescriptorMessage layeredDescriptor) world
                 | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
                 | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
@@ -421,7 +421,7 @@ module TextFacetModule =
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
                           PositionY = transform.Position.Y
-                          AssetTag = text.GetFont world
+                          AssetTag = text.GetFont world |> AssetTag.generalize
                           RenderDescriptor =
                             TextDescriptor
                                 { Transform = transform
@@ -813,7 +813,7 @@ module TileMapFacetModule =
                                             (LayeredDescriptorMessage
                                                 { Depth = transform.Depth
                                                   PositionY = transform.Position.Y
-                                                  AssetTag = image
+                                                  AssetTag = AssetTag.generalize image
                                                   RenderDescriptor =
                                                     TileLayerDescriptor
                                                         { Transform = transform
@@ -1061,7 +1061,7 @@ module StaticSpriteFacetModule =
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
                           PositionY = transform.Position.Y
-                          AssetTag = entity.GetStaticImage world
+                          AssetTag = entity.GetStaticImage world |> AssetTag.generalize
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform
@@ -1132,7 +1132,7 @@ module AnimatedSpriteFacetModule =
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
                           PositionY = transform.Position.Y
-                          AssetTag = entity.GetAnimationSheet world
+                          AssetTag = entity.GetAnimationSheet world |> AssetTag.generalize
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform
@@ -1447,7 +1447,7 @@ module ButtonDispatcherModule =
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
                           PositionY = transform.Position.Y
-                          AssetTag = image
+                          AssetTag = AssetTag.generalize image
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform
@@ -1489,7 +1489,7 @@ module LabelDispatcherModule =
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
                           PositionY = transform.Position.Y
-                          AssetTag = label.GetLabelImage world
+                          AssetTag = label.GetLabelImage world |> AssetTag.generalize
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform
@@ -1534,7 +1534,7 @@ module TextDispatcherModule =
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
                           PositionY = transform.Position.Y
-                          AssetTag = text.GetBackgroundImage world
+                          AssetTag = text.GetBackgroundImage world |> AssetTag.generalize
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform
@@ -1648,7 +1648,7 @@ module ToggleDispatcherModule =
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
                           PositionY = transform.Position.Y
-                          AssetTag = image
+                          AssetTag = AssetTag.generalize image
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform
@@ -1820,7 +1820,7 @@ module FillBarDispatcherModule =
                     (LayeredDescriptorsMessage
                         [|{ Depth = borderSpriteTransform.Depth
                             PositionY = borderSpriteTransform.Position.Y
-                            AssetTag = fillBar.GetBorderImage world
+                            AssetTag = fillBar.GetBorderImage world |> AssetTag.generalize
                             RenderDescriptor =
                                 SpriteDescriptor
                                     { Transform = borderSpriteTransform
@@ -1832,7 +1832,7 @@ module FillBarDispatcherModule =
                                       Flip = FlipNone }}
                           { Depth = fillBarSpriteTransform.Depth
                             PositionY = fillBarSpriteTransform.Position.Y
-                            AssetTag = fillBar.GetFillImage world
+                            AssetTag = fillBar.GetFillImage world |> AssetTag.generalize
                             RenderDescriptor =
                                 SpriteDescriptor
                                     { Transform = fillBarSpriteTransform
@@ -1954,7 +1954,7 @@ module CharacterDispatcherModule =
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
                           PositionY = transform.Position.Y
-                          AssetTag = image
+                          AssetTag = AssetTag.generalize image
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform

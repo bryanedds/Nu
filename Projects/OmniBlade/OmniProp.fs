@@ -102,7 +102,7 @@ module PropDispatcherModule =
                     | Shopkeep shopkeepType ->
                         (None, Assets.CancelImage)
                 [Render
-                    (transform.Depth, transform.Position.Y, image,
+                    (transform.Depth, transform.Position.Y, AssetTag.generalize image,
                      SpriteDescriptor
                         { Transform = transform
                           Offset = Vector2.Zero

@@ -37,7 +37,7 @@ type MetricsEntityDispatcher () =
             (LayeredDescriptorMessage
                 { Depth = transform.Depth
                   PositionY = transform.Position.Y
-                  AssetTag = image
+                  AssetTag = AssetTag.generalize image
                   RenderDescriptor =
                       SpriteDescriptor
                         { Transform = transform

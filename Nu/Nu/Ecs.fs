@@ -434,7 +434,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
             entityId
 
     abstract member RegisterCorrelated : 'c -> Registration -> 'w Ecs -> Guid
-    default this.RegisterCorrelated comp registration _ =
+    default this.RegisterCorrelated (comp : 'c) registration _ =
         match registration with
         | Prealloc ->
             this.RegisterCorrelatedInner comp true Gen.id

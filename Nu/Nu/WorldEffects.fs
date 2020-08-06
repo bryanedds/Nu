@@ -496,7 +496,7 @@ module EffectSystem =
                       RefCount = 0 }
                 transform.Absolute <- effectSystem.Absolute
                 let spriteView =
-                    Render (transform.Depth, transform.Position.Y, image,
+                    Render (transform.Depth, transform.Position.Y, AssetTag.generalize image,
                         SpriteDescriptor 
                             { Transform = transform
                               Offset = slice.Offset
@@ -541,7 +541,7 @@ module EffectSystem =
                           RefCount = 0 }
                     transform.Absolute <- effectSystem.Absolute
                     let animatedSpriteView =
-                        Render (transform.Depth, transform.Position.Y, image,
+                        Render (transform.Depth, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
                                { Transform = transform
                                  Offset = slice.Offset
