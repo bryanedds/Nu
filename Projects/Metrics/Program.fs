@@ -101,8 +101,8 @@ type MyGameDispatcher () =
             let (arr, last) = staticSprites.Iter
             for i = 0 to last do
                 let comp = &arr.[i]
-                if comp.Active then
-                    let entityState = comp.EntityComponent.Index.GetEntityState world
+                if comp.Valid then
+                    let entityState = comp.EntityComponent.Index.Entity.State world
                     entityState.Rotation <- entityState.Rotation + 0.03f
             world)
 
@@ -112,15 +112,12 @@ type MyGameDispatcher () =
             let (arr, last) = staticSprites.Iter
             for i = 0 to last do
                 let comp = &arr.[i]
-                if comp.Active then
-                    let entityState = comp.EntityComponent.Index.GetEntityState world
+                if comp.Valid then
+                    let entityState = comp.EntityComponent.Index.Entity.State world
                     if entityState.Visible then
-                        messages.Add
-                            (LayeredDescriptorMessage
-                                { Depth = entityState.Depth
-                                  PositionY = entityState.Position.Y
-                                  AssetTag = AssetTag.generalize comp.Sprite
-                                  RenderDescriptor = SpriteDescriptor { Transform = entityState.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Vector4.One; Glow = Vector4.Zero; Flip = FlipNone }})
+                        let spriteDescriptor = SpriteDescriptor { Transform = entityState.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Vector4.One; Glow = Vector4.Zero; Flip = FlipNone }
+                        let message = LayeredDescriptorMessage { Depth = entityState.Depth; PositionY = entityState.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
+                        messages.Add message
             World.enqueueRenderMessages messages world)
 #endif
         world

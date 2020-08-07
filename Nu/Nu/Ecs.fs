@@ -41,7 +41,7 @@ type Component =
 [<AutoOpen>]
 module ComponentExtensions =
     type Component with
-        member this.Active with get () =
+        member this.Valid with get () =
             this.RefCount > 0
 
 /// A storable reference to a component in its containing array.
