@@ -1,5 +1,6 @@
 ﻿namespace Metrics
 open System
+open System.Collections.Generic
 open Prime
 open Nu
 open Nu.Declarative
@@ -7,7 +8,7 @@ open Nu.Declarative
 type MetricsEntityDispatcher () =
     inherit EntityDispatcher ()
 
-#if !OPTIMIZED
+#if !OPTIMIZED && !ECS
     static member Facets =
         [typeof<StaticSpriteFacet>]
 #endif
@@ -26,8 +27,10 @@ type MetricsEntityDispatcher () =
               DesignerValue = asset<Image> Assets.DefaultPackageName "Image4" }]
 #endif
 
+#if !ECS
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
+#endif
 
 #if ECS
     override this.Register (entity, world) =
@@ -88,24 +91,34 @@ type MyGameDispatcher () =
         let world = World.selectScreen Simulants.DefaultScreen world
 #if ECS
         let ecs = screen.GetEcs world
-        let _ = ecs.Subscribe EcsEvents.Actualize (fun _ system _ world ->
+        let staticSprites = ecs.IndexSystem<SystemCorrelated<StaticSpriteComponent, World>> typeof<StaticSpriteComponent>.Name
+        let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             let world = ref world
-            let system = system :?> SystemCorrelated<StaticSpriteComponent, World>
-            let (arr, last) = system.Iter
+            let (arr, last) = staticSprites.Iter
             for i = 0 to last do
                 let comp = arr.[i]
-                let entity = comp.EntityComponent.Index.Entity
-                let transform = entity.GetTransform world.Value
-                if transform.Visible && Math.isBoundsInBounds (v4Bounds transform.Position transform.Size) (World.getViewBounds false world.Value) then
-                    world :=
-                        World.enqueueRenderMessage
+                if comp.RefCount > 0 then
+                    let entity = comp.EntityComponent.Index.Entity
+                    world := entity.SetRotation (entity.GetRotation world.Value + 0.03f) world.Value
+            world.Value)
+        let _ = ecs.Subscribe EcsEvents.Actualize (fun _ _ _ world ->
+            let viewBounds = World.getViewBounds false world
+            let messages = List<RenderMessage> ()
+            let (arr, last) = staticSprites.Iter
+            for i = 0 to last do
+                let comp = arr.[i]
+                if comp.RefCount > 0 then
+                    let entity = comp.EntityComponent.Index.Entity
+                    let mutable transform = entity.GetTransform world
+                    if  transform.Visible &&
+                        Math.isBoundsInBounds (v4Bounds transform.Position transform.Size) viewBounds then
+                        messages.Add
                             (LayeredDescriptorMessage
                                 { Depth = transform.Depth
                                   PositionY = transform.Position.Y
                                   AssetTag = AssetTag.generalize comp.Sprite
                                   RenderDescriptor = SpriteDescriptor { Transform = transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Vector4.One; Glow = Vector4.Zero; Flip = FlipNone }})
-                            world.Value
-            world.Value)
+            World.enqueueRenderMessages messages world)
 #endif
         world
 

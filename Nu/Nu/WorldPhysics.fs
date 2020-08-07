@@ -116,6 +116,10 @@ module WorldPhysics =
         static member enqueuePhysicsMessage (message : PhysicsMessage) world =
             World.updatePhysicsEngine (fun physicsEngine -> Subsystem.enqueueMessage message physicsEngine) world
 
+        /// Enqueue multiple physics messages to the world.
+        static member enqueuePhysicsMessages (messages : PhysicsMessage seq) world =
+            Seq.fold (fun world message -> World.enqueuePhysicsMessage message world) world messages
+
         /// Check that the world contains a body with the given physics id.
         [<FunctionBinding>]
         static member bodyExists physicsId world =
