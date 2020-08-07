@@ -102,7 +102,7 @@ type MyGameDispatcher () =
             for i = 0 to last do
                 let comp = &arr.[i]
                 if comp.Active then
-                    let entityState = comp.EntityComponent.Index.Entity.GetEntityState world
+                    let entityState = comp.EntityComponent.Index.GetEntityState world
                     entityState.Rotation <- entityState.Rotation + 0.03f
             world)
 
@@ -113,7 +113,7 @@ type MyGameDispatcher () =
             for i = 0 to last do
                 let comp = &arr.[i]
                 if comp.Active then
-                    let entityState = comp.EntityComponent.Index.Entity.GetEntityState world
+                    let entityState = comp.EntityComponent.Index.GetEntityState world
                     if entityState.Visible then
                         messages.Add
                             (LayeredDescriptorMessage
