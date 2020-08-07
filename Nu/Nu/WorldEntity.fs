@@ -10,10 +10,6 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldEntityModule =
 
-    type EntityComponent with
-        member this.GetEntityState world =
-            World.getEntityState this.Entity world
-
     type Entity with
 
         member this.GetDispatcher world = World.getEntityDispatcher this world
@@ -87,13 +83,12 @@ module WorldEntityModule =
         member this.GetId world = World.getEntityId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
-        member this.GetEntityState world =
+        member this.State world =
             let entityState = World.getEntityState this world
 #if DEBUG
             if not entityState.Mutable then failwith "Can get the entity state of an entity only if it is Imperative, Omnipresent, and not PublishChanges."
 #endif
             entityState
-        member this.EntityState = lensReadOnly Property? EntityState this.GetEntityState this
 
         member this.GetStaticData<'a> world = World.getEntityStaticData<'a> this world
         member this.SetStaticData<'a> value world = World.setEntityStaticData<'a> value this world
@@ -414,4 +409,5 @@ type Entity =
 
     /// Provides a full view of all the properties of an entity. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view entity world = World.viewEntityProperties entity world
+    static member view entity world = World.viewEntityProperties entity world   
+        
