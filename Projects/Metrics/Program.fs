@@ -96,8 +96,8 @@ type MyGameDispatcher () =
             let world = ref world
             let (arr, last) = staticSprites.Iter
             for i = 0 to last do
-                let comp = arr.[i]
-                if comp.RefCount > 0 then
+                let comp = &arr.[i]
+                if  comp.Active then
                     let entity = comp.EntityComponent.Index.Entity
                     world := entity.SetRotation (entity.GetRotation world.Value + 0.03f) world.Value
             world.Value)
@@ -106,10 +106,10 @@ type MyGameDispatcher () =
             let messages = List<RenderMessage> ()
             let (arr, last) = staticSprites.Iter
             for i = 0 to last do
-                let comp = arr.[i]
-                if comp.RefCount > 0 then
+                let comp = &arr.[i]
+                if  comp.Active then
                     let entity = comp.EntityComponent.Index.Entity
-                    let mutable transform = entity.GetTransform world
+                    let transform = entity.GetTransform world
                     if  transform.Visible &&
                         Math.isBoundsInBounds (v4Bounds transform.Position transform.Size) viewBounds then
                         messages.Add

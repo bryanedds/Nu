@@ -43,8 +43,9 @@ module EcsTests =
             let (arr, last) = airshipSystem.Iter
             for i = 0 to last do
                 let comp = &arr.[i]
-                comp.Transform.Index.Enabled <- i % 2 = 0
-                comp.Skin.Index.Color.Z <- 0.5f
+                if  comp.Active then
+                    comp.Transform.Index.Enabled <- i % 2 = 0
+                    comp.Skin.Index.Color.Z <- 0.5f
             world)
 
         // create and register our airship
