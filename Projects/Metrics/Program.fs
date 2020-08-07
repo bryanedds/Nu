@@ -5,6 +5,16 @@ open Prime
 open Nu
 open Nu.Declarative
 
+#if ECS
+type [<NoEquality; NoComparison; Struct>] StaticSpriteHybrid =
+    { mutable RefCount : int
+      mutable Entity : Entity
+      mutable Sprite : Image AssetTag }
+    interface Hybrid with
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+        member this.Entity = this.Entity
+#endif
+
 type MetricsEntityDispatcher () =
     inherit EntityDispatcher ()
 
@@ -26,12 +36,12 @@ type MetricsEntityDispatcher () =
 #if ECS
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : Guid = ecs.RegisterJunctioned<StaticSpriteComponent> { RefCount = 0; EntityComponent = Unchecked.defaultof<_>; Sprite = AssetTag.make Assets.DefaultPackageName Assets.DefaultImageName } typeof<StaticSpriteComponent>.Name (Alloc (entity.GetId world))
+        let _ : Guid = ecs.RegisterHybrid<StaticSpriteHybrid> { RefCount = 0; Entity = entity; Sprite = AssetTag.make Assets.DefaultPackageName Assets.DefaultImageName } typeof<StaticSpriteHybrid>.Name (Alloc (entity.GetId world))
         world
 
     override this.Unregister (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : bool = ecs.UnregisterJunctioned<StaticSpriteComponent> typeof<StaticSpriteComponent>.Name (entity.GetId world)
+        let _ : bool = ecs.UnregisterHybrid<StaticSpriteHybrid> typeof<StaticSpriteHybrid>.Name (entity.GetId world)
         world
 #endif
 
@@ -88,8 +98,8 @@ type MyGameDispatcher () =
         // grab ecs from current screen
         let ecs = screen.GetEcs world
 
-        // grab static sprite system
-        let staticSprites = ecs.IndexSystem<SystemCorrelated<StaticSpriteComponent, World>> typeof<StaticSpriteComponent>.Name
+        // create static sprite system
+        let staticSprites = ecs.RegisterSystem (SystemHybrid<StaticSpriteHybrid> ())
 
         // define update for static sprites
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
@@ -97,8 +107,8 @@ type MyGameDispatcher () =
             for i = 0 to last do
                 let comp = &arr.[i]
                 if comp.Valid then
-                    let entityState = comp.EntityComponent.Index.Entity.State world
-                    entityState.Rotation <- entityState.Rotation + 0.03f
+                    let entity = comp.Entity.State world
+                    entity.Rotation <- entity.Rotation + 0.03f
             world)
 
         // define actualize for static sprites
@@ -108,12 +118,14 @@ type MyGameDispatcher () =
             for i = 0 to last do
                 let comp = &arr.[i]
                 if comp.Valid then
-                    let entityState = comp.EntityComponent.Index.Entity.State world
-                    if entityState.Visible then
-                        let spriteDescriptor = SpriteDescriptor { Transform = entityState.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Vector4.One; Glow = Vector4.Zero; Flip = FlipNone }
-                        let message = LayeredDescriptorMessage { Depth = entityState.Depth; PositionY = entityState.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
+                    let entity = comp.Entity.State world
+                    if entity.Visible then
+                        let spriteDescriptor = SpriteDescriptor { Transform = entity.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Vector4.One; Glow = Vector4.Zero; Flip = FlipNone }
+                        let message = LayeredDescriptorMessage { Depth = entity.Depth; PositionY = entity.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
                         messages.Add message
             World.enqueueRenderMessages messages world)
+#else
+        ignore screen
 #endif
         world
 

@@ -7,31 +7,34 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-/// A transform component.
-type [<NoEquality; NoComparison; Struct>] TransformComponent =
-    { mutable RefCount : int
-      mutable Transform : Transform }
-    interface Component with
-        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+/// A component with an entity reference.
+type Hybrid =
+    interface
+        inherit Component
+        abstract Entity : Entity
+        end
 
-/// The component that refers to an entity.
-/// TODO: move this somewhere more appropriate?
-type [<Struct>] EntityComponent =
-    { mutable RefCount : int
-      mutable Entity : Entity }
-    interface Component with
-        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+/// A system with hybrid components
+type SystemHybrid<'c when 'c : struct and 'c :> Hybrid> (name) =
+    inherit SystemCorrelated<'c, World> (name)
+    new () = SystemHybrid (typeof<'c>.Name)
 
-/// The static sprite component
-type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
-    { mutable RefCount : int
-      mutable EntityComponent : EntityComponent ComponentRef
-      mutable Sprite : Image AssetTag }
-    interface StaticSpriteComponent Junction with
-        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-        member this.SystemNames = [|"EntityComponent"|]
-        member this.Junction systems registration ecs = { id this with EntityComponent = ecs.Junction registration systems.[0] }
-        member this.Disjunction systems entityId ecs = ecs.Disjunction<EntityComponent> entityId systems.[0]
+[<AutoOpen>]
+module WorldEcs =
+
+    type Ecs<'w when 'w :> Freezable> with
+
+        member this.QualifyHybrid<'c when 'c : struct and 'c :> Hybrid> systemName entityId =
+            this.QualifyCorrelated<'c> systemName entityId
+
+        member this.IndexHybrid<'c when 'c : struct and 'c :> Hybrid> systemName entityId =
+            this.IndexCorrelated<'c> systemName entityId
+
+        member this.RegisterHybrid<'c when 'c : struct and 'c :> Hybrid> comp systemName registration =
+            this.RegisterCorrelated<'c> comp systemName registration
+
+        member this.UnregisterHybrid<'c when 'c : struct and 'c :> Hybrid> systemName entityId =
+            this.UnregisterCorrelated<'c> systemName entityId
 
 [<AutoOpen; ModuleBinding>]
 module WorldModuleScreen =
@@ -274,9 +277,6 @@ module WorldModuleScreen =
 
             // make the ecs
             let ecs = world.Plugin.MakeEcs ()
-            let _ = ecs.RegisterSystem (SystemCorrelated<TransformComponent, World> ())
-            let _ = ecs.RegisterSystem (SystemCorrelated<EntityComponent, World> ())
-            let _ = ecs.RegisterSystem (SystemJunctioned<StaticSpriteComponent, World> ())
 
             // make the screen state and populate its properties
             let screenState = ScreenState.make None dispatcher ecs

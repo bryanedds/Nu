@@ -847,10 +847,6 @@ module WorldModuleEntity =
             // ensure entity exists in the world
             if World.getEntityExists entity world then
 
-                // remove entity from ECS
-                let ecs = World.getScreenEcs entity.Parent.Parent world
-                let _ : bool = ecs.UnregisterCorrelated<EntityComponent> typeof<EntityComponent>.Name (World.getEntityId entity world)
-                
                 // unregister entity
                 let world = World.unregisterEntity entity world
 
@@ -943,10 +939,6 @@ module WorldModuleEntity =
             // add entity's state to world
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world = World.addEntity false entityState entity world
-
-            // register entity with ecs
-            let ecs = World.getScreenEcs entity.Parent.Parent world
-            let _ : Guid = ecs.RegisterCorrelated { RefCount = 0; Entity = entity } typeof<EntityComponent>.Name (Alloc (World.getEntityId entity world))
 
             // HACK: make sure xtension is consistent with imperativeness of entity state
             let world = World.setEntityImperative entityState.Imperative entity world
