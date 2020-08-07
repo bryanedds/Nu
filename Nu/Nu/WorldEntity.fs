@@ -90,7 +90,7 @@ module WorldEntityModule =
         member this.GetEntityState world =
             let entityState = World.getEntityState this world
 #if DEBUG
-            if not entityState.Mutable then failwith "Can get the entity state of an entity only if it is Omnipresent."
+            if not entityState.Mutable then failwith "Can get the entity state of an entity only if it is Imperative, Omnipresent, and not PublishChanges."
 #endif
             entityState
         member this.EntityState = lensReadOnly Property? EntityState this.GetEntityState this
