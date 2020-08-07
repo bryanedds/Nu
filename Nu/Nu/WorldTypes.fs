@@ -399,10 +399,7 @@ module WorldTypes =
             abstract member GetXtension : unit -> Xtension
             end
 
-    /// Hosts the ongoing state of a game. The end-user of this engine should never touch this
-    /// type, and it's public _only_ to make [<CLIMutable>] work.
-    /// NOTE: The properties here have duplicated representations in WorldModuleGame that exist
-    /// for performance that must be kept in sync.
+    /// Hosts the ongoing state of a game.
     and [<NoEquality; NoComparison; CLIMutable>] GameState =
         { Dispatcher : GameDispatcher
           Xtension : Xtension
@@ -466,10 +463,7 @@ module WorldTypes =
         static member copy this =
             { this with GameState.Id = this.Id }
 
-    /// Hosts the ongoing state of a screen. The end-user of this engine should never touch this
-    /// type, and it's public _only_ to make [<CLIMutable>] work.
-    /// NOTE: The properties here have duplicated representations in WorldModuleScreen that exist
-    /// for performance that must be kept in sync.
+    /// Hosts the ongoing state of a screen.
     and [<NoEquality; NoComparison; CLIMutable>] ScreenState =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
@@ -536,10 +530,7 @@ module WorldTypes =
         static member copy this =
             { this with ScreenState.Id = this.Id }
     
-    /// Hosts the ongoing state of a layer. The end-user of this engine should never touch this
-    /// type, and it's public _only_ to make [<CLIMutable>] work.
-    /// NOTE: The properties here have duplicated representations in WorldModuleLayer that exist
-    /// for performance that must be kept in sync.
+    /// Hosts the ongoing state of a layer.
     and [<NoEquality; NoComparison; CLIMutable>] LayerState =
         { Dispatcher : LayerDispatcher
           Xtension : Xtension
@@ -598,9 +589,7 @@ module WorldTypes =
         static member copy this =
             { this with LayerState.Id = this.Id }
 
-    /// Hosts the ongoing state of an entity. The end-user of this engine should never touch this
-    /// type, and it's public _only_ to make [<CLIMutable>] work.
-    /// OPTIMIZATION: Booleans are packed into the Transform's Flags field.
+    /// Hosts the ongoing state of an entity.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
         { // cache line 1
           Dispatcher : EntityDispatcher
@@ -681,6 +670,10 @@ module WorldTypes =
         static member getTransform entityState =
             entityState.Transform
 
+        /// Get an entity state's transform.
+        static member getTransformRef entityState =
+            &entityState.Transform
+
         /// Set an entity state's transform.
         static member setTransform (value : Transform) (entityState : EntityState) =
             if entityState.Imperative then
@@ -709,6 +702,7 @@ module WorldTypes =
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
+        member this.Mutable with get () = this.Transform.Mutable
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

@@ -90,34 +90,37 @@ type MyGameDispatcher () =
                 world indices
         let world = World.selectScreen Simulants.DefaultScreen world
 #if ECS
+        // grab ecs from current screen
         let ecs = screen.GetEcs world
+
+        // grab static sprite system
         let staticSprites = ecs.IndexSystem<SystemCorrelated<StaticSpriteComponent, World>> typeof<StaticSpriteComponent>.Name
+
+        // define update for static sprites
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            let world = ref world
             let (arr, last) = staticSprites.Iter
             for i = 0 to last do
                 let comp = &arr.[i]
                 if  comp.Active then
-                    let entity = comp.EntityComponent.Index.Entity
-                    world := entity.SetRotation (entity.GetRotation world.Value + 0.03f) world.Value
-            world.Value)
+                    let entityState = comp.EntityComponent.Index.Entity.GetEntityState world
+                    entityState.Rotation <- entityState.Rotation + 0.03f
+            world)
+
+        // define actualize for static sprites
         let _ = ecs.Subscribe EcsEvents.Actualize (fun _ _ _ world ->
-            let viewBounds = World.getViewBounds false world
             let messages = List<RenderMessage> ()
             let (arr, last) = staticSprites.Iter
             for i = 0 to last do
                 let comp = &arr.[i]
                 if  comp.Active then
-                    let entity = comp.EntityComponent.Index.Entity
-                    let transform = entity.GetTransform world
-                    if  transform.Visible &&
-                        Math.isBoundsInBounds (v4Bounds transform.Position transform.Size) viewBounds then
+                    let entityState = comp.EntityComponent.Index.Entity.GetEntityState world
+                    if  entityState.Visible then
                         messages.Add
                             (LayeredDescriptorMessage
-                                { Depth = transform.Depth
-                                  PositionY = transform.Position.Y
+                                { Depth = entityState.Depth
+                                  PositionY = entityState.Position.Y
                                   AssetTag = AssetTag.generalize comp.Sprite
-                                  RenderDescriptor = SpriteDescriptor { Transform = transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Vector4.One; Glow = Vector4.Zero; Flip = FlipNone }})
+                                  RenderDescriptor = SpriteDescriptor { Transform = entityState.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Vector4.One; Glow = Vector4.Zero; Flip = FlipNone }})
             World.enqueueRenderMessages messages world)
 #endif
         world
