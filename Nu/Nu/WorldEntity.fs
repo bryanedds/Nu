@@ -10,6 +10,10 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldEntityModule =
 
+    type EntityComponent with
+        member this.GetEntityState world =
+            World.getEntityState this.Entity world
+
     type Entity with
 
         member this.GetDispatcher world = World.getEntityDispatcher this world
