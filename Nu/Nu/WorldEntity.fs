@@ -83,13 +83,6 @@ module WorldEntityModule =
         member this.GetId world = World.getEntityId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
 
-        member this.State world =
-            let entityState = World.getEntityState this world
-#if DEBUG
-            if not entityState.Mutable then failwith "Can get the entity state of an entity only if it is Imperative, Omnipresent, and not PublishChanges."
-#endif
-            entityState
-
         member this.GetStaticData<'a> world = World.getEntityStaticData<'a> this world
         member this.SetStaticData<'a> value world = World.setEntityStaticData<'a> value this world
         member this.UpdateStaticData<'a> updater world = this.SetStaticData<'a> (updater this.GetStaticData<'a> world) world
@@ -100,6 +93,19 @@ module WorldEntityModule =
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
+
+        member this.State world =
+            let entityState = World.getEntityState this world
+#if DEBUG
+            if not entityState.Optimized then failwith "Can get the entity state of an entity only if it is Imperative, Omnipresent, and not PublishChanges."
+#endif
+            entityState
+
+        member this.Optimize world =
+            let world = this.SetImperative true world
+            let world = this.SetOmnipresent true world
+            let world = this.SetPublishChanges false world
+            world
 
         /// Set the transform of an entity snapped to the give position and rotation snaps.
         member this.SetTransformSnapped positionSnap rotationSnap transform world =

@@ -702,7 +702,7 @@ module WorldTypes =
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
-        member this.Mutable with get () = this.Transform.Mutable
+        member this.Optimized with get () = this.Transform.Optimized
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

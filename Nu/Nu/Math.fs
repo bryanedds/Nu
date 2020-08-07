@@ -52,7 +52,7 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
     member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
     member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
     member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
-    member this.Mutable with get () = this.Flags &&& OmnipresentMask ||| this.Flags &&& ImperativeMask ||| this.Flags &&& PublishChangesMask = 0
+    member this.Optimized with get () = this.Flags &&& OmnipresentMask ||| this.Flags &&& ImperativeMask ||| this.Flags &&& PublishChangesMask = 0
 
     /// Assign a transform in-place.
     member this.Assign that =
