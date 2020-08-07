@@ -18,15 +18,6 @@ type MetricsEntityDispatcher () =
         [define Entity.PublishChanges true]
 #endif
 
-#if OPTIMIZED
-    static member Properties =
-        [define Entity.Imperative true // makes updates faster by using mutation
-         define Entity.Omnipresent true // makes updates faster by not touching the entity tree
-         define (Entity.StaticData ()) // makes user-defined properties faster by using local data
-            { DesignerType = typeof<Image AssetTag>
-              DesignerValue = asset<Image> Assets.DefaultPackageName "Image4" }]
-#endif
-
 #if !ECS
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
@@ -85,6 +76,10 @@ type MyGameDispatcher () =
         let world =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> None DefaultOverlay Simulants.DefaultLayer world
+#if OPTIMIZED
+                let world = entity.Optimize world
+                let world = entity.SetStaticData (asset<Image> Assets.DefaultPackageName "Image4") world
+#endif
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 entity.SetSize (v2One * 8.0f) world)
                 world indices
