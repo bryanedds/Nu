@@ -62,6 +62,10 @@ module WorldAudio =
         static member enqueueAudioMessage (message : AudioMessage) world =
             World.updateAudioPlayer (fun renderer -> Subsystem.enqueueMessage message renderer) world
 
+        /// Enqueue multiple audio messages to the world.
+        static member enqueueAudioMessages (messages : AudioMessage seq) world =
+            Seq.fold (fun world message -> World.enqueueAudioMessage message world) world messages
+
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]
         static member playSong timeToFadeOutSongMs volume song world =

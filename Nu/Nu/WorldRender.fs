@@ -63,6 +63,10 @@ module WorldRender =
         static member enqueueRenderMessage (message : RenderMessage) world =
             World.updateRenderer (fun renderer -> renderer.EnqueueMessage message) world
 
+        /// Enqueue multiple rendering messages to the world.
+        static member enqueueRenderMessages (messages : RenderMessage seq) world =
+            Seq.fold (fun world message -> World.enqueueRenderMessage message world) world messages
+
         /// Hint that a rendering asset package with the given name should be loaded. Should be
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)
         [<FunctionBinding>]
