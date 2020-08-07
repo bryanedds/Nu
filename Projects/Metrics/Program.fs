@@ -101,20 +101,20 @@ type MyGameDispatcher () =
             let (arr, last) = staticSprites.Iter
             for i = 0 to last do
                 let comp = &arr.[i]
-                if  comp.Active then
+                if comp.Active then
                     let entityState = comp.EntityComponent.Index.Entity.GetEntityState world
                     entityState.Rotation <- entityState.Rotation + 0.03f
             world)
 
         // define actualize for static sprites
         let _ = ecs.Subscribe EcsEvents.Actualize (fun _ _ _ world ->
-            let messages = List<RenderMessage> ()
+            let messages = List ()
             let (arr, last) = staticSprites.Iter
             for i = 0 to last do
                 let comp = &arr.[i]
-                if  comp.Active then
+                if comp.Active then
                     let entityState = comp.EntityComponent.Index.Entity.GetEntityState world
-                    if  entityState.Visible then
+                    if entityState.Visible then
                         messages.Add
                             (LayeredDescriptorMessage
                                 { Depth = entityState.Depth
