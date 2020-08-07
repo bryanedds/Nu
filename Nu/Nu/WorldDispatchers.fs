@@ -1922,8 +1922,8 @@ module CharacterDispatcherModule =
              define Entity.CharacterFacingLeft false]
 
         override this.Update (entity, world) =
-            // we have to a bit of hackery to remember whether the character is facing left or right
-            // when there is no velocity
+            // we have to use a bit of hackery to remember whether the character is facing left or
+            // right when there is no velocity
             let facingLeft = entity.GetCharacterFacingLeft world
             let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
             if facingLeft && velocity.X > 1.0f then entity.SetCharacterFacingLeft false world
