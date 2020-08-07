@@ -22,11 +22,6 @@ module WorldEntityModule =
         member this.GetTransform world = World.getEntityTransform this world
         member this.SetTransform value world = World.setEntityTransform value this world
         member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
-        member this.GetEntityState world =
-            let entityState = World.getEntityState this world
-            if not entityState.Mutable then failwith "Can get the entity state of an entity only if it is Omnipresent."
-            entityState
-        member this.EntityState = lensReadOnly Property? EntityState this.GetEntityState this
         member this.GetBounds world = World.getEntityBounds this world
         member this.SetBounds value world = World.setEntityBounds value this world
         member this.Bounds = lens Property? Bounds this.GetBounds this.SetBounds this
@@ -87,6 +82,14 @@ module WorldEntityModule =
         member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getEntityId this world
         member this.Id = lensReadOnly Property? Id this.GetId this
+
+        member this.GetEntityState world =
+            let entityState = World.getEntityState this world
+#if DEBUG
+            if not entityState.Mutable then failwith "Can get the entity state of an entity only if it is Omnipresent."
+#endif
+            entityState
+        member this.EntityState = lensReadOnly Property? EntityState this.GetEntityState this
 
         member this.GetStaticData<'a> world = World.getEntityStaticData<'a> this world
         member this.SetStaticData<'a> value world = World.setEntityStaticData<'a> value this world
