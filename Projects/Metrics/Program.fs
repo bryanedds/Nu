@@ -23,12 +23,6 @@ type MetricsEntityDispatcher () =
         [typeof<StaticSpriteFacet>]
 #endif
 
-#if ECS
-    static member Properties =
-        [define Entity.Imperative true // makes updates faster by using mutation
-         define Entity.Omnipresent true] // makes updates faster by not touching the entity tree
-#endif
-
 #if REACTIVE
     static member Properties =
         [define Entity.PublishChanges true]
@@ -79,7 +73,7 @@ type MyGameDispatcher () =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> None DefaultOverlay Simulants.DefaultLayer world
 #if ECS
-                //let world = entity.Optimize world
+                let world = entity.Optimize world
 #endif
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 entity.SetSize (v2One * 8.0f) world)
