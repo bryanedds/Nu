@@ -7,61 +7,23 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-[<RequireQualifiedAccess>]
-module WorldRendererSubsystem =
-
-    /// The subsystem for the world's renderer.
-    type [<ReferenceEquality; NoComparison>] RendererSubsystem =
-        private
-            { Renderer : Renderer }
-    
-        interface World Subsystem with
-            
-            member this.PopMessages () =
-                (this.Renderer.PopMessages () :> obj, this :> World Subsystem)
-            
-            member this.ClearMessages () =
-                Renderer.clearMessages this.Renderer
-                this :> World Subsystem
-            
-            member this.EnqueueMessage message =
-                Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer
-                this :> World Subsystem
-            
-            member this.ProcessMessages messages world =
-                let messages = messages :?> RenderMessage List
-                Renderer.render (World.getEyeCenter world) (World.getEyeSize world) messages this.Renderer :> obj
-
-            member this.ApplyResult (_, world) =
-                world
-            
-            member this.CleanUp world =
-                let this = { this with Renderer = Renderer.cleanUp this.Renderer }
-                (this :> World Subsystem, world)
-
-        static member make renderer =
-            { Renderer = renderer }
-
-/// The subsystem for the world's renderer.
-type RendererSubsystem = WorldRendererSubsystem.RendererSubsystem
-
 [<AutoOpen; ModuleBinding>]
 module WorldRender =
 
     type World with
 
         static member internal getRenderer world =
-            world.Subsystems.Renderer :?> RendererSubsystem
+            world.Subsystems.Renderer
 
         static member internal setRenderer renderer world =
             World.updateSubsystems (fun subsystems -> { subsystems with Renderer = renderer }) world
 
         static member internal updateRenderer updater world =
-            World.setRenderer (updater (World.getRenderer world :> World Subsystem)) world
+            World.setRenderer (updater (World.getRenderer world)) world
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage (message : RenderMessage) world =
-            World.updateRenderer (fun renderer -> renderer.EnqueueMessage message) world
+            World.updateRenderer (fun renderer -> Renderer.enqueueMessage message renderer; renderer) world
 
         /// Enqueue multiple rendering messages to the world.
         static member enqueueRenderMessages (messages : RenderMessage seq) world =

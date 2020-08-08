@@ -489,9 +489,7 @@ module WorldModule =
             World.setSubsystems (updater world.Subsystems) world
 
         static member internal cleanUpSubsystems world =
-            let subsystems = World.getSubsystems world
-            let (subsystems, world) = Subsystems.cleanUp subsystems world
-            World.setSubsystems subsystems world
+            World.updateSubsystems (fun subsystems -> { subsystems with Renderer = subsystems.Renderer.CleanUp () }) world
 
     type World with // EventSystem
 

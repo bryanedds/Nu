@@ -988,6 +988,12 @@ module WorldTypes =
           UpdateEntityInEntityTree : bool -> bool -> Vector4 -> Entity -> World -> World -> World
           RebuildEntityTree : World -> Entity SpatialTree }
 
+    /// The subsystems encapsulated by the engine.
+    and [<ReferenceEquality; NoComparison>] internal Subsystems =
+        { PhysicsEngine : PhysicsEngine
+          Renderer : Renderer
+          AudioPlayer : AudioPlayer }
+
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general
     /// configuration data.
@@ -1011,7 +1017,7 @@ module WorldTypes =
               GameState : GameState
               AmbientState : World AmbientState
               // cache line end
-              Subsystems : World Subsystems
+              Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
               Dispatchers : Dispatchers
               ScriptingEnv : Scripting.Env

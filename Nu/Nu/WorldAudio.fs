@@ -7,60 +7,23 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-[<RequireQualifiedAccess>]
-module AudioPlayerSubsystem =
-
-    /// The subsystem for the world's audio player.
-    type [<ReferenceEquality; NoComparison>] AudioPlayerSubsystem =
-        private
-            { AudioPlayer : AudioPlayer }
-    
-        interface World Subsystem with
-            
-            member this.PopMessages () =
-                (this.AudioPlayer.PopMessages () :> obj, this :> World Subsystem)
-            
-            member this.ClearMessages () =
-                AudioPlayer.clearMessages this.AudioPlayer
-                this :> World Subsystem
-            
-            member this.EnqueueMessage message =
-                AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer
-                this :> World Subsystem
-            
-            member this.ProcessMessages messages _ =
-                let messages = messages :?> AudioMessage List
-                AudioPlayer.play messages this.AudioPlayer :> obj
-            
-            member this.ApplyResult (_, world) =
-                world
-            
-            member this.CleanUp world =
-                (this :> World Subsystem, world)
-
-        static member make audioPlayer =
-            { AudioPlayer = audioPlayer }
-
-/// The subsystem for the world's audio player.
-type AudioPlayerSubsystem = AudioPlayerSubsystem.AudioPlayerSubsystem
-
 [<AutoOpen; ModuleBinding>]
 module WorldAudio =
 
     type World with
 
         static member internal getAudioPlayer world =
-            world.Subsystems.AudioPlayer :?> AudioPlayerSubsystem
+            world.Subsystems.AudioPlayer
 
         static member internal setAudioPlayer audioPlayer world =
             World.updateSubsystems (fun subsystems -> { subsystems with AudioPlayer = audioPlayer }) world
 
         static member internal updateAudioPlayer updater world =
-            World.setAudioPlayer (updater (World.getAudioPlayer world :> World Subsystem)) world
+            World.setAudioPlayer (updater (World.getAudioPlayer world)) world
 
         /// Enqueue an audio message to the world.
         static member enqueueAudioMessage (message : AudioMessage) world =
-            World.updateAudioPlayer (fun renderer -> Subsystem.enqueueMessage message renderer) world
+            World.updateAudioPlayer (fun audioPlayer -> AudioPlayer.enqueueMessage message audioPlayer; audioPlayer) world
 
         /// Enqueue multiple audio messages to the world.
         static member enqueueAudioMessages (messages : AudioMessage seq) world =

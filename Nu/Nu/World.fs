@@ -459,10 +459,9 @@ module WorldModule3 =
 
             // make the world's subsystems
             let subsystems =
-                Subsystems.make
-                    (PhysicsEngineSubsystem.make (MockPhysicsEngine.make ()))
-                    (RendererSubsystem.make (MockRenderer.make ()))
-                    (AudioPlayerSubsystem.make (MockAudioPlayer.make ()))
+                { PhysicsEngine = MockPhysicsEngine.make ()
+                  Renderer = MockRenderer.make ()
+                  AudioPlayer = MockAudioPlayer.make () }
 
             // make the world's scripting environment
             let scriptingEnv = Scripting.Env.Env.make ()
@@ -544,20 +543,19 @@ module WorldModule3 =
                 // make the world's subsystems
                 let subsystems =
                     let physicsEngine = FarseerPhysicsEngine.make Constants.Physics.Gravity
-                    let physicsEngineSubsystem = PhysicsEngineSubsystem.make physicsEngine :> World Subsystem
                     let renderer =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
                         | None -> MockRenderer.make () :> Renderer
                     renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackageName) // enqueue default package hint
-                    let rendererSubsystem = RendererSubsystem.make renderer :> World Subsystem
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
                     audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.DefaultPackageName) // enqueue default package hint
-                    let audioPlayerSubsystem = AudioPlayerSubsystem.make audioPlayer :> World Subsystem
-                    Subsystems.make physicsEngineSubsystem rendererSubsystem audioPlayerSubsystem
+                    { PhysicsEngine = physicsEngine
+                      Renderer = renderer
+                      AudioPlayer = audioPlayer }
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
