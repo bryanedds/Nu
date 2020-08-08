@@ -50,7 +50,9 @@ module WorldModuleEntity =
         static member private entityStateFinder (entity : Entity) world =
             // OPTIMIZATION: a ton of optimization has gone down in here...!
             let entityStateOpt = entity.EntityStateOpt
-            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated then
+            if notNull (entityStateOpt :> obj) && not entityStateOpt.Invalidated
+            then entityStateOpt
+            else
                 getFreshKeyAndValueEntity <- entity
                 getFreshKeyAndValueWorld <- world
                 let entityStateOpt =
@@ -66,7 +68,6 @@ module WorldModuleEntity =
                     if entityState.Imperative then entity.EntityStateOpt <- entityState
                     entityState
                 | None -> Unchecked.defaultof<EntityState>
-            else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =
             let screenDirectory =
