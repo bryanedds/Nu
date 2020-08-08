@@ -92,7 +92,7 @@ module WorldEntityModule =
         member this.State world =
             let entityState = World.getEntityState this world
 #if DEBUG
-            if not entityState.Optimized then failwith "Can get the entity state of an entity only if it is Imperative, Omnipresent, and not PublishChanges."
+            if not entityState.Optimized then failwith "Can get the entity state of an entity only if it is Optimized (Imperative, Omnipresent, and not PublishChanges)."
 #endif
             entityState
 
