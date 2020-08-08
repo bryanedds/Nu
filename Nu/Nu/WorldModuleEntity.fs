@@ -748,11 +748,14 @@ module WorldModuleEntity =
                     world facets
             let world = World.updateEntityPublishFlags entity world
             let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
-            World.publish () (rtoa<unit> [|"Register"; "Event"|] --> entity) eventTrace entity true world
+            let eventAddresses = getEventAddresses1 (rtoa<unit> [|"Register"; "Event"|] --> entity)
+            let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity false world) world eventAddresses
+            world
 
-        static member internal unregisterEntity entity world =
+        static member internal unregisterEntity (entity : Entity) world =
             let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
-            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> entity) eventTrace entity true world
+            let eventAddresses = getEventAddresses1 (rtoa<unit> [|"Unregistering"; "Event"|] --> entity)
+            let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity false world) world eventAddresses
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             let facets = World.getEntityFacets entity world
             let world = dispatcher.Unregister (entity, world)
