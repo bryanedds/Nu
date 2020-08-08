@@ -86,3 +86,26 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
+
+    // TODO: remove this after updating Prime.
+    let getEventAddresses1 (eventAddress : 'a Address) =
+
+        // create target event address array
+        let eventAddressNames = Address.getNames eventAddress
+        let eventAddressNamesLength = eventAddressNames.Length
+        let eventAddresses = Array.zeroCreate (inc eventAddressNamesLength)
+
+        // make non-wildcard address the last element
+        eventAddresses.[eventAddressNamesLength] <- eventAddress
+
+        // populate wildcard addresses from specific to general
+        Array.iteri (fun i _ ->
+            let eventAddressNamesAny = Array.zeroCreate eventAddressNamesLength
+            Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNamesLength)
+            eventAddressNamesAny.[i] <- Address.head Events.Wildcard
+            let eventAddressAny = Address.rtoa eventAddressNamesAny
+            eventAddresses.[i] <- eventAddressAny)
+            eventAddressNames
+
+        // fin
+        eventAddresses
