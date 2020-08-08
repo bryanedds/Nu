@@ -310,7 +310,6 @@ module WorldTypes =
              Define? Depth 0.0f
              Define? Omnipresent false
              Define? Absolute false
-             Define? StaticData { DesignerType = typeof<string>; DesignerValue = "" }
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
              Define? Imperative false
@@ -597,7 +596,6 @@ module WorldTypes =
           // cache line 2 start at second-to-last field of Transform
           mutable Facets : Facet array
           mutable Xtension : Xtension
-          mutable StaticData : DesignerProperty
           mutable Model : DesignerProperty
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
@@ -624,7 +622,6 @@ module WorldTypes =
               Dispatcher = dispatcher
               Facets = [||]
               Xtension = Xtension.makeSafe ()
-              StaticData = { DesignerType = typeof<string>; DesignerValue = "" }
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
@@ -669,10 +666,6 @@ module WorldTypes =
         /// Get an entity state's transform.
         static member getTransform entityState =
             entityState.Transform
-
-        /// Get an entity state's transform.
-        static member getTransformRef entityState =
-            &entityState.Transform
 
         /// Set an entity state's transform.
         static member setTransform (value : Transform) (entityState : EntityState) =
