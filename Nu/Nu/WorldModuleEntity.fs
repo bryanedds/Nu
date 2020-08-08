@@ -238,7 +238,7 @@ module WorldModuleEntity =
                         if value then
                             let properties = UMap.makeFromSeq Imperative (Xtension.toSeq entityState.Xtension)
                             let xtension = Xtension.make properties false true true
-                            let entityState = { entityState with Xtension = xtension }
+                            entityState.Xtension <- xtension
                             entityState.Imperative <- true
                             Some entityState
                         else
