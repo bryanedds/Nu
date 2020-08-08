@@ -36,7 +36,7 @@ type MetricsEntityDispatcher () =
 #if ECS
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : Guid = ecs.RegisterHybrid<StaticSpriteHybrid> { RefCount = 0; Entity = entity; Sprite = AssetTag.make Assets.DefaultPackageName Assets.DefaultImageName } typeof<StaticSpriteHybrid>.Name (Alloc (entity.GetId world))
+        let _ : Guid = ecs.RegisterHybrid<StaticSpriteHybrid> { RefCount = 0; Entity = entity; Sprite = AssetTag.make Assets.DefaultPackageName "Image4" } typeof<StaticSpriteHybrid>.Name (Alloc (entity.GetId world))
         world
 
     override this.Unregister (entity, world) =
@@ -74,6 +74,13 @@ type MyGameDispatcher () =
     override this.Register (game, world) =
         let world = base.Register (game, world)
         let (screen, world) = World.createScreen (Some Simulants.DefaultScreen.Name) world
+#if ECS
+        // grab ecs from current screen
+        let ecs = screen.GetEcs world
+
+        // create static sprite system
+        let staticSprites = ecs.RegisterSystem (SystemHybrid<StaticSpriteHybrid> ())
+#endif
         let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
@@ -95,12 +102,6 @@ type MyGameDispatcher () =
                 world indices
         let world = World.selectScreen Simulants.DefaultScreen world
 #if ECS
-        // grab ecs from current screen
-        let ecs = screen.GetEcs world
-
-        // create static sprite system
-        let staticSprites = ecs.RegisterSystem (SystemHybrid<StaticSpriteHybrid> ())
-
         // define update for static sprites
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             let (arr, last) = staticSprites.Iter
