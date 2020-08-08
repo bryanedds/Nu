@@ -27,7 +27,9 @@ module WorldRender =
 
         /// Enqueue multiple rendering messages to the world.
         static member enqueueRenderMessages (messages : RenderMessage seq) world =
-            Seq.fold (fun world message -> World.enqueueRenderMessage message world) world messages
+            let renderer = World.getRenderer world
+            for message in messages do Renderer.enqueueMessage message renderer
+            world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be
         /// used to avoid loading assets at inconvenient times (such as in the middle of game play!)

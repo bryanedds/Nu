@@ -27,7 +27,9 @@ module WorldAudio =
 
         /// Enqueue multiple audio messages to the world.
         static member enqueueAudioMessages (messages : AudioMessage seq) world =
-            Seq.fold (fun world message -> World.enqueueAudioMessage message world) world messages
+            let audioPlayer = World.getAudioPlayer world
+            for message in messages do AudioPlayer.enqueueMessage message audioPlayer
+            world
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]
