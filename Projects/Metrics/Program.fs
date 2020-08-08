@@ -18,9 +18,15 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteHybrid =
 type MetricsEntityDispatcher () =
     inherit EntityDispatcher ()
 
-#if !OPTIMIZED && !ECS
+#if !ECS
     static member Facets =
         [typeof<StaticSpriteFacet>]
+#endif
+
+#if ECS
+    static member Properties =
+        [define Entity.Imperative true // makes updates faster by using mutation
+         define Entity.Omnipresent true] // makes updates faster by not touching the entity tree
 #endif
 
 #if REACTIVE
@@ -43,27 +49,6 @@ type MetricsEntityDispatcher () =
         let ecs = entity.Parent.Parent.GetEcs world
         let _ : bool = ecs.UnregisterHybrid<StaticSpriteHybrid> typeof<StaticSpriteHybrid>.Name (entity.GetId world)
         world
-#endif
-
-#if OPTIMIZED
-    override this.Actualize (entity, world) =
-        let transform = entity.GetTransform world
-        let image = entity.GetStaticData world
-        World.enqueueRenderMessage
-            (LayeredDescriptorMessage
-                { Depth = transform.Depth
-                  PositionY = transform.Position.Y
-                  AssetTag = AssetTag.generalize image
-                  RenderDescriptor =
-                      SpriteDescriptor
-                        { Transform = transform
-                          Offset = Vector2.Zero
-                          InsetOpt = None
-                          Image = image
-                          Color = Vector4.One
-                          Glow = Vector4.Zero
-                          Flip = FlipNone }})
-            world
 #endif
 
 type MyGameDispatcher () =
@@ -93,9 +78,8 @@ type MyGameDispatcher () =
         let world =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> None DefaultOverlay Simulants.DefaultLayer world
-#if OPTIMIZED
-                let world = entity.Optimize world
-                let world = entity.SetStaticData (asset<Image> Assets.DefaultPackageName "Image4") world
+#if ECS
+                //let world = entity.Optimize world
 #endif
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 entity.SetSize (v2One * 8.0f) world)
