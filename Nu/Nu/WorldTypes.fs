@@ -460,7 +460,7 @@ module WorldTypes =
 
         /// Copy a game such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
-            { this with GameState.Id = this.Id }
+            { this with GameState.Dispatcher = this.Dispatcher }
 
     /// Hosts the ongoing state of a screen.
     and [<NoEquality; NoComparison; CLIMutable>] ScreenState =
@@ -527,7 +527,7 @@ module WorldTypes =
 
         /// Copy a screen such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
-            { this with ScreenState.Id = this.Id }
+            { this with ScreenState.Dispatcher = this.Dispatcher }
     
     /// Hosts the ongoing state of a layer.
     and [<NoEquality; NoComparison; CLIMutable>] LayerState =
@@ -586,7 +586,7 @@ module WorldTypes =
 
         /// Copy a layer such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
-            { this with LayerState.Id = this.Id }
+            { this with LayerState.Dispatcher = this.Dispatcher }
 
     /// Hosts the ongoing state of an entity.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
@@ -676,7 +676,7 @@ module WorldTypes =
 
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy (entityState : EntityState) =
-            { entityState with EntityState.Id = entityState.Id }
+            { entityState with EntityState.Dispatcher = entityState.Dispatcher }
 
         // Member properties; only for use by internal reflection facilities.
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
