@@ -23,12 +23,8 @@ module WorldModuleEntity =
     // OPTIMIZATION: avoids closure allocation in tight-loop.
     type private KeyEquality () =
         inherit OptimizedClosures.FSharpFunc<
-            KeyValuePair<
-                Entity Address,
-                UMap<Entity Address, EntityState>>,
-            KeyValuePair<
-                Entity Address,
-                UMap<Entity Address, EntityState>>,
+            KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>,
+            KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>,
             bool> ()
         override this.Invoke _ = failwithumf ()
         override this.Invoke
