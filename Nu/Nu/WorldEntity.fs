@@ -89,12 +89,21 @@ module WorldEntityModule =
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
 
+        /// The state of an entity.
+        /// The only place this accessor should be used is in performance-sensitive code.
+        /// Otherwise, you should get and set the required entity properties via the Entity interface.
         member this.State world =
             let entityState = World.getEntityState this world
 #if DEBUG
             if not entityState.Optimized then failwith "Can get the entity state of an entity only if it is Optimized (Imperative, Omnipresent, and not PublishChanges)."
 #endif
             entityState
+
+        /// The copied state of an entity.
+        /// The only place this accessor should be used is in performance-sensitive code.
+        /// Otherwise, you should get and set the required entity properties via the Entity interface.
+        member this.StateReadOnly world =
+            world |> World.getEntityState this |> EntityState.copy
 
         member this.Optimize world =
             let world = this.SetImperative true world
