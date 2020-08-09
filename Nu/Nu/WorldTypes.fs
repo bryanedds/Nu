@@ -17,7 +17,9 @@ module internal World =
 namespace Nu
 open System
 open System.Collections.Generic
+#if DEBUG
 open System.Diagnostics
+#endif
 open TiledSharp
 open Prime
 open Nu
