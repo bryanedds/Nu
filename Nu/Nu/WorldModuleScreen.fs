@@ -7,35 +7,6 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-/// A component with an entity reference.
-type Hybrid =
-    interface
-        inherit Component
-        abstract Entity : Entity
-        end
-
-/// A system with hybrid components
-type SystemHybrid<'c when 'c : struct and 'c :> Hybrid> (name) =
-    inherit SystemCorrelated<'c, World> (name)
-    new () = SystemHybrid (typeof<'c>.Name)
-
-[<AutoOpen>]
-module WorldEcs =
-
-    type Ecs<'w when 'w :> Freezable> with
-
-        member this.QualifyHybrid<'c when 'c : struct and 'c :> Hybrid> systemName entityId =
-            this.QualifyCorrelated<'c> systemName entityId
-
-        member this.IndexHybrid<'c when 'c : struct and 'c :> Hybrid> systemName entityId =
-            this.IndexCorrelated<'c> systemName entityId
-
-        member this.RegisterHybrid<'c when 'c : struct and 'c :> Hybrid> comp systemName registration =
-            this.RegisterCorrelated<'c> comp systemName registration
-
-        member this.UnregisterHybrid<'c when 'c : struct and 'c :> Hybrid> systemName entityId =
-            this.UnregisterCorrelated<'c> systemName entityId
-
 [<AutoOpen; ModuleBinding>]
 module WorldModuleScreen =
 
