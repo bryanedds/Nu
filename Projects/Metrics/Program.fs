@@ -6,13 +6,12 @@ open Nu
 open Nu.Declarative
 
 #if ECS
-type [<NoEquality; NoComparison; Struct>] StaticSpriteHybrid =
+type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
     { mutable RefCount : int
       mutable Entity : Entity
       mutable Sprite : Image AssetTag }
-    interface Hybrid with
+    interface Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-        member this.Entity = this.Entity
 #endif
 
 type MetricsEntityDispatcher () =
@@ -36,12 +35,12 @@ type MetricsEntityDispatcher () =
 #if ECS
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : Guid = ecs.RegisterHybrid<StaticSpriteHybrid> { RefCount = 0; Entity = entity; Sprite = AssetTag.make Assets.DefaultPackageName "Image4" } typeof<StaticSpriteHybrid>.Name (Alloc (entity.GetId world))
+        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { RefCount = 0; Entity = entity; Sprite = AssetTag.make Assets.DefaultPackageName "Image4" } typeof<StaticSpriteComponent>.Name (Alloc (entity.GetId world))
         world
 
     override this.Unregister (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : bool = ecs.UnregisterHybrid<StaticSpriteHybrid> typeof<StaticSpriteHybrid>.Name (entity.GetId world)
+        let _ : bool = ecs.UnregisterCorrelated<StaticSpriteComponent> typeof<StaticSpriteComponent>.Name (entity.GetId world)
         world
 #endif
 
@@ -58,7 +57,7 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create static sprite system
-        let staticSprites = ecs.RegisterSystem (SystemHybrid<StaticSpriteHybrid> ())
+        let staticSprites = ecs.RegisterSystem (SystemCorrelated<StaticSpriteComponent, World> ())
 #endif
         let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
