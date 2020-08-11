@@ -373,8 +373,10 @@ module ScriptFacetModule =
         override this.Update (entity, world) =
             World.evalWithLogging (entity.GetUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
 
+#if !DISABLE_ENTITY_POST_UPDATE
         override this.PostUpdate (entity, world) =
             World.evalWithLogging (entity.GetPostUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
+#endif
 
 [<AutoOpen>]
 module TextFacetModule =

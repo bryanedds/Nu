@@ -335,9 +335,11 @@ module WorldTypes =
         abstract Update : Entity * World -> World
         default this.Update (_, world) = world
 
+#if !DISABLE_ENTITY_POST_UPDATE
         /// Post-update an entity.
         abstract PostUpdate : Entity * World -> World
         default this.PostUpdate (_, world) = world
+#endif
 
         /// Actualize an entity.
         abstract Actualize : Entity * World -> World
@@ -378,9 +380,11 @@ module WorldTypes =
         abstract Update : Entity * World -> World
         default this.Update (_, world) = world
 
+#if !DISABLE_ENTITY_POST_UPDATE
         /// Post-update a facet.
         abstract PostUpdate : Entity * World -> World
         default this.PostUpdate (_, world) = world
+#endif
 
         /// Actualize a facet.
         abstract Actualize : Entity * World -> World
@@ -897,9 +901,11 @@ module WorldTypes =
             let entityNames = Address.getNames entityAddress
             rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
 
+#if !DISABLE_ENTITY_POST_UPDATE
         let postUpdateEvent =
             let entityNames = Address.getNames entityAddress
             rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+#endif
 
         let mutable entityStateOpt =
             Unchecked.defaultof<EntityState>
@@ -925,8 +931,10 @@ module WorldTypes =
         /// The address of the entity's update event.
         member this.UpdateEventCached = updateEvent
 
+#if !DISABLE_ENTITY_POST_UPDATE
         /// The address of the entity's post-update event.
         member this.PostUpdateEventCached = postUpdateEvent
+#endif
 
         /// The cached entity state for imperative entities.
         member this.EntityStateOpt

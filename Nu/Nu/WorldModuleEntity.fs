@@ -719,12 +719,16 @@ module WorldModuleEntity =
         static member internal updateEntityPublishUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEventCached) world
 
+#if !DISABLE_ENTITY_POST_UPDATE
         static member internal updateEntityPublishPostUpdateFlag entity world =
             World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa entity.PostUpdateEventCached) world
+#endif
 
         static member internal updateEntityPublishFlags entity world =
             let world = World.updateEntityPublishUpdateFlag entity world
+#if !DISABLE_ENTITY_POST_UPDATE
             let world = World.updateEntityPublishPostUpdateFlag entity world
+#endif
             world
 
         static member divergeEntity entity world =
