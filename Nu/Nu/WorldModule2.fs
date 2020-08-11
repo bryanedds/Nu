@@ -28,12 +28,15 @@ module WorldModule2 =
     let private PostUpdateGameTimer = Diagnostics.Stopwatch ()
     let private PostUpdateScreensTimer = Diagnostics.Stopwatch ()
     let private PostUpdateLayersTimer = Diagnostics.Stopwatch ()
+#if !DISABLE_ENTITY_POST_UPDATE
     let private PostUpdateEntitiesTimer = Diagnostics.Stopwatch ()
+#endif
     let private TaskletsTimer = Diagnostics.Stopwatch ()
     let private PerFrameTimer = Diagnostics.Stopwatch ()
     let private PreFrameTimer = Diagnostics.Stopwatch ()
     let private PostFrameTimer = Diagnostics.Stopwatch ()
     let private ActualizeTimer = Diagnostics.Stopwatch ()
+    let private ActualizeGatherTimer = Diagnostics.Stopwatch ()
     let private RenderTimer = Diagnostics.Stopwatch ()
     let private AudioTimer = Diagnostics.Stopwatch ()
 
@@ -751,11 +754,13 @@ module WorldModule2 =
         static member private actualizeSimulants world =
 
             // gather simulants
+            ActualizeGatherTimer.Start ()
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let layers = Seq.concat (List.map (flip World.getLayers world) screens)
             let (entities, world) = World.getEntitiesInView2 world
+            ActualizeGatherTimer.Stop ()
 
             // actualize simulants breadth-first
             let world = World.actualizeGame world
