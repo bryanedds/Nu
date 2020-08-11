@@ -23,6 +23,8 @@ module WorldModule2 =
     let private UpdateScreensTimer = Diagnostics.Stopwatch ()
     let private UpdateLayersTimer = Diagnostics.Stopwatch ()
     let private UpdateEntitiesTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateGatherTimer = Diagnostics.Stopwatch ()
     let private PostUpdateGameTimer = Diagnostics.Stopwatch ()
     let private PostUpdateScreensTimer = Diagnostics.Stopwatch ()
     let private PostUpdateLayersTimer = Diagnostics.Stopwatch ()
@@ -361,6 +363,7 @@ module WorldModule2 =
                              "This will cause a bug where some entity update events are not published.")
                     let world = World.updateEntityPublishUpdateFlag entity world
                     (Cascade, world)
+#if !DISABLE_ENTITY_POST_UPDATE
                 | "PostUpdate" ->
                     if Array.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug
@@ -368,6 +371,7 @@ module WorldModule2 =
                              "This will cause a bug where some entity post-update events are not published.")
                     let world = World.updateEntityPublishPostUpdateFlag entity world
                     (Cascade, world)
+#endif
                 | _ -> (Cascade, world)
             | eventNames when eventNames.Length >= 3 ->
                 let eventFirstName = eventNames.[0]
@@ -665,7 +669,22 @@ module WorldModule2 =
                     entities
             UpdateEntitiesTimer.Stop ()
 
-#if !DISABLE_POST_UPDATES
+            // fin
+            world
+
+        static member private postUpdateSimulants world =
+
+            // gather simulants
+            PostUpdateGatherTimer.Start ()
+            let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
+            let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
+            let screens = List.rev screens
+            let layers = Seq.concat (List.map (flip World.getLayers world) screens)
+#if !DISABLE_ENTITY_POST_UPDATE
+            let (entities, world) = World.getEntitiesInView2 world
+#endif
+            PostUpdateGatherTimer.Stop ()
+
             // post-update game
             PostUpdateGameTimer.Start ()
             let world = World.postUpdateGame world
@@ -681,6 +700,7 @@ module WorldModule2 =
             let world = Seq.fold (fun world layer -> World.postUpdateLayer layer world) world layers
             PostUpdateLayersTimer.Stop ()
 
+#if !DISABLE_ENTITY_POST_UPDATE
             // post-update entities
             PostUpdateEntitiesTimer.Start ()
             let world =
@@ -863,101 +883,107 @@ module WorldModule2 =
                                 UpdateTimer.Stop ()
                                 match World.getLiveness world with
                                 | Running ->
-                                    TaskletsTimer.Start ()
-                                    let world = World.processTasklets world
-                                    TaskletsTimer.Stop ()
+                                    PostUpdateTimer.Start ()
+                                    let world = World.postUpdateSimulants world
+                                    PostUpdateTimer.Stop ()
                                     match World.getLiveness world with
                                     | Running ->
-                                        ActualizeTimer.Start ()
-                                        let world = World.actualizeSimulants world
-                                        ActualizeTimer.Stop ()
+                                        TaskletsTimer.Start ()
+                                        let world = World.processTasklets world
+                                        TaskletsTimer.Stop ()
                                         match World.getLiveness world with
                                         | Running ->
-                                            PerFrameTimer.Start ()
-                                            let world = World.perFrame world
-                                            PerFrameTimer.Stop ()
+                                            ActualizeTimer.Start ()
+                                            let world = World.actualizeSimulants world
+                                            ActualizeTimer.Stop ()
                                             match World.getLiveness world with
                                             | Running ->
-#if MULTITHREAD
-                                                // attempt to finish renderer thread
-                                                let world =
-                                                    match rendererThreadOpt with
-                                                    | Some rendererThread ->
-                                                        Async.AwaitTask rendererThread |> Async.RunSynchronously
-                                                        world
-                                                    | None -> world
-
-                                                // attempt to finish audio player thread
-                                                let world =
-                                                    match audioPlayerThreadOpt with
-                                                    | Some audioPlayerThread ->
-                                                        Async.AwaitTask audioPlayerThread |> Async.RunSynchronously
-                                                        world
-                                                    | None -> world
-
-                                                // attempt to start renderer thread
-                                                let (rendererThreadOpt, world) =
-                                                    match SdlDeps.getRenderContextOpt sdlDeps with
-                                                    | Some renderContext ->
-                                                        let renderer = World.getRenderer world
-                                                        let renderMessages = renderer.PopMessages ()
-                                                        let world = World.setRenderer renderer world
-                                                        let eyeCenter = World.getEyeCenter world
-                                                        let eyeSize = World.getEyeSize world
-                                                        let rendererThread : Task = Task.Factory.StartNew (fun () -> World.render renderMessages renderContext renderer eyeCenter eyeSize)
-                                                        (Some rendererThread, world)
-                                                    | None -> (None, world)
-
-                                                // attempt to start audio player thread
-                                                let (audioPlayerThreadOpt, world) =
-                                                    if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
-                                                        let audioPlayer = World.getAudioPlayer world
-                                                        let audioMessages = audioPlayer.PopMessages ()
-                                                        let world = World.setAudioPlayer audioPlayer world
-                                                        let audioPlayerThread : Task = Task.Factory.StartNew (fun () -> World.play audioMessages audioPlayer)
-                                                        (Some audioPlayerThread, world)
-                                                    else (None, world)
-#else
-                                                // process rendering on main thread
-                                                RenderTimer.Start ()
-                                                let world =
-                                                    match SdlDeps.getRenderContextOpt sdlDeps with
-                                                    | Some renderContext ->
-                                                        let renderer = World.getRenderer world
-                                                        let renderMessages = renderer.PopMessages ()
-                                                        let world = World.setRenderer renderer world
-                                                        let eyeCenter = World.getEyeCenter world
-                                                        let eyeSize = World.getEyeSize world
-                                                        World.render renderMessages renderContext renderer eyeCenter eyeSize
-                                                        world
-                                                    | None -> world
-                                                RenderTimer.Stop ()
-
-                                                // process audio on main thread
-                                                AudioTimer.Start ()
-                                                let world =
-                                                    if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
-                                                        let audioPlayer = World.getAudioPlayer world
-                                                        let audioMessages = audioPlayer.PopMessages ()
-                                                        let world = World.setAudioPlayer audioPlayer world
-                                                        World.play audioMessages audioPlayer
-                                                        world
-                                                    else world
-                                                AudioTimer.Stop ()
-#endif
-                                                // post-process the world
-                                                PostFrameTimer.Start ()
-                                                let world = World.postFrame world
-                                                let world = postProcess world
-                                                PostFrameTimer.Stop ()
+                                                PerFrameTimer.Start ()
+                                                let world = World.perFrame world
+                                                PerFrameTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Running ->
-
-                                                    // update counters and recur
-                                                    TotalTimer.Stop ()
-                                                    let world = World.updateTime world
-                                                    World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
-
+    #if MULTITHREAD
+                                                    // attempt to finish renderer thread
+                                                    let world =
+                                                        match rendererThreadOpt with
+                                                        | Some rendererThread ->
+                                                            Async.AwaitTask rendererThread |> Async.RunSynchronously
+                                                            world
+                                                        | None -> world
+    
+                                                    // attempt to finish audio player thread
+                                                    let world =
+                                                        match audioPlayerThreadOpt with
+                                                        | Some audioPlayerThread ->
+                                                            Async.AwaitTask audioPlayerThread |> Async.RunSynchronously
+                                                            world
+                                                        | None -> world
+    
+                                                    // attempt to start renderer thread
+                                                    let (rendererThreadOpt, world) =
+                                                        match SdlDeps.getRenderContextOpt sdlDeps with
+                                                        | Some renderContext ->
+                                                            let renderer = World.getRenderer world
+                                                            let renderMessages = renderer.PopMessages ()
+                                                            let world = World.setRenderer renderer world
+                                                            let eyeCenter = World.getEyeCenter world
+                                                            let eyeSize = World.getEyeSize world
+                                                            let rendererThread : Task = Task.Factory.StartNew (fun () -> World.render renderMessages renderContext renderer eyeCenter eyeSize)
+                                                            (Some rendererThread, world)
+                                                        | None -> (None, world)
+    
+                                                    // attempt to start audio player thread
+                                                    let (audioPlayerThreadOpt, world) =
+                                                        if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
+                                                            let audioPlayer = World.getAudioPlayer world
+                                                            let audioMessages = audioPlayer.PopMessages ()
+                                                            let world = World.setAudioPlayer audioPlayer world
+                                                            let audioPlayerThread : Task = Task.Factory.StartNew (fun () -> World.play audioMessages audioPlayer)
+                                                            (Some audioPlayerThread, world)
+                                                        else (None, world)
+    #else
+                                                    // process rendering on main thread
+                                                    RenderTimer.Start ()
+                                                    let world =
+                                                        match SdlDeps.getRenderContextOpt sdlDeps with
+                                                        | Some renderContext ->
+                                                            let renderer = World.getRenderer world
+                                                            let renderMessages = renderer.PopMessages ()
+                                                            let world = World.setRenderer renderer world
+                                                            let eyeCenter = World.getEyeCenter world
+                                                            let eyeSize = World.getEyeSize world
+                                                            World.render renderMessages renderContext renderer eyeCenter eyeSize
+                                                            world
+                                                        | None -> world
+                                                    RenderTimer.Stop ()
+    
+                                                    // process audio on main thread
+                                                    AudioTimer.Start ()
+                                                    let world =
+                                                        if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
+                                                            let audioPlayer = World.getAudioPlayer world
+                                                            let audioMessages = audioPlayer.PopMessages ()
+                                                            let world = World.setAudioPlayer audioPlayer world
+                                                            World.play audioMessages audioPlayer
+                                                            world
+                                                        else world
+                                                    AudioTimer.Stop ()
+    #endif
+                                                    // post-process the world
+                                                    PostFrameTimer.Start ()
+                                                    let world = World.postFrame world
+                                                    let world = postProcess world
+                                                    PostFrameTimer.Stop ()
+                                                    match World.getLiveness world with
+                                                    | Running ->
+    
+                                                        // update counters and recur
+                                                        TotalTimer.Stop ()
+                                                        let world = World.updateTime world
+                                                        World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
+    
+                                                    | Exiting -> world
                                                 | Exiting -> world
                                             | Exiting -> world
                                         | Exiting -> world

@@ -71,7 +71,7 @@ type MyGameDispatcher () =
         let world =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> None DefaultOverlay Simulants.DefaultLayer world
-#if ECS
+#if !REACTIVE
                 let world = entity.Optimize world
 #endif
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world

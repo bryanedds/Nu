@@ -87,7 +87,9 @@ module WorldEntityModule =
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
         member this.UpdateEvent = Events.Update --> this
+#if !DISABLE_ENTITY_POST_UPDATE
         member this.PostUpdateEvent = Events.PostUpdate --> this
+#endif
 
         /// The state of an entity.
         /// The only place this accessor should be used is in performance-sensitive code.
@@ -241,6 +243,7 @@ module WorldEntityModule =
                 World.publishPlus () entity.UpdateEventCached eventTrace Simulants.Game false world
             else world
 
+#if !DISABLE_ENTITY_POST_UPDATE
         static member internal postUpdateEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcher world
             let facets = entity.GetFacets world
@@ -253,6 +256,7 @@ module WorldEntityModule =
                 let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
                 World.publishPlus () entity.PostUpdateEventCached eventTrace Simulants.Game false world
             else world
+#endif
 
         static member internal actualizeEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcher world
