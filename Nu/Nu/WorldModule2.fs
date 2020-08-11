@@ -37,6 +37,7 @@ module WorldModule2 =
     let private PostFrameTimer = Diagnostics.Stopwatch ()
     let private ActualizeTimer = Diagnostics.Stopwatch ()
     let private ActualizeGatherTimer = Diagnostics.Stopwatch ()
+    let private ActualizeEntitiesTimer = Diagnostics.Stopwatch ()
     let private RenderTimer = Diagnostics.Stopwatch ()
     let private AudioTimer = Diagnostics.Stopwatch ()
 
@@ -777,7 +778,9 @@ module WorldModule2 =
                     else world)
                     world entities
 #else
+            ActualizeEntitiesTimer.Start ()
             let world = Seq.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
+            ActualizeEntitiesTimer.Stop ()
 #endif
             world
 
