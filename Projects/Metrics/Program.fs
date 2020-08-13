@@ -75,7 +75,7 @@ type MyGameDispatcher () =
         let velocities = ecs.RegisterSystem (SystemCorrelated<VelocityComponent, World> ())
 
         // create components
-        for _ in 0 .. 2300000 do
+        for _ in 0 .. 8000000 do
             let _ : Guid =
                 ecs.RegisterCorrelated<VelocityComponent>
                     { RefCount = 0; Position = v2Zero; Velocity = v2One }
@@ -85,11 +85,12 @@ type MyGameDispatcher () =
 
         // define update for static sprites
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            let (arr, last) = velocities.Iter
-            for i = 0 to last do
+            let arr = velocities.Components.Array
+            for i in 0 .. arr.Length - 1 do
                 let comp = &arr.[i]
                 if comp.RefCount > 0 then
-                    comp.Position <- comp.Position + comp.Velocity
+                    comp.Position.X <- comp.Position.X + comp.Velocity.X
+                    comp.Position.Y <- comp.Position.Y + comp.Velocity.Y
             world)
 #endif
         let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd
@@ -116,9 +117,9 @@ type MyGameDispatcher () =
 #if ECS
         // define update for static sprites
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            let (arr, last) = staticSprites.Iter
-            for i = 0 to last do
-                let comp = &arr.[i]
+            let comps = staticSprites.Components
+            for i in 0 .. comps.Length do
+                let comp = &comps.[i]
                 if comp.RefCount > 0 then
                     let entity = comp.Entity.State world
                     entity.Rotation <- entity.Rotation + 0.03f
@@ -127,9 +128,9 @@ type MyGameDispatcher () =
         // define actualize for static sprites
         let _ = ecs.Subscribe EcsEvents.Actualize (fun _ _ _ world ->
             let messages = List ()
-            let (arr, last) = staticSprites.Iter
-            for i = 0 to last do
-                let comp = &arr.[i]
+            let comps = staticSprites.Components
+            for i in 0 ..comps.Length do
+                let comp = &comps.[i]
                 if comp.Valid then
                     let entity = comp.Entity.State world
                     if entity.Visible then
