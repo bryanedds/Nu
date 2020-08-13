@@ -135,7 +135,7 @@ type MyGameDispatcher () =
         // define update for static sprites
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             let comps = staticSprites.Components
-            for i in 0 .. comps.Length do
+            for i in 0 .. comps.Length - 1 do
                 let comp = &comps.[i]
                 if comp.RefCount > 0 then
                     let entity = comp.Entity.State world
@@ -146,9 +146,9 @@ type MyGameDispatcher () =
         let _ = ecs.Subscribe EcsEvents.Actualize (fun _ _ _ world ->
             let messages = List ()
             let comps = staticSprites.Components
-            for i in 0 ..comps.Length do
+            for i in 0 ..comps.Length - 1 do
                 let comp = &comps.[i]
-                if comp.Valid then
+                if comp.RefCount > 0 then
                     let entity = comp.Entity.State world
                     if entity.Visible then
                         let spriteDescriptor = SpriteDescriptor { Transform = entity.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Vector4.One; Glow = Vector4.Zero; Flip = FlipNone }
