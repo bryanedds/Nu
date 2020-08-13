@@ -84,13 +84,16 @@ type MyGameDispatcher () =
         // get ecs
         let ecs = screen.GetEcs world
 
+        // entity count
+        let entityCount = 4000000
+
         // create systems
-        let velocities = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ())
-        let positions = ecs.RegisterSystem (SystemCorrelated<Position, World> ())
-        let movers = ecs.RegisterSystem (SystemJunctioned<Mover, World> ())
+        let velocities = ecs.RegisterSystem (SystemCorrelated<Velocity, World> entityCount)
+        let positions = ecs.RegisterSystem (SystemCorrelated<Position, World> entityCount)
+        let movers = ecs.RegisterSystem (SystemJunctioned<Mover, World> entityCount)
 
         // create junctions
-        for _ in 0 .. 4100000 do
+        for _ in 0 .. entityCount - 1 do
             let entityId = ecs.RegisterJunctioned<Mover> Unchecked.defaultof<Mover> typeof<Mover>.Name (Alloc Gen.id)
             let mover = ecs.IndexCorrelated<Mover> typeof<Mover>.Name entityId
             mover.Index.Velocity.Index.Velocity <- v2One
