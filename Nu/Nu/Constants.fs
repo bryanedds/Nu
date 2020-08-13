@@ -106,5 +106,5 @@ module Math =
 
 module Ecs =
 
-    let [<Literal>] InitialComponentCount = 32
+    let [<Literal>] ArrayReserve = 32
     let [<Literal>] ArrayGrowth = 2.0f

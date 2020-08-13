@@ -239,14 +239,15 @@ type [<AbstractClass>] SystemMany<'w when 'w :> Freezable> (name) =
     abstract PadComponents : int -> unit
 
 /// An Ecs system with components stored by a raw index.
-type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (name) =
+type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (reserve, name) =
     inherit SystemMany<'w> (name)
 
-    let mutable components = ArrayRef<'c>.make Constants.Ecs.InitialComponentCount
+    let mutable components = ArrayRef<'c>.make reserve
     let mutable freeIndex = 0
     let freeList = Queue<int> ()
-    
-    new () = SystemUncorrelated typeof<'c>.Name
+
+    new (reserve) = SystemUncorrelated (reserve, typeof<'c>.Name)
+    new () = SystemUncorrelated (Constants.Ecs.ArrayReserve, typeof<'c>.Name)
 
     abstract ComponentToBytes : 'c -> char array
     default this.ComponentToBytes _ = failwithnie ()
@@ -284,7 +285,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
         ComponentRef.make index components
 
     member this.RegisterUncorrelated comp =
-        if freeIndex < components.Length - 1 then
+        if freeIndex < components.Length then
             components.[freeIndex] <- comp
             freeIndex <- inc freeIndex
         else
@@ -330,16 +331,17 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
                 | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system with components stored by entity id.
-type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (name) =
+type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (reserve, name) =
     inherit SystemMany<'w> (name)
 
-    let mutable components = ArrayRef<'c>.make Constants.Ecs.InitialComponentCount
+    let mutable components = ArrayRef<'c>.make reserve
     let mutable freeIndex = 0
     let freeList = HashSet<int> ()
     let preDeque = Deque<Guid> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
 
-    new () = SystemCorrelated typeof<'c>.Name
+    new (reserve) = SystemCorrelated (reserve, typeof<'c>.Name)
+    new () = SystemCorrelated (Constants.Ecs.ArrayReserve, typeof<'c>.Name)
 
     member this.Components with get () = components
     member this.FreeIndex with get () = freeIndex and internal set value = freeIndex <- value
@@ -410,7 +412,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
             let comp =
-                if freeIndex < components.Length - 1 then
+                if freeIndex < components.Length then
                     components.[freeIndex] <- comp
                     &components.[freeIndex]
                 else
@@ -457,7 +459,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
                 if components.[index].RefCount = 0 then freeList.Add index |> ignore
             else freeIndex <- dec freeIndex
             if  components.Length < freeList.Count * 2 &&
-                components.Length > Constants.Ecs.InitialComponentCount then
+                components.Length > Constants.Ecs.ArrayReserve then
                 this.Compact ()
             true
         | (false, _) -> false
@@ -534,14 +536,15 @@ type Junction<'c when 'c : struct and 'c :> 'c Junction> =
         end
 
 /// An Ecs system that explicitly associates components by entity id.
-type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Freezable> (name) =
-    inherit SystemCorrelated<'c, 'w> (name)
+type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Freezable> (reserve, name) =
+    inherit SystemCorrelated<'c, 'w> (reserve, name)
 
     let systemNames = Unchecked.defaultof<'c>.SystemNames
     let mutable systemsOpt = None : 'w System array option
     let preDeque = Deque<Guid> ()
 
-    new () = SystemJunctioned (typeof<'c>.Name)
+    new (reserve) = SystemJunctioned (reserve, typeof<'c>.Name)
+    new () = SystemJunctioned (Constants.Ecs.ArrayReserve, typeof<'c>.Name)
 
     member this.GetSystems (ecs : 'w Ecs) =
         match systemsOpt with
@@ -557,7 +560,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
             let systems = this.GetSystems ecs
             let comp = comp.Junction systems registration ecs
             let comp =
-                if this.FreeIndex < this.Components.Length - 1 then
+                if this.FreeIndex < this.Components.Length then
                     this.Components.[this.FreeIndex] <- comp
                     &this.Components.[this.FreeIndex]
                 else
@@ -605,7 +608,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
             else this.FreeIndex <- dec this.FreeIndex
             comp.Disjunction junctions entityId ecs
             if  this.Components.Length < this.FreeList.Count * 2 &&
-                this.Components.Length > Constants.Ecs.InitialComponentCount then
+                this.Components.Length > Constants.Ecs.ArrayReserve then
                 this.Compact ()
             true
         | (false, _) -> false
@@ -663,10 +666,10 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         this.Simplexes.Remove multiId
 
 /// An Ecs system that stores multiple components per entity id.
-type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (name) =
-    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (name)
+type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freezable> (reserve, name) =
+    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (reserve, name)
     
-    new () = SystemMultiplexed typeof<'c>.Name
+    new () = SystemMultiplexed (Constants.Ecs.ArrayReserve, typeof<'c>.Name)
 
     member this.QualifyMultiplexed multiId entityId =
         if this.QualifyCorrelated entityId then
@@ -738,7 +741,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
 
     member this.AddNode parentIdOpt =
         let nodeId = Gen.id
-        let system = SystemCorrelated<'c, 'w> (scstring nodeId)
+        let system = SystemCorrelated<'c, 'w> (Constants.Ecs.ArrayReserve, scstring nodeId)
         let added =
             match parentIdOpt with
             | Some parentId ->
