@@ -276,8 +276,8 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
         components.Array <- arr
 
     member this.Components with get () = components
+
     member this.FreeIndex with get () = freeIndex
-    member this.Iter with get () = (components.Array, freeIndex - 1)
 
     member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
@@ -343,7 +343,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
 
     member this.Components with get () = components
     member this.FreeIndex with get () = freeIndex and internal set value = freeIndex <- value
-    member this.Iter with get () = (components.Array, freeIndex - 1)
     member internal this.FreeList with get () = freeList
     member internal this.Correlations with get () = correlations
 
