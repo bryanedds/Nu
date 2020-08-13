@@ -13,11 +13,19 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
     interface Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
 #endif
+#if ECS_PURE
+type [<NoEquality; NoComparison; Struct>] VelocityComponent =
+    { mutable RefCount : int
+      mutable Position : Vector2
+      mutable Velocity : Vector2 }
+    interface Component with
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+#endif
 
 type MetricsEntityDispatcher () =
     inherit EntityDispatcher ()
 
-#if !ECS
+#if !ECS && !ECS_PURE
     static member Facets =
         [typeof<StaticSpriteFacet>]
 #endif
@@ -27,7 +35,7 @@ type MetricsEntityDispatcher () =
         [define Entity.PublishChanges true]
 #endif
 
-#if !ECS
+#if !ECS && !ECS_PURE
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
 #endif
@@ -59,9 +67,34 @@ type MyGameDispatcher () =
         // create static sprite system
         let staticSprites = ecs.RegisterSystem (SystemCorrelated<StaticSpriteComponent, World> ())
 #endif
+#if ECS_PURE
+        // get ecs
+        let ecs = screen.GetEcs world
+
+        // create velocity system
+        let velocities = ecs.RegisterSystem (SystemCorrelated<VelocityComponent, World> ())
+
+        // make components
+        for _ in 0 .. 1200000 do
+            let _ : Guid =
+                ecs.RegisterCorrelated<VelocityComponent>
+                    { RefCount = 0; Position = v2Zero; Velocity = v2One }
+                    typeof<VelocityComponent>.Name
+                    (Alloc Gen.id)
+            ()
+
+        // define update for static sprites
+        let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
+            let (arr, last) = velocities.Iter
+            for i = 0 to last do
+                let comp = &arr.[i]
+                if comp.Valid then comp.Position <- comp.Position + comp.Velocity
+            world)
+#endif
         let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
+#if !ECS_PURE
         let indices = // 9,900 entities
             seq {
                 for i in 0 .. 74 do
@@ -77,6 +110,7 @@ type MyGameDispatcher () =
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 entity.SetSize (v2One * 8.0f) world)
                 world indices
+#endif
         let world = World.selectScreen Simulants.DefaultScreen world
 #if ECS
         // define update for static sprites
@@ -107,6 +141,7 @@ type MyGameDispatcher () =
 #endif
         world
 
+#if ELMISH
 type ElmishGameDispatcher () =
     inherit GameDispatcher<int list list, int, unit> (List.init 33 (fun _ -> List.init 33 id)) // 990 Elmish entities
 
@@ -130,6 +165,7 @@ type ElmishGameDispatcher () =
                              Entity.Position == v2 (single i * 16.0f - 480.0f) (single j * 16.0f - 272.0f)])])
              Content.layer "Layer" []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
+#endif
 
 type MetricsPlugin () =
     inherit NuPlugin ()

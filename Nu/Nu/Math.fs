@@ -62,6 +62,14 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
         this.Depth <- that.Depth
         this.Flags <- that.Flags
 
+    static member makeEmpty () =
+        { Position = Vector2.Zero
+          Size = Vector2.One
+          Rotation = 0.0f
+          Depth = 0.0f
+          Flags = 0
+          RefCount = 0 }
+
 [<AutoOpen>]
 module Vector2 =
 
