@@ -14,12 +14,25 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
 #endif
 #if ECS_PURE
-type [<NoEquality; NoComparison; Struct>] VelocityComponent =
+type [<NoEquality; NoComparison; Struct>] Velocity =
     { mutable RefCount : int
-      mutable Position : Vector2
       mutable Velocity : Vector2 }
     interface Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+type [<NoEquality; NoComparison; Struct>] Position =
+    { mutable RefCount : int
+      mutable Position : Vector2 }
+    interface Component with
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+type [<NoEquality; NoComparison; Struct>] Mover =
+    { mutable RefCount : int
+      mutable Velocity : Velocity ComponentRef
+      mutable Position : Position ComponentRef }
+    interface Mover Junction with
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+        member this.SystemNames = [|"Velocity"; "Position"|]
+        member this.Junction systems registration ecs = { id this with Velocity = ecs.Junction<Velocity> registration systems.[0]; Position = ecs.Junction<Position> registration systems.[1] }
+        member this.Disjunction systems entityId ecs = ecs.Disjunction<Velocity> entityId systems.[0]; ecs.Disjunction<Position> entityId systems.[1]
 #endif
 
 type MetricsEntityDispatcher () =
@@ -71,26 +84,27 @@ type MyGameDispatcher () =
         // get ecs
         let ecs = screen.GetEcs world
 
-        // create velocity system
-        let velocities = ecs.RegisterSystem (SystemCorrelated<VelocityComponent, World> ())
+        // create systems
+        let velocities = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ())
+        let positions = ecs.RegisterSystem (SystemCorrelated<Position, World> ())
+        let movers = ecs.RegisterSystem (SystemJunctioned<Mover, World> ())
 
-        // create components
-        for _ in 0 .. 8000000 do
-            let _ : Guid =
-                ecs.RegisterCorrelated<VelocityComponent>
-                    { RefCount = 0; Position = v2Zero; Velocity = v2One }
-                    typeof<VelocityComponent>.Name
-                    (Alloc Gen.id)
-            ()
+        // create junctions
+        for _ in 0 .. 4100000 do
+            let entityId = ecs.RegisterJunctioned<Mover> Unchecked.defaultof<Mover> typeof<Mover>.Name (Alloc Gen.id)
+            let mover = ecs.IndexCorrelated<Mover> typeof<Mover>.Name entityId
+            mover.Index.Velocity.Index.Velocity <- v2One
 
-        // define update for static sprites
+        // define update for movers
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            let arr = velocities.Components.Array
+            let arr = movers.Components.Array
             for i in 0 .. arr.Length - 1 do
                 let comp = &arr.[i]
                 if comp.RefCount > 0 then
-                    comp.Position.X <- comp.Position.X + comp.Velocity.X
-                    comp.Position.Y <- comp.Position.Y + comp.Velocity.Y
+                    let velocity = &comp.Velocity.Index
+                    let position = &comp.Position.Index
+                    position.Position.X <- position.Position.X + velocity.Velocity.X
+                    position.Position.Y <- position.Position.Y + velocity.Velocity.Y
             world)
 #endif
         let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd

@@ -103,3 +103,8 @@ module Math =
     let (*Literal*) DegreesToRadians = 1.0 / RadiansToDegrees
     let (*Literal*) RadiansToDegreesF = single RadiansToDegrees
     let (*Literal*) DegreesToRadiansF = single DegreesToRadians
+
+module Ecs =
+
+    let [<Literal>] InitialComponentCount = 32
+    let [<Literal>] ArrayGrowth = 2.0f

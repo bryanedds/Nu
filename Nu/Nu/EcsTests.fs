@@ -53,13 +53,13 @@ module EcsTests =
 
         // change some airship properties
         let airship = ecs.IndexJunctioned<Airship> airshipSystem.Name airshipId
-        airship.Transform.Index.Position.X <- 0.5f
-        airship.Skin.Index.Color.X <- 0.1f
+        airship.Index.Transform.Index.Position.X <- 0.5f
+        airship.Index.Skin.Index.Color.X <- 0.1f
 
         // for non-junctioned entities, you can alternatively construct and use a much slower entity reference
         let airshipRef = ecs.GetEntityRef airshipId
-        airshipRef.Index<Transform>().Position.Y <- 5.0f
-        airshipRef.Index<Skin>().Color.Y <- 1.0f
+        //airshipRef.Index<Transform>().Position.Y <- 5.0f
+        //airshipRef.Index<Skin>().Color.Y <- 1.0f
 
         // invoke update behavior
         ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
