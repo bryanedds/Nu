@@ -38,12 +38,6 @@ type 'c ArrayRef =
 type Component =
     abstract RefCount : int with get, set
 
-[<AutoOpen>]
-module ComponentExtensions =
-    type Component with
-        member this.Valid with get () =
-            this.RefCount > 0
-
 /// A storable reference to a component in its containing array.
 type [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c :> Component> =
     { ComponentIndex : int
