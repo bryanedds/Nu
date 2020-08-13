@@ -74,8 +74,8 @@ type MyGameDispatcher () =
         // create velocity system
         let velocities = ecs.RegisterSystem (SystemCorrelated<VelocityComponent, World> ())
 
-        // make components
-        for _ in 0 .. 1200000 do
+        // create components
+        for _ in 0 .. 2300000 do
             let _ : Guid =
                 ecs.RegisterCorrelated<VelocityComponent>
                     { RefCount = 0; Position = v2Zero; Velocity = v2One }
@@ -88,7 +88,8 @@ type MyGameDispatcher () =
             let (arr, last) = velocities.Iter
             for i = 0 to last do
                 let comp = &arr.[i]
-                if comp.Valid then comp.Position <- comp.Position + comp.Velocity
+                if comp.RefCount > 0 then
+                    comp.Position <- comp.Position + comp.Velocity
             world)
 #endif
         let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd
@@ -118,7 +119,7 @@ type MyGameDispatcher () =
             let (arr, last) = staticSprites.Iter
             for i = 0 to last do
                 let comp = &arr.[i]
-                if comp.Valid then
+                if comp.RefCount > 0 then
                     let entity = comp.Entity.State world
                     entity.Rotation <- entity.Rotation + 0.03f
             world)
