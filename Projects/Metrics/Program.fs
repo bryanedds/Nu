@@ -162,7 +162,7 @@ type MyGameDispatcher () =
 
 #if ELMISH
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<int list list, int, unit> (List.init 33 (fun _ -> List.init 33 id)) // 990 Elmish entities
+    inherit GameDispatcher<int list list, int, unit> (List.init 32 (fun _ -> List.init 32 id)) // 1024 Elmish entities
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
