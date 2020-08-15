@@ -35,9 +35,7 @@ module Nu =
                 let property = { property with PropertyValue = value }
                 let world = World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
                 (Cascade, world)
-            | None ->
-                Log.debug "Property propagation failed. You have used a composed lens on a non-existent simulant, which is not supported."
-                (Cascade, world)
+            | None -> (Cascade, world)
         else (Cascade, world)
 
     let private tryPropagate simulant (left : World Lens) (right : World Lens) world =

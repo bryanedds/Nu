@@ -230,6 +230,15 @@ module WorldDeclarative =
                     if changed then
                         let world =
                             Seq.fold (fun world guidAndContent ->
+                                let (guid, _) = PartialComparable.unmake guidAndContent
+                                match World.tryGetKeyedValue guid world with
+                                | Some simulant ->
+                                    let world = World.removeKeyedValue guid world
+                                    WorldModule.destroy simulant world
+                                | None -> failwithumf ())
+                                world removed
+                        let world =
+                            Seq.fold (fun world guidAndContent ->
                                 let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
                                 let payloadOpt =
                                     match lens.PayloadOpt with
@@ -247,15 +256,6 @@ module WorldDeclarative =
                                     | None -> world
                                 | Some _ -> world)
                                 world added
-                        let world =
-                            Seq.fold (fun world guidAndContent ->
-                                let (guid, _) = PartialComparable.unmake guidAndContent
-                                match World.tryGetKeyedValue guid world with
-                                | Some simulant ->
-                                    let world = World.removeKeyedValue guid world
-                                    WorldModule.destroy simulant world
-                                | None -> failwithumf ())
-                                world removed
                         world
                     else world
                 (Cascade, world)

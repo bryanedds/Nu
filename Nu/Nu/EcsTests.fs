@@ -30,16 +30,16 @@ module EcsTests =
         let ecs = Ecs<World> ()
 
         // create and register our transform system
-        let transformSystem = ecs.RegisterSystem (SystemCorrelated<Transform, World> ())
+        let _ = ecs.RegisterSystem (SystemCorrelated<Transform, World> ())
 
         // create and register our skin system
-        let skinSystem = ecs.RegisterSystem (SystemCorrelated<Skin, World> ())
+        let _ = ecs.RegisterSystem (SystemCorrelated<Skin, World> ())
 
         // create and register our airship system
         let airshipSystem = ecs.RegisterSystem (SystemJunctioned<Airship, World> ())
 
         // define our airship system's update behavior
-        let subscriptionId = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
+        let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             let comps = airshipSystem.Components
             for i in 0 .. comps.Length do
                 let comp = &comps.[i]
@@ -57,7 +57,7 @@ module EcsTests =
         airship.Index.Skin.Index.Color.X <- 0.1f
 
         // for non-junctioned entities, you can alternatively construct and use a much slower entity reference
-        let airshipRef = ecs.GetEntityRef airshipId
+        //let airshipRef = ecs.GetEntityRef airshipId
         //airshipRef.Index<Transform>().Position.Y <- 5.0f
         //airshipRef.Index<Skin>().Color.Y <- 1.0f
 
