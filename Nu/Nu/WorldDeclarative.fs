@@ -235,7 +235,7 @@ module WorldDeclarative =
                                 | Some simulant ->
                                     let world = World.removeKeyedValue guid world
                                     WorldModule.destroy simulant world
-                                | None -> failwithumf ())
+                                | None -> world)
                                 world removed
                         let world =
                             Seq.fold (fun world guidAndContent ->
