@@ -54,7 +54,6 @@ module OmniGame =
 
             match message with
             | UpdateModel model ->
-                ignore ()
                 just model
 
             | UpdateFieldModel field ->
@@ -108,7 +107,7 @@ module OmniGame =
              Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.FieldSong)))
                 [Screen.FieldModel <== model --> fun model ->
                     match model with
-                    | Gui _ -> FieldModel.initial
+                    | Gui _ -> FieldModel.empty
                     | Field field -> field] []
 
              // battle
