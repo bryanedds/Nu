@@ -100,6 +100,16 @@ module FieldModel =
           DialogOpt_ = None
           BattleOpt_ = None }
 
+    let empty =
+        { Dirty_ = Gen.idEmpty
+          FieldType_ = DebugRoom
+          Avatar_ = AvatarModel.empty
+          Legion_ = Map.empty
+          Advents_ = Set.empty
+          Inventory_ = { Items = Map.empty; Gold = 0 }
+          DialogOpt_ = None
+          BattleOpt_ = None }
+
     let initial =
         { Dirty_ = Gen.id
           FieldType_ = DebugRoom
