@@ -332,7 +332,7 @@ module Nu =
                         Gen.id None None None
                         (Right (box (simulant, left, right)))
                         (Events.Register --> right.This.SimulantAddress)
-                        right.This
+                        simulant
                         world
                 let (_, world) =
                     World.monitorCompressed
@@ -342,7 +342,7 @@ module Nu =
                         None
                         (Right (box (simulant, left, right)))
                         (Events.Change right.Name --> right.This.SimulantAddress)
-                        right.This
+                        simulant
                         world
                 world
 
