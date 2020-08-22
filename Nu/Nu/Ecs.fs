@@ -11,12 +11,6 @@ open System.Threading.Tasks
 open Nito.Collections
 open Prime
 
-/// The manner in which a component is registered.
-type [<Struct>] Registration =
-    | Prealloc
-    | Alloc of AllocId : Guid
-    | PostAlloc of PostAllocId : Guid
-
 /// A freezable type.
 /// TODO: move to Prime?
 type Freezable =
@@ -337,7 +331,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
     let mutable components = ArrayRef<'c>.make reserve
     let mutable freeIndex = 0
     let freeList = HashSet<int> ()
-    let preDeque = Deque<Guid> ()
+    let preDeque = Deque<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
 
     new (reserve) = SystemCorrelated (reserve, typeof<'c>.Name)
@@ -346,6 +340,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
     member this.Components with get () = components
     member this.FreeIndex with get () = freeIndex and internal set value = freeIndex <- value
     member internal this.FreeList with get () = freeList
+    member internal this.PreDeque with get () = preDeque
     member internal this.Correlations with get () = correlations
 
     abstract ComponentToBytes : 'c -> char array
@@ -375,24 +370,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
         components.Array.CopyTo (arr, 0)
         components.Array <- arr
 
-    member internal this.Compact () =
-        // TODO: P1: step-debug this.
-        let mutable i = 0
-        let mutable j = i
-        let liveCount = freeIndex - freeList.Count
-        let liveArray = Array.zeroCreate liveCount
-        while j < freeIndex do
-            if components.[i].RefCount = 0 && freeList.Contains i then
-                while components.[j].RefCount = 0 &&
-                      j < freeIndex do
-                      j <- inc j
-                liveArray.[i] <- components.[j]
-                j <- inc j
-            i <- inc i
-        freeList.Clear ()
-        freeIndex <- j
-        components.Array <- liveArray
-
     member this.GetEntitiesCorrelated () =
         correlations.Keys :> _ IEnumerable
 
@@ -408,47 +385,62 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
         let index = this.IndexCorrelatedI entityId
         ComponentRef.make index components
 
-    member private this.RegisterCorrelatedInner comp prealloc entityId =
+    abstract member RegisterCorrelated : 'c -> Guid -> 'w Ecs -> Guid
+    default this.RegisterCorrelated (comp : 'c) entityId _ =
+
+        // check if component is already registered
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
-            let comp =
-                if freeIndex < components.Length then
-                    components.[freeIndex] <- comp
-                    &components.[freeIndex]
-                else
-                    let arr = Array.zeroCreate (single components.Length * Constants.Ecs.ArrayGrowth |> int)
-                    components.Array.CopyTo (arr, 0)
-                    components.Array <- arr
-                    components.[freeIndex] <- comp
-                    &components.[freeIndex]
-            let index = freeIndex
-            freeIndex <- inc freeIndex
-            if prealloc
-            then preDeque.AddToBack entityId
-            else comp.RefCount <- inc comp.RefCount
-            correlations.Add (entityId, index)
-            entityId
+
+            // new component; use a pre-allocated component
+            if preDeque.Count > 0 then
+                let index = preDeque.RemoveFromFront ()
+                correlations.Add (entityId, index)
+                components.Array.[index] <- comp
+                let comp = &components.Array.[index]
+                comp.RefCount <- inc comp.RefCount
+                entityId
+
+            // new component; attempt to recycle
+            elif freeList.Count > 0 then
+                let index = Seq.head freeList
+                let _ : bool = freeList.Remove index
+                correlations.Add (entityId, index)
+                components.Array.[index] <- comp
+                let comp = &components.Array.[index]
+                comp.RefCount <- inc comp.RefCount
+                entityId
+
+            // new component; pre-allocate more components then use the first
+            else
+
+                // pre-allocate more components
+                for i in 0 .. Constants.Ecs.ArrayReserve - 1 do
+
+                    // ensure there is space in the array
+                    if freeIndex >= components.Length then
+                        let arr = Array.zeroCreate (single components.Length * Constants.Ecs.ArrayGrowth |> int)
+                        components.Array.CopyTo (arr, 0)
+                        components.Array <- arr
+
+                    // allocate component
+                    let index = freeIndex in freeIndex <- inc freeIndex
+                    if i = 0 then
+                        let mutable comp = comp
+                        comp.RefCount <- inc comp.RefCount
+                        components.Array.[index] <- comp
+                        correlations.Add (entityId, index)
+                    else
+                        preDeque.AddToBack index
+
+                // fin
+                entityId
+
+        // use existing component
         | (true, index) ->
-            if prealloc then raise (InvalidOperationException "Cannot prealloc an existing component.")
             let mutable comp = components.[index]
             comp.RefCount <- inc comp.RefCount
             entityId
-
-    abstract member RegisterCorrelated : 'c -> Registration -> 'w Ecs -> Guid
-    default this.RegisterCorrelated (comp : 'c) registration _ =
-        match registration with
-        | Prealloc ->
-            this.RegisterCorrelatedInner comp true Gen.id
-        | Alloc entityId ->
-            this.RegisterCorrelatedInner comp false entityId
-        | PostAlloc entityId ->
-            if preDeque.Count > 0 then
-                let preallocId = preDeque.RemoveFromFront ()
-                let index = correlations.[preallocId]
-                let _ = correlations.Remove preallocId
-                correlations.Add (entityId, index)
-                entityId
-            else this.RegisterCorrelatedInner comp false entityId
 
     abstract member UnregisterCorrelated : Guid -> 'w Ecs -> bool
     default this.UnregisterCorrelated entityId _ =
@@ -458,9 +450,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
                 components.[index].RefCount <- dec components.[index].RefCount
                 if components.[index].RefCount = 0 then freeList.Add index |> ignore
             else freeIndex <- dec freeIndex
-            if  components.Length < freeList.Count * 2 &&
-                components.Length > Constants.Ecs.ArrayReserve then
-                this.Compact ()
             true
         | (false, _) -> false
 
@@ -491,10 +480,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
             let system = Option.get systemOpt
             system.IndexCorrelated entityId
 
-        member this.RegisterCorrelated<'c when 'c : struct and 'c :> Component> comp systemName registration =
+        member this.RegisterCorrelated<'c when 'c : struct and 'c :> Component> comp systemName entityId =
             match this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName with
             | Some system ->
-                let entityId = system.RegisterCorrelated comp registration this
+                let entityId = system.RegisterCorrelated comp entityId this
                 match this.Correlations.TryGetValue entityId with
                 | (true, correlation) -> correlation.Add systemName
                 | (false, _) -> this.Correlations.Add (entityId, List [systemName])
@@ -531,7 +520,7 @@ type Junction<'c when 'c : struct and 'c :> 'c Junction> =
     interface
         inherit Component
         abstract SystemNames : string array
-        abstract Junction : 'w System array -> Registration -> 'w Ecs -> 'c
+        abstract Junction : 'w System array -> Guid -> 'w Ecs -> 'c
         abstract Disjunction : 'w System array -> Guid -> 'w Ecs -> unit
         end
 
@@ -541,7 +530,6 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
 
     let systemNames = Unchecked.defaultof<'c>.SystemNames
     let mutable systemsOpt = None : 'w System array option
-    let preDeque = Deque<Guid> ()
 
     new (reserve) = SystemJunctioned (reserve, typeof<'c>.Name)
     new () = SystemJunctioned (Constants.Ecs.ArrayReserve, typeof<'c>.Name)
@@ -554,48 +542,65 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
             systemsOpt <- Some systems
             systems
 
-    member private this.RegisterCorrelatedInner (comp : 'c Junction) registration prealloc entityId ecs =
+    override this.RegisterCorrelated comp entityId ecs =
+
+        // check if component is already registered
         match Dictionary.tryGetValue entityId this.Correlations with
         | (false, _) ->
+            
+            // grab systems
             let systems = this.GetSystems ecs
-            let comp = comp.Junction systems registration ecs
-            let comp =
-                if this.FreeIndex < this.Components.Length then
-                    this.Components.[this.FreeIndex] <- comp
-                    &this.Components.[this.FreeIndex]
-                else
-                    let arr = Array.zeroCreate (this.Components.Length * 2)
-                    this.Components.Array.CopyTo (arr, 0)
-                    this.Components.Array <- arr
-                    this.Components.[this.FreeIndex] <- comp
-                    &this.Components.[this.FreeIndex]
-            let index = this.FreeIndex
-            this.FreeIndex <- inc this.FreeIndex
-            if not prealloc
-            then comp.RefCount <- inc comp.RefCount
-            else preDeque.AddToBack entityId
-            this.Correlations.Add (entityId, index)
-            entityId
+
+            // new component; use a pre-allocated component
+            if this.PreDeque.Count > 0 then
+                let index = this.PreDeque.RemoveFromFront ()
+                this.Correlations.Add (entityId, index)
+                let mutable comp = comp.Junction systems entityId ecs
+                comp.RefCount <- inc comp.RefCount
+                this.Components.Array.[index] <- comp
+                entityId
+
+            // new component; attempt to recycle
+            elif this.FreeList.Count > 0 then
+                let index = Seq.head this.FreeList
+                let _ : bool = this.FreeList.Remove index
+                this.Correlations.Add (entityId, index)
+                let mutable comp = comp.Junction systems entityId ecs
+                comp.RefCount <- inc comp.RefCount
+                this.Components.Array.[index] <- comp
+                entityId
+
+            // new component; pre-allocate more components then use the first
+            else
+
+                // pre-allocate more components
+                for i in 0 .. Constants.Ecs.ArrayReserve - 1 do
+
+                    // ensure there is space in the array
+                    if this.FreeIndex >= this.Components.Length then
+                        let arr = Array.zeroCreate (single this.Components.Length * Constants.Ecs.ArrayGrowth |> int)
+                        this.Components.Array.CopyTo (arr, 0)
+                        this.Components.Array <- arr
+
+                    // allocate component
+                    let index = this.FreeIndex in this.FreeIndex <- inc this.FreeIndex
+                    let entityId = if i = 0 then entityId else Gen.id
+                    let mutable comp = comp.Junction systems entityId ecs
+                    if i = 0 then
+                        comp.RefCount <- inc comp.RefCount
+                        this.Correlations.Add (entityId, index)
+                    else
+                        this.PreDeque.AddToBack index
+                    this.Components.Array.[index] <- comp
+
+                // fin
+                entityId
+
+        // use existing component
         | (true, index) ->
-            if prealloc then raise (InvalidOperationException "Cannot prealloc an existing component.")
             let mutable comp = this.Components.[index]
             comp.RefCount <- inc comp.RefCount
             entityId
-
-    override this.RegisterCorrelated comp registration ecs =
-        match registration with
-        | Prealloc ->
-            this.RegisterCorrelatedInner comp registration true Gen.id ecs
-        | Alloc entityId ->
-            this.RegisterCorrelatedInner comp registration false entityId ecs
-        | PostAlloc entityId ->
-            if preDeque.Count > 0 then
-                let preallocId = preDeque.RemoveFromFront ()
-                let index = this.Correlations.[preallocId]
-                let _ = this.Correlations.Remove preallocId
-                this.Correlations.Add (entityId, index)
-                entityId
-            else this.RegisterCorrelatedInner comp registration false entityId ecs
 
     override this.UnregisterCorrelated entityId ecs =
         match this.Correlations.TryGetValue entityId with
@@ -607,9 +612,6 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
                 if this.Components.[index].RefCount = 0 then this.FreeList.Add index |> ignore
             else this.FreeIndex <- dec this.FreeIndex
             comp.Disjunction junctions entityId ecs
-            if  this.Components.Length < this.FreeList.Count * 2 &&
-                this.Components.Length > Constants.Ecs.ArrayReserve then
-                this.Compact ()
             true
         | (false, _) -> false
 
@@ -621,22 +623,22 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
         member inline this.IndexJunctioned<'c when 'c : struct and 'c :> 'c Junction> systemName entityId : 'c ComponentRef =
             this.IndexCorrelated<'c> systemName entityId
 
-        member this.RegisterJunctioned<'c when 'c : struct and 'c :> 'c Junction> comp systemName registration =
-            this.RegisterCorrelated<'c> comp systemName registration
+        member this.RegisterJunctioned<'c when 'c : struct and 'c :> 'c Junction> comp systemName entityId =
+            this.RegisterCorrelated<'c> comp systemName entityId
 
         member this.UnregisterJunctioned<'c when 'c : struct and 'c :> 'c Junction> systemName entityId =
             this.UnregisterCorrelated<'c> systemName entityId
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> Component>
-            (comp : 'c) (registration : Registration) (system : 'w System) =
+            (comp : 'c) (entityId : Guid) (system : 'w System) =
             let system = system :?> SystemCorrelated<'c, 'w>
-            let entityId = system.RegisterCorrelated comp registration this
+            let entityId = system.RegisterCorrelated comp entityId this
             let index = system.IndexCorrelatedI entityId
             ComponentRef.make index system.Components
 
         member this.Junction<'c when 'c : struct and 'c :> Component>
-            (registration : Registration) (system : 'w System) =
-            this.JunctionPlus<'c> Unchecked.defaultof<'c> registration system
+            (entityId : Guid) (system : 'w System) =
+            this.JunctionPlus<'c> Unchecked.defaultof<'c> entityId system
 
         member this.DisjunctionPlus<'c when 'c : struct and 'c :> Component>
             (entityId : Guid) (system : 'w System) =
@@ -682,7 +684,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fre
         componentMultiplexed.Index.Simplexes.[multiId]
 
     member this.RegisterMultiplexed comp multiId entityId ecs =
-        let entityId = this.RegisterCorrelated Unchecked.defaultof<_> (Alloc entityId) ecs
+        let entityId = this.RegisterCorrelated Unchecked.defaultof<_> entityId ecs
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.Index.RegisterMultiplexed (multiId, comp)
         multiId
@@ -772,7 +774,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
     member this.RegisterHierarchical comp nodeId entityId ecs =
         match systemDict.TryGetValue nodeId with
         | (true, system) ->
-            let _ = system.RegisterCorrelated comp (Alloc entityId) ecs
+            let _ = system.RegisterCorrelated comp entityId ecs
             true
         | (false, _) -> false
 

@@ -56,7 +56,7 @@ type MetricsEntityDispatcher () =
 #if ECS
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { RefCount = 0; Entity = entity; Sprite = AssetTag.make Assets.DefaultPackageName "Image4" } typeof<StaticSpriteComponent>.Name (Alloc (entity.GetId world))
+        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { RefCount = 0; Entity = entity; Sprite = AssetTag.make Assets.DefaultPackageName "Image4" } typeof<StaticSpriteComponent>.Name (entity.GetId world)
         world
 
     override this.Unregister (entity, world) =
@@ -94,7 +94,7 @@ type MyGameDispatcher () =
 
         // create junctions
         for _ in 0 .. entityCount - 1 do
-            let entityId = ecs.RegisterJunctioned<Mover> Unchecked.defaultof<Mover> typeof<Mover>.Name (Alloc Gen.id)
+            let entityId = ecs.RegisterJunctioned<Mover> Unchecked.defaultof<Mover> typeof<Mover>.Name Gen.id
             let mover = ecs.IndexCorrelated<Mover> typeof<Mover>.Name entityId
             mover.Index.Velocity.Index.Velocity <- v2One
 
