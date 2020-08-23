@@ -333,6 +333,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
     let freeList = HashSet<int> ()
     let preDeque = HashSet<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
+    let correlationsBack = dictPlus [] : Dictionary<int, Guid>
 
     new (reserve) = SystemCorrelated (reserve, typeof<'c>.Name)
     new () = SystemCorrelated (Constants.Ecs.ArrayReserve, typeof<'c>.Name)
@@ -342,6 +343,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
     member internal this.FreeList with get () = freeList
     member internal this.PreDeque with get () = preDeque
     member internal this.Correlations with get () = correlations
+    member internal this.CorrelationsBack with get () = correlationsBack
 
     abstract ComponentToBytes : 'c -> char array
     default this.ComponentToBytes _ = failwithnie ()
@@ -370,6 +372,49 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
         components.Array.CopyTo (arr, 0)
         components.Array <- arr
 
+    member internal this.Compact () =
+
+        // compact array
+        // TODO: P1: step-debug this.
+        let mutable i = 0
+        let mutable j = 1
+        let liveCount = freeIndex - freeList.Count
+        let liveArray = Array.zeroCreate liveCount
+        while j < freeIndex do
+
+            // check if slot is free
+            if components.[i].RefCount = 0 && freeList.Contains i then
+                
+                // find next used component
+                while
+                    components.[j].RefCount = 0 &&
+                    not (freeList.Contains j) &&
+                    j < freeIndex do
+                    j <- inc j
+
+                // move component
+                liveArray.[i] <- components.[j]
+
+                // update book-keeping
+                match correlationsBack.TryGetValue j with
+                | (true, entityId) ->
+                    correlations.[entityId] <- i
+                    correlationsBack.Remove i |> ignore
+                    correlationsBack.Add (i, entityId)
+                | (false, _) ->
+                    if preDeque.Remove j
+                    then preDeque.Add i |> ignore
+                    else failwithumf ()
+
+                // loop
+                j <- inc j
+            i <- inc i
+
+        // update book-keeping
+        freeList.Clear ()
+        freeIndex <- j
+        components.Array <- liveArray
+
     member this.GetEntitiesCorrelated () =
         correlations.Keys :> _ IEnumerable
 
@@ -397,6 +442,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
                 let index = Seq.head preDeque
                 let _ : bool = preDeque.Remove index
                 correlations.Add (entityId, index)
+                correlationsBack.Add (index, entityId)
                 components.Array.[index] <- comp
                 let comp = &components.Array.[index]
                 comp.RefCount <- inc comp.RefCount
@@ -407,6 +453,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
                 let index = Seq.head freeList
                 let _ : bool = freeList.Remove index
                 correlations.Add (entityId, index)
+                correlationsBack.Add (index, entityId)
                 components.Array.[index] <- comp
                 let comp = &components.Array.[index]
                 comp.RefCount <- inc comp.RefCount
@@ -431,6 +478,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
                         comp.RefCount <- inc comp.RefCount
                         components.Array.[index] <- comp
                         correlations.Add (entityId, index)
+                        correlationsBack.Add (index, entityId)
                     else preDeque.Add index |> ignore
 
                 // fin
@@ -450,6 +498,11 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
                 components.[index].RefCount <- dec components.[index].RefCount
                 if components.[index].RefCount = 0 then freeList.Add index |> ignore
             else freeIndex <- dec freeIndex
+            let _ : bool = correlations.Remove entityId
+            let _ : bool = correlationsBack.Remove index
+            if  components.Length < freeList.Count * 2 &&
+                components.Length > Constants.Ecs.ArrayReserve then
+                this.Compact ()
             true
         | (false, _) -> false
 
@@ -556,6 +609,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
                 let index = Seq.head this.PreDeque
                 let _ : bool = this.PreDeque.Remove index
                 this.Correlations.Add (entityId, index)
+                this.CorrelationsBack.Add (index, entityId)
                 let mutable comp = comp.Junction systems entityId ecs
                 comp.RefCount <- inc comp.RefCount
                 this.Components.Array.[index] <- comp
@@ -566,6 +620,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
                 let index = Seq.head this.FreeList
                 let _ : bool = this.FreeList.Remove index
                 this.Correlations.Add (entityId, index)
+                this.CorrelationsBack.Add (index, entityId)
                 let mutable comp = comp.Junction systems entityId ecs
                 comp.RefCount <- inc comp.RefCount
                 this.Components.Array.[index] <- comp
@@ -590,6 +645,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
                     if i = 0 then
                         comp.RefCount <- inc comp.RefCount
                         this.Correlations.Add (entityId, index)
+                        this.CorrelationsBack.Add (index, entityId)
                     else this.PreDeque.Add index |> ignore
                     this.Components.Array.[index] <- comp
 
@@ -612,6 +668,11 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
                 if this.Components.[index].RefCount = 0 then this.FreeList.Add index |> ignore
             else this.FreeIndex <- dec this.FreeIndex
             comp.Disjunction junctions entityId ecs
+            let _ : bool = this.Correlations.Remove entityId
+            let _ : bool = this.CorrelationsBack.Remove index
+            if  this.Components.Length < this.FreeList.Count * 2 &&
+                this.Components.Length > Constants.Ecs.ArrayReserve then
+                this.Compact ()
             true
         | (false, _) -> false
 
