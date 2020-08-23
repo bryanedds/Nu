@@ -384,13 +384,13 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
 
             // check if slot is free
             if  components.[i].RefCount = 0 &&
-                not (preList.Contains i) && freeList.Contains i then
-                
+                (freeList.Contains i && not (preList.Contains i)) then
+
                 // find next non-free component
                 while
                     j < freeIndex &&
                     components.[j].RefCount = 0 &&
-                    (preList.Contains j || not (freeList.Contains j)) do
+                    (not (freeList.Contains j) || preList.Contains j) do
                     j <- inc j
 
                 // move component
@@ -442,17 +442,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
             if preList.Count > 0 then
                 let index = Seq.head preList
                 let _ : bool = preList.Remove index
-                correlations.Add (entityId, index)
-                correlationsBack.Add (index, entityId)
-                components.Array.[index] <- comp
-                let comp = &components.Array.[index]
-                comp.RefCount <- inc comp.RefCount
-                entityId
-
-            // new component; attempt to recycle
-            elif freeList.Count > 0 then
-                let index = Seq.head freeList
-                let _ : bool = freeList.Remove index
                 correlations.Add (entityId, index)
                 correlationsBack.Add (index, entityId)
                 components.Array.[index] <- comp
@@ -609,17 +598,6 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
             if this.PreList.Count > 0 then
                 let index = Seq.head this.PreList
                 let _ : bool = this.PreList.Remove index
-                this.Correlations.Add (entityId, index)
-                this.CorrelationsBack.Add (index, entityId)
-                let mutable comp = comp.Junction systems entityId ecs
-                comp.RefCount <- inc comp.RefCount
-                this.Components.Array.[index] <- comp
-                entityId
-
-            // new component; attempt to recycle
-            elif this.FreeList.Count > 0 then
-                let index = Seq.head this.FreeList
-                let _ : bool = this.FreeList.Remove index
                 this.Correlations.Add (entityId, index)
                 this.CorrelationsBack.Add (index, entityId)
                 let mutable comp = comp.Junction systems entityId ecs
