@@ -283,7 +283,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
             components.[freeIndex] <- comp
             freeIndex <- inc freeIndex
         else
-            let arr = Array.zeroCreate (single components.Length * Constants.Ecs.ArrayGrowth |> int)
+            let arr = Array.zeroCreate (components.Length * Constants.Ecs.ArrayGrowth)
             components.Array.CopyTo (arr, 0)
             components.Array <- arr
             components.[freeIndex] <- comp
@@ -457,7 +457,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
 
                     // ensure there is space in the array
                     if freeIndex >= components.Length then
-                        let arr = Array.zeroCreate (single components.Length * Constants.Ecs.ArrayGrowth |> int)
+                        let arr = Array.zeroCreate (components.Length * Constants.Ecs.ArrayGrowth)
                         components.Array.CopyTo (arr, 0)
                         components.Array <- arr
 
@@ -613,7 +613,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
 
                     // ensure there is space in the array
                     if this.FreeIndex >= this.Components.Length then
-                        let arr = Array.zeroCreate (single this.Components.Length * Constants.Ecs.ArrayGrowth |> int)
+                        let arr = Array.zeroCreate (this.Components.Length * Constants.Ecs.ArrayGrowth)
                         this.Components.Array.CopyTo (arr, 0)
                         this.Components.Array <- arr
 

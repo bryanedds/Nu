@@ -107,4 +107,4 @@ module Math =
 module Ecs =
 
     let [<Literal>] ArrayReserve = 256
-    let [<Literal>] ArrayGrowth = 2.0f
+    let [<Literal>] ArrayGrowth = 2
