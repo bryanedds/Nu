@@ -331,7 +331,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
     let mutable components = ArrayRef<'c>.make reserve
     let mutable freeIndex = 0
     let freeList = HashSet<int> ()
-    let preDeque = Deque<int> ()
+    let preDeque = HashSet<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
 
     new (reserve) = SystemCorrelated (reserve, typeof<'c>.Name)
@@ -394,7 +394,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
 
             // new component; use a pre-allocated component
             if preDeque.Count > 0 then
-                let index = preDeque.RemoveFromFront ()
+                let index = Seq.head preDeque
+                let _ : bool = preDeque.Remove index
                 correlations.Add (entityId, index)
                 components.Array.[index] <- comp
                 let comp = &components.Array.[index]
@@ -430,8 +431,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
                         comp.RefCount <- inc comp.RefCount
                         components.Array.[index] <- comp
                         correlations.Add (entityId, index)
-                    else
-                        preDeque.AddToBack index
+                    else preDeque.Add index |> ignore
 
                 // fin
                 entityId
@@ -553,7 +553,8 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
 
             // new component; use a pre-allocated component
             if this.PreDeque.Count > 0 then
-                let index = this.PreDeque.RemoveFromFront ()
+                let index = Seq.head this.PreDeque
+                let _ : bool = this.PreDeque.Remove index
                 this.Correlations.Add (entityId, index)
                 let mutable comp = comp.Junction systems entityId ecs
                 comp.RefCount <- inc comp.RefCount
@@ -589,8 +590,7 @@ type SystemJunctioned<'c, 'w when 'c : struct and 'c :> 'c Junction and 'w :> Fr
                     if i = 0 then
                         comp.RefCount <- inc comp.RefCount
                         this.Correlations.Add (entityId, index)
-                    else
-                        this.PreDeque.AddToBack index
+                    else this.PreDeque.Add index |> ignore
                     this.Components.Array.[index] <- comp
 
                 // fin
