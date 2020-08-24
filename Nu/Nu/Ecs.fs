@@ -402,7 +402,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
                 match correlationsBack.TryGetValue j with
                 | (true, entityId) ->
                     correlations.[entityId] <- i
-                    correlationsBack.Remove i |> ignore
+                    correlationsBack.Remove j |> ignore
                     correlationsBack.Add (i, entityId)
                 | (false, _) ->
                     if preList.Remove j
