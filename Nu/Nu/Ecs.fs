@@ -8,7 +8,6 @@ open System.Collections.Generic
 open System.IO
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
-open Nito.Collections
 open Prime
 
 /// A freezable type.
@@ -279,7 +278,10 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
         ComponentRef.make index components
 
     member this.RegisterUncorrelated comp =
-        if freeIndex < components.Length then
+        if freeList.Count > 0 then
+            let index = freeList.Dequeue ()
+            components.[index] <- comp
+        elif freeIndex < components.Length then
             components.[freeIndex] <- comp
             freeIndex <- inc freeIndex
         else
