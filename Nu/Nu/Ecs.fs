@@ -8,6 +8,7 @@ open System.Collections.Generic
 open System.IO
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
+open Nito.Collections
 open Prime
 
 /// A freezable type.
@@ -237,7 +238,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
 
     let mutable components = ArrayRef<'c>.make reserve
     let mutable freeIndex = 0
-    let freeList = Queue<int> ()
+    let freeList = Deque<int> ()
 
     new (reserve) = SystemUncorrelated (reserve, typeof<'c>.Name)
     new () = SystemUncorrelated (Constants.Ecs.ArrayReserve, typeof<'c>.Name)
@@ -279,7 +280,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
 
     member this.RegisterUncorrelated comp =
         if freeList.Count > 0 then
-            let index = freeList.Dequeue ()
+            let index = freeList.RemoveFromFront ()
             components.[index] <- comp
         elif freeIndex < components.Length then
             components.[freeIndex] <- comp
@@ -294,7 +295,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Fr
     member this.UnregisterUncorrelated index =
         if index <> freeIndex then
             components.[index].RefCount <- dec components.[index].RefCount
-            if components.[index].RefCount = 0 then freeList.Enqueue index
+            if components.[index].RefCount = 0 then freeList.AddToBack index
         else freeIndex <- dec freeIndex
 
     type Ecs<'w when 'w :> Freezable> with
