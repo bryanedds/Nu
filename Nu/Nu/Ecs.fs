@@ -357,7 +357,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> Component and 'w :> Free
         sizeof<'c>
 
     override this.ComponentsCount with get () =
-        freeIndex - 1 - freeList.Count
+        freeIndex - freeList.Count - preList.Count
 
     override this.ComponentsToBytes () =
         let byteArrays = Array.map this.ComponentToBytes components.Array
