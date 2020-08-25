@@ -36,6 +36,9 @@ module WorldLayerModule =
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
 
+        /// Diverge the layer state.
+        member this.Diverge world = World.divergeLayer this world
+
         /// The state of a layer.
         /// The only place this accessor should be used is in performance-sensitive code.
         /// Otherwise, you should get and set the required layer properties via the Layer interface.

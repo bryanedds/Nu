@@ -70,6 +70,9 @@ module WorldGameModule =
         member this.GamepadButtonUpEvent index = Events.GamepadButtonUp index --> this
         member this.AssetsReloadEvent = Events.AssetsReload --> this
 
+        /// Diverge the game state.
+        member this.Diverge world = World.divergeGame world
+
         /// The state of a game.
         /// The only place this accessor should be used is in performance-sensitive code.
         /// Otherwise, you should get and set the required game properties via the Game interface.

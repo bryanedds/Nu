@@ -65,7 +65,7 @@ and LayerPropertyDescriptor (propertyDescriptor, attributes) =
 
             // make property change undo-able
             Globals.pushPastWorld world
-            let world = World.divergeLayer layer world
+            let world = layer.Diverge world
             
             // change property
             match propertyName with

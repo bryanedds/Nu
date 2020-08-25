@@ -120,7 +120,7 @@ module WorldModuleLayer =
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
 
-        static member divergeLayer layer world =
+        static member internal divergeLayer layer world =
             World.getLayerState layer world |>
             LayerState.copy |>
             flip3 World.setLayerState layer world

@@ -88,6 +88,9 @@ module WorldEntityModule =
         member this.PostUpdateEvent = Events.PostUpdate --> this
 #endif
 
+        /// Diverge the entity state.
+        member this.Diverge world = World.divergeEntity this world
+
         /// The state of an entity.
         /// The only place this accessor should be used is in performance-sensitive code.
         /// Otherwise, you should get and set the required entity properties via the Entity interface.

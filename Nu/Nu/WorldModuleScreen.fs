@@ -113,6 +113,11 @@ module WorldModuleScreen =
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
 
+        static member internal divergeScreen screen world =
+            World.getScreenState screen world |>
+            ScreenState.copy |>
+            flip3 World.setScreenState screen world
+
         static member internal setScreenModelProperty (value : DesignerProperty) world =
             World.updateScreenState
                 (fun screenState -> if value.DesignerValue <> screenState.Model.DesignerValue then screenState.Model.DesignerValue <- value.DesignerValue; true else false)

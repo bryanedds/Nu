@@ -670,7 +670,7 @@ module WorldModuleEntity =
 #endif
             world
 
-        static member divergeEntity entity world =
+        static member internal divergeEntity entity world =
             World.getEntityState entity world |>
             EntityState.copy |>
             flip3 World.setEntityState entity world

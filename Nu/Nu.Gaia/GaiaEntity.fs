@@ -78,7 +78,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
 
             // make property change undo-able
             Globals.pushPastWorld world
-            let world = World.divergeEntity entity world
+            let world = entity.Diverge world
 
             // change property
             match propertyName with

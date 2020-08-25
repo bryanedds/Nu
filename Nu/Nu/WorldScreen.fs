@@ -53,6 +53,9 @@ module WorldScreenModule =
         member this.OutgoingStartEvent = Events.OutgoingStart --> this
         member this.OutgoingFinishEvent = Events.OutgoingFinish --> this
 
+        /// Diverge the screen state.
+        member this.Diverge world = World.divergeScreen this world
+
         /// The state of a screen.
         /// The only place this accessor should be used is in performance-sensitive code.
         /// Otherwise, you should get and set the required screen properties via the Screen interface.

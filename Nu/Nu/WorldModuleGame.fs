@@ -44,13 +44,18 @@ module WorldModuleGame =
             then World.publishGameChange propertyName propertyValue world
             else world
 
-        static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
         static member internal getGameModelProperty world = (World.getGameState world).Model
         static member internal getGameModel<'a> world = (World.getGameState world).Model.DesignerValue :?> 'a
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
         static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> if value <> gameState.ScriptFrame then gameState.ScriptFrame <- value; true else false) Property? ScriptFrame value world
+        static member internal getGameId world = (World.getGameState world).Id
+
+        static member internal divergeGame world =
+            World.getGameState world |>
+            GameState.copy |>
+            flip World.setGameState world
 
         static member internal setGameModelProperty (value : DesignerProperty) world =
             World.updateGameState
