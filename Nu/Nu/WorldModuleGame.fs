@@ -35,9 +35,8 @@ module WorldModuleGame =
 
         static member private updateGameStateWithoutEvent updater world =
             let gameState = World.getGameState world
-            match updater gameState with
-            | Some gameState -> (true, World.setGameState gameState world)
-            | None -> (false, world)
+            let changed = updater gameState
+            (changed, world)
 
         static member private updateGameState updater propertyName propertyValue world =
             let (changed, world) = World.updateGameStateWithoutEvent updater world
@@ -51,23 +50,18 @@ module WorldModuleGame =
         static member internal getGameModelProperty world = (World.getGameState world).Model
         static member internal getGameModel<'a> world = (World.getGameState world).Model.DesignerValue :?> 'a
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
-        static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> if value <> gameState.ScriptFrame then Some { gameState with ScriptFrame = value } else None) Property? ScriptFrame value world
+        static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> if value <> gameState.ScriptFrame then gameState.ScriptFrame <- value; true else false) Property? ScriptFrame value world
 
         static member internal setGameModelProperty (value : DesignerProperty) world =
             World.updateGameState
-                (fun gameState ->
-                    if value.DesignerValue <> gameState.Model.DesignerValue
-                    then Some { gameState with Model = { gameState.Model with DesignerValue = value.DesignerValue }}
-                    else None)
+                (fun gameState -> if value.DesignerValue <> gameState.Model.DesignerValue then gameState.Model.DesignerValue <- value.DesignerValue; true else false)
                 Property? Model value.DesignerValue world
 
         static member internal setGameModel<'a> (value : 'a) world =
             World.updateGameState
                 (fun gameState ->
                     let valueObj = value :> obj
-                    if valueObj <> gameState.Model.DesignerValue
-                    then Some { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
-                    else None)
+                    if valueObj <> gameState.Model.DesignerValue then gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }; true else false)
                 Property? Model value world
 
         /// Get the current eye center.
@@ -78,7 +72,7 @@ module WorldModuleGame =
         /// Set the current eye center.
         [<FunctionBinding>]
         static member setEyeCenter value world =
-            World.updateGameState (fun gameState -> if value <> gameState.EyeCenter then Some { gameState with EyeCenter = value } else None) Property? EyeCenter value world
+            World.updateGameState (fun gameState -> if value <> gameState.EyeCenter then gameState.EyeCenter <- value; true else false) Property? EyeCenter value world
 
         /// Get the current eye size.
         [<FunctionBinding>]
@@ -88,7 +82,7 @@ module WorldModuleGame =
         /// Set the current eye size.
         [<FunctionBinding>]
         static member setEyeSize value world =
-            World.updateGameState (fun gameState -> if value <> gameState.EyeSize then Some { gameState with EyeSize = value } else None) Property? EyeSize value world
+            World.updateGameState (fun gameState -> if value <> gameState.EyeSize then gameState.EyeSize <- value; true else false) Property? EyeSize value world
 
         /// Get the omni-screen, if any.
         [<FunctionBinding>]
@@ -99,7 +93,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member setOmniScreenOpt value world =
             if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set OmniScreen to SelectedScreen."
-            World.updateGameState (fun gameState -> if value <> gameState.OmniScreenOpt then Some { gameState with OmniScreenOpt = value } else None) Property? OmniScreenOpt value world
+            World.updateGameState (fun gameState -> if value <> gameState.OmniScreenOpt then gameState.OmniScreenOpt <- value; true else false) Property? OmniScreenOpt value world
 
         /// Get the omniScreen (failing with an exception if there isn't one).
         [<FunctionBinding>]
@@ -127,7 +121,7 @@ module WorldModuleGame =
                 failwith "Cannot set SelectedScreen to OmniScreen."
 
             // raise change event for none selection
-            let world = World.updateGameState Some Property? SelectedScreenOpt None world
+            let world = World.updateGameState (constant true) Property? SelectedScreenOpt None world
 
             // clear out singleton states
             let world =
@@ -141,10 +135,7 @@ module WorldModuleGame =
             // actually set selected screen (no events)
             let (_, world) =
                 World.updateGameStateWithoutEvent
-                    (fun gameState ->
-                        if value <> gameState.SelectedScreenOpt
-                        then Some { gameState with SelectedScreenOpt = value }
-                        else None)
+                    (fun gameState -> if value <> gameState.SelectedScreenOpt then gameState.SelectedScreenOpt <- value; true else false)
                     world
 
             // handle some case
@@ -156,7 +147,7 @@ module WorldModuleGame =
                 let world = WorldModule.registerScreenPhysics screen world
 
                 // raise change event for some selection
-                World.updateGameState Some Property? SelectedScreenOpt (Some screen) world
+                World.updateGameState (constant true) Property? SelectedScreenOpt (Some screen) world
 
             // fin
             | None -> world
@@ -183,10 +174,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member internal setScreenTransitionDestinationOpt destination world =
             World.updateGameState
-                (fun gameState ->
-                    if destination <> gameState.ScreenTransitionDestinationOpt
-                    then Some { gameState with ScreenTransitionDestinationOpt = destination }
-                    else None)
+                (fun gameState -> if destination <> gameState.ScreenTransitionDestinationOpt then gameState.ScreenTransitionDestinationOpt <- destination; true else false)
                 Property? ScreenTransitionDestinationOpt
                 destination
                 world
@@ -306,11 +294,11 @@ module WorldModuleGame =
                             match GameState.tryGetProperty propertyName gameState with
                             | Some propertyOld ->
                                 if property.PropertyValue <> propertyOld.PropertyValue then
-                                    let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
+                                    let successInner = GameState.trySetProperty propertyName property gameState
                                     success <- successInner
-                                    Some gameState
-                                else None
-                            | None -> None)
+                                    true
+                                else false
+                            | None -> false)
                         propertyName property.PropertyValue world
                 (success, world)
 
@@ -324,19 +312,17 @@ module WorldModuleGame =
                 World.updateGameState
                     (fun gameState ->
                         let propertyOld = GameState.getProperty propertyName gameState
-                        if property.PropertyValue <> propertyOld.PropertyValue
-                        then Some (GameState.setProperty propertyName property gameState)
-                        else None)
+                        if property.PropertyValue <> propertyOld.PropertyValue then GameState.setProperty propertyName property gameState; true else false)
                     propertyName property.PropertyValue world
 
         static member internal attachGameProperty propertyName property world =
             World.updateGameState
-                (fun gameState -> Some (GameState.attachProperty propertyName property gameState))
+                (fun gameState -> GameState.attachProperty propertyName property gameState)
                 propertyName property.PropertyValue world
 
         static member internal detachGameProperty propertyName world =
             World.updateGameStateWithoutEvent
-                (fun gameState -> Some (GameState.detachProperty propertyName gameState))
+                (fun gameState -> GameState.detachProperty propertyName gameState)
                 world |>
             snd
 

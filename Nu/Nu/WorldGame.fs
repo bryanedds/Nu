@@ -70,6 +70,11 @@ module WorldGameModule =
         member this.GamepadButtonUpEvent index = Events.GamepadButtonUp index --> this
         member this.AssetsReloadEvent = Events.AssetsReload --> this
 
+        /// The state of a game.
+        /// The only place this accessor should be used is in performance-sensitive code.
+        /// Otherwise, you should get and set the required game properties via the Game interface.
+        member this.State world = World.getGameState world
+
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetGameProperty propertyName world
 

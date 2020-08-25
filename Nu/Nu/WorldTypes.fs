@@ -314,7 +314,7 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
-             Define? Imperative false
+             Define? Imperative true
              Define? PublishChanges false
              Define? Visible true
              Define? Enabled true
@@ -407,14 +407,14 @@ module WorldTypes =
     /// Hosts the ongoing state of a game.
     and [<NoEquality; NoComparison; CLIMutable>] GameState =
         { Dispatcher : GameDispatcher
-          Xtension : Xtension
-          Model : DesignerProperty
-          OmniScreenOpt : Screen option
-          SelectedScreenOpt : Screen option
-          ScreenTransitionDestinationOpt : Screen option
-          EyeCenter : Vector2
-          EyeSize : Vector2
-          ScriptFrame : Scripting.DeclarationFrame
+          mutable Xtension : Xtension
+          mutable Model : DesignerProperty
+          mutable OmniScreenOpt : Screen option
+          mutable SelectedScreenOpt : Screen option
+          mutable ScreenTransitionDestinationOpt : Screen option
+          mutable EyeCenter : Vector2
+          mutable EyeSize : Vector2
+          mutable ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64
           Id : Guid }
 
@@ -427,7 +427,7 @@ module WorldTypes =
             let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
             { Id = Gen.id
               Dispatcher = dispatcher
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeImperative ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               OmniScreenOpt = None
               SelectedScreenOpt = None
@@ -447,22 +447,26 @@ module WorldTypes =
 
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property gameState =
-            match Xtension.trySetProperty propertyName property gameState.Xtension with
-            | (true, xtension) -> (true, { gameState with Xtension = xtension })
-            | (false, _) -> (false, gameState)
+            let (changed, xtension) = Xtension.trySetProperty propertyName property gameState.Xtension
+            gameState.Xtension <- xtension
+            changed
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property gameState =
-            { gameState with GameState.Xtension = Xtension.setProperty propertyName property gameState.Xtension }
+            let xtension = Xtension.setProperty propertyName property gameState.Xtension
+            gameState.Xtension <- xtension
 
         /// Attach an xtension property.
         static member attachProperty name property gameState =
-            { gameState with GameState.Xtension = Xtension.attachProperty name property gameState.Xtension }
+            let xtension = Xtension.attachProperty name property gameState.Xtension
+            gameState.Xtension <- xtension
+            true
 
         /// Detach an xtension property.
         static member detachProperty name gameState =
             let xtension = Xtension.detachProperty name gameState.Xtension
-            { gameState with GameState.Xtension = xtension }
+            gameState.Xtension <- xtension
+            true
 
         /// Copy a game such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -471,15 +475,15 @@ module WorldTypes =
     /// Hosts the ongoing state of a screen.
     and [<NoEquality; NoComparison; CLIMutable>] ScreenState =
         { Dispatcher : ScreenDispatcher
-          Xtension : Xtension
-          Model : DesignerProperty
+          mutable Xtension : Xtension
+          mutable Model : DesignerProperty
           Ecs : World Ecs
-          TransitionState : TransitionState
-          TransitionTicks : int64
-          Incoming : Transition
-          Outgoing : Transition
-          Persistent : bool
-          ScriptFrame : Scripting.DeclarationFrame
+          mutable TransitionState : TransitionState
+          mutable TransitionTicks : int64
+          mutable Incoming : Transition
+          mutable Outgoing : Transition
+          mutable Persistent : bool
+          mutable ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64
           Id : Guid
           Name : string }
@@ -491,7 +495,7 @@ module WorldTypes =
         static member make nameOpt (dispatcher : ScreenDispatcher) ecs =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeImperative ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Ecs = ecs
               TransitionState = IdlingState
@@ -514,35 +518,39 @@ module WorldTypes =
 
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property screenState =
-            match Xtension.trySetProperty propertyName property screenState.Xtension with
-            | (true, xtension) -> (true, { screenState with Xtension = xtension })
-            | (false, _) -> (false, screenState)
+            let (changed, xtension) = Xtension.trySetProperty propertyName property screenState.Xtension
+            screenState.Xtension <- xtension
+            changed
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property screenState =
-            { screenState with ScreenState.Xtension = Xtension.setProperty propertyName property screenState.Xtension }
+            let xtension = Xtension.setProperty propertyName property screenState.Xtension
+            screenState.Xtension <- xtension
 
         /// Attach an xtension property.
         static member attachProperty name property screenState =
-            { screenState with ScreenState.Xtension = Xtension.attachProperty name property screenState.Xtension }
+            let xtension = Xtension.attachProperty name property screenState.Xtension
+            screenState.Xtension <- xtension
+            true
 
         /// Detach an xtension property.
         static member detachProperty name screenState =
             let xtension = Xtension.detachProperty name screenState.Xtension
-            { screenState with ScreenState.Xtension = xtension }
+            screenState.Xtension <- xtension
+            true
 
         /// Copy a screen such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
             { this with ScreenState.Dispatcher = this.Dispatcher }
-    
+
     /// Hosts the ongoing state of a layer.
     and [<NoEquality; NoComparison; CLIMutable>] LayerState =
         { Dispatcher : LayerDispatcher
-          Xtension : Xtension
-          Model : DesignerProperty
-          Visible : bool
-          Persistent : bool
-          ScriptFrame : Scripting.DeclarationFrame
+          mutable Xtension : Xtension
+          mutable Model : DesignerProperty
+          mutable Visible : bool
+          mutable Persistent : bool
+          mutable ScriptFrame : Scripting.DeclarationFrame
           CreationTimeStamp : int64
           Id : Guid
           Name : string }
@@ -554,7 +562,7 @@ module WorldTypes =
         static member make nameOpt (dispatcher : LayerDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeImperative ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Visible = true
               Persistent = true
@@ -573,22 +581,26 @@ module WorldTypes =
 
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property layerState =
-            match Xtension.trySetProperty propertyName property layerState.Xtension with
-            | (true, xtension) -> (true, { layerState with Xtension = xtension })
-            | (false, _) -> (false, layerState)
+            let (changed, xtension) = Xtension.trySetProperty propertyName property layerState.Xtension
+            layerState.Xtension <- xtension
+            changed
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property layerState =
-            { layerState with LayerState.Xtension = Xtension.setProperty propertyName property layerState.Xtension }
+            let xtension = Xtension.setProperty propertyName property layerState.Xtension
+            layerState.Xtension <- xtension
 
         /// Attach an xtension property.
         static member attachProperty name property layerState =
-            { layerState with LayerState.Xtension = Xtension.attachProperty name property layerState.Xtension }
+            let xtension = Xtension.attachProperty name property layerState.Xtension
+            layerState.Xtension <- xtension
+            true
 
         /// Detach an xtension property.
         static member detachProperty name layerState =
             let xtension = Xtension.detachProperty name layerState.Xtension
-            { layerState with LayerState.Xtension = xtension }
+            layerState.Xtension <- xtension
+            true
 
         /// Copy a layer such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
@@ -623,11 +635,11 @@ module WorldTypes =
                   Size = Constants.Engine.DefaultEntitySize
                   Rotation = 0.0f
                   Depth = 0.0f
-                  Flags = 0b100011000000
+                  Flags = 0b100011010000
                   RefCount = 0 }
               Dispatcher = dispatcher
               Facets = [||]
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeImperative ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt

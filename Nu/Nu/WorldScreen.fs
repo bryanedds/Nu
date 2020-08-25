@@ -53,6 +53,11 @@ module WorldScreenModule =
         member this.OutgoingStartEvent = Events.OutgoingStart --> this
         member this.OutgoingFinishEvent = Events.OutgoingFinish --> this
 
+        /// The state of a screen.
+        /// The only place this accessor should be used is in performance-sensitive code.
+        /// Otherwise, you should get and set the required screen properties via the Screen interface.
+        member this.State world = World.getScreenState this world
+
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetScreenProperty propertyName this world
 

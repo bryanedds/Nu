@@ -36,6 +36,11 @@ module WorldLayerModule =
         member this.UpdateEvent = Events.Update --> this
         member this.PostUpdateEvent = Events.PostUpdate --> this
 
+        /// The state of a layer.
+        /// The only place this accessor should be used is in performance-sensitive code.
+        /// Otherwise, you should get and set the required layer properties via the Layer interface.
+        member this.State world = World.getLayerState this world
+
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world = World.tryGetLayerProperty propertyName this world
 

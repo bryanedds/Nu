@@ -17,7 +17,7 @@ module WorldModuleLayer =
     let internal Setters = Dictionary<string, Property -> Layer -> World -> bool * World> HashIdentity.Structural
 
     type World with
-    
+
         static member private layerStateFinder (layer : Layer) world =
             UMap.tryFind layer.LayerAddress world.LayerStates
 
@@ -94,9 +94,8 @@ module WorldModuleLayer =
 
         static member private updateLayerStateWithoutEvent updater layer world =
             let layerState = World.getLayerState layer world
-            match updater layerState with
-            | Some layerState -> (true, World.setLayerState layerState layer world)
-            | None -> (false, world)
+            let changed = updater layerState
+            (changed, world)
 
         static member private updateLayerState updater propertyName propertyValue layer world =
             let (changed, world) = World.updateLayerStateWithoutEvent updater layer world
@@ -112,31 +111,26 @@ module WorldModuleLayer =
         static member internal getLayerModel<'a> layer world = (World.getLayerState layer world).Model.DesignerValue :?> 'a
         static member internal getLayerDispatcher layer world = (World.getLayerState layer world).Dispatcher
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
-        static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Visible then Some { layerState with Visible = value } else None) Property? Visible value layer world
+        static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Visible then layerState.Visible <- value; true else false) Property? Visible value layer world
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
-        static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Persistent then Some { layerState with Persistent = value } else None) Property? Persistent value layer world
+        static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Persistent then layerState.Persistent <- value; true else false) Property? Persistent value layer world
         static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
         static member internal getLayerScriptFrame layer world = (World.getLayerState layer world).ScriptFrame
-        static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> if value <> layerState.ScriptFrame then Some { layerState with ScriptFrame = value } else None) Property? ScriptFrame value layer world
+        static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> if value <> layerState.ScriptFrame then layerState.ScriptFrame <- value; true else false) Property? ScriptFrame value layer world
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
-        
-        static member internal setLayerModelProperty (value : DesignerProperty) layer world =
-            World.updateLayerState
-                (fun layerState ->
-                    if value.DesignerValue <> layerState.Model.DesignerValue
-                    then Some { layerState with Model = { layerState.Model with DesignerValue = value.DesignerValue }}
-                    else None)
-                Property? Model value.DesignerValue layer world
 
-        static member internal setLayerModel<'a> (value : 'a) layer world =
+        static member internal setLayerModelProperty (value : DesignerProperty) world =
+            World.updateLayerState
+                (fun layerState -> if value.DesignerValue <> layerState.Model.DesignerValue then layerState.Model.DesignerValue <- value.DesignerValue; true else false)
+                Property? Model value.DesignerValue world
+
+        static member internal setLayerModel<'a> (value : 'a) world =
             World.updateLayerState
                 (fun layerState ->
                     let valueObj = value :> obj
-                    if valueObj <> layerState.Model.DesignerValue
-                    then Some { layerState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
-                    else None)
-                Property? Model value layer world
+                    if valueObj <> layerState.Model.DesignerValue then layerState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }; true else false)
+                Property? Model value world
 
         static member internal tryGetLayerProperty propertyName layer world =
             if World.getLayerExists layer world then
@@ -165,11 +159,11 @@ module WorldModuleLayer =
                                 match LayerState.tryGetProperty propertyName layerState with
                                 | Some propertyOld ->
                                     if property.PropertyValue <> propertyOld.PropertyValue then
-                                        let (successInner, gameState) = LayerState.trySetProperty propertyName property layerState
+                                        let successInner = LayerState.trySetProperty propertyName property layerState
                                         success <- successInner
-                                        Some gameState
-                                    else None
-                                | None -> None)
+                                        true
+                                    else false
+                                | None -> false)
                             propertyName property.PropertyValue layer world
                     (success, world)
             else (false, world)
@@ -185,16 +179,17 @@ module WorldModuleLayer =
                     World.updateLayerState
                         (fun layerState ->
                             let propertyOld = LayerState.getProperty propertyName layerState
-                            if property.PropertyValue <> propertyOld.PropertyValue
-                            then Some (LayerState.setProperty propertyName property layerState)
-                            else None)
+                            if property.PropertyValue <> propertyOld.PropertyValue then
+                                LayerState.setProperty propertyName property layerState
+                                true
+                            else false)
                         propertyName property.PropertyValue layer world
             else world
 
         static member internal attachLayerProperty propertyName property layer world =
             if World.getLayerExists layer world then
                 World.updateLayerState
-                    (fun layerState -> Some (LayerState.attachProperty propertyName property layerState))
+                    (fun layerState -> LayerState.attachProperty propertyName property layerState)
                     propertyName property.PropertyValue layer world
             else failwith ("Cannot attach layer property '" + propertyName + "'; layer '" + layer.Name + "' is not found.")
 
