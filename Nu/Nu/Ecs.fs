@@ -209,7 +209,7 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> Component and 'w :> Freez
     inherit System<'w> (name)
 
     let mutable comp = comp
-    
+
     new (comp) = SystemSingleton (typeof<'c>.Name, comp)
 
     member this.Component with get () = &comp
