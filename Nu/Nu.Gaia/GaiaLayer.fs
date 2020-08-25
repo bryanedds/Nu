@@ -65,8 +65,11 @@ and LayerPropertyDescriptor (propertyDescriptor, attributes) =
 
             // make property change undo-able
             Globals.pushPastWorld world
-            match propertyName with
+            let world = World.divergeLayer layer world
             
+            // change property
+            match propertyName with
+
             // change the name property
             | "Name" ->
                 MessageBox.Show

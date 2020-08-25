@@ -120,6 +120,11 @@ module WorldModuleLayer =
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
 
+        static member divergeLayer layer world =
+            World.getLayerState layer world |>
+            LayerState.copy |>
+            flip3 World.setLayerState layer world
+
         static member internal setLayerModelProperty (value : DesignerProperty) world =
             World.updateLayerState
                 (fun layerState -> if value.DesignerValue <> layerState.Model.DesignerValue then layerState.Model.DesignerValue <- value.DesignerValue; true else false)

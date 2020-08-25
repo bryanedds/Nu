@@ -15,14 +15,13 @@ module internal TransformMasks =
     let [<Literal>] InvalidatedMask =          0b000000000010
     let [<Literal>] OmnipresentMask =          0b000000000100
     let [<Literal>] AbsoluteMask =             0b000000001000
-    let [<Literal>] UnusedMask =               0b000000010000
-    let [<Literal>] PublishChangesMask =       0b000000100000
-    let [<Literal>] EnabledMask =              0b000001000000
-    let [<Literal>] VisibleMask =              0b000010000000
-    let [<Literal>] AlwaysUpdateMask =         0b000100000000
-    let [<Literal>] PublishUpdatesMask =       0b001000000000
-    let [<Literal>] PublishPostUpdatesMask =   0b010000000000
-    let [<Literal>] PersistentMask =           0b100000000000
+    let [<Literal>] PublishChangesMask =       0b000000010000
+    let [<Literal>] EnabledMask =              0b000000100000
+    let [<Literal>] VisibleMask =              0b000001000000
+    let [<Literal>] AlwaysUpdateMask =         0b000010000000
+    let [<Literal>] PublishUpdatesMask =       0b000100000000
+    let [<Literal>] PublishPostUpdatesMask =   0b001000000000
+    let [<Literal>] PersistentMask =           0b010000000000
 
 /// Carries transformation data specific to an Entity.
 type [<StructuralEquality; NoComparison; Struct>] Transform =
@@ -44,7 +43,6 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
     member this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
     member this.Omnipresent with get () = this.Flags &&& OmnipresentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| OmnipresentMask else this.Flags &&& ~~~OmnipresentMask
     member this.Absolute with get () = this.Flags &&& AbsoluteMask <> 0 and set value = this.Flags <- if value then this.Flags ||| AbsoluteMask else this.Flags &&& ~~~AbsoluteMask
-    member this.Unused with get () = this.Flags &&& UnusedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| UnusedMask else this.Flags &&& ~~~UnusedMask
     member this.PublishChanges with get () = this.Flags &&& PublishChangesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishChangesMask else this.Flags &&& ~~~PublishChangesMask
     member this.Enabled with get () = this.Flags &&& EnabledMask <> 0 and set value = this.Flags <- if value then this.Flags ||| EnabledMask else this.Flags &&& ~~~EnabledMask
     member this.Visible with get () = this.Flags &&& VisibleMask <> 0 and set value = this.Flags <- if value then this.Flags ||| VisibleMask else this.Flags &&& ~~~VisibleMask

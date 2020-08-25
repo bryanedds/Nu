@@ -634,7 +634,7 @@ module WorldTypes =
                   Size = Constants.Engine.DefaultEntitySize
                   Rotation = 0.0f
                   Depth = 0.0f
-                  Flags = 0b100011000000
+                  Flags = 0b010001100000
                   RefCount = 0 }
               Dispatcher = dispatcher
               Facets = [||]
@@ -692,7 +692,6 @@ module WorldTypes =
         member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
         member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
         member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
-        member this.Unused with get () = this.Transform.Unused and set value = this.Transform.Unused <- value
         member this.PublishChanges with get () = this.Transform.PublishChanges and set value = this.Transform.PublishChanges <- value
         member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
         member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
