@@ -314,7 +314,6 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
-             Define? Imperative true
              Define? PublishChanges false
              Define? Visible true
              Define? Enabled true
@@ -635,7 +634,7 @@ module WorldTypes =
                   Size = Constants.Engine.DefaultEntitySize
                   Rotation = 0.0f
                   Depth = 0.0f
-                  Flags = 0b100011010000
+                  Flags = 0b100011000000
                   RefCount = 0 }
               Dispatcher = dispatcher
               Facets = [||]
@@ -659,38 +658,26 @@ module WorldTypes =
 
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property entityState =
-            match Xtension.trySetProperty propertyName property entityState.Xtension with
-            | (true, xtension) ->
-                let entityState =
-                    if entityState.Imperative then entityState
-                    else { entityState with Xtension = xtension }
-                (true, entityState)
-            | (false, _) -> (false, entityState)
+            let (changed, xtension) = Xtension.trySetProperty propertyName property entityState.Xtension
+            entityState.Xtension <- xtension
+            changed
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property entityState =
-            { entityState with EntityState.Xtension = Xtension.setProperty propertyName property entityState.Xtension }
+            let xtension = Xtension.setProperty propertyName property entityState.Xtension
+            entityState.Xtension <- xtension
 
         /// Attach an xtension property.
         static member attachProperty name property entityState =
-            { entityState with EntityState.Xtension = Xtension.attachProperty name property entityState.Xtension }
+            let xtension = Xtension.attachProperty name property entityState.Xtension
+            entityState.Xtension <- xtension
+            true
 
         /// Detach an xtension property.
         static member detachProperty name entityState =
             let xtension = Xtension.detachProperty name entityState.Xtension
-            if entityState.Imperative then entityState
-            else { entityState with EntityState.Xtension = xtension }
-
-        /// Get an entity state's transform.
-        static member getTransform entityState =
-            entityState.Transform
-
-        /// Set an entity state's transform.
-        static member setTransform (value : Transform) (entityState : EntityState) =
-            if entityState.Imperative then
-                entityState.Transform.Assign value
-                entityState
-            else { entityState with Transform = value }
+            entityState.Xtension <- xtension
+            true
 
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy (entityState : EntityState) =
@@ -705,7 +692,7 @@ module WorldTypes =
         member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
         member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
         member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
-        member this.Imperative with get () = this.Transform.Imperative and set value = this.Transform.Imperative <- value
+        member this.Unused with get () = this.Transform.Unused and set value = this.Transform.Unused <- value
         member this.PublishChanges with get () = this.Transform.PublishChanges and set value = this.Transform.PublishChanges <- value
         member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
         member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
@@ -948,7 +935,7 @@ module WorldTypes =
         member this.PostUpdateEventCached = postUpdateEvent
 #endif
 
-        /// The cached entity state for imperative entities.
+        /// The cached entity state.
         member this.EntityStateOpt
             with get () = entityStateOpt
             and set value = entityStateOpt <- value

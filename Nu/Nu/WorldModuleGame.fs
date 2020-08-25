@@ -121,7 +121,7 @@ module WorldModuleGame =
                 failwith "Cannot set SelectedScreen to OmniScreen."
 
             // raise change event for none selection
-            let world = World.updateGameState (constant true) Property? SelectedScreenOpt None world
+            let world = World.updateGameState tautology Property? SelectedScreenOpt None world
 
             // clear out singleton states
             let world =
@@ -147,7 +147,7 @@ module WorldModuleGame =
                 let world = WorldModule.registerScreenPhysics screen world
 
                 // raise change event for some selection
-                World.updateGameState (constant true) Property? SelectedScreenOpt (Some screen) world
+                World.updateGameState tautology Property? SelectedScreenOpt (Some screen) world
 
             // fin
             | None -> world

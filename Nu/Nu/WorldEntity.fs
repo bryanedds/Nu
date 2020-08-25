@@ -54,9 +54,6 @@ module WorldEntityModule =
         member this.GetOverflow world = World.getEntityOverflow this world
         member this.SetOverflow value world = World.setEntityOverflow value this world
         member this.Overflow = lens Property? Overflow this.GetOverflow this.SetOverflow this
-        member this.GetImperative world = World.getEntityImperative this world
-        member this.SetImperative value world = World.setEntityImperative value this world
-        member this.Imperative = lens Property? Imperative this.GetImperative this.SetImperative this
         member this.GetPublishChanges world = World.getEntityPublishChanges this world
         member this.SetPublishChanges value world = World.setEntityPublishChanges value this world
         member this.PublishChanges = lens Property? PublishChanges this.GetPublishChanges this.SetPublishChanges this
@@ -108,7 +105,6 @@ module WorldEntityModule =
             world |> World.getEntityState this |> EntityState.copy
 
         member this.Optimize world =
-            let world = this.SetImperative true world
             let world = this.SetOmnipresent true world
             let world = this.SetPublishChanges false world
             world
