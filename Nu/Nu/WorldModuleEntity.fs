@@ -293,6 +293,7 @@ module WorldModuleEntity =
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
+        static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
