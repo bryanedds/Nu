@@ -61,7 +61,7 @@ module OmniField =
                     if Set.contains (Opened chestId) advents then None
                     else Some "Open"
                 | Door _ -> Some "Open"
-                | Portal -> Some "Enter"
+                | Portal (_, _, _, _) -> Some "Enter"
                 | Switch -> Some "Use"
                 | Sensor -> None
                 | Npc _ -> Some "Talk"
@@ -139,7 +139,7 @@ module OmniField =
                                 let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
                                 withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
                         | Door (lockType, doorType) -> just model
-                        | Portal -> just model
+                        | Portal (_, _, _, _) -> just model
                         | Switch -> just model
                         | Sensor -> just model
                         | Npc (_, _, dialog) ->
