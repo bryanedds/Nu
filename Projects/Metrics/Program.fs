@@ -10,25 +10,34 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
     { mutable RefCount : int
       mutable Entity : Entity
       mutable Sprite : Image AssetTag }
-    interface Component with
+    interface StaticSpriteComponent Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+        member this.SystemNames = [||]
+        member this.Junction _ _ _ = this
+        member this.Disjunction _ _ _ = ()
 #endif
 #if ECS_PURE
 type [<NoEquality; NoComparison; Struct>] Velocity =
     { mutable RefCount : int
       mutable Velocity : Vector2 }
-    interface Component with
+    interface Velocity Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+        member this.SystemNames = [||]
+        member this.Junction _ _ _ = this
+        member this.Disjunction _ _ _ = ()
 type [<NoEquality; NoComparison; Struct>] Position =
     { mutable RefCount : int
       mutable Position : Vector2 }
-    interface Component with
+    interface Position Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+        member this.SystemNames = [||]
+        member this.Junction _ _ _ = this
+        member this.Disjunction _ _ _ = ()
 type [<NoEquality; NoComparison; Struct>] Mover =
     { mutable RefCount : int
       mutable Velocity : Velocity ComponentRef
       mutable Position : Position ComponentRef }
-    interface Mover Junction with
+    interface Mover Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
         member this.SystemNames = [|"Velocity"; "Position"|]
         member this.Junction systems registration ecs = { id this with Velocity = ecs.Junction<Velocity> registration systems.[0]; Position = ecs.Junction<Position> registration systems.[1] }
@@ -90,11 +99,11 @@ type MyGameDispatcher () =
         // create systems
         let velocities = ecs.RegisterSystem (SystemCorrelated<Velocity, World> entityCount)
         let positions = ecs.RegisterSystem (SystemCorrelated<Position, World> entityCount)
-        let movers = ecs.RegisterSystem (SystemJunctioned<Mover, World> entityCount)
+        let movers = ecs.RegisterSystem (SystemCorrelated<Mover, World> entityCount)
 
         // create junctions
         for _ in 0 .. entityCount - 1 do
-            let entityId = ecs.RegisterJunctioned<Mover> Unchecked.defaultof<Mover> typeof<Mover>.Name Gen.id
+            let entityId = ecs.RegisterCorrelated<Mover> Unchecked.defaultof<Mover> typeof<Mover>.Name Gen.id
             let mover = ecs.IndexCorrelated<Mover> typeof<Mover>.Name entityId
             mover.Index.Velocity.Index.Velocity <- v2One
 
