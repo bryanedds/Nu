@@ -11,14 +11,17 @@ module EcsTests =
     type [<NoEquality; NoComparison; Struct>] Skin =
         { mutable RefCount : int
           mutable Color : Vector4 }
-        interface Component with
+        interface Skin Component with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+            member this.SystemNames = [||]
+            member this.Junction _ _ _ = this
+            member this.Disjunction _ _ _ = ()
 
     type [<NoEquality; NoComparison; Struct>] Airship =
         { mutable RefCount : int
           Transform : Transform ComponentRef
           Skin : Skin ComponentRef }
-        interface Airship Junction with
+        interface Airship Component with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
             member this.SystemNames = [|"Transform"; "Skin"|]
             member this.Junction systems registration ecs = { id this with Transform = ecs.Junction registration systems.[0]; Skin = ecs.Junction registration systems.[1] }
@@ -36,7 +39,7 @@ module EcsTests =
         let _ = ecs.RegisterSystem (SystemCorrelated<Skin, World> ())
 
         // create and register our airship system
-        let airshipSystem = ecs.RegisterSystem (SystemJunctioned<Airship, World> ())
+        let airshipSystem = ecs.RegisterSystem (SystemCorrelated<Airship, World> ())
 
         // define our airship system's update behavior
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
@@ -49,10 +52,10 @@ module EcsTests =
             world)
 
         // create and register our airship
-        let airshipId = ecs.RegisterJunctioned Unchecked.defaultof<Airship> airshipSystem.Name Gen.id
+        let airshipId = ecs.RegisterCorrelated Unchecked.defaultof<Airship> airshipSystem.Name Gen.id
 
         // change some airship properties
-        let airship = ecs.IndexJunctioned<Airship> airshipSystem.Name airshipId
+        let airship = ecs.IndexCorrelated<Airship> airshipSystem.Name airshipId
         airship.Index.Transform.Index.Position.X <- 0.5f
         airship.Index.Skin.Index.Color.X <- 0.1f
 
