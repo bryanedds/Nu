@@ -34,10 +34,11 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
       mutable RefCount : int }
       // cache line end
 
-    interface Component with
-        member this.RefCount
-          with get () = this.RefCount
-          and set value = this.RefCount <- value
+    interface Transform Component with
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+        member this.SystemNames = [||]
+        member this.Junction _ _ _ = this
+        member this.Disjunction _ _ _ = ()
 
     member this.Dirty with get () = this.Flags &&& DirtyMask <> 0 and set value = this.Flags <- if value then this.Flags ||| DirtyMask else this.Flags &&& ~~~DirtyMask
     member this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
