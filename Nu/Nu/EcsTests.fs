@@ -60,9 +60,9 @@ module EcsTests =
         airship.Index.Skin.Index.Color.X <- 0.1f
 
         // for non-junctioned entities, you can alternatively construct and use a much slower entity reference
-        //let airshipRef = ecs.GetEntityRef airshipId
-        //airshipRef.Index<Transform>().Position.Y <- 5.0f
-        //airshipRef.Index<Skin>().Color.Y <- 1.0f
+        let airshipRef = ecs.GetEntityRef airshipId
+        airshipRef.Index<Transform>().Position.Y <- 5.0f
+        airshipRef.Index<Skin>().Color.Y <- 1.0f
 
         // invoke update behavior
         ecs.Publish EcsEvents.Update () ecs.GlobalSystem world

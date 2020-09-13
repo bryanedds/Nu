@@ -456,7 +456,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
                 let _ : bool = preList.Remove index
                 correlations.Add (entityId, index)
                 correlationsBack.Add (index, entityId)
-                let mutable comp = comp.Junction systems entityId ecs : 'c
+                let mutable comp = comp.Junction systems entityId ecs
                 comp.RefCount <- inc comp.RefCount
                 components.Array.[index] <- comp
                 entityId
@@ -476,7 +476,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
                     // allocate component
                     let index = freeIndex in freeIndex <- inc freeIndex
                     let entityId = if i = 0 then entityId else Gen.id
-                    let mutable comp = comp.Junction systems entityId ecs : 'c
+                    let mutable comp = comp.Junction systems entityId ecs
                     if i = 0 then
                         comp.RefCount <- inc comp.RefCount
                         correlations.Add (entityId, index)
@@ -522,9 +522,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             match this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName with
             | Some system -> system.GetEntitiesCorrelated ()
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
-
-        member this.GetEntityRef entityId =
-            { EntityId = entityId; EntityEcs = this }
 
         member this.QualifyCorrelated<'c when 'c : struct and 'c :> 'c Component> systemName entityId =
             let systemOpt = this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName
@@ -581,17 +578,20 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
 /// A correlated entity reference.
 /// Very slow, but convenient for one-off operations.
-and [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
+type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
     { EntityId : Guid
       EntityEcs : 'w Ecs }
-    //member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> systemName : 'c byref =
-    //    let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> systemName
-    //    let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-    //    &correlated.ComponentArrRef.Array.[correlated.Index]
-    //member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
-    //    let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
-    //    let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-    //    &correlated.ComponentArrRef.Array.[correlated.Index]
+    member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> systemName : 'c byref =
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> systemName
+        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
+        &correlated.ComponentArrRef.Array.[correlated.ComponentIndex] : 'c byref
+    member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
+        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
+        &correlated.ComponentArrRef.Array.[correlated.ComponentIndex]
+    type Ecs<'w when 'w :> Freezable> with
+        member this.GetEntityRef entityId =
+            { EntityId = entityId; EntityEcs = this }
 
 /// Handle to one of an array of multiplexed components.
 type Simplex<'c when 'c : struct> =
