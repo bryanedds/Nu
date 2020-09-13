@@ -24,7 +24,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;ECS_PURE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;ECS</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Metrics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
@@ -38,7 +38,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;ECS_PURE</DefineConstants>
+    <DefineConstants>TRACE;ECS</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Release\Metrics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
