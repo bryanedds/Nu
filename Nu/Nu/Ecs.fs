@@ -446,7 +446,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
         // check if component is already registered
         match Dictionary.tryGetValue entityId correlations with
         | (false, _) ->
-            
+
             // grab systems
             let systems = this.GetSystems ecs
 
