@@ -44,7 +44,7 @@ module EcsTests =
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
             member this.SystemNames = [|"Node"|]
             member this.Junction systems entityId ecs = { id this with Transform = ecs.JunctionHierarchical this.NodeId entityId systems.[0] }
-            member this.Disjunction systems entityId ecs = ecs.Disjunction<Transform> entityId systems.[0]
+            member this.Disjunction systems entityId ecs = ecs.DisjunctionHierarchical<Transform> this.NodeId entityId systems.[0]
 
     let example (world : World) =
 
