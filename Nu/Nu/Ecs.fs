@@ -127,10 +127,10 @@ and [<NoEquality; NoComparison>] Ecs<'w when 'w :> Freezable> () as this =
     member this.RegisterSystemGeneralized (system : 'w System) =
         systemsUnordered.Add (system.Name, system)
         systemsOrdered.Add (system.Name, system)
-        //system.RegisterPipedValue this
+        //system.RegisterPipedValue this // TODO: see if we can enable this somehow.
 
     member this.UnregisterSystem (system : 'w System) =
-        //system.UnregisterPipedValue this
+        //system.UnregisterPipedValue this // TODO: see if we can enable this somehow.
         systemsOrdered.RemoveAll (fun (systemName', _) -> systemName' = system.Name) |> ignore
         systemsUnordered.Remove system.Name |> ignore
 
@@ -688,7 +688,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
         | (true, system) -> system.Components
         | (false, _) -> failwith ("Node with id '" + scstring nodeId + "'not found.")
 
-    member this.AddNode parentIdOpt =
+    member this.AddNode (parentIdOpt : Guid option) =
         let nodeId = Gen.id
         let system = SystemCorrelated<'c, 'w> (Constants.Ecs.ArrayReserve, scstring nodeId)
         let added =
@@ -781,6 +781,26 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
                     | (true, correlation) -> correlation.Add systemName
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.JunctionHierarchicalPlus<'c when 'c : struct and 'c :> 'c Component>
+            (comp : 'c) (nodeId : Guid) (entityId : Guid) (system : 'w System) =
+            let system = system :?> SystemHierarchical<'c, 'w>
+            if system.RegisterHierarchical comp nodeId entityId this
+            then system.IndexHierarchical nodeId entityId
+            else failwith ("Could not find expected hierarchical system node '" + scstring nodeId + "'.")
+
+        member this.JunctionHierarchical<'c when 'c : struct and 'c :> 'c Component>
+            (nodeId : Guid) (entityId : Guid) (system : 'w System) =
+            this.JunctionHierarchicalPlus<'c> Unchecked.defaultof<'c> nodeId entityId system
+
+        member this.DisjunctionHierarchicalPlus<'c when 'c : struct and 'c :> 'c Component>
+            (nodeId : Guid) (entityId : Guid) (system : 'w System) =
+            let system = system :?> SystemHierarchical<'c, 'w>
+            system.UnregisterHierarchical nodeId entityId this |> ignore
+
+        member this.DisjunctionHierarchical<'c when 'c : struct and 'c :> 'c Component>
+            (nodeId : Guid) (entityId : Guid) (system : 'w System) =
+            this.DisjunctionHierarchicalPlus<'c> nodeId entityId system
 
 [<RequireQualifiedAccess>]
 module EcsEvents =
