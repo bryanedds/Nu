@@ -24,8 +24,27 @@ module EcsTests =
         interface Airship Component with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
             member this.SystemNames = [|"Transform"; "Skin"|]
-            member this.Junction systems registration ecs = { id this with Transform = ecs.Junction registration systems.[0]; Skin = ecs.Junction registration systems.[1] }
+            member this.Junction systems entityId ecs = { id this with Transform = ecs.Junction entityId systems.[0]; Skin = ecs.Junction entityId systems.[1] }
             member this.Disjunction systems entityId ecs = ecs.Disjunction<Transform> entityId systems.[0]; ecs.Disjunction<Skin> entityId systems.[1]
+
+    type [<NoEquality; NoComparison; Struct>] Node =
+        { mutable RefCount : int
+          Transform : Transform }
+        interface Node Component with
+            member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+            member this.SystemNames = [||]
+            member this.Junction _ _ _ = this
+            member this.Disjunction _ _ _ = ()
+
+    type [<NoEquality; NoComparison; Struct>] Prop =
+        { mutable RefCount : int
+          Transform : Transform ComponentRef
+          NodeId : Guid }
+        interface Prop Component with
+            member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+            member this.SystemNames = [|"Node"|]
+            member this.Junction systems entityId ecs = { id this with Transform = ecs.JunctionHierarchical this.NodeId entityId systems.[0] }
+            member this.Disjunction systems entityId ecs = ecs.DisjunctionHierarchical<Transform> this.NodeId entityId systems.[0]
 
     let example (world : World) =
 
