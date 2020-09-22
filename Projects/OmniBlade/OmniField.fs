@@ -12,12 +12,14 @@ module OmniField =
 
     type [<NoComparison>] FieldMessage =
         | UpdateAvatar of AvatarModel
+        | UpdateFieldTransition
         | UpdateDialog
         | TouchPortal
         | Interact
 
     type [<NoComparison>] FieldCommand =
         | PlaySound of int64 * single * AssetTag<Sound>
+        | MoveAvatar of Vector2
         | UpdateEye
 
     type Screen with
@@ -74,6 +76,7 @@ module OmniField =
 
         override this.Channel (_, field) =
             [field.UpdateEvent => msg UpdateDialog
+             field.UpdateEvent => msg UpdateFieldTransition
              field.PostUpdateEvent => cmd UpdateEye
              Simulants.FieldInteract.ClickEvent => msg Interact
              Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))]
@@ -95,6 +98,17 @@ module OmniField =
                          | None -> None)
                         model
                 just model
+
+            | UpdateFieldTransition ->
+                match model.FieldTransitionOpt with
+                | Some fieldTransition ->
+                    if World.getTickTime world = fieldTransition.FieldTransitionTime then
+                        let model = FieldModel.updateFieldType (constant fieldTransition.FieldType) model
+                        let model = FieldModel.updateFieldTransitionOpt (constant None) model
+                        let model = FieldModel.updateAvatar (AvatarModel.updateDirection (constant fieldTransition.FieldDirection)) model
+                        withCmd model (MoveAvatar fieldTransition.FieldIndex)
+                    else just model
+                | None -> just model
 
             | TouchPortal ->
                 just model
@@ -138,8 +152,16 @@ module OmniField =
                                 let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
                                 let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
                                 withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
-                        | Door (lockType, doorType) -> just model
-                        | Portal (_, _, _, _) -> just model
+                        | Door (lockType, doorType) ->
+                            just model
+                        | Portal (_, fieldType, index, direction) ->
+                            let transition =
+                                { FieldType = fieldType
+                                  FieldIndex = index
+                                  FieldDirection = direction
+                                  FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
+                            let model = FieldModel.updateFieldTransitionOpt (constant (Some transition)) model
+                            just model
                         | Switch -> just model
                         | Sensor -> just model
                         | Npc (_, _, dialog) ->
@@ -155,6 +177,11 @@ module OmniField =
             | UpdateEye ->
                 let avatarModel = Simulants.FieldAvatar.GetAvatarModel world
                 let world = World.setEyeCenter avatarModel.Center world
+                just world
+
+            | MoveAvatar position ->
+                let physicsId = Simulants.FieldAvatar.GetPhysicsId world
+                let world = World.setBodyPosition position physicsId world
                 just world
 
             | PlaySound (delay, volume, sound) ->
@@ -180,7 +207,7 @@ module OmniField =
                     [Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Position == v2 256.0f 256.0f
                      Entity.Depth == Constants.Field.ForgroundDepth
-                     Entity.Enabled <== model --> fun model -> Option.isNone model.DialogOpt
+                     Entity.Enabled <== model --> fun model -> Option.isNone model.DialogOpt && Option.isNone model.FieldTransitionOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
                      Entity.AvatarModel <== model --> fun model -> model.Avatar]
 
