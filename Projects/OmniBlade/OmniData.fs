@@ -150,6 +150,7 @@ type [<StructuralEquality; StructuralComparison>] NpcType =
 
 type [<StructuralEquality; StructuralComparison>] FieldType =
     | DebugRoom
+    | DebugRoom2
 
 type [<StructuralEquality; StructuralComparison>] BattleType =
     | DebugBattle
@@ -277,7 +278,7 @@ type [<StructuralEquality; NoComparison>] ShopkeepData =
 type [<StructuralEquality; StructuralComparison>] PropData =
     | Chest of ItemType * ChestType * Guid * BattleType option * LockType option
     | Door of LockType * DoorType // for simplicity, we'll just have north / south doors
-    | Portal of int * FieldType * int * Direction // leads to a different portal
+    | Portal of int * FieldType * Vector2 * Direction // leads to a different portal
     | Switch // anything the can affect another thing on the field through interaction
     | Sensor // anything the can affect another thing on the field through traversal
     | Npc of NpcType * Direction * Dialog

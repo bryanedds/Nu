@@ -21,29 +21,19 @@
   <properties>
    <property name="D" value="10"/>
   </properties>
-  <object id="2" gid="813" x="512" y="640" width="64" height="64">
+  <object id="23" gid="488" x="512" y="704" width="160" height="160">
    <properties>
-    <property name="I" value="[Chest [Consumable GreenHerb] WoodenChest 7ced2215-353f-4653-86f4-05200b99f641]"/>
-   </properties>
-  </object>
-  <object id="3" gid="813" x="640" y="640" width="64" height="64">
-   <properties>
-    <property name="I" value="[Chest [Consumable GreenHerb] WoodenChest 33521205-c327-4bba-9b1c-afc982ba66ac [Some DebugBattle] None]"/>
-   </properties>
-  </object>
-  <object id="23" gid="488" x="448" y="448" width="160" height="160">
-   <properties>
-    <property name="I" value="[Npc VillageMan Downward [&quot;Hello, NPC!&quot; &quot;Aye aye aye!&quot;]]"/>
+    <property name="I" value="[Npc VillageMan Downward [&quot;If the war inside my head...&quot; &quot;Won't take a day, I'll be dead.&quot;]]"/>
    </properties>
   </object>
   <object id="25" gid="488" x="1024" y="1024" width="128" height="32">
    <properties>
-    <property name="I" value="[Portal 0 DebugRoom2 [640 640] Upward]"/>
+    <property name="I" value="[Portal 0 DebugRoom [640 640] Upward]"/>
    </properties>
   </object>
   <object id="26" gid="488" x="1952" y="640" width="32" height="128">
    <properties>
-    <property name="I" value="[Portal 1 DebugRoom2 [320 320] Leftward]"/>
+    <property name="I" value="[Portal 1 DebugRoom [320 320] Leftward]"/>
    </properties>
   </object>
  </objectgroup>

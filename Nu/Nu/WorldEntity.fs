@@ -114,6 +114,10 @@ module WorldEntityModule =
             let world = this.SetPublishChanges false world
             world
 
+        /// Set the transform of an entity without generating any change events.
+        member this.SetTransformWithoutEvent transform world =
+            World.setEntityTransformWithoutEvent transform this world
+
         /// Set the transform of an entity snapped to the give position and rotation snaps.
         member this.SetTransformSnapped positionSnap rotationSnap transform world =
             let transform = Math.snapTransform positionSnap rotationSnap transform

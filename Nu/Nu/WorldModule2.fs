@@ -837,7 +837,7 @@ module WorldModule2 =
                                 if bodyTransformMessage.BodySource.BodyId = Gen.idEmpty then
                                     let transform2 = { transform with Position = position; Rotation = rotation }
                                     if transform <> transform2
-                                    then entity.SetTransform transform2 world
+                                    then entity.SetTransformWithoutEvent transform2 world
                                     else world
                                 else world
                             let transformAddress = Events.Transform --> entity.EntityAddress

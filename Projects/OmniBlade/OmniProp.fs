@@ -10,6 +10,9 @@ module PropDispatcherModule =
     type PropMessage =
         | Update
 
+    type PropCommand =
+        | PropagatePhysics
+
     type Entity with
 
         member this.GetPropModel = this.GetModel<PropModel>
@@ -17,42 +20,50 @@ module PropDispatcherModule =
         member this.PropModel = this.Model<PropModel> ()
 
     type PropDispatcher () =
-        inherit EntityDispatcher<PropModel, PropMessage, unit>
+        inherit EntityDispatcher<PropModel, PropMessage, PropCommand>
             (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f Set.empty PropData.empty NilState)
 
         static member Facets =
             [typeof<RigidBodyFacet>]
 
         static member Properties =
-            [define Entity.FixedRotation true
+            [define Entity.PublishChanges true
+             define Entity.FixedRotation true
              define Entity.GravityScale 0.0f]
 
         override this.Channel (_, entity) =
-            [entity.UpdateEvent => msg Update]
+            [entity.UpdateEvent => msg Update
+             entity.ChangeEvent Property? Bounds => cmd PropagatePhysics
+             entity.ChangeEvent Property? IsSensor => cmd PropagatePhysics
+             entity.ChangeEvent Property? BodyShape => cmd PropagatePhysics]
 
         override this.Initializers (model, entity) =
-            [entity.Bounds <== model --> fun model -> model.Bounds
+            [entity.BodyType == Static
+             entity.LinearDamping == 0.0f
+             entity.GravityScale == 0.0f
+             entity.Bounds <== model --> fun model ->
+                model.Bounds
              entity.IsSensor <== model --> fun model ->
                 match model.PropData with
                 | Sensor
                 | Portal _ -> true
                 | _ -> false
-             entity.BodyType == Static
-             entity.LinearDamping == 0.0f
-             entity.GravityScale == 0.0f
              entity.BodyShape <== model --> fun model ->
                 match model.PropData with
                 | Npc _ -> BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
                 | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
-
-        override this.Register (entity, world) =
-            base.Register (entity, world)
 
         override this.Message (model, message, entity, world) =
             match message with
             | Update ->
                 let model = PropModel.updateBounds (constant (entity.GetBounds world)) model
                 just model
+
+        override this.Command (_, command, entity, world) =
+            match command with
+            | PropagatePhysics ->
+                let world = entity.PropagatePhysics world
+                just world
 
         override this.View (model, entity, world) =
             if entity.GetVisible world && entity.GetInView world then

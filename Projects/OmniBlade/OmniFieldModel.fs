@@ -41,6 +41,12 @@ type [<StructuralEquality; NoComparison>] DialogModel =
       DialogText : Dialog
       DialogProgress : int }
 
+type FieldTransition =
+    { FieldType : FieldType
+      FieldIndex : Vector2
+      FieldDirection : Direction
+      FieldTransitionTime : int64 }
+
 [<RequireQualifiedAccess>]
 module FieldModel =
 
@@ -52,8 +58,9 @@ module FieldModel =
               Legion_ : Map<int, Legionnaire>
               Advents_ : Advent Set
               Inventory_ : Inventory
+              FieldTransitionOpt_ : FieldTransition option
               DialogOpt_ : DialogModel option
-              BattleOpt_ : BattleModel option}
+              BattleOpt_ : BattleModel option }
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
@@ -61,6 +68,7 @@ module FieldModel =
         member this.Legion = this.Legion_
         member this.Advents = this.Advents_
         member this.Inventory = this.Inventory_
+        member this.FieldTransitionOpt = this.FieldTransitionOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
 
@@ -75,6 +83,9 @@ module FieldModel =
         Seq.tryTake 3 |>
         Map.ofSeq
 
+    let updateFieldType updater fieldModel =
+        { fieldModel with Dirty_ = Gen.id; FieldType_ = updater fieldModel.FieldType_ }
+
     let updateAvatar updater fieldModel =
         { fieldModel with Dirty_ = Gen.id; Avatar_ = updater fieldModel.Avatar_ }
 
@@ -87,6 +98,9 @@ module FieldModel =
     let updateDialogOpt updater fieldModel =
         { fieldModel with Dirty_ = Gen.id; DialogOpt_ = updater fieldModel.DialogOpt_ }
 
+    let updateFieldTransitionOpt updater fieldModel =
+        { fieldModel with Dirty_ = Gen.id; FieldTransitionOpt_ = updater fieldModel.FieldTransitionOpt_ }
+
     let updateBattleOpt updater fieldModel =
         { fieldModel with Dirty_ = Gen.id; BattleOpt_ = updater fieldModel.BattleOpt_ }
 
@@ -97,6 +111,7 @@ module FieldModel =
           Legion_ = legion
           Advents_ = advents
           Inventory_ = inventory
+          FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
 
@@ -107,6 +122,7 @@ module FieldModel =
           Legion_ = Map.empty
           Advents_ = Set.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
+          FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
 
@@ -117,6 +133,7 @@ module FieldModel =
           Legion_ = Map.ofList [(0, Legionnaire.finn); (1, Legionnaire.glenn)]
           Advents_ = Set.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
+          FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
 
