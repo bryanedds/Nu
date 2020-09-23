@@ -32,7 +32,8 @@ module OmniField =
         inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand> (FieldModel.initial)
 
         static let isFacingBodyShape bodyShape (avatar : AvatarModel) world =
-            if bodyShape.Entity.Is<PropDispatcher> world then
+            if  bodyShape.Entity.Exists world &&
+                bodyShape.Entity.Is<PropDispatcher> world then
                 let v = bodyShape.Entity.GetBottom world - avatar.Bottom
                 let direction = Direction.fromVector2 v
                 direction = avatar.Direction

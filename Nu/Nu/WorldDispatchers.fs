@@ -438,7 +438,7 @@ module TextFacetModule =
 module RigidBodyFacetModule =
 
     type Entity with
-
+    
         member this.GetBodyType world : BodyType = this.Get Property? BodyType world
         member this.SetBodyType (value : BodyType) world = this.SetFast Property? BodyType false false value world
         member this.BodyType = lens Property? BodyType this.GetBodyType this.SetBodyType this

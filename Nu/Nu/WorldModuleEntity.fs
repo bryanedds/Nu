@@ -317,6 +317,26 @@ module WorldModuleEntity =
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Overflow then Some (if entityState.Imperative then entityState.Overflow <- value; entityState else { entityState with Overflow = value }) else None) false false Property? Overflow value entity world
         static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> if value <> entityState.ScriptFrame then Some (if entityState.Imperative then entityState.ScriptFrame <- value; entityState else { entityState with ScriptFrame = value }) else None) false true Property? ScriptFrame value entity world
 
+        static member internal getEntityTransformWithoutEvent entity world =
+            EntityState.getTransform (World.getEntityState entity world)
+
+        static member internal setEntityTransformWithoutEvent value entity world =
+            let oldWorld = world
+            let oldEntityState = World.getEntityState entity world
+            let oldOmnipresent = oldEntityState.Omnipresent
+            let oldAbsolute = oldEntityState.Absolute
+            let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+            let (changed, world) =
+                World.updateEntityStateWithoutEvent
+                    (fun entityState ->
+                        if value <> entityState.Transform
+                        then Some (EntityState.setTransform value entityState)
+                        else None)
+                    entity world
+            if changed
+            then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+            else world
+
         static member internal getEntityTransform entity world =
             EntityState.getTransform (World.getEntityState entity world)
 

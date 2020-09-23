@@ -39,12 +39,14 @@ module AvatarDispatcherModule =
 
         static let isIntersectedBodyShape collider collidee world =
             if (collider.BodyShapeId = coreShapeId &&
+                collidee.Entity.Exists world &&
                 collidee.Entity.Is<PropDispatcher> world &&
                 match (collidee.Entity.GetPropModel world).PropData with
                 | Portal _ -> true
                 | _ -> false) then
                 true
             elif (collider.BodyShapeId = sensorShapeId &&
+                  collidee.Entity.Exists world &&
                   collidee.Entity.Is<PropDispatcher> world &&
                   match (collidee.Entity.GetPropModel world).PropData with
                   | Portal _ -> false
