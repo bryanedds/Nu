@@ -353,62 +353,27 @@ module WorldModuleEntity =
             v4 transform.Position.X transform.Position.Y (transform.Position.X + transform.Size.X) (transform.Position.Y + transform.Size.Y)
 
         static member internal setEntityBounds (value : Vector4) entity world =
-            World.updateEntityStatePlus
-                (fun entityState ->
-                    if  entityState.Transform.Position.X <> value.X ||
-                        entityState.Transform.Position.Y <> value.Y ||
-                        entityState.Transform.Position.X + entityState.Transform.Size.X <> value.Z ||
-                        entityState.Transform.Position.Y + entityState.Transform.Size.Y <> value.W then
-                        if entityState.Imperative then
-                            entityState.Transform.Position.X <- value.X
-                            entityState.Transform.Position.Y <- value.Y
-                            entityState.Transform.Size.X <- value.Z - value.X
-                            entityState.Transform.Size.Y <- value.W - value.Y
-                            Some entityState
-                        else
-                            let transform =
-                                { entityState.Transform with
-                                    Position = v2 value.X value.Y
-                                    Size = v2 (value.Z - value.X) (value.W - value.Y) }
-                            let entityState = { entityState with Transform = transform }
-                            Some entityState
-                    else None)
-                false false Property? Position value entity world
+            let transform = World.getEntityTransform entity world
+            let transform = { transform with Position = v2 value.X value.Y; Size = v2 value.Z value.W - v2 value.X value.Y }
+            World.setEntityTransform transform entity world
 
         static member internal getEntityCenter entity world =
             let transform = (World.getEntityState entity world).Transform
             transform.Position + transform.Size * 0.5f
 
         static member internal setEntityCenter value entity world =
-            World.updateEntityStatePlus
-                (fun entityState ->
-                    if value <> entityState.Position + entityState.Transform.Size * 0.5f then
-                        if entityState.Imperative then
-                            entityState.Transform.Position <- value - entityState.Transform.Size * 0.5f
-                            Some entityState
-                        else
-                            let entityState = { entityState with Transform = { entityState.Transform with Position = value - entityState.Transform.Size * 0.5f }}
-                            Some entityState
-                    else None)
-                false false Property? Position value entity world
+            let transform = World.getEntityTransform entity world
+            let transform = { transform with Position = value - transform.Size * 0.5f }
+            World.setEntityTransform transform entity world
 
         static member internal getEntityBottom entity world =
             let transform = (World.getEntityState entity world).Transform
             transform.Position + transform.Size.WithY 0.0f * 0.5f
 
         static member internal setEntityBottom value entity world =
-            World.updateEntityStatePlus
-                (fun entityState ->
-                    if value <> entityState.Transform.Position + entityState.Transform.Size.WithY 0.0f * 0.5f then
-                        if entityState.Imperative then
-                            entityState.Transform.Position <- value - entityState.Transform.Size.WithY 0.0f * 0.5f
-                            Some entityState
-                        else
-                            let transform = { entityState.Transform with Position = value - entityState.Transform.Size.WithY 0.0f * 0.5f }
-                            let entityState = { entityState with Transform = transform }
-                            Some entityState
-                    else None)
-                false false Property? Position value entity world
+            let transform = World.getEntityTransform entity world
+            let transform = { transform with Position = value - transform.Size.WithY 0.0f * 0.5f }
+            World.setEntityTransform transform entity world
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
