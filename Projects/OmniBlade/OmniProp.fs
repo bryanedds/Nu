@@ -41,7 +41,8 @@ module PropDispatcherModule =
             [entity.BodyType == Static
              entity.LinearDamping == 0.0f
              entity.GravityScale == 0.0f
-             entity.Bounds <== model --> fun model -> model.Bounds
+             entity.Bounds <== model --> fun model ->
+                model.Bounds
              entity.IsSensor <== model --> fun model ->
                 match model.PropData with
                 | Sensor
