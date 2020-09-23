@@ -323,6 +323,7 @@ module WorldModuleEntity =
         static member internal setEntityTransformWithoutEvent value entity world =
             let oldWorld = world
             let oldEntityState = World.getEntityState entity world
+            if oldEntityState.Transform.Flags <> value.Flags then failwith "Cannot change transform flags via setEntityTransformEithoutEvent."
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldAbsolute = oldEntityState.Absolute
             let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
@@ -343,6 +344,7 @@ module WorldModuleEntity =
         static member internal setEntityTransform value entity world =
             let oldWorld = world
             let oldEntityState = World.getEntityState entity world
+            if oldEntityState.Transform.Flags <> value.Flags then failwith "Cannot change transform flags via setEntityTransform."
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldAbsolute = oldEntityState.Absolute
             let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
