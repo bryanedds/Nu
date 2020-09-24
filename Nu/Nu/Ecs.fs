@@ -233,6 +233,7 @@ type [<AbstractClass>] SystemMany<'w when 'w :> Freezable> (name) =
     abstract PadComponents : int -> unit
 
 /// An Ecs system with components stored by a raw index.
+/// Stores components in an unordered manner.
 type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (reserve, name) =
     inherit SystemMany<'w> (name)
 
@@ -329,7 +330,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
                 | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system with components stored by entity id.
-type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (compacting, reserve, name) =
+type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (ordered, reserve, name) =
     inherit SystemMany<'w> (name)
 
     let systemNames = Unchecked.defaultof<'c>.SystemNames
@@ -342,7 +343,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     let correlations = dictPlus [] : Dictionary<Guid, int>
     let correlationsBack = dictPlus [] : Dictionary<int, Guid>
 
-    new (compacting, reserve) = SystemCorrelated (compacting, reserve, typeof<'c>.Name)
+    new (ordered, reserve) = SystemCorrelated (ordered, reserve, typeof<'c>.Name)
     new (reserve) = SystemCorrelated (false, reserve, typeof<'c>.Name)
     new () = SystemCorrelated (false, Constants.Ecs.ArrayReserve, typeof<'c>.Name)
 
@@ -501,17 +502,16 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             if index <> freeIndex then
                 components.[index].RefCount <- dec components.[index].RefCount
                 if components.[index].RefCount = 0 then
-                    if compacting
+                    if ordered
                     then freeList.Add index |> ignore<bool>
                     else preList.Add index |> ignore<bool>
             else freeIndex <- dec freeIndex
             correlations.Remove entityId |> ignore<bool>
             correlationsBack.Remove index |> ignore<bool>
-            if  compacting then
-                comp.Disjunction junctions entityId ecs
-                if  components.Length < freeList.Count * 2 &&
-                    components.Length > Constants.Ecs.ArrayReserve then
-                    this.Compact ()
+            if ordered then comp.Disjunction junctions entityId ecs
+            if  components.Length < freeList.Count * 2 && // freeList is always empty if unordered
+                components.Length > Constants.Ecs.ArrayReserve then
+                this.Compact ()
             true
         | (false, _) -> false
 
@@ -619,10 +619,10 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         this.Simplexes.Remove multiId
 
 /// An Ecs system that stores multiple components per entity id.
-type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (compacting, reserve, name) =
-    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (compacting, reserve, name)
-    
-    new (compacting, reserve) = SystemMultiplexed (compacting, reserve, typeof<'c>.Name)
+type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (ordered, reserve, name) =
+    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (ordered, reserve, name)
+
+    new (ordered, reserve) = SystemMultiplexed (ordered, reserve, typeof<'c>.Name)
     new (reserve) = SystemMultiplexed (false, reserve, typeof<'c>.Name)
     new () = SystemMultiplexed (false, Constants.Ecs.ArrayReserve, typeof<'c>.Name)
 
@@ -680,13 +680,13 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> 
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
-type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (compacting, reserve, name) =
+type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (ordered, reserve, name) =
     inherit System<'w> (name)
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
     let systemDict = dictPlus [] : Dictionary<Guid, SystemCorrelated<'c, 'w>>
 
-    new (compacting, reserve) = SystemHierarchical (compacting, reserve, typeof<'c>.Name)
+    new (ordered, reserve) = SystemHierarchical (ordered, reserve, typeof<'c>.Name)
     new (reserve) = SystemHierarchical (false, reserve, typeof<'c>.Name)
     new () = SystemHierarchical (false, Constants.Ecs.ArrayReserve, typeof<'c>.Name)
 
@@ -700,7 +700,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 
     member this.AddNode (parentIdOpt : Guid option) =
         let nodeId = Gen.id
-        let system = SystemCorrelated<'c, 'w> (compacting, reserve, scstring nodeId)
+        let system = SystemCorrelated<'c, 'w> (ordered, reserve, scstring nodeId)
         let added =
             match parentIdOpt with
             | Some parentId ->
