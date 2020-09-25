@@ -62,7 +62,7 @@ module EcsTests =
 
         // define our airship system's update behavior
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            let comps = airshipSystem.Components
+            let comps = airshipSystem.Components.Array
             for i in 0 .. comps.Length - 1 do
                 let comp = &comps.[i]
                 if  comp.RefCount > 0 then
