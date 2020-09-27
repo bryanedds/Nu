@@ -629,6 +629,16 @@ module TileMapFacetModule =
     type TileMapFacet () =
         inherit Facet ()
 
+        let rec importShape shape (tileSize : Vector2) (tileOffset : Vector2) =
+            let tileExtent = tileSize * 0.5f
+            match shape with
+            | BodyEmpty as be -> be
+            | BodyBox box -> BodyBox { box with Extent = box.Extent * tileExtent; Center = box.Center * tileSize + tileOffset }
+            | BodyCircle circle -> BodyCircle { circle with Radius = circle.Radius * tileExtent.Y; Center = circle.Center * tileSize + tileOffset }
+            | BodyCapsule capsule -> BodyCapsule { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileExtent.Y; Center = capsule.Center * tileSize + tileOffset }
+            | BodyPolygon polygon -> BodyPolygon { polygon with Vertices = Array.map (fun point -> point * tileSize) polygon.Vertices; Center = polygon.Center * tileSize + tileOffset }
+            | BodyShapes shapes -> BodyShapes (List.map (fun shape -> importShape shape tileSize tileOffset) shapes)
+
         let tryMakeTileMapDescriptor (tileMapAsset : TileMap AssetTag) world =
             let metadataMap = World.getMetadata world
             match Metadata.tryGetTileMapMetadata tileMapAsset metadataMap with
@@ -655,15 +665,16 @@ module TileMapFacetModule =
             let gidPosition = gid * tmd.TileSizeI.X
             let gid2 = Vector2i (gid % tileSetRun, gid / tileSetRun)
             let tileMapPosition = tm.GetPosition world
-            let tilePosition =
+            let tilePositionI =
                 Vector2i
                     (int tileMapPosition.X + tmd.TileSizeI.X * i,
-                     int tileMapPosition.Y - tmd.TileSizeI.Y * (j + 1)) // subtraction for right-handedness
+                     int tileMapPosition.Y - tmd.TileSizeI.Y * (j + 1) + tmd.TileMapSizeI.Y) // invert y coords
+            let tilePositionF = v2 (single tilePositionI.X) (single tilePositionI.Y)
             let tileSetTileOpt =
                 match tmd.TileSet.Tiles.TryGetValue (tile.Gid - 1) with
                 | (true, tile) -> Some tile
                 | (false, _) -> None
-            { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; TileSetTileOpt = tileSetTileOpt }
+            { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePositionI = tilePositionI; TilePositionF = tilePositionF; TileSetTileOpt = tileSetTileOpt }
 
         let getTileLayerBodyShape tm tmd (tl : TmxLayer) ti world =
             let td = makeTileDescriptor tm tmd tl ti world
@@ -671,15 +682,17 @@ module TileMapFacetModule =
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
                 | (true, cexpr) ->
+                    let tileCenter =
+                        Vector2
+                            (td.TilePositionF.X + tmd.TileSizeF.X * 0.5f,
+                             td.TilePositionF.Y + tmd.TileSizeF.Y * 0.5f)
                     let tileBody =
-                        let tileExtent = tmd.TileSizeF * 0.5f
-                        let tileCenter =
-                            Vector2
-                                (single (td.TilePosition.X + tmd.TileSizeI.X / 2),
-                                 single (td.TilePosition.Y + tmd.TileSizeI.Y / 2 + tmd.TileMapSizeI.Y))
                         match cexpr with
-                        | "" -> BodyBox { Extent = tileExtent; Center = tileCenter; PropertiesOpt = None }
-                        | _ -> scvalue<BodyShape> cexpr
+                        | "" -> BodyBox { Extent = tmd.TileSizeF * 0.5f; Center = tileCenter; PropertiesOpt = None }
+                        | _ ->
+                            let tileShape = scvalue<BodyShape> cexpr
+                            let tileShapeImported = importShape tileShape tmd.TileSizeF tileCenter
+                            tileShapeImported
                     Some tileBody
                 | (false, _) -> None
             | None -> None
