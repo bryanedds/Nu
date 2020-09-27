@@ -742,6 +742,7 @@ module TileMapFacetModule =
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (tileMap, world) =
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Position) tileMap world
             let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Friction) tileMap world
             let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Restitution) tileMap world
             let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? CollisionCategories) tileMap world
