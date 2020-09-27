@@ -665,28 +665,6 @@ module TileMapFacetModule =
                 | (false, _) -> None
             { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; TileSetTileOpt = tileSetTileOpt }
 
-        let getBodyProperties (tileMap : Entity) id position shape world =
-            { BodyId = id
-              Position = position
-              Rotation = 0.0f
-              BodyShape = shape
-              BodyType = BodyType.Static
-              Awake = false
-              Enabled = true
-              Density = Constants.Physics.NormalDensity
-              Friction = tileMap.GetFriction world
-              Restitution = tileMap.GetRestitution world
-              FixedRotation = true
-              AngularVelocity = 0.0f
-              AngularDamping = 0.0f
-              LinearVelocity = Vector2.Zero
-              LinearDamping = 0.0f
-              GravityScale = 0.0f
-              CollisionCategories = PhysicsEngine.categorizeCollisionMask (tileMap.GetCollisionCategories world)
-              CollisionMask = PhysicsEngine.categorizeCollisionMask (tileMap.GetCollisionMask world)
-              IsBullet = false
-              IsSensor = false }
-
         let getTileLayerBodyShape tm tmd (tl : TmxLayer) ti world =
             let td = makeTileDescriptor tm tmd tl ti world
             match td.TileSetTileOpt with
@@ -698,7 +676,8 @@ module TileMapFacetModule =
                         let tileCenter =
                             Vector2
                                 (single (td.TilePosition.X + tmd.TileSizeI.X / 2),
-                                 single (td.TilePosition.Y + tmd.TileSizeI.Y / 2 + tmd.TileMapSizeI.Y))
+                                 single (td.TilePosition.Y + tmd.TileSizeI.Y / 2 + tmd.TileMapSizeI.Y)) +
+                            v2Zero // (tm.GetPosition world)
                         match cexpr with
                         | "" -> BodyBox { Extent = tileExtent; Center = tileCenter; PropertiesOpt = None }
                         | _ -> scvalue<BodyShape> cexpr
@@ -726,7 +705,27 @@ module TileMapFacetModule =
 
         let registerTileMapPhysics (tileMap : Entity) tileMapDescriptor world =
             let bodyShapes = getTileMapBodyShapes tileMap tileMapDescriptor world
-            let bodyProperties = getBodyProperties tileMap (tileMap.GetPhysicsId world).CorrelationId (tileMap.GetPosition world) (BodyShapes bodyShapes) world
+            let bodyProperties =
+                { BodyId = (tileMap.GetPhysicsId world).CorrelationId
+                  Position = v2Zero
+                  Rotation = 0.0f
+                  BodyShape = BodyShapes bodyShapes
+                  BodyType = BodyType.Static
+                  Awake = false
+                  Enabled = true
+                  Density = Constants.Physics.NormalDensity
+                  Friction = tileMap.GetFriction world
+                  Restitution = tileMap.GetRestitution world
+                  FixedRotation = true
+                  AngularVelocity = 0.0f
+                  AngularDamping = 0.0f
+                  LinearVelocity = Vector2.Zero
+                  LinearDamping = 0.0f
+                  GravityScale = 0.0f
+                  CollisionCategories = PhysicsEngine.categorizeCollisionMask (tileMap.GetCollisionCategories world)
+                  CollisionMask = PhysicsEngine.categorizeCollisionMask (tileMap.GetCollisionMask world)
+                  IsBullet = false
+                  IsSensor = false }
             World.createBody tileMap (tileMap.GetId world) bodyProperties world
 
         static member Properties =

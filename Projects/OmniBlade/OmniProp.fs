@@ -50,7 +50,7 @@ module PropDispatcherModule =
                 | _ -> false
              entity.BodyShape <== model --> fun model ->
                 match model.PropData with
-                | Npc _ -> BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                | Npc _ -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
                 | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
 
         override this.Message (model, message, entity, world) =
