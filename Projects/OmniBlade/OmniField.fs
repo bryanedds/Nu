@@ -127,6 +127,7 @@ module OmniField =
                         let model =
                             FieldModel.updateAvatar (fun avatar ->
                                 let avatar = AvatarModel.updateDirection (constant fieldTransition.FieldDirection) avatar
+                                let avatar = AvatarModel.updateDirection (constant fieldTransition.FieldDirection) avatar
                                 let avatar = AvatarModel.updateIntersectedBodyShapes (constant []) avatar
                                 avatar)
                                 model
@@ -208,8 +209,8 @@ module OmniField =
                 just world
 
             | MoveAvatar position ->
-                let physicsId = Simulants.FieldAvatar.GetPhysicsId world
-                let world = World.setBodyPosition position physicsId world
+                let world = Simulants.FieldAvatar.SetCenter position world
+                let world = World.setBodyPosition position (Simulants.FieldAvatar.GetPhysicsId world) world
                 just world
 
             | PlaySound (delay, volume, sound) ->
@@ -223,8 +224,7 @@ module OmniField =
 
                 [// tile map
                  Content.tileMap Simulants.FieldTileMap.Name
-                    [Entity.PublishChanges == true
-                     Entity.Depth == Constants.Field.BackgroundDepth
+                    [Entity.Depth == Constants.Field.BackgroundDepth
                      Entity.TileMapAsset <== model --> fun model ->
                         match Map.tryFind model.FieldType data.Value.Fields with
                         | Some fieldData -> fieldData.FieldTileMap
