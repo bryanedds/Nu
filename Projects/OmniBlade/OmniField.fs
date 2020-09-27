@@ -223,7 +223,8 @@ module OmniField =
 
                 [// tile map
                  Content.tileMap Simulants.FieldTileMap.Name
-                    [Entity.Depth == Constants.Field.BackgroundDepth
+                    [Entity.PublishChanges == true
+                     Entity.Depth == Constants.Field.BackgroundDepth
                      Entity.TileMapAsset <== model --> fun model ->
                         match Map.tryFind model.FieldType data.Value.Fields with
                         | Some fieldData -> fieldData.FieldTileMap
