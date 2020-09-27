@@ -90,7 +90,7 @@ module PropDispatcherModule =
                                 | DoorState opened -> if opened then Assets.WoodenDoorOpenedImage else Assets.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
                         (None, image)
-                    | Portal (_, _, _, _) -> (None, Assets.CancelImage)
+                    | Portal (_, _, _, _) -> (None, Assets.EmptyImage)
                     | Switch -> (None, Assets.CancelImage)
                     | Sensor -> (None, Assets.CancelImage)
                     | Npc (npcType, direction, _) ->

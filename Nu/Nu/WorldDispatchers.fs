@@ -1797,8 +1797,8 @@ module FillBarDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
-             define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackageName "Image10")
-             define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackageName "Image11")]
+             define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackageName "Image11")
+             define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackageName "Image12")]
 
         override this.Actualize (fillBar, world) =
             if fillBar.GetVisible world then
