@@ -33,7 +33,8 @@ type [<StructuralEquality; NoComparison>] TileDescriptor =
       GidPosition : int
       Gid2 : Vector2i
       TileSetTileOpt : TmxTilesetTile option
-      TilePosition : Vector2i }
+      TilePositionI : Vector2i
+      TilePositionF : Vector2 }
 
 /// Describes a Tiled tile map.
 type [<StructuralEquality; NoComparison>] TileMapDescriptor =
