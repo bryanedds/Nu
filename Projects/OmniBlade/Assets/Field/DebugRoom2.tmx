@@ -26,7 +26,7 @@
     <property name="I" value="[Npc VillageMan Downward [&quot;If the war inside my head...&quot; &quot;Won't take a day, I'll be dead.&quot;]]"/>
    </properties>
   </object>
-  <object id="25" gid="488" x="1024" y="1024" width="128" height="32">
+  <object id="25" gid="488" x="1024" y="1056" width="128" height="32">
    <properties>
     <property name="I" value="[Portal 0 DebugRoom [640 640] Upward]"/>
    </properties>

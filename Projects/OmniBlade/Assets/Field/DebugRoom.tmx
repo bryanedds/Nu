@@ -36,7 +36,7 @@
     <property name="I" value="[Npc VillageMan Downward [&quot;Hello, NPC!&quot; &quot;Aye aye aye!&quot;]]"/>
    </properties>
   </object>
-  <object id="25" gid="488" x="1024" y="1024" width="128" height="32">
+  <object id="25" gid="488" x="1024" y="1056" width="128" height="32">
    <properties>
     <property name="I" value="[Portal 0 DebugRoom2 [640 640] Upward]"/>
    </properties>

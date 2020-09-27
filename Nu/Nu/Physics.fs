@@ -643,7 +643,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         // listen for collisions
         body.add_OnCollision (fun fn fn2 collision -> FarseerPhysicsEngine.handleCollision physicsEngine fn fn2 collision)
 
-        // listen for collisions
+        // listen for separations
         body.add_OnSeparation (fun fn fn2 -> FarseerPhysicsEngine.handleSeparation physicsEngine fn fn2)
 
         // attempt to add the body
