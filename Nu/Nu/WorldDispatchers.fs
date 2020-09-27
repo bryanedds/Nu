@@ -676,8 +676,7 @@ module TileMapFacetModule =
                         let tileCenter =
                             Vector2
                                 (single (td.TilePosition.X + tmd.TileSizeI.X / 2),
-                                 single (td.TilePosition.Y + tmd.TileSizeI.Y / 2 + tmd.TileMapSizeI.Y)) +
-                            v2Zero // (tm.GetPosition world)
+                                 single (td.TilePosition.Y + tmd.TileSizeI.Y / 2 + tmd.TileMapSizeI.Y))
                         match cexpr with
                         | "" -> BodyBox { Extent = tileExtent; Center = tileCenter; PropertiesOpt = None }
                         | _ -> scvalue<BodyShape> cexpr
@@ -704,9 +703,10 @@ module TileMapFacetModule =
             Seq.toList
 
         let registerTileMapPhysics (tileMap : Entity) tileMapDescriptor world =
+            let bodyId = (tileMap.GetPhysicsId world).CorrelationId
             let bodyShapes = getTileMapBodyShapes tileMap tileMapDescriptor world
             let bodyProperties =
-                { BodyId = (tileMap.GetPhysicsId world).CorrelationId
+                { BodyId = bodyId
                   Position = v2Zero
                   Rotation = 0.0f
                   BodyShape = BodyShapes bodyShapes
