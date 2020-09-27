@@ -32,8 +32,7 @@ module OmniField =
         inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand> (FieldModel.initial)
 
         static let isFacingBodyShape bodyShape (avatar : AvatarModel) world =
-            if  bodyShape.Entity.Exists world &&
-                bodyShape.Entity.Is<PropDispatcher> world then
+            if bodyShape.Entity.Is<PropDispatcher> world then
                 let v = bodyShape.Entity.GetBottom world - avatar.Bottom
                 let direction = Direction.fromVector2 v
                 direction = avatar.Direction
@@ -64,7 +63,7 @@ module OmniField =
                     if Set.contains (Opened chestId) advents then None
                     else Some "Open"
                 | Door _ -> Some "Open"
-                | Portal (_, _, _, _) -> Some "Enter"
+                | Portal (_, _, _, _) -> None
                 | Switch -> Some "Use"
                 | Sensor -> None
                 | Npc _ -> Some "Talk"
@@ -128,7 +127,13 @@ module OmniField =
                     if World.getTickTime world = fieldTransition.FieldTransitionTime then
                         let model = FieldModel.updateFieldType (constant fieldTransition.FieldType) model
                         let model = FieldModel.updateFieldTransitionOpt (constant None) model
-                        let model = FieldModel.updateAvatar (AvatarModel.updateDirection (constant fieldTransition.FieldDirection)) model
+                        let model =
+                            FieldModel.updateAvatar (fun avatar ->
+                                let avatar = AvatarModel.updateDirection (constant fieldTransition.FieldDirection) avatar
+                                let avatar = AvatarModel.updateIntersectedBodyShapes (constant []) avatar
+                                avatar)
+                                model
+                        printfn "Move Avatar"
                         withCmd model (MoveAvatar fieldTransition.FieldIndex)
                     else just model
                 | None -> just model
@@ -138,6 +143,7 @@ module OmniField =
                 | None ->
                     match tryGetTouchingPortal model.Avatar world with
                     | Some (fieldType, index, direction) ->
+                        printfn "Start Transition"
                         let transition =
                             { FieldType = fieldType
                               FieldIndex = index
