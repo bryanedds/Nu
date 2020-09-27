@@ -545,48 +545,6 @@ module RigidBodyFacetModule =
             World.destroyBody (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
-module RigidBodiesFacetModule =
-
-    type Entity with
-
-        member this.GetBodies world : Map<Guid, BodyProperties> = this.Get Property? Bodies world
-        member this.SetBodies (value : Map<Guid, BodyProperties>) world = this.SetFast Property? Bodies false false value world
-        member this.Bodies = lens Property? Bodies this.GetBodies this.SetBodies this
-        member this.GetJoints world : Map<Guid, JointProperties> = this.Get Property? Joints world
-        member this.SetJoints (value : Map<Guid, JointProperties>) world = this.SetFast Property? Joints false false value world
-        member this.Joints = lens Property? Joints this.GetJoints this.SetJoints this
-
-    type RigidBodiesFacet () =
-        inherit Facet ()
-
-        static member Properties =
-            [define Entity.Bodies Map.empty
-             define Entity.Joints Map.empty
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
-
-        override this.RegisterPhysics (entity, world) =
-            let position = entity.GetPosition world
-            let size = entity.GetSize world
-            let rotation = entity.GetRotation world
-            let bodiesProperties =
-                entity.GetBodies world |>
-                Map.toValueList |>
-                List.map (fun properties ->
-                    { properties with
-                        Position = properties.Position + position
-                        Rotation = properties.Rotation + rotation
-                        BodyShape = World.localizeBodyShape size properties.BodyShape world })
-            let world = World.createBodies entity (entity.GetId world) bodiesProperties world
-            let jointsProperties = Map.toValueList (entity.GetJoints world)
-            let world = World.createJoints entity (entity.GetId world) jointsProperties world
-            world
-
-        override this.UnregisterPhysics (entity, world) =
-            let bodiesProperties = entity.GetBodies world |> Map.toValueList
-            let physicsIds = List.map (fun (properties : BodyProperties) -> { SourceId = entity.GetId world; CorrelationId = properties.BodyId }) bodiesProperties
-            World.destroyBodies physicsIds world
-
-[<AutoOpen>]
 module JointFacetModule =
 
     type Entity with
