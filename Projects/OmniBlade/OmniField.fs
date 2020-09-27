@@ -46,7 +46,6 @@ module OmniField =
         static let tryGetFacingProp (avatar : AvatarModel) world =
             match getFacingBodyShapes avatar world with
             | head :: _ ->
-                // TODO: distance-sort these instead of just taking head
                 let prop = head.Entity.GetPropModel world
                 Some prop.PropData
             | [] -> None
@@ -85,11 +84,9 @@ module OmniField =
         static let tryGetTouchingPortal (avatar : AvatarModel) world =
             let portals =
                 List.choose (fun shape ->
-                    if shape.Entity.Exists world then
-                        match (shape.Entity.GetPropModel world).PropData with
-                        | Portal (_, fieldType, index, direction) -> Some (fieldType, index, direction)
-                        | _ -> None
-                    else None)
+                    match (shape.Entity.GetPropModel world).PropData with
+                    | Portal (_, fieldType, index, direction) -> Some (fieldType, index, direction)
+                    | _ -> None)
                     avatar.IntersectedBodyShapes
             match portals with
             | head :: _ -> Some head
@@ -133,7 +130,6 @@ module OmniField =
                                 let avatar = AvatarModel.updateIntersectedBodyShapes (constant []) avatar
                                 avatar)
                                 model
-                        printfn "Move Avatar"
                         withCmd model (MoveAvatar fieldTransition.FieldIndex)
                     else just model
                 | None -> just model
@@ -143,7 +139,6 @@ module OmniField =
                 | None ->
                     match tryGetTouchingPortal model.Avatar world with
                     | Some (fieldType, index, direction) ->
-                        printfn "Start Transition"
                         let transition =
                             { FieldType = fieldType
                               FieldIndex = index
@@ -193,8 +188,7 @@ module OmniField =
                                 let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
                                 let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
                                 withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
-                        | Door (lockType, doorType) ->
-                            just model
+                        | Door (lockType, doorType) -> just model
                         | Portal (_, _, _, _) -> just model
                         | Switch -> just model
                         | Sensor -> just model
