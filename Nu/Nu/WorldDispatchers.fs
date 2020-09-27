@@ -615,7 +615,7 @@ module JointFacetModule =
 module TileMapFacetModule =
 
     type Entity with
-    
+
         member this.GetTileMapAsset world : TileMap AssetTag = this.Get Property? TileMapAsset world
         member this.SetTileMapAsset (value : TileMap AssetTag) world = this.SetFast Property? TileMapAsset false false value world
         member this.TileMapAsset = lens Property? TileMapAsset this.GetTileMapAsset this.SetTileMapAsset this
@@ -665,109 +665,98 @@ module TileMapFacetModule =
                 | (false, _) -> None
             { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; TileSetTileOpt = tileSetTileOpt }
 
-        let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
-            let tileShape = World.localizeBodyShape (Vector2 (single tmd.TileSizeI.X, single tmd.TileSizeI.Y)) cexpr world
-            { BodyId = Gen.idFromInts tli ti
-              Position =
-                Vector2
-                    (single (td.TilePosition.X + tmd.TileSizeI.X / 2),
-                     single (td.TilePosition.Y + tmd.TileSizeI.Y / 2 + tmd.TileMapSizeI.Y))
-              Rotation = tm.GetRotation world
-              BodyShape = tileShape
+        let getBodyProperties (tileMap : Entity) id position shape world =
+            { BodyId = id
+              Position = position
+              Rotation = 0.0f
+              BodyShape = shape
               BodyType = BodyType.Static
               Awake = false
               Enabled = true
               Density = Constants.Physics.NormalDensity
-              Friction = tm.GetFriction world
-              Restitution = tm.GetRestitution world
+              Friction = tileMap.GetFriction world
+              Restitution = tileMap.GetRestitution world
               FixedRotation = true
               AngularVelocity = 0.0f
               AngularDamping = 0.0f
               LinearVelocity = Vector2.Zero
               LinearDamping = 0.0f
               GravityScale = 0.0f
-              CollisionCategories = PhysicsEngine.categorizeCollisionMask (tm.GetCollisionCategories world)
-              CollisionMask = PhysicsEngine.categorizeCollisionMask (tm.GetCollisionMask world)
+              CollisionCategories = PhysicsEngine.categorizeCollisionMask (tileMap.GetCollisionCategories world)
+              CollisionMask = PhysicsEngine.categorizeCollisionMask (tileMap.GetCollisionMask world)
               IsBullet = false
               IsSensor = false }
 
-        let getTileBodyProperties tm tmd (tl : TmxLayer) tli ti world =
+        let getTileLayerBodyShape tm tmd (tl : TmxLayer) ti world =
             let td = makeTileDescriptor tm tmd tl ti world
             match td.TileSetTileOpt with
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
                 | (true, cexpr) ->
                     let tileBody =
+                        let tileExtent = tmd.TileSizeF * 0.5f
+                        let tileCenter =
+                            Vector2
+                                (single (td.TilePosition.X + tmd.TileSizeI.X / 2),
+                                 single (td.TilePosition.Y + tmd.TileSizeI.Y / 2 + tmd.TileMapSizeI.Y))
                         match cexpr with
-                        | "" -> BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero; PropertiesOpt = None }
+                        | "" -> BodyBox { Extent = tileExtent; Center = tileCenter; PropertiesOpt = None }
                         | _ -> scvalue<BodyShape> cexpr
-                    let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti tileBody world
-                    Some tileBodyProperties
+                    Some tileBody
                 | (false, _) -> None
             | None -> None
 
-        let getTileLayerBodyPropertyList tileMap tileMapDescriptor tileLayerIndex (tileLayer : TmxLayer) world =
+        let getTileLayerBodyShapes tileMap tileMapDescriptor (tileLayer : TmxLayer) world =
             Seq.foldi
-                (fun i bodyPropertyList _ ->
-                    match getTileBodyProperties tileMap tileMapDescriptor tileLayer tileLayerIndex i world with
-                    | Some bodyProperties -> bodyProperties :: bodyPropertyList
-                    | None -> bodyPropertyList)
+                (fun i bodyShapes _ ->
+                    match getTileLayerBodyShape tileMap tileMapDescriptor tileLayer i world with
+                    | Some bodyShape -> bodyShape :: bodyShapes
+                    | None -> bodyShapes)
                 [] tileLayer.Tiles |>
             Seq.toList
 
-        let registerTileLayerPhysics (tileMap : Entity) tileMapDescriptor tileLayerIndex world tileLayer =
-            let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapDescriptor tileLayerIndex tileLayer world
-            World.createBodies tileMap (tileMap.GetId world) bodyPropertyList world
-
-        let getTileLayerPhysicsIds (tileMap : Entity) tileMapDescriptor tileLayer tileLayerIndex world =
-            Seq.foldi
-                (fun tileIndex physicsIds _ ->
-                    let tileDescriptor = makeTileDescriptor tileMap tileMapDescriptor tileLayer tileIndex world
-                    match tileDescriptor.TileSetTileOpt with
-                    | Some tileSetTile ->
-                        if tileSetTile.Properties.ContainsKey Constants.TileMap.CollisionPropertyName then
-                            let physicsId = { SourceId = tileMap.GetId world; CorrelationId = Gen.idFromInts tileLayerIndex tileIndex }
-                            physicsId :: physicsIds
-                        else physicsIds
-                    | None -> physicsIds)
-                [] tileLayer.Tiles |>
+        let getTileMapBodyShapes tileMap tileMapDescriptor world =
+            tileMapDescriptor.TileMap.Layers |>
+            Seq.fold (fun shapess tileLayer ->
+                let shapes = getTileLayerBodyShapes tileMap tileMapDescriptor tileLayer world
+                shapes :: shapess)
+                [] |>
+            Seq.concat |>
             Seq.toList
+
+        let registerTileMapPhysics (tileMap : Entity) tileMapDescriptor world =
+            let bodyShapes = getTileMapBodyShapes tileMap tileMapDescriptor world
+            let bodyProperties = getBodyProperties tileMap (tileMap.GetPhysicsId world).CorrelationId (tileMap.GetPosition world) (BodyShapes bodyShapes) world
+            World.createBody tileMap (tileMap.GetId world) bodyProperties world
 
         static member Properties =
             [define Entity.Omnipresent true
+             define Entity.PublishChanges true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackageName Assets.DefaultTileMapName)
              define Entity.TileLayerClearance 2.0f
-             define Entity.Parallax 0.0f]
+             define Entity.Parallax 0.0f
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+
+        override this.Register (tileMap, world) =
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Friction) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Restitution) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? CollisionCategories) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? CollisionMask) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? TileMapAsset) tileMap world
+            world
 
         override this.RegisterPhysics (tileMap, world) =
             let tileMapAsset = tileMap.GetTileMapAsset world
             match tryMakeTileMapDescriptor tileMapAsset world with
-            | Some tileMapDescriptor ->
-                Seq.foldi
-                    (registerTileLayerPhysics tileMap tileMapDescriptor)
-                    world
-                    tileMapDescriptor.TileMap.Layers
-            | None ->
-                Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
-                world
+            | Some tileMapDescriptor -> registerTileMapPhysics tileMap tileMapDescriptor world
+            | None -> Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'."); world
 
         override this.UnregisterPhysics (tileMap, world) =
-            let tileMapAsset = tileMap.GetTileMapAsset world
-            match tryMakeTileMapDescriptor tileMapAsset world with
-            | Some tileMapDescriptor ->
-                Seq.foldi
-                    (fun tileLayerIndex world (tileLayer : TmxLayer) ->
-                        let physicsIds = getTileLayerPhysicsIds tileMap tileMapDescriptor tileLayer tileLayerIndex world
-                        World.destroyBodies physicsIds world)
-                    world
-                    tileMapDescriptor.TileMap.Layers
-            | None ->
-                Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
-                world
+            World.destroyBody (tileMap.GetPhysicsId world) world
 
         override this.Actualize (tileMap, world) =
             if tileMap.GetVisible world then
@@ -1980,6 +1969,7 @@ module TileMapDispatcherModule =
 
         static member Properties =
             [define Entity.Omnipresent true
+             define Entity.PublishChanges true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
