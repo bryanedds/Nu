@@ -23,6 +23,7 @@ module Assets =
     let BrassChestClosedImage = asset<Image> FieldPackageName "BrassChestClosed"
     let WoodenDoorOpenedImage = asset<Image> FieldPackageName "WoodenDoorOpened"
     let WoodenDoorClosedImage = asset<Image> FieldPackageName "WoodenDoorClosed"
+    let EmptyImage = asset<Image> FieldPackageName "Empty"
     let NpcAnimationSheet = asset<Image> FieldPackageName "Npcs"
     let FinnAnimationSheet = asset<Image> FieldPackageName "Finn"
     let GlennAnimationSheet = asset<Image> FieldPackageName "Glenn"
@@ -33,6 +34,7 @@ module Assets =
     let HealSound = asset<Sound> FieldPackageName "Heal"
     let DeathSound = asset<Sound> FieldPackageName "Death"
     let OpenChestSound = asset<Sound> FieldPackageName "Unlatch"
+    let StairStepsSound = asset<Sound> FieldPackageName "StairSteps"
     let FieldSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> FieldPackageName "Field" }
 
     // battle assets

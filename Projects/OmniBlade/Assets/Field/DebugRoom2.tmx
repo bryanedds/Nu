@@ -31,10 +31,5 @@
     <property name="I" value="[Portal 0 DebugRoom [640 640] Upward]"/>
    </properties>
   </object>
-  <object id="26" gid="488" x="1952" y="640" width="32" height="128">
-   <properties>
-    <property name="I" value="[Portal 1 DebugRoom [320 320] Leftward]"/>
-   </properties>
-  </object>
  </objectgroup>
 </map>
