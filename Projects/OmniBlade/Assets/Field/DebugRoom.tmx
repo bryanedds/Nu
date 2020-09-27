@@ -38,7 +38,7 @@
   </object>
   <object id="25" gid="488" x="960" y="1024" width="128" height="32">
    <properties>
-    <property name="I" value="[Portal 0 DebugRoom2 [640 640] Upward]"/>
+    <property name="I" value="[Portal 0 DebugRoom2 [1024 832] Downward]"/>
    </properties>
   </object>
  </objectgroup>
