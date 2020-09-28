@@ -499,7 +499,8 @@ module RigidBodyFacetModule =
             World.localizeBodyShape (entity.GetSize world) (entity.GetBodyShape world) world
 
         static member Properties =
-            [define Entity.BodyType Dynamic
+            [define Entity.PublishChanges true
+             define Entity.BodyType Dynamic
              define Entity.Awake true
              define Entity.Density Constants.Physics.NormalDensity
              define Entity.Friction 0.2f
@@ -516,6 +517,25 @@ module RigidBodyFacetModule =
              define Entity.IsBullet false
              define Entity.IsSensor false
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+
+        override this.Register (entity, world) =
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyType) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Awake) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Density) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Friction) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Restitution) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularVelocity) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularDamping) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? LinearVelocity) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? LinearDamping) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? GravityScale) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyShape) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IsBullet) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IsSensor) entity world
+            world
 
         override this.RegisterPhysics (entity, world) =
             let bodyProperties = 
@@ -545,48 +565,6 @@ module RigidBodyFacetModule =
             World.destroyBody (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
-module RigidBodiesFacetModule =
-
-    type Entity with
-
-        member this.GetBodies world : Map<Guid, BodyProperties> = this.Get Property? Bodies world
-        member this.SetBodies (value : Map<Guid, BodyProperties>) world = this.SetFast Property? Bodies false false value world
-        member this.Bodies = lens Property? Bodies this.GetBodies this.SetBodies this
-        member this.GetJoints world : Map<Guid, JointProperties> = this.Get Property? Joints world
-        member this.SetJoints (value : Map<Guid, JointProperties>) world = this.SetFast Property? Joints false false value world
-        member this.Joints = lens Property? Joints this.GetJoints this.SetJoints this
-
-    type RigidBodiesFacet () =
-        inherit Facet ()
-
-        static member Properties =
-            [define Entity.Bodies Map.empty
-             define Entity.Joints Map.empty
-             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
-
-        override this.RegisterPhysics (entity, world) =
-            let position = entity.GetPosition world
-            let size = entity.GetSize world
-            let rotation = entity.GetRotation world
-            let bodiesProperties =
-                entity.GetBodies world |>
-                Map.toValueList |>
-                List.map (fun properties ->
-                    { properties with
-                        Position = properties.Position + position
-                        Rotation = properties.Rotation + rotation
-                        BodyShape = World.localizeBodyShape size properties.BodyShape world })
-            let world = World.createBodies entity (entity.GetId world) bodiesProperties world
-            let jointsProperties = Map.toValueList (entity.GetJoints world)
-            let world = World.createJoints entity (entity.GetId world) jointsProperties world
-            world
-
-        override this.UnregisterPhysics (entity, world) =
-            let bodiesProperties = entity.GetBodies world |> Map.toValueList
-            let physicsIds = List.map (fun (properties : BodyProperties) -> { SourceId = entity.GetId world; CorrelationId = properties.BodyId }) bodiesProperties
-            World.destroyBodies physicsIds world
-
-[<AutoOpen>]
 module JointFacetModule =
 
     type Entity with
@@ -599,8 +577,14 @@ module JointFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.JointDevice JointEmpty
+            [define Entity.PublishChanges true
+             define Entity.JointDevice JointEmpty
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+
+        override this.Register (tileMap, world) =
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Transform) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? JointDevice) tileMap world
+            world
 
         override this.RegisterPhysics (entity, world) =
             let jointProperties =
@@ -615,7 +599,7 @@ module JointFacetModule =
 module TileMapFacetModule =
 
     type Entity with
-    
+
         member this.GetTileMapAsset world : TileMap AssetTag = this.Get Property? TileMapAsset world
         member this.SetTileMapAsset (value : TileMap AssetTag) world = this.SetFast Property? TileMapAsset false false value world
         member this.TileMapAsset = lens Property? TileMapAsset this.GetTileMapAsset this.SetTileMapAsset this
@@ -628,6 +612,16 @@ module TileMapFacetModule =
 
     type TileMapFacet () =
         inherit Facet ()
+
+        let rec importShape shape (tileSize : Vector2) (tileOffset : Vector2) =
+            let tileExtent = tileSize * 0.5f
+            match shape with
+            | BodyEmpty as be -> be
+            | BodyBox box -> BodyBox { box with Extent = box.Extent * tileExtent; Center = box.Center * tileSize + tileOffset }
+            | BodyCircle circle -> BodyCircle { circle with Radius = circle.Radius * tileExtent.Y; Center = circle.Center * tileSize + tileOffset }
+            | BodyCapsule capsule -> BodyCapsule { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileExtent.Y; Center = capsule.Center * tileSize + tileOffset }
+            | BodyPolygon polygon -> BodyPolygon { polygon with Vertices = Array.map (fun point -> point * tileSize) polygon.Vertices; Center = polygon.Center * tileSize + tileOffset }
+            | BodyShapes shapes -> BodyShapes (List.map (fun shape -> importShape shape tileSize tileOffset) shapes)
 
         let tryMakeTileMapDescriptor (tileMapAsset : TileMap AssetTag) world =
             let metadataMap = World.getMetadata world
@@ -655,119 +649,111 @@ module TileMapFacetModule =
             let gidPosition = gid * tmd.TileSizeI.X
             let gid2 = Vector2i (gid % tileSetRun, gid / tileSetRun)
             let tileMapPosition = tm.GetPosition world
-            let tilePosition =
+            let tilePositionI =
                 Vector2i
                     (int tileMapPosition.X + tmd.TileSizeI.X * i,
-                     int tileMapPosition.Y - tmd.TileSizeI.Y * (j + 1)) // subtraction for right-handedness
+                     int tileMapPosition.Y - tmd.TileSizeI.Y * (j + 1) + tmd.TileMapSizeI.Y) // invert y coords
+            let tilePositionF = v2 (single tilePositionI.X) (single tilePositionI.Y)
             let tileSetTileOpt =
                 match tmd.TileSet.Tiles.TryGetValue (tile.Gid - 1) with
                 | (true, tile) -> Some tile
                 | (false, _) -> None
-            { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; TileSetTileOpt = tileSetTileOpt }
+            { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePositionI = tilePositionI; TilePositionF = tilePositionF; TileSetTileOpt = tileSetTileOpt }
 
-        let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
-            let tileShape = World.localizeBodyShape (Vector2 (single tmd.TileSizeI.X, single tmd.TileSizeI.Y)) cexpr world
-            { BodyId = Gen.idFromInts tli ti
-              Position =
-                Vector2
-                    (single (td.TilePosition.X + tmd.TileSizeI.X / 2),
-                     single (td.TilePosition.Y + tmd.TileSizeI.Y / 2 + tmd.TileMapSizeI.Y))
-              Rotation = tm.GetRotation world
-              BodyShape = tileShape
-              BodyType = BodyType.Static
-              Awake = false
-              Enabled = true
-              Density = Constants.Physics.NormalDensity
-              Friction = tm.GetFriction world
-              Restitution = tm.GetRestitution world
-              FixedRotation = true
-              AngularVelocity = 0.0f
-              AngularDamping = 0.0f
-              LinearVelocity = Vector2.Zero
-              LinearDamping = 0.0f
-              GravityScale = 0.0f
-              CollisionCategories = PhysicsEngine.categorizeCollisionMask (tm.GetCollisionCategories world)
-              CollisionMask = PhysicsEngine.categorizeCollisionMask (tm.GetCollisionMask world)
-              IsBullet = false
-              IsSensor = false }
-
-        let getTileBodyProperties tm tmd (tl : TmxLayer) tli ti world =
+        let getTileLayerBodyShape tm tmd (tl : TmxLayer) ti world =
             let td = makeTileDescriptor tm tmd tl ti world
             match td.TileSetTileOpt with
             | Some tileSetTile ->
                 match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
                 | (true, cexpr) ->
+                    let tileCenter =
+                        Vector2
+                            (td.TilePositionF.X + tmd.TileSizeF.X * 0.5f,
+                             td.TilePositionF.Y + tmd.TileSizeF.Y * 0.5f)
                     let tileBody =
                         match cexpr with
-                        | "" -> BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero; PropertiesOpt = None }
-                        | _ -> scvalue<BodyShape> cexpr
-                    let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti tileBody world
-                    Some tileBodyProperties
+                        | "" -> BodyBox { Extent = tmd.TileSizeF * 0.5f; Center = tileCenter; PropertiesOpt = None }
+                        | _ ->
+                            let tileShape = scvalue<BodyShape> cexpr
+                            let tileShapeImported = importShape tileShape tmd.TileSizeF tileCenter
+                            tileShapeImported
+                    Some tileBody
                 | (false, _) -> None
             | None -> None
 
-        let getTileLayerBodyPropertyList tileMap tileMapDescriptor tileLayerIndex (tileLayer : TmxLayer) world =
+        let getTileLayerBodyShapes tileMap tileMapDescriptor (tileLayer : TmxLayer) world =
             Seq.foldi
-                (fun i bodyPropertyList _ ->
-                    match getTileBodyProperties tileMap tileMapDescriptor tileLayer tileLayerIndex i world with
-                    | Some bodyProperties -> bodyProperties :: bodyPropertyList
-                    | None -> bodyPropertyList)
+                (fun i bodyShapes _ ->
+                    match getTileLayerBodyShape tileMap tileMapDescriptor tileLayer i world with
+                    | Some bodyShape -> bodyShape :: bodyShapes
+                    | None -> bodyShapes)
                 [] tileLayer.Tiles |>
             Seq.toList
 
-        let registerTileLayerPhysics (tileMap : Entity) tileMapDescriptor tileLayerIndex world tileLayer =
-            let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapDescriptor tileLayerIndex tileLayer world
-            World.createBodies tileMap (tileMap.GetId world) bodyPropertyList world
-
-        let getTileLayerPhysicsIds (tileMap : Entity) tileMapDescriptor tileLayer tileLayerIndex world =
-            Seq.foldi
-                (fun tileIndex physicsIds _ ->
-                    let tileDescriptor = makeTileDescriptor tileMap tileMapDescriptor tileLayer tileIndex world
-                    match tileDescriptor.TileSetTileOpt with
-                    | Some tileSetTile ->
-                        if tileSetTile.Properties.ContainsKey Constants.TileMap.CollisionPropertyName then
-                            let physicsId = { SourceId = tileMap.GetId world; CorrelationId = Gen.idFromInts tileLayerIndex tileIndex }
-                            physicsId :: physicsIds
-                        else physicsIds
-                    | None -> physicsIds)
-                [] tileLayer.Tiles |>
+        let getTileMapBodyShapes tileMap tileMapDescriptor world =
+            tileMapDescriptor.TileMap.Layers |>
+            Seq.fold (fun shapess tileLayer ->
+                let shapes = getTileLayerBodyShapes tileMap tileMapDescriptor tileLayer world
+                shapes :: shapess)
+                [] |>
+            Seq.concat |>
             Seq.toList
+
+        let registerTileMapPhysics (tileMap : Entity) tileMapDescriptor world =
+            let bodyId = (tileMap.GetPhysicsId world).CorrelationId
+            let bodyShapes = getTileMapBodyShapes tileMap tileMapDescriptor world
+            let bodyProperties =
+                { BodyId = bodyId
+                  Position = v2Zero
+                  Rotation = 0.0f
+                  BodyShape = BodyShapes bodyShapes
+                  BodyType = BodyType.Static
+                  Awake = false
+                  Enabled = true
+                  Density = Constants.Physics.NormalDensity
+                  Friction = tileMap.GetFriction world
+                  Restitution = tileMap.GetRestitution world
+                  FixedRotation = true
+                  AngularVelocity = 0.0f
+                  AngularDamping = 0.0f
+                  LinearVelocity = Vector2.Zero
+                  LinearDamping = 0.0f
+                  GravityScale = 0.0f
+                  CollisionCategories = PhysicsEngine.categorizeCollisionMask (tileMap.GetCollisionCategories world)
+                  CollisionMask = PhysicsEngine.categorizeCollisionMask (tileMap.GetCollisionMask world)
+                  IsBullet = false
+                  IsSensor = false }
+            World.createBody tileMap (tileMap.GetId world) bodyProperties world
 
         static member Properties =
             [define Entity.Omnipresent true
+             define Entity.PublishChanges true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackageName Assets.DefaultTileMapName)
              define Entity.TileLayerClearance 2.0f
-             define Entity.Parallax 0.0f]
+             define Entity.Parallax 0.0f
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+
+        override this.Register (tileMap, world) =
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Transform) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Friction) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Restitution) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? CollisionCategories) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? CollisionMask) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? TileMapAsset) tileMap world
+            world
 
         override this.RegisterPhysics (tileMap, world) =
             let tileMapAsset = tileMap.GetTileMapAsset world
             match tryMakeTileMapDescriptor tileMapAsset world with
-            | Some tileMapDescriptor ->
-                Seq.foldi
-                    (registerTileLayerPhysics tileMap tileMapDescriptor)
-                    world
-                    tileMapDescriptor.TileMap.Layers
-            | None ->
-                Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
-                world
+            | Some tileMapDescriptor -> registerTileMapPhysics tileMap tileMapDescriptor world
+            | None -> Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'."); world
 
         override this.UnregisterPhysics (tileMap, world) =
-            let tileMapAsset = tileMap.GetTileMapAsset world
-            match tryMakeTileMapDescriptor tileMapAsset world with
-            | Some tileMapDescriptor ->
-                Seq.foldi
-                    (fun tileLayerIndex world (tileLayer : TmxLayer) ->
-                        let physicsIds = getTileLayerPhysicsIds tileMap tileMapDescriptor tileLayer tileLayerIndex world
-                        World.destroyBodies physicsIds world)
-                    world
-                    tileMapDescriptor.TileMap.Layers
-            | None ->
-                Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
-                world
+            World.destroyBody (tileMap.GetPhysicsId world) world
 
         override this.Actualize (tileMap, world) =
             if tileMap.GetVisible world then
@@ -1120,9 +1106,9 @@ module AnimatedSpriteFacetModule =
             else None
 
         static member Properties =
-            [define Entity.CelCount 16 
-             define Entity.CelSize (Vector2 (16.0f, 16.0f))
+            [define Entity.CelSize (Vector2 (16.0f, 16.0f))
              define Entity.CelRun 4
+             define Entity.CelCount 16
              define Entity.AnimationDelay 4L
              define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")
              define Entity.Flip FlipNone]
@@ -1797,8 +1783,8 @@ module FillBarDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
-             define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackageName "Image10")
-             define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackageName "Image11")]
+             define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackageName "Image11")
+             define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackageName "Image12")]
 
         override this.Actualize (fillBar, world) =
             if fillBar.GetVisible world then
@@ -1863,7 +1849,8 @@ module BlockDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.BodyType Static
+            [define Entity.PublishChanges true
+             define Entity.BodyType Static
              define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
 [<AutoOpen>]
@@ -1877,13 +1864,14 @@ module BoxDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+            [define Entity.PublishChanges true
+             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
 [<AutoOpen>]
 module CharacterDispatcherModule =
 
     type Entity with
-        
+
         member this.GetCharacterIdleImage world = this.Get Property? CharacterIdleImage world
         member this.SetCharacterIdleImage value world = this.SetFast Property? CharacterIdleImage false false value world
         member this.CharacterIdleImage = lens<Image AssetTag> Property? CharacterIdleImage this.GetCharacterIdleImage this.SetCharacterIdleImage this
@@ -1896,7 +1884,7 @@ module CharacterDispatcherModule =
         member this.GetCharacterFacingLeft world = this.Get Property? CharacterFacingLeft world
         member this.SetCharacterFacingLeft value world = this.SetFast Property? CharacterFacingLeft false false value world
         member this.CharacterFacingLeft = lens<bool> Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
-        
+
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
 
@@ -1912,9 +1900,10 @@ module CharacterDispatcherModule =
             [typeof<RigidBodyFacet>]
 
         static member Properties =
-            [define Entity.AnimationDelay 6L
+            [define Entity.PublishChanges true
              define Entity.CelSize (v2 28.0f 28.0f)
              define Entity.CelRun 8
+             define Entity.AnimationDelay 4L
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero; PropertiesOpt = None })
@@ -1980,6 +1969,7 @@ module TileMapDispatcherModule =
 
         static member Properties =
             [define Entity.Omnipresent true
+             define Entity.PublishChanges true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"

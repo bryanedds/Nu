@@ -14,7 +14,7 @@ module OmniField =
         | UpdateAvatar of AvatarModel
         | UpdateFieldTransition
         | UpdateDialog
-        | TouchPortal
+        | UpdatePortal
         | Interact
 
     type [<NoComparison>] FieldCommand =
@@ -32,8 +32,7 @@ module OmniField =
         inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand> (FieldModel.initial)
 
         static let isFacingBodyShape bodyShape (avatar : AvatarModel) world =
-            if  bodyShape.Entity.Exists world &&
-                bodyShape.Entity.Is<PropDispatcher> world then
+            if bodyShape.Entity.Is<PropDispatcher> world then
                 let v = bodyShape.Entity.GetBottom world - avatar.Bottom
                 let direction = Direction.fromVector2 v
                 direction = avatar.Direction
@@ -47,7 +46,6 @@ module OmniField =
         static let tryGetFacingProp (avatar : AvatarModel) world =
             match getFacingBodyShapes avatar world with
             | head :: _ ->
-                // TODO: distance-sort these instead of just taking head
                 let prop = head.Entity.GetPropModel world
                 Some prop.PropData
             | [] -> None
@@ -64,7 +62,7 @@ module OmniField =
                     if Set.contains (Opened chestId) advents then None
                     else Some "Open"
                 | Door _ -> Some "Open"
-                | Portal (_, _, _, _) -> Some "Enter"
+                | Portal (_, _, _, _) -> None
                 | Switch -> Some "Use"
                 | Sensor -> None
                 | Npc _ -> Some "Talk"
@@ -75,12 +73,32 @@ module OmniField =
             | Some prop -> tryGetInteraction3 dialogOpt advents prop
             | None -> None
 
+        static let tryGetFacingProp (avatar : AvatarModel) world =
+            match getFacingBodyShapes avatar world with
+            | head :: _ -> 
+                // TODO: distance-sort these instead of just taking head 
+                let prop = head.Entity.GetPropModel world
+                Some prop.PropData
+            | [] -> None
+
+        static let tryGetTouchingPortal (avatar : AvatarModel) world =
+            let portals =
+                List.choose (fun shape ->
+                    match (shape.Entity.GetPropModel world).PropData with
+                    | Portal (_, fieldType, index, direction) -> Some (fieldType, index, direction)
+                    | _ -> None)
+                    avatar.IntersectedBodyShapes
+            match portals with
+            | head :: _ -> Some head
+            | _ -> None
+
         override this.Channel (_, field) =
-            [field.UpdateEvent => msg UpdateDialog
+            [Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))
+             field.UpdateEvent => msg UpdateDialog
              field.UpdateEvent => msg UpdateFieldTransition
-             field.PostUpdateEvent => cmd UpdateEye
+             field.UpdateEvent => msg UpdatePortal
              Simulants.FieldInteract.ClickEvent => msg Interact
-             Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))]
+             field.PostUpdateEvent => cmd UpdateEye]
 
         override this.Message (model, message, _, world) =
 
@@ -106,13 +124,31 @@ module OmniField =
                     if World.getTickTime world = fieldTransition.FieldTransitionTime then
                         let model = FieldModel.updateFieldType (constant fieldTransition.FieldType) model
                         let model = FieldModel.updateFieldTransitionOpt (constant None) model
-                        let model = FieldModel.updateAvatar (AvatarModel.updateDirection (constant fieldTransition.FieldDirection)) model
+                        let model =
+                            FieldModel.updateAvatar (fun avatar ->
+                                let avatar = AvatarModel.updateDirection (constant fieldTransition.FieldDirection) avatar
+                                let avatar = AvatarModel.updateDirection (constant fieldTransition.FieldDirection) avatar
+                                let avatar = AvatarModel.updateIntersectedBodyShapes (constant []) avatar
+                                avatar)
+                                model
                         withCmd model (MoveAvatar fieldTransition.FieldIndex)
                     else just model
                 | None -> just model
 
-            | TouchPortal ->
-                just model
+            | UpdatePortal ->
+                match model.FieldTransitionOpt with
+                | None ->
+                    match tryGetTouchingPortal model.Avatar world with
+                    | Some (fieldType, index, direction) ->
+                        let transition =
+                            { FieldType = fieldType
+                              FieldIndex = index
+                              FieldDirection = direction
+                              FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
+                        let model = FieldModel.updateFieldTransitionOpt (constant (Some transition)) model
+                        withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.StairStepsSound))
+                    | None -> just model
+                | Some _ -> just model
 
             | Interact ->
                 match model.DialogOpt with
@@ -153,16 +189,8 @@ module OmniField =
                                 let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
                                 let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
                                 withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
-                        | Door (lockType, doorType) ->
-                            just model
-                        | Portal (_, fieldType, index, direction) ->
-                            let transition =
-                                { FieldType = fieldType
-                                  FieldIndex = index
-                                  FieldDirection = direction
-                                  FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
-                            let model = FieldModel.updateFieldTransitionOpt (constant (Some transition)) model
-                            just model
+                        | Door (lockType, doorType) -> just model
+                        | Portal (_, _, _, _) -> just model
                         | Switch -> just model
                         | Sensor -> just model
                         | Npc (_, _, dialog) ->
@@ -181,8 +209,8 @@ module OmniField =
                 just world
 
             | MoveAvatar position ->
-                let physicsId = Simulants.FieldAvatar.GetPhysicsId world
-                let world = World.setBodyPosition position physicsId world
+                let world = Simulants.FieldAvatar.SetCenter position world
+                let world = World.setBodyPosition position (Simulants.FieldAvatar.GetPhysicsId world) world
                 just world
 
             | PlaySound (delay, volume, sound) ->

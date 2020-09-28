@@ -29,10 +29,9 @@ type [<StructuralEquality; NoComparison>] CurrentCommand =
 [<RequireQualifiedAccess>]
 module BattleModel =
 
-    type [<CustomEquality; NoComparison>] BattleModel =
+    type [<ReferenceEquality; NoComparison>] BattleModel =
         private
-            { Dirty_ : Guid
-              BattleState_ : BattleState
+            { BattleState_ : BattleState
               Characters_ : Map<CharacterIndex, CharacterModel>
               Inventory_ : Inventory
               BonusItemOpt_ : ItemType option
@@ -44,10 +43,6 @@ module BattleModel =
         member this.Inventory = this.Inventory_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
-
-        (* Equals *)
-        override this.GetHashCode () = hash this.Dirty_
-        override this.Equals thatObj = match thatObj with :? BattleModel as that -> this.Dirty_ = that.Dirty_ | _ -> false
 
     let getAllies model =
         model.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
@@ -107,13 +102,13 @@ module BattleModel =
         | NoAim -> []
 
     let addCharacter index character (model : BattleModel) =
-        { model with Dirty_ = Gen.id; Characters_ = Map.add index character model.Characters_ }
+        { model with Characters_ = Map.add index character model.Characters_ }
 
     let removeCharacter index (model : BattleModel) =
-        { model with Dirty_ = Gen.id; Characters_ = Map.remove index model.Characters_ }
+        { model with Characters_ = Map.remove index model.Characters_ }
 
     let updateCharactersIf predicate updater (model : BattleModel) =
-        { model with Dirty_ = Gen.id; Characters_ = Map.map (fun index character -> if predicate index then updater character else character) model.Characters_ }
+        { model with Characters_ = Map.map (fun index character -> if predicate index then updater character else character) model.Characters_ }
 
     let updateCharacters updater model =
         updateCharactersIf tautology updater model
@@ -137,38 +132,37 @@ module BattleModel =
         match tryGetCharacter characterIndex model with
         | Some character ->
             let character = updater character
-            { model with Dirty_ = Gen.id; Characters_ = Map.add characterIndex character model.Characters_ }
+            { model with Characters_ = Map.add characterIndex character model.Characters_ }
         | None -> model
 
     let updateCharacter updater characterIndex model =
         let character = getCharacter characterIndex model
         let character = updater character
-        { model with Dirty_ = Gen.id; Characters_ = Map.add characterIndex character model.Characters_ }
+        { model with Characters_ = Map.add characterIndex character model.Characters_ }
 
     let updateBattleState updater model =
-        { model with Dirty_ = Gen.id; BattleState_ = updater model.BattleState_ }
+        { model with BattleState_ = updater model.BattleState_ }
 
     let updateInventory updater model =
-        { model with Dirty_ = Gen.id; Inventory_ = updater model.Inventory_ }
+        { model with Inventory_ = updater model.Inventory_ }
 
     let updateCurrentCommandOpt updater model =
-        { model with Dirty_ = Gen.id; CurrentCommandOpt_ = updater model.CurrentCommandOpt_ }
+        { model with CurrentCommandOpt_ = updater model.CurrentCommandOpt_ }
 
     let updateActionCommands updater model =
-        { model with Dirty_ = Gen.id; ActionCommands_ = updater model.ActionCommands_ }
+        { model with ActionCommands_ = updater model.ActionCommands_ }
 
     let appendActionCommand command model =
-        { model with Dirty_ = Gen.id; ActionCommands_ = Queue.conj command model.ActionCommands }
+        { model with ActionCommands_ = Queue.conj command model.ActionCommands }
 
     let prependActionCommand command model =
-         { model with Dirty_ = Gen.id; ActionCommands_ = Queue.rev model.ActionCommands |> Queue.conj command |> Queue.rev }
+         { model with ActionCommands_ = Queue.rev model.ActionCommands |> Queue.conj command |> Queue.rev }
 
     let make battleData allies inventory bonusItemOpt time =
         let enemies = List.mapi CharacterModel.makeEnemy battleData.BattleEnemies
         let characters = allies @ enemies |> Map.ofListBy (fun (character : CharacterModel) -> (character.CharacterIndex, character))
         let model =
-            { Dirty_ = Gen.id
-              BattleState_ = BattleReady time
+            { BattleState_ = BattleReady time
               Characters_ = characters
               Inventory_ = inventory
               BonusItemOpt_ = bonusItemOpt
@@ -177,8 +171,7 @@ module BattleModel =
         model
 
     let empty =
-        { Dirty_ = Gen.idEmpty
-          BattleState_ = BattleReady 0L
+        { BattleState_ = BattleReady 0L
           Characters_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
           BonusItemOpt_ = None

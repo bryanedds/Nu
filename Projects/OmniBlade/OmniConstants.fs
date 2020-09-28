@@ -23,7 +23,7 @@ module Constants =
         let GuiDepth = 20.0f
         let GuiEffectDepth = 30.0f
         let PropsLayerName = "Props"
-        let TransitionTime = 40L
+        let TransitionTime = 60L
 
     [<RequireQualifiedAccess>]
     module Battle =

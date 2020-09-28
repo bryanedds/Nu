@@ -50,10 +50,9 @@ type FieldTransition =
 [<RequireQualifiedAccess>]
 module FieldModel =
 
-    type [<CustomEquality; NoComparison>] FieldModel =
+    type [<ReferenceEquality; NoComparison>] FieldModel =
         private
-            { Dirty_ : Guid
-              FieldType_ : FieldType
+            { FieldType_ : FieldType
               Avatar_ : AvatarModel
               Legion_ : Map<int, Legionnaire>
               Advents_ : Advent Set
@@ -72,10 +71,6 @@ module FieldModel =
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
 
-        (* Equals *)
-        override this.GetHashCode () = hash this.Dirty_
-        override this.Equals thatObj = match thatObj with :? FieldModel as that -> this.Dirty_ = that.Dirty_ | _ -> false
-
     let getParty fieldModel =
         fieldModel.Legion_ |>
         Map.filter (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt) |>
@@ -84,29 +79,28 @@ module FieldModel =
         Map.ofSeq
 
     let updateFieldType updater fieldModel =
-        { fieldModel with Dirty_ = Gen.id; FieldType_ = updater fieldModel.FieldType_ }
+        { fieldModel with FieldType_ = updater fieldModel.FieldType_ }
 
     let updateAvatar updater fieldModel =
-        { fieldModel with Dirty_ = Gen.id; Avatar_ = updater fieldModel.Avatar_ }
+        { fieldModel with Avatar_ = updater fieldModel.Avatar_ }
 
     let updateAdvents updater fieldModel =
-        { fieldModel with Dirty_ = Gen.id; Advents_ = updater fieldModel.Advents_ }
+        { fieldModel with Advents_ = updater fieldModel.Advents_ }
 
     let updateInventory updater fieldModel =
-        { fieldModel with Dirty_ = Gen.id; Inventory_ = updater fieldModel.Inventory_ }
+        { fieldModel with Inventory_ = updater fieldModel.Inventory_ }
 
     let updateDialogOpt updater fieldModel =
-        { fieldModel with Dirty_ = Gen.id; DialogOpt_ = updater fieldModel.DialogOpt_ }
+        { fieldModel with DialogOpt_ = updater fieldModel.DialogOpt_ }
 
     let updateFieldTransitionOpt updater fieldModel =
-        { fieldModel with Dirty_ = Gen.id; FieldTransitionOpt_ = updater fieldModel.FieldTransitionOpt_ }
+        { fieldModel with FieldTransitionOpt_ = updater fieldModel.FieldTransitionOpt_ }
 
     let updateBattleOpt updater fieldModel =
-        { fieldModel with Dirty_ = Gen.id; BattleOpt_ = updater fieldModel.BattleOpt_ }
+        { fieldModel with BattleOpt_ = updater fieldModel.BattleOpt_ }
 
     let make fieldType avatarModel legion advents inventory =
-        { Dirty_ = Gen.id
-          FieldType_ = fieldType
+        { FieldType_ = fieldType
           Avatar_ = avatarModel
           Legion_ = legion
           Advents_ = advents
@@ -116,8 +110,7 @@ module FieldModel =
           BattleOpt_ = None }
 
     let empty =
-        { Dirty_ = Gen.idEmpty
-          FieldType_ = DebugRoom
+        { FieldType_ = DebugRoom
           Avatar_ = AvatarModel.empty
           Legion_ = Map.empty
           Advents_ = Set.empty
@@ -127,8 +120,7 @@ module FieldModel =
           BattleOpt_ = None }
 
     let initial =
-        { Dirty_ = Gen.id
-          FieldType_ = DebugRoom
+        { FieldType_ = DebugRoom
           Avatar_ = AvatarModel.empty
           Legion_ = Map.ofList [(0, Legionnaire.finn); (1, Legionnaire.glenn)]
           Advents_ = Set.empty

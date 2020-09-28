@@ -860,7 +860,6 @@ module Gaia =
                       Flags = entity.GetFlags world
                       RefCount = 0 }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
-                let world = entity.PropagatePhysics world
                 selectEntity entity form world
                 world
             with exn ->
@@ -1050,7 +1049,6 @@ module Gaia =
                 Globals.pushPastWorld world
                 let world = entity.Diverge world
                 let world = entity.SetSize (entity.GetQuickSize world) world
-                let world = entity.PropagatePhysics world
                 Globals.World <- world // must be set for property grid
                 form.entityPropertyGrid.Refresh ()
                 world
@@ -1343,7 +1341,6 @@ module Gaia =
                         if entity.Has<NodeFacet> world && entity.ParentNodeExists world
                         then entity.SetPositionLocal entityPositionSnapped world
                         else entity.SetPosition entityPositionSnapped world
-                    let world = entity.PropagatePhysics world
                     let world =
                         updateEditorState (fun editorState ->
                             { editorState with DragEntityState = DragEntityPosition (pickOffset, mousePositionWorldOrig, entity) })

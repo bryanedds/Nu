@@ -10,9 +10,6 @@ module PropDispatcherModule =
     type PropMessage =
         | Update
 
-    type PropCommand =
-        | PropagatePhysics
-
     type Entity with
 
         member this.GetPropModel = this.GetModel<PropModel>
@@ -20,7 +17,7 @@ module PropDispatcherModule =
         member this.PropModel = this.Model<PropModel> ()
 
     type PropDispatcher () =
-        inherit EntityDispatcher<PropModel, PropMessage, PropCommand>
+        inherit EntityDispatcher<PropModel, PropMessage, unit>
             (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f Set.empty PropData.empty NilState)
 
         static member Facets =
@@ -32,10 +29,7 @@ module PropDispatcherModule =
              define Entity.GravityScale 0.0f]
 
         override this.Channel (_, entity) =
-            [entity.UpdateEvent => msg Update
-             entity.ChangeEvent Property? Bounds => cmd PropagatePhysics
-             entity.ChangeEvent Property? IsSensor => cmd PropagatePhysics
-             entity.ChangeEvent Property? BodyShape => cmd PropagatePhysics]
+            [entity.UpdateEvent => msg Update]
 
         override this.Initializers (model, entity) =
             [entity.BodyType == Static
@@ -50,7 +44,7 @@ module PropDispatcherModule =
                 | _ -> false
              entity.BodyShape <== model --> fun model ->
                 match model.PropData with
-                | Npc _ -> BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                | Npc _ -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
                 | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
 
         override this.Message (model, message, entity, world) =
@@ -58,12 +52,6 @@ module PropDispatcherModule =
             | Update ->
                 let model = PropModel.updateBounds (constant (entity.GetBounds world)) model
                 just model
-
-        override this.Command (_, command, entity, world) =
-            match command with
-            | PropagatePhysics ->
-                let world = entity.PropagatePhysics world
-                just world
 
         override this.View (model, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
@@ -90,7 +78,7 @@ module PropDispatcherModule =
                                 | DoorState opened -> if opened then Assets.WoodenDoorOpenedImage else Assets.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
                         (None, image)
-                    | Portal (_, _, _, _) -> (None, Assets.CancelImage)
+                    | Portal (_, _, _, _) -> (None, Assets.EmptyImage)
                     | Switch -> (None, Assets.CancelImage)
                     | Sensor -> (None, Assets.CancelImage)
                     | Npc (npcType, direction, _) ->
