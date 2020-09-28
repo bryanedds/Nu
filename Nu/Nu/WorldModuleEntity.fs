@@ -215,7 +215,7 @@ module WorldModuleEntity =
             | _ ->
                 let boundsOverflow = Math.makeBoundsOverflow transform.Position transform.Size entityState.Overflow
                 let position = boundsOverflow.Xy
-                let size = Vector2 (boundsOverflow.Z, boundsOverflow.W) - position
+                let size = Vector2 (boundsOverflow.Z, boundsOverflow.W)
                 let center = position + size * 0.5f
                 let corner = position + size
                 let centerToCorner = corner - center
@@ -359,7 +359,7 @@ module WorldModuleEntity =
                 let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 if World.getEntityPublishChanges entity world then
                     let world = World.publishEntityChange Property? Transform value entity world
-                    let world = World.publishEntityChange Property? Bounds (v4 value.Position.X value.Position.Y (value.Position.X + value.Size.X) (value.Position.Y + value.Size.Y)) entity world
+                    let world = World.publishEntityChange Property? Bounds (v4Bounds value.Position value.Size) entity world
                     let world = World.publishEntityChange Property? Position value.Position entity world
                     let world = World.publishEntityChange Property? Center (value.Position + value.Size * 0.5f) entity world
                     let world = World.publishEntityChange Property? Bottom (value.Position + value.Size.WithY 0.0f * 0.5f) entity world
@@ -372,7 +372,7 @@ module WorldModuleEntity =
 
         static member internal getEntityBounds entity world =
             let transform = (World.getEntityState entity world).Transform
-            v4 transform.Position.X transform.Position.Y (transform.Position.X + transform.Size.X) (transform.Position.Y + transform.Size.Y)
+            v4 transform.Position.X transform.Position.Y transform.Size.X transform.Size.Y
 
         static member internal setEntityBounds (value : Vector4) entity world =
             let transform = World.getEntityTransform entity world

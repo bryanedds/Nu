@@ -239,14 +239,12 @@ module Vector4 =
     let v4UnitY = Vector4.UnitY
     let v4UnitZ = Vector4.UnitZ
     let v4UnitW = Vector4.UnitW
-    let v4Bounds (position : Vector2) (size : Vector2) = v4 position.X position.Y (position.X + size.X) (position.Y + size.Y)
+    let v4Bounds (position : Vector2) (size : Vector2) = v4 position.X position.Y size.X size.Y
     let v4BoundsOverflow (position : Vector2) (size : Vector2) (overflow : Vector2) =
-        let sizeHalf = size * 0.5f
-        let center = position + sizeHalf
-        let sizeHalfOverflow = Vector2.Multiply (sizeHalf, overflow + Vector2.One)
-        let xy = center - sizeHalfOverflow
-        let x2y2 = center + sizeHalfOverflow
-        v4 xy.X xy.Y x2y2.X x2y2.Y
+        let overflow2 = size * overflow
+        let position2 = position - overflow2 * 0.5f
+        let size2 = size + overflow2
+        v4Bounds position2 size2
 
 /// The Vector4 value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector4Pluggable =
@@ -490,14 +488,7 @@ module Vector4i =
     let v4iUnitY = Vector4i.UnitY
     let v4iUnitZ = Vector4i.UnitZ
     let v4iUnitW = Vector4i.UnitW
-    let v4iBounds (position : Vector2i) (size : Vector2i) = v4i position.X position.Y (position.X + size.X) (position.Y + size.Y)
-    let v4iBoundsOverflow (position : Vector2i) (size : Vector2i) (overflow : Vector2i) =
-        let sizeHalf = size / 2
-        let center = position + sizeHalf
-        let sizeHalfOverflow = Vector2i.Multiply (sizeHalf, overflow + Vector2i.One)
-        let xy = center - sizeHalfOverflow
-        let x2y2 = center + sizeHalfOverflow
-        v4i xy.X xy.Y x2y2.X x2y2.Y
+    let v4iBounds (position : Vector2i) (size : Vector2i) = v4i position.X position.Y size.X size.Y
 
 /// The Vector4 value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector4iPluggable =
@@ -642,23 +633,23 @@ module Math =
     /// Check that a point is within the given bounds.
     let isPointInBounds (point : Vector2) (bounds : Vector4) =
         point.X >= bounds.X &&
-        point.X <= bounds.Z &&
         point.Y >= bounds.Y &&
-        point.Y <= bounds.W
+        point.X <= bounds.X + bounds.Z &&
+        point.Y <= bounds.Y + bounds.W
 
     /// Check that a bounds is within the given bounds.
     let isBoundsInBounds (bounds : Vector4) (bounds2 : Vector4) =
         bounds.X >= bounds2.X &&
-        bounds.Z <= bounds2.Z &&
         bounds.Y >= bounds2.Y &&
-        bounds.W <= bounds2.W
+        bounds.X + bounds.Z <= bounds2.X + bounds2.Z &&
+        bounds.Y + bounds.W <= bounds2.Y + bounds2.W
 
     /// Check that a bounds is intersecting the given bounds.
     let isBoundsIntersectingBounds (bounds : Vector4) (bounds2 : Vector4) =
-        bounds.X < bounds2.Z &&
-        bounds.Z > bounds2.X &&
-        bounds.Y < bounds2.W &&
-        bounds.W > bounds2.Y
+        bounds.X < bounds2.X + bounds2.Z &&
+        bounds.Y < bounds2.Y + bounds2.W &&
+        bounds.X + bounds.Z > bounds2.X &&
+        bounds.Y + bounds.W > bounds2.Y
 
     /// Make a Vector2 center value.
     let makeCenter position size =
