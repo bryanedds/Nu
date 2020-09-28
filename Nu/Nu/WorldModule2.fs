@@ -511,7 +511,7 @@ module WorldModule2 =
                 | SDL.SDL_EventType.SDL_QUIT ->
                     World.exit world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
-                    let mousePosition = Vector2 (single evt.button.x, single evt.button.y)
+                    let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
                             let eventTrace = EventTrace.record4 "World" "processInput" "MouseDrag" EventTrace.empty

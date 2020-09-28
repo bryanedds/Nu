@@ -407,7 +407,7 @@ module TextFacetModule =
              define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName Assets.DefaultFontName)
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.TextColor (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
+             define Entity.TextColor (v4 0.0f 0.0f 0.0f 1.0f)]
 
         override this.Actualize (text, world) =
             let textStr = text.GetText world
@@ -796,7 +796,7 @@ module TileMapFacetModule =
                                         Seq.skip (j * map.Width) |>
                                         Seq.take map.Width |>
                                         Seq.toArray
-                                    if World.isBoundsInView absolute (Math.makeBounds parallaxPosition size) world then
+                                    if World.isBoundsInView absolute (v4Bounds parallaxPosition size) world then
                                         World.enqueueRenderMessage
                                             (LayeredDescriptorMessage
                                                 { Depth = transform.Depth

@@ -328,8 +328,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             Vector2
                                 (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f,
                                 -(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
-                        let tileBounds = Math.makeBounds tilePosition tileSize
-                        let viewBounds = Math.makeBounds Vector2.Zero eyeSize
+                        let tileBounds = v4Bounds tilePosition tileSize
+                        let viewBounds = v4Bounds Vector2.Zero eyeSize
                         if Math.isBoundsIntersectingBounds tileBounds viewBounds then
                             let gid = tile.Gid - tileSet.FirstGid
                             let gidPosition = gid * tileSourceSize.X
@@ -408,7 +408,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             | JustifyTop -> 0.0f
                             | JustifyMiddle -> (sizeView.Y - single !height) * 0.5f
                             | JustifyBottom -> sizeView.Y - single !height
-                        (Vector2 (offsetX, offsetY), textSurface)
+                        (v2 offsetX offsetY, textSurface)
                 if textSurface <> IntPtr.Zero then
                     let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
                     let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture textTexture
