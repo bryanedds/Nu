@@ -44,6 +44,7 @@ module BulletModule =
         static member Properties =
             [define Entity.Size (Vector2 (20.0f, 20.0f))
              define Entity.Omnipresent true
+             define Entity.PublishChanges true
              define Entity.Density 0.1f
              define Entity.Restitution 0.5f
              define Entity.LinearDamping 0.0f
@@ -107,7 +108,8 @@ module EnemyModule =
              typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (48.0f, 96.0f))
+            [define Entity.PublishChanges true
+             define Entity.Size (Vector2 (48.0f, 96.0f))
              define Entity.Friction 0.0f
              define Entity.FixedRotation true
              define Entity.LinearDamping 3.0f
@@ -150,7 +152,6 @@ module PlayerModule =
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetDepth playerTransform.Depth world
-            let world = bullet.PropagatePhysics world
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
@@ -217,7 +218,8 @@ module PlayerModule =
              typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (48.0f, 96.0f))
+            [define Entity.PublishChanges true
+             define Entity.Size (Vector2 (48.0f, 96.0f))
              define Entity.FixedRotation true
              define Entity.Friction 0.0f
              define Entity.LinearDamping 3.0f
@@ -288,9 +290,7 @@ module GameplayModule =
 
         static let shiftEntities xShift entities world =
             Seq.fold
-                (fun world (entity : Entity) ->
-                    let world = entity.SetPosition (entity.GetPosition world + Vector2 (xShift, 0.0f)) world
-                    entity.PropagatePhysics world)
+                (fun world (entity : Entity) -> entity.SetPosition (entity.GetPosition world + Vector2 (xShift, 0.0f)) world)
                 world
                 entities
 
