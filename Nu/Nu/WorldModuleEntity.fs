@@ -210,17 +210,17 @@ module WorldModuleEntity =
             let transform = entityState.Transform
             match transform.Rotation with
             | 0.0f ->
-                let boundsOverflow = Math.makeBoundsOverflow transform.Position transform.Size entityState.Overflow
+                let boundsOverflow = v4BoundsOverflow transform.Position transform.Size entityState.Overflow
                 boundsOverflow // no need to transform when unrotated
             | _ ->
-                let boundsOverflow = Math.makeBoundsOverflow transform.Position transform.Size entityState.Overflow
+                let boundsOverflow = v4BoundsOverflow transform.Position transform.Size entityState.Overflow
                 let position = boundsOverflow.Xy
                 let size = boundsOverflow.Zw
                 let center = position + size * 0.5f
                 let corner = position + size
                 let centerToCorner = corner - center
                 let quaternion = Quaternion.FromAxisAngle (Vector3.UnitZ, Constants.Math.DegreesToRadiansF * 45.0f)
-                let newSizeOver2 = Vector2 (Vector2.Transform (centerToCorner, quaternion)).Y
+                let newSizeOver2 = v2Dup (Vector2.Transform (centerToCorner, quaternion)).Y
                 let newPosition = center - newSizeOver2
                 let newSize = newSizeOver2 * 2.0f
                 v4Bounds newPosition newSize

@@ -314,7 +314,7 @@ module EffectSystem =
         let celY = celJ * celSize.Y
         let celPosition = Vector2 (single celX, single celY)
         let celSize = Vector2 (single celSize.X, single celSize.Y)
-        Math.makeBounds celPosition celSize
+        v4Bounds celPosition celSize
     let evalArgument (argument : Argument) : Definition =
         match argument with
         | SymbolicCompressionA resource ->

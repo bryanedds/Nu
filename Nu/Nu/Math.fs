@@ -215,7 +215,7 @@ type Vector3Converter () =
 module Vector4 =
 
     type Vector4 with
-        member this.Translate (translation : Vector2) = Vector4 (this.X + translation.X, this.Y + translation.Y, this.Z + translation.X, this.W + translation.Y)
+        member this.Translate (translation : Vector2) = Vector4 (this.X + translation.X, this.Y + translation.Y, this.Z, this.W)
         member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
         member this.MapZ mapper = Vector4 (this.X, this.Y, mapper this.Z, this.W)
@@ -650,18 +650,6 @@ module Math =
         bounds.Y < bounds2.Y + bounds2.W &&
         bounds.X + bounds.Z > bounds2.X &&
         bounds.Y + bounds.W > bounds2.Y
-
-    /// Make a Vector2 center value.
-    let makeCenter position size =
-        v2Center position size
-
-    /// Make a Vector4 bounds value.
-    let makeBounds position size =
-        v4Bounds position size
-
-    /// Make a Vector4 bounds value, taking into consideration overflow.
-    let makeBoundsOverflow position size overflow =
-        v4BoundsOverflow position size overflow
 
     /// Get the view of the eye in absolute terms (world space).
     let getViewAbsolute (_ : Vector2) (_ : Vector2) =

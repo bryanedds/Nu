@@ -425,7 +425,7 @@ module WorldTypes =
         /// Make a game state value.
         static member make (dispatcher : GameDispatcher) =
             let eyeCenter = Vector2.Zero
-            let eyeSize = Vector2 (single Constants.Render.DefaultResolutionX, single Constants.Render.DefaultResolutionY)
+            let eyeSize = v2 (single Constants.Render.DefaultResolutionX) (single Constants.Render.DefaultResolutionY)
             { Id = Gen.id
               Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
