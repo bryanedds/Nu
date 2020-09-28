@@ -43,7 +43,7 @@ module OmniCharacter =
             let statuses = model.Statuses
             if CharacterModel.isAutoBattling model then Vector4 (1.0f,0.0f,0.0f,pulseIntensity) // red
             elif Set.contains PoisonStatus statuses then Vector4 (0.0f,1.0f,0.0f,pulseIntensity) // green
-            elif Set.contains MuteStatus statuses then Vector4 (0.1f,1.0f,0.0f,pulseIntensity) // orange
+            elif Set.contains MuteStatus statuses then Vector4 (1.0f,1.0f,0.0f,pulseIntensity) // orange
             elif Set.contains SleepStatus statuses then Vector4 (0.0f,0.0f,1.0f,pulseIntensity) // blue
             else Vector4.Zero
 

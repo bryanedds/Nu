@@ -166,8 +166,8 @@ module OmniField =
                                 | Some battleData ->
                                     let legionnaires = Map.toValueList (FieldModel.getParty model)
                                     let allies =
-                                        List.map
-                                            (fun legionnaire ->
+                                        List.mapi
+                                            (fun i legionnaire ->
                                                 match Map.tryFind legionnaire.CharacterType data.Value.Characters with
                                                 | Some characterData ->
                                                     // TODO: bounds checking
@@ -177,7 +177,8 @@ module OmniField =
                                                     let characterState = CharacterState.make characterData legionnaire.ExpPoints legionnaire.WeaponOpt legionnaire.ArmorOpt legionnaire.Accessories
                                                     let animationSheet = characterData.AnimationSheet
                                                     let direction = Direction.fromVector2 -bounds.Bottom
-                                                    CharacterModel.make bounds characterIndex characterState animationSheet direction
+                                                    let character = CharacterModel.make bounds characterIndex characterState animationSheet direction
+                                                    CharacterModel.updateActionTime (constant (inc i * 333)) character
                                                 | None -> failwith ("Could not find CharacterData for '" + scstring legionnaire.CharacterType + "'."))
                                             legionnaires
                                     let battleModel = BattleModel.make battleData allies model.Inventory (Some itemType) (World.getTickTime world)
