@@ -499,7 +499,8 @@ module RigidBodyFacetModule =
             World.localizeBodyShape (entity.GetSize world) (entity.GetBodyShape world) world
 
         static member Properties =
-            [define Entity.BodyType Dynamic
+            [define Entity.PublishChanges true
+             define Entity.BodyType Dynamic
              define Entity.Awake true
              define Entity.Density Constants.Physics.NormalDensity
              define Entity.Friction 0.2f
@@ -516,6 +517,25 @@ module RigidBodyFacetModule =
              define Entity.IsBullet false
              define Entity.IsSensor false
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+
+        override this.Register (entity, world) =
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyType) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Awake) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Density) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Friction) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Restitution) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularVelocity) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularDamping) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? LinearVelocity) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? LinearDamping) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? GravityScale) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyShape) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IsBullet) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IsSensor) entity world
+            world
 
         override this.RegisterPhysics (entity, world) =
             let bodyProperties = 
@@ -557,8 +577,14 @@ module JointFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.JointDevice JointEmpty
+            [define Entity.PublishChanges true
+             define Entity.JointDevice JointEmpty
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+
+        override this.Register (tileMap, world) =
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Transform) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? JointDevice) tileMap world
+            world
 
         override this.RegisterPhysics (entity, world) =
             let jointProperties =
@@ -712,7 +738,7 @@ module TileMapFacetModule =
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (tileMap, world) =
-            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Position) tileMap world
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Transform) tileMap world
             let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Friction) tileMap world
             let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Restitution) tileMap world
             let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? CollisionCategories) tileMap world
@@ -1080,9 +1106,9 @@ module AnimatedSpriteFacetModule =
             else None
 
         static member Properties =
-            [define Entity.CelCount 16 
-             define Entity.CelSize (Vector2 (16.0f, 16.0f))
+            [define Entity.CelSize (Vector2 (16.0f, 16.0f))
              define Entity.CelRun 4
+             define Entity.CelCount 16
              define Entity.AnimationDelay 4L
              define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")
              define Entity.Flip FlipNone]
@@ -1823,7 +1849,8 @@ module BlockDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.BodyType Static
+            [define Entity.PublishChanges true
+             define Entity.BodyType Static
              define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
 [<AutoOpen>]
@@ -1837,13 +1864,14 @@ module BoxDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+            [define Entity.PublishChanges true
+             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
 
 [<AutoOpen>]
 module CharacterDispatcherModule =
 
     type Entity with
-        
+
         member this.GetCharacterIdleImage world = this.Get Property? CharacterIdleImage world
         member this.SetCharacterIdleImage value world = this.SetFast Property? CharacterIdleImage false false value world
         member this.CharacterIdleImage = lens<Image AssetTag> Property? CharacterIdleImage this.GetCharacterIdleImage this.SetCharacterIdleImage this
@@ -1856,7 +1884,7 @@ module CharacterDispatcherModule =
         member this.GetCharacterFacingLeft world = this.Get Property? CharacterFacingLeft world
         member this.SetCharacterFacingLeft value world = this.SetFast Property? CharacterFacingLeft false false value world
         member this.CharacterFacingLeft = lens<bool> Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
-        
+
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
 
@@ -1872,9 +1900,10 @@ module CharacterDispatcherModule =
             [typeof<RigidBodyFacet>]
 
         static member Properties =
-            [define Entity.AnimationDelay 6L
+            [define Entity.PublishChanges true
              define Entity.CelSize (v2 28.0f 28.0f)
              define Entity.CelRun 8
+             define Entity.AnimationDelay 4L
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero; PropertiesOpt = None })

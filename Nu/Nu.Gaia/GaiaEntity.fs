@@ -122,7 +122,6 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                         let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                         let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                         PropertyDescriptor.trySetValue alwaysPublish nonPersistent propertyDescriptor value entity world |> snd
-                let world = entity.PropagatePhysics world
                 Globals.World <- world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world
