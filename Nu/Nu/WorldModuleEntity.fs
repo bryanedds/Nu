@@ -296,9 +296,10 @@ module WorldModuleEntity =
             let (changed, world) =
                 World.updateEntityStateWithoutEvent
                     (fun entityState ->
-                        if value <> entityState.Transform
-                        then Some (EntityState.setTransform value entityState)
-                        else None)
+                        if value <> entityState.Transform then
+                            EntityState.setTransform value entityState
+                            true
+                        else false)
                     entity world
             if changed
             then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world

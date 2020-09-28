@@ -680,6 +680,14 @@ module WorldTypes =
             entityState.Xtension <- xtension
             true
 
+        /// Get an entity state's transform.
+        static member getTransform entityState =
+            entityState.Transform
+
+        /// Set an entity state's transform.
+        static member setTransform (value : Transform) (entityState : EntityState) =
+            entityState.Transform.Assign value
+
         /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy (entityState : EntityState) =
             { entityState with EntityState.Dispatcher = entityState.Dispatcher }
