@@ -259,8 +259,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 | Some inset ->
                     sourceRect.x <- int inset.X
                     sourceRect.y <- int inset.Y
-                    sourceRect.w <- int (inset.Z - inset.X)
-                    sourceRect.h <- int (inset.W - inset.Y)
+                    sourceRect.w <- int inset.Z
+                    sourceRect.h <- int inset.W
                 | None ->
                     sourceRect.x <- 0
                     sourceRect.y <- 0

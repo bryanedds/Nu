@@ -215,7 +215,7 @@ module WorldModuleEntity =
             | _ ->
                 let boundsOverflow = Math.makeBoundsOverflow transform.Position transform.Size entityState.Overflow
                 let position = boundsOverflow.Xy
-                let size = Vector2 (boundsOverflow.Z, boundsOverflow.W)
+                let size = boundsOverflow.Zw
                 let center = position + size * 0.5f
                 let corner = position + size
                 let centerToCorner = corner - center
@@ -223,7 +223,7 @@ module WorldModuleEntity =
                 let newSizeOver2 = Vector2 (Vector2.Transform (centerToCorner, quaternion)).Y
                 let newPosition = center - newSizeOver2
                 let newSize = newSizeOver2 * 2.0f
-                Vector4 (newPosition.X, newPosition.Y, newPosition.X + newSize.X, newPosition.Y + newSize.Y)
+                v4Bounds newPosition newSize
 
         static member internal getEntityImperative entity world =
             (World.getEntityState entity world).Imperative
@@ -372,11 +372,11 @@ module WorldModuleEntity =
 
         static member internal getEntityBounds entity world =
             let transform = (World.getEntityState entity world).Transform
-            v4 transform.Position.X transform.Position.Y transform.Size.X transform.Size.Y
+            v4Bounds transform.Position transform.Size
 
         static member internal setEntityBounds (value : Vector4) entity world =
             let transform = World.getEntityTransform entity world
-            let transform = { transform with Position = v2 value.X value.Y; Size = v2 value.Z value.W - v2 value.X value.Y }
+            let transform = { transform with Position = v2 value.X value.Y; Size = v2 value.Z value.W }
             World.setEntityTransform transform entity world
 
         static member internal getEntityCenter entity world =

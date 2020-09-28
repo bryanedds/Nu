@@ -236,7 +236,7 @@ type [<StructuralEquality; NoComparison>] CharacterAnimationState =
 
     static member indexSaturatedWithDirection run stutter offset time state =
         let position = CharacterAnimationState.directionToInt state.Direction * run
-        let position =  Vector2i (CharacterAnimationState.indexSaturated run stutter time state + position, 0)
+        let position = Vector2i (CharacterAnimationState.indexSaturated run stutter time state + position, 0)
         let position = position + offset
         position
 

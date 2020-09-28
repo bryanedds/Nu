@@ -88,9 +88,9 @@ module Effects =
                  [|Inset
                     (Set, Constant, Once,
                      [|{ TweenValue = v4 0.0f   0.0f    256.0f  1024.0f; TweenLength = 5L }
-                       { TweenValue = v4 256.0f 0.0f    512.0f  1024.0f; TweenLength = 5L }
-                       { TweenValue = v4 512.0f 0.0f    768.0f  1024.0f; TweenLength = 5L }
-                       { TweenValue = v4 512.0f 0.0f    768.0f  1024.0f; TweenLength = 65L }|])
+                       { TweenValue = v4 256.0f 0.0f    256.0f  1024.0f; TweenLength = 5L }
+                       { TweenValue = v4 512.0f 0.0f    256.0f  1024.0f; TweenLength = 5L }
+                       { TweenValue = v4 512.0f 0.0f    256.0f  1024.0f; TweenLength = 65L }|])
                    Color
                     (Set, EaseOut, Once,
                      [|{ TweenValue = v4One; TweenLength = 40L }
