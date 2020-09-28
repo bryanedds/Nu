@@ -76,7 +76,7 @@ module OmniField =
         static let tryGetFacingProp (avatar : AvatarModel) world =
             match getFacingBodyShapes avatar world with
             | head :: _ -> 
-                // TODO: distance-sort these instead of just taking head
+                // TODO: distance-sort these instead of just taking head 
                 let prop = head.Entity.GetPropModel world
                 Some prop.PropData
             | [] -> None
