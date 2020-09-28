@@ -1101,7 +1101,7 @@ module AnimatedSpriteFacetModule =
                 let celJ = cel / celRun
                 let celX = single celI * celSize.X
                 let celY = single celJ * celSize.Y
-                let inset = Vector4 (celX, celY, celX + celSize.X, celY + celSize.Y)
+                let inset = v4Bounds (v2 celX celY) celSize
                 Some inset
             else None
 
@@ -1894,7 +1894,7 @@ module CharacterDispatcherModule =
             let i = single (frame % 3L)
             let j = single (frame / 3L)
             let offset = v2 (i * celSize.X) (j * celSize.Y) 
-            v4 offset.X offset.Y (offset.X + celSize.X) (offset.Y + celSize.Y)
+            v4Bounds offset celSize
 
         static member Facets =
             [typeof<RigidBodyFacet>]
