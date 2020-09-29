@@ -23,7 +23,7 @@
   </properties>
   <object id="23" gid="488" x="896" y="768" width="160" height="160">
    <properties>
-    <property name="I" value="[Npc VillageMan Downward [&quot;If the war inside my head...&quot; &quot;Won't take a day, I'll be dead.&quot;]]"/>
+    <property name="I" value="[Npc VillageMan Downward [&quot;If the war inside my head...&quot; &quot;Won't take a day off, I'll be dead.&quot;]]"/>
    </properties>
   </object>
   <object id="25" gid="488" x="960" y="192" width="128" height="32">
