@@ -60,6 +60,7 @@
     <Compile Include="Vector2i.cs" />
     <Compile Include="Vector3i.cs" />
     <Compile Include="Vector3.cs" />
+    <Compile Include="Color.cs" />
     <Compile Include="Vector4i.cs" />
     <Compile Include="Vector4.cs" />
   </ItemGroup>
