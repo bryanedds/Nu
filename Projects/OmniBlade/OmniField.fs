@@ -235,7 +235,7 @@ module OmniField =
                      Entity.Color <== model --> fun model ->
                         match data.Value.Fields.TryGetValue model.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
-                        | (false, _) -> v4Zero.WithW 1.0f]
+                        | (false, _) -> Color.Black]
 
                  // portal fade sprite
                  Content.staticSprite Simulants.FieldPortalFade.Name
@@ -253,8 +253,8 @@ module OmniField =
                                 if deltaTime < halfTransitionTime
                                 then deltaTime / halfTransitionTime
                                 else 1.0f - (deltaTime - halfTransitionTime) / halfTransitionTime
-                            v4Zero.WithW progress
-                        | None -> v4Zero]
+                            Color.Black.WithA (byte (progress * 255.0f))
+                        | None -> Color.Zero]
 
                  // tile map
                  Content.tileMap Simulants.FieldTileMap.Name

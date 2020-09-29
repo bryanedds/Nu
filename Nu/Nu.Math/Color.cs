@@ -55,6 +55,16 @@ namespace Nu
         public static readonly Color One = new Color(1, 1, 1, 1);
 
         /// <summary>
+        /// The white color.
+        /// </summary>
+        public static readonly Color White = new Color(255, 255, 255, 255);
+
+        /// <summary>
+        /// The black color.
+        /// </summary>
+        public static readonly Color Black = new Color(0, 0, 0, 255);
+
+        /// <summary>
         /// Defines the size of the <see cref="Color"/> struct in bytes.
         /// </summary>
         public static readonly int SizeInBytes = Marshal.SizeOf<Color>();
@@ -200,7 +210,7 @@ namespace Nu
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
         [Pure]
-        public static Color Multiply(Color color, byte scale)
+        public static Color Multiply(Color color, float scale)
         {
             Multiply(ref color, scale, out color);
             return color;
@@ -212,7 +222,7 @@ namespace Nu
         /// <param name="color">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Multiply(ref Color color, byte scale, out Color result)
+        public static void Multiply(ref Color color, float scale, out Color result)
         {
             result.R = (byte)(color.R * scale);
             result.G = (byte)(color.G * scale);
@@ -241,10 +251,10 @@ namespace Nu
         /// <param name="result">Result of the operation.</param>
         public static void Multiply(ref Color color, ref Color scale, out Color result)
         {
-            result.R = (byte)(color.R * scale.R);
-            result.G = (byte)(color.G * scale.G);
-            result.B = (byte)(color.B * scale.B);
-            result.A = (byte)(color.A * scale.A);
+            result.R = (byte)(color.R * (scale.R / 255.0f));
+            result.G = (byte)(color.G * (scale.G / 255.0f));
+            result.B = (byte)(color.B * (scale.B / 255.0f));
+            result.A = (byte)(color.A * (scale.A / 255.0f));
         }
 
         /// <summary>
@@ -254,7 +264,7 @@ namespace Nu
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
         [Pure]
-        public static Color Divide(Color color, byte scale)
+        public static Color Divide(Color color, float scale)
         {
             Divide(ref color, scale, out color);
             return color;
@@ -266,7 +276,7 @@ namespace Nu
         /// <param name="color">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <param name="result">Result of the operation.</param>
-        public static void Divide(ref Color color, byte scale, out Color result)
+        public static void Divide(ref Color color, float scale, out Color result)
         {
             result.R = (byte)(color.R / scale);
             result.G = (byte)(color.G / scale);
@@ -295,10 +305,10 @@ namespace Nu
         /// <param name="result">Result of the operation.</param>
         public static void Divide(ref Color color, ref Color scale, out Color result)
         {
-            result.R = (byte)(color.R / scale.R);
-            result.G = (byte)(color.G / scale.G);
-            result.B = (byte)(color.B / scale.B);
-            result.A = (byte)(color.A / scale.A);
+            result.R = (byte)(color.R / (scale.R / 255.0f));
+            result.G = (byte)(color.G / (scale.G / 255.0f));
+            result.B = (byte)(color.B / (scale.B / 255.0f));
+            result.A = (byte)(color.A / (scale.A / 255.0f));
         }
 
         /// <summary>
@@ -454,12 +464,12 @@ namespace Nu
         /// <param name="scale">The scalar.</param>
         /// <returns>The result of the calculation.</returns>
         [Pure]
-        public static Color operator *(Color color, byte scale)
+        public static Color operator *(Color color, float scale)
         {
-            color.R *= scale;
-            color.G *= scale;
-            color.B *= scale;
-            color.A *= scale;
+            color.R = (byte)(color.R * scale);
+            color.G = (byte)(color.G * scale);
+            color.B = (byte)(color.B * scale);
+            color.A = (byte)(color.A * scale);
             return color;
         }
 
@@ -470,12 +480,12 @@ namespace Nu
         /// <param name="color">The instance.</param>
         /// <returns>The result of the calculation.</returns>
         [Pure]
-        public static Color operator *(byte scale, Color color)
+        public static Color operator *(float scale, Color color)
         {
-            color.R *= scale;
-            color.G *= scale;
-            color.B *= scale;
-            color.A *= scale;
+            color.R = (byte)(color.R * scale);
+            color.G = (byte)(color.G * scale);
+            color.B = (byte)(color.B * scale);
+            color.A = (byte)(color.A * scale);
             return color;
         }
 
@@ -488,10 +498,10 @@ namespace Nu
         [Pure]
         public static Color operator *(Color color, Color scale)
         {
-            color.R *= scale.R;
-            color.G *= scale.G;
-            color.B *= scale.B;
-            color.A *= scale.A;
+            color.R = (byte)(color.R * (scale.R / 255.0f));
+            color.G = (byte)(color.G * (scale.G / 255.0f));
+            color.B = (byte)(color.B * (scale.B / 255.0f));
+            color.A = (byte)(color.A * (scale.A / 255.0f));
             return color;
         }
 
@@ -502,12 +512,12 @@ namespace Nu
         /// <param name="scale">The scalar.</param>
         /// <returns>The result of the calculation.</returns>
         [Pure]
-        public static Color operator /(Color color, byte scale)
+        public static Color operator /(Color color, float scale)
         {
-            color.R /= scale;
-            color.G /= scale;
-            color.B /= scale;
-            color.A /= scale;
+            color.R = (byte)(color.R / scale);
+            color.G = (byte)(color.G / scale);
+            color.B = (byte)(color.B / scale);
+            color.A = (byte)(color.A / scale);
             return color;
         }
 

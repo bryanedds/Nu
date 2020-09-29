@@ -107,7 +107,7 @@ module PropDispatcherModule =
                           Offset = Vector2.Zero
                           InsetOpt = insetOpt
                           Image = image
-                          Color = v4One
-                          Glow = v4Zero
+                          Color = Color.White
+                          Glow = Color.Zero
                           Flip = FlipNone })]
             else []

@@ -160,7 +160,7 @@ module AvatarDispatcherModule =
                           Offset = Vector2.Zero
                           InsetOpt = Some (getSpriteInset entity world)
                           Image = model.AnimationSheet
-                          Color = v4One
-                          Glow = v4Zero
+                          Color = Color.White
+                          Glow = Color.Zero
                           Flip = FlipNone })]
             else []
