@@ -44,7 +44,10 @@ module PropDispatcherModule =
                 | _ -> false
              entity.BodyShape <== model --> fun model ->
                 match model.PropData with
-                | Npc _ -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                | Npc _ ->
+                    match model.PropState with
+                    | NpcState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                    | _ -> BodyEmpty
                 | Door _ ->
                     match model.PropState with
                     | DoorState true -> BodyEmpty
@@ -85,23 +88,26 @@ module PropDispatcherModule =
                     | Portal (_, _, _, _, _) -> (None, Assets.EmptyImage)
                     | Switch _ -> (None, Assets.CancelImage)
                     | Sensor -> (None, Assets.CancelImage)
-                    | Npc (npcType, direction, _) ->
-                        let image = Assets.NpcAnimationSheet
-                        let row =
-                            match npcType with
-                            | VillageMan -> 0
-                            | VillageWoman -> 1
-                            | VillageBoy -> 2
-                            | VillageGirl -> 3
-                        let column =
-                            match direction with
-                            | Downward -> 0
-                            | Leftward -> 1
-                            | Upward -> 2
-                            | Rightward -> 3
-                        let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
-                        let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
-                        (Some inset, image)
+                    | Npc (npcType, direction, _, _) ->
+                        match model.PropState with
+                        | NpcState true ->
+                            let image = Assets.NpcAnimationSheet
+                            let row =
+                                match npcType with
+                                | VillageMan -> 0
+                                | VillageWoman -> 1
+                                | VillageBoy -> 2
+                                | VillageGirl -> 3
+                            let column =
+                                match direction with
+                                | Downward -> 0
+                                | Leftward -> 1
+                                | Upward -> 2
+                                | Rightward -> 3
+                            let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
+                            let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
+                            (Some inset, image)
+                        | _ -> (None, Assets.EmptyImage)
                     | Shopkeep _ ->
                         (None, Assets.CancelImage)
                 [Render
