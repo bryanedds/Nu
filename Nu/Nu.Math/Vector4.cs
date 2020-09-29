@@ -430,6 +430,11 @@ namespace Nu
 
         #endregion public void Scale()
 
+        public Color ToColor()
+        {
+            return new Color(this);
+        }
+
         #endregion
 
         #region Static
