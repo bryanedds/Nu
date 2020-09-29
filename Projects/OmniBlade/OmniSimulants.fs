@@ -26,6 +26,7 @@ module Simulants =
     let FieldBack = FieldHud / "Back"
     let FieldScene = Field / "Scene"
     let FieldBackdrop = FieldScene / "Backdrop"
+    let FieldPortalFade = FieldScene / "PortalFade"
     let FieldTileMap = FieldScene / "TileMap"
     let FieldAvatar = FieldScene / "Avatar"
     let FieldInteract = FieldScene / "Interact"

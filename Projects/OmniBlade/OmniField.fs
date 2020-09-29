@@ -121,9 +121,9 @@ module OmniField =
             | UpdateFieldTransition ->
                 match model.FieldTransitionOpt with
                 | Some fieldTransition ->
-                    if World.getTickTime world = fieldTransition.FieldTransitionTime then
+                    let tickTime = World.getTickTime world
+                    if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
                         let model = FieldModel.updateFieldType (constant fieldTransition.FieldType) model
-                        let model = FieldModel.updateFieldTransitionOpt (constant None) model
                         let model =
                             FieldModel.updateAvatar (fun avatar ->
                                 let avatar = AvatarModel.updateDirection (constant fieldTransition.FieldDirection) avatar
@@ -132,6 +132,9 @@ module OmniField =
                                 avatar)
                                 model
                         withCmd model (MoveAvatar fieldTransition.FieldIndex)
+                    elif tickTime = fieldTransition.FieldTransitionTime then
+                        let model = FieldModel.updateFieldTransitionOpt (constant None) model
+                        just model
                     else just model
                 | None -> just model
 
@@ -228,12 +231,30 @@ module OmniField =
                     [Entity.Absolute == true
                      Entity.Depth == Single.MinValue
                      Entity.StaticImage == asset Assets.DefaultPackageName "Image9"
+                     Entity.Bounds <== model ->> fun _ world -> World.getViewBoundsAbsolute world
                      Entity.Color <== model --> fun model ->
                         match data.Value.Fields.TryGetValue model.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
-                        | (false, _) -> v4Zero.WithW 1.0f
-                     Entity.Bounds <== model ->> fun _ world ->
-                        World.getViewBoundsAbsolute world]
+                        | (false, _) -> v4Zero.WithW 1.0f]
+
+                 // portal fade sprite
+                 Content.staticSprite Simulants.FieldPortalFade.Name
+                   [Entity.Absolute == true
+                    Entity.Depth == Single.MaxValue
+                    Entity.StaticImage == asset Assets.DefaultPackageName "Image9"
+                    Entity.Bounds <== model ->> fun _ world -> World.getViewBoundsAbsolute world
+                    Entity.Color <== model ->> fun model world ->
+                        match model.FieldTransitionOpt with
+                        | Some transition ->
+                            let tickTime = World.getTickTime world
+                            let deltaTime = single transition.FieldTransitionTime - single tickTime
+                            let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
+                            let progress =
+                                if deltaTime < halfTransitionTime
+                                then deltaTime / halfTransitionTime
+                                else 1.0f - (deltaTime - halfTransitionTime) / halfTransitionTime
+                            v4Zero.WithW progress
+                        | None -> v4Zero]
 
                  // tile map
                  Content.tileMap Simulants.FieldTileMap.Name
