@@ -39,7 +39,8 @@ type [<StructuralEquality; NoComparison>] DialogForm =
 type [<StructuralEquality; NoComparison>] DialogModel =
     { DialogForm : DialogForm
       DialogText : Dialog
-      DialogProgress : int }
+      DialogProgress : int
+      DialogPage : int }
 
 type FieldTransition =
     { FieldType : FieldType

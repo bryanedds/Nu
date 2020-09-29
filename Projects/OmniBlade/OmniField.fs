@@ -18,7 +18,7 @@ module OmniField =
         | Interact
 
     type [<NoComparison>] FieldCommand =
-        | PlaySound of int64 * single * AssetTag<Sound>
+        | PlaySound of int64 * single * Sound AssetTag
         | MoveAvatar of Vector2
         | UpdateEye
 
@@ -53,7 +53,7 @@ module OmniField =
         static let tryGetInteraction3 dialogOpt advents prop =
             match dialogOpt with
             | Some dialog ->
-                if dialog.DialogProgress > String.Join("\n", dialog.DialogText).Length
+                if dialog.DialogProgress > dialog.DialogText.[dialog.DialogPage].Length
                 then Some "Next"
                 else None
             | None ->
@@ -113,7 +113,8 @@ module OmniField =
                         (function
                          | Some dialog ->
                             let increment = if World.getTickTime world % 2L = 0L then 1 else 0
-                            Some { dialog with DialogProgress = dialog.DialogProgress + increment }
+                            let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
+                            Some dialog
                          | None -> None)
                         model
                 just model
@@ -155,9 +156,14 @@ module OmniField =
 
             | Interact ->
                 match model.DialogOpt with
-                | Some _ ->
-                    let model = FieldModel.updateDialogOpt (constant None) model
-                    just model
+                | Some dialog ->
+                    if dialog.DialogPage < dialog.DialogText.Length - 1 then
+                        let dialog = { dialog with DialogProgress = 0; DialogPage = inc dialog.DialogPage }
+                        let model = FieldModel.updateDialogOpt (constant (Some dialog)) model
+                        just model
+                    else
+                        let model = FieldModel.updateDialogOpt (constant None) model
+                        just model
                 | None ->
                     match tryGetFacingProp model.Avatar world with
                     | Some prop ->
@@ -191,14 +197,14 @@ module OmniField =
                             | None ->
                                 let model = FieldModel.updateInventory (Inventory.addItem itemType) model
                                 let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
-                                let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0 })) model
+                                let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0; DialogPage = 0 })) model
                                 withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
                         | Door (lockType, doorType) -> just model
                         | Portal (_, _, _, _) -> just model
                         | Switch -> just model
                         | Sensor -> just model
                         | Npc (_, _, dialog) ->
-                            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0 }
+                            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0 }
                             let model = FieldModel.updateDialogOpt (constant (Some dialogForm)) model
                             just model
                         | Shopkeep shopkeepType -> just model
@@ -309,7 +315,8 @@ module OmniField =
                      Entity.Text <== model --> fun model ->
                         match model.DialogOpt with
                         | Some dialog ->
-                            let text = String.Join (" ", dialog.DialogText)
+                            let textPage = dialog.DialogPage
+                            let text = dialog.DialogText.[textPage]
                             let textToShow = String.tryTake dialog.DialogProgress text
                             textToShow
                         | None -> ""
