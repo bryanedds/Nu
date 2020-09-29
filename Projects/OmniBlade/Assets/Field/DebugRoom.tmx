@@ -38,12 +38,12 @@
   </object>
   <object id="28" gid="813" x="640" y="640" width="64" height="64">
    <properties>
-    <property name="I" value="[Chest [Consumable GreenHerb] WoodenChest 46733ddc-a989-4d6e-a1b7-518af5428739]"/>
+    <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 46733ddc-a989-4d6e-a1b7-518af5428739]"/>
    </properties>
   </object>
   <object id="29" gid="813" x="448" y="640" width="64" height="64">
    <properties>
-    <property name="I" value="[Chest [Consumable GreenHerb] WoodenChest 7ced2215-353f-4653-86f4-05200b99f641]"/>
+    <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 7ced2215-353f-4653-86f4-05200b99f641]"/>
    </properties>
   </object>
  </objectgroup>

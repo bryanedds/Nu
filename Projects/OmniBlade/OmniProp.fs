@@ -62,7 +62,7 @@ module PropDispatcherModule =
                 let transform = entity.GetTransform world
                 let (insetOpt, image) =
                     match model.PropData with
-                    | Chest (_, chestType, chestId, _, _) ->
+                    | Chest (chestType, _, chestId, _, _) ->
                         let image =
                             match chestType with
                             | WoodenChest ->

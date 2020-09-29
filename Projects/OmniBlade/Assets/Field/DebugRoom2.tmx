@@ -38,7 +38,7 @@
   </object>
   <object id="31" gid="813" x="1600" y="704" width="64" height="64">
    <properties>
-    <property name="I" value="[Chest [Consumable GreenHerb] WoodenChest 33521205-c327-4bba-9b1c-afc982ba66ac [Some DebugBattle]]"/>
+    <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 33521205-c327-4bba-9b1c-afc982ba66ac [Some DebugBattle]]"/>
    </properties>
   </object>
  </objectgroup>
