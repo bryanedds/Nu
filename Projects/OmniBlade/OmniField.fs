@@ -57,7 +57,7 @@ module OmniField =
                 else None
             | None ->
                 match prop with
-                | Chest (_, _, chestId, _, _) ->
+                | Chest (_, _, chestId, _, _, _) ->
                     if Set.contains (Opened chestId) advents then None
                     else Some "Open"
                 | Door _ -> Some "Open"
@@ -158,7 +158,7 @@ module OmniField =
                     | Some prop ->
                         let propModel = prop.GetPropModel world
                         match propModel.PropData with
-                        | Chest (_, itemType, chestId, battleTypeOpt, requirements) ->
+                        | Chest (_, itemType, chestId, battleTypeOpt, requirements, _) ->
                             if model.Advents.IsSupersetOf requirements then
                                 match battleTypeOpt with
                                 | Some battleType ->
@@ -174,7 +174,7 @@ module OmniField =
                                     let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0 })) model
                                     withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
                             else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
-                        | Door (_, requirements) ->
+                        | Door (_, requirements, _) ->
                             match propModel.PropState with
                             | DoorState false ->
                                 if model.Advents.IsSupersetOf requirements
@@ -184,7 +184,7 @@ module OmniField =
                         | Portal (_, _, _, _, _) -> just model
                         | Switch (_, _, _) -> just model
                         | Sensor -> just model
-                        | Npc (_, _, dialogs, _) ->
+                        | Npc (_, _, dialogs, _, _) ->
                             let dialogs = dialogs |> List.choose (fun (dialog, requirements) -> if model.Advents.IsSupersetOf requirements then Some dialog else None) |> List.rev
                             let dialog = match List.tryHead dialogs with Some dialog -> dialog | None -> "..."
                             let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0 }
@@ -342,9 +342,9 @@ module OmniField =
                                 | (false, _) -> PropData.empty
                             let propState =
                                 match propData with
-                                | Door (_, _) -> DoorState false
+                                | Door (_, _, _) -> DoorState false
                                 | Switch (_, _, _) -> SwitchState false
-                                | Npc (_, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements)
+                                | Npc (_, _, _, requirements, _) -> NpcState (advents.IsSupersetOf requirements)
                                 | _ -> NilState
                             PropModel.make propBounds propDepth advents propData propState)
                         Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]]
