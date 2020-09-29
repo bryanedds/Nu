@@ -8,12 +8,16 @@ open Nu
 type Dialog =
     string list
 
+type [<StructuralEquality; StructuralComparison>] Advent =
+    | Opened of Guid
+    | KilledFinalBoss
+    | SavedPrincess
+
 type [<StructuralEquality; StructuralComparison>] Direction =
     | Downward
     | Leftward
     | Upward
     | Rightward
-
     static member fromVector2 (v2 : Vector2) =
         let angle = double (atan2 v2.Y v2.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
@@ -276,14 +280,14 @@ type [<StructuralEquality; NoComparison>] ShopkeepData =
       ShopkeepFarewell : string list }
 
 type [<StructuralEquality; StructuralComparison>] PropData =
-    | Chest of ItemType * ChestType * Guid * BattleType option * LockType option
-    | Door of LockType * DoorType // for simplicity, we'll just have north / south doors
-    | Portal of int * FieldType * Vector2 * Direction // leads to a different portal
-    | Switch // anything the can affect another thing on the field through interaction
+    | Chest of ItemType * ChestType * Guid * BattleType option * Advent Set
+    | Door of DoorType * Advent Set // for simplicity, we'll just have north / south doors
+    | Portal of int * FieldType * Vector2 * Direction * Advent Set // leads to a different portal
+    | Switch of Advent Set * Advent Set // anything the can affect another thing on the field through interaction
     | Sensor // anything the can affect another thing on the field through traversal
     | Npc of NpcType * Direction * Dialog
     | Shopkeep of ShopkeepType
-    static member empty = Chest (Consumable GreenHerb, WoodenChest, Gen.idEmpty, None, None)
+    static member empty = Chest (Consumable GreenHerb, WoodenChest, Gen.idEmpty, None, Set.empty)
 
 type [<StructuralEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
