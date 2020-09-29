@@ -11,7 +11,7 @@ type [<StructuralEquality; NoComparison>] DialogForm =
 
 type [<StructuralEquality; NoComparison>] DialogModel =
     { DialogForm : DialogForm
-      DialogText : Dialog
+      DialogText : string
       DialogProgress : int
       DialogPage : int }
 

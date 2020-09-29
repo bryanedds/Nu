@@ -23,7 +23,7 @@
   </properties>
   <object id="23" gid="488" x="960" y="512" width="160" height="160">
    <properties>
-    <property name="I" value="[Npc VillageMan Downward [&quot;Welcome to Debug Room!&quot; &quot;Aye aye aye!&quot;]]"/>
+    <property name="I" value="[Npc VillageMan Downward [[&quot;Welcome to Debug Room!^Aye aye aye!&quot; []]]]"/>
    </properties>
   </object>
   <object id="25" gid="488" x="960" y="1024" width="128" height="64">
