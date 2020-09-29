@@ -9,38 +9,10 @@ type PropState =
     | SwitchState of bool
     | NilState
 
-type [<CustomEquality; CustomComparison>] Advent =
+type [<StructuralEquality; StructuralComparison>] Advent =
     | Opened of Guid
     | KilledFinalBoss
     | SavedPrincess
-
-    member private this.ToInt () =
-        match this with
-        | Opened guid -> hash guid
-        | KilledFinalBoss -> 1
-        | SavedPrincess -> 2
-
-    override this.GetHashCode () =
-        let rand = Rand.makeFromInt (this.ToInt ())
-        let (result, _) = Rand.nextInt rand
-        result
-
-    override this.Equals that =
-        match that with
-        | :? Advent as thatAdvent -> (this :> IComparable<Advent>).CompareTo thatAdvent = 0
-        | _ -> false
-
-    interface IComparable<Advent> with
-        member this.CompareTo that =
-            let thisInt = this.ToInt ()
-            let thatInt = that.ToInt ()
-            thisInt.CompareTo thatInt
-            
-    interface IComparable with
-        member this.CompareTo that =
-            match that with
-            | :? Advent as thatAdvent -> (this :> IComparable<Advent>).CompareTo thatAdvent
-            | _ -> -1
 
 type [<StructuralEquality; NoComparison>] Inventory =
     { Items : Map<ItemType, int>
