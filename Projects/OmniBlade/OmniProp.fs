@@ -65,7 +65,7 @@ module PropDispatcherModule =
                 let transform = entity.GetTransform world
                 let (insetOpt, image) =
                     match model.PropData with
-                    | Chest (chestType, _, chestId, _, _) ->
+                    | Chest (chestType, _, chestId, _, _, _) ->
                         let image =
                             match chestType with
                             | WoodenChest ->
@@ -77,7 +77,7 @@ module PropDispatcherModule =
                                 then Assets.BrassChestOpenedImage
                                 else Assets.BrassChestClosedImage
                         (None, image)
-                    | Door (doorType, _) ->
+                    | Door (doorType, _, _) ->
                         let image =
                             match doorType with
                             | WoodenDoor ->
@@ -88,7 +88,7 @@ module PropDispatcherModule =
                     | Portal (_, _, _, _, _) -> (None, Assets.EmptyImage)
                     | Switch _ -> (None, Assets.CancelImage)
                     | Sensor -> (None, Assets.CancelImage)
-                    | Npc (npcType, direction, _, _) ->
+                    | Npc (npcType, direction, _, _, _) ->
                         match model.PropState with
                         | NpcState true ->
                             let image = Assets.NpcAnimationSheet
