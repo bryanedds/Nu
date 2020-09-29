@@ -20,6 +20,7 @@ module OmniField =
     type [<NoComparison>] FieldCommand =
         | PlaySound of int64 * single * Sound AssetTag
         | MoveAvatar of Vector2
+        | OpenDoor of Entity
         | UpdateEye
 
     type Screen with
@@ -45,9 +46,7 @@ module OmniField =
 
         static let tryGetFacingProp (avatar : AvatarModel) world =
             match getFacingBodyShapes avatar world with
-            | head :: _ ->
-                let prop = head.Entity.GetPropModel world
-                Some prop.PropData
+            | head :: _ -> Some head.Entity
             | [] -> None
 
         static let tryGetInteraction3 dialogOpt advents prop =
@@ -63,14 +62,14 @@ module OmniField =
                     else Some "Open"
                 | Door _ -> Some "Open"
                 | Portal (_, _, _, _, _) -> None
-                | Switch (_, _) -> Some "Use"
+                | Switch (_, _, _) -> Some "Use"
                 | Sensor -> None
                 | Npc _ -> Some "Talk"
                 | Shopkeep _ -> Some "Inquire"
 
         static let tryGetInteraction dialogOpt advents (avatar : AvatarModel) world =
             match tryGetFacingProp avatar world with
-            | Some prop -> tryGetInteraction3 dialogOpt advents prop
+            | Some prop -> tryGetInteraction3 dialogOpt advents (prop.GetPropModel world).PropData
             | None -> None
 
         static let tryGetTouchingPortal (avatar : AvatarModel) world =
@@ -157,8 +156,9 @@ module OmniField =
                 | None ->
                     match tryGetFacingProp model.Avatar world with
                     | Some prop ->
-                        match prop with
-                        | Chest (itemType, _, chestId, battleTypeOpt, requirements) ->
+                        let propModel = prop.GetPropModel world
+                        match propModel.PropData with
+                        | Chest (_, itemType, chestId, battleTypeOpt, requirements) ->
                             if model.Advents.IsSupersetOf requirements then
                                 match battleTypeOpt with
                                 | Some battleType ->
@@ -174,9 +174,15 @@ module OmniField =
                                     let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0; DialogPage = 0 })) model
                                     withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
                             else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Locked!"]; DialogProgress = 0; DialogPage = 0 })) model)
-                        | Door (_, _) -> just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Locked!"]; DialogProgress = 0; DialogPage = 0 })) model)
+                        | Door (_, requirements) ->
+                            match propModel.PropState with
+                            | DoorState false ->
+                                if model.Advents.IsSupersetOf requirements
+                                then withCmd model (OpenDoor prop)
+                                else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Locked!"]; DialogProgress = 0; DialogPage = 0 })) model)
+                            | _ -> failwithumf ()
                         | Portal (_, _, _, _, _) -> just model
-                        | Switch (_, _) -> just model
+                        | Switch (_, _, _) -> just model
                         | Sensor -> just model
                         | Npc (_, _, dialog) ->
                             let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0 }
@@ -197,6 +203,10 @@ module OmniField =
                 let world = Simulants.FieldAvatar.SetCenter position world
                 let world = World.setBodyPosition position (Simulants.FieldAvatar.GetPhysicsId world) world
                 just world
+
+            | OpenDoor prop ->
+                let world = prop.UpdateModel (fun model -> PropModel.updatePropState (constant (DoorState true)) model) world
+                withCmd world (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenDoorSound))
 
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
@@ -330,8 +340,8 @@ module OmniField =
                                 | (false, _) -> PropData.empty
                             let propState =
                                 match propData with
-                                | Door (_, requirements) -> DoorState (advents.IsSupersetOf requirements)
-                                | Switch (_, _) -> SwitchState false
+                                | Door (_, _) -> DoorState false
+                                | Switch (_, _, _) -> SwitchState false
                                 | _ -> NilState
                             PropModel.make propBounds propDepth advents propData propState)
                         Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]]

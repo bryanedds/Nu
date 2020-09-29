@@ -33,7 +33,8 @@ module Assets =
     let EnterBattleSound = asset<Sound> FieldPackageName "EnterBattle"
     let HealSound = asset<Sound> FieldPackageName "Heal"
     let DeathSound = asset<Sound> FieldPackageName "Death"
-    let OpenChestSound = asset<Sound> FieldPackageName "Unlatch"
+    let OpenDoorSound = asset<Sound> FieldPackageName "Unlatch"
+    let OpenChestSound = asset<Sound> FieldPackageName "Unlatch2"
     let StairStepsSound = asset<Sound> FieldPackageName "StairSteps"
     let FieldSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> FieldPackageName "Field" }
 
