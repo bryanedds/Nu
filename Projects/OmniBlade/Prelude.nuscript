@@ -403,6 +403,27 @@
 [define dot_Vector4i [u v] [+ [* u.X v.X] [* u.Y v.Y] [* u.Z v.Z] [* u.W v.W]]]
 [define -v4i- [v4i 0 0 0 0]]
 
+; Color extensions.
+[define empty_Color [_] [color 0 0 0 0]]
+[define identity_Color [_] [color 1 1 1 1]]
+[define minimum_Color [_] [let [m [0]] [color m m m m]]]
+[define maximum_Color [_] [let [m [255]] [color m m m m]]]
+[define =_Color [u v] [&& [= u.R v.R] [= u.G v.G] [= u.B v.B] [= u.A v.A]]]
+[define <>_Color [u v] [&& [<> u.R v.R] [<> u.G v.G] [<> u.B v.B] [<> u.A v.A]]]
+[define <_Color [u v] [&& [< u.R v.R] [< u.G v.G] [< u.B v.B] [< u.A v.A]]]
+[define >_Color [u v] [&& [> u.R v.R] [> u.G v.G] [> u.B v.B] [> u.A v.A]]]
+[define <=_Color [u v] [&& [<= u.R v.R] [<= u.G v.G] [<= u.B v.B] [<= u.A v.A]]]
+[define >=_Color [u v] [&& [>= u.R v.R] [>= u.G v.G] [>= u.B v.B] [>= u.A v.A]]]
+[define +_Color [u v] [color [+ u.R v.R] [+ u.G v.G] [+ u.B v.B] [+ u.A v.A]]]
+[define -_Color [u v] [color [- u.R v.R] [- u.G v.G] [- u.B v.B] [- u.A v.A]]]
+[define *_Color [u v] [color [* u.R v.R] [* u.G v.G] [* u.B v.B] [* u.A v.A]]]
+[define /_Color [u v] [color [/ u.R v.R] [/ u.G v.G] [/ u.B v.B] [/ u.A v.A]]]
+[define %_Color [u v] [color [% u.R v.R] [% u.G v.G] [% u.B v.B] [% u.A v.A]]]
+[define dot_Color [u v] [+ [* u.R v.R] [* u.G v.G] [* u.B v.B] [* u.A v.A]]]
+[define -color- [color 0 0 0 0]]
+[define -white- [color 255 255 255 255]]
+[define -black- [color 0 0 0 255]]
+
 ; Update function.
 [define update [property updater]
     [set property [updater [get property]]]]

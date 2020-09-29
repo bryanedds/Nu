@@ -427,7 +427,7 @@ module Vector3i =
     let v3iUnitY = Vector3i.UnitY
     let v3iUnitZ = Vector3i.UnitZ
 
-/// Converts Vector4 types.
+/// Converts Vector3i types.
 type Vector3iConverter () =
     inherit TypeConverter ()
 
@@ -490,7 +490,7 @@ module Vector4i =
     let v4iUnitW = Vector4i.UnitW
     let v4iBounds (position : Vector2i) (size : Vector2i) = v4i position.X position.Y size.X size.Y
 
-/// The Vector4 value that can be plugged into the scripting language.
+/// The Vector4i value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector4iPluggable =
     { Vector4i : Vector4i }
 
@@ -533,7 +533,7 @@ type [<CustomEquality; CustomComparison>] Vector4iPluggable =
             let w = Symbol.Number (scstring this.Vector4i.W, None)
             Symbol.Symbols ([v4i; x; y; z; w], None)
 
-/// Converts Vector4 types.
+/// Converts Vector4i types.
 type Vector4iConverter () =
     inherit TypeConverter ()
 
@@ -566,6 +566,102 @@ type Vector4iConverter () =
                 failconv "Invalid Vector4Converter conversion from source." (Some symbol)
         | :? Vector4i -> source
         | _ -> failconv "Invalid Vector4Converter conversion from source." None
+
+[<AutoOpen>]
+module Color =
+
+    type Color with
+        member this.MapR mapper = Color (mapper this.R, this.G, this.B, this.A)
+        member this.MapG mapper = Color (this.R, mapper this.G, this.B, this.A)
+        member this.MapB mapper = Color (this.R, this.G, mapper this.B, this.A)
+        member this.MapA mapper = Color (this.R, this.G, this.B, mapper this.A)
+        member this.WithR r = Color (r, this.G, this.B, this.A)
+        member this.WithG g = Color (this.R, g, this.B, this.A)
+        member this.WithB b = Color (this.R, this.G, b, this.A)
+        member this.WithA a = Color (this.R, this.G, this.B, a)
+
+    let inline col r g b a = Color (r, g, b, a)
+    let inline colDup a = col a a a a
+    let colEmpty = col (byte 0) (byte 0) (byte 0) (byte 0)
+    let colWhite = col (byte 255) (byte 255) (byte 255) (byte 255)
+    let colBlack = col (byte 0) (byte 0) (byte 0) (byte 255)
+
+/// The Color value that can be plugged into the scripting language.
+type [<CustomEquality; CustomComparison>] ColorPluggable =
+    { Color : Color }
+
+    static member equals left right =
+        left.Color = right.Color
+
+    static member compare left right =
+        compare (left.Color.R, left.Color.G) (right.Color.B, right.Color.A)
+
+    override this.GetHashCode () =
+        hash this.Color
+
+    override this.Equals that =
+        match that with
+        | :? ColorPluggable as that -> ColorPluggable.equals this that
+        | _ -> failwithumf ()
+
+    interface ColorPluggable IComparable with
+        member this.CompareTo that =
+            ColorPluggable.compare this that
+
+    interface Scripting.Pluggable with
+
+        member this.CompareTo that =
+            match that with
+            | :? ColorPluggable as that -> (this :> ColorPluggable IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+        member this.TypeName =
+            "Color"
+
+        member this.FSharpType =
+            getType this.Color
+
+        member this.ToSymbol () =
+            let col = Symbol.Atom ("col", None)
+            let r = Symbol.Number (scstring this.Color.R, None)
+            let g = Symbol.Number (scstring this.Color.G, None)
+            let b = Symbol.Number (scstring this.Color.B, None)
+            let a = Symbol.Number (scstring this.Color.A, None)
+            Symbol.Symbols ([col; r; g; b; a], None)
+
+/// Converts Color types.
+type ColorConverter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Color>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let col = source :?> Color
+            Symbols
+                ([Number (scstring col.R, None)
+                  Number (scstring col.G, None)
+                  Number (scstring col.B, None)
+                  Number (scstring col.A, None)], None) :> obj
+        elif destType = typeof<Color> then source
+        else failconv "Invalid ColorConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Color>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([Number (r, _); Number (g, _); Number (b, _); Number (a, _)], _) ->
+                Color (scvalue r, scvalue g, scvalue b, scvalue a) :> obj
+            | _ ->
+                failconv "Invalid ColorConverter conversion from source." (Some symbol)
+        | :? Color -> source
+        | _ -> failconv "Invalid ColorConverter conversion from source." None
 
 [<AutoOpen>]
 module Matrix3 =
