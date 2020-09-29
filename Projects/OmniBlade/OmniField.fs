@@ -112,7 +112,7 @@ module OmniField =
                     FieldModel.updateDialogOpt
                         (function
                          | Some dialog ->
-                            let increment = if World.getTickTime world % 3L = 0L then 1 else 0
+                            let increment = if World.getTickTime world % 2L = 0L then 1 else 0
                             Some { dialog with DialogProgress = dialog.DialogProgress + increment }
                          | None -> None)
                         model
@@ -314,8 +314,8 @@ module OmniField =
                             textToShow
                         | None -> ""
                      Entity.Visible <== model --> fun model -> Option.isSome model.DialogOpt
-                     Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
-                     Entity.Margins == v2 32.0f 0.0f]
+                     Entity.Justification == Unjustified true
+                     Entity.Margins == v2 32.0f 32.0f]
 
                  // props
                  Content.entities model

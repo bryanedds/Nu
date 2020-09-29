@@ -391,8 +391,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     | Unjustified wrapped ->
                         let textSurface =
                             if wrapped
-                            then SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
-                            else SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 sizeView.X)
+                            then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 sizeView.X)
+                            else SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
                         (Vector2.Zero, textSurface)
                     | Justified (h, v) ->
                         let textSurface = SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
