@@ -23,7 +23,7 @@
   </properties>
   <object id="23" gid="488" x="896" y="768" width="160" height="160">
    <properties>
-    <property name="I" value="[Npc VillageWoman Rightward [[&quot;I swear I heard that chest over there rattling....&quot; []]]]"/>
+    <property name="I" value="[Npc VillageWoman Rightward [[&quot;I swear I heard that chest over there rattling....&quot;]]]"/>
    </properties>
   </object>
   <object id="25" gid="488" x="960" y="256" width="128" height="64">
@@ -43,7 +43,7 @@
   </object>
   <object id="32" gid="488" x="1280" y="512" width="160" height="160">
    <properties>
-    <property name="I" value="[Npc VillageMan Downward [[&quot;I swear I heard that chest over there rattle....&quot; []]] [SavedPrincess]]"/>
+    <property name="I" value="[Npc VillageMan Downward [[&quot;I swear I heard that chest over there rattle....&quot;]] [SavedPrincess]]"/>
    </properties>
   </object>
  </objectgroup>
