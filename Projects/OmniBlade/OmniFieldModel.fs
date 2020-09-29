@@ -4,33 +4,6 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type Legionnaire =
-    { LegionIndex : int // key
-      PartyIndexOpt : int option
-      CharacterType : CharacterType
-      ExpPoints : int
-      WeaponOpt : WeaponType option
-      ArmorOpt : ArmorType option
-      Accessories : AccessoryType list }
-
-    static member finn =
-        { LegionIndex = 0
-          PartyIndexOpt = Some 0
-          CharacterType = Ally Finn
-          ExpPoints = 15
-          WeaponOpt = None
-          ArmorOpt = None
-          Accessories = [] }
-
-    static member glenn =
-        { LegionIndex = 1
-          PartyIndexOpt = Some 1
-          CharacterType = Ally Glenn
-          ExpPoints = 15
-          WeaponOpt = None
-          ArmorOpt = None
-          Accessories = [] }
-
 type [<StructuralEquality; NoComparison>] DialogForm =
     | DialogThin
     | DialogMedium
@@ -55,7 +28,7 @@ module FieldModel =
         private
             { FieldType_ : FieldType
               Avatar_ : AvatarModel
-              Legion_ : Map<int, Legionnaire>
+              Legion_ : Legion
               Advents_ : Advent Set
               Inventory_ : Inventory
               FieldTransitionOpt_ : FieldTransition option

@@ -73,14 +73,6 @@ module OmniField =
             | Some prop -> tryGetInteraction3 dialogOpt advents prop
             | None -> None
 
-        static let tryGetFacingProp (avatar : AvatarModel) world =
-            match getFacingBodyShapes avatar world with
-            | head :: _ -> 
-                // TODO: distance-sort these instead of just taking head 
-                let prop = head.Entity.GetPropModel world
-                Some prop.PropData
-            | [] -> None
-
         static let tryGetTouchingPortal (avatar : AvatarModel) world =
             let portals =
                 List.choose (fun shape ->
@@ -161,9 +153,7 @@ module OmniField =
                         let dialog = { dialog with DialogProgress = 0; DialogPage = inc dialog.DialogPage }
                         let model = FieldModel.updateDialogOpt (constant (Some dialog)) model
                         just model
-                    else
-                        let model = FieldModel.updateDialogOpt (constant None) model
-                        just model
+                    else just (FieldModel.updateDialogOpt (constant None) model)
                 | None ->
                     match tryGetFacingProp model.Avatar world with
                     | Some prop ->
@@ -173,24 +163,7 @@ module OmniField =
                             | Some battleType ->
                                 match Map.tryFind battleType data.Value.Battles with
                                 | Some battleData ->
-                                    let legionnaires = Map.toValueList (FieldModel.getParty model)
-                                    let allies =
-                                        List.mapi
-                                            (fun i legionnaire ->
-                                                match Map.tryFind legionnaire.CharacterType data.Value.Characters with
-                                                | Some characterData ->
-                                                    // TODO: bounds checking
-                                                    let index = legionnaire.LegionIndex
-                                                    let bounds = v4Bounds battleData.BattleAllyPositions.[index] Constants.Gameplay.CharacterSize
-                                                    let characterIndex = AllyIndex index
-                                                    let characterState = CharacterState.make characterData legionnaire.ExpPoints legionnaire.WeaponOpt legionnaire.ArmorOpt legionnaire.Accessories
-                                                    let animationSheet = characterData.AnimationSheet
-                                                    let direction = Direction.fromVector2 -bounds.Bottom
-                                                    let character = CharacterModel.make bounds characterIndex characterState animationSheet direction
-                                                    CharacterModel.updateActionTime (constant (inc i * 333)) character
-                                                | None -> failwith ("Could not find CharacterData for '" + scstring legionnaire.CharacterType + "'."))
-                                            legionnaires
-                                    let battleModel = BattleModel.make battleData allies model.Inventory (Some itemType) (World.getTickTime world)
+                                    let battleModel = BattleModel.makeFromLegion (FieldModel.getParty model) model.Inventory (Some itemType) battleData (World.getTickTime world)
                                     let model = FieldModel.updateBattleOpt (constant (Some battleModel)) model
                                     just model
                                 | None -> just model

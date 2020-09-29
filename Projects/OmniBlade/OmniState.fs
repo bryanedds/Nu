@@ -80,6 +80,36 @@ type [<StructuralEquality; NoComparison>] Inventory =
             { inventory with Items = Map.remove item inventory.Items }
         | _ -> inventory
 
+type Legionnaire =
+    { LegionIndex : int // key
+      PartyIndexOpt : int option
+      CharacterType : CharacterType
+      ExpPoints : int
+      WeaponOpt : WeaponType option
+      ArmorOpt : ArmorType option
+      Accessories : AccessoryType list }
+
+    static member finn =
+        { LegionIndex = 0
+          PartyIndexOpt = Some 0
+          CharacterType = Ally Finn
+          ExpPoints = 15
+          WeaponOpt = None
+          ArmorOpt = None
+          Accessories = [] }
+
+    static member glenn =
+        { LegionIndex = 1
+          PartyIndexOpt = Some 1
+          CharacterType = Ally Glenn
+          ExpPoints = 15
+          WeaponOpt = None
+          ArmorOpt = None
+          Accessories = [] }
+
+type Legion =
+    Map<int, Legionnaire>
+
 type [<StructuralEquality; StructuralComparison>] CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
