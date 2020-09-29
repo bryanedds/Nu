@@ -10,7 +10,7 @@ module EcsTests =
 
     type [<NoEquality; NoComparison; Struct>] Skin =
         { mutable RefCount : int
-          mutable Color : Vector4 }
+          mutable Color : Color }
         interface Skin Component with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
             member this.SystemNames = [||]
@@ -67,7 +67,7 @@ module EcsTests =
                 let comp = &comps.[i]
                 if  comp.RefCount > 0 then
                     comp.Transform.Index.Enabled <- i % 2 = 0
-                    comp.Skin.Index.Color.Z <- 0.5f
+                    comp.Skin.Index.Color.A <- byte 128
             world)
 
         // create and register our airship
@@ -76,12 +76,12 @@ module EcsTests =
         // change some airship properties
         let airship = ecs.IndexCorrelated<Airship> airshipSystem.Name airshipId
         airship.Index.Transform.Index.Position.X <- 0.5f
-        airship.Index.Skin.Index.Color.X <- 0.1f
+        airship.Index.Skin.Index.Color.R <- byte 16
 
         // for non-junctioned entities, you can alternatively construct and use a much slower entity reference
         let airshipRef = ecs.GetEntityRef airshipId
         airshipRef.Index<Transform>().Position.Y <- 5.0f
-        airshipRef.Index<Skin>().Color.Y <- 1.0f
+        airshipRef.Index<Skin>().Color.G <- byte 255
 
         // invoke update behavior
         ecs.Publish EcsEvents.Update () ecs.GlobalSystem world

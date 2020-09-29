@@ -291,7 +291,7 @@ type [<StructuralEquality; NoComparison>] FieldData =
       FieldProps : PropData list
       FieldSongOpt : Song AssetTag option
       FieldAmbienceOpt : Song AssetTag option
-      FieldBackgroundColor : Vector4 }
+      FieldBackgroundColor : Color }
 
 type [<StructuralEquality; NoComparison>] EnemyData =
     { EnemyType : EnemyType // key

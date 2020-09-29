@@ -51,8 +51,8 @@ type [<StructuralEquality; NoComparison>] SpriteDescriptor =
       Offset : Vector2
       InsetOpt : Vector4 option
       Image : Image AssetTag
-      Color : Vector4
-      Glow : Vector4
+      Color : Color
+      Glow : Color
       Flip : Flip }
 
 /// Describes how to render a tile map to the rendering system.
@@ -70,7 +70,7 @@ type [<StructuralEquality; NoComparison>] TextDescriptor =
     { Transform : Transform
       Text : string
       Font : Font AssetTag
-      Color : Vector4
+      Color : Color
       Justification : Justification }
 
 /// Describes how to render something to the rendering system.
@@ -276,14 +276,14 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 rotationCenter.x <- int (sizeView.X * 0.5f)
                 rotationCenter.y <- int (sizeView.Y * 0.5f)
                 SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
-                SDL.SDL_SetTextureColorMod (texture, byte (255.0f * color.X), byte (255.0f * color.Y), byte (255.0f * color.Z)) |> ignore
-                SDL.SDL_SetTextureAlphaMod (texture, byte (255.0f * color.W)) |> ignore
+                SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
+                SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
                 let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
                 if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-                if glow <> Vector4.Zero then
+                if glow <> Color.Zero then
                     SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                    SDL.SDL_SetTextureColorMod (texture, byte (255.0f * glow.X), byte (255.0f * glow.Y), byte (255.0f * glow.Z)) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, byte (255.0f * glow.W)) |> ignore
+                    SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
+                    SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore
                     let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
                     if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
@@ -379,10 +379,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             match renderAsset with
             | FontAsset (font, _) ->
                 let mutable renderColor = SDL.SDL_Color ()
-                renderColor.r <- byte (color.X * 255.0f)
-                renderColor.g <- byte (color.Y * 255.0f)
-                renderColor.b <- byte (color.Z * 255.0f)
-                renderColor.a <- byte (color.W * 255.0f)
+                renderColor.r <- color.R
+                renderColor.g <- color.G
+                renderColor.b <- color.B
+                renderColor.a <- color.A
                 // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
                 // texture one or more times a frame must be understood! Although, maybe it all happens in software
                 // and vram fragmentation would not be a concern in the first place... perf could still be, however.

@@ -582,9 +582,9 @@ module Color =
 
     let inline col r g b a = Color (r, g, b, a)
     let inline colDup a = col a a a a
-    let colEmpty = col (byte 0) (byte 0) (byte 0) (byte 0)
-    let colWhite = col (byte 255) (byte 255) (byte 255) (byte 255)
-    let colBlack = col (byte 0) (byte 0) (byte 0) (byte 255)
+    let colZero = Color.Zero
+    let colWhite = Color.White
+    let colBlack = Color.Black
 
 /// The Color value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] ColorPluggable =
@@ -695,6 +695,8 @@ module Math =
             assignTypeConverter<Vector3, Vector3Converter> ()
             assignTypeConverter<Vector4, Vector4Converter> ()
             assignTypeConverter<Vector2i, Vector2iConverter> ()
+            assignTypeConverter<Vector4i, Vector4iConverter> ()
+            assignTypeConverter<Color, ColorConverter> ()
             Initialized <- true
 
     /// Snap an int value to an offset.
