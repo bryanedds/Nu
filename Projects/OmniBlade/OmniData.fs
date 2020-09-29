@@ -285,7 +285,7 @@ type [<StructuralEquality; StructuralComparison>] PropData =
     | Portal of int * FieldType * Vector2 * Direction * Advent Set // leads to a different portal
     | Switch of SwitchType * Advent Set * Advent Set // anything the can affect another thing on the field through interaction
     | Sensor // anything the can affect another thing on the field through traversal
-    | Npc of NpcType * Direction * (string * Advent Set) list * Advent Set * Advent Set
+    | Npc of NpcType * Direction * (string * Advent Set * Advent Set) list * Advent Set
     | Shopkeep of ShopkeepType
     static member empty = Chest (WoodenChest, Consumable GreenHerb, Gen.idEmpty, None, Set.empty, Set.empty)
 

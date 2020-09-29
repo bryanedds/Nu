@@ -88,7 +88,7 @@ module PropDispatcherModule =
                     | Portal (_, _, _, _, _) -> (None, Assets.EmptyImage)
                     | Switch _ -> (None, Assets.CancelImage)
                     | Sensor -> (None, Assets.CancelImage)
-                    | Npc (npcType, direction, _, _, _) ->
+                    | Npc (npcType, direction, _, _) ->
                         match model.PropState with
                         | NpcState true ->
                             let image = Assets.NpcAnimationSheet
