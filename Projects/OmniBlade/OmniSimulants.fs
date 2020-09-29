@@ -25,6 +25,7 @@ module Simulants =
     let FieldHud = Field / "Hud"
     let FieldBack = FieldHud / "Back"
     let FieldScene = Field / "Scene"
+    let FieldBackdrop = FieldScene / "Backdrop"
     let FieldTileMap = FieldScene / "TileMap"
     let FieldAvatar = FieldScene / "Avatar"
     let FieldInteract = FieldScene / "Interact"

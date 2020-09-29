@@ -223,7 +223,19 @@ module OmniField =
             [// main layer
              Content.layer Simulants.FieldScene.Name []
 
-                [// tile map
+                [// backdrop sprite
+                 Content.staticSprite Simulants.FieldBackdrop.Name
+                    [Entity.Absolute == true
+                     Entity.Depth == Single.MinValue
+                     Entity.StaticImage == asset Assets.DefaultPackageName "Image9"
+                     Entity.Color <== model --> fun model ->
+                        match data.Value.Fields.TryGetValue model.FieldType with
+                        | (true, fieldData) -> fieldData.FieldBackgroundColor
+                        | (false, _) -> v4Zero.WithW 1.0f
+                     Entity.Bounds <== model ->> fun _ world ->
+                        World.getViewBoundsAbsolute world]
+
+                 // tile map
                  Content.tileMap Simulants.FieldTileMap.Name
                     [Entity.Depth == Constants.Field.BackgroundDepth
                      Entity.TileMapAsset <== model --> fun model ->

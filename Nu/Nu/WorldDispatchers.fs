@@ -1031,6 +1031,15 @@ module StaticSpriteFacetModule =
         member this.GetStaticImage world : Image AssetTag = this.Get Property? StaticImage world
         member this.SetStaticImage (value : Image AssetTag) world = this.SetFast Property? StaticImage false false value world
         member this.StaticImage = lens Property? StaticImage this.GetStaticImage this.SetStaticImage this
+        member this.GetColor world : Vector4 = this.Get Property? Color world
+        member this.SetColor (value : Vector4) world = this.SetFast Property? Color false false value world
+        member this.Color = lens Property? Color this.GetColor this.SetColor this
+        member this.GetGlow world : Vector4 = this.Get Property? Glow world
+        member this.SetGlow (value : Vector4) world = this.SetFast Property? Glow false false value world
+        member this.Glow = lens Property? Glow this.GetGlow this.SetGlow this
+        member this.GetInsetOpt world : Vector4 option = this.Get Property? Inset world
+        member this.SetInsetOpt (value : Vector4 option) world = this.SetFast Property? Inset false false value world
+        member this.InsetOpt = lens Property? Inset this.GetInsetOpt this.SetInsetOpt this
         member this.GetFlip world : Flip = this.Get Property? Flip world
         member this.SetFlip (value : Flip) world = this.SetFast Property? Flip false false value world
         member this.Flip = lens Property? Flip this.GetFlip this.SetFlip this
@@ -1040,6 +1049,9 @@ module StaticSpriteFacetModule =
 
         static member Properties =
             [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")
+             define Entity.Color Vector4.One
+             define Entity.Glow Vector4.Zero
+             define Entity.InsetOpt None
              define Entity.Flip FlipNone]
 
         override this.Actualize (entity, world) =
@@ -1054,10 +1066,10 @@ module StaticSpriteFacetModule =
                             SpriteDescriptor
                                 { Transform = transform
                                   Offset = Vector2.Zero
-                                  InsetOpt = None
+                                  InsetOpt = entity.GetInsetOpt world
                                   Image = entity.GetStaticImage world
-                                  Color = Vector4.One
-                                  Glow = Vector4.Zero
+                                  Color = entity.GetColor world
+                                  Glow = entity.GetGlow world
                                   Flip = entity.GetFlip world }})
                     world
             else world
@@ -1111,6 +1123,8 @@ module AnimatedSpriteFacetModule =
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
              define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")
+             define Entity.Color Vector4.One
+             define Entity.Glow Vector4.Zero
              define Entity.Flip FlipNone]
 
         override this.Actualize (entity, world) =
@@ -1127,8 +1141,8 @@ module AnimatedSpriteFacetModule =
                                   Offset = Vector2.Zero
                                   InsetOpt = getSpriteInsetOpt entity world
                                   Image = entity.GetAnimationSheet world
-                                  Color = Vector4.One
-                                  Glow = Vector4.Zero
+                                  Color = entity.GetColor world
+                                  Glow = entity.GetGlow world
                                   Flip = entity.GetFlip world }})
                     world
             else world
@@ -1244,6 +1258,41 @@ module EffectDispatcherModule =
         static member Properties =
             [define Entity.PublishChanges true
              define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+
+[<AutoOpen>]
+module StaticSpriteDispatcherModule =
+
+    type StaticSpriteDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<StaticSpriteFacet>]
+
+        static member Properties =
+            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")
+             define Entity.Color Vector4.One
+             define Entity.Glow Vector4.Zero
+             define Entity.InsetOpt None
+             define Entity.Flip FlipNone]
+
+[<AutoOpen>]
+module AnimatedSpriteDispatcherModule =
+
+    type AnimatedSpriteDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<AnimatedSpriteFacet>]
+
+        static member Properties =
+            [define Entity.CelSize (Vector2 (16.0f, 16.0f))
+             define Entity.CelRun 4
+             define Entity.CelCount 16
+             define Entity.AnimationDelay 4L
+             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")
+             define Entity.Color Vector4.One
+             define Entity.Glow Vector4.Zero
+             define Entity.Flip FlipNone]
 
 [<AutoOpen>]
 module NodeDispatcherModule =

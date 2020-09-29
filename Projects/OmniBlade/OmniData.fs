@@ -290,7 +290,8 @@ type [<StructuralEquality; NoComparison>] FieldData =
       FieldTileMap : TileMap AssetTag
       FieldProps : PropData list
       FieldSongOpt : Song AssetTag option
-      FieldAmbienceOpt : Song AssetTag option }
+      FieldAmbienceOpt : Song AssetTag option
+      FieldBackgroundColor : Vector4 }
 
 type [<StructuralEquality; NoComparison>] EnemyData =
     { EnemyType : EnemyType // key
