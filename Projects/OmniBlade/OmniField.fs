@@ -184,7 +184,7 @@ module OmniField =
                         | Portal (_, _, _, _, _) -> just model
                         | Switch (_, _, _) -> just model
                         | Sensor -> just model
-                        | Npc (_, _, dialog) ->
+                        | Npc (_, _, dialog, _) ->
                             let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0 }
                             let model = FieldModel.updateDialogOpt (constant (Some dialogForm)) model
                             just model
@@ -342,6 +342,7 @@ module OmniField =
                                 match propData with
                                 | Door (_, _) -> DoorState false
                                 | Switch (_, _, _) -> SwitchState false
+                                | Npc (_, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements)
                                 | _ -> NilState
                             PropModel.make propBounds propDepth advents propData propState)
                         Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]]
