@@ -9,11 +9,6 @@ type PropState =
     | SwitchState of bool
     | NilState
 
-type [<StructuralEquality; StructuralComparison>] Advent =
-    | Opened of Guid
-    | KilledFinalBoss
-    | SavedPrincess
-
 type [<StructuralEquality; NoComparison>] Inventory =
     { Items : Map<ItemType, int>
       Gold : int }

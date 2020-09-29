@@ -62,8 +62,8 @@ module OmniField =
                     if Set.contains (Opened chestId) advents then None
                     else Some "Open"
                 | Door _ -> Some "Open"
-                | Portal (_, _, _, _) -> None
-                | Switch -> Some "Use"
+                | Portal (_, _, _, _, _) -> None
+                | Switch (_, _) -> Some "Use"
                 | Sensor -> None
                 | Npc _ -> Some "Talk"
                 | Shopkeep _ -> Some "Inquire"
@@ -77,7 +77,7 @@ module OmniField =
             let portals =
                 List.choose (fun shape ->
                     match (shape.Entity.GetPropModel world).PropData with
-                    | Portal (_, fieldType, index, direction) -> Some (fieldType, index, direction)
+                    | Portal (_, fieldType, index, direction, _) -> Some (fieldType, index, direction)
                     | _ -> None)
                     avatar.IntersectedBodyShapes
             match portals with
@@ -158,29 +158,31 @@ module OmniField =
                     match tryGetFacingProp model.Avatar world with
                     | Some prop ->
                         match prop with
-                        | Chest (itemType, _, chestId, battleTypeOpt, _) ->
-                            match battleTypeOpt with
-                            | Some battleType ->
-                                match Map.tryFind battleType data.Value.Battles with
-                                | Some battleData ->
-                                    let battleModel = BattleModel.makeFromLegion (FieldModel.getParty model) model.Inventory (Some itemType) battleData (World.getTickTime world)
-                                    let model = FieldModel.updateBattleOpt (constant (Some battleModel)) model
-                                    just model
-                                | None -> just model
-                            | None ->
-                                let model = FieldModel.updateInventory (Inventory.addItem itemType) model
-                                let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
-                                let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0; DialogPage = 0 })) model
-                                withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
-                        | Door (lockType, doorType) -> just model
-                        | Portal (_, _, _, _) -> just model
-                        | Switch -> just model
+                        | Chest (itemType, _, chestId, battleTypeOpt, requirements) ->
+                            if model.Advents.IsSupersetOf requirements then
+                                match battleTypeOpt with
+                                | Some battleType ->
+                                    match Map.tryFind battleType data.Value.Battles with
+                                    | Some battleData ->
+                                        let battleModel = BattleModel.makeFromLegion (FieldModel.getParty model) model.Inventory (Some itemType) battleData (World.getTickTime world)
+                                        let model = FieldModel.updateBattleOpt (constant (Some battleModel)) model
+                                        just model
+                                    | None -> just model
+                                | None ->
+                                    let model = FieldModel.updateInventory (Inventory.addItem itemType) model
+                                    let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
+                                    let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Found " + ItemType.getName itemType + "!"]; DialogProgress = 0; DialogPage = 0 })) model
+                                    withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
+                            else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Locked!"]; DialogProgress = 0; DialogPage = 0 })) model)
+                        | Door (_, _) -> just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = ["Locked!"]; DialogProgress = 0; DialogPage = 0 })) model)
+                        | Portal (_, _, _, _, _) -> just model
+                        | Switch (_, _) -> just model
                         | Sensor -> just model
                         | Npc (_, _, dialog) ->
                             let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0 }
                             let model = FieldModel.updateDialogOpt (constant (Some dialogForm)) model
                             just model
-                        | Shopkeep shopkeepType -> just model
+                        | Shopkeep _ -> just model
                     | None -> just model
 
         override this.Command (_, command, _, world) =
@@ -328,8 +330,8 @@ module OmniField =
                                 | (false, _) -> PropData.empty
                             let propState =
                                 match propData with
-                                | Door _ -> DoorState false
-                                | Switch _ -> SwitchState false
+                                | Door (_, requirements) -> DoorState (advents.IsSupersetOf requirements)
+                                | Switch (_, _) -> SwitchState false
                                 | _ -> NilState
                             PropModel.make propBounds propDepth advents propData propState)
                         Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]]

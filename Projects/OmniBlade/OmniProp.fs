@@ -45,6 +45,10 @@ module PropDispatcherModule =
              entity.BodyShape <== model --> fun model ->
                 match model.PropData with
                 | Npc _ -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                | Door _ ->
+                    match model.PropState with
+                    | DoorState true -> BodyEmpty
+                    | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                 | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
 
         override this.Message (model, message, entity, world) =
@@ -70,7 +74,7 @@ module PropDispatcherModule =
                                 then Assets.BrassChestOpenedImage
                                 else Assets.BrassChestClosedImage
                         (None, image)
-                    | Door (_, doorType) ->
+                    | Door (doorType, _) ->
                         let image =
                             match doorType with
                             | WoodenDoor ->
@@ -78,8 +82,8 @@ module PropDispatcherModule =
                                 | DoorState opened -> if opened then Assets.WoodenDoorOpenedImage else Assets.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
                         (None, image)
-                    | Portal (_, _, _, _) -> (None, Assets.EmptyImage)
-                    | Switch -> (None, Assets.CancelImage)
+                    | Portal (_, _, _, _, _) -> (None, Assets.EmptyImage)
+                    | Switch _ -> (None, Assets.CancelImage)
                     | Sensor -> (None, Assets.CancelImage)
                     | Npc (npcType, direction, _) ->
                         let image = Assets.NpcAnimationSheet
@@ -98,7 +102,7 @@ module PropDispatcherModule =
                         let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                         let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
                         (Some inset, image)
-                    | Shopkeep shopkeepType ->
+                    | Shopkeep _ ->
                         (None, Assets.CancelImage)
                 [Render
                     (transform.Depth, transform.Position.Y, AssetTag.generalize image,

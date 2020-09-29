@@ -331,6 +331,12 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                         let tileBounds = v4Bounds tilePosition tileSize
                         let viewBounds = v4Bounds Vector2.Zero eyeSize
                         if Math.isBoundsIntersectingBounds tileBounds viewBounds then
+                            let tileFlip =
+                                match (tile.HorizontalFlip, tile.VerticalFlip) with
+                                | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
+                                | (true, false) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
+                                | (false, true) -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+                                | (true, true) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
                             let gid = tile.Gid - tileSet.FirstGid
                             let gidPosition = gid * tileSourceSize.X
                             let tileSourcePosition =
@@ -354,7 +360,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             tileSourceRectRef := sourceRect
                             tileDestRectRef := destRect
                             tileRotationCenterRef := rotationCenter
-                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
+                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
                             if renderResult <> 0 then Log.info ("Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + "."))
                     tiles
             | _ -> Log.debug "Cannot render tile with a non-texture asset."
