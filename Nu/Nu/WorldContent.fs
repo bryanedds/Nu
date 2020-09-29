@@ -154,6 +154,12 @@ module Content =
     /// Describe an effect with the given initializers.
     let effect entityName initializers = entity<EffectDispatcher> entityName initializers
 
+    /// Describe a static sprite with the given initializers.
+    let staticSprite entityName initializers = entity<StaticSpriteDispatcher> entityName initializers
+
+    /// Describe an animated sprite with the given initializers.
+    let animatedSprite entityName initializers = entity<AnimatedSpriteDispatcher> entityName initializers
+
     /// Describe a node with the given initializers.
     let node entityName initializers = entity<NodeDispatcher> entityName initializers
 
