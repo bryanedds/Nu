@@ -58,7 +58,7 @@ module Effects =
                    Color
                     (Set, EaseOut, Once,
                      [|{ TweenValue = colorOpaque; TweenLength = 50L }
-                       { TweenValue = colorTransparent; TweenLength = 30L }
+                       { TweenValue = colorOpaque; TweenLength = 30L }
                        { TweenValue = colorTransparent; TweenLength = 0L }|])|],
                  Nil) }
 

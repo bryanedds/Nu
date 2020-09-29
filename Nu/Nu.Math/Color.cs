@@ -93,6 +93,17 @@ namespace Nu
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="Color"/> struct.
+        /// </summary>
+        public Color(Vector4 vector)
+        {
+            R = (byte)vector.X;
+            G = (byte)vector.Y;
+            B = (byte)vector.Z;
+            A = (byte)vector.W;
+        }
+
+        /// <summary>
         /// Gets or sets the value at the index of the color.
         /// </summary>
         /// <param name="index">The index of the component from the color.</param>
