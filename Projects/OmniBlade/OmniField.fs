@@ -53,10 +53,6 @@ module OmniField =
 
         static let tryGetInteraction3 dialogOpt advents prop =
             match dialogOpt with
-            | Some dialog ->
-                if dialog.DialogProgress > dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
-                then Some "Next"
-                else None
             | None ->
                 match prop with
                 | Chest (_, _, chestId, _, _, _) ->
@@ -68,6 +64,10 @@ module OmniField =
                 | Sensor (_, _, _, _) -> None
                 | Npc _ -> Some "Talk"
                 | Shopkeep _ -> Some "Inquire"
+            | Some dialog ->
+                if dialog.DialogProgress > dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
+                then Some "Next"
+                else None
 
         static let tryGetInteraction dialogOpt advents (avatar : AvatarModel) world =
             match tryGetFacingProp avatar world with
@@ -95,6 +95,57 @@ module OmniField =
                 | Sensor (sensorType, _, requirements, consequents) -> Some (sensorType, requirements, consequents)
                 | _ -> None)
                 avatar.SeparatedBodyShapes
+
+        static let interactDialog dialog model =
+            if dialog.DialogPage < dialog.DialogText.Split(Constants.Gameplay.DialogSplit).Length - 1 then
+                let dialog = { dialog with DialogProgress = 0; DialogPage = inc dialog.DialogPage }
+                let model = FieldModel.updateDialogOpt (constant (Some dialog)) model
+                just model
+            else just (FieldModel.updateDialogOpt (constant None) model)
+
+        static let interactChest time itemType chestId battleTypeOpt requirements consequents (model : FieldModel) =
+            if model.Advents.IsSupersetOf requirements then
+                match battleTypeOpt with
+                | Some battleType ->
+                    match Map.tryFind battleType data.Value.Battles with
+                    | Some battleData ->
+                        let battleModel = BattleModel.makeFromLegion (FieldModel.getParty model) model.Inventory (Some itemType) battleData time
+                        let model = FieldModel.updateBattleOpt (constant (Some battleModel)) model
+                        just model
+                    | None -> just model
+                | None ->
+                    let model = FieldModel.updateInventory (Inventory.addItem itemType) model
+                    let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
+                    let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0 })) model
+                    let model = FieldModel.updateAdvents (Set.addMany consequents) model
+                    withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
+            else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
+
+        static let interactDoor requirements consequents prop (propModel : PropModel) (model : FieldModel) =
+            match propModel.PropState with
+            | DoorState false ->
+                if model.Advents.IsSupersetOf requirements then
+                    let model = FieldModel.updateAdvents (Set.addMany consequents) model
+                    withCmd model (OpenDoor prop)
+                else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
+            | _ -> failwithumf ()
+
+        static let interactSwitch requirements consequents prop (propModel : PropModel) (model : FieldModel) =
+            match propModel.PropState with
+            | SwitchState on ->
+                if model.Advents.IsSupersetOf requirements then
+                    let model = FieldModel.updateAdvents (if on then Set.removeMany consequents else Set.addMany consequents) model
+                    withCmd model (UseSwitch prop)
+                else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0 })) model)
+            | _ -> failwithumf ()
+
+        static let interactNpc dialogs (model : FieldModel) =
+            let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if model.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
+            let (dialog, consequents) = match List.tryHead dialogs with Some dialog -> dialog | None -> ("...", Set.empty)
+            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0 }
+            let model = FieldModel.updateDialogOpt (constant (Some dialogForm)) model
+            let model = FieldModel.updateAdvents (Set.addMany consequents) model
+            just model
 
         override this.Channel (_, field) =
             [Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))
@@ -177,63 +228,20 @@ module OmniField =
 
             | Interact ->
                 match model.DialogOpt with
-                | Some dialog ->
-                    if dialog.DialogPage < dialog.DialogText.Split(Constants.Gameplay.DialogSplit).Length - 1 then
-                        let dialog = { dialog with DialogProgress = 0; DialogPage = inc dialog.DialogPage }
-                        let model = FieldModel.updateDialogOpt (constant (Some dialog)) model
-                        just model
-                    else just (FieldModel.updateDialogOpt (constant None) model)
                 | None ->
                     match tryGetFacingProp model.Avatar world with
                     | Some prop ->
                         let propModel = prop.GetPropModel world
                         match propModel.PropData with
-                        | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) ->
-                            if model.Advents.IsSupersetOf requirements then
-                                match battleTypeOpt with
-                                | Some battleType ->
-                                    match Map.tryFind battleType data.Value.Battles with
-                                    | Some battleData ->
-                                        let battleModel = BattleModel.makeFromLegion (FieldModel.getParty model) model.Inventory (Some itemType) battleData (World.getTickTime world)
-                                        let model = FieldModel.updateBattleOpt (constant (Some battleModel)) model
-                                        just model
-                                    | None -> just model
-                                | None ->
-                                    let model = FieldModel.updateInventory (Inventory.addItem itemType) model
-                                    let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
-                                    let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0 })) model
-                                    let model = FieldModel.updateAdvents (Set.addMany consequents) model
-                                    withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
-                            else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
-                        | Door (_, requirements, consequents) ->
-                            match propModel.PropState with
-                            | DoorState false ->
-                                if model.Advents.IsSupersetOf requirements then
-                                    let model = FieldModel.updateAdvents (Set.addMany consequents) model
-                                    withCmd model (OpenDoor prop)
-                                else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
-                            | _ -> failwithumf ()
-                        | Portal (_, _, _, _, _) ->
-                            just model
-                        | Switch (_, requirements, consequents) ->
-                            match propModel.PropState with
-                            | SwitchState on ->
-                                if model.Advents.IsSupersetOf requirements then
-                                    let model = FieldModel.updateAdvents (if on then Set.removeMany consequents else Set.addMany consequents) model
-                                    withCmd model (UseSwitch prop)
-                                else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0 })) model)
-                            | _ -> failwithumf ()
-                        | Sensor (_, _, _, _) ->
-                            just model
-                        | Npc (_, _, dialogs, _) ->
-                            let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if model.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
-                            let (dialog, consequents) = match List.tryHead dialogs with Some dialog -> dialog | None -> ("...", Set.empty)
-                            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0 }
-                            let model = FieldModel.updateDialogOpt (constant (Some dialogForm)) model
-                            let model = FieldModel.updateAdvents (Set.addMany consequents) model
-                            just model
+                        | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest (World.getTickTime world) itemType chestId battleTypeOpt requirements consequents model
+                        | Door (_, requirements, consequents) -> interactDoor requirements consequents prop propModel model
+                        | Portal (_, _, _, _, _) -> just model
+                        | Switch (_, requirements, consequents) -> interactSwitch requirements consequents prop propModel model
+                        | Sensor (_, _, _, _) -> just model
+                        | Npc (_, _, dialogs, _) -> interactNpc dialogs model
                         | Shopkeep _ -> just model
                     | None -> just model
+                | Some dialog -> interactDialog dialog model
 
         override this.Command (_, command, _, world) =
 
