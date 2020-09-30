@@ -7,6 +7,8 @@ open Nu
 
 type [<StructuralEquality; StructuralComparison>] Advent =
     | Opened of Guid
+    | DebugSwitch
+    | DebugSwitch2
     | KilledFinalBoss
     | SavedPrincess
 
@@ -154,7 +156,7 @@ type [<StructuralEquality; StructuralComparison>] FieldType =
     | DebugRoom2
 
 type [<StructuralEquality; StructuralComparison>] SwitchType =
-    | MetalThrowSwitch
+    | ThrowSwitch
     
 type [<StructuralEquality; StructuralComparison>] SensorType =
     | AirSensor

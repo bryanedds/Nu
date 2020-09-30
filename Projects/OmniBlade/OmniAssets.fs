@@ -23,6 +23,8 @@ module Assets =
     let BrassChestClosedImage = asset<Image> FieldPackageName "BrassChestClosed"
     let WoodenDoorOpenedImage = asset<Image> FieldPackageName "WoodenDoorOpened"
     let WoodenDoorClosedImage = asset<Image> FieldPackageName "WoodenDoorClosed"
+    let ThrowSwitchOffImage = asset<Image> FieldPackageName "ThrowSwitchOff"
+    let ThrowSwitchOnImage = asset<Image> FieldPackageName "ThrowSwitchOn"
     let StepPlateImage = asset<Image> FieldPackageName "StepPlate"
     let EmptyImage = asset<Image> FieldPackageName "Empty"
     let NpcAnimationSheet = asset<Image> FieldPackageName "Npcs"
@@ -37,6 +39,7 @@ module Assets =
     let OpenDoorSound = asset<Sound> FieldPackageName "Unlatch"
     let OpenChestSound = asset<Sound> FieldPackageName "Unlatch2"
     let TriggerSound = asset<Sound> FieldPackageName "Unlatch3"
+    let UseSwitchSound = asset<Sound> FieldPackageName "Unlatch4"
     let StairStepsSound = asset<Sound> FieldPackageName "StairSteps"
     let FieldSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> FieldPackageName "Field" }
 

@@ -22,6 +22,7 @@ module OmniField =
         | PlaySound of int64 * single * Sound AssetTag
         | MoveAvatar of Vector2
         | OpenDoor of Entity
+        | UseSwitch of Entity
         | UpdateEye
 
     type Screen with
@@ -212,9 +213,18 @@ module OmniField =
                                     withCmd model (OpenDoor prop)
                                 else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
                             | _ -> failwithumf ()
-                        | Portal (_, _, _, _, _) -> just model
-                        | Switch (_, _, _) -> just model
-                        | Sensor (_, _, _, _) -> just model
+                        | Portal (_, _, _, _, _) ->
+                            just model
+                        | Switch (_, requirements, consequents) ->
+                            match propModel.PropState with
+                            | SwitchState on ->
+                                if model.Advents.IsSupersetOf requirements then
+                                    let model = FieldModel.updateAdvents (if on then Set.removeMany consequents else Set.addMany consequents) model
+                                    withCmd model (UseSwitch prop)
+                                else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0 })) model)
+                            | _ -> failwithumf ()
+                        | Sensor (_, _, _, _) ->
+                            just model
                         | Npc (_, _, dialogs, _) ->
                             let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if model.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
                             let (dialog, consequents) = match List.tryHead dialogs with Some dialog -> dialog | None -> ("...", Set.empty)
@@ -241,6 +251,10 @@ module OmniField =
             | OpenDoor prop ->
                 let world = prop.UpdateModel (fun model -> PropModel.updatePropState (constant (DoorState true)) model) world
                 withCmd world (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenDoorSound))
+
+            | UseSwitch prop ->
+                let world = prop.UpdateModel (fun model -> PropModel.updatePropState (function SwitchState flag -> SwitchState (not flag) | _ -> failwithumf ()) model) world
+                withCmd world (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UseSwitchSound))
 
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
