@@ -39,7 +39,7 @@ module PropDispatcherModule =
                 model.Bounds
              entity.IsSensor <== model --> fun model ->
                 match model.PropData with
-                | Sensor
+                | Sensor _
                 | Portal _ -> true
                 | _ -> false
              entity.BodyShape <== model --> fun model ->
@@ -52,6 +52,10 @@ module PropDispatcherModule =
                     match model.PropState with
                     | DoorState true -> BodyEmpty
                     | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                | Sensor (_, shapeOpt, _, _) ->
+                    match shapeOpt with
+                    | Some shape -> shape
+                    | None -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                 | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
 
         override this.Message (model, message, entity, world) =
@@ -63,7 +67,7 @@ module PropDispatcherModule =
         override this.View (model, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                let (insetOpt, image) =
+                let (background, insetOpt, image) =
                     match model.PropData with
                     | Chest (chestType, _, chestId, _, _, _) ->
                         let image =
@@ -76,7 +80,7 @@ module PropDispatcherModule =
                                 if Set.contains (Opened chestId) model.Advents
                                 then Assets.BrassChestOpenedImage
                                 else Assets.BrassChestClosedImage
-                        (None, image)
+                        (false, None, image)
                     | Door (doorType, _, _) ->
                         let image =
                             match doorType with
@@ -84,10 +88,14 @@ module PropDispatcherModule =
                                 match model.PropState with
                                 | DoorState opened -> if opened then Assets.WoodenDoorOpenedImage else Assets.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
-                        (None, image)
-                    | Portal (_, _, _, _, _) -> (None, Assets.EmptyImage)
-                    | Switch _ -> (None, Assets.CancelImage)
-                    | Sensor -> (None, Assets.CancelImage)
+                        (false, None, image)
+                    | Portal (_, _, _, _, _) -> (false, None, Assets.EmptyImage)
+                    | Switch _ -> (false, None, Assets.CancelImage)
+                    | Sensor (sensorType, _, _, _) ->
+                        match sensorType with
+                        | AirSensor -> (true, None, Assets.EmptyImage)
+                        | HiddenSensor -> (true, None, Assets.EmptyImage)
+                        | StepPlateSensor -> (true, None, Assets.StepPlateImage)
                     | Npc (npcType, direction, _, _) ->
                         match model.PropState with
                         | NpcState true ->
@@ -106,13 +114,15 @@ module PropDispatcherModule =
                                 | Rightward -> 3
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
-                            (Some inset, image)
-                        | _ -> (None, Assets.EmptyImage)
+                            (false, Some inset, image)
+                        | _ -> (false, None, Assets.EmptyImage)
                     | Shopkeep _ ->
-                        (None, Assets.CancelImage)
-                [Render
-                    (transform.Depth, transform.Position.Y, AssetTag.generalize image,
-                     SpriteDescriptor
+                        (false, None, Assets.CancelImage)
+                let depth = if background then Constants.Field.BackgroundDepth else Constants.Field.ForgroundDepth
+                let positionY = transform.Position.Y
+                let assetTag = AssetTag.generalize image
+                [Render (depth, positionY, assetTag,
+                    SpriteDescriptor
                         { Transform = transform
                           Offset = Vector2.Zero
                           InsetOpt = insetOpt

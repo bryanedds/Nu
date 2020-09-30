@@ -11,6 +11,8 @@ module AvatarModel =
             { BoundsOriginal_ : Vector4
               Bounds_ : Vector4
               AnimationState_ : CharacterAnimationState
+              CollidedBodyShapes_ : BodyShapeSource list
+              SeparatedBodyShapes_ : BodyShapeSource list
               IntersectedBodyShapes_ : BodyShapeSource list }
 
         (* Bounds Original Properties *)
@@ -34,6 +36,8 @@ module AvatarModel =
         member this.Direction = this.AnimationState_.Direction
 
         (* Local Properties *)
+        member this.CollidedBodyShapes = this.CollidedBodyShapes_
+        member this.SeparatedBodyShapes = this.SeparatedBodyShapes_
         member this.IntersectedBodyShapes = this.IntersectedBodyShapes_
 
     let getAnimationIndex time avatar =
@@ -44,6 +48,12 @@ module AvatarModel =
 
     let getAnimationFinished time avatar =
         CharacterAnimationState.getFinished time avatar.AnimationState_
+
+    let updateCollidedBodyShapes updater (avatar : AvatarModel) =
+        { avatar with CollidedBodyShapes_ = updater avatar.CollidedBodyShapes_ }
+
+    let updateSeparatedBodyShapes updater (avatar : AvatarModel) =
+        { avatar with SeparatedBodyShapes_ = updater avatar.SeparatedBodyShapes_ }
 
     let updateIntersectedBodyShapes updater (avatar : AvatarModel) =
         { avatar with IntersectedBodyShapes_ = updater avatar.IntersectedBodyShapes_ }
@@ -71,6 +81,8 @@ module AvatarModel =
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           AnimationState_ = animationState
+          CollidedBodyShapes_ = []
+          SeparatedBodyShapes_ = []
           IntersectedBodyShapes_ = [] }
 
     let empty =
@@ -78,6 +90,8 @@ module AvatarModel =
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           AnimationState_ = CharacterAnimationState.empty
+          CollidedBodyShapes_ = []
+          SeparatedBodyShapes_ = []
           IntersectedBodyShapes_ = [] }
 
 type AvatarModel = AvatarModel.AvatarModel

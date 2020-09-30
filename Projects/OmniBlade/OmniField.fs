@@ -15,6 +15,7 @@ module OmniField =
         | UpdateFieldTransition
         | UpdateDialog
         | UpdatePortal
+        | UpdateSensor
         | Interact
 
     type [<NoComparison>] FieldCommand =
@@ -63,7 +64,7 @@ module OmniField =
                 | Door _ -> Some "Open"
                 | Portal (_, _, _, _, _) -> None
                 | Switch (_, _, _) -> Some "Use"
-                | Sensor -> None
+                | Sensor (_, _, _, _) -> None
                 | Npc _ -> Some "Talk"
                 | Shopkeep _ -> Some "Inquire"
 
@@ -73,21 +74,33 @@ module OmniField =
             | None -> None
 
         static let tryGetTouchingPortal (avatar : AvatarModel) world =
-            let portals =
-                List.choose (fun shape ->
-                    match (shape.Entity.GetPropModel world).PropData with
-                    | Portal (_, fieldType, index, direction, _) -> Some (fieldType, index, direction)
-                    | _ -> None)
-                    avatar.IntersectedBodyShapes
-            match portals with
-            | head :: _ -> Some head
-            | _ -> None
+            avatar.IntersectedBodyShapes |>
+            List.choose (fun shape ->
+                match (shape.Entity.GetPropModel world).PropData with
+                | Portal (_, fieldType, index, direction, _) -> Some (fieldType, index, direction)
+                | _ -> None) |>
+            List.tryHead
+
+        static let getTouchedSensors (avatar : AvatarModel) world =
+            List.choose (fun shape ->
+                match (shape.Entity.GetPropModel world).PropData with
+                | Sensor (sensorType, _, requirements, consequents) -> Some (sensorType, requirements, consequents)
+                | _ -> None)
+                avatar.CollidedBodyShapes
+
+        static let getUntouchedSensors (avatar : AvatarModel) world =
+            List.choose (fun shape ->
+                match (shape.Entity.GetPropModel world).PropData with
+                | Sensor (sensorType, _, requirements, consequents) -> Some (sensorType, requirements, consequents)
+                | _ -> None)
+                avatar.SeparatedBodyShapes
 
         override this.Channel (_, field) =
             [Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))
              field.UpdateEvent => msg UpdateDialog
              field.UpdateEvent => msg UpdateFieldTransition
              field.UpdateEvent => msg UpdatePortal
+             field.UpdateEvent => msg UpdateSensor
              Simulants.FieldInteract.ClickEvent => msg Interact
              field.PostUpdateEvent => cmd UpdateEye]
 
@@ -145,6 +158,22 @@ module OmniField =
                     | None -> just model
                 | Some _ -> just model
 
+            | UpdateSensor ->
+                match model.FieldTransitionOpt with
+                | None ->
+                    let sensors = getTouchedSensors model.Avatar world
+                    let results =
+                        List.fold (fun (model : FieldModel, cmds : Signal<FieldMessage, FieldCommand> list) (sensorType, requirements, consequents) ->
+                            if model.Advents.IsSupersetOf requirements then
+                                let model = FieldModel.updateAdvents (constant (Set.union consequents model.Advents)) model
+                                match sensorType with
+                                | AirSensor -> (model, cmds)
+                                | HiddenSensor | StepPlateSensor -> (model, (Command (PlaySound (0L,  Constants.Audio.DefaultSoundVolume, Assets.TriggerSound)) :: cmds))
+                            else (model, cmds))
+                            (model, []) sensors
+                    results
+                | Some _ -> just model
+
             | Interact ->
                 match model.DialogOpt with
                 | Some dialog ->
@@ -185,7 +214,7 @@ module OmniField =
                             | _ -> failwithumf ()
                         | Portal (_, _, _, _, _) -> just model
                         | Switch (_, _, _) -> just model
-                        | Sensor -> just model
+                        | Sensor (_, _, _, _) -> just model
                         | Npc (_, _, dialogs, _) ->
                             let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if model.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
                             let (dialog, consequents) = match List.tryHead dialogs with Some dialog -> dialog | None -> ("...", Set.empty)

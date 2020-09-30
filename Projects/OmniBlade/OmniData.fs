@@ -155,6 +155,11 @@ type [<StructuralEquality; StructuralComparison>] FieldType =
 
 type [<StructuralEquality; StructuralComparison>] SwitchType =
     | MetalThrowSwitch
+    
+type [<StructuralEquality; StructuralComparison>] SensorType =
+    | AirSensor
+    | HiddenSensor
+    | StepPlateSensor
 
 type [<StructuralEquality; StructuralComparison>] BattleType =
     | DebugBattle
@@ -279,12 +284,12 @@ type [<StructuralEquality; NoComparison>] ShopkeepData =
       ShopkeepGreet : string list
       ShopkeepFarewell : string list }
 
-type [<StructuralEquality; StructuralComparison>] PropData =
+type [<StructuralEquality; NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Advent Set * Advent Set
     | Door of DoorType * Advent Set * Advent Set // for simplicity, we'll just have north / south doors
     | Portal of int * FieldType * Vector2 * Direction * Advent Set // leads to a different portal
-    | Switch of SwitchType * Advent Set * Advent Set // anything the can affect another thing on the field through interaction
-    | Sensor // anything the can affect another thing on the field through traversal
+    | Switch of SwitchType * Advent Set * Advent Set // anything that can affect another thing on the field through interaction
+    | Sensor of SensorType * BodyShape option * Advent Set * Advent Set // anything that can affect another thing on the field through traversal
     | Npc of NpcType * Direction * (string * Advent Set * Advent Set) list * Advent Set
     | Shopkeep of ShopkeepType
     static member empty = Chest (WoodenChest, Consumable GreenHerb, Gen.idEmpty, None, Set.empty, Set.empty)
