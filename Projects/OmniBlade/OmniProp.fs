@@ -89,8 +89,16 @@ module PropDispatcherModule =
                                 | DoorState opened -> if opened then Assets.WoodenDoorOpenedImage else Assets.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
                         (false, None, image)
-                    | Portal (_, _, _, _, _) -> (false, None, Assets.EmptyImage)
-                    | Switch _ -> (false, None, Assets.CancelImage)
+                    | Portal (_, _, _, _, _) ->
+                        (false, None, Assets.EmptyImage)
+                    | Switch (switchType, _, _) ->
+                        let image =
+                            match switchType with
+                            | ThrowSwitch ->
+                                match model.PropState with
+                                | SwitchState on -> if on then Assets.ThrowSwitchOnImage else Assets.ThrowSwitchOffImage
+                                | _ -> failwithumf ()
+                        (false, None, image)
                     | Sensor (sensorType, _, _, _) ->
                         match sensorType with
                         | AirSensor -> (true, None, Assets.EmptyImage)
