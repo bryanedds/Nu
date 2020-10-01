@@ -57,6 +57,8 @@ module Assets =
     // layer file paths
     let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
     let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
+    let ShopLayerFilePath = "Assets/Field/Shop.nulyr"
+    let ShopConfirmLayerFilePath = "Assets/Field/ShopConfirm.nulyr"
 
     // data file paths
     let WeaponDataFilePath = "Assets/Field/WeaponData.csv"

@@ -31,6 +31,7 @@ module Simulants =
     let FieldAvatar = FieldScene / "Avatar"
     let FieldInteract = FieldScene / "Interact"
     let FieldDialog = FieldScene / "Dialog"
+    let FieldShop = Field / "Shop"
 
     // battle
     let Battle = Screen "Battle"

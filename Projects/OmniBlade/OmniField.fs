@@ -147,6 +147,11 @@ module OmniField =
             let model = FieldModel.updateAdvents (Set.addMany consequents) model
             just model
 
+        static let interactShopkeep shopType (model : FieldModel) =
+            let shopModel = { ShopType = shopType; ShopState = ShopGreeting; ShopPage = 0; ShopConfirmModelOpt = None }
+            let model = FieldModel.updateShopModelOpt (constant (Some shopModel)) model
+            just model
+
         override this.Channel (_, field) =
             [Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))
              field.UpdateEvent => msg UpdateDialog
@@ -239,7 +244,7 @@ module OmniField =
                         | Switch (_, requirements, consequents) -> interactSwitch requirements consequents propModel model
                         | Sensor (_, _, _, _) -> just model
                         | Npc (_, _, dialogs, _) -> interactNpc dialogs model
-                        | Shopkeep _ -> just model
+                        | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType model
                     | None -> just model
                 | Some dialog -> interactDialog dialog model
 
@@ -397,8 +402,11 @@ module OmniField =
                                     | Door (_, _, _) -> DoorState false
                                     | Switch (_, _, _) -> SwitchState false
                                     | Npc (_, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements)
-                                    | Shopkeep (_, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
+                                    | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
                                     | _ -> NilState
                                 | Some propState -> propState
                             PropModel.make propBounds propDepth advents propData propState object.Id)
-                        Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]]
+                        Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]
+
+             // shop layer
+             Content.layerFromFile<ShopDispatcher> Simulants.FieldShop.Name Assets.ShopLayerFilePath [] []]

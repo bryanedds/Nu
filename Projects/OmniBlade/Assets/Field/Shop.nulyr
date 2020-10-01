@@ -1,7 +1,5 @@
-[LayerDispatcher
- [[Model
-   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
-  [Name Layer]
+[ShopDispatcher
+ [[Name Layer]
   [Persistent True]
   [Visible True]]
  [[TextDispatcher

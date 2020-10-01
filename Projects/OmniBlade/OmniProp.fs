@@ -123,7 +123,7 @@ module PropDispatcherModule =
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
                             (false, Some inset, image)
                         | _ -> (false, None, Assets.EmptyImage)
-                    | Shopkeep (shopkeepType, direction, _) ->
+                    | Shopkeep (shopkeepType, direction, _, _) ->
                         match model.PropState with
                         | ShopkeepState true ->
                             let image = Assets.ShopkeepAnimationSheet
