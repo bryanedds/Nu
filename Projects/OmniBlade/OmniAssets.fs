@@ -28,6 +28,7 @@ module Assets =
     let StepPlateImage = asset<Image> FieldPackageName "StepPlate"
     let EmptyImage = asset<Image> FieldPackageName "Empty"
     let NpcAnimationSheet = asset<Image> FieldPackageName "Npcs"
+    let ShopkeepAnimationSheet = asset<Image> FieldPackageName "Shopkeep"
     let FinnAnimationSheet = asset<Image> FieldPackageName "Finn"
     let GlennAnimationSheet = asset<Image> FieldPackageName "Glenn"
     let GoblinAnimationSheet = asset<Image> FieldPackageName "Goblin"

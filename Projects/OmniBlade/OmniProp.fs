@@ -55,7 +55,12 @@ module PropDispatcherModule =
                     match shapeOpt with
                     | Some shape -> shape
                     | None -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
-                | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
+                | Shopkeep _ ->
+                    match model.PropState with
+                    | ShopkeepState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                    | _ -> BodyEmpty
+                | _ ->
+                    BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
 
         override this.Message (model, message, entity, world) =
             match message with
@@ -113,18 +118,21 @@ module PropDispatcherModule =
                                 | VillageWoman -> 1
                                 | VillageBoy -> 2
                                 | VillageGirl -> 3
-                            let column =
-                                match direction with
-                                | Downward -> 0
-                                | Leftward -> 1
-                                | Upward -> 2
-                                | Rightward -> 3
+                            let column = CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
                             (false, Some inset, image)
                         | _ -> (false, None, Assets.EmptyImage)
-                    | Shopkeep _ ->
-                        (false, None, Assets.CancelImage)
+                    | Shopkeep (shopkeepType, direction, _) ->
+                        match model.PropState with
+                        | ShopkeepState true ->
+                            let image = Assets.ShopkeepAnimationSheet
+                            let row = match shopkeepType with ShopkeepMan -> 0
+                            let column = CharacterAnimationState.directionToInt direction
+                            let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
+                            let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
+                            (false, Some inset, image)
+                        | _ -> (false, None, Assets.EmptyImage)
                 let depth = if background then Constants.Field.BackgroundDepth else Constants.Field.ForgroundDepth
                 let positionY = transform.Position.Y
                 let assetTag = AssetTag.generalize image
