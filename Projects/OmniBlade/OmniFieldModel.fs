@@ -15,6 +15,16 @@ type [<StructuralEquality; NoComparison>] DialogModel =
       DialogProgress : int
       DialogPage : int }
 
+type [<StructuralEquality; NoComparison>] ShopConfirmModel =
+    { ShopConfirmItemType : ItemType
+      ShopConfirmState : bool } // true if buying
+
+type [<StructuralEquality; NoComparison>] ShopModel =
+    { ShopType : ShopType
+      ShopState : ShopState
+      ShopPage : int
+      ShopConfirmModelOpt : ShopConfirmModel option }
+
 type FieldTransition =
     { FieldType : FieldType
       FieldIndex : Vector2
@@ -32,6 +42,7 @@ module FieldModel =
               Advents_ : Advent Set
               PropStates_ : Map<int, PropState>
               Inventory_ : Inventory
+              ShopModelOpt_ : ShopModel option
               FieldTransitionOpt_ : FieldTransition option
               DialogOpt_ : DialogModel option
               BattleOpt_ : BattleModel option }
@@ -69,6 +80,9 @@ module FieldModel =
     let updateInventory updater fieldModel =
         { fieldModel with Inventory_ = updater fieldModel.Inventory_ }
 
+    let updateShopModelOpt updater fieldModel =
+        { fieldModel with ShopModelOpt_ = updater fieldModel.ShopModelOpt_ }
+
     let updateDialogOpt updater fieldModel =
         { fieldModel with DialogOpt_ = updater fieldModel.DialogOpt_ }
 
@@ -85,6 +99,7 @@ module FieldModel =
           Advents_ = advents
           PropStates_ = Map.empty
           Inventory_ = inventory
+          ShopModelOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
@@ -96,6 +111,7 @@ module FieldModel =
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
+          ShopModelOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
@@ -107,6 +123,7 @@ module FieldModel =
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
+          ShopModelOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
