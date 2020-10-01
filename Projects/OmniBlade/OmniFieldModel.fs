@@ -30,6 +30,7 @@ module FieldModel =
               Avatar_ : AvatarModel
               Legion_ : Legion
               Advents_ : Advent Set
+              PropStates_ : Map<int, PropState>
               Inventory_ : Inventory
               FieldTransitionOpt_ : FieldTransition option
               DialogOpt_ : DialogModel option
@@ -40,6 +41,7 @@ module FieldModel =
         member this.Avatar = this.Avatar_
         member this.Legion = this.Legion_
         member this.Advents = this.Advents_
+        member this.PropStates = this.PropStates_
         member this.Inventory = this.Inventory_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
         member this.DialogOpt = this.DialogOpt_
@@ -61,6 +63,9 @@ module FieldModel =
     let updateAdvents updater fieldModel =
         { fieldModel with Advents_ = updater fieldModel.Advents_ }
 
+    let updatePropStates updater fieldModel =
+        { fieldModel with PropStates_ = updater fieldModel.PropStates_ }
+
     let updateInventory updater fieldModel =
         { fieldModel with Inventory_ = updater fieldModel.Inventory_ }
 
@@ -78,6 +83,7 @@ module FieldModel =
           Avatar_ = avatarModel
           Legion_ = legion
           Advents_ = advents
+          PropStates_ = Map.empty
           Inventory_ = inventory
           FieldTransitionOpt_ = None
           DialogOpt_ = None
@@ -88,6 +94,7 @@ module FieldModel =
           Avatar_ = AvatarModel.empty
           Legion_ = Map.empty
           Advents_ = Set.empty
+          PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
           FieldTransitionOpt_ = None
           DialogOpt_ = None
@@ -98,6 +105,7 @@ module FieldModel =
           Avatar_ = AvatarModel.empty
           Legion_ = Map.ofList [(0, Legionnaire.finn); (1, Legionnaire.glenn)]
           Advents_ = Set.empty
+          PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
           FieldTransitionOpt_ = None
           DialogOpt_ = None

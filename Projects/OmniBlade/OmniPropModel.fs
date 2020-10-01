@@ -11,7 +11,8 @@ module PropModel =
               Depth_ : single
               Advents_ : Advent Set
               PropData_ : PropData
-              PropState_ : PropState }
+              PropState_ : PropState
+              PropId_ : int }
 
         (* Bounds Properties *)
         member this.Bounds = this.Bounds_
@@ -25,6 +26,7 @@ module PropModel =
         member this.Advents = this.Advents_
         member this.PropData = this.PropData_
         member this.PropState = this.PropState_
+        member this.PropId = this.PropId_
 
     let updateBounds updater (model : PropModel) =
         { model with Bounds_ = updater model.Bounds_ }
@@ -41,18 +43,20 @@ module PropModel =
     let updatePropState updater (model : PropModel) =
         { model with PropState_ = updater model.PropState_ }
 
-    let make bounds depth advents propData propState =
+    let make bounds depth advents propData propState propId =
         { Bounds_ = bounds
           Depth_ = depth
           Advents_ = advents
           PropData_ = propData
-          PropState_ = propState }
+          PropState_ = propState
+          PropId_ = propId }
 
     let empty =
-        { Bounds_ = v4Bounds v2Zero Constants.Gameplay.CharacterSize
+        { Bounds_ = v4Bounds v2Zero Constants.Gameplay.TileSize
           Depth_ = 0.0f
           Advents_ = Set.empty
           PropData_ = PropData.empty
-          PropState_ = NilState }
+          PropState_ = NilState
+          PropId_ = 0 }
 
 type PropModel = PropModel.PropModel

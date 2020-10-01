@@ -21,8 +21,6 @@ module OmniField =
     type [<NoComparison>] FieldCommand =
         | PlaySound of int64 * single * Sound AssetTag
         | MoveAvatar of Vector2
-        | OpenDoor of Entity
-        | UseSwitch of Entity
         | UpdateEye
 
     type Screen with
@@ -121,21 +119,23 @@ module OmniField =
                     withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound))
             else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
 
-        static let interactDoor requirements consequents prop (propModel : PropModel) (model : FieldModel) =
+        static let interactDoor requirements consequents (propModel : PropModel) (model : FieldModel) =
             match propModel.PropState with
             | DoorState false ->
                 if model.Advents.IsSupersetOf requirements then
                     let model = FieldModel.updateAdvents (Set.addMany consequents) model
-                    withCmd model (OpenDoor prop)
+                    let model = FieldModel.updatePropStates (Map.add propModel.PropId (DoorState true)) model
+                    just model
                 else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
             | _ -> failwithumf ()
 
-        static let interactSwitch requirements consequents prop (propModel : PropModel) (model : FieldModel) =
+        static let interactSwitch requirements consequents (propModel : PropModel) (model : FieldModel) =
             match propModel.PropState with
             | SwitchState on ->
                 if model.Advents.IsSupersetOf requirements then
                     let model = FieldModel.updateAdvents (if on then Set.removeMany consequents else Set.addMany consequents) model
-                    withCmd model (UseSwitch prop)
+                    let model = FieldModel.updatePropStates (Map.add propModel.PropId (SwitchState (not on))) model
+                    just model
                 else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0 })) model)
             | _ -> failwithumf ()
 
@@ -234,9 +234,9 @@ module OmniField =
                         let propModel = prop.GetPropModel world
                         match propModel.PropData with
                         | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest (World.getTickTime world) itemType chestId battleTypeOpt requirements consequents model
-                        | Door (_, requirements, consequents) -> interactDoor requirements consequents prop propModel model
+                        | Door (_, requirements, consequents) -> interactDoor requirements consequents propModel model
                         | Portal (_, _, _, _, _) -> just model
-                        | Switch (_, requirements, consequents) -> interactSwitch requirements consequents prop propModel model
+                        | Switch (_, requirements, consequents) -> interactSwitch requirements consequents propModel model
                         | Sensor (_, _, _, _) -> just model
                         | Npc (_, _, dialogs, _) -> interactNpc dialogs model
                         | Shopkeep _ -> just model
@@ -255,14 +255,6 @@ module OmniField =
                 let world = Simulants.FieldAvatar.SetCenter position world
                 let world = World.setBodyPosition position (Simulants.FieldAvatar.GetPhysicsId world) world
                 just world
-
-            | OpenDoor prop ->
-                let world = prop.UpdateModel (fun model -> PropModel.updatePropState (constant (DoorState true)) model) world
-                withCmd world (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenDoorSound))
-
-            | UseSwitch prop ->
-                let world = prop.UpdateModel (fun model -> PropModel.updatePropState (function SwitchState flag -> SwitchState (not flag) | _ -> failwithumf ()) model) world
-                withCmd world (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UseSwitchSound))
 
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
@@ -367,8 +359,8 @@ module OmniField =
 
                  // props
                  Content.entities model
-                    (fun model -> (model.FieldType, model.Advents))
-                    (fun (fieldType, advents) world ->
+                    (fun model -> (model.FieldType, model.Advents, model.PropStates))
+                    (fun (fieldType, advents, propStates) world ->
                         match Map.tryFind fieldType data.Value.Fields with
                         | Some fieldData ->
                             match World.tryGetTileMapMetadata fieldData.FieldTileMap world with
@@ -376,13 +368,13 @@ module OmniField =
                                 if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
                                     let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
                                     let objects = enumerable<TmxObject> group.Objects
-                                    let results = Seq.map (fun object -> (object, group, tileMap, advents)) objects
+                                    let results = Seq.map (fun object -> (object, group, tileMap, advents, propStates)) objects
                                     Seq.toList results
                                 else []
                             | None -> []
                         | None -> [])
                     (fun _ model _ ->
-                        let propModel = model.Map (fun (object, group, tileMap, advents) ->
+                        let propModel = model.Map (fun (object, group, tileMap, advents, propStates) ->
                             let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
                             let propSize = v2 (single object.Width) (single object.Height)
                             let propBounds = v4Bounds propPosition propSize
@@ -395,10 +387,13 @@ module OmniField =
                                 | (true, propDataStr) -> scvalue propDataStr
                                 | (false, _) -> PropData.empty
                             let propState =
-                                match propData with
-                                | Door (_, _, _) -> DoorState false
-                                | Switch (_, _, _) -> SwitchState false
-                                | Npc (_, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements)
-                                | _ -> NilState
-                            PropModel.make propBounds propDepth advents propData propState)
+                                match Map.tryFind object.Id propStates with
+                                | None ->
+                                    match propData with
+                                    | Door (_, _, _) -> DoorState false
+                                    | Switch (_, _, _) -> SwitchState false
+                                    | Npc (_, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements)
+                                    | _ -> NilState
+                                | Some propState -> propState
+                            PropModel.make propBounds propDepth advents propData propState object.Id)
                         Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])]]
