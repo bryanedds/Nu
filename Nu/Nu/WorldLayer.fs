@@ -239,7 +239,7 @@ module WorldLayerModule =
         /// Turn a layers lens into a series of live layers.
         static member expandLayers (lens : Lens<obj, World>) sieve spread indexOpt mapper origin screen world =
             let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
-            World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin screen world
+            World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin screen screen world
 
         /// Turn layer content into a live layer.
         static member expandLayerContent content origin screen world =
@@ -270,12 +270,12 @@ module WorldLayerModule =
                             world handlers
                     let world =
                         List.fold (fun world (layer, lens, sieve, spread, indexOpt, mapper) ->
-                            World.expandEntities lens sieve spread indexOpt mapper origin layer world)
+                            World.expandEntities lens sieve spread indexOpt mapper origin layer layer world)
                             world streams
                     let world =
                         List.fold (fun world (owner, entityContents) ->
                             List.fold (fun world entityContent ->
-                                World.expandEntityContent entityContent (SimulantOrigin owner) layer world |> snd)
+                                World.expandEntityContent entityContent origin owner layer world |> snd)
                                 world entityContents)
                             world entityContents
                     (Some layer, world)

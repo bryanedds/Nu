@@ -306,8 +306,8 @@ module WorldScreenModule =
                     List.fold (fun world (handler, address, simulant) ->
                         World.monitor (fun (evt : Event) world ->
                             let signal = handler evt
-                            let owner = match origin with SimulantOrigin simulant -> simulant | FacetOrigin (simulant, _) -> simulant
-                            let world = WorldModule.trySignal signal owner world
+                            let simulant = match origin with SimulantOrigin simulant -> simulant | FacetOrigin (simulant, _) -> simulant
+                            let world = WorldModule.trySignal signal simulant world
                             (Cascade, world))
                             address simulant world)
                         world handlers
@@ -317,13 +317,13 @@ module WorldScreenModule =
                         world layerStreams
                 let world =
                     List.fold (fun world (layer, lens, sieve, unfold, indexOpt, mapper) ->
-                        World.expandEntities lens sieve unfold indexOpt mapper origin layer world)
+                        World.expandEntities lens sieve unfold indexOpt mapper origin layer layer world)
                         world entityStreams
                 let world =
                     List.fold (fun world (owner : Entity, entityContents) ->
                         let layer = owner.Parent
                         List.fold (fun world entityContent ->
-                            World.expandEntityContent entityContent (SimulantOrigin owner) layer world |> snd)
+                            World.expandEntityContent entityContent origin owner layer world |> snd)
                             world entityContents)
                         world entityContents
                 let world =

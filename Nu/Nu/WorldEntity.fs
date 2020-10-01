@@ -359,38 +359,35 @@ module WorldEntityModule =
                     ([], world)
 
         /// Turn an entity lens into a series of live entities.
-        static member expandEntities (lens : Lens<obj, World>) sieve spread indexOpt mapper origin layer world =
+        static member expandEntities (lens : Lens<obj, World>) sieve spread indexOpt mapper origin owner layer world =
             let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
-            World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin layer world
+            World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin owner layer world
 
         /// Turn entity content into a live entity.
-        static member expandEntityContent content origin layer world =
+        static member expandEntityContent content origin (owner : Simulant) layer world =
             if World.getLayerExists layer world then
                 match EntityContent.expand content layer world with
                 | Choice1Of3 (lens, sieve, spread, indexOpt, mapper) ->
-                    let world = World.expandEntities lens sieve spread indexOpt mapper origin layer world
+                    let world = World.expandEntities lens sieve spread indexOpt mapper origin owner layer world
                     (None, world)
                 | Choice2Of3 (_, descriptor, handlers, binds, content) ->
                     let (entity, world) =
                         World.createEntity4 DefaultOverlay descriptor layer world
                     let world =
-                        match origin with
-                        | SimulantOrigin simulant
-                        | FacetOrigin (simulant, _) ->
-                            let world =
-                                match simulant with
-                                | :? Entity as parent ->
-                                    // only set parent node if one was not specified by the descriptor properties
-                                    if not (List.exists (fun (name, _) -> name = Property? ParentNodeOpt) descriptor.SimulantProperties) then
-                                        let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
-                                        entity.TrySetProperty Property? ParentNodeOpt true false property world |> snd
-                                    else world
-                                | _ -> world
-                            World.monitor
-                                (fun _ world -> (Cascade, World.destroyEntity entity world))
-                                (Events.Unregistering --> simulant.SimulantAddress)
-                                entity
-                                world
+                        match owner with
+                        | :? Entity as parent ->
+                            // only set parent node if one was not specified by the descriptor properties
+                            if not (List.exists (fun (name, _) -> name = Property? ParentNodeOpt) descriptor.SimulantProperties) then
+                                let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
+                                entity.TrySetProperty Property? ParentNodeOpt true false property world |> snd
+                            else world
+                        | _ -> world
+                    let world =
+                        World.monitor
+                            (fun _ world -> (Cascade, World.destroyEntity entity world))
+                            (Events.Unregistering --> owner.SimulantAddress)
+                            entity
+                            world
                     let world =
                         List.fold (fun world (simulant, left : World Lens, right) ->
                             WorldModule.bind5 simulant left right world)
@@ -401,14 +398,14 @@ module WorldEntityModule =
                                 let signal = handler evt
                                 let world =
                                     match origin with
-                                    | SimulantOrigin owner -> WorldModule.trySignal signal owner world
-                                    | FacetOrigin (owner, facetName) -> WorldModule.trySignalFacet signal facetName owner world
+                                    | SimulantOrigin simulant -> WorldModule.trySignal signal simulant world
+                                    | FacetOrigin (simulant, facetName) -> WorldModule.trySignalFacet signal facetName simulant world
                                 (Cascade, world))
                                 address simulant world)
                             world handlers
                     let world =
                         List.fold (fun world content ->
-                            World.expandEntityContent content origin layer world |> snd)
+                            World.expandEntityContent content origin owner layer world |> snd)
                             world (snd content)
                     (Some entity, world)
                 | Choice3Of3 (entityName, filePath) ->
