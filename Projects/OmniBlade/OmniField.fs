@@ -355,7 +355,7 @@ module OmniField =
                         | None -> ""
                      Entity.Visible <== model --> fun model -> Option.isSome model.DialogOpt
                      Entity.Justification == Unjustified true
-                     Entity.Margins == v2 32.0f 32.0f]
+                     Entity.Margins == v2 40.0f 40.0f]
 
                  // props
                  Content.entities model
