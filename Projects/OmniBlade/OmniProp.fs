@@ -17,8 +17,7 @@ module PropDispatcherModule =
         member this.PropModel = this.Model<PropModel> ()
 
     type PropDispatcher () =
-        inherit EntityDispatcher<PropModel, PropMessage, unit>
-            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f Set.empty PropData.empty NilState)
+        inherit EntityDispatcher<PropModel, PropMessage, unit> (PropModel.empty)
 
         static member Facets =
             [typeof<RigidBodyFacet>]
