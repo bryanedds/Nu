@@ -1549,9 +1549,9 @@ module TextDispatcherModule =
 
     type Entity with
     
-        member this.GetBackgroundImage world : Image AssetTag = this.Get Property? BackgroundImage world
-        member this.SetBackgroundImage (value : Image AssetTag) world = this.SetFast Property? BackgroundImage false false value world
-        member this.BackgroundImage = lens Property? BackgroundImage this.GetBackgroundImage this.SetBackgroundImage this
+        member this.GetBackgroundImageOpt world : Image AssetTag option = this.Get Property? BackgroundImageOpt world
+        member this.SetBackgroundImageOpt (value : Image AssetTag option) world = this.SetFast Property? BackgroundImageOpt false false value world
+        member this.BackgroundImageOpt = lens Property? BackgroundImageOpt this.GetBackgroundImageOpt this.SetBackgroundImageOpt this
 
     type TextDispatcher () =
         inherit GuiDispatcher ()
@@ -1562,31 +1562,37 @@ module TextDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
+             define Entity.BackgroundImageOpt (Some (AssetTag.make<Image> Assets.DefaultPackageName "Image3"))]
 
         override this.Actualize (text, world) =
             if text.GetVisible world then
-                let transform = text.GetTransform world
-                World.enqueueRenderMessage
-                    (LayeredDescriptorMessage
-                        { Depth = transform.Depth
-                          PositionY = transform.Position.Y
-                          AssetTag = text.GetBackgroundImage world |> AssetTag.generalize
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = transform
-                                  Offset = Vector2.Zero
-                                  InsetOpt = None
-                                  Image = text.GetBackgroundImage world
-                                  Color = if text.GetEnabled world then Color.White else text.GetDisabledColor world
-                                  Glow = Color.Zero
-                                  Flip = FlipNone }})
-                    world
+                match text.GetBackgroundImageOpt world with
+                | Some image ->
+                    let transform = text.GetTransform world
+                    World.enqueueRenderMessage
+                        (LayeredDescriptorMessage
+                            { Depth = transform.Depth
+                              PositionY = transform.Position.Y
+                              AssetTag = AssetTag.generalize image
+                              RenderDescriptor =
+                                SpriteDescriptor
+                                    { Transform = transform
+                                      Offset = Vector2.Zero
+                                      InsetOpt = None
+                                      Image = image
+                                      Color = if text.GetEnabled world then Color.White else text.GetDisabledColor world
+                                      Glow = Color.Zero
+                                      Flip = FlipNone }})
+                        world
+                | None -> world
             else world
 
         override this.GetQuickSize (text, world) =
-            match Metadata.tryGetTextureSizeF (text.GetBackgroundImage world) (World.getMetadata world) with
-            | Some size -> size
+            match text.GetBackgroundImageOpt world with
+            | Some image ->
+                match Metadata.tryGetTextureSizeF image (World.getMetadata world) with
+                | Some size -> size
+                | None -> Constants.Engine.DefaultEntitySize
             | None -> Constants.Engine.DefaultEntitySize
 
 [<AutoOpen>]
