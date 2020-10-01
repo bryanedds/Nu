@@ -337,14 +337,16 @@ module OmniField =
                             | DialogMedium -> v4Bounds (v2 -448.0f 0.0f) (v2 640.0f 256.0f)
                             | DialogLarge -> v4Bounds (v2 -448.0f 0.0f) (v2 896.0f 256.0f)
                         | None -> v4Zero
-                     Entity.BackgroundImage <== model --> fun model ->
-                        match model.DialogOpt with
-                        | Some dialog ->
-                            match dialog.DialogForm with
-                            | DialogThin -> Assets.DialogThin
-                            | DialogMedium -> Assets.DialogMedium
-                            | DialogLarge -> Assets.DialogLarge
-                        | None -> Assets.DialogLarge
+                     Entity.BackgroundImageOpt <== model --> fun model ->
+                        let image =
+                            match model.DialogOpt with
+                            | Some dialog ->
+                                match dialog.DialogForm with
+                                | DialogThin -> Assets.DialogThin
+                                | DialogMedium -> Assets.DialogMedium
+                                | DialogLarge -> Assets.DialogLarge
+                            | None -> Assets.DialogLarge
+                        Some image
                      Entity.Text <== model --> fun model ->
                         match model.DialogOpt with
                         | Some dialog ->
