@@ -8,6 +8,7 @@ type PropState =
     | DoorState of bool
     | SwitchState of bool
     | NpcState of bool
+    | ShopkeepState of bool
     | NilState
 
 type [<StructuralEquality; NoComparison>] Inventory =

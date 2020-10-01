@@ -61,7 +61,7 @@ module OmniField =
                 | Switch (_, _, _) -> Some "Use"
                 | Sensor (_, _, _, _) -> None
                 | Npc _ -> Some "Talk"
-                | Shopkeep _ -> Some "Inquire"
+                | Shopkeep _ -> Some "Shop"
             | Some dialog ->
                 if dialog.DialogProgress > dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
                 then Some "Next"
@@ -393,6 +393,7 @@ module OmniField =
                                     | Door (_, _, _) -> DoorState false
                                     | Switch (_, _, _) -> SwitchState false
                                     | Npc (_, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements)
+                                    | Shopkeep (_, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
                                     | _ -> NilState
                                 | Some propState -> propState
                             PropModel.make propBounds propDepth advents propData propState object.Id)

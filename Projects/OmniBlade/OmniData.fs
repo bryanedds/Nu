@@ -125,7 +125,7 @@ type [<StructuralEquality; StructuralComparison>] ArmorSubtype =
 type AccessoryType =
     string
 
-type [<StructuralEquality; StructuralComparison>] ShopkeepType =
+type [<StructuralEquality; StructuralComparison>] ShopType =
     | WeaponShopkeep of int // level
     | ArmorShopKeep of int // level
     | AccessoryShopKeep of int // level
@@ -150,6 +150,9 @@ type [<StructuralEquality; StructuralComparison>] NpcType =
     | VillageWoman
     | VillageBoy
     | VillageGirl
+
+type [<StructuralEquality; StructuralComparison>] ShopkeepType =
+    | ShopkeepMan
 
 type [<StructuralEquality; StructuralComparison>] FieldType =
     | DebugRoom
@@ -293,7 +296,7 @@ type [<StructuralEquality; NoComparison>] PropData =
     | Switch of SwitchType * Advent Set * Advent Set // anything that can affect another thing on the field through interaction
     | Sensor of SensorType * BodyShape option * Advent Set * Advent Set // anything that can affect another thing on the field through traversal
     | Npc of NpcType * Direction * (string * Advent Set * Advent Set) list * Advent Set
-    | Shopkeep of ShopkeepType
+    | Shopkeep of ShopkeepType * Direction * Advent Set
     static member empty = Chest (WoodenChest, Consumable GreenHerb, Gen.idEmpty, None, Set.empty, Set.empty)
 
 type [<StructuralEquality; NoComparison>] FieldData =
