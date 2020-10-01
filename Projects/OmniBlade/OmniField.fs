@@ -315,8 +315,8 @@ module OmniField =
 
                  // interact button
                  Content.button Simulants.FieldInteract.Name
-                    [Entity.Size == v2Dup 92.0f
-                     Entity.Position == v2 360.0f -252.0f
+                    [Entity.Size == v2 192.0f 64.0f
+                     Entity.Position == v2 248.0f -240.0f
                      Entity.Depth == Constants.Field.GuiDepth
                      Entity.Visible <== model ->> fun model world ->
                         let interactionOpt = tryGetInteraction model.DialogOpt model.Advents model.Avatar world
