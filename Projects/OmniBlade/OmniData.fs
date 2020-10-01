@@ -62,11 +62,13 @@ type [<StructuralEquality; StructuralComparison>] ItemType =
     | Equipment of EquipmentType
     | Consumable of ConsumableType
     | KeyItem of KeyItemType
+    | Stash of int
     static member getName item =
         match item with
         | Equipment ty -> string ty
         | Consumable ty -> string ty
         | KeyItem ty -> string ty
+        | Stash gold -> string gold + "G"
 
 type [<StructuralEquality; StructuralComparison>] AimType =
     | EnemyAim of bool // healthy (N/A)
