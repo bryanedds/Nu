@@ -32,6 +32,12 @@ module Simulants =
     let FieldInteract = FieldScene / "Interact"
     let FieldDialog = FieldScene / "Dialog"
     let FieldShop = Field / "Shop"
+    let FieldShopBuy = FieldShop / "Buy"
+    let FieldShopSell = FieldShop / "Sell"
+    let FieldShopLeave = FieldShop / "Leave"
+    let FieldShopGold = FieldShop / "Gold"
+    let FieldShopPageUp = FieldShop / "PageUp"
+    let FieldShopPageDown = FieldShop / "PageDown"
 
     // battle
     let Battle = Screen "Battle"

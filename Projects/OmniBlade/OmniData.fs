@@ -126,9 +126,9 @@ type AccessoryType =
     string
 
 type [<StructuralEquality; StructuralComparison>] ShopType =
-    | WeaponShopkeep of int // level
-    | ArmorShopKeep of int // level
-    | AccessoryShopKeep of int // level
+    | WeaponShop of int // level
+    | ArmorShop of int // level
+    | AccessoryShop of int // level
 
 type [<StructuralEquality; StructuralComparison>] ShopState =
     | ShopGreeting

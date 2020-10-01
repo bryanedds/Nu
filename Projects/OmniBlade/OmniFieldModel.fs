@@ -54,6 +54,7 @@ module FieldModel =
         member this.Advents = this.Advents_
         member this.PropStates = this.PropStates_
         member this.Inventory = this.Inventory_
+        member this.ShopModelOpt = this.ShopModelOpt_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
