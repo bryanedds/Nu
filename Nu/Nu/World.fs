@@ -181,6 +181,31 @@ module Nu =
                     else tryPropagateByName simulant left.Name right world
                 (handling, world :> obj)
 
+            // init trySignalFacet F# reach-around
+            WorldTypes.trySignalFacet <- fun signalObj facetNameObj entityObj worldObj ->
+                let entity = entityObj :?> Entity
+                entity.TrySignalFacet signalObj facetNameObj (worldObj :?> World) :> obj
+
+            // init trySignalEntity F# reach-around
+            WorldTypes.trySignalEntity <- fun signalObj entityObj worldObj ->
+                let entity = entityObj :?> Entity
+                entity.TrySignal signalObj (worldObj :?> World) :> obj
+
+            // init trySignalLayer F# reach-around
+            WorldTypes.trySignalLayer <- fun signalObj layerObj worldObj ->
+                let layer = layerObj :?> Layer
+                layer.TrySignal signalObj (worldObj :?> World) :> obj
+
+            // init trySignalScreen F# reach-around
+            WorldTypes.trySignalScreen <- fun signalObj screenObj worldObj ->
+                let screen = screenObj :?> Screen
+                screen.TrySignal signalObj (worldObj :?> World) :> obj
+
+            // init trySignalGame F# reach-around
+            WorldTypes.trySignalGame <- fun signalObj gameObj worldObj ->
+                let game = gameObj :?> Game
+                game.TrySignal signalObj (worldObj :?> World) :> obj
+
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
             WorldModule.eval <- fun expr localFrame scriptContext world ->

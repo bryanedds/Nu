@@ -12,6 +12,7 @@ module Assets =
     let DialogThinImage = asset<Image> GuiPackageName "DialogThin"
     let DialogMediumImage = asset<Image> GuiPackageName "DialogMedium"
     let DialogLargeImage = asset<Image> GuiPackageName "DialogLarge"
+    let DialogHugeImage = asset<Image> GuiPackageName "DialogHuge"
     let ButtonUpImage = asset<Image> GuiPackageName "ButtonUp"
     let ButtonDownImage = asset<Image> GuiPackageName "ButtonDown"
     let ButtonShortUpImage = asset<Image> GuiPackageName "ButtonShortUp"

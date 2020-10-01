@@ -63,7 +63,7 @@
   </object>
   <object id="36" gid="488" x="1408" y="512" width="160" height="160">
    <properties>
-    <property name="I" value="[Shopkeep ShopkeepMan]"/>
+    <property name="I" value="[Shopkeep ShopkeepMan Downward [WeaponShop 0]]"/>
    </properties>
   </object>
  </objectgroup>
