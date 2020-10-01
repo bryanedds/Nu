@@ -16,6 +16,8 @@ module OmniField =
         | UpdateDialog
         | UpdatePortal
         | UpdateSensor
+        | ShopPageUp
+        | ShopPageDown
         | ShopLeave
         | Interact
 
@@ -232,6 +234,14 @@ module OmniField =
                     results
                 | Some _ -> just model
 
+            | ShopPageUp ->
+                let model = FieldModel.updateShopModelOpt (function Some shopModel -> Some { shopModel with ShopPage = max 0 (dec shopModel.ShopPage) } | None -> None) model
+                just model
+
+            | ShopPageDown ->
+                let model = FieldModel.updateShopModelOpt (function Some shopModel -> Some { shopModel with ShopPage = inc shopModel.ShopPage } | None -> None) model
+                just model
+
             | ShopLeave ->
                 let model = FieldModel.updateShopModelOpt (constant None) model
                 just model
@@ -396,28 +406,37 @@ module OmniField =
                      Content.text Simulants.FieldShopGold.Name
                         [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text <== model --> fun model -> scstring model.Inventory.Gold + "G"]
                      Content.button Simulants.FieldShopPageUp.Name
-                        [Entity.PositionLocal == v2 16.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == "<"; Entity.Size == v2 48.0f 64.0f]
+                        [Entity.PositionLocal == v2 16.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == "<"; Entity.Size == v2 48.0f 64.0f
+                         Entity.ClickEvent ==> msg ShopPageUp]
                      Content.button Simulants.FieldShopPageDown.Name
-                        [Entity.PositionLocal == v2 832.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == ">"; Entity.Size == v2 48.0f 64.0f]
+                        [Entity.PositionLocal == v2 832.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == ">"; Entity.Size == v2 48.0f 64.0f
+                         Entity.ClickEvent ==> msg ShopPageDown]
                      Content.entities model
                         (fun (model : FieldModel) -> (model.ShopModelOpt, model.Inventory))
                         (fun (shopModelOpt, inventory : Inventory) _ ->
                             match shopModelOpt with
-                            | Some _ ->
+                            | Some shopModel ->
                                 inventory.Items |>
-                                Map.toList |>
-                                List.map (fun (ty, ct) -> List.init ct (fun _ -> ty)) |>
-                                List.concat |>
-                                List.choose
+                                Map.toSeq |>
+                                Seq.map (fun (ty, ct) -> List.init ct (fun _ -> ty)) |>
+                                Seq.concat |>
+                                Seq.choose
                                     (function
                                      | Equipment _ as item -> Some (ItemType.getName item)
                                      | Consumable _ as item -> Some (ItemType.getName item)
                                      | KeyItem _ -> None
-                                     | Stash _ -> None)
+                                     | Stash _ -> None) |>
+                                Seq.chunkBySize 10 |>
+                                Seq.trySkip shopModel.ShopPage |>
+                                Seq.map List.ofArray |>
+                                Seq.tryHead |>
+                                Option.defaultValue []
                             | None -> [])
                         (fun i item _ ->
+                            let x = if i < 5 then 12.0f else 448.0f
+                            let y = 336.0f - single (i % 5) * 72.0f
                             Content.button Gen.name
-                                [Entity.PositionLocal == v2 12.0f (336.0f - single i * 72.0f)
+                                [Entity.PositionLocal == v2 x y
                                  Entity.Size == v2 320.0f 64.0f
                                  Entity.DepthLocal == 1.0f
                                  Entity.Text <== item --> fun item -> item

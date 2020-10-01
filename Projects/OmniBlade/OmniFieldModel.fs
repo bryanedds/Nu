@@ -123,7 +123,7 @@ module FieldModel =
           Legion_ = Map.ofList [(0, Legionnaire.finn); (1, Legionnaire.glenn)]
           Advents_ = Set.empty
           PropStates_ = Map.empty
-          Inventory_ = { Items = Map.empty; Gold = 0 }
+          Inventory_ = { Items = Map.singleton (Consumable GreenHerb) 32; Gold = 0 }
           ShopModelOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
