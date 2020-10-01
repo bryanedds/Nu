@@ -35,11 +35,12 @@ type [<StructuralEquality; NoComparison>] Inventory =
         | _ -> false
 
     static member addItem item inventory =
-        match Map.tryFind item inventory.Items with
-        | Some itemCount ->
-            { inventory with Items = Map.add item (inc itemCount) inventory.Items }
-        | None ->
-            { inventory with Items = Map.add item 1 inventory.Items }
+        match item with
+        | Equipment _ | Consumable _ | KeyItem _ ->
+            match Map.tryFind item inventory.Items with
+            | Some itemCount -> { inventory with Items = Map.add item (inc itemCount) inventory.Items }
+            | None -> { inventory with Items = Map.add item 1 inventory.Items }
+        | Stash gold -> { inventory with Gold = inventory.Gold + gold }
 
     static member removeItem item inventory =
         match Map.tryFind item inventory.Items with

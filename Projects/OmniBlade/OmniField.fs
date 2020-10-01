@@ -394,11 +394,35 @@ module OmniField =
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 320.0f 408.0f; Entity.DepthLocal == 1.0f; Entity.Text == "Sell..."; Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
                      Content.text Simulants.FieldShopGold.Name
-                        [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == "0G"]
+                        [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text <== model --> fun model -> scstring model.Inventory.Gold + "G"]
                      Content.button Simulants.FieldShopPageUp.Name
                         [Entity.PositionLocal == v2 16.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == "<"; Entity.Size == v2 48.0f 64.0f]
                      Content.button Simulants.FieldShopPageDown.Name
-                        [Entity.PositionLocal == v2 832.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == ">"; Entity.Size == v2 48.0f 64.0f]]
+                        [Entity.PositionLocal == v2 832.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == ">"; Entity.Size == v2 48.0f 64.0f]
+                     Content.entities model
+                        (fun (model : FieldModel) -> (model.ShopModelOpt, model.Inventory))
+                        (fun (shopModelOpt, inventory : Inventory) _ ->
+                            match shopModelOpt with
+                            | Some _ ->
+                                inventory.Items |>
+                                Map.toList |>
+                                List.map (fun (ty, ct) -> List.init ct (fun _ -> ty)) |>
+                                List.concat |>
+                                List.choose
+                                    (function
+                                     | Equipment _ as item -> Some (ItemType.getName item)
+                                     | Consumable _ as item -> Some (ItemType.getName item)
+                                     | KeyItem _ -> None
+                                     | Stash _ -> None)
+                            | None -> [])
+                        (fun i item _ ->
+                            Content.button Gen.name
+                                [Entity.PositionLocal == v2 12.0f (336.0f - single i * 72.0f)
+                                 Entity.Size == v2 320.0f 64.0f
+                                 Entity.DepthLocal == 1.0f
+                                 Entity.Text <== item --> fun item -> item
+                                 Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
+                                 Entity.Margins == v2 16.0f 0.0f])]
 
                  // props
                  Content.entities model
