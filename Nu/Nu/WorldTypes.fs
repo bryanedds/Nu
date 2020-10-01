@@ -146,13 +146,6 @@ module WorldTypes =
     // EventSystem reach-arounds.
     let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
 
-    // Signal reach-arounds.
-    let mutable internal trySignalFacet : obj -> string -> obj -> obj -> obj = Unchecked.defaultof<_>
-    let mutable internal trySignalEntity : obj -> obj -> obj -> obj = Unchecked.defaultof<_>
-    let mutable internal trySignalLayer : obj -> obj -> obj -> obj = Unchecked.defaultof<_>
-    let mutable internal trySignalScreen : obj -> obj -> obj -> obj = Unchecked.defaultof<_>
-    let mutable internal trySignalGame : obj -> obj -> obj -> obj = Unchecked.defaultof<_>
-
     /// Represents an unsubscription operation for an event.
     type Unsubscription =
         World -> World
@@ -251,7 +244,7 @@ module WorldTypes =
 
         /// Try to send a signal to a game.
         abstract TrySignal : obj * Game * World -> World
-        default this.TrySignal (_, _, world) = Log.info "Incorrect signal type returned from event binding."; world
+        default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for screens.
     and ScreenDispatcher () =
@@ -279,7 +272,7 @@ module WorldTypes =
 
         /// Try to send a signal to a screen.
         abstract TrySignal : obj * Screen * World -> World
-        default this.TrySignal (signalObj, screen, world) = trySignalGame signalObj screen.Parent world :?> World
+        default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for layers.
     and LayerDispatcher () =
@@ -307,7 +300,7 @@ module WorldTypes =
 
         /// Try to send a signal to a layer.
         abstract TrySignal : obj * Layer * World -> World
-        default this.TrySignal (signalObj, layer, world) = trySignalScreen signalObj layer.Parent world :?> World
+        default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for entities.
     and EntityDispatcher () =
@@ -359,11 +352,11 @@ module WorldTypes =
 
         /// Try to send a signal to an entity's facet.
         abstract TrySignalFacet : obj * string * Entity * World -> World
-        default this.TrySignalFacet (signalObj, _, entity, world) = trySignalEntity signalObj entity world :?> World
+        default this.TrySignalFacet (_, _, _, world) = world
 
         /// Try to send a signal to an entity.
         abstract TrySignal : obj * Entity * World -> World
-        default this.TrySignal (signalObj, entity, world) = trySignalLayer signalObj entity.Parent world :?> World
+        default this.TrySignal (_, _, world) = world
 
     /// Dynamically augments an entity's behavior in a composable way.
     and Facet () =
@@ -404,7 +397,7 @@ module WorldTypes =
 
         /// Try to send a signal to a facet.
         abstract TrySignal : obj * Entity * World -> World
-        default this.TrySignal (signalObj, entity, world) = trySignalEntity signalObj entity world :?> World
+        default this.TrySignal (_, _, world) = world
 
     /// Generalized interface for simulant state.
     and SimulantState =
