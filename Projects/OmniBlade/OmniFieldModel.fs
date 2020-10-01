@@ -4,33 +4,6 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type Legionnaire =
-    { LegionIndex : int // key
-      PartyIndexOpt : int option
-      CharacterType : CharacterType
-      ExpPoints : int
-      WeaponOpt : WeaponType option
-      ArmorOpt : ArmorType option
-      Accessories : AccessoryType list }
-
-    static member finn =
-        { LegionIndex = 0
-          PartyIndexOpt = Some 0
-          CharacterType = Ally Finn
-          ExpPoints = 15
-          WeaponOpt = None
-          ArmorOpt = None
-          Accessories = [] }
-
-    static member glenn =
-        { LegionIndex = 1
-          PartyIndexOpt = Some 1
-          CharacterType = Ally Glenn
-          ExpPoints = 15
-          WeaponOpt = None
-          ArmorOpt = None
-          Accessories = [] }
-
 type [<StructuralEquality; NoComparison>] DialogForm =
     | DialogThin
     | DialogMedium
@@ -38,8 +11,9 @@ type [<StructuralEquality; NoComparison>] DialogForm =
 
 type [<StructuralEquality; NoComparison>] DialogModel =
     { DialogForm : DialogForm
-      DialogText : Dialog
-      DialogProgress : int }
+      DialogText : string
+      DialogProgress : int
+      DialogPage : int }
 
 type FieldTransition =
     { FieldType : FieldType
@@ -54,8 +28,9 @@ module FieldModel =
         private
             { FieldType_ : FieldType
               Avatar_ : AvatarModel
-              Legion_ : Map<int, Legionnaire>
+              Legion_ : Legion
               Advents_ : Advent Set
+              PropStates_ : Map<int, PropState>
               Inventory_ : Inventory
               FieldTransitionOpt_ : FieldTransition option
               DialogOpt_ : DialogModel option
@@ -66,6 +41,7 @@ module FieldModel =
         member this.Avatar = this.Avatar_
         member this.Legion = this.Legion_
         member this.Advents = this.Advents_
+        member this.PropStates = this.PropStates_
         member this.Inventory = this.Inventory_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
         member this.DialogOpt = this.DialogOpt_
@@ -87,6 +63,9 @@ module FieldModel =
     let updateAdvents updater fieldModel =
         { fieldModel with Advents_ = updater fieldModel.Advents_ }
 
+    let updatePropStates updater fieldModel =
+        { fieldModel with PropStates_ = updater fieldModel.PropStates_ }
+
     let updateInventory updater fieldModel =
         { fieldModel with Inventory_ = updater fieldModel.Inventory_ }
 
@@ -104,6 +83,7 @@ module FieldModel =
           Avatar_ = avatarModel
           Legion_ = legion
           Advents_ = advents
+          PropStates_ = Map.empty
           Inventory_ = inventory
           FieldTransitionOpt_ = None
           DialogOpt_ = None
@@ -114,6 +94,7 @@ module FieldModel =
           Avatar_ = AvatarModel.empty
           Legion_ = Map.empty
           Advents_ = Set.empty
+          PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
           FieldTransitionOpt_ = None
           DialogOpt_ = None
@@ -124,6 +105,7 @@ module FieldModel =
           Avatar_ = AvatarModel.empty
           Legion_ = Map.ofList [(0, Legionnaire.finn); (1, Legionnaire.glenn)]
           Advents_ = Set.empty
+          PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
           FieldTransitionOpt_ = None
           DialogOpt_ = None

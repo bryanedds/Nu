@@ -511,7 +511,7 @@ module WorldModule2 =
                 | SDL.SDL_EventType.SDL_QUIT ->
                     World.exit world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
-                    let mousePosition = Vector2 (single evt.button.x, single evt.button.y)
+                    let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
                             let eventTrace = EventTrace.record4 "World" "processInput" "MouseDrag" EventTrace.empty
@@ -770,7 +770,7 @@ module WorldModule2 =
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionTicks world) / single transition.TransitionLifetime
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
-                let color = Vector4 (Vector3.One, alpha)
+                let color = Color.White.WithA (byte (alpha * 255.0f))
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
                 let transform = { Position = position; Size = size; Rotation = 0.0f; Depth = Single.MaxValue; Flags = -1; RefCount = 0 }
@@ -786,7 +786,7 @@ module WorldModule2 =
                                   InsetOpt = None
                                   Image = dissolveImage
                                   Color = color
-                                  Glow = Vector4.Zero
+                                  Glow = Color.Zero
                                   Flip = FlipNone }})
                     world
             | None -> world

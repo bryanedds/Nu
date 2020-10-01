@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="64" tileheight="64" infinite="0" nextlayerid="5" nextobjectid="27">
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="64" tileheight="64" infinite="0" nextlayerid="5" nextobjectid="30">
  <tileset firstgid="1" source="Colloseum.tsx"/>
  <layer id="2" name="Floor" width="32" height="16">
   <properties>
    <property name="D" value="0"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2BgAQ8TAwMvnTEfE8J+HSBbl85YbxDa3wjETXhwMxHmopuBSw82+xcC8SI8eDER9qObgUsPNvsPAvEhPPgwje2nBkb3Ay43D6b05wNk+5KB0c0kRa8fkv1TmUjH6OaRYwalgBpmAQBEQVjl
+   eJxjYKAfmMoEwQMFRu0fnPbzAMV46Yz5kNyhA2Tr0hnrDUL7G4G4CQ9uJsJcdDNw6cFm/0IgXoQHLybCfnQzcOnBZv9BID6EBx+msf3UwOh+wOXmwZT+fIBsXzIwupmk6PVDsh9WLpGC0c0jxwxKATXMAgAHol7L
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="16">
@@ -14,31 +14,36 @@
    <property name="D" value="10"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJzN1W1KAlEUxvFznSxsFyII9qFFKIT1pT2kJmbSHnz9UG2iNPdhmvsw0W30H+bKXEZnvOT4cuHHHDzH+xxwwLSIpHGDMipaOYZn8LNVXdCZq9xHVNFGB44SSeFSeXXH6IXNBPvtiHseUNJ7FNFFD30MkGE2hyvl1QOjFzYT7Pcj7mmihbzO/8IQY0zcvZi9xZ3y6onRC5sJ9scR93zg08j/wRRzrcRsDU/Kq+eybpeZEb6N/AWW4p+W2lxLTDMz/Br5xzr7zL93jpv/4mzfY1P+tcXe206d3/oZDeXvYZsfx3kl9w3vIe/lvvNtzynkZ3GOiwPmJuC+Fhnx/4fcPc6QtHgm9b5KS+ie7ffN3P8qGvn5He75Aw85XeI=
+   eJzN1V9KAlEUx/FzHU1qFyIE9aB7UAjzpT2kFf2jPaTWQ7WJ1NpHae2jpLbRd5gzzGW8gxcbswMf5jLn6O/ADExFRCrYQxdHqpvDNX2vqTlNzYxzj3GCPgYIjMgmtkx0Hli9rJl0v++YqXGvjkN0dI8WbnCLEcaoMruDXROdx1YvaybdHzlm4rpGDw3Nf8IzJpiGezG7j7aJzlOrlzWT7k8cM3E9Ymjlv+EdM9Vh9hRnJjrPZN4yM3G94NXK/8J30paecZ8lp5kPfFr566pV5h8E682/Chbv4cqveey9qM551he4NMkevvl51B2593jIeC9Xne9b/yF/Gxso/2FuAeFrUZXkOxTuUUTJ41rSfY0qaM/393buslpWfuMX//MDuTBYXA==
   </data>
  </layer>
  <objectgroup id="4" name="Props">
   <properties>
    <property name="D" value="10"/>
   </properties>
-  <object id="2" gid="813" x="512" y="640" width="64" height="64">
-   <properties>
-    <property name="I" value="[Chest [Consumable GreenHerb] WoodenChest 7ced2215-353f-4653-86f4-05200b99f641]"/>
-   </properties>
-  </object>
-  <object id="3" gid="813" x="384" y="640" width="64" height="64">
-   <properties>
-    <property name="I" value="[Chest [Consumable GreenHerb] WoodenChest 33521205-c327-4bba-9b1c-afc982ba66ac [Some DebugBattle] None]"/>
-   </properties>
-  </object>
   <object id="23" gid="488" x="960" y="512" width="160" height="160">
    <properties>
-    <property name="I" value="[Npc VillageMan Downward [&quot;Hello, NPC!&quot; &quot;Aye aye aye!&quot;]]"/>
+    <property name="I" value="[Npc VillageMan Downward [[&quot;Welcome to Debug Room!^Aye aye aye!&quot;]]]"/>
    </properties>
   </object>
-  <object id="25" gid="488" x="960" y="1024" width="128" height="32">
+  <object id="25" gid="488" x="960" y="1024" width="128" height="64">
    <properties>
-    <property name="I" value="[Portal 0 DebugRoom2 [1024 832] Downward]"/>
+    <property name="I" value="[Portal 0 DebugRoom2 [1024 768] Downward]"/>
+   </properties>
+  </object>
+  <object id="27" gid="488" x="1728" y="320" width="128" height="192">
+   <properties>
+    <property name="I" value="[Door WoodenDoor [SavedPrincess]]"/>
+   </properties>
+  </object>
+  <object id="28" gid="813" x="640" y="640" width="64" height="64">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 46733ddc-a989-4d6e-a1b7-518af5428739]"/>
+   </properties>
+  </object>
+  <object id="29" gid="813" x="448" y="640" width="64" height="64">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 7ced2215-353f-4653-86f4-05200b99f641]"/>
    </properties>
   </object>
  </objectgroup>

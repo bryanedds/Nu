@@ -17,8 +17,7 @@ module PropDispatcherModule =
         member this.PropModel = this.Model<PropModel> ()
 
     type PropDispatcher () =
-        inherit EntityDispatcher<PropModel, PropMessage, unit>
-            (PropModel.make (v4Bounds v2Zero Constants.Gameplay.TileSize) 0.0f Set.empty PropData.empty NilState)
+        inherit EntityDispatcher<PropModel, PropMessage, unit> (PropModel.empty)
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -39,13 +38,29 @@ module PropDispatcherModule =
                 model.Bounds
              entity.IsSensor <== model --> fun model ->
                 match model.PropData with
-                | Sensor
+                | Sensor _
                 | Portal _ -> true
                 | _ -> false
              entity.BodyShape <== model --> fun model ->
                 match model.PropData with
-                | Npc _ -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
-                | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
+                | Npc _ ->
+                    match model.PropState with
+                    | NpcState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                    | _ -> BodyEmpty
+                | Door _ ->
+                    match model.PropState with
+                    | DoorState true -> BodyEmpty
+                    | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                | Sensor (_, shapeOpt, _, _) ->
+                    match shapeOpt with
+                    | Some shape -> shape
+                    | None -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                | Shopkeep _ ->
+                    match model.PropState with
+                    | ShopkeepState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                    | _ -> BodyEmpty
+                | _ ->
+                    BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
 
         override this.Message (model, message, entity, world) =
             match message with
@@ -56,9 +71,9 @@ module PropDispatcherModule =
         override this.View (model, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                let (insetOpt, image) =
+                let (background, insetOpt, image) =
                     match model.PropData with
-                    | Chest (_, chestType, chestId, _, _) ->
+                    | Chest (chestType, _, chestId, _, _, _) ->
                         let image =
                             match chestType with
                             | WoodenChest ->
@@ -69,45 +84,65 @@ module PropDispatcherModule =
                                 if Set.contains (Opened chestId) model.Advents
                                 then Assets.BrassChestOpenedImage
                                 else Assets.BrassChestClosedImage
-                        (None, image)
-                    | Door (_, doorType) ->
+                        (false, None, image)
+                    | Door (doorType, _, _) ->
                         let image =
                             match doorType with
                             | WoodenDoor ->
                                 match model.PropState with
                                 | DoorState opened -> if opened then Assets.WoodenDoorOpenedImage else Assets.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
-                        (None, image)
-                    | Portal (_, _, _, _) -> (None, Assets.EmptyImage)
-                    | Switch -> (None, Assets.CancelImage)
-                    | Sensor -> (None, Assets.CancelImage)
-                    | Npc (npcType, direction, _) ->
-                        let image = Assets.NpcAnimationSheet
-                        let row =
-                            match npcType with
-                            | VillageMan -> 0
-                            | VillageWoman -> 1
-                            | VillageBoy -> 2
-                            | VillageGirl -> 3
-                        let column =
-                            match direction with
-                            | Downward -> 0
-                            | Leftward -> 1
-                            | Upward -> 2
-                            | Rightward -> 3
-                        let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
-                        let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
-                        (Some inset, image)
-                    | Shopkeep shopkeepType ->
-                        (None, Assets.CancelImage)
-                [Render
-                    (transform.Depth, transform.Position.Y, AssetTag.generalize image,
-                     SpriteDescriptor
+                        (false, None, image)
+                    | Portal (_, _, _, _, _) ->
+                        (false, None, Assets.EmptyImage)
+                    | Switch (switchType, _, _) ->
+                        let image =
+                            match switchType with
+                            | ThrowSwitch ->
+                                match model.PropState with
+                                | SwitchState on -> if on then Assets.ThrowSwitchOnImage else Assets.ThrowSwitchOffImage
+                                | _ -> failwithumf ()
+                        (false, None, image)
+                    | Sensor (sensorType, _, _, _) ->
+                        match sensorType with
+                        | AirSensor -> (true, None, Assets.EmptyImage)
+                        | HiddenSensor -> (true, None, Assets.EmptyImage)
+                        | StepPlateSensor -> (true, None, Assets.StepPlateImage)
+                    | Npc (npcType, direction, _, _) ->
+                        match model.PropState with
+                        | NpcState true ->
+                            let image = Assets.NpcAnimationSheet
+                            let row =
+                                match npcType with
+                                | VillageMan -> 0
+                                | VillageWoman -> 1
+                                | VillageBoy -> 2
+                                | VillageGirl -> 3
+                            let column = CharacterAnimationState.directionToInt direction
+                            let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
+                            let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
+                            (false, Some inset, image)
+                        | _ -> (false, None, Assets.EmptyImage)
+                    | Shopkeep (shopkeepType, direction, _) ->
+                        match model.PropState with
+                        | ShopkeepState true ->
+                            let image = Assets.ShopkeepAnimationSheet
+                            let row = match shopkeepType with ShopkeepMan -> 0
+                            let column = CharacterAnimationState.directionToInt direction
+                            let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
+                            let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
+                            (false, Some inset, image)
+                        | _ -> (false, None, Assets.EmptyImage)
+                let depth = if background then Constants.Field.BackgroundDepth else Constants.Field.ForgroundDepth
+                let positionY = transform.Position.Y
+                let assetTag = AssetTag.generalize image
+                [Render (depth, positionY, assetTag,
+                    SpriteDescriptor
                         { Transform = transform
                           Offset = Vector2.Zero
                           InsetOpt = insetOpt
                           Image = image
-                          Color = v4One
-                          Glow = v4Zero
+                          Color = Color.White
+                          Glow = Color.Zero
                           Flip = FlipNone })]
             else []

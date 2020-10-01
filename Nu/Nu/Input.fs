@@ -54,7 +54,7 @@ module MouseState =
     /// Get the position of the mouse in floating-point coordinates.
     let getPositionF world =
         let mousePosition = getPosition world
-        Vector2 (single mousePosition.X, single mousePosition.Y)
+        v2 (single mousePosition.X) (single mousePosition.Y)
 
 [<RequireQualifiedAccess>]
 module KeyboardState =

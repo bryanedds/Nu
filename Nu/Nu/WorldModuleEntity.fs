@@ -202,20 +202,20 @@ module WorldModuleEntity =
             let transform = entityState.Transform
             match transform.Rotation with
             | 0.0f ->
-                let boundsOverflow = Math.makeBoundsOverflow transform.Position transform.Size entityState.Overflow
+                let boundsOverflow = v4BoundsOverflow transform.Position transform.Size entityState.Overflow
                 boundsOverflow // no need to transform when unrotated
             | _ ->
-                let boundsOverflow = Math.makeBoundsOverflow transform.Position transform.Size entityState.Overflow
+                let boundsOverflow = v4BoundsOverflow transform.Position transform.Size entityState.Overflow
                 let position = boundsOverflow.Xy
-                let size = Vector2 (boundsOverflow.Z, boundsOverflow.W) - position
+                let size = boundsOverflow.Zw
                 let center = position + size * 0.5f
                 let corner = position + size
                 let centerToCorner = corner - center
                 let quaternion = Quaternion.FromAxisAngle (Vector3.UnitZ, Constants.Math.DegreesToRadiansF * 45.0f)
-                let newSizeOver2 = Vector2 (Vector2.Transform (centerToCorner, quaternion)).Y
+                let newSizeOver2 = v2Dup (Vector2.Transform (centerToCorner, quaternion)).Y
                 let newPosition = center - newSizeOver2
                 let newSize = newSizeOver2 * 2.0f
-                Vector4 (newPosition.X, newPosition.Y, newPosition.X + newSize.X, newPosition.Y + newSize.Y)
+                v4Bounds newPosition newSize
 
         static member internal getEntityModelProperty entity world =
             (World.getEntityState entity world).Model
@@ -324,7 +324,7 @@ module WorldModuleEntity =
                 let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 if World.getEntityPublishChanges entity world then
                     let world = World.publishEntityChange Property? Transform value entity world
-                    let world = World.publishEntityChange Property? Bounds (v4 value.Position.X value.Position.Y (value.Position.X + value.Size.X) (value.Position.Y + value.Size.Y)) entity world
+                    let world = World.publishEntityChange Property? Bounds (v4Bounds value.Position value.Size) entity world
                     let world = World.publishEntityChange Property? Position value.Position entity world
                     let world = World.publishEntityChange Property? Center (value.Position + value.Size * 0.5f) entity world
                     let world = World.publishEntityChange Property? Bottom (value.Position + value.Size.WithY 0.0f * 0.5f) entity world
@@ -337,11 +337,11 @@ module WorldModuleEntity =
 
         static member internal getEntityBounds entity world =
             let transform = (World.getEntityState entity world).Transform
-            v4 transform.Position.X transform.Position.Y (transform.Position.X + transform.Size.X) (transform.Position.Y + transform.Size.Y)
+            v4Bounds transform.Position transform.Size
 
         static member internal setEntityBounds (value : Vector4) entity world =
             let transform = World.getEntityTransform entity world
-            let transform = { transform with Position = v2 value.X value.Y; Size = v2 value.Z value.W - v2 value.X value.Y }
+            let transform = { transform with Position = v2 value.X value.Y; Size = v2 value.Z value.W }
             World.setEntityTransform transform entity world
 
         static member internal getEntityCenter entity world =

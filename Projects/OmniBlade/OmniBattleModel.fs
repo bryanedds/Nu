@@ -158,7 +158,7 @@ module BattleModel =
     let prependActionCommand command model =
          { model with ActionCommands_ = Queue.rev model.ActionCommands |> Queue.conj command |> Queue.rev }
 
-    let make battleData allies inventory bonusItemOpt time =
+    let makeFromAllies allies inventory bonusItemOpt battleData time =
         let enemies = List.mapi CharacterModel.makeEnemy battleData.BattleEnemies
         let characters = allies @ enemies |> Map.ofListBy (fun (character : CharacterModel) -> (character.CharacterIndex, character))
         let model =
@@ -169,6 +169,26 @@ module BattleModel =
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty }
         model
+
+    let makeFromLegion (legion : Legion) inventory bonusItemOpt battleData time =
+        let allies =
+            List.mapi
+                (fun i legionnaire ->
+                    match Map.tryFind legionnaire.CharacterType data.Value.Characters with
+                    | Some characterData ->
+                        // TODO: bounds checking
+                        let index = legionnaire.LegionIndex
+                        let bounds = v4Bounds battleData.BattleAllyPositions.[index] Constants.Gameplay.CharacterSize
+                        let characterIndex = AllyIndex index
+                        let characterState = CharacterState.make characterData legionnaire.ExpPoints legionnaire.WeaponOpt legionnaire.ArmorOpt legionnaire.Accessories
+                        let animationSheet = characterData.AnimationSheet
+                        let direction = Direction.fromVector2 -bounds.Bottom
+                        let character = CharacterModel.make bounds characterIndex characterState animationSheet direction
+                        CharacterModel.updateActionTime (constant (inc i * 333)) character
+                    | None -> failwith ("Could not find CharacterData for '" + scstring legionnaire.CharacterType + "'."))
+                (Map.toValueList legion)
+        let battleModel = makeFromAllies allies inventory bonusItemOpt battleData time
+        battleModel
 
     let empty =
         { BattleState_ = BattleReady 0L

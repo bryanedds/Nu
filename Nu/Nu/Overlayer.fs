@@ -16,7 +16,7 @@ type [<StructuralEquality; StructuralComparison>] internal OverlayState =
 
 /// An overlay.
 [<Syntax
-    ("EntityDispatcher EffectDispatcher NodeDispatcher GuiDispatcher " +
+    ("EntityDispatcher EffectDispatcher StaticSpriteDispatcher AnimatedSpriteDispatcher NodeDispatcher GuiDispatcher " +
      "ButtonDispatcher LabelDispatcher TextDispatcher ToggleDispatcher FeelerDispatcher FillBarDispatcher " +
      "BlockDispatcher BoxDispatcher CharacterDispatcher TileMapDispatcher",
      "EffectFacet ScriptFacet TextFacet RigidBodyFacet RigidBodiesFacet JointFacet TileMapFacet NodeFacet StaticSpriteFacet AnimatedSpriteFacet",

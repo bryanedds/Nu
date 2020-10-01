@@ -8,7 +8,7 @@
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
 #r "../../packages/FsCheck.2.11.0/lib/net452/FsCheck.dll"
 #r "../../packages/FsCheck.Xunit.2.11.0/lib/net452/FsCheck.Xunit.dll"
-#r "../../packages/Prime.5.21.0/lib/net472/Prime.dll"
+#r "../../packages/Prime.5.22.0/lib/net472/Prime.dll"
 #r "../../packages/Prime.Scripting.5.3.0/lib/net472/Prime.Scripting.exe"
 #r "../../Nu/Nu.Dependencies/FSharpx.Core/FSharpx.Core.dll"
 #r "../../Nu/Nu.Dependencies/FSharpx.Collections/FSharpx.Collections.dll"

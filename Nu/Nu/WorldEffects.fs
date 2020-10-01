@@ -42,8 +42,8 @@ module Effects =
           Depth : single
           Offset : Vector2
           InsetOpt : Vector4 option
-          Color : Vector4
-          Glow : Vector4
+          Color : Color
+          Glow : Color
           Volume : single
           Enabled : bool }
 
@@ -76,6 +76,12 @@ module Effects =
 
     type [<StructuralEquality; StructuralComparison>] Tween4KeyFrame =
         { TweenValue : Vector4
+          TweenLength : int64 }
+        interface KeyFrame with
+            member this.KeyFrameLength = this.TweenLength
+
+    type [<StructuralEquality; StructuralComparison>] TweenCKeyFrame =
+        { TweenValue : Color
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
@@ -120,8 +126,8 @@ module Effects =
         | Rotation of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Depth of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Inset of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
-        | Color of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
-        | Glow of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
+        | Color of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
+        | Glow of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
         | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Bone // TODO: implement bone aspect
         | Expand of string * Argument array
@@ -314,7 +320,8 @@ module EffectSystem =
         let celY = celJ * celSize.Y
         let celPosition = Vector2 (single celX, single celY)
         let celSize = Vector2 (single celSize.X, single celSize.Y)
-        Math.makeBounds celPosition celSize
+        v4Bounds celPosition celSize
+
     let evalArgument (argument : Argument) : Definition =
         match argument with
         | SymbolicCompressionA resource ->
@@ -415,24 +422,24 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
+                let inset = match slice.InsetOpt with Some inset -> inset | None -> Vector4 (0.0f, 0.0f, 1.0f, 1.0f)
+                let applied = applyTween Vector4.Multiply Vector4.Divide inset tweened applicator
                 { slice with InsetOpt = Some applied }
             else slice
-
         | Color (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
+                let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.ToVector4 ()) (keyFrame2.TweenValue.ToVector4 ()) progress algorithm effectSystem
+                let applied = applyTween Color.Multiply Color.Divide slice.Color (tweened.ToColor ()) applicator
                 { slice with Color = applied }
             else slice
         | Glow (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween Vector4.Multiply Vector4.Divide slice.Color tweened applicator
+                let tweened = tween Color.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                let applied = applyTween Color.Multiply Color.Divide slice.Color tweened applicator
                 { slice with Color = applied }
             else slice
         | Volume (applicator, algorithm, playback, keyFrames) ->
@@ -503,7 +510,7 @@ module EffectSystem =
                               InsetOpt = slice.InsetOpt
                               Image = AssetTag.specialize<Image> image
                               Color = slice.Color
-                              Glow = Vector4.Zero
+                              Glow = Color.Zero
                               Flip = FlipNone })
                 addView spriteView effectSystem
             else effectSystem

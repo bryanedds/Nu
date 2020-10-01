@@ -38,10 +38,10 @@ module Effects =
     let makeHitPointsChangeEffect delta =
         let colorOpaque =
             if delta < 0
-            then v4 1.0f 1.0f 1.0f 1.0f
-            else v4 0.0f 1.0f 1.0f 1.0f
+            then col (byte 255) (byte 255) (byte 255) (byte 255)
+            else col (byte 0) (byte 255) (byte 255) (byte 255)
         let colorTransparent =
-            colorOpaque.WithW 0.0f
+            colorOpaque.WithA (byte 0)
         { EffectName = "HitPointsChange"
           LifetimeOpt = Some 80L
           Definitions = Map.empty
@@ -88,14 +88,14 @@ module Effects =
                  [|Inset
                     (Set, Constant, Once,
                      [|{ TweenValue = v4 0.0f   0.0f    256.0f  1024.0f; TweenLength = 5L }
-                       { TweenValue = v4 256.0f 0.0f    512.0f  1024.0f; TweenLength = 5L }
-                       { TweenValue = v4 512.0f 0.0f    768.0f  1024.0f; TweenLength = 5L }
-                       { TweenValue = v4 512.0f 0.0f    768.0f  1024.0f; TweenLength = 65L }|])
+                       { TweenValue = v4 256.0f 0.0f    256.0f  1024.0f; TweenLength = 5L }
+                       { TweenValue = v4 512.0f 0.0f    256.0f  1024.0f; TweenLength = 5L }
+                       { TweenValue = v4 512.0f 0.0f    256.0f  1024.0f; TweenLength = 65L }|])
                    Color
                     (Set, EaseOut, Once,
-                     [|{ TweenValue = v4One; TweenLength = 40L }
-                       { TweenValue = v4One; TweenLength = 40L }
-                       { TweenValue = v4One.WithW 0.0f; TweenLength = 0L }|])|],
+                     [|{ TweenValue = Color.White; TweenLength = 40L }
+                       { TweenValue = Color.White; TweenLength = 40L }
+                       { TweenValue = Color.White.WithA (byte 0); TweenLength = 0L }|])|],
                  Nil)
         let explosionSprite =
             AnimatedSprite
@@ -105,9 +105,9 @@ module Effects =
                    Position (Sum, Constant, Once, [|{ TweenValue = v2 0.0f -512.0f; TweenLength = 0L }|])
                    Color
                     (Set, EaseOut, Once,
-                     [|{ TweenValue = v4One; TweenLength = 30L }
-                       { TweenValue = v4One; TweenLength = 30L }
-                       { TweenValue = v4One.WithW 0.0f; TweenLength = 0L }|])|],
+                     [|{ TweenValue = Color.White; TweenLength = 30L }
+                       { TweenValue = Color.White; TweenLength = 30L }
+                       { TweenValue = Color.White.WithA (byte 0); TweenLength = 0L }|])|],
                  Nil)
         let explostionSoundEffect =
             SoundEffect

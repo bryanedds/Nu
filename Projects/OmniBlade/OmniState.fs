@@ -7,40 +7,9 @@ open Nu
 type PropState =
     | DoorState of bool
     | SwitchState of bool
+    | NpcState of bool
+    | ShopkeepState of bool
     | NilState
-
-type [<CustomEquality; CustomComparison>] Advent =
-    | Opened of Guid
-    | KilledFinalBoss
-    | SavedPrincess
-
-    member private this.ToInt () =
-        match this with
-        | Opened guid -> hash guid
-        | KilledFinalBoss -> 1
-        | SavedPrincess -> 2
-
-    override this.GetHashCode () =
-        let rand = Rand.makeFromInt (this.ToInt ())
-        let (result, _) = Rand.nextInt rand
-        result
-
-    override this.Equals that =
-        match that with
-        | :? Advent as thatAdvent -> (this :> IComparable<Advent>).CompareTo thatAdvent = 0
-        | _ -> false
-
-    interface IComparable<Advent> with
-        member this.CompareTo that =
-            let thisInt = this.ToInt ()
-            let thatInt = that.ToInt ()
-            thisInt.CompareTo thatInt
-            
-    interface IComparable with
-        member this.CompareTo that =
-            match that with
-            | :? Advent as thatAdvent -> (this :> IComparable<Advent>).CompareTo thatAdvent
-            | _ -> -1
 
 type [<StructuralEquality; NoComparison>] Inventory =
     { Items : Map<ItemType, int>
@@ -79,6 +48,36 @@ type [<StructuralEquality; NoComparison>] Inventory =
         | Some itemCount when itemCount = 1 ->
             { inventory with Items = Map.remove item inventory.Items }
         | _ -> inventory
+
+type Legionnaire =
+    { LegionIndex : int // key
+      PartyIndexOpt : int option
+      CharacterType : CharacterType
+      ExpPoints : int
+      WeaponOpt : WeaponType option
+      ArmorOpt : ArmorType option
+      Accessories : AccessoryType list }
+
+    static member finn =
+        { LegionIndex = 0
+          PartyIndexOpt = Some 0
+          CharacterType = Ally Finn
+          ExpPoints = 15
+          WeaponOpt = None
+          ArmorOpt = None
+          Accessories = [] }
+
+    static member glenn =
+        { LegionIndex = 1
+          PartyIndexOpt = Some 1
+          CharacterType = Ally Glenn
+          ExpPoints = 15
+          WeaponOpt = None
+          ArmorOpt = None
+          Accessories = [] }
+
+type Legion =
+    Map<int, Legionnaire>
 
 type [<StructuralEquality; StructuralComparison>] CharacterIndex =
     | AllyIndex of int
@@ -236,7 +235,7 @@ type [<StructuralEquality; NoComparison>] CharacterAnimationState =
 
     static member indexSaturatedWithDirection run stutter offset time state =
         let position = CharacterAnimationState.directionToInt state.Direction * run
-        let position =  Vector2i (CharacterAnimationState.indexSaturated run stutter time state + position, 0)
+        let position = Vector2i (CharacterAnimationState.indexSaturated run stutter time state + position, 0)
         let position = position + offset
         position
 

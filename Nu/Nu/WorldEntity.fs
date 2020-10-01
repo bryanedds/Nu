@@ -168,7 +168,7 @@ module WorldEntityModule =
         member this.GetQuickSize world = World.getEntityQuickSize this world
 
         /// Get an entity's bounds, taking into account its overflow.
-        member this.GetBoundsOverflow world = Math.makeBoundsOverflow (this.GetPosition world) (this.GetSize world) (this.GetOverflow world)
+        member this.GetBoundsOverflow world = v4BoundsOverflow (this.GetPosition world) (this.GetSize world) (this.GetOverflow world)
 
         /// Get an entity's bounds maximum.
         member this.GetBoundsMax world = World.getEntityBoundsMax this world

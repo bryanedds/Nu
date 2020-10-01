@@ -1,3 +1,3 @@
-Type,FieldTileMap,FieldPropss,FieldSongOpt,FieldAmbienceOpt
-DebugRoom,[Field DebugRoom],[],[Some [Field Field]],None
-DebugRoom2,[Field DebugRoom2],[],[Some [Field Field]],None
+Type,FieldTileMap,FieldProps,FieldSongOpt,FieldAmbienceOpt,FieldBackgroundColor
+DebugRoom,[Field DebugRoom],[],[Some [Field Field]],None,[8 8 8 255]
+DebugRoom2,[Field DebugRoom2],[],[Some [Field Field]],None,[8 8 8 255]

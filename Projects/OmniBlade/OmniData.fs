@@ -5,15 +5,18 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type Dialog =
-    string list
+type [<StructuralEquality; StructuralComparison>] Advent =
+    | Opened of Guid
+    | DebugSwitch
+    | DebugSwitch2
+    | KilledFinalBoss
+    | SavedPrincess
 
 type [<StructuralEquality; StructuralComparison>] Direction =
     | Downward
     | Leftward
     | Upward
     | Rightward
-
     static member fromVector2 (v2 : Vector2) =
         let angle = double (atan2 v2.Y v2.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
@@ -122,7 +125,7 @@ type [<StructuralEquality; StructuralComparison>] ArmorSubtype =
 type AccessoryType =
     string
 
-type [<StructuralEquality; StructuralComparison>] ShopkeepType =
+type [<StructuralEquality; StructuralComparison>] ShopType =
     | WeaponShopkeep of int // level
     | ArmorShopKeep of int // level
     | AccessoryShopKeep of int // level
@@ -148,9 +151,20 @@ type [<StructuralEquality; StructuralComparison>] NpcType =
     | VillageBoy
     | VillageGirl
 
+type [<StructuralEquality; StructuralComparison>] ShopkeepType =
+    | ShopkeepMan
+
 type [<StructuralEquality; StructuralComparison>] FieldType =
     | DebugRoom
     | DebugRoom2
+
+type [<StructuralEquality; StructuralComparison>] SwitchType =
+    | ThrowSwitch
+    
+type [<StructuralEquality; StructuralComparison>] SensorType =
+    | AirSensor
+    | HiddenSensor
+    | StepPlateSensor
 
 type [<StructuralEquality; StructuralComparison>] BattleType =
     | DebugBattle
@@ -275,22 +289,23 @@ type [<StructuralEquality; NoComparison>] ShopkeepData =
       ShopkeepGreet : string list
       ShopkeepFarewell : string list }
 
-type [<StructuralEquality; StructuralComparison>] PropData =
-    | Chest of ItemType * ChestType * Guid * BattleType option * LockType option
-    | Door of LockType * DoorType // for simplicity, we'll just have north / south doors
-    | Portal of int * FieldType * Vector2 * Direction // leads to a different portal
-    | Switch // anything the can affect another thing on the field through interaction
-    | Sensor // anything the can affect another thing on the field through traversal
-    | Npc of NpcType * Direction * Dialog
-    | Shopkeep of ShopkeepType
-    static member empty = Chest (Consumable GreenHerb, WoodenChest, Gen.idEmpty, None, None)
+type [<StructuralEquality; NoComparison>] PropData =
+    | Chest of ChestType * ItemType * Guid * BattleType option * Advent Set * Advent Set
+    | Door of DoorType * Advent Set * Advent Set // for simplicity, we'll just have north / south doors
+    | Portal of int * FieldType * Vector2 * Direction * Advent Set // leads to a different portal
+    | Switch of SwitchType * Advent Set * Advent Set // anything that can affect another thing on the field through interaction
+    | Sensor of SensorType * BodyShape option * Advent Set * Advent Set // anything that can affect another thing on the field through traversal
+    | Npc of NpcType * Direction * (string * Advent Set * Advent Set) list * Advent Set
+    | Shopkeep of ShopkeepType * Direction * Advent Set
+    static member empty = Chest (WoodenChest, Consumable GreenHerb, Gen.idEmpty, None, Set.empty, Set.empty)
 
 type [<StructuralEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : TileMap AssetTag
       FieldProps : PropData list
       FieldSongOpt : Song AssetTag option
-      FieldAmbienceOpt : Song AssetTag option }
+      FieldAmbienceOpt : Song AssetTag option
+      FieldBackgroundColor : Color }
 
 type [<StructuralEquality; NoComparison>] EnemyData =
     { EnemyType : EnemyType // key

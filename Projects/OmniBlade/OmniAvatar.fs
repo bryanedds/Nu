@@ -9,6 +9,7 @@ module AvatarDispatcherModule =
 
     type [<NoComparison>] AvatarMessage =
         | Update
+        | PostUpdate
         | Collision of CollisionData
         | Separation of SeparationData
         | Face of Direction
@@ -43,6 +44,7 @@ module AvatarDispatcherModule =
                 collidee.Entity.Is<PropDispatcher> world &&
                 match (collidee.Entity.GetPropModel world).PropData with
                 | Portal _ -> true
+                | Sensor _ -> true
                 | _ -> false) then
                 true
             elif (collider.BodyShapeId = sensorShapeId &&
@@ -50,6 +52,7 @@ module AvatarDispatcherModule =
                   collidee.Entity.Is<PropDispatcher> world &&
                   match (collidee.Entity.GetPropModel world).PropData with
                   | Portal _ -> false
+                  | Sensor _ -> false
                   | _ -> true) then
                 true
             else false
@@ -68,8 +71,8 @@ module AvatarDispatcherModule =
              entity.BodyShape == bodyShapes]
 
         override this.Channel (_, entity) =
-            [entity.UpdateEvent =>
-                msg Update
+            [entity.UpdateEvent => msg Update
+             entity.Parent.PostUpdateEvent => msg PostUpdate
              entity.UpdateEvent =|> fun _ ->
                 let force = v2Zero
                 let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.WalkForce 0.0f + force else force
@@ -107,6 +110,13 @@ module AvatarDispatcherModule =
                 let model = AvatarModel.updateBounds (constant (entity.GetBounds world)) model
                 just model
 
+            | PostUpdate ->
+
+                // clear all temporary body shapes
+                let model = AvatarModel.updateCollidedBodyShapes (constant []) model
+                let model = AvatarModel.updateSeparatedBodyShapes (constant []) model
+                just model
+
             | Face direction ->
 
                 // update facing if enabled, velocity is zero, and direction pressed
@@ -121,19 +131,23 @@ module AvatarDispatcherModule =
 
             | Separation separation ->
 
-                // remove separated body shape
+                // add separated body shape
                 let model =
-                    if isIntersectedBodyShape separation.Separator separation.Separatee world
-                    then AvatarModel.updateIntersectedBodyShapes (List.remove ((=) separation.Separatee)) model
+                    if isIntersectedBodyShape separation.Separator separation.Separatee world then
+                        let model = AvatarModel.updateSeparatedBodyShapes (fun shapes -> separation.Separatee :: shapes) model
+                        let model = AvatarModel.updateIntersectedBodyShapes (List.remove ((=) separation.Separatee)) model
+                        model
                     else model
                 just model
 
             | Collision collision ->
 
-                // add collidee shape
+                // add collided body shape
                 let model =
-                    if isIntersectedBodyShape collision.Collider collision.Collidee world
-                    then AvatarModel.updateIntersectedBodyShapes (fun shapes -> collision.Collidee :: shapes) model
+                    if isIntersectedBodyShape collision.Collider collision.Collidee world then
+                        let model = AvatarModel.updateCollidedBodyShapes (fun shapes -> collision.Collidee :: shapes) model
+                        let model = AvatarModel.updateIntersectedBodyShapes (fun shapes -> collision.Collidee :: shapes) model
+                        model
                     else model
                 just model
 
@@ -160,7 +174,7 @@ module AvatarDispatcherModule =
                           Offset = Vector2.Zero
                           InsetOpt = Some (getSpriteInset entity world)
                           Image = model.AnimationSheet
-                          Color = v4One
-                          Glow = v4Zero
+                          Color = Color.White
+                          Glow = Color.Zero
                           Flip = FlipNone })]
             else []

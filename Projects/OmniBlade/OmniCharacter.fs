@@ -30,22 +30,22 @@ module OmniCharacter =
             let color =
                 if model.AnimationCycle = CharacterAnimationCycle.WoundCycle && model.IsEnemy then
                     match CharacterModel.getAnimationProgressOpt (World.getTickTime world) model with
-                    | Some progress -> Vector4 (1.0f,0.5f,1.0f,1.0f-progress) // purple
+                    | Some progress -> Color (byte 255, byte 128, byte 255, byte 255 - (byte (progress * 255.0f))) // purple
                     | None -> failwithumf ()
-                else Vector4.One
+                else Color.White
             color
 
         static let getSpriteGlow (character : Entity) world =
             let pulseTime = World.getTickTime world % Constants.Battle.CharacterPulseLength
             let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseLength
-            let pulseIntensity = sin (pulseProgress * single Math.PI)
+            let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
             let model = character.GetCharacterModel world
             let statuses = model.Statuses
-            if CharacterModel.isAutoBattling model then Vector4 (1.0f,0.0f,0.0f,pulseIntensity) // red
-            elif Set.contains PoisonStatus statuses then Vector4 (0.0f,1.0f,0.0f,pulseIntensity) // green
-            elif Set.contains MuteStatus statuses then Vector4 (0.1f,1.0f,0.0f,pulseIntensity) // orange
-            elif Set.contains SleepStatus statuses then Vector4 (0.0f,0.0f,1.0f,pulseIntensity) // blue
-            else Vector4.Zero
+            if CharacterModel.isAutoBattling model then Color (byte 255, byte 0, byte 0, pulseIntensity) // red
+            elif Set.contains PoisonStatus statuses then Color (byte 0, byte 255, byte 0, pulseIntensity) // green
+            elif Set.contains MuteStatus statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
+            elif Set.contains SleepStatus statuses then Color (byte 0, byte 0,byte 255, pulseIntensity) // blue
+            else Color.Zero
 
         static member Properties =
             [define Entity.Omnipresent true]

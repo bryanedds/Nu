@@ -258,8 +258,8 @@ module EffectFacetModule =
                       Effects.Depth = entity.GetDepth world
                       Effects.Offset = Vector2 0.5f
                       Effects.InsetOpt = None
-                      Effects.Color = Vector4.One
-                      Effects.Glow = Vector4.Zero
+                      Effects.Color = Color.White
+                      Effects.Glow = Color.Zero
                       Effects.Enabled = true
                       Effects.Volume = Constants.Audio.DefaultSoundVolume }
                 let effectHistory = entity.GetEffectHistory world
@@ -395,8 +395,8 @@ module TextFacetModule =
         member this.GetJustification world : Justification = this.Get Property? Justification world
         member this.SetJustification (value : Justification) world = this.SetFast Property? Justification false false value world
         member this.Justification = lens Property? Justification this.GetJustification this.SetJustification this
-        member this.GetTextColor world : Vector4 = this.Get Property? TextColor world
-        member this.SetTextColor (value : Vector4) world = this.SetFast Property? TextColor false false value world
+        member this.GetTextColor world : Color = this.Get Property? TextColor world
+        member this.SetTextColor (value : Color) world = this.SetFast Property? TextColor false false value world
         member this.TextColor = lens Property? TextColor this.GetTextColor this.SetTextColor this
 
     type TextFacet () =
@@ -407,7 +407,7 @@ module TextFacetModule =
              define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName Assets.DefaultFontName)
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.TextColor (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
+             define Entity.TextColor Color.Black]
 
         override this.Actualize (text, world) =
             let textStr = text.GetText world
@@ -796,7 +796,7 @@ module TileMapFacetModule =
                                         Seq.skip (j * map.Width) |>
                                         Seq.take map.Width |>
                                         Seq.toArray
-                                    if World.isBoundsInView absolute (Math.makeBounds parallaxPosition size) world then
+                                    if World.isBoundsInView absolute (v4Bounds parallaxPosition size) world then
                                         World.enqueueRenderMessage
                                             (LayeredDescriptorMessage
                                                 { Depth = transform.Depth
@@ -1031,6 +1031,15 @@ module StaticSpriteFacetModule =
         member this.GetStaticImage world : Image AssetTag = this.Get Property? StaticImage world
         member this.SetStaticImage (value : Image AssetTag) world = this.SetFast Property? StaticImage false false value world
         member this.StaticImage = lens Property? StaticImage this.GetStaticImage this.SetStaticImage this
+        member this.GetColor world : Color = this.Get Property? Color world
+        member this.SetColor (value : Color) world = this.SetFast Property? Color false false value world
+        member this.Color = lens Property? Color this.GetColor this.SetColor this
+        member this.GetGlow world : Color = this.Get Property? Glow world
+        member this.SetGlow (value : Color) world = this.SetFast Property? Glow false false value world
+        member this.Glow = lens Property? Glow this.GetGlow this.SetGlow this
+        member this.GetInsetOpt world : Vector4 option = this.Get Property? Inset world
+        member this.SetInsetOpt (value : Vector4 option) world = this.SetFast Property? Inset false false value world
+        member this.InsetOpt = lens Property? Inset this.GetInsetOpt this.SetInsetOpt this
         member this.GetFlip world : Flip = this.Get Property? Flip world
         member this.SetFlip (value : Flip) world = this.SetFast Property? Flip false false value world
         member this.Flip = lens Property? Flip this.GetFlip this.SetFlip this
@@ -1040,6 +1049,9 @@ module StaticSpriteFacetModule =
 
         static member Properties =
             [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
+             define Entity.InsetOpt None
              define Entity.Flip FlipNone]
 
         override this.Actualize (entity, world) =
@@ -1054,10 +1066,10 @@ module StaticSpriteFacetModule =
                             SpriteDescriptor
                                 { Transform = transform
                                   Offset = Vector2.Zero
-                                  InsetOpt = None
+                                  InsetOpt = entity.GetInsetOpt world
                                   Image = entity.GetStaticImage world
-                                  Color = Vector4.One
-                                  Glow = Vector4.Zero
+                                  Color = entity.GetColor world
+                                  Glow = entity.GetGlow world
                                   Flip = entity.GetFlip world }})
                     world
             else world
@@ -1101,7 +1113,7 @@ module AnimatedSpriteFacetModule =
                 let celJ = cel / celRun
                 let celX = single celI * celSize.X
                 let celY = single celJ * celSize.Y
-                let inset = Vector4 (celX, celY, celX + celSize.X, celY + celSize.Y)
+                let inset = v4Bounds (v2 celX celY) celSize
                 Some inset
             else None
 
@@ -1111,6 +1123,8 @@ module AnimatedSpriteFacetModule =
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
              define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
 
         override this.Actualize (entity, world) =
@@ -1127,8 +1141,8 @@ module AnimatedSpriteFacetModule =
                                   Offset = Vector2.Zero
                                   InsetOpt = getSpriteInsetOpt entity world
                                   Image = entity.GetAnimationSheet world
-                                  Color = Vector4.One
-                                  Glow = Vector4.Zero
+                                  Color = entity.GetColor world
+                                  Glow = entity.GetGlow world
                                   Flip = entity.GetFlip world }})
                     world
             else world
@@ -1246,6 +1260,41 @@ module EffectDispatcherModule =
              define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
+module StaticSpriteDispatcherModule =
+
+    type StaticSpriteDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<StaticSpriteFacet>]
+
+        static member Properties =
+            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
+             define Entity.InsetOpt None
+             define Entity.Flip FlipNone]
+
+[<AutoOpen>]
+module AnimatedSpriteDispatcherModule =
+
+    type AnimatedSpriteDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<AnimatedSpriteFacet>]
+
+        static member Properties =
+            [define Entity.CelSize (Vector2 (16.0f, 16.0f))
+             define Entity.CelRun 4
+             define Entity.CelCount 16
+             define Entity.AnimationDelay 4L
+             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
+             define Entity.Flip FlipNone]
+
+[<AutoOpen>]
 module NodeDispatcherModule =
 
     type NodeDispatcher () =
@@ -1271,8 +1320,8 @@ module GuiDispatcherModule =
 
     type Entity with
     
-        member this.GetDisabledColor world : Vector4 = this.Get Property? DisabledColor world
-        member this.SetDisabledColor (value : Vector4) world = this.SetFast Property? DisabledColor false false value world
+        member this.GetDisabledColor world : Color = this.Get Property? DisabledColor world
+        member this.SetDisabledColor (value : Color) world = this.SetFast Property? DisabledColor false false value world
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
         member this.GetSwallowMouseLeft world : bool = this.Get Property? SwallowMouseLeft world
         member this.SetSwallowMouseLeft (value : bool) world = this.SetFast Property? SwallowMouseLeft false false value world
@@ -1303,7 +1352,7 @@ module GuiDispatcherModule =
              define Entity.Absolute true
              define Entity.PublishChanges true
              define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Vector4 0.75f)
+             define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))
              define Entity.SwallowMouseLeft true]
 
         override this.Register (gui, world) =
@@ -1335,7 +1384,7 @@ module GuiDispatcherModule =
             [define Entity.Absolute true
              define Entity.PublishChanges true
              define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Vector4 0.75f)
+             define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))
              define Entity.SwallowMouseLeft true]
 
         override this.Register (gui, world) =
@@ -1442,8 +1491,8 @@ module ButtonDispatcherModule =
                                   Offset = Vector2.Zero
                                   InsetOpt = None
                                   Image = image
-                                  Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world
-                                  Glow = Vector4.Zero
+                                  Color = if button.GetEnabled world then Color.White else button.GetDisabledColor world
+                                  Glow = Color.Zero
                                   Flip = FlipNone }})
                     world
             else world
@@ -1484,8 +1533,8 @@ module LabelDispatcherModule =
                                   Offset = Vector2.Zero
                                   InsetOpt = None
                                   Image = label.GetLabelImage world
-                                  Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world
-                                  Glow = Vector4.Zero
+                                  Color = if label.GetEnabled world then Color.White else label.GetDisabledColor world
+                                  Glow = Color.Zero
                                   Flip = FlipNone }})
                     world
             else world
@@ -1500,9 +1549,9 @@ module TextDispatcherModule =
 
     type Entity with
     
-        member this.GetBackgroundImage world : Image AssetTag = this.Get Property? BackgroundImage world
-        member this.SetBackgroundImage (value : Image AssetTag) world = this.SetFast Property? BackgroundImage false false value world
-        member this.BackgroundImage = lens Property? BackgroundImage this.GetBackgroundImage this.SetBackgroundImage this
+        member this.GetBackgroundImageOpt world : Image AssetTag option = this.Get Property? BackgroundImageOpt world
+        member this.SetBackgroundImageOpt (value : Image AssetTag option) world = this.SetFast Property? BackgroundImageOpt false false value world
+        member this.BackgroundImageOpt = lens Property? BackgroundImageOpt this.GetBackgroundImageOpt this.SetBackgroundImageOpt this
 
     type TextDispatcher () =
         inherit GuiDispatcher ()
@@ -1513,31 +1562,37 @@ module TextDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
+             define Entity.BackgroundImageOpt (Some (AssetTag.make<Image> Assets.DefaultPackageName "Image3"))]
 
         override this.Actualize (text, world) =
             if text.GetVisible world then
-                let transform = text.GetTransform world
-                World.enqueueRenderMessage
-                    (LayeredDescriptorMessage
-                        { Depth = transform.Depth
-                          PositionY = transform.Position.Y
-                          AssetTag = text.GetBackgroundImage world |> AssetTag.generalize
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = transform
-                                  Offset = Vector2.Zero
-                                  InsetOpt = None
-                                  Image = text.GetBackgroundImage world
-                                  Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world
-                                  Glow = Vector4.Zero
-                                  Flip = FlipNone }})
-                    world
+                match text.GetBackgroundImageOpt world with
+                | Some image ->
+                    let transform = text.GetTransform world
+                    World.enqueueRenderMessage
+                        (LayeredDescriptorMessage
+                            { Depth = transform.Depth
+                              PositionY = transform.Position.Y
+                              AssetTag = AssetTag.generalize image
+                              RenderDescriptor =
+                                SpriteDescriptor
+                                    { Transform = transform
+                                      Offset = Vector2.Zero
+                                      InsetOpt = None
+                                      Image = image
+                                      Color = if text.GetEnabled world then Color.White else text.GetDisabledColor world
+                                      Glow = Color.Zero
+                                      Flip = FlipNone }})
+                        world
+                | None -> world
             else world
 
         override this.GetQuickSize (text, world) =
-            match Metadata.tryGetTextureSizeF (text.GetBackgroundImage world) (World.getMetadata world) with
-            | Some size -> size
+            match text.GetBackgroundImageOpt world with
+            | Some image ->
+                match Metadata.tryGetTextureSizeF image (World.getMetadata world) with
+                | Some size -> size
+                | None -> Constants.Engine.DefaultEntitySize
             | None -> Constants.Engine.DefaultEntitySize
 
 [<AutoOpen>]
@@ -1643,8 +1698,8 @@ module ToggleDispatcherModule =
                                   Offset = Vector2.Zero
                                   InsetOpt = None
                                   Image = image
-                                  Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world
-                                  Glow = Vector4.Zero
+                                  Color = if toggle.GetEnabled world then Color.White else toggle.GetDisabledColor world
+                                  Glow = Color.Zero
                                   Flip = FlipNone }})
                     world
             else world
@@ -1803,7 +1858,7 @@ module FillBarDispatcherModule =
                       Depth = fillBar.GetDepth world
                       Flags = fillBar.GetFlags world
                       RefCount = 0 }
-                let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
+                let fillBarColor = if fillBar.GetEnabled world then Color.White else fillBar.GetDisabledColor world
                 World.enqueueRenderMessage
                     (LayeredDescriptorsMessage
                         [|{ Depth = borderSpriteTransform.Depth
@@ -1816,7 +1871,7 @@ module FillBarDispatcherModule =
                                       InsetOpt = None
                                       Image = fillBar.GetBorderImage world
                                       Color = fillBarColor
-                                      Glow = Vector4.Zero
+                                      Glow = Color.Zero
                                       Flip = FlipNone }}
                           { Depth = fillBarSpriteTransform.Depth
                             PositionY = fillBarSpriteTransform.Position.Y
@@ -1828,7 +1883,7 @@ module FillBarDispatcherModule =
                                       InsetOpt = None
                                       Image = fillBar.GetFillImage world
                                       Color = fillBarColor
-                                      Glow = Vector4.Zero
+                                      Glow = Color.Zero
                                       Flip = FlipNone }}|])
                     world
             else world
@@ -1894,7 +1949,7 @@ module CharacterDispatcherModule =
             let i = single (frame % 3L)
             let j = single (frame / 3L)
             let offset = v2 (i * celSize.X) (j * celSize.Y) 
-            v4 offset.X offset.Y (offset.X + celSize.X) (offset.Y + celSize.Y)
+            v4Bounds offset celSize
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -1923,7 +1978,7 @@ module CharacterDispatcherModule =
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then
-                let time = World.getTickTime world
+                let tickTime = World.getTickTime world
                 let physicsId = entity.GetPhysicsId world
                 let facingLeft = entity.GetCharacterFacingLeft world
                 let velocity = World.getBodyLinearVelocity physicsId world
@@ -1940,7 +1995,7 @@ module CharacterDispatcherModule =
                         (None, image)
                     else
                         let image = entity.GetCharacterWalkSheet world
-                        (Some (computeWalkCelInset celSize celRun animationDelay time), image)
+                        (Some (computeWalkCelInset celSize celRun animationDelay tickTime), image)
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
@@ -1952,8 +2007,8 @@ module CharacterDispatcherModule =
                                   Offset = v2Zero
                                   InsetOpt = insetOpt
                                   Image = image
-                                  Color = Vector4.One
-                                  Glow = Vector4.Zero
+                                  Color = Color.White
+                                  Glow = Color.Zero
                                   Flip = if facingLeft then FlipH else FlipNone }})
                     world
             else world

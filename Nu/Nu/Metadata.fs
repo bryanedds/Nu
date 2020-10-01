@@ -122,7 +122,7 @@ module Metadata =
     /// Try to get the texture size metadata of the given asset.
     let tryGetTextureSizeF assetTag metadata =
         match tryGetTextureSize assetTag metadata with
-        | Some size -> Some (Vector2 (single size.X, single size.Y))
+        | Some size -> Some (v2 (single size.X) (single size.Y))
         | None -> None
 
     /// Forcibly get the texture size metadata of the given asset (throwing on failure).

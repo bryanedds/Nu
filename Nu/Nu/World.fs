@@ -394,6 +394,8 @@ module WorldModule3 =
             // TODO: consider if we shoud reflectively generate these
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher ()
+                 StaticSpriteDispatcher () :> EntityDispatcher
+                 AnimatedSpriteDispatcher () :> EntityDispatcher
                  NodeDispatcher () :> EntityDispatcher
                  EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher

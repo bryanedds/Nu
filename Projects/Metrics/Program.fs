@@ -160,7 +160,7 @@ type MyGameDispatcher () =
                 if comp.RefCount > 0 then
                     let entity = comp.Entity.State world
                     if entity.Visible then
-                        let spriteDescriptor = SpriteDescriptor { Transform = entity.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Vector4.One; Glow = Vector4.Zero; Flip = FlipNone }
+                        let spriteDescriptor = SpriteDescriptor { Transform = entity.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
                         let message = LayeredDescriptorMessage { Depth = entity.Depth; PositionY = entity.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
                         messages.Add message
             World.enqueueRenderMessages messages world)

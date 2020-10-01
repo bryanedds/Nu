@@ -51,8 +51,8 @@ type [<StructuralEquality; NoComparison>] SpriteDescriptor =
       Offset : Vector2
       InsetOpt : Vector4 option
       Image : Image AssetTag
-      Color : Vector4
-      Glow : Vector4
+      Color : Color
+      Glow : Color
       Flip : Flip }
 
 /// Describes how to render a tile map to the rendering system.
@@ -70,7 +70,7 @@ type [<StructuralEquality; NoComparison>] TextDescriptor =
     { Transform : Transform
       Text : string
       Font : Font AssetTag
-      Color : Vector4
+      Color : Color
       Justification : Justification }
 
 /// Describes how to render something to the rendering system.
@@ -259,8 +259,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 | Some inset ->
                     sourceRect.x <- int inset.X
                     sourceRect.y <- int inset.Y
-                    sourceRect.w <- int (inset.Z - inset.X)
-                    sourceRect.h <- int (inset.W - inset.Y)
+                    sourceRect.w <- int inset.Z
+                    sourceRect.h <- int inset.W
                 | None ->
                     sourceRect.x <- 0
                     sourceRect.y <- 0
@@ -276,14 +276,14 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 rotationCenter.x <- int (sizeView.X * 0.5f)
                 rotationCenter.y <- int (sizeView.Y * 0.5f)
                 SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
-                SDL.SDL_SetTextureColorMod (texture, byte (255.0f * color.X), byte (255.0f * color.Y), byte (255.0f * color.Z)) |> ignore
-                SDL.SDL_SetTextureAlphaMod (texture, byte (255.0f * color.W)) |> ignore
+                SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
+                SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
                 let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
                 if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-                if glow <> Vector4.Zero then
+                if glow <> Color.Zero then
                     SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                    SDL.SDL_SetTextureColorMod (texture, byte (255.0f * glow.X), byte (255.0f * glow.Y), byte (255.0f * glow.Z)) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, byte (255.0f * glow.W)) |> ignore
+                    SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
+                    SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore
                     let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
                     if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
@@ -328,9 +328,15 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             Vector2
                                 (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f,
                                 -(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
-                        let tileBounds = Math.makeBounds tilePosition tileSize
-                        let viewBounds = Math.makeBounds Vector2.Zero eyeSize
+                        let tileBounds = v4Bounds tilePosition tileSize
+                        let viewBounds = v4Bounds Vector2.Zero eyeSize
                         if Math.isBoundsIntersectingBounds tileBounds viewBounds then
+                            let tileFlip =
+                                match (tile.HorizontalFlip, tile.VerticalFlip) with
+                                | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
+                                | (true, false) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
+                                | (false, true) -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+                                | (true, true) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
                             let gid = tile.Gid - tileSet.FirstGid
                             let gidPosition = gid * tileSourceSize.X
                             let tileSourcePosition =
@@ -354,7 +360,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             tileSourceRectRef := sourceRect
                             tileDestRectRef := destRect
                             tileRotationCenterRef := rotationCenter
-                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, SDL.SDL_RendererFlip.SDL_FLIP_NONE) // TODO: implement tile flip
+                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
                             if renderResult <> 0 then Log.info ("Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + "."))
                     tiles
             | _ -> Log.debug "Cannot render tile with a non-texture asset."
@@ -379,10 +385,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             match renderAsset with
             | FontAsset (font, _) ->
                 let mutable renderColor = SDL.SDL_Color ()
-                renderColor.r <- byte (color.X * 255.0f)
-                renderColor.g <- byte (color.Y * 255.0f)
-                renderColor.b <- byte (color.Z * 255.0f)
-                renderColor.a <- byte (color.W * 255.0f)
+                renderColor.r <- color.R
+                renderColor.g <- color.G
+                renderColor.b <- color.B
+                renderColor.a <- color.A
                 // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
                 // texture one or more times a frame must be understood! Although, maybe it all happens in software
                 // and vram fragmentation would not be a concern in the first place... perf could still be, however.
@@ -391,8 +397,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     | Unjustified wrapped ->
                         let textSurface =
                             if wrapped
-                            then SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
-                            else SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 sizeView.X)
+                            then SDL_ttf.TTF_RenderText_Blended_Wrapped (font, text, renderColor, uint32 sizeView.X)
+                            else SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
                         (Vector2.Zero, textSurface)
                     | Justified (h, v) ->
                         let textSurface = SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
@@ -408,7 +414,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             | JustifyTop -> 0.0f
                             | JustifyMiddle -> (sizeView.Y - single !height) * 0.5f
                             | JustifyBottom -> sizeView.Y - single !height
-                        (Vector2 (offsetX, offsetY), textSurface)
+                        (v2 offsetX offsetY, textSurface)
                 if textSurface <> IntPtr.Zero then
                     let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
                     let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture textTexture

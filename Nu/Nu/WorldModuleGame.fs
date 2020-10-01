@@ -210,8 +210,8 @@ module WorldModuleGame =
             Vector4
                 (gameState.EyeCenter.X - gameState.EyeSize.X * 0.5f,
                  gameState.EyeCenter.Y - gameState.EyeSize.Y * 0.5f,
-                 gameState.EyeCenter.X + gameState.EyeSize.X * 0.5f,
-                 gameState.EyeCenter.Y + gameState.EyeSize.Y * 0.5f)
+                 gameState.EyeSize.X,
+                 gameState.EyeSize.Y)
 
         /// Get the bounds of the eye's sight not relative to its position.
         [<FunctionBinding>]
@@ -220,8 +220,8 @@ module WorldModuleGame =
             Vector4
                 (gameState.EyeSize.X * -0.5f,
                  gameState.EyeSize.Y * -0.5f,
-                 gameState.EyeSize.X * 0.5f,
-                 gameState.EyeSize.Y * 0.5f)
+                 gameState.EyeSize.X,
+                 gameState.EyeSize.Y)
 
         /// Get the bounds of the eye's sight.
         [<FunctionBinding>]

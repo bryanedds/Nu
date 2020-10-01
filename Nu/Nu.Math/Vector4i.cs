@@ -1,5 +1,5 @@
 //
-//  Vector3i.cs
+//  Vector4i.cs
 //
 //  Copyright (C) OpenTK
 //

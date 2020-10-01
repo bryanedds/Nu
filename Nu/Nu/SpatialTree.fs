@@ -74,9 +74,9 @@ module internal SpatialNode =
                 let (nodes : 'e SpatialNode array) =
                     [|for i in 0 .. granularity * granularity - 1 do
                         let childDepth = depth - 1
-                        let childSize = Vector2 (bounds.Z - bounds.X, bounds.W - bounds.Y) / single granularity
-                        let childPosition = bounds.Xy + Vector2 (childSize.X * single (i % granularity), childSize.Y * single (i / granularity))
-                        let childBounds = Vector4 (childPosition.X, childPosition.Y, childPosition.X + childSize.X, childPosition.Y + childSize.Y)
+                        let childSize = v2 bounds.Z bounds.W / single granularity
+                        let childPosition = bounds.Xy + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
+                        let childBounds = v4Bounds childPosition childSize
                         yield make granularity childDepth childBounds|]
                 Left nodes
             else Right (HashSet<'e> HashIdentity.Structural)

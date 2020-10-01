@@ -2,8 +2,8 @@
   [ButtonDispatcher]
   [[ClickSoundOpt [Some [Gui Affirm]]]
    [Font [Gui Font]]
-   [TextColor [1 1 1 1]]]]
+   [TextColor [255 255 255 255]]]]
  [TextDispatcherRoute
   [TextDispatcher]
   [[Font [Gui Font]]
-   [TextColor [1 1 1 1]]]]]
+   [TextColor [255 255 255 255]]]]]

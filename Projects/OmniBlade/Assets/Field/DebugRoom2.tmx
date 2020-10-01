@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="64" tileheight="64" infinite="0" nextlayerid="5" nextobjectid="29">
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="64" tileheight="64" infinite="0" nextlayerid="5" nextobjectid="37">
  <tileset firstgid="1" source="Colloseum.tsx"/>
  <layer id="2" name="Floor" width="32" height="16">
   <properties>
    <property name="D" value="0"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYCAf6DJB8ECBqUwQPFCAlwmCBwoMdPhTy34eJkRYkoJh9pOjlw/J3TpIZtEL6w1y+xuBuAkJN9PZ/oVAvAgJLybSXHR3o+NmGtuPrg8dLybS/oNAfAgJHybSfnR96PgwkfbTM/35ANm+ZGB0M0nR64dkP6weIRWjm0mqfmoASs0CAJw5WvQ=
+   eJxjYCAfTGWC4IECo/YPD/t5gGbw0hnzIblbB8jWpTPWG+T2NwJxExJuprP9C4F4ERJeTKS56O5Gx800th9dHzpeTKT9B4H4EBI+TKT96PrQ8WEi7adn+vMBsn3pjP2Q7IeVY/TGgwEAALeyXqY=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="16">
@@ -14,21 +14,56 @@
    <property name="D" value="10"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJzV1V1Kw0AUhuEzRit1F6Eg2AsXoSDqjXswVfEP92D/LtRNaKrbEG11HWrRbfQdMyGHsYm9sAkOPOSQc5hvICEJRSTEFlo4cFozXN+cvL5/L603XWaae4gjdNBFYETqWDFJ3VU9PROIPNZga7/fKdhnH5E7xzZ66CPGAA1m19A0ST1QPT2TLlv7/bhgn0u0seHy7/GAIUb2XMzuYNck9Uj19Ey6bO33hwX73OJO5b/gFWMnYvYYJyapx/JTpPKLZqbt84Rnlf+Jr2w7aZvptfzRzDs+VH5Va5b8vaDa/Itgfuf4Lf+UZ3aGc5Odo8z8K3KvcZPzfuWt9Zyz+vf/w/s37/xV8A2X5RJzF+T73yENyf5D9hyLWCrhqnOrNgHLHl7A
+   eJzV1V1Kw0AUhuEzxlp0F6FQ0It2DxVEvXEPpipWS/fQH71QN6Gt7qM/ug8tug3fIVNyGJvYC5vgwEMOOSfzDSSQUERCHKCJM6e5wnXfPZfW9+/p50KVe44L9DFAYES2sWPieqB6eqbGte5qv9/P2OcUkTvHIW5wiyFGqDC7iz0T1yPV0zOLZWu/P8zYp4seGi7/GS+YYmbPxewRjk1cz1RPzyyWrf3+NGOfRzyp/Fe8Ye5EzF6iZeJ6Lj9FKj9rZtk+Y0xU/ie+ku2kZ5bX8kcz7/hQ+UWtVfJPgmLzO8H6zvFb/hXv7Bptk5wjz/w7cu/xkPJ9pa1ayln9+//h+1t3fhVbKOeYuwH7KiqS/IfsOTZRyuGqc4v2DdEEXFs=
   </data>
  </layer>
  <objectgroup id="4" name="Props">
   <properties>
-   <property name="D" value="10"/>
+   <property name="I" value="[Door WoodenDoor]"/>
   </properties>
   <object id="23" gid="488" x="896" y="768" width="160" height="160">
    <properties>
-    <property name="I" value="[Npc VillageMan Downward [&quot;If the war inside my head...&quot; &quot;Won't take a day, I'll be dead.&quot;]]"/>
+    <property name="I" value="[Npc VillageWoman Rightward [[&quot;I swear I heard that chest over there rattling....&quot;]]]"/>
    </properties>
   </object>
-  <object id="25" gid="488" x="960" y="192" width="128" height="32">
+  <object id="25" gid="488" x="960" y="256" width="128" height="64">
    <properties>
     <property name="I" value="[Portal 0 DebugRoom [1024 192] Upward]"/>
+   </properties>
+  </object>
+  <object id="29" gid="488" x="960" y="320" width="128" height="192">
+   <properties>
+    <property name="I" value="[Door WoodenDoor []]"/>
+   </properties>
+  </object>
+  <object id="31" gid="813" x="1600" y="704" width="64" height="64">
+   <properties>
+    <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 33521205-c327-4bba-9b1c-afc982ba66ac [Some DebugBattle] [DebugSwitch2]]"/>
+   </properties>
+  </object>
+  <object id="32" gid="488" x="1664" y="512" width="160" height="160">
+   <properties>
+    <property name="I" value="[Npc VillageMan Downward [[&quot;I swear I heard that chest over there rattle....&quot;]] [SavedPrincess]]"/>
+   </properties>
+  </object>
+  <object id="33" gid="488" x="704" y="512" width="64" height="64">
+   <properties>
+    <property name="I" value="[Sensor StepPlateSensor]"/>
+   </properties>
+  </object>
+  <object id="34" gid="488" x="1216" y="320" width="64" height="128">
+   <properties>
+    <property name="I" value="[Switch ThrowSwitch [] [DebugSwitch]]"/>
+   </properties>
+  </object>
+  <object id="35" gid="488" x="1344" y="320" width="64" height="128">
+   <properties>
+    <property name="I" value="[Switch ThrowSwitch [DebugSwitch] [DebugSwitch2]]"/>
+   </properties>
+  </object>
+  <object id="36" gid="488" x="1408" y="512" width="160" height="160">
+   <properties>
+    <property name="I" value="[Shopkeep ShopkeepMan]"/>
    </properties>
   </object>
  </objectgroup>
