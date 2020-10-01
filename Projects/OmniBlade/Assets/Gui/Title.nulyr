@@ -1,24 +1,28 @@
 [LayerDispatcher
- [[Depth 0]
+ [[Model
+   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Gui]
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
    [[Name Credits]
-    [Position [-128.0f -160.0f]]
-    [Size [256.0f 64.0f]]
-    [Text "Credits"]]]
+    [Optimized False]
+    [Position [-128 -120]]
+    [Text Credits]]]
   [ButtonDispatcher
    [[Name Exit]
-    [Position [-128.0f -224.0f]]
-    [Size [256.0f 64.0f]]
-    [Text "Exit"]]]
+    [Optimized False]
+    [Position [-128 -200]]
+    [Text Exit]]]
   [ButtonDispatcher
    [[Name Play]
-    [Position [-128.0f -96.0f]]
-    [Size [256.0f 64.0f]]
-    [Text "Play"]]]
+    [Optimized False]
+    [Position [-128 -40]]
+    [Text Play]]]
   [TextDispatcher
-   [[Position [-320.0f 96.0f]]
-    [Size [640.0f 128.0f]]
+   [[BackgroundImageOpt
+     [Some [Gui DialogThin]]]
+    [Optimized False]
+    [Position [-440 104]]
+    [Size [896 112]]
     [Text OmniBlade]]]]]
