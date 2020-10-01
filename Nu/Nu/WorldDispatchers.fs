@@ -47,7 +47,7 @@ module FacetModule =
                 match signalObj with
                 | :? Signal<'message, 'command> as signal ->
                     Signal.processSignal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) signal entity world
-                | _ -> entity.TrySignal signalObj world
+                | _ -> Log.info "Incorrect signal type returned from event binding."; world
             | _ -> Log.info "Failed to send signal to entity facet."; world
 
         static member internal signalEntityFacet<'model, 'message, 'command> signal facetName (entity : Entity) world =
@@ -132,7 +132,7 @@ module FacetModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) (getTypeName this) world
             | :? Signal<obj, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) (getTypeName this) world
-            | _ -> entity.Parent.TrySignal signalObj world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
         default this.Initializers (_, _) = []
@@ -1226,7 +1226,7 @@ module EntityDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> entity.Parent.TrySignal signalObj world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
         default this.Initializers (_, _) = []
@@ -2105,7 +2105,7 @@ module LayerDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> layer.Parent.TrySignal signalObj world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         abstract member Initializers : Lens<'model, World> * Layer -> PropertyInitializer list
         default this.Initializers (_, _) = []
@@ -2198,7 +2198,7 @@ module ScreenDispatcherModule =
             match signalObj with
             | :? Signal<'message, obj> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
-            | _ -> screen.Parent.TrySignal signalObj world
+            | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
         abstract member Initializers : Lens<'model, World> * Screen -> PropertyInitializer list
         default this.Initializers (_, _) = []
