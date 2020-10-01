@@ -1,9 +1,13 @@
 [[ButtonDispatcherRoute
   [ButtonDispatcher]
-  [[ClickSoundOpt [Some [Gui Affirm]]]
+  [[ClickSoundOpt
+    [Some [Gui Affirm]]]
+   [DownImage [Gui ButtonDown]]
    [Font [Gui Font]]
-   [TextColor [255 255 255 255]]]]
+   [TextColor [255 255 255 255]]
+   [UpImage [Gui ButtonUp]]]]
  [TextDispatcherRoute
   [TextDispatcher]
-  [[Font [Gui Font]]
+  [[BackgroundImageOpt None]
+   [Font [Gui Font]]
    [TextColor [255 255 255 255]]]]]

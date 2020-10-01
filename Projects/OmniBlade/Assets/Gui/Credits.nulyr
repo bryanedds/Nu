@@ -1,22 +1,32 @@
 [LayerDispatcher
- [[Depth 0]
+ [[Model
+   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Gui]
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
    [[Name Back]
-    [Position [-128.0f -224.0f]]
-    [Size [256.0f 64.0f]]
-    [Text "Back"]]]
+    [Optimized False]
+    [Position [-128 -192]]
+    [Text Back]]]
   [TextDispatcher
-   [[Position [-320.0f 96.0f]]
-    [Size [640.0f 128.0f]]
+   [[BackgroundImageOpt
+     [Some [Gui DialogThin]]]
+    [Optimized False]
+    [Position [-448 144]]
+    [Size [896 112]]
     [Text Credits]]]
   [TextDispatcher
-   [[Position [-320.0f 0.0f]]
-    [Size [640.0f 64.0f]]
+   [[BackgroundImageOpt
+     [Some [Gui DialogThin]]]
+    [Optimized False]
+    [Position [-448 16]]
+    [Size [896 112]]
     [Text "Code: Bryan Edds"]]]
   [TextDispatcher
-   [[Position [-320.0f -96.0f]]
-    [Size [640.0f 64.0f]]
+   [[BackgroundImageOpt
+     [Some [Gui DialogThin]]]
+    [Optimized False]
+    [Position [-448 -112]]
+    [Size [896 112]]
     [Text "Art: Placeholder for now."]]]]]
