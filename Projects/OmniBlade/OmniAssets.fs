@@ -9,9 +9,13 @@ module Assets =
 
     // gui assets
     let Font = asset<Font> GuiPackageName "Font"
-    let DialogThin = asset<Image> GuiPackageName "DialogThin"
-    let DialogMedium = asset<Image> GuiPackageName "DialogMedium"
-    let DialogLarge = asset<Image> GuiPackageName "DialogLarge"
+    let DialogThinImage = asset<Image> GuiPackageName "DialogThin"
+    let DialogMediumImage = asset<Image> GuiPackageName "DialogMedium"
+    let DialogLargeImage = asset<Image> GuiPackageName "DialogLarge"
+    let ButtonUpImage = asset<Image> GuiPackageName "ButtonUp"
+    let ButtonDownImage = asset<Image> GuiPackageName "ButtonDown"
+    let ButtonShortUpImage = asset<Image> GuiPackageName "ButtonShortUp"
+    let ButtonShortDownImage = asset<Image> GuiPackageName "ButtonShortDown"
     let AffirmSound = asset<Sound> GuiPackageName "Affirm"
     let TitleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> GuiPackageName "Title" }
 

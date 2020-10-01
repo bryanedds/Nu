@@ -318,6 +318,8 @@ module OmniField =
                     [Entity.Size == v2 192.0f 64.0f
                      Entity.Position == v2 248.0f -240.0f
                      Entity.Depth == Constants.Field.GuiDepth
+                     Entity.UpImage == Assets.ButtonShortUpImage
+                     Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Visible <== model ->> fun model world ->
                         let interactionOpt = tryGetInteraction model.DialogOpt model.Advents model.Avatar world
                         Option.isSome interactionOpt
@@ -342,10 +344,10 @@ module OmniField =
                             match model.DialogOpt with
                             | Some dialog ->
                                 match dialog.DialogForm with
-                                | DialogThin -> Assets.DialogThin
-                                | DialogMedium -> Assets.DialogMedium
-                                | DialogLarge -> Assets.DialogLarge
-                            | None -> Assets.DialogLarge
+                                | DialogThin -> Assets.DialogThinImage
+                                | DialogMedium -> Assets.DialogMediumImage
+                                | DialogLarge -> Assets.DialogLargeImage
+                            | None -> Assets.DialogLargeImage
                         Some image
                      Entity.Text <== model --> fun model ->
                         match model.DialogOpt with
