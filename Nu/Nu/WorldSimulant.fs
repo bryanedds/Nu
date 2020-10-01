@@ -111,9 +111,9 @@ module WorldSimulantModule =
 
         /// Expand the given simulant content.
         [<FunctionBinding>]
-        static member expandContent setScreenSplash (content : SimulantContent) origin (parent : Simulant) (world : World) =
+        static member expandContent setScreenSplash (content : SimulantContent) origin owner (parent : Simulant) (world : World) =
             match (content, parent) with
-            | ((:? EntityContent as entityContent), (:? Layer as layer)) -> World.expandEntityContent entityContent origin layer world |> mapFst (Option.map cast<Simulant>)
+            | ((:? EntityContent as entityContent), (:? Layer as layer)) -> World.expandEntityContent entityContent origin owner layer world |> mapFst (Option.map cast<Simulant>)
             | ((:? LayerContent as layerContent), (:? Screen as screen)) -> World.expandLayerContent layerContent origin screen world |> mapFst (Option.map cast<Simulant>)
             | ((:? ScreenContent as screenContent), (:? Game as game)) -> World.expandScreenContent setScreenSplash screenContent origin game world |> mapFst (Some << cast<Simulant>)
             | _ -> failwithumf ()

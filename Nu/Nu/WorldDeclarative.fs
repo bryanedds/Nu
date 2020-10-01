@@ -174,6 +174,7 @@ module WorldDeclarative =
             (indexOpt : (obj -> int) option)
             (mapper : int -> Lens<obj, World> -> World -> SimulantContent)
             (origin : ContentOrigin)
+            (owner : Simulant)
             (parent : Simulant)
             world =
             let expansionId = Gen.id
@@ -250,7 +251,7 @@ module WorldDeclarative =
                                 let content = mapper index lens world
                                 match World.tryGetKeyedValue guid world with
                                 | None ->
-                                    let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin parent world
+                                    let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin owner parent world
                                     match simulantOpt with
                                     | Some simulant -> World.addKeyedValue guid simulant world
                                     | None -> world

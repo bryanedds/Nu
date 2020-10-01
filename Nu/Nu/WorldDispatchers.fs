@@ -103,7 +103,7 @@ module FacetModule =
             let content = this.Content (this.Model entity, entity)
             let world =
                 List.fold (fun world content ->
-                    World.expandEntityContent content (FacetOrigin (entity, getTypeName this)) entity.Parent world |> snd)
+                    World.expandEntityContent content (FacetOrigin (entity, getTypeName this)) entity entity.Parent world |> snd)
                     world content
             let initializers = this.Initializers (this.Model entity, entity)
             List.fold (fun world initializer ->
@@ -1194,7 +1194,7 @@ module EntityDispatcherModule =
             let content = this.Content (this.Model entity, entity)
             let world =
                 List.fold (fun world content ->
-                    World.expandEntityContent content (SimulantOrigin entity) entity.Parent world |> snd)
+                    World.expandEntityContent content (SimulantOrigin entity) entity entity.Parent world |> snd)
                     world content
             let initializers = this.Initializers (this.Model entity, entity)
             List.fold (fun world initializer ->
@@ -2076,7 +2076,7 @@ module LayerDispatcherModule =
             let content = this.Content (this.Model layer, layer)
             let world =
                 List.fold (fun world content ->
-                    World.expandEntityContent content (SimulantOrigin layer) layer world |> snd)
+                    World.expandEntityContent content (SimulantOrigin layer) layer layer world |> snd)
                     world content
             let initializers = this.Initializers (this.Model layer, layer)
             List.fold (fun world initializer ->
