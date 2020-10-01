@@ -81,8 +81,8 @@ module Content =
         layersPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) None mapper
 
     /// Describe a layer to be loaded from a file.
-    let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
-        LayerFromFile (layerName, filePath)
+    let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath initializers content =
+        LayerFromFile (typeof<'d>.Name, layerName, filePath, initializers, content)
 
     /// Describe a layer with the given initializers and contained entities.
     let layer<'d when 'd :> LayerDispatcher> layerName initializers entities =
@@ -140,8 +140,8 @@ module Content =
         entitiesPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) None mapper
 
     /// Describe an entity to be loaded from a file.
-    let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
-        EntityFromFile (entityName, filePath)
+    let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath initializers content =
+        EntityFromFile (typeof<'d>.Name, entityName, filePath, initializers, content)
 
     /// Describe an entity with the given initializers and content.
     let entityWithContent<'d when 'd :> EntityDispatcher> entityName initializers content =

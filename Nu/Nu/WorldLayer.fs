@@ -241,46 +241,51 @@ module WorldLayerModule =
             let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
             World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin screen world
 
+        /// Expand an existing layer.
+        static member private expandLayerExisting origin handlers binds streams entityFilePaths entityContents (layer : Layer) world =
+            let world =
+                List.fold (fun world (_, entityName, filePath) ->
+                    World.readEntityFromFile filePath (Some entityName) layer world |> snd)
+                    world entityFilePaths
+            let world =
+                List.fold (fun world (simulant, left : World Lens, right) ->
+                    WorldModule.bind5 simulant left right world)
+                    world binds
+            let world =
+                List.fold (fun world (handler, address, simulant) ->
+                    World.monitor (fun (evt : Event) world ->
+                        let signal = handler evt
+                        let owner = match origin with SimulantOrigin simulant -> simulant | FacetOrigin (simulant, _) -> simulant
+                        let world = WorldModule.trySignal signal owner world
+                        (Cascade, world))
+                        address simulant world)
+                    world handlers
+            let world =
+                List.fold (fun world (layer, lens, sieve, spread, indexOpt, mapper) ->
+                    World.expandEntities lens sieve spread indexOpt mapper origin layer world)
+                    world streams
+            let world =
+                List.fold (fun world (owner, entityContents) ->
+                    List.fold (fun world entityContent ->
+                        World.expandEntityContent entityContent (SimulantOrigin owner) layer world |> snd)
+                        world entityContents)
+                    world entityContents
+            (Some layer, world)
+
         /// Turn layer content into a live layer.
         static member expandLayerContent content origin screen world =
             if World.getScreenExists screen world then
                 match LayerContent.expand content screen world with
-                | Choice1Of3 (lens, sieve, spread, indexOpt, mapper) ->
+                | Left (lens, sieve, spread, indexOpt, mapper) ->
                     let world = World.expandLayers lens sieve spread indexOpt mapper origin screen world
                     (None, world)
-                | Choice2Of3 (_, descriptor, handlers, binds, streams, entityFilePaths, entityContents) ->
-                    let (layer, world) =
-                        World.createLayer3 descriptor screen world
-                    let world =
-                        List.fold (fun world (_, entityName, filePath) ->
-                            World.readEntityFromFile filePath (Some entityName) layer world |> snd)
-                            world entityFilePaths
-                    let world =
-                        List.fold (fun world (simulant, left : World Lens, right) ->
-                            WorldModule.bind5 simulant left right world)
-                            world binds
-                    let world =
-                        List.fold (fun world (handler, address, simulant) ->
-                            World.monitor (fun (evt : Event) world ->
-                                let signal = handler evt
-                                let owner = match origin with SimulantOrigin simulant -> simulant | FacetOrigin (simulant, _) -> simulant
-                                let world = WorldModule.trySignal signal owner world
-                                (Cascade, world))
-                                address simulant world)
-                            world handlers
-                    let world =
-                        List.fold (fun world (layer, lens, sieve, spread, indexOpt, mapper) ->
-                            World.expandEntities lens sieve spread indexOpt mapper origin layer world)
-                            world streams
-                    let world =
-                        List.fold (fun world (owner, entityContents) ->
-                            List.fold (fun world entityContent ->
-                                World.expandEntityContent entityContent (SimulantOrigin owner) layer world |> snd)
-                                world entityContents)
-                            world entityContents
+                | Right (_, Left descriptor, handlers, binds, streams, entityFilePaths, entityContents) ->
+                    let (layer, world) = World.createLayer3 descriptor screen world
+                    let (layer, world) = World.expandLayerExisting origin handlers binds streams entityFilePaths entityContents layer world
                     (Some layer, world)
-                | Choice3Of3 (layerName, filePath) ->
+                | Right (layerName, Right filePath, handlers, binds, streams, entityFilePaths, entityContents) ->
                     let (layer, world) = World.readLayerFromFile filePath (Some layerName) screen world
+                    let (layer, world) = World.expandLayerExisting origin handlers binds streams entityFilePaths entityContents layer world
                     (Some layer, world)
             else (None, world)
 

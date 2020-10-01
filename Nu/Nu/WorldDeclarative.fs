@@ -18,45 +18,55 @@ type [<StructuralEquality; NoComparison>] ScreenBehavior =
 type [<NoEquality; NoComparison>] EntityContent =
     | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> obj seq) * (obj -> int) option * (int -> Lens<obj, World> -> World -> EntityContent)
     | EntityFromInitializers of string * string * PropertyInitializer list * EntityContent list
-    | EntityFromFile of string * string
+    | EntityFromFile of string * string * string * PropertyInitializer list * EntityContent list
     interface SimulantContent
 
     /// Expand an entity content to its constituent parts.
     static member expand content (layer : Layer) (world : World) =
         match content with
         | EntitiesFromStream (lens, sieve, unfold, indexOpt, mapper) ->
-            Choice1Of3 (lens, sieve, unfold, indexOpt, mapper)
+            Left (lens, sieve, unfold, indexOpt, mapper)
         | EntityFromInitializers (dispatcherName, name, initializers, content) ->
             let (descriptor, handlersEntity, bindsEntity) = Describe.entity4 dispatcherName (Some name) initializers (layer / name) world
-            Choice2Of3 (name, descriptor, handlersEntity, bindsEntity, (layer / name, content))
-        | EntityFromFile (name, filePath) ->
-            Choice3Of3 (name, filePath)
+            Right (name, Left descriptor, handlersEntity, bindsEntity, (layer / name, content))
+        | EntityFromFile (dispatcherName, name, filePath, initializers, content) ->
+            let (_, handlersEntity, bindsEntity) = Describe.entity4 dispatcherName (Some name) initializers (layer / name) world
+            Right (name, Right filePath, handlersEntity, bindsEntity, (layer / name, content))
 
 /// Describes the content of a layer.
 type [<NoEquality; NoComparison>] LayerContent =
     | LayersFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> obj seq) * (obj -> int) option * (int -> obj -> World -> LayerContent)
     | LayerFromInitializers of string * string * PropertyInitializer list * EntityContent list
-    | LayerFromFile of string * string
+    | LayerFromFile of string * string * string * PropertyInitializer list * EntityContent list
     interface SimulantContent
 
     /// Expand a layer content to its constituent parts.
     static member expand content screen (world : World) =
         match content with
         | LayersFromStream (lens, sieve, unfold, indexOpt, mapper) ->
-            Choice1Of3 (lens, sieve, unfold, indexOpt, mapper)
+            Left (lens, sieve, unfold, indexOpt, mapper)
         | LayerFromInitializers (dispatcherName, name, initializers, content) ->
             let layer = screen / name
             let expansions = List.map (fun content -> EntityContent.expand content layer world) content
-            let streams = List.map (function Choice1Of3 (lens, sieve, unfold, indexOpt, mapper) -> Some (layer, lens, sieve, unfold, indexOpt, mapper) | _ -> None) expansions |> List.definitize
-            let descriptors = List.map (function Choice2Of3 (_, descriptor, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
-            let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
-            let binds = List.map (function Choice2Of3 (_, _, _, binds, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
-            let entityContents = List.map (function Choice2Of3 (_, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize
-            let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))
+            let streams = List.map (function Left (lens, sieve, unfold, indexOpt, mapper) -> Some (layer, lens, sieve, unfold, indexOpt, mapper) | _ -> None) expansions |> List.definitize
+            let descriptors = List.map (function Right (_, Left descriptor, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
+            let filePaths = List.map (function Right (entityName, Right filePath, _, _, _) -> Some (name, entityName, filePath) | _ -> None) expansions |> List.definitize
+            let handlers = List.map (function Right (_, _, handlers, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
+            let binds = List.map (function Right (_, _, _, binds, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
+            let entityContents = List.map (function Right (_, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize
             let (descriptor, handlersLayer, bindsLayer) = Describe.layer5 dispatcherName (Some name) initializers descriptors layer world
-            Choice2Of3 (name, descriptor, handlers @ handlersLayer, binds @ bindsLayer, streams, filePaths, entityContents)
-        | LayerFromFile (name, filePath) ->
-            Choice3Of3 (name, filePath)
+            Right (name, Left descriptor, handlers @ handlersLayer, binds @ bindsLayer, streams, filePaths, entityContents)
+        | LayerFromFile (dispatcherName, name, filePath, initializers, content) ->
+            let layer = screen / name
+            let expansions = List.map (fun content -> EntityContent.expand content layer world) content
+            let streams = List.map (function Left (lens, sieve, unfold, indexOpt, mapper) -> Some (layer, lens, sieve, unfold, indexOpt, mapper) | _ -> None) expansions |> List.definitize
+            let descriptors = List.map (function Right (_, Left descriptor, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
+            let filePaths = List.map (function Right (entityName, Right filePath, _, _, _) -> Some (name, entityName, filePath) | _ -> None) expansions |> List.definitize
+            let handlers = List.map (function Right (_, _, handlers, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
+            let binds = List.map (function Right (_, _, _, binds, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
+            let entityContents = List.map (function Right (_, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize
+            let (_, handlersLayer, bindsLayer) = Describe.layer5 dispatcherName (Some name) initializers descriptors layer world
+            Right (name, Right filePath, handlers @ handlersLayer, binds @ bindsLayer, streams, filePaths, entityContents)
 
 /// Describes the content of a screen.
 type [<NoEquality; NoComparison>] ScreenContent =
@@ -71,14 +81,14 @@ type [<NoEquality; NoComparison>] ScreenContent =
         | ScreenFromInitializers (dispatcherName, name, behavior, initializers, content) ->
             let screen = Screen name
             let expansions = List.map (fun content -> LayerContent.expand content screen world) content
-            let streams = List.map (function Choice1Of3 (lens, sieve, unfold, indexOpt, mapper) -> Some (screen, lens, sieve, unfold, indexOpt, mapper) | _ -> None) expansions |> List.definitize
-            let descriptors = List.map (function Choice2Of3 (_, descriptor, _, _, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
-            let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
-            let binds = List.map (function Choice2Of3 (_, _, _, binds, _, _, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
-            let entityStreams = List.map (function Choice2Of3 (_, _, _, _, stream, _, _) -> Some stream | _ -> None) expansions |> List.definitize |> List.concat
-            let entityFilePaths = List.map (function Choice2Of3 (_, _, _, _, _, filePaths, _) -> Some (List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) | _ -> None) expansions |> List.definitize |> List.concat
-            let entityContents = List.map (function Choice2Of3 (_, _, _, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize |> List.concat
-            let layerFilePaths = List.map (function Choice3Of3 (layerName, filePath) -> Some (name, layerName, filePath) | _ -> None) expansions |> List.definitize
+            let streams = List.map (function Left (lens, sieve, unfold, indexOpt, mapper) -> Some (screen, lens, sieve, unfold, indexOpt, mapper) | _ -> None) expansions |> List.definitize
+            let descriptors = List.map (function Right (_, Left descriptor, _, _, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
+            let handlers = List.map (function Right (_, _, handlers, _, _, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
+            let binds = List.map (function Right (_, _, _, binds, _, _, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
+            let entityStreams = List.map (function Right (_, _, _, _, stream, _, _) -> Some stream | _ -> None) expansions |> List.definitize |> List.concat
+            let entityFilePaths = List.map (function Right (_, _, _, _, _, filePaths, _) -> Some (List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) | _ -> None) expansions |> List.definitize |> List.concat
+            let entityContents = List.map (function Right (_, _, _, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize |> List.concat
+            let layerFilePaths = List.map (function Right (layerName, Right filePath, _, _, _, _, _) -> Some (name, layerName, filePath) | _ -> None) expansions |> List.definitize
             let (descriptor, handlersScreen, bindsScreen) = Describe.screen5 dispatcherName (Some name) initializers descriptors screen world
             Left (name, descriptor, handlers @ handlersScreen, binds @ bindsScreen, behavior, streams, entityStreams, layerFilePaths, entityFilePaths, entityContents)
         | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
