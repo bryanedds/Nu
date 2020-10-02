@@ -131,7 +131,7 @@ module OmniField =
                 if model.Advents.IsSupersetOf requirements then
                     let model = FieldModel.updateAdvents (Set.addMany consequents) model
                     let model = FieldModel.updatePropStates (Map.add propModel.PropId (DoorState true)) model
-                    just model
+                    withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenDoorSound))
                 else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
             | _ -> failwithumf ()
 
@@ -141,7 +141,7 @@ module OmniField =
                 if model.Advents.IsSupersetOf requirements then
                     let model = FieldModel.updateAdvents (if on then Set.removeMany consequents else Set.addMany consequents) model
                     let model = FieldModel.updatePropStates (Map.add propModel.PropId (SwitchState (not on))) model
-                    just model
+                    withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UseSwitchSound))
                 else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0 })) model)
             | _ -> failwithumf ()
 
@@ -247,29 +247,39 @@ module OmniField =
 
             | ShopConfirmPrompt (buying, selectionLens) ->
                 let selection = Lens.get selectionLens world
-                let shopConfirmModelOpt =
-                    match snd selection with
-                    | Consumable ty as itemType ->
-                        match Map.tryFind ty data.Value.Consumables with
-                        | Some cd ->
-                            let model =
-                                { ShopConfirmSelection = selection
-                                  ShopConfirmState = buying
-                                  ShopConfirmOffer = "Sell " + ItemType.getName itemType + " for " + string (cd.Cost / 2) + "G?"
-                                  ShopConfirmLine1 = "Effect: " + cd.Description
-                                  ShopConfirmLine2 = "" }
-                            Some model
-                        | None -> None
-                    | _ -> None
-                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = shopConfirmModelOpt })) model
+                let model =
+                    FieldModel.updateShopModelOpt (Option.map (fun shopModel ->
+                        let shopConfirmModelOpt =
+                            match snd selection with
+                            | Consumable ty as itemType ->
+                                match Map.tryFind ty data.Value.Consumables with
+                                | Some cd ->
+                                    let price = cd.Cost / 2
+                                    let model =
+                                        { ShopConfirmSelection = selection
+                                          ShopConfirmPrice = price
+                                          ShopConfirmOffer = "Sell " + ItemType.getName itemType + " for " + string price + "G?"
+                                          ShopConfirmLine1 = "Effect: " + cd.Description
+                                          ShopConfirmLine2 = "" }
+                                    Some model
+                                | None -> None
+                            | _ -> None
+                        { shopModel with ShopConfirmModelOpt = shopConfirmModelOpt }))
+                        model
                 just model
 
             | ShopConfirmAccept ->
-                //match model.ShopModelOpt with
-                //| Some shopModel ->
-                //    match shopModel.ShopConfirmModelOpt with
-                //    | Some shopConfirmModel ->
-                just model
+                match model.ShopModelOpt with
+                | Some shopModel ->
+                    match shopModel.ShopConfirmModelOpt with
+                    | Some shopConfirmModel ->
+                        let itemType = snd shopConfirmModel.ShopConfirmSelection
+                        let model = FieldModel.updateInventory (Inventory.removeItem itemType) model
+                        let model = FieldModel.updateInventory (Inventory.updateGold ((if shopModel.ShopState = ShopBuying then (-) else (+)) shopConfirmModel.ShopConfirmPrice)) model
+                        let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = None })) model
+                        withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound))
+                    | None -> just model
+                | None -> just model
 
             | ShopConfirmDecline ->
                 let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = None })) model

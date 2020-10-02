@@ -62,6 +62,9 @@ type [<StructuralEquality; NoComparison>] Inventory =
         let tail = Seq.trySkip index items
         Seq.tryHead tail
 
+    static member updateGold updater inventory =
+        { inventory with Gold = updater inventory.Gold }
+
 type Legionnaire =
     { LegionIndex : int // key
       PartyIndexOpt : int option

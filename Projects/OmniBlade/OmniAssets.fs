@@ -42,6 +42,7 @@ module Assets =
     let EnterBattleSound = asset<Sound> FieldPackageName "EnterBattle"
     let HealSound = asset<Sound> FieldPackageName "Heal"
     let DeathSound = asset<Sound> FieldPackageName "Death"
+    let PurchaseSound = asset<Sound> FieldPackageName "Purchase"
     let OpenDoorSound = asset<Sound> FieldPackageName "Unlatch"
     let OpenChestSound = asset<Sound> FieldPackageName "Unlatch2"
     let TriggerSound = asset<Sound> FieldPackageName "Unlatch3"
