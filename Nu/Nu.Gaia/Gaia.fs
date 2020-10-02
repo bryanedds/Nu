@@ -1461,6 +1461,7 @@ module Gaia =
         refreshHierarchyTreeView form Globals.World
         refreshLayerTabs form Globals.World
         selectLayer defaultLayer form Globals.World
+        form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
         form.tickingButton.CheckState <- CheckState.Unchecked
         form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
             let WM_KEYDOWN = 0x0100
