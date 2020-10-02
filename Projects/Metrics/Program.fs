@@ -171,7 +171,7 @@ type MyGameDispatcher () =
 
 #if ELMISH
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<int list list, int, unit> (List.init 32 (fun _ -> List.init 32 id)) // 1024 Elmish entities
+    inherit GameDispatcher<int list list, int, unit> (List.init 35 (fun _ -> List.init 35 id)) // 1225 Elmish entities
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -186,10 +186,12 @@ type ElmishGameDispatcher () =
     override this.Content (model, _) =
         [Content.screen "Screen" Vanilla []
             [Content.layers model id constant (fun i ints _ ->
-                Content.layer (scstring i) []
+                Content.layer (string i) []
                     [Content.entities ints id constant (fun j int _ ->
-                        Content.label (scstring j)
-                            [Entity.Size <== int --> fun int -> v2 (single int) (single int)
+                        Content.staticSprite (string j)
+                            [Entity.Imperative == true
+                             Entity.Omnipresent == true
+                             Entity.Size <== int --> fun int -> v2 (single int) (single int)
                              Entity.Position == v2 (single i * 16.0f - 480.0f) (single j * 16.0f - 272.0f)])])
              Content.layer "Layer" []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
