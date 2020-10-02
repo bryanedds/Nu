@@ -480,7 +480,7 @@ module OmniField =
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 1.0f; Entity.Text == "Sell..."; Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
                      Content.text Simulants.FieldShopGold.Name
-                        [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text <== model --> (fun model -> scstring model.Inventory.Gold + "G"); Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
+                        [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text <== model --> (fun model -> string model.Inventory.Gold + "G"); Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
                      Content.button Simulants.FieldShopPageUp.Name
                         [Entity.PositionLocal == v2 16.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == "<"; Entity.Size == v2 48.0f 64.0f
                          Entity.ClickEvent ==> msg ShopPageUp]
