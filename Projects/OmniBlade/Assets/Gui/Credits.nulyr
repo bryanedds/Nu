@@ -12,6 +12,7 @@
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
     [Optimized False]
     [Position [-448 144]]
     [Size [896 112]]
@@ -19,6 +20,7 @@
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
     [Optimized False]
     [Position [-448 16]]
     [Size [896 112]]
@@ -26,6 +28,7 @@
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
     [Optimized False]
     [Position [-448 -112]]
     [Size [896 112]]

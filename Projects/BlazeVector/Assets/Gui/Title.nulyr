@@ -16,6 +16,8 @@
     [Position [-128.0f -96.0f]]
     [Text Play]]]
   [TextDispatcher
-   [[Position [-320.0f 96.0f]]
+   [[BackgroundImageOpt [Some [Default Image3]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
+    [Position [-320.0f 96.0f]]
     [Size [640.0f 128.0f]]
     [Text BlazeVector]]]]]

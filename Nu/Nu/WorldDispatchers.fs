@@ -398,6 +398,9 @@ module TextFacetModule =
         member this.GetTextColor world : Color = this.Get Property? TextColor world
         member this.SetTextColor (value : Color) world = this.SetFast Property? TextColor false false value world
         member this.TextColor = lens Property? TextColor this.GetTextColor this.SetTextColor this
+        member this.GetTextDisabledColor world : Color = this.Get Property? TextDisabledColor world
+        member this.SetTextDisabledColor (value : Color) world = this.SetFast Property? TextDisabledColor false false value world
+        member this.TextDisabledColor = lens Property? TextDisabledColor this.GetTextDisabledColor this.SetTextDisabledColor this
 
     type TextFacet () =
         inherit Facet ()
@@ -407,7 +410,8 @@ module TextFacetModule =
              define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName Assets.DefaultFontName)
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.TextColor Color.Black]
+             define Entity.TextColor Color.Black
+             define Entity.TextDisabledColor (Color (byte 64, byte 64, byte 64, byte 192))]
 
         override this.Actualize (text, world) =
             let textStr = text.GetText world
@@ -429,7 +433,7 @@ module TextFacetModule =
                                 { Transform = transform
                                   Text = textStr
                                   Font = text.GetFont world
-                                  Color = text.GetTextColor world
+                                  Color = if text.GetEnabled world then text.GetTextColor world else text.GetTextDisabledColor world
                                   Justification = text.GetJustification world }})
                     world
             else world
@@ -1319,7 +1323,7 @@ module NodeDispatcherModule =
 module GuiDispatcherModule =
 
     type Entity with
-    
+
         member this.GetDisabledColor world : Color = this.Get Property? DisabledColor world
         member this.SetDisabledColor (value : Color) world = this.SetFast Property? DisabledColor false false value world
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
@@ -1562,7 +1566,8 @@ module TextDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.BackgroundImageOpt (Some (AssetTag.make<Image> Assets.DefaultPackageName "Image3"))]
+             define Entity.BackgroundImageOpt None
+             define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
         override this.Actualize (text, world) =
             if text.GetVisible world then
