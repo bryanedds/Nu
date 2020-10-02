@@ -42,8 +42,8 @@ module Simulants =
     let FieldShopConfirmAccept = Field / "ShopConfirmAccept"
     let FieldShopConfirmDecline = Field / "ShopConfirmDecline"
     let FieldShopConfirmOffer = Field / "ShopConfirmOffer"
-    let FieldShopConfirmStats = Field / "ShopConfirmStats"
-    let FieldShopConfirmEffect = Field / "ShopConfirmEffect"
+    let FieldShopConfirmLine1 = Field / "ShopConfirmLine1"
+    let FieldShopConfirmLine2 = Field / "ShopConfirmLine2"
 
     // battle
     let Battle = Screen "Battle"

@@ -241,6 +241,7 @@ type [<StructuralEquality; NoComparison>] ConsumableData =
       Scalar : single
       Curative : bool
       AimType : AimType
+      Cost : int
       Description : string }
 
 type [<StructuralEquality; NoComparison>] TechData =
