@@ -22,6 +22,7 @@
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
     [Optimized False]
     [Position [-440 104]]
     [Size [896 112]]

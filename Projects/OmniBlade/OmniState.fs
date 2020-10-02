@@ -50,6 +50,18 @@ type [<StructuralEquality; NoComparison>] Inventory =
             { inventory with Items = Map.remove item inventory.Items }
         | _ -> inventory
 
+    static member indexItems (inventory : Inventory) =
+        inventory.Items |>
+        Map.toSeq |>
+        Seq.map (fun (ty, ct) -> List.init ct (fun _ -> ty)) |>
+        Seq.concat |>
+        Seq.index
+
+    static member tryIndexItem index inventory =
+        let items = Inventory.indexItems inventory
+        let tail = Seq.trySkip index items
+        Seq.tryHead tail
+
 type Legionnaire =
     { LegionIndex : int // key
       PartyIndexOpt : int option

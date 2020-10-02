@@ -8,10 +8,14 @@
     [Position [-128.0f -224.0f]]
     [Text Back]]]
   [TextDispatcher
-   [[Position [-320.0f 96.0f]]
+   [[BackgroundImageOpt [Some [Default Image3]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
+    [Position [-320.0f 96.0f]]
     [Size [640.0f 128.0f]]
     [Text Credits]]]
   [TextDispatcher
-   [[Position [-320.0f -56.0f]]
+   [[BackgroundImageOpt [Some [Default Image3]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
+    [Position [-320.0f -56.0f]]
     [Size [640.0f 64.0f]]
     [Text "Your Name Here!"]]]]]
