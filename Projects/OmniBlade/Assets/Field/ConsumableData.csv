@@ -1,3 +1,3 @@
-Type,Scalar,Curative,AimType,Description
-GreenHerb,1,True,[AllyAim True],None
-RedHerb,2,True,[AllyAim True],None
+Type,Scalar,Curative,AimType,Cost,Description
+GreenHerb,1,True,[AllyAim True],5,Heals minor injuries.
+RedHerb,2,True,[AllyAim True],20,Heals medium injuries.

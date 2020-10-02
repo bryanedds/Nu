@@ -247,8 +247,21 @@ module OmniField =
 
             | ShopConfirmPrompt (buying, selectionLens) ->
                 let selection = Lens.get selectionLens world
-                let shopConfirmModel = { ShopConfirmSelection = selection; ShopConfirmState = buying }
-                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = Some shopConfirmModel })) model
+                let shopConfirmModelOpt =
+                    match snd selection with
+                    | Consumable ty as itemType ->
+                        match Map.tryFind ty data.Value.Consumables with
+                        | Some cd ->
+                            let model =
+                                { ShopConfirmSelection = selection
+                                  ShopConfirmState = buying
+                                  ShopConfirmOffer = "Sell " + ItemType.getName itemType + " for " + string (cd.Cost / 2) + "G?"
+                                  ShopConfirmLine1 = "Effect: " + cd.Description
+                                  ShopConfirmLine2 = "" }
+                            Some model
+                        | None -> None
+                    | _ -> None
+                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = shopConfirmModelOpt })) model
                 just model
 
             | ShopConfirmAccept ->
@@ -449,25 +462,25 @@ module OmniField =
 
                  // shop
                  Content.panel Simulants.FieldShop.Name
-                    [Entity.Position == v2 -448.0f -240.0f
-                     Entity.Size == v2 896.0f 480.0f
+                    [Entity.Position == v2 -448.0f -256.0f
+                     Entity.Size == v2 896.0f 512.0f
                      Entity.Depth == Constants.Field.GuiDepth
                      Entity.LabelImage == Assets.DialogHugeImage
                      Entity.Visible <== model --> fun model -> Option.isSome model.ShopModelOpt
                      Entity.Enabled <== model --> fun model -> match model.ShopModelOpt with Some shopModel -> Option.isNone shopModel.ShopConfirmModelOpt | None -> true]
                     [Content.button Simulants.FieldShopBuy.Name
-                        [Entity.PositionLocal == v2 12.0f 408.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Buy"]
+                        [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Buy"]
                      Content.button Simulants.FieldShopSell.Name
-                        [Entity.PositionLocal == v2 320.0f 408.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Sell"]
+                        [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Sell"]
                      Content.button Simulants.FieldShopLeave.Name
-                        [Entity.PositionLocal == v2 628.0f 408.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Leave"
+                        [Entity.PositionLocal == v2 628.0f 440.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Leave"
                          Entity.ClickEvent ==|> fun _ -> msg ShopLeave]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 12.0f 408.0f; Entity.DepthLocal == 1.0f; Entity.Text == "Buy..."; Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
+                        [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 1.0f; Entity.Text == "Buy..."; Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 320.0f 408.0f; Entity.DepthLocal == 1.0f; Entity.Text == "Sell..."; Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
+                        [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 1.0f; Entity.Text == "Sell..."; Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
                      Content.text Simulants.FieldShopGold.Name
-                        [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text <== model --> (fun model -> scstring model.Inventory.Gold + "G"); Entity.Justification == Justified (JustifyLeft, JustifyMiddle)]
+                        [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text <== model --> (fun model -> scstring model.Inventory.Gold + "G"); Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
                      Content.button Simulants.FieldShopPageUp.Name
                         [Entity.PositionLocal == v2 16.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == "<"; Entity.Size == v2 48.0f 64.0f
                          Entity.ClickEvent ==> msg ShopPageUp]
@@ -495,7 +508,7 @@ module OmniField =
                             | None -> [])
                         (fun i selection _ ->
                             let x = if i < 5 then 12.0f else 448.0f
-                            let y = 336.0f - single (i % 5) * 72.0f
+                            let y = 368.0f - single (i % 5) * 72.0f
                             Content.button Gen.name
                                 [Entity.PositionLocal == v2 x y
                                  Entity.Size == v2 320.0f 64.0f
@@ -522,8 +535,29 @@ module OmniField =
                         [Entity.PositionLocal == v2 456.0f 16.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Decline"
                          Entity.ClickEvent ==> msg ShopConfirmDecline]
                      Content.text Simulants.FieldShopConfirmOffer.Name
-                        [Entity.PositionLocal == v2 32.0f 176.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Offer?"]
-                     Content.text Simulants.FieldShopConfirmStats.Name
-                        [Entity.PositionLocal == v2 64.0f 128.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Stats | Own: 1 | Eq'd: 1"]
-                     Content.text Simulants.FieldShopConfirmEffect.Name
-                        [Entity.PositionLocal == v2 64.0f 80.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Effect: ..."]]]]
+                        [Entity.PositionLocal == v2 32.0f 176.0f; Entity.DepthLocal == 2.0f
+                         Entity.Text <== model --> fun model ->
+                            match model.ShopModelOpt with
+                            | Some shopModel ->
+                                match shopModel.ShopConfirmModelOpt with
+                                | Some shopConfirmModel -> shopConfirmModel.ShopConfirmOffer
+                                | None -> ""
+                            | None -> ""]
+                     Content.text Simulants.FieldShopConfirmLine1.Name
+                        [Entity.PositionLocal == v2 64.0f 128.0f; Entity.DepthLocal == 2.0f
+                         Entity.Text <== model --> fun model ->
+                            match model.ShopModelOpt with
+                            | Some shopModel ->
+                                match shopModel.ShopConfirmModelOpt with
+                                | Some shopConfirmModel -> shopConfirmModel.ShopConfirmLine1
+                                | None -> ""
+                            | None -> ""]
+                     Content.text Simulants.FieldShopConfirmLine2.Name
+                        [Entity.PositionLocal == v2 64.0f 80.0f; Entity.DepthLocal == 2.0f
+                         Entity.Text <== model --> fun model ->
+                            match model.ShopModelOpt with
+                            | Some shopModel ->
+                                match shopModel.ShopConfirmModelOpt with
+                                | Some shopConfirmModel -> shopConfirmModel.ShopConfirmLine2
+                                | None -> ""
+                            | None -> ""]]]]
