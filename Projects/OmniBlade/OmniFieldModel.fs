@@ -17,7 +17,7 @@ type [<StructuralEquality; NoComparison>] DialogModel =
 
 type [<StructuralEquality; NoComparison>] ShopConfirmModel =
     { ShopConfirmSelection : int * ItemType
-      ShopConfirmState : bool // true if buying
+      ShopConfirmPrice : int
       ShopConfirmOffer : string
       ShopConfirmLine1 : string
       ShopConfirmLine2 : string }
