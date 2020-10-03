@@ -124,7 +124,6 @@ type [<StructuralEquality; StructuralComparison>] ShopType =
     | AccessoryShop of int // level
 
 type [<StructuralEquality; StructuralComparison>] ShopState =
-    | ShopGreeting
     | ShopBuying
     | ShopSelling
 

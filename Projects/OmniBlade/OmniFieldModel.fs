@@ -22,6 +22,63 @@ type [<StructuralEquality; NoComparison>] ShopConfirmModel =
       ShopConfirmLine1 : string
       ShopConfirmLine2 : string }
 
+    static member make selection price offer line1 line2 =
+        { ShopConfirmSelection = selection
+          ShopConfirmPrice = price
+          ShopConfirmOffer = offer
+          ShopConfirmLine1 = line1
+          ShopConfirmLine2 = line2 }
+
+    static member makeFromConsumableData buying selection itemType cd =
+        let header = if buying then "Buy " else "Sell "
+        let price = if buying then cd.Cost else cd.Cost / 2
+        let offer = header + ItemType.getName itemType + " for " + string price + "G?"
+        let effect = "Effect: " + cd.Description
+        ShopConfirmModel.make selection price offer effect ""
+
+    static member makeFromWeaponData buying selection itemType (wd : WeaponData) =
+        let header = if buying then "Buy " else "Sell "
+        let price = if buying then wd.Cost else wd.Cost / 2
+        let effect = "Effect: " + wd.Description
+        let offer = header + ItemType.getName itemType + " for " + string price + "G?"
+        ShopConfirmModel.make selection price offer effect ""
+
+    static member makeFromArmorData buying selection itemType (ad : ArmorData) =
+        let header = if buying then "Buy " else "Sell "
+        let price = if buying then ad.Cost else ad.Cost / 2
+        let effect = "Effect: " + ad.Description
+        let offer = header + ItemType.getName itemType + " for " + string price + "G?"
+        ShopConfirmModel.make selection price offer effect ""
+
+    static member makeFromAccessoryData buying selection itemType (ad : AccessoryData) =
+        let header = if buying then "Buy " else "Sell "
+        let price = if buying then ad.Cost else ad.Cost / 2
+        let effect = "Effect: " + ad.Description
+        let offer = header + ItemType.getName itemType + " for " + string price + "G?"
+        ShopConfirmModel.make selection price offer effect ""
+
+    static member tryMakeFromSelection buying selection =
+        match snd selection with
+        | Consumable ty as itemType ->
+            match Map.tryFind ty data.Value.Consumables with
+            | Some cd -> ShopConfirmModel.makeFromConsumableData buying selection itemType cd |> Some
+            | None -> None
+        | Equipment ty as itemType ->
+            match ty with
+            | WeaponType name ->
+                match Map.tryFind name data.Value.Weapons with
+                | Some wd -> ShopConfirmModel.makeFromWeaponData buying selection itemType wd |> Some
+                | None -> None
+            | ArmorType name ->
+                match Map.tryFind name data.Value.Armors with
+                | Some ad -> ShopConfirmModel.makeFromArmorData buying selection itemType ad |> Some
+                | None -> None
+            | AccessoryType name ->
+                match Map.tryFind name data.Value.Accessories with
+                | Some ad -> ShopConfirmModel.makeFromAccessoryData buying selection itemType ad |> Some
+                | None -> None
+        | KeyItem _ | Stash _ -> None
+
 type [<StructuralEquality; NoComparison>] ShopModel =
     { ShopType : ShopType
       ShopState : ShopState

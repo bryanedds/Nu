@@ -154,7 +154,7 @@ module OmniField =
             just model
 
         static let interactShopkeep shopType (model : FieldModel) =
-            let shopModel = { ShopType = shopType; ShopState = ShopGreeting; ShopPage = 0; ShopConfirmModelOpt = None }
+            let shopModel = { ShopType = shopType; ShopState = ShopSelling; ShopPage = 0; ShopConfirmModelOpt = None }
             let model = FieldModel.updateShopModelOpt (constant (Some shopModel)) model
             just model
 
@@ -249,59 +249,7 @@ module OmniField =
                 let selection = Lens.get selectionLens world
                 let model =
                     FieldModel.updateShopModelOpt (Option.map (fun shopModel ->
-                        let shopConfirmModelOpt =
-                            match snd selection with
-                            | Equipment ty as itemType when not buying ->
-                                match ty with
-                                | WeaponType name ->
-                                    match Map.tryFind name data.Value.Weapons with
-                                    | Some wd ->
-                                        let price = wd.Cost / 2
-                                        let model =
-                                            { ShopConfirmSelection = selection
-                                              ShopConfirmPrice = price
-                                              ShopConfirmOffer = "Sell " + ItemType.getName itemType + " for " + string price + "G?"
-                                              ShopConfirmLine1 = "Pow: " + string wd.PowerBase + " Mag: " + string wd.MagicBase
-                                              ShopConfirmLine2 = "Effect: " + wd.Description }
-                                        Some model
-                                    | None -> None
-                                | ArmorType name ->
-                                    match Map.tryFind name data.Value.Armors with
-                                    | Some ad ->
-                                        let price = ad.Cost / 2
-                                        let model =
-                                            { ShopConfirmSelection = selection
-                                              ShopConfirmPrice = price
-                                              ShopConfirmOffer = "Sell " + ItemType.getName itemType + " for " + string price + "G?"
-                                              ShopConfirmLine1 = "HP: " + string ad.HitPointsBase + " TP: " + string ad.TechPointsBase
-                                              ShopConfirmLine2 = "Effect: " + ad.Description }
-                                        Some model
-                                    | None -> None
-                                | AccessoryType name ->
-                                    match Map.tryFind name data.Value.Accessories with
-                                    | Some ad ->
-                                        let price = ad.Cost / 2
-                                        let model =
-                                            { ShopConfirmSelection = selection
-                                              ShopConfirmPrice = price
-                                              ShopConfirmOffer = "Sell " + ItemType.getName itemType + " for " + string price + "G?"
-                                              ShopConfirmLine1 = "Blk: " + string ad.ShieldBase + " Ctr: " + string ad.CounterBase
-                                              ShopConfirmLine2 = "Effect: " + ad.Description }
-                                        Some model
-                                    | None -> None
-                            | Consumable ty as itemType when not buying ->
-                                match Map.tryFind ty data.Value.Consumables with
-                                | Some cd ->
-                                    let price = cd.Cost / 2
-                                    let model =
-                                        { ShopConfirmSelection = selection
-                                          ShopConfirmPrice = price
-                                          ShopConfirmOffer = "Sell " + ItemType.getName itemType + " for " + string price + "G?"
-                                          ShopConfirmLine1 = "Effect: " + cd.Description
-                                          ShopConfirmLine2 = "" }
-                                    Some model
-                                | None -> None
-                            | _ -> None
+                        let shopConfirmModelOpt = ShopConfirmModel.tryMakeFromSelection buying selection
                         { shopModel with ShopConfirmModelOpt = shopConfirmModelOpt }))
                         model
                 just model
