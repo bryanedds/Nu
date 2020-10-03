@@ -544,11 +544,11 @@ module OmniField =
                                     pageItems 10 shopModel.ShopPage
                             | None -> [])
                         (fun i selection _ ->
-                            let x = if i < 5 then 12.0f else 448.0f
+                            let x = if i < 5 then 20.0f else 452.0f
                             let y = 368.0f - single (i % 5) * 72.0f
                             Content.button Gen.name
                                 [Entity.PositionLocal == v2 x y
-                                 Entity.Size == v2 320.0f 64.0f
+                                 Entity.Size == v2 424.0f 64.0f
                                  Entity.DepthLocal == 1.0f
                                  Entity.Text <== selection --> fun (_, itemType) -> ItemType.getName itemType
                                  Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
