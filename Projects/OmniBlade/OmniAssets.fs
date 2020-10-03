@@ -70,6 +70,7 @@ module Assets =
     let TechDataFilePath = "Assets/Field/TechData.csv"
     let ArchetypeDataFilePath = "Assets/Field/ArchetypeData.csv"
     let CharacterDataFilePath = "Assets/Field/CharacterData.csv"
+    let ShopDataFilePath = "Assets/Field/ShopData.csv"
     let FieldDataFilePath = "Assets/Field/FieldData.csv"
     let BattleDataFilePath = "Assets/Field/BattleData.csv"
     let TechAnimationDataFilePath = "Assets/Field/TechAnimationData.csv"
