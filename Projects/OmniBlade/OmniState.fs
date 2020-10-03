@@ -70,9 +70,9 @@ type Legionnaire =
       PartyIndexOpt : int option
       CharacterType : CharacterType
       ExpPoints : int
-      WeaponOpt : WeaponType option
-      ArmorOpt : ArmorType option
-      Accessories : AccessoryType list }
+      WeaponOpt : string option
+      ArmorOpt : string option
+      Accessories : string list }
 
     static member finn =
         { LegionIndex = 0
@@ -107,9 +107,9 @@ type [<StructuralEquality; StructuralComparison>] CharacterIndex =
 type [<StructuralEquality; NoComparison>] CharacterState =
     { ArchetypeType : ArchetypeType
       ExpPoints : int
-      WeaponOpt : WeaponType option
-      ArmorOpt : ArmorType option
-      Accessories : AccessoryType list
+      WeaponOpt : string option
+      ArmorOpt : string option
+      Accessories : string list
       HitPoints : int
       TechPoints : int
       Statuses : StatusType Set

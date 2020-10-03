@@ -1,5 +1,5 @@
-Type,Subtype,PowerBase,MindBase
-Melee,Melee,0,0
-WoodenSword,Sword,2,2
-StoneSword,Heavesword,3,1
-OakRod,Rod,1,3
+Type,Subtype,PowerBase,MindBase,Cost,Description
+Melee,Melee,0,0,0,None.
+WoodenSword,Sword,2,2,5,None.
+StoneSword,Heavesword,3,1,10,None.
+OakRod,Rod,1,3,5,None.

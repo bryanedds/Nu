@@ -47,9 +47,9 @@ type [<StructuralEquality; StructuralComparison>] StatusType =
     | SleepStatus
 
 type [<StructuralEquality; StructuralComparison>] EquipmentType =
-    | Weapon
-    | Armor
-    | Accessory
+    | WeaponType of string
+    | ArmorType of string
+    | AccessoryType of string
 
 type [<StructuralEquality; StructuralComparison>] ConsumableType =
     | GreenHerb
@@ -65,7 +65,7 @@ type [<StructuralEquality; StructuralComparison>] ItemType =
     | Stash of int
     static member getName item =
         match item with
-        | Equipment ty -> string ty
+        | Equipment ty -> match ty with WeaponType name | ArmorType name | AccessoryType name -> name
         | Consumable ty -> string ty
         | KeyItem ty -> string ty
         | Stash gold -> string gold + "G"
@@ -104,9 +104,6 @@ type [<StructuralEquality; StructuralComparison>] ArchetypeType =
     | Cleric
     | Goblin
 
-type WeaponType =
-    string
-
 type [<StructuralEquality; StructuralComparison>] WeaponSubtype =
     | Melee
     | Sword
@@ -115,17 +112,11 @@ type [<StructuralEquality; StructuralComparison>] WeaponSubtype =
     | Staff
     | Rod
 
-type ArmorType =
-    string
-
 type [<StructuralEquality; StructuralComparison>] ArmorSubtype =
     | Robe
     | Vest
     | Mail
     | Pelt
-
-type AccessoryType =
-    string
 
 type [<StructuralEquality; StructuralComparison>] ShopType =
     | WeaponShop of int // level
@@ -217,23 +208,26 @@ type [<StructuralEquality; StructuralComparison>] CharacterType =
     | Enemy of EnemyType
 
 type [<StructuralEquality; NoComparison>] WeaponData =
-    { WeaponType : WeaponType // key
+    { WeaponType : string // key
       WeaponSubtype : WeaponSubtype
       PowerBase : int
       MagicBase : int
+      Cost : int
       Description : string }
 
 type [<StructuralEquality; NoComparison>] ArmorData =
-    { ArmorType : ArmorType // key
+    { ArmorType : string // key
       ArmorSubtype : ArmorSubtype
       HitPointsBase : int
       TechPointsBase : int
+      Cost : int
       Description : string }
 
 type [<StructuralEquality; NoComparison>] AccessoryData =
-    { AccessoryType : AccessoryType // key
+    { AccessoryType : string // key
       ShieldBase : int
       CounterBase : int
+      Cost : int
       Description : string }
 
 type [<StructuralEquality; NoComparison>] ConsumableData =
@@ -344,9 +338,9 @@ type [<StructuralEquality; NoComparison>] CharacterAnimationData =
 module Data =
 
     type [<StructuralEquality; NoComparison>] Data =
-        { Weapons : Map<WeaponType, WeaponData>
-          Armors : Map<ArmorType, ArmorData>
-          Accessories : Map<AccessoryType, AccessoryData>
+        { Weapons : Map<string, WeaponData>
+          Armors : Map<string, ArmorData>
+          Accessories : Map<string, AccessoryData>
           Consumables : Map<ConsumableType, ConsumableData>
           Techs : Map<TechType, TechData>
           Archetypes : Map<ArchetypeType, ArchetypeData>

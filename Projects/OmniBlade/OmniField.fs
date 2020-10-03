@@ -251,7 +251,45 @@ module OmniField =
                     FieldModel.updateShopModelOpt (Option.map (fun shopModel ->
                         let shopConfirmModelOpt =
                             match snd selection with
-                            | Consumable ty as itemType ->
+                            | Equipment ty as itemType when not buying ->
+                                match ty with
+                                | WeaponType name ->
+                                    match Map.tryFind name data.Value.Weapons with
+                                    | Some wd ->
+                                        let price = wd.Cost / 2
+                                        let model =
+                                            { ShopConfirmSelection = selection
+                                              ShopConfirmPrice = price
+                                              ShopConfirmOffer = "Sell " + ItemType.getName itemType + " for " + string price + "G?"
+                                              ShopConfirmLine1 = "Pow: " + string wd.PowerBase + " Mag: " + string wd.MagicBase
+                                              ShopConfirmLine2 = "Effect: " + wd.Description }
+                                        Some model
+                                    | None -> None
+                                | ArmorType name ->
+                                    match Map.tryFind name data.Value.Armors with
+                                    | Some ad ->
+                                        let price = ad.Cost / 2
+                                        let model =
+                                            { ShopConfirmSelection = selection
+                                              ShopConfirmPrice = price
+                                              ShopConfirmOffer = "Sell " + ItemType.getName itemType + " for " + string price + "G?"
+                                              ShopConfirmLine1 = "HP: " + string ad.HitPointsBase + " TP: " + string ad.TechPointsBase
+                                              ShopConfirmLine2 = "Effect: " + ad.Description }
+                                        Some model
+                                    | None -> None
+                                | AccessoryType name ->
+                                    match Map.tryFind name data.Value.Accessories with
+                                    | Some ad ->
+                                        let price = ad.Cost / 2
+                                        let model =
+                                            { ShopConfirmSelection = selection
+                                              ShopConfirmPrice = price
+                                              ShopConfirmOffer = "Sell " + ItemType.getName itemType + " for " + string price + "G?"
+                                              ShopConfirmLine1 = "Blk: " + string ad.ShieldBase + " Ctr: " + string ad.CounterBase
+                                              ShopConfirmLine2 = "Effect: " + ad.Description }
+                                        Some model
+                                    | None -> None
+                            | Consumable ty as itemType when not buying ->
                                 match Map.tryFind ty data.Value.Consumables with
                                 | Some cd ->
                                     let price = cd.Cost / 2
@@ -526,7 +564,7 @@ module OmniField =
                                  Entity.Text <== selection --> fun (_, itemType) -> ItemType.getName itemType
                                  Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                                  Entity.Margins == v2 16.0f 0.0f
-                                 Entity.ClickEvent ==> msg (ShopConfirmPrompt (true, selection))])]
+                                 Entity.ClickEvent ==> msg (ShopConfirmPrompt (false, selection))])]
 
                  // shop confirm
                  Content.panel Simulants.FieldShopConfirm.Name
