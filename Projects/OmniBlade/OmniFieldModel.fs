@@ -29,53 +29,61 @@ type [<StructuralEquality; NoComparison>] ShopConfirmModel =
           ShopConfirmLine1 = line1
           ShopConfirmLine2 = line2 }
 
-    static member makeFromConsumableData buying selection itemType cd =
+    static member makeFromConsumableData buying inventory selection cd =
+        let itemType = snd selection
         let header = if buying then "Buy " else "Sell "
         let price = if buying then cd.Cost else cd.Cost / 2
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
         let effect = "Effect: " + cd.Description
-        ShopConfirmModel.make selection price offer effect ""
+        let stats = "Own: " + string (Inventory.getItemCount itemType inventory)
+        ShopConfirmModel.make selection price offer stats effect
 
-    static member makeFromWeaponData buying selection itemType (wd : WeaponData) =
+    static member makeFromWeaponData buying inventory selection (wd : WeaponData) =
+        let itemType = snd selection
         let header = if buying then "Buy " else "Sell "
         let price = if buying then wd.Cost else wd.Cost / 2
         let effect = "Effect: " + wd.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
-        ShopConfirmModel.make selection price offer effect ""
+        let stats = "Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
+        ShopConfirmModel.make selection price offer stats effect
 
-    static member makeFromArmorData buying selection itemType (ad : ArmorData) =
+    static member makeFromArmorData buying inventory selection (ad : ArmorData) =
+        let itemType = snd selection
         let header = if buying then "Buy " else "Sell "
         let price = if buying then ad.Cost else ad.Cost / 2
         let effect = "Effect: " + ad.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
-        ShopConfirmModel.make selection price offer effect ""
+        let stats = "HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
+        ShopConfirmModel.make selection price offer stats effect
 
-    static member makeFromAccessoryData buying selection itemType (ad : AccessoryData) =
+    static member makeFromAccessoryData buying inventory selection (ad : AccessoryData) =
+        let itemType = snd selection
         let header = if buying then "Buy " else "Sell "
         let price = if buying then ad.Cost else ad.Cost / 2
         let effect = "Effect: " + ad.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
-        ShopConfirmModel.make selection price offer effect ""
+        let stats = "Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
+        ShopConfirmModel.make selection price offer stats effect
 
-    static member tryMakeFromSelection buying selection =
+    static member tryMakeFromSelection buying inventory selection =
         match snd selection with
-        | Consumable ty as itemType ->
+        | Consumable ty ->
             match Map.tryFind ty data.Value.Consumables with
-            | Some cd -> ShopConfirmModel.makeFromConsumableData buying selection itemType cd |> Some
+            | Some cd -> ShopConfirmModel.makeFromConsumableData buying inventory selection cd |> Some
             | None -> None
-        | Equipment ty as itemType ->
+        | Equipment ty ->
             match ty with
             | WeaponType name ->
                 match Map.tryFind name data.Value.Weapons with
-                | Some wd -> ShopConfirmModel.makeFromWeaponData buying selection itemType wd |> Some
+                | Some wd -> ShopConfirmModel.makeFromWeaponData buying inventory selection wd |> Some
                 | None -> None
             | ArmorType name ->
                 match Map.tryFind name data.Value.Armors with
-                | Some ad -> ShopConfirmModel.makeFromArmorData buying selection itemType ad |> Some
+                | Some ad -> ShopConfirmModel.makeFromArmorData buying inventory selection ad |> Some
                 | None -> None
             | AccessoryType name ->
                 match Map.tryFind name data.Value.Accessories with
-                | Some ad -> ShopConfirmModel.makeFromAccessoryData buying selection itemType ad |> Some
+                | Some ad -> ShopConfirmModel.makeFromAccessoryData buying inventory selection ad |> Some
                 | None -> None
         | KeyItem _ | Stash _ -> None
 

@@ -268,7 +268,7 @@ module OmniField =
                 let model =
                     FieldModel.updateShopModelOpt (Option.map (fun shopModel ->
                         let buying = match shopModel.ShopState with ShopBuying -> true | ShopSelling -> false
-                        let shopConfirmModelOpt = ShopConfirmModel.tryMakeFromSelection buying selection
+                        let shopConfirmModelOpt = ShopConfirmModel.tryMakeFromSelection buying model.Inventory selection
                         { shopModel with ShopConfirmModelOpt = shopConfirmModelOpt }))
                         model
                 just model
@@ -278,7 +278,11 @@ module OmniField =
                 | Some shopModel ->
                     match shopModel.ShopConfirmModelOpt with
                     | Some shopConfirmModel ->
-                        if model.Inventory.Gold > shopConfirmModel.ShopConfirmPrice then
+                        let valid =
+                            match shopModel.ShopState with
+                            | ShopBuying -> model.Inventory.Gold > shopConfirmModel.ShopConfirmPrice
+                            | ShopSelling -> true
+                        if valid then
                             let itemType = snd shopConfirmModel.ShopConfirmSelection
                             let model =
                                 FieldModel.updateInventory
