@@ -278,24 +278,26 @@ module OmniField =
                 | Some shopModel ->
                     match shopModel.ShopConfirmModelOpt with
                     | Some shopConfirmModel ->
-                        let itemType = snd shopConfirmModel.ShopConfirmSelection
-                        let model =
-                            FieldModel.updateInventory
-                                (match shopModel.ShopState with
-                                 | ShopBuying -> Inventory.addItem itemType
-                                 | ShopSelling -> Inventory.removeItem itemType)
-                                model
-                        let model =
-                            FieldModel.updateInventory
-                                (match shopModel.ShopState with
-                                 | ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirmModel.ShopConfirmPrice)
-                                 | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirmModel.ShopConfirmPrice))
-                                model
-                        let model =
-                            FieldModel.updateShopModelOpt (Option.map (fun shopModel ->
-                                { shopModel with ShopConfirmModelOpt = None }))
-                                model
-                        withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound))
+                        if model.Inventory.Gold > shopConfirmModel.ShopConfirmPrice then
+                            let itemType = snd shopConfirmModel.ShopConfirmSelection
+                            let model =
+                                FieldModel.updateInventory
+                                    (match shopModel.ShopState with
+                                     | ShopBuying -> Inventory.addItem itemType
+                                     | ShopSelling -> Inventory.removeItem itemType)
+                                    model
+                            let model =
+                                FieldModel.updateInventory
+                                    (match shopModel.ShopState with
+                                     | ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirmModel.ShopConfirmPrice)
+                                     | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirmModel.ShopConfirmPrice))
+                                    model
+                            let model =
+                                FieldModel.updateShopModelOpt (Option.map (fun shopModel ->
+                                    { shopModel with ShopConfirmModelOpt = None }))
+                                    model
+                            withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound))
+                        else withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.ErrorSound))
                     | None -> just model
                 | None -> just model
 
