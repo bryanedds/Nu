@@ -62,6 +62,11 @@ type [<StructuralEquality; NoComparison>] Inventory =
         let tail = Seq.trySkip index items
         Seq.tryHead tail
 
+    static member getItemCount itemType inventory =
+        match Map.tryFind itemType inventory.Items with
+        | Some count -> count
+        | None -> 0
+
     static member updateGold updater inventory =
         { inventory with Gold = updater inventory.Gold }
 
