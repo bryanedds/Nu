@@ -119,9 +119,8 @@ type [<StructuralEquality; StructuralComparison>] ArmorSubtype =
     | Pelt
 
 type [<StructuralEquality; StructuralComparison>] ShopType =
-    | WeaponShop of int // level
-    | ArmorShop of int // level
-    | AccessoryShop of int // level
+    | PodunkChemist
+    | PodunkArmory
 
 type [<StructuralEquality; StructuralComparison>] ShopState =
     | ShopBuying
@@ -283,12 +282,9 @@ type [<StructuralEquality; NoComparison>] DoorData =
       OpenImage : Image AssetTag
       ClosedImage : Image AssetTag }
 
-type [<StructuralEquality; NoComparison>] ShopkeepData =
-    { ShopkeepType : ShopkeepType // key
-      ShopkeepAppearanceType : ShopkeepAppearanceType
-      ShopkeepItems : ItemType Set
-      ShopkeepGreet : string list
-      ShopkeepFarewell : string list }
+type [<StructuralEquality; NoComparison>] ShopData =
+    { ShopType : ShopType // key
+      ShopItems : ItemType Set }
 
 type [<StructuralEquality; NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Advent Set * Advent Set
@@ -344,6 +340,7 @@ module Data =
           Techs : Map<TechType, TechData>
           Archetypes : Map<ArchetypeType, ArchetypeData>
           Characters : Map<CharacterType, CharacterData>
+          Shops : Map<ShopType, ShopData>
           Fields : Map<FieldType, FieldData>
           Battles : Map<BattleType, BattleData>
           TechAnimations : Map<TechType, TechAnimationData>
@@ -363,6 +360,7 @@ module Data =
           Techs = readSheet Assets.TechDataFilePath (fun data -> data.TechType)
           Archetypes = readSheet Assets.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
           Characters = readSheet Assets.CharacterDataFilePath (fun data -> data.CharacterType)
+          Shops = readSheet Assets.ShopDataFilePath (fun data -> data.ShopType)
           Fields = readSheet Assets.FieldDataFilePath (fun data -> data.FieldType)
           Battles = readSheet Assets.BattleDataFilePath (fun data -> data.BattleType)
           TechAnimations = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
