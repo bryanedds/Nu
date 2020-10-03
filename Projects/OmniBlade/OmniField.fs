@@ -40,6 +40,14 @@ module OmniField =
     type FieldDispatcher () =
         inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand> (FieldModel.initial)
 
+        static let pageItems pageSize pageIndex items =
+            items |>
+            Seq.chunkBySize pageSize |>
+            Seq.trySkip pageIndex |>
+            Seq.map List.ofArray |>
+            Seq.tryHead |>
+            Option.defaultValue []
+
         static let isFacingBodyShape bodyShape (avatar : AvatarModel) world =
             if bodyShape.Entity.Is<PropDispatcher> world then
                 let v = bodyShape.Entity.GetBottom world - avatar.Bottom
@@ -271,9 +279,22 @@ module OmniField =
                     match shopModel.ShopConfirmModelOpt with
                     | Some shopConfirmModel ->
                         let itemType = snd shopConfirmModel.ShopConfirmSelection
-                        let model = FieldModel.updateInventory (Inventory.removeItem itemType) model
-                        let model = FieldModel.updateInventory (Inventory.updateGold ((if shopModel.ShopState = ShopBuying then (-) else (+)) shopConfirmModel.ShopConfirmPrice)) model
-                        let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = None })) model
+                        let model =
+                            FieldModel.updateInventory
+                                (match shopModel.ShopState with
+                                 | ShopBuying -> Inventory.addItem itemType
+                                 | ShopSelling -> Inventory.removeItem itemType)
+                                model
+                        let model =
+                            FieldModel.updateInventory
+                                (match shopModel.ShopState with
+                                 | ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirmModel.ShopConfirmPrice)
+                                 | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirmModel.ShopConfirmPrice))
+                                model
+                        let model =
+                            FieldModel.updateShopModelOpt (Option.map (fun shopModel ->
+                                { shopModel with ShopConfirmModelOpt = None }))
+                                model
                         withCmd model (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound))
                     | None -> just model
                 | None -> just model
@@ -506,17 +527,19 @@ module OmniField =
                         (fun (shopModelOpt, inventory : Inventory) _ ->
                             match shopModelOpt with
                             | Some shopModel ->
-                                inventory |>
-                                Inventory.indexItems |>
-                                Seq.choose
-                                    (function
-                                     | (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item
-                                     | (_, KeyItem _) | (_, Stash _) -> None) |>
-                                Seq.chunkBySize 10 |>
-                                Seq.trySkip shopModel.ShopPage |>
-                                Seq.map List.ofArray |>
-                                Seq.tryHead |>
-                                Option.defaultValue []
+                                match shopModel.ShopState with
+                                | ShopBuying ->
+                                    match Map.tryFind shopModel.ShopType data.Value.Shops with
+                                    | Some shop -> shop.ShopItems |> Set.toSeq |> Seq.indexed |> pageItems 10 shopModel.ShopPage
+                                    | None -> []
+                                | ShopSelling ->
+                                    inventory |>
+                                    Inventory.indexItems |>
+                                    Seq.choose
+                                        (function
+                                         | (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item
+                                         | (_, KeyItem _) | (_, Stash _) -> None) |>
+                                    pageItems 10 shopModel.ShopPage
                             | None -> [])
                         (fun i selection _ ->
                             let x = if i < 5 then 12.0f else 448.0f
