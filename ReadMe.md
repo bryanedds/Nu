@@ -9,7 +9,7 @@ https://dlive.tv/NuGameEngine
 
 What is the **Nu Game Engine**?
 
-*"The Nu Game Engine is a game development platform that aims to drastically reduce the cost of game development by providing a superior programming model for games via Iterative Functional Reactive Programming (IFRP). After finally reaching v1.3.0.4, the implementation has matured enough to prove both the efficacy and viability of functional programming in games in terms of performance, programmability, and reliability."*
+*"The Nu Game Engine is the world's first practical functional game engine (functional in the functional programming sense). It offers a declarative Elm-style reactive programming API, as well as an imperative and ECS programming APIs for scalability. After finally reaching v1.3.0.4, the implementation has matured enough to prove both the efficacy and viability of functional programming in games in terms of performance, programmability, and reliability."*
 
 This repository hosts several projects, including -
 
