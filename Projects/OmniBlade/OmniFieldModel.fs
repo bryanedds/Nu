@@ -47,7 +47,7 @@ type [<ReferenceEquality; NoComparison>] SubmenuLegion =
         Option.map snd lacdOpt
 
 type [<ReferenceEquality; NoComparison>] SubmenuItem =
-    { ItemUnused : unit }
+    { ItemPage : int }
 
 type [<StructuralEquality; NoComparison>] SubmenuState =
     | SubmenuLegion of SubmenuLegion
