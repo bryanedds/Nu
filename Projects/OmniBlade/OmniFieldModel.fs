@@ -27,30 +27,30 @@ type [<ReferenceEquality; NoComparison>] SubmenuUseModel =
           SubmenuUseEffect = effect
           SubmenuUseTargets = targets }
 
-type [<ReferenceEquality; NoComparison>] SubmenuEquip =
-    { EquipmentCurrentAlly : int
-      EquipmentAllies : int list }
+type [<ReferenceEquality; NoComparison>] SubmenuLegion =
+    { LegionIndex : int
+      LegionIndices : int list }
       
-    static member tryGetLegionnaire (legion : Legion) submenuEquip =
-        Map.tryFind submenuEquip.EquipmentCurrentAlly legion
+    static member tryGetLegionnaire (legion : Legion) submenuLegion =
+        Map.tryFind submenuLegion.LegionIndex legion
 
-    static member tryGetLegionnaireAndCharacterData legion submenuEquip =
-        match SubmenuEquip.tryGetLegionnaire legion submenuEquip with
+    static member tryGetLegionnaireAndLegionData legion submenuLegion =
+        match SubmenuLegion.tryGetLegionnaire legion submenuLegion with
         | Some legionnaire ->
             match Map.tryFind legionnaire.CharacterType data.Value.Characters with
             | Some characterData -> Some (legionnaire, characterData)
             | None -> None
         | None -> None
 
-    static member tryGetCharacterData legion submenuEquip =
-        let lacdOpt = SubmenuEquip.tryGetLegionnaireAndCharacterData legion submenuEquip
+    static member tryGetLegionData legion submenuLegion =
+        let lacdOpt = SubmenuLegion.tryGetLegionnaireAndLegionData legion submenuLegion
         Option.map snd lacdOpt
 
 type [<ReferenceEquality; NoComparison>] SubmenuItem =
     { ItemUnused : unit }
 
 type [<StructuralEquality; NoComparison>] SubmenuState =
-    | SubmenuEquip of SubmenuEquip
+    | SubmenuLegion of SubmenuLegion
     | SubmenuItem of SubmenuItem
     | SubmenuClosed
 

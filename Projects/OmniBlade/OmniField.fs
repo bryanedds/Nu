@@ -16,8 +16,8 @@ module OmniField =
         | UpdateDialog
         | UpdatePortal
         | UpdateSensor
-        | SubmenuEquipOpen
-        | SubmenuEquipAlly of int
+        | SubmenuLegionOpen
+        | SubmenuLegionAlly of int
         | SubmenuItemOpen
         | SubmenuClose
         | ShopBuy
@@ -251,12 +251,12 @@ module OmniField =
                     results
                 | Some _ -> just model
 
-            | SubmenuEquipOpen ->
-                let equipState = SubmenuEquip { EquipmentCurrentAlly = 0; EquipmentAllies = Map.toKeyList model.Legion }
-                let model = FieldModel.updateSubmenuModel (fun submenu -> { submenu with SubmenuState = equipState }) model
+            | SubmenuLegionOpen ->
+                let state = SubmenuLegion { LegionIndex = 0; LegionIndices = Map.toKeyList model.Legion }
+                let model = FieldModel.updateSubmenuModel (fun submenu -> { submenu with SubmenuState = state }) model
                 just model
 
-            | SubmenuEquipAlly _ ->
+            | SubmenuLegionAlly _ ->
                 just model
 
             | SubmenuItemOpen ->
@@ -422,7 +422,7 @@ module OmniField =
                         Option.isNone model.DialogOpt &&
                         Option.isNone model.ShopModelOpt &&
                         Option.isNone model.FieldTransitionOpt
-                     Entity.ClickEvent ==> msg SubmenuEquipOpen]
+                     Entity.ClickEvent ==> msg SubmenuLegionOpen]
 
                  // interact button
                  Content.button Simulants.FieldInteract.Name
@@ -516,20 +516,20 @@ module OmniField =
                             PropModel.make propBounds propDepth advents propData propState object.Id)
                         Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])
 
-                 // equip
-                 Content.panel Simulants.SubmenuEquip.Name
+                 // legion
+                 Content.panel Simulants.SubmenuLegion.Name
                     [Entity.Position == v2 -448.0f -256.0f
                      Entity.Depth == Constants.Field.GuiDepth
                      Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogHugeImage
                      Entity.Visible <== model --> fun model ->
                         match model.SubmenuModel.SubmenuState with
-                        | SubmenuEquip _ -> true
+                        | SubmenuLegion _ -> true
                         | _ -> false]
-                    [Content.button Simulants.SubmenuEquipTab.Name
-                        [Entity.PositionLocal == v2 40.0f 424.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "E"
-                         Entity.Enabled <== model --> fun model -> match model.SubmenuModel.SubmenuState with SubmenuEquip _ -> false | _ -> true
-                         Entity.ClickEvent ==> msg SubmenuEquipOpen]
+                    [Content.button Simulants.SubmenuLegionTab.Name
+                        [Entity.PositionLocal == v2 40.0f 424.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "L"
+                         Entity.Enabled <== model --> fun model -> match model.SubmenuModel.SubmenuState with SubmenuLegion _ -> false | _ -> true
+                         Entity.ClickEvent ==> msg SubmenuLegionOpen]
                      Content.button Simulants.SubmenuItemTab.Name
                         [Entity.PositionLocal == v2 40.0f 352.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "I"
                          Entity.Enabled <== model --> fun model -> match model.SubmenuModel.SubmenuState with SubmenuItem _ -> false | _ -> true
@@ -540,19 +540,19 @@ module OmniField =
                      Content.entities model
                         (fun model -> model.Legion)
                         (fun legion _ -> legion |> Map.toValueList |> List.choose (fun legionnaire -> Map.tryFind legionnaire.CharacterType data.Value.Characters))
-                        (fun i characterLens world ->
-                            let character = Lens.get characterLens world
+                        (fun i legionnaireLens world ->
+                            let legionnaire = Lens.get legionnaireLens world
                             Content.button Gen.name
                                 [Entity.PositionLocal == v2 144.0f (424.0f - single i * 72.0f)
                                  Entity.DepthLocal == 1.0f
-                                 Entity.Text == CharacterType.getName character.CharacterType
-                                 Entity.ClickEvent ==> msg (SubmenuEquipAlly i)])
+                                 Entity.Text == CharacterType.getName legionnaire.CharacterType
+                                 Entity.ClickEvent ==> msg (SubmenuLegionAlly i)])
                      Content.label Gen.name
                         [Entity.PositionLocal == v2 448.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== model --> fun model ->
                             match model.SubmenuModel.SubmenuState with
-                            | SubmenuEquip equip ->
-                                match SubmenuEquip.tryGetCharacterData model.Legion equip with
+                            | SubmenuLegion submenu ->
+                                match SubmenuLegion.tryGetLegionData model.Legion submenu with
                                 | Some characterData ->
                                     match characterData.MugOpt with
                                     | Some mug -> mug
@@ -563,8 +563,8 @@ module OmniField =
                         [Entity.PositionLocal == v2 672.0f 384.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
                             match model.SubmenuModel.SubmenuState with
-                            | SubmenuEquip equip ->
-                                match SubmenuEquip.tryGetCharacterData model.Legion equip with
+                            | SubmenuLegion submenu ->
+                                match SubmenuLegion.tryGetLegionData model.Legion submenu with
                                 | Some characterData -> CharacterType.getName characterData.CharacterType
                                 | None -> ""
                             | _ -> ""]
@@ -572,8 +572,8 @@ module OmniField =
                         [Entity.PositionLocal == v2 672.0f 328.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
                             match model.SubmenuModel.SubmenuState with
-                            | SubmenuEquip equip ->
-                                match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                            | SubmenuLegion submenu ->
+                                match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
                                 | Some legionnaire -> "Level " + string (Algorithms.expPointsToLevel legionnaire.ExpPoints)
                                 | None -> ""
                             | _ -> ""]
@@ -581,8 +581,8 @@ module OmniField =
                         [Entity.PositionLocal == v2 448.0f 224.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
                             match model.SubmenuModel.SubmenuState with
-                            | SubmenuEquip equip ->
-                                match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                            | SubmenuLegion submenu ->
+                                match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
                                 | Some legionnaire -> "W: " + Option.getOrDefault "None" legionnaire.WeaponOpt
                                 | None -> ""
                             | _ -> ""]
@@ -590,8 +590,8 @@ module OmniField =
                         [Entity.PositionLocal == v2 448.0f 184.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
                             match model.SubmenuModel.SubmenuState with
-                            | SubmenuEquip equip ->
-                                match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                            | SubmenuLegion submenu ->
+                                match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
                                 | Some legionnaire -> "A: " + Option.getOrDefault "None" legionnaire.ArmorOpt
                                 | None -> ""
                             | _ -> ""]
@@ -599,8 +599,8 @@ module OmniField =
                         [Entity.PositionLocal == v2 448.0f 144.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
                             match model.SubmenuModel.SubmenuState with
-                            | SubmenuEquip equip ->
-                                match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                            | SubmenuLegion submenu ->
+                                match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
                                 | Some legionnaire -> "1: " + Option.getOrDefault "None" (List.tryHead legionnaire.Accessories)
                                 | None -> ""
                             | _ -> ""]
@@ -608,8 +608,8 @@ module OmniField =
                         [Entity.PositionLocal == v2 448.0f -104.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 512.0f 256.0f; Entity.Justification == Unjustified true
                          Entity.Text <== model --> fun model ->
                             match model.SubmenuModel.SubmenuState with
-                            | SubmenuEquip equip ->
-                                match SubmenuEquip.tryGetLegionnaireAndCharacterData model.Legion equip with
+                            | SubmenuLegion submenu ->
+                                match SubmenuLegion.tryGetLegionnaireAndLegionData model.Legion submenu with
                                 | Some (legionnaire, characterData) ->
                                     let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
                                     let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
