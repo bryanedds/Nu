@@ -234,6 +234,9 @@ module FieldModel =
     let updateAvatar updater fieldModel =
         { fieldModel with Avatar_ = updater fieldModel.Avatar_ }
 
+    let updateLegion updater fieldModel =
+        { fieldModel with Legion_ = updater fieldModel.Legion_ }
+
     let updateAdvents updater fieldModel =
         { fieldModel with Advents_ = updater fieldModel.Advents_ }
 

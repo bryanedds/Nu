@@ -262,13 +262,17 @@ module CharacterModel =
 
     let makeEnemy index enemyData =
         // TODO: error checking
-        let characterData = 
+        let character =
             match Map.tryFind (Enemy enemyData.EnemyType) data.Value.Characters with
             | Some characterData -> characterData
             | None -> failwith ("Could not find CharacterData for '" + scstring enemyData.EnemyType + "'")
-        let characterState = CharacterState.make characterData 0 None None [] // TODO: figure out if / how we should populate equipment
+        let expPoints = Algorithms.levelToExpPoints character.LevelBase
+        let archetypeType = character.ArchetypeType
+        let hitPoints = Algorithms.hitPointsMax None archetypeType character.LevelBase
+        let techPoints = Algorithms.techPointsMax None archetypeType character.LevelBase
+        let characterState = CharacterState.make character hitPoints techPoints expPoints None None [] // TODO: figure out if / how we should populate equipment
         let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
-        let enemy = make bounds (EnemyIndex index) characterState characterData.AnimationSheet Leftward
+        let enemy = make bounds (EnemyIndex index) characterState character.AnimationSheet Leftward
         enemy
 
     let empty =
