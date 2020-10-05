@@ -80,10 +80,21 @@ module OmniGame =
                     match field.BattleOpt with
                     | Some battle ->
                         match battle.BattleState with
-                        | BattleCease (_, time) ->
-                            if World.getTickTime world - time < 120L
-                            then withCmd (Show Simulants.Battle) model
-                            else withCmd (Show Simulants.Field) model
+                        | BattleCease (result, time) ->
+                            if World.getTickTime world - time = 120L then
+                                if result then
+                                    let field =
+                                        FieldModel.updateLegion (fun legion ->
+                                            // TODO: P1: update legion hp and tp from battle here
+                                            legion)
+                                            field
+                                    let field = FieldModel.updateInventory (constant battle.Inventory) field
+                                    let model = Field field
+                                    withCmd (Show Simulants.Field) model
+                                else
+                                    let model = Gui Title
+                                    withCmd (Show Simulants.Title) model
+                            else withCmd (Show Simulants.Battle) model
                         | _ -> withCmd (Show Simulants.Battle) model
                     | None -> withCmd (Show Simulants.Field) model
 

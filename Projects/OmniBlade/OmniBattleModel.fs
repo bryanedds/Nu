@@ -173,19 +173,19 @@ module BattleModel =
     let makeFromLegion (legion : Legion) inventory bonusItemOpt battleData time =
         let allies =
             List.mapi
-                (fun i legionnaire ->
-                    match Map.tryFind legionnaire.CharacterType data.Value.Characters with
+                (fun i leg ->
+                    match Map.tryFind leg.CharacterType data.Value.Characters with
                     | Some characterData ->
                         // TODO: bounds checking
-                        let index = legionnaire.LegionIndex
+                        let index = leg.LegionIndex
                         let bounds = v4Bounds battleData.BattleAllyPositions.[index] Constants.Gameplay.CharacterSize
                         let characterIndex = AllyIndex index
-                        let characterState = CharacterState.make characterData legionnaire.ExpPoints legionnaire.WeaponOpt legionnaire.ArmorOpt legionnaire.Accessories
+                        let characterState = CharacterState.make characterData leg.HitPoints leg.TechPoints leg.ExpPoints leg.WeaponOpt leg.ArmorOpt leg.Accessories
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.fromVector2 -bounds.Bottom
                         let character = CharacterModel.make bounds characterIndex characterState animationSheet direction
                         CharacterModel.updateActionTime (constant (inc i * 333)) character
-                    | None -> failwith ("Could not find CharacterData for '" + scstring legionnaire.CharacterType + "'."))
+                    | None -> failwith ("Could not find CharacterData for '" + scstring leg.CharacterType + "'."))
                 (Map.toValueList legion)
         let battleModel = makeFromAllies allies inventory bonusItemOpt battleData time
         battleModel

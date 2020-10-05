@@ -74,27 +74,45 @@ type Legionnaire =
     { LegionIndex : int // key
       PartyIndexOpt : int option
       CharacterType : CharacterType
+      HitPoints : int
+      TechPoints : int
       ExpPoints : int
       WeaponOpt : string option
       ArmorOpt : string option
       Accessories : string list }
 
     static member finn =
+        let characterType = Ally Finn
+        let character = Map.find characterType data.Value.Characters
+        let expPoints = Algorithms.levelToExpPoints character.LevelBase
+        let archetypeType = character.ArchetypeType
+        let weaponOpt = None
+        let armorOpt = None
         { LegionIndex = 0
           PartyIndexOpt = Some 0
           CharacterType = Ally Finn
-          ExpPoints = 15
-          WeaponOpt = None
-          ArmorOpt = None
+          HitPoints = Algorithms.hitPointsMax armorOpt archetypeType character.LevelBase
+          TechPoints = Algorithms.techPointsMax armorOpt archetypeType character.LevelBase
+          ExpPoints = expPoints
+          WeaponOpt = weaponOpt
+          ArmorOpt = armorOpt
           Accessories = [] }
 
     static member glenn =
-        { LegionIndex = 1
-          PartyIndexOpt = Some 1
-          CharacterType = Ally Glenn
-          ExpPoints = 15
-          WeaponOpt = None
-          ArmorOpt = None
+        let characterType = Ally Glenn
+        let character = Map.find characterType data.Value.Characters
+        let expPoints = Algorithms.levelToExpPoints character.LevelBase
+        let archetypeType = character.ArchetypeType
+        let weaponOpt = None
+        let armorOpt = None
+        { LegionIndex = 0
+          PartyIndexOpt = Some 0
+          CharacterType = Ally Finn
+          HitPoints = Algorithms.hitPointsMax armorOpt archetypeType character.LevelBase
+          TechPoints = Algorithms.techPointsMax armorOpt archetypeType character.LevelBase
+          ExpPoints = expPoints
+          WeaponOpt = weaponOpt
+          ArmorOpt = armorOpt
           Accessories = [] }
 
 type Legion =
@@ -167,21 +185,18 @@ type [<StructuralEquality; NoComparison>] CharacterState =
         elif state.Charging then Charging
         else Poising
 
-    static member make characterData expPoints weaponOpt armorOpt accessories =
+    static member make characterData hitPoints techPoints expPoints weaponOpt armorOpt accessories =
         let levelBase = characterData.LevelBase
         let archetypeType = characterData.ArchetypeType
         let expPointsTotal = Algorithms.levelToExpPoints levelBase + expPoints
-        let level = Algorithms.expPointsToLevel expPointsTotal
-        let hitPointsMax = Algorithms.hitPointsMax armorOpt archetypeType level
-        let techPointsMax = Algorithms.hitPointsMax armorOpt archetypeType level
         let characterState =
             { ArchetypeType = archetypeType
               ExpPoints = expPointsTotal
               WeaponOpt = weaponOpt
               ArmorOpt = armorOpt
               Accessories = accessories
-              HitPoints = hitPointsMax
-              TechPoints = techPointsMax
+              HitPoints = hitPoints
+              TechPoints = techPoints
               Statuses = Set.empty
               Defending = false
               Charging = false
