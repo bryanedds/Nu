@@ -201,6 +201,11 @@ type [<StructuralEquality; StructuralComparison>] CharacterType =
     | Ally of AllyType
     | Enemy of EnemyType
 
+    static member getName characterType =
+        match characterType with
+        | Ally ty -> string ty
+        | Enemy ty -> string ty
+
 type [<StructuralEquality; NoComparison>] WeaponData =
     { WeaponType : string // key
       WeaponSubtype : WeaponSubtype

@@ -17,6 +17,7 @@ module OmniField =
         | UpdatePortal
         | UpdateSensor
         | SubmenuEquipOpen
+        | SubmenuEquipAlly of int
         | SubmenuItemOpen
         | SubmenuClose
         | ShopBuy
@@ -253,6 +254,9 @@ module OmniField =
             | SubmenuEquipOpen ->
                 let equipState = SubmenuEquip { EquipmentCurrentAlly = 0; EquipmentAllies = Map.toKeyList model.Legion }
                 let model = FieldModel.updateSubmenuModel (fun submenu -> { submenu with SubmenuState = equipState }) model
+                just model
+
+            | SubmenuEquipAlly _ ->
                 just model
 
             | SubmenuItemOpen ->
@@ -532,7 +536,7 @@ module OmniField =
                         [Entity.PositionLocal == v2 12.0f 296.0f; Entity.Size == v2 64.0f 64.0f; Entity.DepthLocal == 1.0f; Entity.Text == "X"
                          Entity.ClickEvent ==> msg SubmenuClose]
                      Content.label Gen.name
-                        [Entity.PositionLocal == v2 400.0f 288.0f; Entity.Size == v2 192.0f 192.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 392.0f 288.0f; Entity.Size == v2 192.0f 192.0f; Entity.DepthLocal == 1.0f
                          Entity.LabelImage <== model --> fun model ->
                             match model.SubmenuModel.SubmenuState with
                             | SubmenuEquip equip ->
@@ -546,7 +550,17 @@ module OmniField =
                                         | None -> Assets.EmptyImage
                                     | None -> Assets.EmptyImage
                                 | None -> Assets.EmptyImage
-                            | _ -> Assets.EmptyImage]]
+                            | _ -> Assets.EmptyImage]
+                     Content.entities model
+                        (fun model -> model.Legion)
+                        (fun legion _ -> legion |> Map.toValueList |> List.choose (fun legionnaire -> Map.tryFind legionnaire.CharacterType data.Value.Characters))
+                        (fun i characterLens world ->
+                            let character = Lens.get characterLens world
+                            Content.button Gen.name
+                                [Entity.PositionLocal == v2 104.0f (408.0f - single i * 72.0f)
+                                 Entity.DepthLocal == 1.0f
+                                 Entity.Text == CharacterType.getName character.CharacterType
+                                 Entity.ClickEvent ==> msg (SubmenuEquipAlly i)])]
 
                  // shop
                  Content.panel Simulants.FieldShop.Name
