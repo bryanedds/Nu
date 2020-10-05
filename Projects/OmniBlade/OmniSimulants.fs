@@ -46,9 +46,7 @@ module Simulants =
     let FieldShopConfirmLine1 = Field / "ShopConfirmLine1"
     let FieldShopConfirmLine2 = Field / "ShopConfirmLine2"
     let SubmenuLegion = Field / "Legion"
-    let SubmenuLegionTab = Field / "LegionTab"
     let SubmenuItem = Field / "Item"
-    let SubmenuItemTab = Field / "ItemTab"
     let SubmenuClose = Field / "Close"
     let SubmenuUse = Field / "Use"
 
