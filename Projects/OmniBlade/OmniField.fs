@@ -408,8 +408,9 @@ module OmniField =
                  // submenu button
                  Content.button Simulants.FieldSubmenu.Name
                     [Entity.Size == v2 192.0f 64.0f
-                     Entity.Position == v2 -448.0f -240.0f
+                     Entity.Position == v2 -444.0f -240.0f
                      Entity.Depth == Constants.Field.GuiDepth
+                     Entity.Text == "Submenu"
                      Entity.UpImage == Assets.ButtonShortUpImage
                      Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Visible <== model --> fun model ->
@@ -529,7 +530,23 @@ module OmniField =
                          Entity.ClickEvent ==> msg SubmenuItemOpen]
                      Content.button Simulants.SubmenuClose.Name
                         [Entity.PositionLocal == v2 12.0f 296.0f; Entity.Size == v2 64.0f 64.0f; Entity.DepthLocal == 1.0f; Entity.Text == "X"
-                         Entity.ClickEvent ==> msg SubmenuClose]]
+                         Entity.ClickEvent ==> msg SubmenuClose]
+                     Content.label Gen.name
+                        [Entity.PositionLocal == v2 400.0f 288.0f; Entity.Size == v2 192.0f 192.0f; Entity.DepthLocal == 1.0f
+                         Entity.LabelImage <== model --> fun model ->
+                            match model.SubmenuModel.SubmenuState with
+                            | SubmenuEquip equip ->
+                                let allyIndex = equip.EquipmentCurrentAlly
+                                match Map.tryFind allyIndex model.Legion with
+                                | Some ally ->
+                                    match Map.tryFind ally.CharacterType data.Value.Characters with
+                                    | Some character ->
+                                        match character.MugOpt with
+                                        | Some mug -> mug
+                                        | None -> Assets.EmptyImage
+                                    | None -> Assets.EmptyImage
+                                | None -> Assets.EmptyImage
+                            | _ -> Assets.EmptyImage]]
 
                  // shop
                  Content.panel Simulants.FieldShop.Name
