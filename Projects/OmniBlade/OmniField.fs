@@ -659,7 +659,8 @@ module OmniField =
                                     let tpm = Algorithms.techPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
                                     let pow = Algorithms.power legionnaire.WeaponOpt 0.0f characterData.ArchetypeType level
                                     let mag = Algorithms.magic legionnaire.WeaponOpt 0.0f characterData.ArchetypeType level
-                                    "HP  " + (string hpm).PadLeft 3 + "   TP  " + (string tpm).PadLeft 3 +
+                                    "HP  "   + (string legionnaire.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
+                                    "\nTP  " + (string legionnaire.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
                                     "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
                                     "\nExp " + (string legionnaire.ExpPoints).PadLeft 3 +
                                     "\n"
