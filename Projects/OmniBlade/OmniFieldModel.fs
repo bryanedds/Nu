@@ -17,42 +17,38 @@ type [<ReferenceEquality; NoComparison>] DialogModel =
 
 type [<ReferenceEquality; NoComparison>] SubmenuUse =
     { SubmenuUseSelection : int * ItemType
-      SubmenuUseEffect : string
-      SubmenuUsePrompt : string
+      SubmenuUseLine1 : string
+      SubmenuUseLine2 : string
       SubmenuUseTargets : int list }
 
-    static member make selection effect prompt targets =
+    static member make selection line1 line2 targets =
         { SubmenuUseSelection = selection
-          SubmenuUseEffect = effect
-          SubmenuUsePrompt = prompt
+          SubmenuUseLine1 = line1
+          SubmenuUseLine2 = line2
           SubmenuUseTargets = targets }
 
     static member makeFromConsumableData selection targets (cd : ConsumableData) =
-        let itemType = snd selection
+        //let itemType = snd selection
         let effect = "Effect: " + cd.Description
-        let prompt = "Use " + ItemType.getName itemType + " on:"
-        SubmenuUse.make selection prompt effect targets
+        SubmenuUse.make selection effect "" targets
 
     static member makeFromWeaponData selection targets (wd : WeaponData) =
-        let itemType = snd selection
+        //let itemType = snd selection
+        let stats = "Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase
         let effect = "Effect: " + wd.Description
-        //let stats = "Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        let prompt = "Equip " + ItemType.getName itemType + " on:"
-        SubmenuUse.make selection prompt effect targets
+        SubmenuUse.make selection stats effect targets
 
     static member makeFromArmorData selection targets (ad : ArmorData) =
-        let itemType = snd selection
+        //let itemType = snd selection
+        let stats = "HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase
         let effect = "Effect: " + ad.Description
-        //let stats = "HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        let prompt = "Equip " + ItemType.getName itemType + " on:"
-        SubmenuUse.make selection prompt effect targets
+        SubmenuUse.make selection stats effect targets
 
     static member makeFromAccessoryData selection targets (ad : AccessoryData) =
-        let itemType = snd selection
+        //let itemType = snd selection
+        let stats = "Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase
         let effect = "Effect: " + ad.Description
-        //let stats = "Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        let prompt = "Equip " + ItemType.getName itemType + " on:"
-        SubmenuUse.make selection effect prompt targets
+        SubmenuUse.make selection stats effect targets
 
     static member tryMakeFromSelection selection targets =
         match snd selection with

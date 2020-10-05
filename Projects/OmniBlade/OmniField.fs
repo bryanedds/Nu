@@ -20,6 +20,7 @@ module OmniField =
         | SubmenuLegionAlly of int
         | SubmenuItemOpen
         | SubmenuItemUse of Lens<int * ItemType, World>
+        | SubmenuItemCancel
         | SubmenuClose
         | ShopBuy
         | ShopSell
@@ -178,12 +179,12 @@ module OmniField =
                 [Content.button Gen.name
                    [Entity.PositionLocal == position; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "L"
-                    Entity.Enabled <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuLegion _ -> false | _ -> true
+                    Entity.EnabledLocal <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuLegion _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuLegionOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 72.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "I"
-                    Entity.Enabled <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuItem _ -> false | _ -> true
+                    Entity.EnabledLocal <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuItem _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuItemOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 144.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
@@ -232,7 +233,7 @@ module OmniField =
                         [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 336.0f 64.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
                          Entity.Text <== selection --> fun (_, itemType) -> ItemType.getName itemType
-                         Entity.Enabled <== selection --> fun (_, itemType) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
+                         Entity.EnabledLocal <== selection --> fun (_, itemType) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
                          Entity.ClickEvent ==> msg (fieldMsg selection)])
 
         override this.Channel (_, field) =
@@ -335,6 +336,10 @@ module OmniField =
                         let submenuUseOpt = SubmenuUse.tryMakeFromSelection selection useTargets
                         { submenu with SubmenuUseOpt = submenuUseOpt })
                         model
+                just model
+
+            | SubmenuItemCancel ->
+                let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuUseOpt = None }) model
                 just model
 
             | SubmenuClose ->
@@ -683,18 +688,18 @@ module OmniField =
                      Content.button Gen.name
                         [Entity.PositionLocal == v2 456.0f 16.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Cancel"
-                         Entity.ClickEvent ==> msg ShopConfirmDecline]
+                         Entity.ClickEvent ==> msg SubmenuItemCancel]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 32.0f 176.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== model --> fun model ->
                             match model.Submenu.SubmenuUseOpt with
-                            | Some submenu -> submenu.SubmenuUsePrompt
+                            | Some submenu -> submenu.SubmenuUseLine1
                             | None -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 64.0f 128.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== model --> fun model ->
                              match model.Submenu.SubmenuUseOpt with
-                             | Some submenu -> submenu.SubmenuUseEffect
+                             | Some submenu -> submenu.SubmenuUseLine2
                              | None -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 64.0f 80.0f; Entity.DepthLocal == 2.0f
