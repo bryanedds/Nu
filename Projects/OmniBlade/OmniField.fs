@@ -574,6 +574,33 @@ module OmniField =
                                  match SubmenuEquip.tryGetLegionnaire model.Legion equip with
                                  | Some legionnaire -> "Level " + string (Algorithms.expPointsToLevel legionnaire.ExpPoints)
                                  | None -> ""
+                             | _ -> ""]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 408.0f 224.0f; Entity.DepthLocal == 1.0f
+                         Entity.Text <== model --> fun model ->
+                             match model.SubmenuModel.SubmenuState with
+                             | SubmenuEquip equip ->
+                                 match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                                 | Some legionnaire -> "W: " + Option.getOrDefault "None" legionnaire.WeaponOpt
+                                 | None -> ""
+                             | _ -> ""]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 408.0f 184.0f; Entity.DepthLocal == 1.0f
+                         Entity.Text <== model --> fun model ->
+                             match model.SubmenuModel.SubmenuState with
+                             | SubmenuEquip equip ->
+                                 match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                                 | Some legionnaire -> "A: " + Option.getOrDefault "None" legionnaire.ArmorOpt
+                                 | None -> ""
+                             | _ -> ""]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 408.0f 144.0f; Entity.DepthLocal == 1.0f
+                         Entity.Text <== model --> fun model ->
+                             match model.SubmenuModel.SubmenuState with
+                             | SubmenuEquip equip ->
+                                 match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                                 | Some legionnaire -> "1: " + Option.getOrDefault "None" (List.tryHead legionnaire.Accessories)
+                                 | None -> ""
                              | _ -> ""]]
 
                  // shop
