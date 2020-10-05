@@ -535,22 +535,6 @@ module OmniField =
                      Content.button Simulants.SubmenuClose.Name
                         [Entity.PositionLocal == v2 12.0f 296.0f; Entity.Size == v2 64.0f 64.0f; Entity.DepthLocal == 1.0f; Entity.Text == "X"
                          Entity.ClickEvent ==> msg SubmenuClose]
-                     Content.label Gen.name
-                        [Entity.PositionLocal == v2 392.0f 288.0f; Entity.Size == v2 192.0f 192.0f; Entity.DepthLocal == 1.0f
-                         Entity.LabelImage <== model --> fun model ->
-                            match model.SubmenuModel.SubmenuState with
-                            | SubmenuEquip equip ->
-                                let allyIndex = equip.EquipmentCurrentAlly
-                                match Map.tryFind allyIndex model.Legion with
-                                | Some ally ->
-                                    match Map.tryFind ally.CharacterType data.Value.Characters with
-                                    | Some character ->
-                                        match character.MugOpt with
-                                        | Some mug -> mug
-                                        | None -> Assets.EmptyImage
-                                    | None -> Assets.EmptyImage
-                                | None -> Assets.EmptyImage
-                            | _ -> Assets.EmptyImage]
                      Content.entities model
                         (fun model -> model.Legion)
                         (fun legion _ -> legion |> Map.toValueList |> List.choose (fun legionnaire -> Map.tryFind legionnaire.CharacterType data.Value.Characters))
@@ -560,7 +544,37 @@ module OmniField =
                                 [Entity.PositionLocal == v2 104.0f (408.0f - single i * 72.0f)
                                  Entity.DepthLocal == 1.0f
                                  Entity.Text == CharacterType.getName character.CharacterType
-                                 Entity.ClickEvent ==> msg (SubmenuEquipAlly i)])]
+                                 Entity.ClickEvent ==> msg (SubmenuEquipAlly i)])
+                     Content.label Gen.name
+                        [Entity.PositionLocal == v2 392.0f 288.0f; Entity.Size == v2 192.0f 192.0f; Entity.DepthLocal == 1.0f
+                         Entity.LabelImage <== model --> fun model ->
+                            match model.SubmenuModel.SubmenuState with
+                            | SubmenuEquip equip ->
+                                match SubmenuEquip.tryGetCharacterData model.Legion equip with
+                                | Some characterData ->
+                                    match characterData.MugOpt with
+                                    | Some mug -> mug
+                                    | None -> Assets.EmptyImage
+                                | None -> Assets.EmptyImage
+                            | _ -> Assets.EmptyImage]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 616.0f 384.0f; Entity.DepthLocal == 1.0f
+                         Entity.Text <== model --> fun model ->
+                             match model.SubmenuModel.SubmenuState with
+                             | SubmenuEquip equip ->
+                                 match SubmenuEquip.tryGetCharacterData model.Legion equip with
+                                 | Some characterData -> CharacterType.getName characterData.CharacterType
+                                 | None -> ""
+                             | _ -> ""]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 616.0f 328.0f; Entity.DepthLocal == 1.0f
+                         Entity.Text <== model --> fun model ->
+                             match model.SubmenuModel.SubmenuState with
+                             | SubmenuEquip equip ->
+                                 match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                                 | Some legionnaire -> "Level " + string (Algorithms.expPointsToLevel legionnaire.ExpPoints)
+                                 | None -> ""
+                             | _ -> ""]]
 
                  // shop
                  Content.panel Simulants.FieldShop.Name
