@@ -15,17 +15,66 @@ type [<ReferenceEquality; NoComparison>] DialogModel =
       DialogProgress : int
       DialogPage : int }
 
-type [<ReferenceEquality; NoComparison>] SubmenuUseModel =
+type [<ReferenceEquality; NoComparison>] SubmenuUse =
     { SubmenuUseSelection : int * ItemType
-      SubmenuUsePrompt : string
       SubmenuUseEffect : string
+      SubmenuUsePrompt : string
       SubmenuUseTargets : int list }
 
-    static member make selection prompt effect targets =
+    static member make selection effect prompt targets =
         { SubmenuUseSelection = selection
-          SubmenuUsePrompt = prompt
           SubmenuUseEffect = effect
+          SubmenuUsePrompt = prompt
           SubmenuUseTargets = targets }
+
+    static member makeFromConsumableData selection targets (cd : ConsumableData) =
+        let itemType = snd selection
+        let effect = "Effect: " + cd.Description
+        let prompt = "Use " + ItemType.getName itemType + " on:"
+        SubmenuUse.make selection prompt effect targets
+
+    static member makeFromWeaponData selection targets (wd : WeaponData) =
+        let itemType = snd selection
+        let effect = "Effect: " + wd.Description
+        //let stats = "Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
+        let prompt = "Equip " + ItemType.getName itemType + " on:"
+        SubmenuUse.make selection prompt effect targets
+
+    static member makeFromArmorData selection targets (ad : ArmorData) =
+        let itemType = snd selection
+        let effect = "Effect: " + ad.Description
+        //let stats = "HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
+        let prompt = "Equip " + ItemType.getName itemType + " on:"
+        SubmenuUse.make selection prompt effect targets
+
+    static member makeFromAccessoryData selection targets (ad : AccessoryData) =
+        let itemType = snd selection
+        let effect = "Effect: " + ad.Description
+        //let stats = "Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
+        let prompt = "Equip " + ItemType.getName itemType + " on:"
+        SubmenuUse.make selection effect prompt targets
+
+    static member tryMakeFromSelection selection targets =
+        match snd selection with
+        | Consumable ty ->
+            match Map.tryFind ty data.Value.Consumables with
+            | Some cd -> SubmenuUse.makeFromConsumableData selection targets cd |> Some
+            | None -> None
+        | Equipment ty ->
+            match ty with
+            | WeaponType name ->
+                match Map.tryFind name data.Value.Weapons with
+                | Some wd -> SubmenuUse.makeFromWeaponData selection targets wd |> Some
+                | None -> None
+            | ArmorType name ->
+                match Map.tryFind name data.Value.Armors with
+                | Some ad -> SubmenuUse.makeFromArmorData selection targets ad |> Some
+                | None -> None
+            | AccessoryType name ->
+                match Map.tryFind name data.Value.Accessories with
+                | Some ad -> SubmenuUse.makeFromAccessoryData selection targets ad |> Some
+                | None -> None
+        | KeyItem _ | Stash _ -> None
 
 type [<ReferenceEquality; NoComparison>] SubmenuLegion =
     { LegionIndex : int
@@ -54,9 +103,9 @@ type [<StructuralEquality; NoComparison>] SubmenuState =
     | SubmenuItem of SubmenuItem
     | SubmenuClosed
 
-type [<ReferenceEquality; NoComparison>] SubmenuModel =
+type [<ReferenceEquality; NoComparison>] Submenu =
     { SubmenuState : SubmenuState
-      SubmenuUseModelOpt : SubmenuUseModel option }
+      SubmenuUseOpt : SubmenuUse option }
 
 type [<StructuralEquality; StructuralComparison>] ShopState =
     | ShopBuying
@@ -134,7 +183,7 @@ type [<ReferenceEquality; NoComparison>] ShopConfirmModel =
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
-type [<ReferenceEquality; NoComparison>] ShopModel =
+type [<ReferenceEquality; NoComparison>] Shop =
     { ShopType : ShopType
       ShopState : ShopState
       ShopPage : int
@@ -157,8 +206,8 @@ module FieldModel =
               Advents_ : Advent Set
               PropStates_ : Map<int, PropState>
               Inventory_ : Inventory
-              SubmenuModel_ : SubmenuModel
-              ShopModelOpt_ : ShopModel option
+              Submenu_ : Submenu
+              ShopOpt_ : Shop option
               FieldTransitionOpt_ : FieldTransition option
               DialogOpt_ : DialogModel option
               BattleOpt_ : BattleModel option }
@@ -170,8 +219,8 @@ module FieldModel =
         member this.Advents = this.Advents_
         member this.PropStates = this.PropStates_
         member this.Inventory = this.Inventory_
-        member this.SubmenuModel = this.SubmenuModel_
-        member this.ShopModelOpt = this.ShopModelOpt_
+        member this.Submenu = this.Submenu_
+        member this.ShopOpt = this.ShopOpt_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
@@ -198,11 +247,11 @@ module FieldModel =
     let updateInventory updater fieldModel =
         { fieldModel with Inventory_ = updater fieldModel.Inventory_ }
 
-    let updateSubmenuModel updater fieldModel =
-        { fieldModel with SubmenuModel_ = updater fieldModel.SubmenuModel_ }
+    let updateSubmenu updater fieldModel =
+        { fieldModel with Submenu_ = updater fieldModel.Submenu_ }
 
-    let updateShopModelOpt updater fieldModel =
-        { fieldModel with ShopModelOpt_ = updater fieldModel.ShopModelOpt_ }
+    let updateShopOpt updater fieldModel =
+        { fieldModel with ShopOpt_ = updater fieldModel.ShopOpt_ }
 
     let updateDialogOpt updater fieldModel =
         { fieldModel with DialogOpt_ = updater fieldModel.DialogOpt_ }
@@ -220,8 +269,8 @@ module FieldModel =
           Advents_ = advents
           PropStates_ = Map.empty
           Inventory_ = inventory
-          SubmenuModel_ = { SubmenuState = SubmenuClosed; SubmenuUseModelOpt = None }
-          ShopModelOpt_ = None
+          Submenu_ = { SubmenuState = SubmenuClosed; SubmenuUseOpt = None }
+          ShopOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
@@ -233,8 +282,8 @@ module FieldModel =
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
-          SubmenuModel_ = { SubmenuState = SubmenuClosed; SubmenuUseModelOpt = None }
-          ShopModelOpt_ = None
+          Submenu_ = { SubmenuState = SubmenuClosed; SubmenuUseOpt = None }
+          ShopOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
@@ -246,8 +295,8 @@ module FieldModel =
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
-          SubmenuModel_ = { SubmenuState = SubmenuClosed; SubmenuUseModelOpt = None }
-          ShopModelOpt_ = None
+          Submenu_ = { SubmenuState = SubmenuClosed; SubmenuUseOpt = None }
+          ShopOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
