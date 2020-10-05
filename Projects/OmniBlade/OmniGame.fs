@@ -83,17 +83,20 @@ module OmniGame =
                         | BattleCease (result, time) ->
                             if World.getTickTime world - time = 120L then
                                 if result then
+                                    let allies = BattleModel.getAllies battle
                                     let field =
-                                        FieldModel.updateLegion (fun legion ->
-                                            // TODO: P1: update legion hp and tp from battle here
-                                            legion)
-                                            field
+                                        List.foldi (fun i field (ally : CharacterModel) ->
+                                            FieldModel.updateLegion (fun legion ->
+                                                match Map.tryFind i legion with
+                                                | Some legionnaire -> Map.add i { legionnaire with HitPoints = ally.HitPoints } legion
+                                                | None -> legion)
+                                                field)
+                                            field allies
                                     let field = FieldModel.updateInventory (constant battle.Inventory) field
+                                    let field = FieldModel.updateBattleOpt (constant None) field
                                     let model = Field field
                                     withCmd (Show Simulants.Field) model
-                                else
-                                    let model = Gui Title
-                                    withCmd (Show Simulants.Title) model
+                                else withCmd (Show Simulants.Title) (Gui Title)
                             else withCmd (Show Simulants.Battle) model
                         | _ -> withCmd (Show Simulants.Battle) model
                     | None -> withCmd (Show Simulants.Field) model
