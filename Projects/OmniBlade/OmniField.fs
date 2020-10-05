@@ -269,11 +269,11 @@ module OmniField =
                 just model
 
             | ShopBuy ->
-                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopState = ShopBuying })) model
+                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopState = ShopBuying; ShopPage = 0 })) model
                 just model
 
             | ShopSell ->
-                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopState = ShopSelling })) model
+                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopState = ShopSelling; ShopPage = 0 })) model
                 just model
 
             | ShopPageUp ->
@@ -618,7 +618,7 @@ module OmniField =
                                     let mag = Algorithms.magic legionnaire.WeaponOpt 0.0f characterData.ArchetypeType level
                                     "HP  " + (string hpm).PadLeft 3 + "   TP  " + (string tpm).PadLeft 3 +
                                     "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
-                                    "\nExp " + string legionnaire.ExpPoints +
+                                    "\nExp " + (string legionnaire.ExpPoints).PadLeft 3 +
                                     "\n"
                                 | None -> ""
                             | _ -> ""]]
