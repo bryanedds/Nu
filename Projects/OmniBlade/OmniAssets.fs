@@ -18,6 +18,7 @@ module Assets =
     let ButtonShortUpImage = asset<Image> GuiPackageName "ButtonShortUp"
     let ButtonShortDownImage = asset<Image> GuiPackageName "ButtonShortDown"
     let AffirmSound = asset<Sound> GuiPackageName "Affirm"
+    let MistakeSound = asset<Sound> GuiPackageName "Mistake"
     let TitleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> GuiPackageName "Title" }
 
     // field assets
@@ -43,7 +44,6 @@ module Assets =
     let HealSound = asset<Sound> FieldPackageName "Heal"
     let DeathSound = asset<Sound> FieldPackageName "Death"
     let PurchaseSound = asset<Sound> FieldPackageName "Purchase"
-    let ErrorSound = asset<Sound> FieldPackageName "Error"
     let OpenDoorSound = asset<Sound> FieldPackageName "Unlatch"
     let OpenChestSound = asset<Sound> FieldPackageName "Unlatch2"
     let TriggerSound = asset<Sound> FieldPackageName "Unlatch3"

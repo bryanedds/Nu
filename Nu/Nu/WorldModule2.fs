@@ -1112,10 +1112,10 @@ module GameDispatcherModule =
         abstract member Channel : Lens<'model, World> * Game -> Channel<'message, 'command, Game, World> list
         default this.Channel (_, _) = []
 
-        abstract member Message : 'model * 'message * Game * World -> 'model * Signal<'message, 'command> list
+        abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Game * World -> World * Signal<'message, 'command> list
+        abstract member Command : 'model * 'command * Game * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Game -> ScreenContent list

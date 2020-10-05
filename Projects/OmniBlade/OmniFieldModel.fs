@@ -9,13 +9,45 @@ type [<StructuralEquality; NoComparison>] DialogForm =
     | DialogMedium
     | DialogLarge
 
-type [<StructuralEquality; NoComparison>] DialogModel =
+type [<ReferenceEquality; NoComparison>] DialogModel =
     { DialogForm : DialogForm
       DialogText : string
       DialogProgress : int
       DialogPage : int }
 
-type [<StructuralEquality; NoComparison>] ShopConfirmModel =
+type [<ReferenceEquality; NoComparison>] SubmenuUseModel =
+    { SubmenuUseSelection : int * ItemType
+      SubmenuUsePrompt : string
+      SubmenuUseEffect : string
+      SubmenuUseTargets : int list }
+
+    static member make selection prompt effect targets =
+        { SubmenuUseSelection = selection
+          SubmenuUsePrompt = prompt
+          SubmenuUseEffect = effect
+          SubmenuUseTargets = targets }
+
+type [<ReferenceEquality; NoComparison>] SubmenuEquip =
+    { EquipmentCurrentAlly : int
+      EquipmentAllies : int list }
+
+type [<ReferenceEquality; NoComparison>] SubmenuItem =
+    { ItemUnused : unit }
+
+type [<StructuralEquality; NoComparison>] SubmenuState =
+    | SubmenuEquip of SubmenuEquip
+    | SubmenuItem of SubmenuItem
+    | SubmenuClosed
+
+type [<ReferenceEquality; NoComparison>] SubmenuModel =
+    { SubmenuState : SubmenuState
+      SubmenuUseModelOpt : SubmenuUseModel option }
+
+type [<StructuralEquality; StructuralComparison>] ShopState =
+    | ShopBuying
+    | ShopSelling
+
+type [<ReferenceEquality; NoComparison>] ShopConfirmModel =
     { ShopConfirmSelection : int * ItemType
       ShopConfirmPrice : int
       ShopConfirmOffer : string
@@ -87,13 +119,13 @@ type [<StructuralEquality; NoComparison>] ShopConfirmModel =
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
-type [<StructuralEquality; NoComparison>] ShopModel =
+type [<ReferenceEquality; NoComparison>] ShopModel =
     { ShopType : ShopType
       ShopState : ShopState
       ShopPage : int
       ShopConfirmModelOpt : ShopConfirmModel option }
 
-type FieldTransition =
+type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
       FieldIndex : Vector2
       FieldDirection : Direction
@@ -110,6 +142,7 @@ module FieldModel =
               Advents_ : Advent Set
               PropStates_ : Map<int, PropState>
               Inventory_ : Inventory
+              SubmenuModel_ : SubmenuModel
               ShopModelOpt_ : ShopModel option
               FieldTransitionOpt_ : FieldTransition option
               DialogOpt_ : DialogModel option
@@ -122,6 +155,7 @@ module FieldModel =
         member this.Advents = this.Advents_
         member this.PropStates = this.PropStates_
         member this.Inventory = this.Inventory_
+        member this.SubmenuModel = this.SubmenuModel_
         member this.ShopModelOpt = this.ShopModelOpt_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
         member this.DialogOpt = this.DialogOpt_
@@ -149,6 +183,9 @@ module FieldModel =
     let updateInventory updater fieldModel =
         { fieldModel with Inventory_ = updater fieldModel.Inventory_ }
 
+    let updateSubmenuModel updater fieldModel =
+        { fieldModel with SubmenuModel_ = updater fieldModel.SubmenuModel_ }
+
     let updateShopModelOpt updater fieldModel =
         { fieldModel with ShopModelOpt_ = updater fieldModel.ShopModelOpt_ }
 
@@ -168,6 +205,7 @@ module FieldModel =
           Advents_ = advents
           PropStates_ = Map.empty
           Inventory_ = inventory
+          SubmenuModel_ = { SubmenuState = SubmenuClosed; SubmenuUseModelOpt = None }
           ShopModelOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
@@ -180,6 +218,7 @@ module FieldModel =
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
+          SubmenuModel_ = { SubmenuState = SubmenuClosed; SubmenuUseModelOpt = None }
           ShopModelOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
@@ -192,6 +231,7 @@ module FieldModel =
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
+          SubmenuModel_ = { SubmenuState = SubmenuClosed; SubmenuUseModelOpt = None }
           ShopModelOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None

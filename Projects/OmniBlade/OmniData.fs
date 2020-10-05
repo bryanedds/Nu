@@ -122,10 +122,6 @@ type [<StructuralEquality; StructuralComparison>] ShopType =
     | PodunkChemist
     | PodunkArmory
 
-type [<StructuralEquality; StructuralComparison>] ShopState =
-    | ShopBuying
-    | ShopSelling
-
 type [<StructuralEquality; StructuralComparison>] ShopkeepAppearanceType =
     | Male
     | Female
