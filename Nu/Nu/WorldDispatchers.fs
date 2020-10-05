@@ -140,10 +140,10 @@ module FacetModule =
         abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
         default this.Channel (_, _) = []
 
-        abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command> list
+        abstract member Message : 'model * 'message * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command> list
+        abstract member Command : 'model * 'command * Entity * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Entity -> EntityContent list
@@ -1238,10 +1238,10 @@ module EntityDispatcherModule =
         abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
         default this.Channel (_, _) = []
 
-        abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command> list
+        abstract member Message : 'model * 'message * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command> list
+        abstract member Command : 'model * 'command * Entity * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Entity -> EntityContent list
@@ -2118,10 +2118,10 @@ module LayerDispatcherModule =
         abstract member Channel : Lens<'model, World> * Layer -> Channel<'message, 'command, Layer, World> list
         default this.Channel (_, _) = []
 
-        abstract member Message : 'model * 'message * Layer * World -> 'model * Signal<'message, 'command> list
+        abstract member Message : 'model * 'message * Layer * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Layer * World -> World * Signal<'message, 'command> list
+        abstract member Command : 'model * 'command * Layer * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Layer -> EntityContent list
@@ -2211,10 +2211,10 @@ module ScreenDispatcherModule =
         abstract member Channel : Lens<'model, World> * Screen -> Channel<'message, 'command, Screen, World> list
         default this.Channel (_, _) = []
 
-        abstract member Message : 'model * 'message * Screen * World -> 'model * Signal<'message, 'command> list
+        abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Screen * World -> World * Signal<'message, 'command> list
+        abstract member Command : 'model * 'command * Screen * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
         abstract member Content : Lens<'model, World> * Screen -> LayerContent list

@@ -74,18 +74,18 @@ module OmniGame =
                 | Gui gui ->
                     match gui with
                     | Splashing -> just model
-                    | Title -> withCmd model (Show Simulants.Title)
-                    | Credits -> withCmd model (Show Simulants.Credits)
+                    | Title -> withCmd (Show Simulants.Title) model
+                    | Credits -> withCmd (Show Simulants.Credits) model
                 | Field field ->
                     match field.BattleOpt with
                     | Some battle ->
                         match battle.BattleState with
                         | BattleCease (_, time) ->
                             if World.getTickTime world - time < 120L
-                            then withCmd model (Show Simulants.Battle)
-                            else withCmd model (Show Simulants.Field)
-                        | _ -> withCmd model (Show Simulants.Battle)
-                    | None -> withCmd model (Show Simulants.Field)
+                            then withCmd (Show Simulants.Battle) model
+                            else withCmd (Show Simulants.Field) model
+                        | _ -> withCmd (Show Simulants.Battle) model
+                    | None -> withCmd (Show Simulants.Field) model
 
         override this.Command (_, command, _, world) =
             match command with

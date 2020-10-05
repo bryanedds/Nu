@@ -67,25 +67,25 @@ module OmniBattle =
                 match timeLocal with
                 | 0L ->
                     if target.IsHealthy
-                    then withMsg model (AttackCharacter1 sourceIndex)
+                    then withMsg (AttackCharacter1 sourceIndex) model
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                        withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+                        withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] model
                 | 15L ->
-                    withMsg model (AttackCharacter2 (sourceIndex, targetIndex))
+                    withMsg (AttackCharacter2 (sourceIndex, targetIndex)) model
                 | _ when CharacterModel.getAnimationFinished time target ->
                     let target = BattleModel.getCharacter targetIndex model
                     if target.IsHealthy then
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                        withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
+                        withMsgs [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] model
                     else
                         let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
                         let model = BattleModel.updateCurrentCommandOpt (constant (Some woundCommand)) model
-                        withMsg model (PoiseCharacter sourceIndex)
+                        withMsg (PoiseCharacter sourceIndex) model
                 | _ -> just model
             | None ->
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+                withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] model
 
         static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal model =
             match targetIndexOpt with
@@ -94,54 +94,54 @@ module OmniBattle =
                 match timeLocal with
                 | 0L ->
                     if target.IsHealthy
-                    then withMsg model (ConsumeCharacter1 (consumable, sourceIndex))
+                    then withMsg (ConsumeCharacter1 (consumable, sourceIndex)) model
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                        withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+                        withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] model
                 | 30L ->
-                    withMsg model (ConsumeCharacter2 (consumable, targetIndex))
+                    withMsg (ConsumeCharacter2 (consumable, targetIndex)) model
                 | _ when CharacterModel.getAnimationFinished time target ->
                     let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                    withMsgs model [PoiseCharacter sourceIndex; PoiseCharacter targetIndex]
+                    withMsgs [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] model
                 | _ -> just model
             | None ->
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+                withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] model
 
         static let tickTech techType sourceIndex (targetIndexOpt : CharacterIndex option) (_ : int64) timeLocal model =
             match targetIndexOpt with
             | Some targetIndex ->
                 match Map.tryFind techType data.Value.TechAnimations with
                 | Some techData ->
-                    let (model, msgs) =
-                        if timeLocal = techData.TechStart then (model, [TechCharacter1 (sourceIndex, targetIndex, techType)])
-                        elif timeLocal = techData.TechingStart then (model, [TechCharacter2 (sourceIndex, targetIndex, techType)])
-                        elif timeLocal = techData.AffectingStart then (model, [TechCharacter3 (sourceIndex, targetIndex, techType)])
-                        elif timeLocal = techData.AffectingStop then (model, [TechCharacter4 (sourceIndex, targetIndex, techType)])
-                        elif timeLocal = techData.TechingStop then (model, [TechCharacter5 (sourceIndex, targetIndex, techType)])
-                        elif timeLocal = techData.TechStop then (model, [TechCharacter6 (sourceIndex, targetIndex, techType)])
-                        else (model, [])
-                    let (model, msgs) = (model, msgs @ [TechCharacterAmbient (sourceIndex, targetIndex, techType)])
-                    withMsgs model msgs
+                    let (msgs, model) =
+                        if timeLocal = techData.TechStart then ([TechCharacter1 (sourceIndex, targetIndex, techType)], model)
+                        elif timeLocal = techData.TechingStart then ([TechCharacter2 (sourceIndex, targetIndex, techType)], model)
+                        elif timeLocal = techData.AffectingStart then ([TechCharacter3 (sourceIndex, targetIndex, techType)], model)
+                        elif timeLocal = techData.AffectingStop then ([TechCharacter4 (sourceIndex, targetIndex, techType)], model)
+                        elif timeLocal = techData.TechingStop then ([TechCharacter5 (sourceIndex, targetIndex, techType)], model)
+                        elif timeLocal = techData.TechStop then ([TechCharacter6 (sourceIndex, targetIndex, techType)], model)
+                        else ([], model)
+                    let (msgs, model) = (msgs @ [TechCharacterAmbient (sourceIndex, targetIndex, techType)], model)
+                    withMsgs msgs model
                 | None ->
                     let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                    withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+                    withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] model
             | None ->
                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+                withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] model
 
         static let rec tickWound targetIndexOpt time model =
             match targetIndexOpt with
             | Some targetIndex ->
                 let character = BattleModel.getCharacter targetIndex model
-                let (model, sigs) =
+                let (sigs, model) =
                     if character.IsAlly then
                         match character.AnimationCycle with
                         | DamageCycle ->
                             if CharacterModel.getAnimationFinished time character then
                                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                                (model, [Message (WoundCharacter targetIndex)])
-                            else (model, [])
+                                ([Message (WoundCharacter targetIndex)], model)
+                            else ([], model)
                         | _ -> failwithumf ()
                     else
                         match character.AnimationCycle with
@@ -149,40 +149,40 @@ module OmniBattle =
                             if CharacterModel.getAnimationFinished time character then
                                 let woundCharacter = WoundCharacter targetIndex
                                 let playDeathSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.DeathSound)
-                                (model, [Message woundCharacter; Command playDeathSound])
-                            else (model, [])
+                                ([Message woundCharacter; Command playDeathSound], model)
+                            else ([], model)
                         | WoundCycle ->
                             if CharacterModel.getAnimationFinished time character then
                                 let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                                (model, [Message (DestroyCharacter targetIndex)])
-                            else (model, [])
+                                ([Message (DestroyCharacter targetIndex)], model)
+                            else ([], model)
                         | _ -> failwithumf ()
-                let (model, sigs) =
+                let (sigs, model) =
                     match model.CurrentCommandOpt with
                     | None ->
                         let allies = BattleModel.getAllies model
                         let enemies = BattleModel.getEnemies model
                         if List.forall (fun (character : CharacterModel) -> character.IsWounded) allies then
                             let model = BattleModel.updateBattleState (constant (BattleCease (false, time))) model
-                            let (model, sigs2) = tick time model
-                            (model, sigs @ sigs2)
+                            let (sigs2, model) = tick time model
+                            (sigs @ sigs2, model)
                         elif
                             List.forall (fun (character : CharacterModel) -> character.IsWounded) enemies &&
                             List.hasAtMost 1 enemies then
                             let model = BattleModel.updateBattleState (constant (BattleCease (true, time))) model
-                            let (model, sigs2) = tick time model
-                            (model, sigs @ sigs2)
-                        else (model, sigs)
-                    | Some _ -> (model, sigs)
-                withSigs model sigs
+                            let (sigs2, model) = tick time model
+                            (sigs @ sigs2, model)
+                        else (sigs, model)
+                    | Some _ -> (sigs, model)
+                withSigs sigs model
             | None -> just model
 
         and tickReady time timeStart model =
             let timeLocal = time - timeStart
-            if timeLocal = 0L then withMsg model ReadyCharacters
+            if timeLocal = 0L then withMsg ReadyCharacters model
             elif timeLocal >= 30L then
                 let model = BattleModel.updateBattleState (constant BattleRunning) model
-                withMsg model PoiseCharacters
+                withMsg PoiseCharacters model
             else just model
 
         and tickCurrentCommand time currentCommand model =
@@ -255,7 +255,7 @@ module OmniBattle =
                         else character
                     character)
                     model
-            withSigs model (List.rev (allySignalsRev @ enemySignalsRev))
+            withSigs (List.rev (allySignalsRev @ enemySignalsRev)) model
 
         and tickNoCurrentCommand time (model : BattleModel) =
             match model.ActionCommands with
@@ -270,16 +270,14 @@ module OmniBattle =
         and tickCease time timeStart outcome model =
             let timeLocal = time - timeStart
             match timeLocal with
-            | 0L -> withMsg model (CelebrateCharacters outcome)
+            | 0L -> withMsg (CelebrateCharacters outcome) model
             | _ -> just model
 
         and tick time model =
-            let (model, sigs) =
-                match model.BattleState with
-                | BattleReady timeStart -> tickReady time timeStart model
-                | BattleRunning -> tickRunning time model
-                | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome model
-            (model, sigs)
+            match model.BattleState with
+            | BattleReady timeStart -> tickReady time timeStart model
+            | BattleRunning -> tickRunning time model
+            | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome model
 
         override this.Channel (_, battle) =
             [battle.UpdateEvent => msg Tick
@@ -381,7 +379,7 @@ module OmniBattle =
                             | "Tremor" -> ActionCommand.make (Tech Tremor) allyIndex (Some targetIndex)
                             | _ -> ActionCommand.make Attack allyIndex (Some targetIndex)
                         let model = BattleModel.appendActionCommand command model
-                        withMsg model (ResetCharacter allyIndex)
+                        withMsg (ResetCharacter allyIndex) model
                     | _ -> just model
                 | _ -> just model
 
@@ -425,7 +423,7 @@ module OmniBattle =
                 let model = BattleModel.updateCharacter (CharacterModel.animate time AttackCycle) sourceIndex model
                 let playHitSoundDelay = 15L
                 let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                withCmd model playHitSound
+                withCmd playHitSound model
 
             | AttackCharacter2 (sourceIndex, targetIndex) ->
                 let time = World.getTickTime world
@@ -438,7 +436,7 @@ module OmniBattle =
                     then (model, [Message (ResetCharacter targetIndex)]) // wounded
                     else (BattleModel.updateCharacter (CharacterModel.animate time DamageCycle) targetIndex model, []) // just damaged
                 let sigs = Command (DisplayHitPointsChange (targetIndex, -damage)) :: sigs
-                withSigs model sigs
+                withSigs sigs model
 
             | ConsumeCharacter1 (consumable, sourceIndex) ->
                 let time = World.getTickTime world
@@ -457,7 +455,7 @@ module OmniBattle =
                 let model = BattleModel.updateCharacter (CharacterModel.animate time SpinCycle) targetIndex model
                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
                 let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
-                withCmds model [displayHitPointsChange; playHealSound]
+                withCmds [displayHitPointsChange; playHealSound] model
             
             | TechCharacter1 (sourceIndex, targetIndex, techType) ->
                 let source = BattleModel.getCharacter sourceIndex model
@@ -469,12 +467,12 @@ module OmniBattle =
                 match hopOpt with
                 | None ->
                     if target.IsHealthy
-                    then withMsg model (ChargeCharacter sourceIndex)
+                    then withMsg (ChargeCharacter sourceIndex) model
                     else
                         let model = BattleModel.updateCurrentCommandOpt (constant None) model
-                        withMsgs model [ResetCharacter sourceIndex; PoiseCharacter sourceIndex]
+                        withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] model
                 | Some hop ->
-                    withCmd model (DisplayHop hop)
+                    withCmd (DisplayHop hop) model
 
             | TechCharacter2 (sourceIndex, targetIndex, techType) ->
                 match techType with
@@ -483,7 +481,7 @@ module OmniBattle =
                     let model = BattleModel.updateCharacter (CharacterModel.animate time AttackCycle) sourceIndex model
                     let playHitSoundDelay = 10L
                     let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                    withCmd model playHitSound
+                    withCmd playHitSound model
                 | Cyclone ->
                     let time = World.getTickTime world
                     let model = BattleModel.updateCharacter (CharacterModel.animate time WhirlCycle) sourceIndex model
@@ -492,15 +490,15 @@ module OmniBattle =
                          PlaySound (40L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (80L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
-                    withCmds model (DisplayCircle ((BattleModel.getCharacter sourceIndex model).Bottom, 64.0f) :: playHitSounds)
+                    withCmds (DisplayCircle ((BattleModel.getCharacter sourceIndex model).Bottom, 64.0f) :: playHitSounds) model
                 | Bolt ->
                     let time = World.getTickTime world
                     let model = BattleModel.updateCharacter (CharacterModel.animate time Cast2Cycle) sourceIndex model
-                    withCmd model (DisplayBolt targetIndex)
+                    withCmd (DisplayBolt targetIndex) model
                 | Tremor ->
                     let time = World.getTickTime world
                     let model = BattleModel.updateCharacter (CharacterModel.animate time BuryCycle) sourceIndex model
-                    withCmd model (DisplayBolt targetIndex)
+                    withCmd (DisplayBolt targetIndex) model
 
             | TechCharacter3 (sourceIndex, targetIndex, techType) ->
                 let time = World.getTickTime world
@@ -520,7 +518,7 @@ module OmniBattle =
                             else (model, cmds))
                             (model, [])
                             results
-                    withCmds model cmds
+                    withCmds cmds model
                 | None -> just model
 
             | TechCharacter4 (sourceIndex, targetIndex, techType) ->
@@ -536,7 +534,7 @@ module OmniBattle =
                             (model, sigs))
                             (model, [])
                             results
-                    withSigs model sigs
+                    withSigs sigs model
                 | None -> just model
 
             | TechCharacter5 (sourceIndex, targetIndex, techType) ->
@@ -548,7 +546,7 @@ module OmniBattle =
                     | Bolt | Tremor -> None
                 match hopOpt with
                 | None -> just model
-                | Some hop -> withCmd model (DisplayHop hop)
+                | Some hop -> withCmd (DisplayHop hop) model
 
             | TechCharacter6 (sourceIndex, targetIndex, techType) ->
                 match Map.tryFind techType data.Value.Techs with
@@ -577,7 +575,7 @@ module OmniBattle =
                             results
                     let model = BattleModel.updateCurrentCommandOpt (constant None) model
                     let sigs = Message (PoiseCharacter sourceIndex) :: sigs
-                    withSigs model sigs
+                    withSigs sigs model
                 | None -> just model
                     
             | TechCharacterAmbient (sourceIndex, _, _) ->
