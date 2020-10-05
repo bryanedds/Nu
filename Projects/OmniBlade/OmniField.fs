@@ -170,7 +170,7 @@ module OmniField =
 
         static let interactShopkeep shopType (model : FieldModel) =
             let shopModel = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmModelOpt = None }
-            let model = FieldModel.updateShopModelOpt (constant (Some shopModel)) model
+            let model = FieldModel.updateShopOpt (constant (Some shopModel)) model
             just model
 
         static let sidebar position depth (model : Lens<FieldModel, World>) =
@@ -178,21 +178,32 @@ module OmniField =
                 [Content.button Gen.name
                    [Entity.PositionLocal == position; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "L"
-                    Entity.Enabled <== model --> fun model -> match model.SubmenuModel.SubmenuState with SubmenuLegion _ -> false | _ -> true
+                    Entity.Enabled <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuLegion _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuLegionOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 72.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "I"
-                    Entity.Enabled <== model --> fun model -> match model.SubmenuModel.SubmenuState with SubmenuItem _ -> false | _ -> true
+                    Entity.Enabled <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuItem _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuItemOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 144.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "X"
                     Entity.ClickEvent ==> msg SubmenuClose]]
 
+        static let legion (position : Vector2) depth (model : Lens<FieldModel, World>) fieldMsg =
+            Content.entities model
+                (fun model -> model.Legion)
+                (fun legion _ -> legion |> Map.toValueList |> List.choose (fun legionnaire -> Map.tryFind legionnaire.CharacterType data.Value.Characters))
+                (fun i legionnaireLens world ->
+                    let legionnaire = Lens.get legionnaireLens world
+                    Content.button Gen.name
+                        [Entity.PositionLocal == v2 position.X (position.Y - single i * 72.0f); Entity.DepthLocal == depth
+                         Entity.Text == CharacterType.getName legionnaire.CharacterType
+                         Entity.ClickEvent ==> msg (fieldMsg i)])
+
         static let items (position : Vector2) depth model fieldMsg =
             Content.entities model
-                (fun (model : FieldModel) -> (model.SubmenuModel, model.ShopModelOpt, model.Inventory))
+                (fun (model : FieldModel) -> (model.Submenu, model.ShopOpt, model.Inventory))
                 (fun (submenu, shopModelOpt, inventory : Inventory) _ ->
                     let items =
                         match submenu.SubmenuState with
@@ -221,6 +232,7 @@ module OmniField =
                         [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 336.0f 64.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
                          Entity.Text <== selection --> fun (_, itemType) -> ItemType.getName itemType
+                         Entity.Enabled <== selection --> fun (_, itemType) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
                          Entity.ClickEvent ==> msg (fieldMsg selection)])
 
         override this.Channel (_, field) =
@@ -304,7 +316,7 @@ module OmniField =
 
             | SubmenuLegionOpen ->
                 let state = SubmenuLegion { LegionIndex = 0; LegionIndices = Map.toKeyList model.Legion }
-                let model = FieldModel.updateSubmenuModel (fun submenu -> { submenu with SubmenuState = state }) model
+                let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuState = state }) model
                 just model
 
             | SubmenuLegionAlly _ ->
@@ -312,36 +324,43 @@ module OmniField =
 
             | SubmenuItemOpen ->
                 let itemState = SubmenuItem { ItemPage = 0 }
-                let model = FieldModel.updateSubmenuModel (fun submenu -> { submenu with SubmenuState = itemState }) model
+                let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuState = itemState }) model
                 just model
 
-            | SubmenuItemUse _ ->
+            | SubmenuItemUse selectionLens ->
+                let selection = Lens.get selectionLens world
+                let model =
+                    FieldModel.updateSubmenu (fun submenu ->
+                        let useTargets = Map.toKeyList model.Legion
+                        let submenuUseOpt = SubmenuUse.tryMakeFromSelection selection useTargets
+                        { submenu with SubmenuUseOpt = submenuUseOpt })
+                        model
                 just model
 
             | SubmenuClose ->
-                let model = FieldModel.updateSubmenuModel (fun submenu -> { submenu with SubmenuState = SubmenuClosed }) model
+                let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuState = SubmenuClosed }) model
                 just model
 
             | ShopBuy ->
-                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopState = ShopBuying; ShopPage = 0 })) model
+                let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopState = ShopBuying; ShopPage = 0 })) model
                 just model
 
             | ShopSell ->
-                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopState = ShopSelling; ShopPage = 0 })) model
+                let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopState = ShopSelling; ShopPage = 0 })) model
                 just model
 
             | ShopPageUp ->
-                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopPage = max 0 (dec shopModel.ShopPage) })) model
+                let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopPage = max 0 (dec shopModel.ShopPage) })) model
                 just model
 
             | ShopPageDown ->
-                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopPage = inc shopModel.ShopPage })) model
+                let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopPage = inc shopModel.ShopPage })) model
                 just model
 
             | ShopConfirmPrompt selectionLens ->
                 let selection = Lens.get selectionLens world
                 let model =
-                    FieldModel.updateShopModelOpt (Option.map (fun shopModel ->
+                    FieldModel.updateShopOpt (Option.map (fun shopModel ->
                         let buying = match shopModel.ShopState with ShopBuying -> true | ShopSelling -> false
                         let shopConfirmModelOpt = ShopConfirmModel.tryMakeFromSelection buying model.Inventory selection
                         { shopModel with ShopConfirmModelOpt = shopConfirmModelOpt }))
@@ -349,7 +368,7 @@ module OmniField =
                 just model
 
             | ShopConfirmAccept ->
-                match model.ShopModelOpt with
+                match model.ShopOpt with
                 | Some shopModel ->
                     match shopModel.ShopConfirmModelOpt with
                     | Some shopConfirmModel ->
@@ -358,18 +377,18 @@ module OmniField =
                             let itemType = snd shopConfirmModel.ShopConfirmSelection
                             let model = FieldModel.updateInventory (match shopModel.ShopState with ShopBuying -> Inventory.addItem itemType | ShopSelling -> Inventory.removeItem itemType) model
                             let model = FieldModel.updateInventory (match shopModel.ShopState with ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirmModel.ShopConfirmPrice) | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirmModel.ShopConfirmPrice)) model
-                            let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = None })) model
+                            let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = None })) model
                             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) model
                         else withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.MistakeSound)) model
                     | None -> just model
                 | None -> just model
 
             | ShopConfirmDecline ->
-                let model = FieldModel.updateShopModelOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = None })) model
+                let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = None })) model
                 just model
 
             | ShopLeave ->
-                let model = FieldModel.updateShopModelOpt (constant None) model
+                let model = FieldModel.updateShopOpt (constant None) model
                 just model
 
             | Interact ->
@@ -450,9 +469,9 @@ module OmniField =
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
                     [Entity.Position == v2 256.0f 256.0f; Entity.Depth == Constants.Field.ForgroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled <== model --> fun model ->
-                        model.SubmenuModel.SubmenuState = SubmenuClosed &&
+                        model.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone model.DialogOpt &&
-                        Option.isNone model.ShopModelOpt &&
+                        Option.isNone model.ShopOpt &&
                         Option.isNone model.FieldTransitionOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
                      Entity.AvatarModel <== model --> fun model -> model.Avatar]
@@ -463,9 +482,9 @@ module OmniField =
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Text == "Submenu"
                      Entity.Visible <== model --> fun model ->
-                        model.SubmenuModel.SubmenuState = SubmenuClosed &&
+                        model.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone model.DialogOpt &&
-                        Option.isNone model.ShopModelOpt &&
+                        Option.isNone model.ShopOpt &&
                         Option.isNone model.FieldTransitionOpt
                      Entity.ClickEvent ==> msg SubmenuLegionOpen]
 
@@ -474,8 +493,8 @@ module OmniField =
                     [Entity.Position == v2 248.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Visible <== model ->> fun model world ->
-                        model.SubmenuModel.SubmenuState = SubmenuClosed &&
-                        Option.isNone model.ShopModelOpt &&
+                        model.Submenu.SubmenuState = SubmenuClosed &&
+                        Option.isNone model.ShopOpt &&
                         Option.isNone model.FieldTransitionOpt &&
                         Option.isSome (tryGetInteraction model.DialogOpt model.Advents model.Avatar world)
                      Entity.Text <== model ->> fun model world ->
@@ -562,22 +581,13 @@ module OmniField =
                  Content.panel Simulants.SubmenuLegion.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogHugeImage
-                     Entity.Visible <== model --> fun model -> match model.SubmenuModel.SubmenuState with SubmenuLegion _ -> true | _ -> false]
+                     Entity.Visible <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuLegion _ -> true | _ -> false]
                     [sidebar (v2 40.0f 424.0f) 1.0f model
-                     Content.entities model
-                        (fun model -> model.Legion)
-                        (fun legion _ -> legion |> Map.toValueList |> List.choose (fun legionnaire -> Map.tryFind legionnaire.CharacterType data.Value.Characters))
-                        (fun i legionnaireLens world ->
-                            let legionnaire = Lens.get legionnaireLens world
-                            Content.button Gen.name
-                                [Entity.PositionLocal == v2 136.0f (424.0f - single i * 72.0f)
-                                 Entity.DepthLocal == 1.0f
-                                 Entity.Text == CharacterType.getName legionnaire.CharacterType
-                                 Entity.ClickEvent ==> msg (SubmenuLegionAlly i)])
+                     legion (v2 136.0f 424.0f) 1.0f model SubmenuLegionAlly
                      Content.label Gen.name
                         [Entity.PositionLocal == v2 424.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== model --> fun model ->
-                            match model.SubmenuModel.SubmenuState with
+                            match model.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
                                 match SubmenuLegion.tryGetLegionData model.Legion submenu with
                                 | Some characterData ->
@@ -589,7 +599,7 @@ module OmniField =
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 672.0f 384.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
-                            match model.SubmenuModel.SubmenuState with
+                            match model.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
                                 match SubmenuLegion.tryGetLegionData model.Legion submenu with
                                 | Some characterData -> CharacterType.getName characterData.CharacterType
@@ -598,7 +608,7 @@ module OmniField =
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 672.0f 328.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
-                            match model.SubmenuModel.SubmenuState with
+                            match model.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
                                 match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
                                 | Some legionnaire -> "Level " + string (Algorithms.expPointsToLevel legionnaire.ExpPoints)
@@ -607,7 +617,7 @@ module OmniField =
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 224.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
-                            match model.SubmenuModel.SubmenuState with
+                            match model.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
                                 match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
                                 | Some legionnaire -> "W: " + Option.getOrDefault "None" legionnaire.WeaponOpt
@@ -616,7 +626,7 @@ module OmniField =
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 184.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
-                            match model.SubmenuModel.SubmenuState with
+                            match model.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
                                 match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
                                 | Some legionnaire -> "A: " + Option.getOrDefault "None" legionnaire.ArmorOpt
@@ -625,7 +635,7 @@ module OmniField =
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 144.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
-                            match model.SubmenuModel.SubmenuState with
+                            match model.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
                                 match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
                                 | Some legionnaire -> "1: " + Option.getOrDefault "None" (List.tryHead legionnaire.Accessories)
@@ -635,7 +645,7 @@ module OmniField =
                         [Entity.PositionLocal == v2 448.0f -104.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 512.0f 256.0f
                          Entity.Justification == Unjustified true
                          Entity.Text <== model --> fun model ->
-                            match model.SubmenuModel.SubmenuState with
+                            match model.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
                                 match SubmenuLegion.tryGetLegionnaireAndLegionData model.Legion submenu with
                                 | Some (legionnaire, characterData) ->
@@ -655,7 +665,8 @@ module OmniField =
                  Content.panel Simulants.SubmenuItem.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogHugeImage
-                     Entity.Visible <== model --> fun model -> match model.SubmenuModel.SubmenuState with SubmenuItem _ -> true | _ -> false]
+                     Entity.Visible <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuItem _ -> true | _ -> false
+                     Entity.Enabled <== model --> fun model -> Option.isNone model.Submenu.SubmenuUseOpt]
                     [sidebar (v2 40.0f 424.0f) 1.0f model
                      items (v2 144.0f 424.0f) 1.0f model SubmenuItemUse
                      Content.text Gen.name
@@ -663,32 +674,64 @@ module OmniField =
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text <== model --> (fun model -> string model.Inventory.Gold + "G")]]
 
+                 // use
+                 Content.panel Simulants.SubmenuUse.Name
+                    [Entity.Position == v2 -448.0f -128.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 256.0f
+                     Entity.LabelImage == Assets.DialogLargeImage
+                     Entity.Visible <== model --> fun model -> Option.isSome model.Submenu.SubmenuUseOpt]
+                    [legion (v2 160.0f 72.0f) 1.0f model SubmenuLegionAlly
+                     Content.button Gen.name
+                        [Entity.PositionLocal == v2 456.0f 16.0f; Entity.DepthLocal == 2.0f
+                         Entity.Text == "Cancel"
+                         Entity.ClickEvent ==> msg ShopConfirmDecline]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 32.0f 176.0f; Entity.DepthLocal == 2.0f
+                         Entity.Text <== model --> fun model ->
+                            match model.Submenu.SubmenuUseOpt with
+                            | Some submenu -> submenu.SubmenuUsePrompt
+                            | None -> ""]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 64.0f 128.0f; Entity.DepthLocal == 2.0f
+                         Entity.Text <== model --> fun model ->
+                             match model.Submenu.SubmenuUseOpt with
+                             | Some submenu -> submenu.SubmenuUseEffect
+                             | None -> ""]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 64.0f 80.0f; Entity.DepthLocal == 2.0f
+                         Entity.Text <== model --> fun model ->
+                            match model.ShopOpt with
+                            | Some shopModel ->
+                                match shopModel.ShopConfirmModelOpt with
+                                | Some shopConfirmModel -> shopConfirmModel.ShopConfirmLine2
+                                | None -> ""
+                            | None -> ""]]
+
                  // shop
                  Content.panel Simulants.FieldShop.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogHugeImage
-                     Entity.Visible <== model --> fun model -> Option.isSome model.ShopModelOpt
-                     Entity.Enabled <== model --> fun model -> match model.ShopModelOpt with Some shopModel -> Option.isNone shopModel.ShopConfirmModelOpt | None -> true]
+                     Entity.Visible <== model --> fun model -> Option.isSome model.ShopOpt
+                     Entity.Enabled <== model --> fun model -> match model.ShopOpt with Some shopModel -> Option.isNone shopModel.ShopConfirmModelOpt | None -> true]
                     [Content.button Simulants.FieldShopBuy.Name
                         [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Buy"
-                         Entity.Visible <== model --> fun model -> match model.ShopModelOpt with Some shopModel -> shopModel.ShopState = ShopSelling | None -> false
+                         Entity.Visible <== model --> fun model -> match model.ShopOpt with Some shopModel -> shopModel.ShopState = ShopSelling | None -> false
                          Entity.ClickEvent ==> msg ShopBuy]
                      Content.button Simulants.FieldShopSell.Name
                         [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Sell"
-                         Entity.Visible <== model --> fun model -> match model.ShopModelOpt with Some shopModel -> shopModel.ShopState = ShopBuying | None -> false
+                         Entity.Visible <== model --> fun model -> match model.ShopOpt with Some shopModel -> shopModel.ShopState = ShopBuying | None -> false
                          Entity.ClickEvent ==> msg ShopSell]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text == "Buy what?"
-                         Entity.Visible <== model --> fun model -> match model.ShopModelOpt with Some shopModel -> shopModel.ShopState = ShopBuying | None -> false]
+                         Entity.Visible <== model --> fun model -> match model.ShopOpt with Some shopModel -> shopModel.ShopState = ShopBuying | None -> false]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text == "Sell what?"
-                         Entity.Visible <== model --> fun model -> match model.ShopModelOpt with Some shopModel -> shopModel.ShopState = ShopSelling | None -> false]
+                         Entity.Visible <== model --> fun model -> match model.ShopOpt with Some shopModel -> shopModel.ShopState = ShopSelling | None -> false]
                      Content.button Simulants.FieldShopLeave.Name
                         [Entity.PositionLocal == v2 628.0f 440.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Leave"
@@ -712,19 +755,21 @@ module OmniField =
                     [Entity.Position == v2 -448.0f -128.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 256.0f
                      Entity.LabelImage == Assets.DialogLargeImage
                      Entity.Visible <== model --> fun model ->
-                        match model.ShopModelOpt with
+                        match model.ShopOpt with
                         | Some shopModel -> Option.isSome shopModel.ShopConfirmModelOpt
                         | None -> false]
                     [Content.button Simulants.FieldShopConfirmAccept.Name
-                        [Entity.PositionLocal == v2 160.0f 16.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Accept"
+                        [Entity.PositionLocal == v2 160.0f 16.0f; Entity.DepthLocal == 2.0f
+                         Entity.Text == "Accept"
                          Entity.ClickEvent ==> msg ShopConfirmAccept]
                      Content.button Simulants.FieldShopConfirmDecline.Name
-                        [Entity.PositionLocal == v2 456.0f 16.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Decline"
+                        [Entity.PositionLocal == v2 456.0f 16.0f; Entity.DepthLocal == 2.0f
+                         Entity.Text == "Decline"
                          Entity.ClickEvent ==> msg ShopConfirmDecline]
                      Content.text Simulants.FieldShopConfirmOffer.Name
                         [Entity.PositionLocal == v2 32.0f 176.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== model --> fun model ->
-                            match model.ShopModelOpt with
+                            match model.ShopOpt with
                             | Some shopModel ->
                                 match shopModel.ShopConfirmModelOpt with
                                 | Some shopConfirmModel -> shopConfirmModel.ShopConfirmOffer
@@ -733,7 +778,7 @@ module OmniField =
                      Content.text Simulants.FieldShopConfirmLine1.Name
                         [Entity.PositionLocal == v2 64.0f 128.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== model --> fun model ->
-                            match model.ShopModelOpt with
+                            match model.ShopOpt with
                             | Some shopModel ->
                                 match shopModel.ShopConfirmModelOpt with
                                 | Some shopConfirmModel -> shopConfirmModel.ShopConfirmLine1
@@ -742,7 +787,7 @@ module OmniField =
                      Content.text Simulants.FieldShopConfirmLine2.Name
                         [Entity.PositionLocal == v2 64.0f 80.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== model --> fun model ->
-                            match model.ShopModelOpt with
+                            match model.ShopOpt with
                             | Some shopModel ->
                                 match shopModel.ShopConfirmModelOpt with
                                 | Some shopConfirmModel -> shopConfirmModel.ShopConfirmLine2
