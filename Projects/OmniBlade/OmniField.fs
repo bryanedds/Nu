@@ -527,13 +527,15 @@ module OmniField =
                         | SubmenuEquip _ -> true
                         | _ -> false]
                     [Content.button Simulants.SubmenuEquipTab.Name
-                        [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "E"
+                        [Entity.PositionLocal == v2 40.0f 424.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "E"
+                         Entity.Enabled <== model --> fun model -> match model.SubmenuModel.SubmenuState with SubmenuEquip _ -> false | _ -> true
                          Entity.ClickEvent ==> msg SubmenuEquipOpen]
                      Content.button Simulants.SubmenuItemTab.Name
-                        [Entity.PositionLocal == v2 12.0f 368.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "I"
+                        [Entity.PositionLocal == v2 40.0f 352.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "I"
+                         Entity.Enabled <== model --> fun model -> match model.SubmenuModel.SubmenuState with SubmenuItem _ -> false | _ -> true
                          Entity.ClickEvent ==> msg SubmenuItemOpen]
                      Content.button Simulants.SubmenuClose.Name
-                        [Entity.PositionLocal == v2 12.0f 296.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "X"
+                        [Entity.PositionLocal == v2 40.0f 280.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "X"
                          Entity.ClickEvent ==> msg SubmenuClose]
                      Content.entities model
                         (fun model -> model.Legion)
@@ -541,12 +543,12 @@ module OmniField =
                         (fun i characterLens world ->
                             let character = Lens.get characterLens world
                             Content.button Gen.name
-                                [Entity.PositionLocal == v2 104.0f (408.0f - single i * 72.0f)
+                                [Entity.PositionLocal == v2 144.0f (424.0f - single i * 72.0f)
                                  Entity.DepthLocal == 1.0f
                                  Entity.Text == CharacterType.getName character.CharacterType
                                  Entity.ClickEvent ==> msg (SubmenuEquipAlly i)])
                      Content.label Gen.name
-                        [Entity.PositionLocal == v2 392.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
+                        [Entity.PositionLocal == v2 448.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== model --> fun model ->
                             match model.SubmenuModel.SubmenuState with
                             | SubmenuEquip equip ->
@@ -558,50 +560,68 @@ module OmniField =
                                 | None -> Assets.EmptyImage
                             | _ -> Assets.EmptyImage]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 616.0f 384.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 672.0f 384.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
-                             match model.SubmenuModel.SubmenuState with
-                             | SubmenuEquip equip ->
-                                 match SubmenuEquip.tryGetCharacterData model.Legion equip with
-                                 | Some characterData -> CharacterType.getName characterData.CharacterType
-                                 | None -> ""
-                             | _ -> ""]
+                            match model.SubmenuModel.SubmenuState with
+                            | SubmenuEquip equip ->
+                                match SubmenuEquip.tryGetCharacterData model.Legion equip with
+                                | Some characterData -> CharacterType.getName characterData.CharacterType
+                                | None -> ""
+                            | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 616.0f 328.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 672.0f 328.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
-                             match model.SubmenuModel.SubmenuState with
-                             | SubmenuEquip equip ->
-                                 match SubmenuEquip.tryGetLegionnaire model.Legion equip with
-                                 | Some legionnaire -> "Level " + string (Algorithms.expPointsToLevel legionnaire.ExpPoints)
-                                 | None -> ""
-                             | _ -> ""]
+                            match model.SubmenuModel.SubmenuState with
+                            | SubmenuEquip equip ->
+                                match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                                | Some legionnaire -> "Level " + string (Algorithms.expPointsToLevel legionnaire.ExpPoints)
+                                | None -> ""
+                            | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 408.0f 224.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 448.0f 224.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
-                             match model.SubmenuModel.SubmenuState with
-                             | SubmenuEquip equip ->
-                                 match SubmenuEquip.tryGetLegionnaire model.Legion equip with
-                                 | Some legionnaire -> "W: " + Option.getOrDefault "None" legionnaire.WeaponOpt
-                                 | None -> ""
-                             | _ -> ""]
+                            match model.SubmenuModel.SubmenuState with
+                            | SubmenuEquip equip ->
+                                match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                                | Some legionnaire -> "W: " + Option.getOrDefault "None" legionnaire.WeaponOpt
+                                | None -> ""
+                            | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 408.0f 184.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 448.0f 184.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
-                             match model.SubmenuModel.SubmenuState with
-                             | SubmenuEquip equip ->
-                                 match SubmenuEquip.tryGetLegionnaire model.Legion equip with
-                                 | Some legionnaire -> "A: " + Option.getOrDefault "None" legionnaire.ArmorOpt
-                                 | None -> ""
-                             | _ -> ""]
+                            match model.SubmenuModel.SubmenuState with
+                            | SubmenuEquip equip ->
+                                match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                                | Some legionnaire -> "A: " + Option.getOrDefault "None" legionnaire.ArmorOpt
+                                | None -> ""
+                            | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 408.0f 144.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 448.0f 144.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== model --> fun model ->
-                             match model.SubmenuModel.SubmenuState with
-                             | SubmenuEquip equip ->
-                                 match SubmenuEquip.tryGetLegionnaire model.Legion equip with
-                                 | Some legionnaire -> "1: " + Option.getOrDefault "None" (List.tryHead legionnaire.Accessories)
-                                 | None -> ""
-                             | _ -> ""]]
+                            match model.SubmenuModel.SubmenuState with
+                            | SubmenuEquip equip ->
+                                match SubmenuEquip.tryGetLegionnaire model.Legion equip with
+                                | Some legionnaire -> "1: " + Option.getOrDefault "None" (List.tryHead legionnaire.Accessories)
+                                | None -> ""
+                            | _ -> ""]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 448.0f -104.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 512.0f 256.0f; Entity.Justification == Unjustified true
+                         Entity.Text <== model --> fun model ->
+                            match model.SubmenuModel.SubmenuState with
+                            | SubmenuEquip equip ->
+                                match SubmenuEquip.tryGetLegionnaireAndCharacterData model.Legion equip with
+                                | Some (legionnaire, characterData) ->
+                                    let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
+                                    let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
+                                    let tpm = Algorithms.techPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
+                                    let pow = Algorithms.power legionnaire.WeaponOpt 0.0f characterData.ArchetypeType level
+                                    let mag = Algorithms.magic legionnaire.WeaponOpt 0.0f characterData.ArchetypeType level
+                                    "HP  " + (string hpm).PadLeft 3 + "   TP  " + (string tpm).PadLeft 3 +
+                                    "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
+                                    "\nExp " + string legionnaire.ExpPoints +
+                                    "\n"
+                                | None -> ""
+                            | _ -> ""]]
 
                  // shop
                  Content.panel Simulants.FieldShop.Name

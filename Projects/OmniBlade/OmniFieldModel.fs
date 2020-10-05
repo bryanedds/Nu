@@ -33,14 +33,18 @@ type [<ReferenceEquality; NoComparison>] SubmenuEquip =
       
     static member tryGetLegionnaire (legion : Legion) submenuEquip =
         Map.tryFind submenuEquip.EquipmentCurrentAlly legion
-      
-    static member tryGetCharacterData legion submenuEquip =
+
+    static member tryGetLegionnaireAndCharacterData legion submenuEquip =
         match SubmenuEquip.tryGetLegionnaire legion submenuEquip with
         | Some legionnaire ->
             match Map.tryFind legionnaire.CharacterType data.Value.Characters with
-            | Some characterData -> Some characterData
+            | Some characterData -> Some (legionnaire, characterData)
             | None -> None
         | None -> None
+
+    static member tryGetCharacterData legion submenuEquip =
+        let lacdOpt = SubmenuEquip.tryGetLegionnaireAndCharacterData legion submenuEquip
+        Option.map snd lacdOpt
 
 type [<ReferenceEquality; NoComparison>] SubmenuItem =
     { ItemUnused : unit }
