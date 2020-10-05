@@ -34,7 +34,10 @@ module Gaia =
     let private getPickableEntities world =
         let selectedLayer = (getEditorState world).SelectedLayer
         let (entities, world) = World.getEntitiesInView2 world
-        let entitiesInLayer = Enumerable.ToList (Enumerable.Where (entities, fun entity -> entity.Parent = selectedLayer))
+        let entitiesInLayer =
+            Enumerable.ToList
+                (Enumerable.Where
+                    (entities, fun entity -> entity.GetVisible world && entity.Parent = selectedLayer))
         (entitiesInLayer, world)
 
     let private getSnaps (form : GaiaForm) =

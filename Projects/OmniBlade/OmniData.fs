@@ -315,6 +315,7 @@ type [<StructuralEquality; NoComparison>] CharacterData =
       ArchetypeType : ArchetypeType
       LevelBase : int
       AnimationSheet : Image AssetTag
+      MugOpt : Image AssetTag option
       Description : string }
 
 type [<StructuralEquality; NoComparison>] CharacterAnimationData =
