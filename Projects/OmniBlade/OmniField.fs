@@ -398,9 +398,9 @@ module OmniField =
 
                  // avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
-                    [Entity.Size == Constants.Gameplay.CharacterSize
-                     Entity.Position == v2 256.0f 256.0f
+                    [Entity.Position == v2 256.0f 256.0f
                      Entity.Depth == Constants.Field.ForgroundDepth
+                     Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled <== model --> fun model ->
                         model.SubmenuModel.SubmenuState = SubmenuClosed &&
                         Option.isNone model.DialogOpt &&
@@ -411,9 +411,9 @@ module OmniField =
 
                  // submenu button
                  Content.button Simulants.FieldSubmenu.Name
-                    [Entity.Size == v2 192.0f 64.0f
-                     Entity.Position == v2 -444.0f -240.0f
+                    [Entity.Position == v2 -444.0f -240.0f
                      Entity.Depth == Constants.Field.GuiDepth
+                     Entity.Size == v2 192.0f 64.0f
                      Entity.Text == "Submenu"
                      Entity.UpImage == Assets.ButtonShortUpImage
                      Entity.DownImage == Assets.ButtonShortDownImage
@@ -426,9 +426,9 @@ module OmniField =
 
                  // interact button
                  Content.button Simulants.FieldInteract.Name
-                    [Entity.Size == v2 192.0f 64.0f
-                     Entity.Position == v2 248.0f -240.0f
+                    [Entity.Position == v2 248.0f -240.0f
                      Entity.Depth == Constants.Field.GuiDepth
+                     Entity.Size == v2 192.0f 64.0f
                      Entity.UpImage == Assets.ButtonShortUpImage
                      Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Visible <== model ->> fun model world ->
@@ -519,21 +519,21 @@ module OmniField =
                  // equip
                  Content.panel Simulants.SubmenuEquip.Name
                     [Entity.Position == v2 -448.0f -256.0f
-                     Entity.Size == v2 896.0f 512.0f
                      Entity.Depth == Constants.Field.GuiDepth
+                     Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogHugeImage
                      Entity.Visible <== model --> fun model ->
                         match model.SubmenuModel.SubmenuState with
                         | SubmenuEquip _ -> true
                         | _ -> false]
                     [Content.button Simulants.SubmenuEquipTab.Name
-                        [Entity.PositionLocal == v2 12.0f 440.0f; Entity.Size == v2 64.0f 64.0f; Entity.DepthLocal == 1.0f; Entity.Text == "E"
+                        [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "E"
                          Entity.ClickEvent ==> msg SubmenuEquipOpen]
                      Content.button Simulants.SubmenuItemTab.Name
-                        [Entity.PositionLocal == v2 12.0f 368.0f; Entity.Size == v2 64.0f 64.0f; Entity.DepthLocal == 1.0f; Entity.Text == "I"
+                        [Entity.PositionLocal == v2 12.0f 368.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "I"
                          Entity.ClickEvent ==> msg SubmenuItemOpen]
                      Content.button Simulants.SubmenuClose.Name
-                        [Entity.PositionLocal == v2 12.0f 296.0f; Entity.Size == v2 64.0f 64.0f; Entity.DepthLocal == 1.0f; Entity.Text == "X"
+                        [Entity.PositionLocal == v2 12.0f 296.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 64.0f 64.0f; Entity.Text == "X"
                          Entity.ClickEvent ==> msg SubmenuClose]
                      Content.entities model
                         (fun model -> model.Legion)
@@ -546,7 +546,7 @@ module OmniField =
                                  Entity.Text == CharacterType.getName character.CharacterType
                                  Entity.ClickEvent ==> msg (SubmenuEquipAlly i)])
                      Content.label Gen.name
-                        [Entity.PositionLocal == v2 392.0f 288.0f; Entity.Size == v2 192.0f 192.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 392.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== model --> fun model ->
                             match model.SubmenuModel.SubmenuState with
                             | SubmenuEquip equip ->
@@ -606,8 +606,8 @@ module OmniField =
                  // shop
                  Content.panel Simulants.FieldShop.Name
                     [Entity.Position == v2 -448.0f -256.0f
-                     Entity.Size == v2 896.0f 512.0f
                      Entity.Depth == Constants.Field.GuiDepth
+                     Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogHugeImage
                      Entity.Visible <== model --> fun model -> Option.isSome model.ShopModelOpt
                      Entity.Enabled <== model --> fun model -> match model.ShopModelOpt with Some shopModel -> Option.isNone shopModel.ShopConfirmModelOpt | None -> true]
@@ -629,10 +629,10 @@ module OmniField =
                         [Entity.PositionLocal == v2 628.0f 440.0f; Entity.DepthLocal == 2.0f; Entity.Text == "Leave"
                          Entity.ClickEvent ==> msg ShopLeave]
                      Content.button Simulants.FieldShopPageUp.Name
-                        [Entity.PositionLocal == v2 16.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == "<"; Entity.Size == v2 48.0f 64.0f
+                        [Entity.PositionLocal == v2 16.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 48.0f 64.0f; Entity.Text == "<"
                          Entity.ClickEvent ==> msg ShopPageUp]
                      Content.button Simulants.FieldShopPageDown.Name
-                        [Entity.PositionLocal == v2 832.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Text == ">"; Entity.Size == v2 48.0f 64.0f
+                        [Entity.PositionLocal == v2 832.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 48.0f 64.0f; Entity.Text == ">"
                          Entity.ClickEvent ==> msg ShopPageDown]
                      Content.text Simulants.FieldShopGold.Name
                         [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -661,8 +661,8 @@ module OmniField =
                             let y = 368.0f - single (i % 5) * 72.0f
                             Content.button Gen.name
                                 [Entity.PositionLocal == v2 x y
-                                 Entity.Size == v2 424.0f 64.0f
                                  Entity.DepthLocal == 1.0f
+                                 Entity.Size == v2 424.0f 64.0f
                                  Entity.Text <== selection --> fun (_, itemType) -> ItemType.getName itemType
                                  Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                                  Entity.Margins == v2 16.0f 0.0f
@@ -671,8 +671,8 @@ module OmniField =
                  // shop confirm
                  Content.panel Simulants.FieldShopConfirm.Name
                     [Entity.Position == v2 -448.0f -128.0f
-                     Entity.Size == v2 896.0f 256.0f
                      Entity.Depth == Constants.Field.GuiDepth + 10.0f
+                     Entity.Size == v2 896.0f 256.0f
                      Entity.LabelImage == Assets.DialogLargeImage
                      Entity.Visible <== model --> fun model ->
                         match model.ShopModelOpt with
