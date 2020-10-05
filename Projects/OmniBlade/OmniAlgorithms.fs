@@ -23,7 +23,7 @@ module Algorithms =
 
     let levelToExpPointsRange level =
         expReqRanges |>
-        List.tryItem level |>
+        List.tryItem (dec level) |> // level 1 is the minimum
         Option.getOrDefault (List.last expReqs, Int32.MaxValue)
 
     let levelToExpPoints level =
