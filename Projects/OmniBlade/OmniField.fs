@@ -45,7 +45,7 @@ module OmniField =
     type FieldDispatcher () =
         inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand> (FieldModel.initial)
 
-        static let pageItems pageSize pageIndex items =
+        static let pageItems pageIndex pageSize items =
             items |>
             Seq.chunkBySize pageSize |>
             Seq.trySkip pageIndex |>
@@ -194,28 +194,26 @@ module OmniField =
             Content.entities model
                 (fun (model : FieldModel) -> (model.SubmenuModel, model.ShopModelOpt, model.Inventory))
                 (fun (submenu, shopModelOpt, inventory : Inventory) _ ->
-                    match submenu.SubmenuState with
-                    | SubmenuItem submenu ->
-                        inventory |>
-                        Inventory.indexItems |>
-                        pageItems 10 submenu.ItemPage
-                    | _ ->
-                        match shopModelOpt with
-                        | Some shopModel ->
-                            match shopModel.ShopState with
-                            | ShopBuying ->
-                                match Map.tryFind shopModel.ShopType data.Value.Shops with
-                                | Some shop -> shop.ShopItems |> Set.toSeq |> Seq.indexed |> pageItems 10 shopModel.ShopPage
-                                | None -> []
-                            | ShopSelling ->
-                                inventory |>
-                                Inventory.indexItems |>
-                                Seq.choose
-                                    (function
-                                     | (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item
-                                     | (_, KeyItem _) | (_, Stash _) -> None) |>
-                                pageItems 10 shopModel.ShopPage
-                        | None -> [])
+                    let items =
+                        match submenu.SubmenuState with
+                        | SubmenuItem submenu ->
+                            pageItems submenu.ItemPage 10 (Inventory.indexItems inventory)
+                        | _ ->
+                            match shopModelOpt with
+                            | Some shopModel ->
+                                match shopModel.ShopState with
+                                | ShopBuying ->
+                                    match Map.tryFind shopModel.ShopType data.Value.Shops with
+                                    | Some shop -> shop.ShopItems |> Set.toSeq |> Seq.indexed |> pageItems shopModel.ShopPage 10
+                                    | None -> []
+                                | ShopSelling ->
+                                    inventory |>
+                                    Inventory.indexItems |>
+                                    Seq.choose (function (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item | (_, KeyItem _) | (_, Stash _) -> None) |>
+                                    pageItems shopModel.ShopPage 10
+                            | None -> []
+                    let itemsSorted = List.sortBy snd items
+                    itemsSorted)
                 (fun i selection _ ->
                     let x = if i < 5 then position.X else position.X + 368.0f
                     let y = position.Y - single (i % 5) * 72.0f
@@ -659,7 +657,7 @@ module OmniField =
                      Entity.LabelImage == Assets.DialogHugeImage
                      Entity.Visible <== model --> fun model -> match model.SubmenuModel.SubmenuState with SubmenuItem _ -> true | _ -> false]
                     [sidebar (v2 40.0f 424.0f) 1.0f model
-                     items (v2 136.0f 424.0f) 1.0f model SubmenuItemUse
+                     items (v2 144.0f 424.0f) 1.0f model SubmenuItemUse
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -707,7 +705,7 @@ module OmniField =
                         [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text <== model --> (fun model -> string model.Inventory.Gold + "G")]
-                     items (v2 88.0f 368.0f) 1.0f model ShopConfirmPrompt]
+                     items (v2 96.0f 368.0f) 1.0f model ShopConfirmPrompt]
 
                  // shop confirm
                  Content.panel Simulants.FieldShopConfirm.Name

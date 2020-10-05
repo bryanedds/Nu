@@ -59,14 +59,14 @@ type [<StructuralEquality; StructuralComparison>] KeyItemType =
     | BrassKey
 
 type [<StructuralEquality; StructuralComparison>] ItemType =
-    | Equipment of EquipmentType
     | Consumable of ConsumableType
+    | Equipment of EquipmentType
     | KeyItem of KeyItemType
     | Stash of int
     static member getName item =
         match item with
-        | Equipment ty -> match ty with WeaponType name | ArmorType name | AccessoryType name -> name
         | Consumable ty -> string ty
+        | Equipment ty -> match ty with WeaponType name | ArmorType name | AccessoryType name -> name
         | KeyItem ty -> string ty
         | Stash gold -> string gold + "G"
 
