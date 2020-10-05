@@ -30,6 +30,17 @@ type [<ReferenceEquality; NoComparison>] SubmenuUseModel =
 type [<ReferenceEquality; NoComparison>] SubmenuEquip =
     { EquipmentCurrentAlly : int
       EquipmentAllies : int list }
+      
+    static member tryGetLegionnaire (legion : Legion) submenuEquip =
+        Map.tryFind submenuEquip.EquipmentCurrentAlly legion
+      
+    static member tryGetCharacterData legion submenuEquip =
+        match SubmenuEquip.tryGetLegionnaire legion submenuEquip with
+        | Some legionnaire ->
+            match Map.tryFind legionnaire.CharacterType data.Value.Characters with
+            | Some characterData -> Some characterData
+            | None -> None
+        | None -> None
 
 type [<ReferenceEquality; NoComparison>] SubmenuItem =
     { ItemUnused : unit }
