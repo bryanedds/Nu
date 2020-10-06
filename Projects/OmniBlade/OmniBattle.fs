@@ -450,7 +450,7 @@ module OmniBattle =
                 let healing =
                     match consumable with
                     | GreenHerb -> 50 // TODO: pull from data
-                    | RedHerb -> 500 // TODO: pull from data
+                    | RedHerb -> 250 // TODO: pull from data
                 let model = BattleModel.updateCharacter (CharacterModel.updateHitPoints (fun hitPoints -> (hitPoints + healing, false))) targetIndex model
                 let model = BattleModel.updateCharacter (CharacterModel.animate time SpinCycle) targetIndex model
                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)

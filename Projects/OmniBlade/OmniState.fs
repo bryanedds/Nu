@@ -81,6 +81,56 @@ type Legionnaire =
       ArmorOpt : string option
       Accessories : string list }
 
+    static member canUseItem itemType legionnaire =
+        match Map.tryFind legionnaire.CharacterType data.Value.Characters with
+        | Some characterData ->
+            match Map.tryFind characterData.ArchetypeType data.Value.Archetypes with
+            | Some archetypeData ->
+                match itemType with
+                | Consumable _ -> true
+                | Equipment equipmentType ->
+                    match equipmentType with
+                    | WeaponType weaponType ->
+                        match Map.tryFind weaponType data.Value.Weapons with
+                        | Some weaponData -> weaponData.WeaponSubtype = archetypeData.WeaponSubtype
+                        | None -> false
+                    | ArmorType armorType ->
+                        match Map.tryFind armorType data.Value.Armors with
+                        | Some armorData -> armorData.ArmorSubtype = archetypeData.ArmorSubtype
+                        | None -> false
+                    | AccessoryType _ -> true
+                | KeyItem _ -> false
+                | Stash _ -> false
+            | None -> false
+        | None -> false
+
+    static member tryUseItem itemType legionnaire =
+        if Legionnaire.canUseItem itemType legionnaire then
+            match Map.tryFind legionnaire.CharacterType data.Value.Characters with
+            | Some characterData ->
+                match itemType with
+                | Consumable consumableType ->
+                    match consumableType with
+                    | GreenHerb ->
+                        let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
+                        let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
+                        let legionnaire = { legionnaire with HitPoints = min hpm (legionnaire.HitPoints + 50) } // TODO: pull from data!
+                        (true, None, legionnaire)
+                    | RedHerb ->
+                        let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
+                        let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
+                        let legionnaire = { legionnaire with HitPoints = min hpm (legionnaire.HitPoints + 250) } // TODO: pull from data!
+                        (true, None, legionnaire)
+                | Equipment equipmentType ->
+                    match equipmentType with
+                    | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) legionnaire.WeaponOpt, { legionnaire with WeaponOpt = Some weaponType })
+                    | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) legionnaire.ArmorOpt, { legionnaire with ArmorOpt = Some armorType })
+                    | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead legionnaire.Accessories), { legionnaire with Accessories = [accessoryType] })
+                | KeyItem _ -> (false, None, legionnaire)
+                | Stash _ -> (false, None, legionnaire)
+            | None -> (false, None, legionnaire)
+        else (false, None, legionnaire)
+
     static member finn =
         let index = 0
         let characterType = Ally Finn
