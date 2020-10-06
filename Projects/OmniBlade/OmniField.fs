@@ -320,7 +320,15 @@ module OmniField =
                 let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuState = state }) model
                 just model
 
-            | SubmenuLegionAlly _ ->
+            | SubmenuLegionAlly index ->
+                let model =
+                    FieldModel.updateSubmenu (fun submenu ->
+                        let state =
+                            match submenu.SubmenuState with
+                            | SubmenuLegion submenuLegion -> SubmenuLegion { submenuLegion with LegionIndex = index }
+                            | state -> state
+                        { submenu with SubmenuState = state })
+                        model
                 just model
 
             | SubmenuItemOpen ->
@@ -662,8 +670,7 @@ module OmniField =
                                     "HP  "   + (string legionnaire.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
                                     "\nTP  " + (string legionnaire.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
                                     "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
-                                    "\nExp " + (string legionnaire.ExpPoints).PadLeft 3 +
-                                    "\n"
+                                    "\nExp " + (string legionnaire.ExpPoints).PadLeft 3
                                 | None -> ""
                             | _ -> ""]]
 
