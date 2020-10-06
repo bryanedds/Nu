@@ -37,7 +37,7 @@ module Nu =
                     let world = World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
                     (Cascade, world)
                 else (Cascade, world)
-            | Some _ | None -> (Cascade, world)
+            | None -> (Cascade, world)
         else (Cascade, world)
 
     let private tryPropagate simulant (left : World Lens) (right : World Lens) world =
