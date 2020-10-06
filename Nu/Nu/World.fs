@@ -26,16 +26,18 @@ module Nu =
         else (Cascade, world)
 
     let private tryPropagateByName simulant leftName (right : World Lens) world =
-        let nonPersistent = Reflection.isPropertyNonPersistentByName leftName
-        let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
         if right.Validate world then
             let value = right.GetWithoutValidation world
             match World.tryGetProperty leftName simulant world with
             | Some property ->
-                let property = { property with PropertyValue = value }
-                let world = World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
-                (Cascade, world)
-            | None -> (Cascade, world)
+                if property.PropertyValue <> value then // OPTIMIZATION: avoid reflection when value doesn't change
+                    let nonPersistent = Reflection.isPropertyNonPersistentByName leftName
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
+                    let property = { property with PropertyValue = value }
+                    let world = World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
+                    (Cascade, world)
+                else (Cascade, world)
+            | Some _ | None -> (Cascade, world)
         else (Cascade, world)
 
     let private tryPropagate simulant (left : World Lens) (right : World Lens) world =

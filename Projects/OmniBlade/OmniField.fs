@@ -209,8 +209,7 @@ module OmniField =
                 (fun (submenu, shopModelOpt, inventory : Inventory) _ ->
                     let items =
                         match submenu.SubmenuState with
-                        | SubmenuItem submenu ->
-                            pageItems submenu.ItemPage 10 (Inventory.indexItems inventory)
+                        | SubmenuItem submenu -> pageItems submenu.ItemPage 10 (Inventory.indexItems inventory)
                         | _ ->
                             match shopModelOpt with
                             | Some shopModel ->
