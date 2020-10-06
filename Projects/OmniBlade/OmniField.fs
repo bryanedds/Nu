@@ -19,14 +19,15 @@ module OmniField =
         | SubmenuLegionOpen
         | SubmenuLegionAlly of int
         | SubmenuItemOpen
-        | SubmenuItemUse of Lens<int * ItemType, World>
+        | SubmenuItemSelect of Lens<int * ItemType, World>
+        | SubmenuItemUse of int
         | SubmenuItemCancel
         | SubmenuClose
         | ShopBuy
         | ShopSell
         | ShopPageUp
         | ShopPageDown
-        | ShopConfirmPrompt of Lens<int * ItemType, World>
+        | ShopSelect of Lens<int * ItemType, World>
         | ShopConfirmAccept
         | ShopConfirmDecline
         | ShopLeave
@@ -336,15 +337,35 @@ module OmniField =
                 let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuState = itemState }) model
                 just model
 
-            | SubmenuItemUse selectionLens ->
+            | SubmenuItemSelect selectionLens ->
                 let selection = Lens.get selectionLens world
                 let model =
                     FieldModel.updateSubmenu (fun submenu ->
-                        let useTargets = Map.toKeyList model.Legion
+                        let useTargets =
+                            model.Legion |>
+                            Map.toList |>
+                            List.filter (fun (_, legionnaire) -> Legionnaire.canUseItem (snd selection) legionnaire)  |>
+                            List.map fst
                         let submenuUseOpt = SubmenuUse.tryMakeFromSelection selection useTargets
                         { submenu with SubmenuUseOpt = submenuUseOpt })
                         model
                 just model
+
+            | SubmenuItemUse index ->
+                match Map.tryFind index model.Legion with
+                | Some legionnaire ->
+                    match model.Submenu.SubmenuUseOpt with
+                    | Some submenuUse ->
+                        let itemType = snd submenuUse.SubmenuUseSelection
+                        let (result, displacedOpt, legionnaire) = Legionnaire.tryUseItem itemType legionnaire
+                        let model = if result then FieldModel.updateInventory (Inventory.removeItem itemType) model else model
+                        let model = match displacedOpt with Some displaced -> FieldModel.updateInventory (Inventory.addItem displaced) model | None -> model
+                        let model = FieldModel.updateLegion (Map.add index legionnaire) model
+                        let model = FieldModel.updateSubmenu (constant { model.Submenu with SubmenuUseOpt = None }) model
+                        if result then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) model
+                        else just model
+                    | None -> just model
+                | None -> just model
 
             | SubmenuItemCancel ->
                 let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuUseOpt = None }) model
@@ -370,7 +391,7 @@ module OmniField =
                 let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopPage = inc shopModel.ShopPage })) model
                 just model
 
-            | ShopConfirmPrompt selectionLens ->
+            | ShopSelect selectionLens ->
                 let selection = Lens.get selectionLens world
                 let model =
                     FieldModel.updateShopOpt (Option.map (fun shopModel ->
@@ -593,7 +614,7 @@ module OmniField =
                  // legion
                  Content.panel Simulants.SubmenuLegion.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
-                     Entity.LabelImage == Assets.DialogHugeImage
+                     Entity.LabelImage == Assets.DialogXXLImage
                      Entity.Visible <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuLegion _ -> true | _ -> false]
                     [sidebar (v2 40.0f 424.0f) 1.0f model
                      legion (v2 136.0f 424.0f) 1.0f model SubmenuLegionAlly
@@ -665,8 +686,8 @@ module OmniField =
                                     let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
                                     let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
                                     let tpm = Algorithms.techPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
-                                    let pow = Algorithms.power legionnaire.WeaponOpt 0.0f characterData.ArchetypeType level
-                                    let mag = Algorithms.magic legionnaire.WeaponOpt 0.0f characterData.ArchetypeType level
+                                    let pow = Algorithms.power legionnaire.WeaponOpt 1.0f characterData.ArchetypeType level
+                                    let mag = Algorithms.magic legionnaire.WeaponOpt 1.0f characterData.ArchetypeType level
                                     "HP  "   + (string legionnaire.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
                                     "\nTP  " + (string legionnaire.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
                                     "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
@@ -677,11 +698,11 @@ module OmniField =
                  // item
                  Content.panel Simulants.SubmenuItem.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
-                     Entity.LabelImage == Assets.DialogHugeImage
+                     Entity.LabelImage == Assets.DialogXXLImage
                      Entity.Visible <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuItem _ -> true | _ -> false
                      Entity.Enabled <== model --> fun model -> Option.isNone model.Submenu.SubmenuUseOpt]
                     [sidebar (v2 40.0f 424.0f) 1.0f model
-                     items (v2 144.0f 424.0f) 1.0f model SubmenuItemUse
+                     items (v2 136.0f 424.0f) 1.0f model SubmenuItemSelect
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -689,28 +710,28 @@ module OmniField =
 
                  // use
                  Content.panel Simulants.SubmenuUse.Name
-                    [Entity.Position == v2 -448.0f -128.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 256.0f
-                     Entity.LabelImage == Assets.DialogLargeImage
+                    [Entity.Position == v2 -448.0f -192.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 384.0f
+                     Entity.LabelImage == Assets.DialogXLImage
                      Entity.Visible <== model --> fun model -> Option.isSome model.Submenu.SubmenuUseOpt]
-                    [legion (v2 160.0f 72.0f) 1.0f model SubmenuLegionAlly
+                    [legion (v2 160.0f 248.0f) 1.0f model SubmenuItemUse
                      Content.button Gen.name
-                        [Entity.PositionLocal == v2 456.0f 16.0f; Entity.DepthLocal == 2.0f
-                         Entity.Text == "Cancel"
+                        [Entity.PositionLocal == v2 820.0f 312.0f; Entity.DepthLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
+                         Entity.Text == "X"
                          Entity.ClickEvent ==> msg SubmenuItemCancel]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 32.0f 176.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 32.0f 304.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== model --> fun model ->
                             match model.Submenu.SubmenuUseOpt with
                             | Some submenu -> submenu.SubmenuUseLine1
                             | None -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 64.0f 128.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 64.0f 256.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== model --> fun model ->
                              match model.Submenu.SubmenuUseOpt with
                              | Some submenu -> submenu.SubmenuUseLine2
                              | None -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 64.0f 80.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 64.0f 208.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== model --> fun model ->
                             match model.ShopOpt with
                             | Some shopModel ->
@@ -722,10 +743,11 @@ module OmniField =
                  // shop
                  Content.panel Simulants.FieldShop.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
-                     Entity.LabelImage == Assets.DialogHugeImage
+                     Entity.LabelImage == Assets.DialogXXLImage
                      Entity.Visible <== model --> fun model -> Option.isSome model.ShopOpt
                      Entity.Enabled <== model --> fun model -> match model.ShopOpt with Some shopModel -> Option.isNone shopModel.ShopConfirmModelOpt | None -> true]
-                    [Content.button Simulants.FieldShopBuy.Name
+                    [items (v2 96.0f 368.0f) 1.0f model ShopSelect
+                     Content.button Simulants.FieldShopBuy.Name
                         [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Buy"
                          Entity.Visible <== model --> fun model -> match model.ShopOpt with Some shopModel -> shopModel.ShopState = ShopSelling | None -> false
@@ -760,8 +782,7 @@ module OmniField =
                      Content.text Simulants.FieldShopGold.Name
                         [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                         Entity.Text <== model --> (fun model -> string model.Inventory.Gold + "G")]
-                     items (v2 96.0f 368.0f) 1.0f model ShopConfirmPrompt]
+                         Entity.Text <== model --> (fun model -> string model.Inventory.Gold + "G")]]
 
                  // shop confirm
                  Content.panel Simulants.FieldShopConfirm.Name
