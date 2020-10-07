@@ -192,14 +192,16 @@ module OmniField =
                     Entity.Text == "X"
                     Entity.ClickEvent ==> msg SubmenuClose]]
 
-        static let legion (position : Vector2) depth (model : Lens<FieldModel, World>) fieldMsg =
+        static let legion (position : Vector2) depth rows (model : Lens<FieldModel, World>) fieldMsg =
             Content.entities model
                 (fun model -> model.Legion)
                 (fun legion _ -> legion |> Map.toValueList |> List.choose (fun legionnaire -> Map.tryFind legionnaire.CharacterType data.Value.Characters))
                 (fun i legionnaireLens world ->
                     let legionnaire = Lens.get legionnaireLens world
+                    let x = position.X
+                    let y = position.Y - single (i % rows) * 72.0f
                     Content.button Gen.name
-                        [Entity.PositionLocal == v2 position.X (position.Y - single i * 72.0f); Entity.DepthLocal == depth
+                        [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth
                          Entity.Text == CharacterType.getName legionnaire.CharacterType
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
@@ -616,7 +618,7 @@ module OmniField =
                      Entity.LabelImage == Assets.DialogXXLImage
                      Entity.Visible <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuLegion _ -> true | _ -> false]
                     [sidebar (v2 40.0f 424.0f) 1.0f model
-                     legion (v2 136.0f 424.0f) 1.0f model SubmenuLegionAlly
+                     legion (v2 136.0f 424.0f) 1.0f Int32.MaxValue model SubmenuLegionAlly
                      Content.label Gen.name
                         [Entity.PositionLocal == v2 424.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== model --> fun model ->
@@ -712,7 +714,7 @@ module OmniField =
                     [Entity.Position == v2 -448.0f -192.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 384.0f
                      Entity.LabelImage == Assets.DialogXLImage
                      Entity.Visible <== model --> fun model -> Option.isSome model.Submenu.SubmenuUseOpt]
-                    [legion (v2 160.0f 192.0f) 1.0f model SubmenuItemUse
+                    [legion (v2 160.0f 192.0f) 1.0f 3 model SubmenuItemUse
                      Content.button Gen.name
                         [Entity.PositionLocal == v2 820.0f 312.0f; Entity.DepthLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
                          Entity.Text == "X"
