@@ -28,27 +28,24 @@ type [<ReferenceEquality; NoComparison>] SubmenuUse =
           SubmenuUseTargets = targets }
 
     static member makeFromConsumableData selection targets (cd : ConsumableData) =
-        //let itemType = snd selection
-        let effect = "Effect: " + cd.Description
-        SubmenuUse.make selection effect "" targets
+        let prompt = "Use " + string cd.ConsumableType + " on whom?"
+        let effect = "(Effect: " + cd.Description + ")"
+        SubmenuUse.make selection prompt effect targets
 
     static member makeFromWeaponData selection targets (wd : WeaponData) =
-        //let itemType = snd selection
-        let stats = "Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase
-        let effect = "Effect: " + wd.Description
-        SubmenuUse.make selection stats effect targets
+        let prompt = "Equip " + wd.WeaponType + " to whom?"
+        let stats = "(Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + ")"
+        SubmenuUse.make selection prompt stats targets
 
     static member makeFromArmorData selection targets (ad : ArmorData) =
-        //let itemType = snd selection
-        let stats = "HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase
-        let effect = "Effect: " + ad.Description
-        SubmenuUse.make selection stats effect targets
+        let prompt = "Equip " + ad.ArmorType + " to whom?"
+        let stats = "(HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + ")"
+        SubmenuUse.make selection prompt stats targets
 
     static member makeFromAccessoryData selection targets (ad : AccessoryData) =
-        //let itemType = snd selection
-        let stats = "Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase
-        let effect = "Effect: " + ad.Description
-        SubmenuUse.make selection stats effect targets
+        let prompt = "Equip " + ad.AccessoryType + " to whom?"
+        let stats = "(Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + ")"
+        SubmenuUse.make selection prompt stats targets
 
     static member tryMakeFromSelection selection targets =
         match snd selection with
