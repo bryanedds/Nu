@@ -712,7 +712,7 @@ module OmniField =
                     [Entity.Position == v2 -448.0f -192.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 384.0f
                      Entity.LabelImage == Assets.DialogXLImage
                      Entity.Visible <== model --> fun model -> Option.isSome model.Submenu.SubmenuUseOpt]
-                    [legion (v2 160.0f 248.0f) 1.0f model SubmenuItemUse
+                    [legion (v2 160.0f 192.0f) 1.0f model SubmenuItemUse
                      Content.button Gen.name
                         [Entity.PositionLocal == v2 820.0f 312.0f; Entity.DepthLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
                          Entity.Text == "X"
