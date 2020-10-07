@@ -176,17 +176,17 @@ module WorldModuleEntity =
 
             // OPTIMIZATION: don't update entity tree if entity is omnipresent
             let (changed, entityState, world) =
-                if oldOmnipresent
-                then World.updateEntityStateInternal updater oldEntityState entity world
-                else
+                if not oldOmnipresent then
+                    let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+                    let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
                     let (changed, entityState, world) = World.updateEntityStateInternal updater oldEntityState entity world
                     let world =
                         if changed
                         then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                         else world
                     (changed, entityState, world)
+                else World.updateEntityStateInternal updater oldEntityState entity world
 
             // publish entity change event if needed
             if changed && World.shouldPublishEntityChange alwaysPublish nonPersistent entityState
@@ -320,28 +320,9 @@ module WorldModuleEntity =
         static member internal setEntityTransformWithoutEvent value entity world =
             let oldWorld = world
             let oldEntityState = World.getEntityState entity world
-            if oldEntityState.Transform.Flags <> value.Flags then failwith "Cannot change transform flags via setEntityTransformEithoutEvent."
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldAbsolute = oldEntityState.Absolute
-            let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
-            let (changed, world) =
-                World.updateEntityStateWithoutEvent
-                    (fun entityState ->
-                        if value <> entityState.Transform
-                        then Some (EntityState.setTransform value entityState)
-                        else None)
-                    entity world
-            if changed
-            then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
-            else world
-
-        static member internal setEntityTransform value entity world =
-            let oldWorld = world
-            let oldEntityState = World.getEntityState entity world
-            if oldEntityState.Transform.Flags <> value.Flags then failwith "Cannot change transform flags via setEntityTransform."
-            let oldOmnipresent = oldEntityState.Omnipresent
-            let oldAbsolute = oldEntityState.Absolute
-            let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+            let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
             let (changed, world) =
                 World.updateEntityStateWithoutEvent
                     (fun entityState ->
@@ -350,6 +331,27 @@ module WorldModuleEntity =
                         else None)
                     entity world
             if changed then
+                if oldEntityState.Transform.Flags <> value.Flags then failwith "Cannot change transform flags via setEntityTransformEithoutEvent."
+                World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+            else world
+
+        static member internal setEntityTransform value entity world =
+            let oldWorld = world
+            let oldEntityState = World.getEntityState entity world
+            let oldOmnipresent = oldEntityState.Omnipresent
+            let oldAbsolute = oldEntityState.Absolute
+            let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+            let (changed, world) =
+                World.updateEntityStateWithoutEvent
+                    (fun entityState ->
+                        if value <> entityState.Transform
+                        then Some (EntityState.setTransform value entityState)
+                        else None)
+                    entity world
+            if changed then
+#if DEBUG
+                if oldEntityState.Transform.Flags <> value.Flags then failwith "Cannot change transform flags via setEntityTransform."
+#endif
                 let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 if World.getEntityPublishChanges entity world then
                     let world = World.publishEntityChange Property? Transform value entity world
@@ -370,7 +372,11 @@ module WorldModuleEntity =
 
         static member internal setEntityBounds (value : Vector4) entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
-            World.setEntityTransform { transform with Position = v2 value.X value.Y; Size = v2 value.Z value.W } entity world
+            let position = value.Xy
+            let size = value.Zw
+            if transform.Position <> position || transform.Size <> size
+            then World.setEntityTransform { transform with Position = position; Size = size } entity world
+            else world
 
         static member internal getEntityCenter entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
@@ -378,7 +384,10 @@ module WorldModuleEntity =
 
         static member internal setEntityCenter value entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
-            World.setEntityTransform { transform with Position = value - transform.Size * 0.5f } entity world
+            let position = value - transform.Size * 0.5f
+            if transform.Position <> position
+            then World.setEntityTransform { transform with Position = position } entity world
+            else world
 
         static member internal getEntityBottom entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
@@ -386,7 +395,10 @@ module WorldModuleEntity =
 
         static member internal setEntityBottom value entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
-            World.setEntityTransform { transform with Position = value - transform.Size.WithY 0.0f * 0.5f } entity world
+            let position = value - transform.Size.WithY 0.0f * 0.5f
+            if transform.Position <> position
+            then World.setEntityTransform { transform with Position = position } entity world
+            else world
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
@@ -478,7 +490,7 @@ module WorldModuleEntity =
                     let oldEntityState = entityState
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+                    let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
                     let world = World.setEntityState entityState entity world
                     let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                     Right (World.getEntityState entity world, world)
@@ -505,7 +517,7 @@ module WorldModuleEntity =
                         let oldEntityState = entityState
                         let oldOmnipresent = oldEntityState.Omnipresent
                         let oldAbsolute = oldEntityState.Absolute
-                        let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+                        let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
                         let world = World.setEntityState entityState entity world
                         let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                         let world = facet.Register (entity, world)
@@ -581,7 +593,7 @@ module WorldModuleEntity =
                     let oldEntityState = entityState
                     let oldOmnipresent = oldEntityState.Omnipresent
                     let oldAbsolute = oldEntityState.Absolute
-                    let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+                    let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
                     let facetNames = World.getEntityFacetNamesReflectively entityState
                     let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
@@ -1069,7 +1081,7 @@ module WorldModuleEntity =
                 let oldEntityState = entityState
                 let oldOmnipresent = oldEntityState.Omnipresent
                 let oldAbsolute = oldEntityState.Absolute
-                let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+                let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
                 let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 let world =
@@ -1098,7 +1110,7 @@ module WorldModuleEntity =
                 let oldEntityState = entityState
                 let oldOmnipresent = oldEntityState.Omnipresent
                 let oldAbsolute = oldEntityState.Absolute
-                let oldBoundsMax = World.getEntityStateBoundsMax oldEntityState
+                let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
                 let world = World.setEntityState entityState entity world
                 let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 let world =
