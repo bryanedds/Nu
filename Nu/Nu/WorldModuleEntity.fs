@@ -283,7 +283,7 @@ module WorldModuleEntity =
         static member internal getEntitySize entity world = (World.getEntityState entity world).Transform.Size
         static member internal getEntityRotation entity world = (World.getEntityState entity world).Transform.Rotation
         static member internal getEntityDepth entity world = (World.getEntityState entity world).Transform.Depth
-        static member internal getEntityFlags entity world = (World.getEntityTransform entity world).Flags
+        static member internal getEntityFlags entity world = (World.getEntityState entity world).Transform.Flags
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
         static member internal getEntityAbsolute entity world = (World.getEntityState entity world).Absolute
         static member internal getEntityPublishChanges entity world = (World.getEntityState entity world).PublishChanges
@@ -301,10 +301,10 @@ module WorldModuleEntity =
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
-        static member internal setEntityPosition value entity world = let mutable transform = World.getEntityTransform entity world in if value <> transform.Position then World.setEntityTransform (transform.Position <- value; transform) entity world else world
-        static member internal setEntitySize value entity world = let mutable transform = World.getEntityTransform entity world in if value <> transform.Size then World.setEntityTransform (transform.Size <- value; transform) entity world else world
-        static member internal setEntityRotation value entity world = let mutable transform = World.getEntityTransform entity world in if value <> transform.Rotation then World.setEntityTransform (transform.Rotation <- value; transform) entity world else world
-        static member internal setEntityDepth value entity world = let mutable transform = World.getEntityTransform entity world in if value <> transform.Depth then World.setEntityTransform (transform.Depth <- value; transform) entity world else world
+        static member internal setEntityPosition value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Position then World.setEntityTransform { transform with Transform.Position = value } entity world else world
+        static member internal setEntitySize value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Size then World.setEntityTransform { transform with Size = value } entity world else world
+        static member internal setEntityRotation value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Rotation then World.setEntityTransform { transform with Rotation = value } entity world else world
+        static member internal setEntityDepth value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Depth then World.setEntityTransform { transform with Depth = value } entity world else world
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then Some (if entityState.Imperative then entityState.Omnipresent <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Omnipresent <- value; entityState)) else None) false false Property? Omnipresent value entity world
         static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then Some (if entityState.Imperative then entityState.Absolute <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Absolute <- value; entityState)) else None) false false Property? Absolute value entity world
         static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChanges then Some (if entityState.Imperative then entityState.PublishChanges <- value; entityState else (let entityState = EntityState.copy entityState in entityState.PublishChanges <- value; entityState)) else None) false false Property? PublishChanges value entity world
@@ -316,9 +316,6 @@ module WorldModuleEntity =
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then Some (if entityState.Imperative then entityState.Persistent <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Persistent <- value; entityState)) else None) false false Property? Persistent value entity world
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Overflow then Some (if entityState.Imperative then entityState.Overflow <- value; entityState else { entityState with Overflow = value }) else None) false false Property? Overflow value entity world
         static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> if value <> entityState.ScriptFrame then Some (if entityState.Imperative then entityState.ScriptFrame <- value; entityState else { entityState with ScriptFrame = value }) else None) false true Property? ScriptFrame value entity world
-
-        static member internal getEntityTransformWithoutEvent entity world =
-            EntityState.getTransform (World.getEntityState entity world)
 
         static member internal setEntityTransformWithoutEvent value entity world =
             let oldWorld = world
@@ -337,9 +334,6 @@ module WorldModuleEntity =
             if changed
             then World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
             else world
-
-        static member internal getEntityTransform entity world =
-            EntityState.getTransform (World.getEntityState entity world)
 
         static member internal setEntityTransform value entity world =
             let oldWorld = world
@@ -371,31 +365,28 @@ module WorldModuleEntity =
             else world
 
         static member internal getEntityBounds entity world =
-            let transform = (World.getEntityState entity world).Transform
+            let mutable transform = &(World.getEntityState entity world).Transform
             v4Bounds transform.Position transform.Size
 
         static member internal setEntityBounds (value : Vector4) entity world =
-            let transform = World.getEntityTransform entity world
-            let transform = { transform with Position = v2 value.X value.Y; Size = v2 value.Z value.W }
-            World.setEntityTransform transform entity world
+            let mutable transform = &(World.getEntityState entity world).Transform
+            World.setEntityTransform { transform with Position = v2 value.X value.Y; Size = v2 value.Z value.W } entity world
 
         static member internal getEntityCenter entity world =
-            let transform = (World.getEntityState entity world).Transform
+            let mutable transform = &(World.getEntityState entity world).Transform
             transform.Position + transform.Size * 0.5f
 
         static member internal setEntityCenter value entity world =
-            let transform = World.getEntityTransform entity world
-            let transform = { transform with Position = value - transform.Size * 0.5f }
-            World.setEntityTransform transform entity world
+            let mutable transform = &(World.getEntityState entity world).Transform
+            World.setEntityTransform { transform with Position = value - transform.Size * 0.5f } entity world
 
         static member internal getEntityBottom entity world =
-            let transform = (World.getEntityState entity world).Transform
+            let mutable transform = &(World.getEntityState entity world).Transform
             transform.Position + transform.Size.WithY 0.0f * 0.5f
 
         static member internal setEntityBottom value entity world =
-            let transform = World.getEntityTransform entity world
-            let transform = { transform with Position = value - transform.Size.WithY 0.0f * 0.5f }
-            World.setEntityTransform transform entity world
+            let mutable transform = &(World.getEntityState entity world).Transform
+            World.setEntityTransform { transform with Position = value - transform.Size.WithY 0.0f * 0.5f } entity world
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
@@ -1220,7 +1211,7 @@ module WorldModuleEntity =
         Getters.Add ("Facets", fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world })
         Getters.Add ("PublishChanges", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world })
         Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
-        Getters.Add ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = World.getEntityTransform entity world })
+        Getters.Add ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform })
         Getters.Add ("Bounds", fun entity world -> { PropertyType = typeof<Vector4>; PropertyValue = World.getEntityBounds entity world })
         Getters.Add ("Position", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world })
         Getters.Add ("Center", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityCenter entity world })
