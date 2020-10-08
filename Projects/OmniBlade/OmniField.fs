@@ -193,10 +193,10 @@ module OmniField =
                     Entity.Text == "X"
                     Entity.ClickEvent ==> msg SubmenuClose]]
 
-        static let legion (position : Vector2) depth rows (model : Lens<FieldModel, World>) fieldMsg =
+        static let legion (position : Vector2) depth rows (model : Lens<FieldModel, World>) filter fieldMsg =
             Content.entities model
-                (fun model -> model.Legion)
-                (fun legion _ -> legion |> Map.toValueList |> List.choose (fun legionnaire -> Map.tryFind legionnaire.CharacterType data.Value.Characters))
+                (fun model -> (model.Legion, model.Submenu))
+                (fun (legion, submenu) _ -> legion |> Map.toValueList |> List.filter (flip filter submenu))
                 (fun i legionnaireLens world ->
                     let legionnaire = Lens.get legionnaireLens world
                     let x = position.X
@@ -341,16 +341,7 @@ module OmniField =
 
             | SubmenuItemSelect selectionLens ->
                 let selection = Lens.get selectionLens world
-                let model =
-                    FieldModel.updateSubmenu (fun submenu ->
-                        let useTargets =
-                            model.Legion |>
-                            Map.toList |>
-                            List.filter (fun (_, legionnaire) -> Legionnaire.canUseItem (snd selection) legionnaire)  |>
-                            List.map fst
-                        let submenuUseOpt = SubmenuUse.tryMakeFromSelection selection useTargets
-                        { submenu with SubmenuUseOpt = submenuUseOpt })
-                        model
+                let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuUseOpt = SubmenuUse.tryMakeFromSelection selection }) model
                 just model
 
             | SubmenuItemUse index ->
@@ -619,7 +610,7 @@ module OmniField =
                      Entity.LabelImage == Assets.DialogXXLImage
                      Entity.Visible <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuLegion _ -> true | _ -> false]
                     [sidebar (v2 40.0f 424.0f) 1.0f model
-                     legion (v2 136.0f 424.0f) 1.0f Int32.MaxValue model SubmenuLegionAlly
+                     legion (v2 136.0f 424.0f) 1.0f Int32.MaxValue model tautology2 SubmenuLegionAlly
                      Content.label Gen.name
                         [Entity.PositionLocal == v2 424.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== model --> fun model ->
@@ -715,7 +706,12 @@ module OmniField =
                     [Entity.Position == v2 -448.0f -192.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 384.0f
                      Entity.LabelImage == Assets.DialogXLImage
                      Entity.Visible <== model --> fun model -> Option.isSome model.Submenu.SubmenuUseOpt]
-                    [legion (v2 160.0f 192.0f) 1.0f 3 model SubmenuItemUse
+                    [legion (v2 160.0f 192.0f) 1.0f 3 model
+                        (fun legionnaire submenu ->
+                            match submenu.SubmenuUseOpt with
+                            | Some submenuUse -> Legionnaire.canUseItem (snd submenuUse.SubmenuUseSelection) legionnaire
+                            | None -> false)
+                        SubmenuItemUse
                      Content.button Gen.name
                         [Entity.PositionLocal == v2 820.0f 312.0f; Entity.DepthLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
                          Entity.Text == "X"

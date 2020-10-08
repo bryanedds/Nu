@@ -18,54 +18,52 @@ type [<ReferenceEquality; NoComparison>] DialogModel =
 type [<ReferenceEquality; NoComparison>] SubmenuUse =
     { SubmenuUseSelection : int * ItemType
       SubmenuUseLine1 : string
-      SubmenuUseLine2 : string
-      SubmenuUseTargets : int list }
+      SubmenuUseLine2 : string }
 
-    static member make selection line1 line2 targets =
+    static member make selection line1 line2 =
         { SubmenuUseSelection = selection
           SubmenuUseLine1 = line1
-          SubmenuUseLine2 = line2
-          SubmenuUseTargets = targets }
+          SubmenuUseLine2 = line2 }
 
-    static member makeFromConsumableData selection targets (cd : ConsumableData) =
+    static member makeFromConsumableData selection (cd : ConsumableData) =
         let prompt = "Use " + string cd.ConsumableType + " on whom?"
         let effect = "(Effect: " + cd.Description + ")"
-        SubmenuUse.make selection prompt effect targets
+        SubmenuUse.make selection prompt effect
 
-    static member makeFromWeaponData selection targets (wd : WeaponData) =
+    static member makeFromWeaponData selection (wd : WeaponData) =
         let prompt = "Equip " + wd.WeaponType + " to whom?"
         let stats = "(Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + ")"
-        SubmenuUse.make selection prompt stats targets
+        SubmenuUse.make selection prompt stats
 
-    static member makeFromArmorData selection targets (ad : ArmorData) =
+    static member makeFromArmorData selection (ad : ArmorData) =
         let prompt = "Equip " + ad.ArmorType + " to whom?"
         let stats = "(HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + ")"
-        SubmenuUse.make selection prompt stats targets
+        SubmenuUse.make selection prompt stats
 
-    static member makeFromAccessoryData selection targets (ad : AccessoryData) =
+    static member makeFromAccessoryData selection (ad : AccessoryData) =
         let prompt = "Equip " + ad.AccessoryType + " to whom?"
         let stats = "(Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + ")"
-        SubmenuUse.make selection prompt stats targets
+        SubmenuUse.make selection prompt stats
 
-    static member tryMakeFromSelection selection targets =
+    static member tryMakeFromSelection selection =
         match snd selection with
         | Consumable ty ->
             match Map.tryFind ty data.Value.Consumables with
-            | Some cd -> SubmenuUse.makeFromConsumableData selection targets cd |> Some
+            | Some cd -> SubmenuUse.makeFromConsumableData selection cd |> Some
             | None -> None
         | Equipment ty ->
             match ty with
             | WeaponType name ->
                 match Map.tryFind name data.Value.Weapons with
-                | Some wd -> SubmenuUse.makeFromWeaponData selection targets wd |> Some
+                | Some wd -> SubmenuUse.makeFromWeaponData selection wd |> Some
                 | None -> None
             | ArmorType name ->
                 match Map.tryFind name data.Value.Armors with
-                | Some ad -> SubmenuUse.makeFromArmorData selection targets ad |> Some
+                | Some ad -> SubmenuUse.makeFromArmorData selection ad |> Some
                 | None -> None
             | AccessoryType name ->
                 match Map.tryFind name data.Value.Accessories with
-                | Some ad -> SubmenuUse.makeFromAccessoryData selection targets ad |> Some
+                | Some ad -> SubmenuUse.makeFromAccessoryData selection ad |> Some
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
