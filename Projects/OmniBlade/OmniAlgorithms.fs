@@ -115,3 +115,11 @@ module Algorithms =
         match indexOpt with
         | Some index -> techs |> Map.toList |> List.take (inc index) |> List.map snd |> Set.ofList
         | None -> Set.empty
+
+    let goldPrize scalar (level : int) =
+        let algo = level * level // sure, why not?
+        int (single algo * scalar)
+
+    let expPrize scalar (level : int) =
+        let algo = level * level // sure, why not?
+        int (single algo * scalar)

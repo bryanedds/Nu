@@ -130,7 +130,8 @@ module OmniField =
                 | Some battleType ->
                     match Map.tryFind battleType data.Value.Battles with
                     | Some battleData ->
-                        let battleModel = BattleModel.makeFromLegion (FieldModel.getParty model) model.Inventory (Some itemType) battleData time
+                        let prizePool = { Items = []; Gold = 0; Exp = 0 }
+                        let battleModel = BattleModel.makeFromLegion (FieldModel.getParty model) model.Inventory prizePool battleData time
                         let model = FieldModel.updateBattleOpt (constant (Some battleModel)) model
                         just model
                     | None -> just model

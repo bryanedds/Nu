@@ -1,4 +1,4 @@
-Type,ArchetypeType,LevelBase,AnimationSheet,Mug,Description
-[Ally Finn],Fighter,3,[Field Finn],[Some [Field FinnMug]],The main protagonist.
-[Ally Glenn],Brawler,3,[Field Glenn],[Some [Field GlennMug]],Finn's best friend.
-[Enemy Goblin],Goblin,2,[Field Goblin],None,A minor goblin from the Golobogos Islands.
+Type,ArchetypeType,LevelBase,AnimationSheet,Mug,GoldScalar,ExpScalar,Description
+[Ally Finn],Fighter,3,[Field Finn],[Some [Field FinnMug]],1,1,The main protagonist.
+[Ally Glenn],Brawler,3,[Field Glenn],[Some [Field GlennMug]],1,1,Finn's best friend.
+[Enemy Goblin],Goblin,2,[Field Goblin],None,1,1,A minor goblin from the Golobogos Islands.

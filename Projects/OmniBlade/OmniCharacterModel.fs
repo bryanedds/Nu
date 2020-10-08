@@ -3,7 +3,7 @@ open System
 open Prime
 open Nu
 
-type [<StructuralEquality; NoComparison>] AutoBattle =
+type [<ReferenceEquality; NoComparison>] AutoBattle =
     { AutoTarget : CharacterIndex
       AutoTechOpt : TechType option }
 
@@ -69,6 +69,8 @@ module CharacterModel =
         member this.Power = this.CharacterState_.Power
         member this.Magic = this.CharacterState_.Magic
         member this.Shield = this.CharacterState_.Shield
+        member this.GoldPrize = this.CharacterState_.GoldPrize
+        member this.ExpPrize = this.CharacterState_.ExpPrize
 
         (* AnimationState Properties *)
         member this.TimeStart = this.AnimationState_.TimeStart
@@ -201,6 +203,9 @@ module CharacterModel =
     let updateTechPoints updater character =
         { character with CharacterState_ = CharacterState.updateTechPoints updater character.CharacterState_ }
 
+    let updateExpPoints updater character =
+        { character with CharacterState_ = CharacterState.updateExpPoints updater character.CharacterState_ }
+
     let updateInputState updater character =
         { character with InputState_ = updater character.InputState_ }
 
@@ -262,17 +267,17 @@ module CharacterModel =
 
     let makeEnemy index enemyData =
         // TODO: error checking
-        let character =
+        let characterData =
             match Map.tryFind (Enemy enemyData.EnemyType) data.Value.Characters with
             | Some characterData -> characterData
             | None -> failwith ("Could not find CharacterData for '" + scstring enemyData.EnemyType + "'")
-        let expPoints = Algorithms.levelToExpPoints character.LevelBase
-        let archetypeType = character.ArchetypeType
-        let hitPoints = Algorithms.hitPointsMax None archetypeType character.LevelBase
-        let techPoints = Algorithms.techPointsMax None archetypeType character.LevelBase
-        let characterState = CharacterState.make character hitPoints techPoints expPoints None None [] // TODO: figure out if / how we should populate equipment
+        let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
+        let archetypeType = characterData.ArchetypeType
+        let hitPoints = Algorithms.hitPointsMax None archetypeType characterData.LevelBase
+        let techPoints = Algorithms.techPointsMax None archetypeType characterData.LevelBase
+        let characterState = CharacterState.make characterData hitPoints techPoints expPoints None None [] // TODO: figure out if / how we should populate equipment
         let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
-        let enemy = make bounds (EnemyIndex index) characterState character.AnimationSheet Leftward
+        let enemy = make bounds (EnemyIndex index) characterState characterData.AnimationSheet Leftward
         enemy
 
     let empty =

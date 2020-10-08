@@ -7,7 +7,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniGame =
 
-    type [<StructuralEquality; NoComparison>] GuiModel =
+    type [<StructuralEquality; StructuralComparison>] GuiModel =
         | Splashing
         | Title
         | Credits
@@ -16,13 +16,13 @@ module OmniGame =
         | Gui of GuiModel
         | Field of FieldModel
 
-    type [<NoComparison>] OmniMessage =
+    type [<NoEquality; NoComparison>] OmniMessage =
         | Update
         | UpdateModel of OmniModel
         | UpdateFieldModel of FieldModel
         | UpdateBattleModel of BattleModel
 
-    type [<NoComparison>] OmniCommand =
+    type [<NoEquality; NoComparison>] OmniCommand =
         | Show of Screen
         | Exit
 
@@ -88,7 +88,9 @@ module OmniGame =
                                         List.foldi (fun i field (ally : CharacterModel) ->
                                             FieldModel.updateLegion (fun legion ->
                                                 match Map.tryFind i legion with
-                                                | Some legionnaire -> Map.add i { legionnaire with HitPoints = ally.HitPoints } legion
+                                                | Some legionnaire ->
+                                                    let legionnaire = { legionnaire with HitPoints = ally.HitPoints; ExpPoints = ally.ExpPoints }
+                                                    Map.add i legionnaire legion
                                                 | None -> legion)
                                                 field)
                                             field allies
