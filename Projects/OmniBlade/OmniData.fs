@@ -321,6 +321,8 @@ type [<StructuralEquality; NoComparison>] CharacterData =
       LevelBase : int
       AnimationSheet : Image AssetTag
       MugOpt : Image AssetTag option
+      GoldScalar : single
+      ExpScalar : single
       Description : string }
 
 type [<StructuralEquality; NoComparison>] CharacterAnimationData =

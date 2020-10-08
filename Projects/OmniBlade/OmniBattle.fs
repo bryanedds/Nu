@@ -8,7 +8,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniBattle =
 
-    type [<StructuralEquality; NoComparison>] Hop =
+    type [<ReferenceEquality; NoComparison>] Hop =
         { HopStart : Vector2
           HopStop : Vector2 }
 
@@ -163,12 +163,17 @@ module OmniBattle =
                         let allies = BattleModel.getAllies model
                         let enemies = BattleModel.getEnemies model
                         if List.forall (fun (character : CharacterModel) -> character.IsWounded) allies then
+                            // lost battle
                             let model = BattleModel.updateBattleState (constant (BattleCease (false, time))) model
                             let (sigs2, model) = tick time model
                             (sigs @ sigs2, model)
                         elif
                             List.forall (fun (character : CharacterModel) -> character.IsWounded) enemies &&
                             List.hasAtMost 1 enemies then
+                            // won battle
+                            let model = BattleModel.updateAllies (fun ally -> CharacterModel.updateExpPoints ((+) model.PrizePool.Exp) ally) model
+                            let model = BattleModel.updateInventory (fun inv -> { inv with Gold = inv.Gold + model.PrizePool.Gold }) model
+                            let model = BattleModel.updateInventory (Inventory.addItems model.PrizePool.Items) model
                             let model = BattleModel.updateBattleState (constant (BattleCease (true, time))) model
                             let (sigs2, model) = tick time model
                             (sigs @ sigs2, model)

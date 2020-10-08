@@ -9,7 +9,7 @@ type [<StructuralEquality; StructuralComparison>] BattleState =
     | BattleRunning
     | BattleCease of bool * int64
 
-type [<StructuralEquality; NoComparison>] ActionCommand =
+type [<ReferenceEquality; NoComparison>] ActionCommand =
     { Action : ActionType
       Source : CharacterIndex
       TargetOpt : CharacterIndex option }
@@ -19,7 +19,7 @@ type [<StructuralEquality; NoComparison>] ActionCommand =
           Source = source
           TargetOpt = targetOpt }
 
-type [<StructuralEquality; NoComparison>] CurrentCommand =
+type [<ReferenceEquality; NoComparison>] CurrentCommand =
     { TimeStart : int64
       ActionCommand : ActionCommand }
 
@@ -34,13 +34,14 @@ module BattleModel =
             { BattleState_ : BattleState
               Characters_ : Map<CharacterIndex, CharacterModel>
               Inventory_ : Inventory
-              BonusItemOpt_ : ItemType option
+              PrizePool_ : PrizePool
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand Queue }
 
         (* Local Properties *)
         member this.BattleState = this.BattleState_
         member this.Inventory = this.Inventory_
+        member this.PrizePool = this.PrizePool_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
 
@@ -158,19 +159,21 @@ module BattleModel =
     let prependActionCommand command model =
          { model with ActionCommands_ = Queue.rev model.ActionCommands |> Queue.conj command |> Queue.rev }
 
-    let makeFromAllies allies inventory bonusItemOpt battleData time =
+    let makeFromAllies allies inventory (prizePool : PrizePool) battleData time =
         let enemies = List.mapi CharacterModel.makeEnemy battleData.BattleEnemies
         let characters = allies @ enemies |> Map.ofListBy (fun (character : CharacterModel) -> (character.CharacterIndex, character))
+        let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : CharacterModel) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
+        let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : CharacterModel) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
         let model =
             { BattleState_ = BattleReady time
               Characters_ = characters
               Inventory_ = inventory
-              BonusItemOpt_ = bonusItemOpt
+              PrizePool_ = prizePool
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty }
         model
 
-    let makeFromLegion (legion : Legion) inventory bonusItemOpt battleData time =
+    let makeFromLegion (legion : Legion) inventory prizePool battleData time =
         let legionnaires = legion |> Map.toList |> List.tryTake 3
         let allies =
             List.map
@@ -187,14 +190,14 @@ module BattleModel =
                         CharacterModel.updateActionTime (constant (inc index * 333)) character
                     | None -> failwith ("Could not find CharacterData for '" + scstring leg.CharacterType + "'."))
                 legionnaires
-        let battleModel = makeFromAllies allies inventory bonusItemOpt battleData time
+        let battleModel = makeFromAllies allies inventory prizePool battleData time
         battleModel
 
     let empty =
         { BattleState_ = BattleReady 0L
           Characters_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
-          BonusItemOpt_ = None
+          PrizePool_ = { Items = []; Gold = 0; Exp = 0 }
           CurrentCommandOpt_ = None
           ActionCommands_ = Queue.empty }
 

@@ -11,7 +11,12 @@ type PropState =
     | ShopkeepState of bool
     | NilState
 
-type [<StructuralEquality; NoComparison>] Inventory =
+type [<ReferenceEquality; NoComparison>] PrizePool =
+    { Items : ItemType list
+      Gold : int
+      Exp : int }
+
+type [<ReferenceEquality; NoComparison>] Inventory =
     { Items : Map<ItemType, int>
       Gold : int }
 
@@ -42,6 +47,9 @@ type [<StructuralEquality; NoComparison>] Inventory =
             | None -> { inventory with Items = Map.add item 1 inventory.Items }
         | Stash gold -> { inventory with Gold = inventory.Gold + gold }
 
+    static member addItems items inventory =
+        List.fold (flip Inventory.addItem) inventory items
+
     static member removeItem item inventory =
         match Map.tryFind item inventory.Items with
         | Some itemCount when itemCount > 1 ->
@@ -67,7 +75,7 @@ type [<StructuralEquality; NoComparison>] Inventory =
         | Some count -> count
         | None -> 0
 
-    static member updateGold updater inventory =
+    static member updateGold updater (inventory : Inventory) =
         { inventory with Gold = updater inventory.Gold }
 
 type Legionnaire =
@@ -179,7 +187,7 @@ type [<StructuralEquality; StructuralComparison>] CharacterIndex =
         | (EnemyIndex _, EnemyIndex _) -> true
         | (_, _) -> false
 
-type [<StructuralEquality; NoComparison>] CharacterState =
+type [<ReferenceEquality; NoComparison>] CharacterState =
     { ArchetypeType : ArchetypeType
       ExpPoints : int
       WeaponOpt : string option
@@ -193,7 +201,9 @@ type [<StructuralEquality; NoComparison>] CharacterState =
       PowerBuff : single
       ShieldBuff : single
       MagicBuff : single
-      CounterBuff : single }
+      CounterBuff : single
+      GoldPrize : int
+      ExpPrize : int }
 
     member this.Level = Algorithms.expPointsToLevel this.ExpPoints
     member this.IsHealthy = this.HitPoints > 0
@@ -219,17 +229,22 @@ type [<StructuralEquality; NoComparison>] CharacterState =
         { state with HitPoints = hitPoints }
 
     static member updateTechPoints updater state =
-        let specialPoints = updater state.TechPoints
-        let specialPoints = max 0 specialPoints
-        let specialPoints = min state.TechPointsMax specialPoints
-        { state with TechPoints = specialPoints }
+        let techPoints = updater state.TechPoints
+        let techPoints = max 0 techPoints
+        let techPoints = min state.TechPointsMax techPoints
+        { state with TechPoints = techPoints }
+
+    static member updateExpPoints updater state =
+        let expPoints = updater state.ExpPoints
+        let expPoints = max 0 expPoints
+        { state with ExpPoints = expPoints }
 
     static member tryGetTechRandom (state : CharacterState) =
-        let specials = state.Techs
-        if Set.notEmpty specials then
-            let specialIndex = Gen.random1 specials.Count
-            let special = Seq.item specialIndex specials
-            Some special
+        let techs = state.Techs
+        if Set.notEmpty techs then
+            let techIndex = Gen.random1 techs.Count
+            let tech = Seq.item techIndex techs
+            Some tech
         else None
 
     static member getPoiseType state =
@@ -255,7 +270,9 @@ type [<StructuralEquality; NoComparison>] CharacterState =
               PowerBuff = 1.0f
               MagicBuff = 1.0f
               ShieldBuff = 1.0f
-              CounterBuff = 1.0f }
+              CounterBuff = 1.0f
+              GoldPrize = Algorithms.goldPrize characterData.GoldScalar levelBase
+              ExpPrize = Algorithms.expPrize characterData.ExpScalar levelBase }
         characterState
 
     static member empty =
@@ -273,10 +290,12 @@ type [<StructuralEquality; NoComparison>] CharacterState =
               PowerBuff = 1.0f
               MagicBuff = 1.0f
               ShieldBuff = 1.0f
-              CounterBuff = 1.0f }
+              CounterBuff = 1.0f
+              GoldPrize = 0
+              ExpPrize = 0 }
         characterState
 
-type [<StructuralEquality; NoComparison>] CharacterAnimationState =
+type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     { TimeStart : int64
       AnimationSheet : Image AssetTag
       AnimationCycle : CharacterAnimationCycle

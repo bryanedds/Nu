@@ -8,7 +8,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniRingMenu =
 
-    type [<StructuralEquality; NoComparison>] RingMenuModel =
+    type [<ReferenceEquality; NoComparison>] RingMenuModel =
         { Items : (int * (bool * string)) list
           ItemCancelOpt : string option }
 
