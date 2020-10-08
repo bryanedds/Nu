@@ -171,7 +171,7 @@ module OmniBattle =
                             List.forall (fun (character : CharacterModel) -> character.IsWounded) enemies &&
                             List.hasAtMost 1 enemies then
                             // won battle
-                            let model = BattleModel.updateAllies (fun ally -> CharacterModel.updateExpPoints ((+) model.PrizePool.Exp) ally) model
+                            let model = BattleModel.updateAllies (fun ally -> if ally.IsHealthy then CharacterModel.updateExpPoints ((+) model.PrizePool.Exp) ally else ally) model
                             let model = BattleModel.updateInventory (fun inv -> { inv with Gold = inv.Gold + model.PrizePool.Gold }) model
                             let model = BattleModel.updateInventory (Inventory.addItems model.PrizePool.Items) model
                             let model = BattleModel.updateBattleState (constant (BattleCease (true, time))) model

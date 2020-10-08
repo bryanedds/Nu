@@ -252,13 +252,12 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         elif state.Charging then Charging
         else Poising
 
-    static member make characterData hitPoints techPoints expPoints weaponOpt armorOpt accessories =
-        let levelBase = characterData.LevelBase
+    static member make (characterData : CharacterData) hitPoints techPoints expPoints weaponOpt armorOpt accessories =
         let archetypeType = characterData.ArchetypeType
-        let expPointsTotal = Algorithms.levelToExpPoints levelBase + expPoints
+        let level = Algorithms.expPointsToLevel expPoints
         let characterState =
             { ArchetypeType = archetypeType
-              ExpPoints = expPointsTotal
+              ExpPoints = expPoints
               WeaponOpt = weaponOpt
               ArmorOpt = armorOpt
               Accessories = accessories
@@ -271,8 +270,8 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               MagicBuff = 1.0f
               ShieldBuff = 1.0f
               CounterBuff = 1.0f
-              GoldPrize = Algorithms.goldPrize characterData.GoldScalar levelBase
-              ExpPrize = Algorithms.expPrize characterData.ExpScalar levelBase }
+              GoldPrize = Algorithms.goldPrize characterData.GoldScalar level
+              ExpPrize = Algorithms.expPrize characterData.ExpScalar level }
         characterState
 
     static member empty =
