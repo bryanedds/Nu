@@ -407,7 +407,7 @@ module TextFacetModule =
 
         static member Properties =
             [define Entity.Text ""
-             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackageName Assets.DefaultFontName)
+             define Entity.Font Assets.DefaultFont
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
              define Entity.TextColor Color.Black
@@ -736,7 +736,7 @@ module TileMapFacetModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackageName Assets.DefaultTileMapName)
+             define Entity.TileMapAsset Assets.DefaultTileMap
              define Entity.TileLayerClearance 2.0f
              define Entity.Parallax 0.0f
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
@@ -1052,7 +1052,7 @@ module StaticSpriteFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")
+            [define Entity.StaticImage Assets.DefaultImage4
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.InsetOpt None
@@ -1126,7 +1126,7 @@ module AnimatedSpriteFacetModule =
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")
+             define Entity.AnimationSheet Assets.DefaultImage7
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
@@ -1273,7 +1273,7 @@ module StaticSpriteDispatcherModule =
             [typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")
+            [define Entity.StaticImage Assets.DefaultImage4
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.InsetOpt None
@@ -1293,7 +1293,7 @@ module AnimatedSpriteDispatcherModule =
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackageName "Image7")
+             define Entity.AnimationSheet Assets.DefaultImage7
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
@@ -1470,9 +1470,9 @@ module ButtonDispatcherModule =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Down false
-             define Entity.UpImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
-             define Entity.DownImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
-             define Entity.ClickSoundOpt (Some (AssetTag.make<Sound> Assets.DefaultPackageName "Sound"))
+             define Entity.UpImage Assets.DefaultImage
+             define Entity.DownImage Assets.DefaultImage2
+             define Entity.ClickSoundOpt (Some Assets.DefaultSound)
              define Entity.ClickSoundVolume Constants.Audio.DefaultSoundVolume]
 
         override this.Register (button, world) =
@@ -1521,7 +1521,7 @@ module LabelDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.LabelImage (AssetTag.make<Image> Assets.DefaultPackageName "Image3")]
+             define Entity.LabelImage Assets.DefaultImage3]
 
         override this.Actualize (label, world) =
             if label.GetVisible world then
@@ -1675,9 +1675,9 @@ module ToggleDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Open true
              define Entity.Pressed false
-             define Entity.OpenImage (AssetTag.make<Image> Assets.DefaultPackageName "Image")
-             define Entity.ClosedImage (AssetTag.make<Image> Assets.DefaultPackageName "Image2")
-             define Entity.ToggleSoundOpt (Some (AssetTag.make<Sound> Assets.DefaultPackageName "Sound"))
+             define Entity.OpenImage Assets.DefaultImage
+             define Entity.ClosedImage Assets.DefaultImage2
+             define Entity.ToggleSoundOpt (Some Assets.DefaultSound)
              define Entity.ToggleSoundVolume Constants.Audio.DefaultSoundVolume]
 
         override this.Register (toggle, world) =
@@ -1843,8 +1843,8 @@ module FillBarDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
-             define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackageName "Image11")
-             define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackageName "Image12")]
+             define Entity.FillImage Assets.DefaultImage11
+             define Entity.BorderImage Assets.DefaultImage12]
 
         override this.Actualize (fillBar, world) =
             if fillBar.GetVisible world then
@@ -1911,7 +1911,7 @@ module BlockDispatcherModule =
         static member Properties =
             [define Entity.PublishChanges true
              define Entity.BodyType Static
-             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+             define Entity.StaticImage Assets.DefaultImage4]
 
 [<AutoOpen>]
 module BoxDispatcherModule =
@@ -1925,7 +1925,7 @@ module BoxDispatcherModule =
 
         static member Properties =
             [define Entity.PublishChanges true
-             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackageName "Image4")]
+             define Entity.StaticImage Assets.DefaultImage4]
 
 [<AutoOpen>]
 module CharacterDispatcherModule =
@@ -1967,9 +1967,9 @@ module CharacterDispatcherModule =
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero; PropertiesOpt = None })
-             define Entity.CharacterIdleImage (AssetTag.make Assets.DefaultPackageName "CharacterIdle")
-             define Entity.CharacterJumpImage (AssetTag.make Assets.DefaultPackageName "CharacterJump")
-             define Entity.CharacterWalkSheet (AssetTag.make Assets.DefaultPackageName "CharacterWalk")
+             define Entity.CharacterIdleImage Assets.DefaultCharacterIdleImage
+             define Entity.CharacterJumpImage Assets.DefaultCharacterJumpImage
+             define Entity.CharacterWalkSheet Assets.DefaultCharacterWalkImage
              define Entity.CharacterFacingLeft false]
 
         override this.Update (entity, world) =
@@ -2034,7 +2034,7 @@ module TileMapDispatcherModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackageName Assets.DefaultTileMapName)
+             define Entity.TileMapAsset Assets.DefaultTileMap
              define Entity.Parallax 0.0f]
 
 [<AutoOpen>]

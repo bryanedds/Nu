@@ -460,7 +460,7 @@ module OmniField =
                 [// backdrop sprite
                  Content.staticSprite Simulants.FieldBackdrop.Name
                     [Entity.Bounds <== model ->> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MinValue; Entity.Absolute == true
-                     Entity.StaticImage == asset Assets.DefaultPackageName "Image9"
+                     Entity.StaticImage == Assets.DefaultImage9
                      Entity.Color <== model --> fun model ->
                         match data.Value.Fields.TryGetValue model.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
@@ -469,7 +469,7 @@ module OmniField =
                  // portal fade sprite
                  Content.staticSprite Simulants.FieldPortalFade.Name
                    [Entity.Bounds <== model ->> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
-                    Entity.StaticImage == asset Assets.DefaultPackageName "Image9"
+                    Entity.StaticImage == Assets.DefaultImage9
                     Entity.Color <== model ->> fun model world ->
                         match model.FieldTransitionOpt with
                         | Some transition ->
