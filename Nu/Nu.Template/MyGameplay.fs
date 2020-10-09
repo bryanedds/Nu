@@ -32,7 +32,7 @@ type MyGameplayDispatcher () =
             if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
             elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
             else cmd Nop
-         Simulants.Gameplay.UpdateEvent => cmd EyeTrack]
+         Simulants.Gameplay.PostUpdateEvent => cmd EyeTrack]
 
     // here we handle the above commands
     override this.Command (_, command, _, world) =
