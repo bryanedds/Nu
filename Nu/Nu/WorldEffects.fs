@@ -341,10 +341,10 @@ module EffectSystem =
                 | SymbolicCompressionA resource -> evalResource resource effectSystem
                 | _ ->
                     Log.info ("Expected Resource for definition '" + definitionName + ".")
-                    scvalue<obj AssetTag> Assets.DefaultImageString
+                    AssetTag.generalize Assets.DefaultImage
             | None ->
                 Log.info ("Could not find definition with name '" + definitionName + "'.")
-                scvalue<obj AssetTag> Assets.DefaultImageString
+                AssetTag.generalize Assets.DefaultImage
 
     let rec private iterateViews incrementAspects content slice effectSystem =
         let effectSystem = { effectSystem with ProgressOffset = 0.0f }

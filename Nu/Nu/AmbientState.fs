@@ -31,7 +31,7 @@ module AmbientState =
               TickTime : int64
               UpdateCount : int64
               ClockDelta : single // NOTE: might be better to make this accessible from World to avoid cache misses
-              // cache line ends here
+              // cache line 2 begin
               Metadata : Metadata
               KeyValueStore : UMap<Guid, obj>
               ClockTime : DateTimeOffset // moved down here because it's 16 bytes according to - https://stackoverflow.com/a/38731608
@@ -39,6 +39,7 @@ module AmbientState =
               SdlDepsOpt : SdlDeps option
               SymbolStore : SymbolStore
               Overlayer : Overlayer
+              // cache line 3 begin
               OverlayRouter : OverlayRouter }
 
     /// Get the the liveness state of the engine.
