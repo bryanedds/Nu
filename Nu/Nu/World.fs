@@ -31,8 +31,8 @@ module Nu =
             match World.tryGetProperty leftName simulant world with
             | Some property ->
                 if property.PropertyValue <> value then // OPTIMIZATION: avoid reflection when value doesn't change
-                    let nonPersistent = Reflection.isPropertyNonPersistentByName leftName
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
+                    let nonPersistent = Reflection.isPropertyNonPersistentByName leftName
                     let property = { property with PropertyValue = value }
                     let world = World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
                     (Cascade, world)
