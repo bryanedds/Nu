@@ -60,6 +60,9 @@ module AvatarDispatcherModule =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
+        static member Properties =
+            [define Entity.PublishChanges true]
+
         override this.Initializers (model, entity) =
             let bodyShapes =
                 BodyShapes
@@ -159,7 +162,7 @@ module AvatarDispatcherModule =
         override this.Command (_, command, entity, world) =
             match command with
             | Move force ->
-                if entity.GetEnabled world then
+                if force <> v2Zero && entity.GetEnabled world then
                     let physicsId = Simulants.FieldAvatar.GetPhysicsId world
                     let world = World.applyBodyForce force physicsId world
                     just world

@@ -112,6 +112,12 @@ module WorldPhysics =
             let destroyJointsMessage = DestroyJointsMessage { PhysicsIds = physicsIds }
             World.enqueuePhysicsMessage destroyJointsMessage world
 
+        /// Send a message to the physics system to set the enabled-ness of a body with the given physics id.
+        [<FunctionBinding>]
+        static member setBodyEnabled enabled physicsId world =
+            let setBodyEnabledMessage = SetBodyEnabledMessage { PhysicsId = physicsId; Enabled = enabled }
+            World.enqueuePhysicsMessage setBodyEnabledMessage world
+
         /// Send a message to the physics system to set the position of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyPosition position physicsId world =
