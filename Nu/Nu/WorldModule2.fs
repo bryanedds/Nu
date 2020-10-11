@@ -633,7 +633,7 @@ module WorldModule2 =
             let entityTree = World.getEntityTree world
             let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree world) entityTree
             let world = World.setEntityTree entityTree world
-            let entities : Entity HashSet = getElementsFromTree spatialTree
+            let entities : Entity seq = getElementsFromTree spatialTree
             (entities, world)
 
         [<FunctionBinding>]
