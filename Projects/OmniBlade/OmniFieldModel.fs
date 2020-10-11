@@ -4,7 +4,7 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<StructuralEquality; NoComparison>] DialogForm =
+type [<NoComparison>] DialogForm =
     | DialogThin
     | DialogMedium
     | DialogLarge
@@ -89,7 +89,7 @@ type [<ReferenceEquality; NoComparison>] SubmenuLegion =
 type [<ReferenceEquality; NoComparison>] SubmenuItem =
     { ItemPage : int }
 
-type [<StructuralEquality; NoComparison>] SubmenuState =
+type [<NoComparison>] SubmenuState =
     | SubmenuLegion of SubmenuLegion
     | SubmenuItem of SubmenuItem
     | SubmenuClosed
@@ -98,7 +98,7 @@ type [<ReferenceEquality; NoComparison>] Submenu =
     { SubmenuState : SubmenuState
       SubmenuUseOpt : SubmenuUse option }
 
-type [<StructuralEquality; StructuralComparison>] ShopState =
+type ShopState =
     | ShopBuying
     | ShopSelling
 

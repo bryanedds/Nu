@@ -78,7 +78,7 @@ type [<ReferenceEquality; NoComparison>] Inventory =
     static member updateGold updater (inventory : Inventory) =
         { inventory with Gold = updater inventory.Gold }
 
-type Legionnaire =
+type [<ReferenceEquality; NoComparison>] Legionnaire =
     { LegionIndex : int // key
       PartyIndexOpt : int option
       CharacterType : CharacterType
@@ -178,7 +178,7 @@ type Legionnaire =
 type Legion =
     Map<int, Legionnaire>
 
-type [<StructuralEquality; StructuralComparison>] CharacterIndex =
+type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
     static member isTeammate index index2 =
@@ -381,7 +381,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
           AnimationCycle = IdleCycle
           Direction = Downward }
 
-type [<StructuralEquality; StructuralComparison>] CharacterInputState =
+type CharacterInputState =
     | NoInput
     | RegularMenu
     | TechMenu

@@ -7,12 +7,12 @@ open OmniBlade
 [<AutoOpen>]
 module OmniGame =
 
-    type [<StructuralEquality; StructuralComparison>] GuiModel =
+    type GuiModel =
         | Splashing
         | Title
         | Credits
 
-    type [<StructuralEquality; NoComparison>] OmniModel =
+    type [<NoComparison>] OmniModel =
         | Gui of GuiModel
         | Field of FieldModel
 

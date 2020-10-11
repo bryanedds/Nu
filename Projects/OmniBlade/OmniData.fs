@@ -5,14 +5,14 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<StructuralEquality; StructuralComparison>] Advent =
+type Advent =
     | Opened of Guid
     | DebugSwitch
     | DebugSwitch2
     | KilledFinalBoss
     | SavedPrincess
 
-type [<StructuralEquality; StructuralComparison>] Direction =
+type Direction =
     | Downward
     | Leftward
     | Upward
@@ -27,11 +27,11 @@ type [<StructuralEquality; StructuralComparison>] Direction =
             else                                                            Downward
         direction
 
-type [<StructuralEquality; StructuralComparison>] EffectType =
+type EffectType =
     | Physical
     | Magical
 
-type [<StructuralEquality; StructuralComparison>] ElementType =
+type ElementType =
     | Fire // beats ice, average scalar
     | Ice // beats fire, lightning; average scaler
     | Lightning // beats water, average scalar
@@ -40,25 +40,25 @@ type [<StructuralEquality; StructuralComparison>] ElementType =
     | Light // beats dark, weaker scalar
     | Earth // beats nothing, strongest scalar
 
-type [<StructuralEquality; StructuralComparison>] StatusType =
+type StatusType =
     | DefendStatus // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
     | PoisonStatus
     | MuteStatus
     | SleepStatus
 
-type [<StructuralEquality; StructuralComparison>] EquipmentType =
+type EquipmentType =
     | WeaponType of string
     | ArmorType of string
     | AccessoryType of string
 
-type [<StructuralEquality; StructuralComparison>] ConsumableType =
+type ConsumableType =
     | GreenHerb
     | RedHerb
 
-type [<StructuralEquality; StructuralComparison>] KeyItemType =
+type KeyItemType =
     | BrassKey
 
-type [<StructuralEquality; StructuralComparison>] ItemType =
+type ItemType =
     | Consumable of ConsumableType
     | Equipment of EquipmentType
     | KeyItem of KeyItemType
@@ -70,32 +70,32 @@ type [<StructuralEquality; StructuralComparison>] ItemType =
         | KeyItem ty -> string ty
         | Stash gold -> string gold + "G"
 
-type [<StructuralEquality; StructuralComparison>] AimType =
+type AimType =
     | EnemyAim of bool // healthy (N/A)
     | AllyAim of bool // healthy
     | AnyAim of bool // healthy
     | NoAim
 
-type [<StructuralEquality; StructuralComparison>] TargetType =
+type TargetType =
     | SingleTarget of AimType
     | ProximityTarget of AimType * single
     | RadialTarget of AimType * single
     | LineTarget of AimType * single
     | AllTarget of AimType
 
-type [<StructuralEquality; StructuralComparison>] TechType =
+type TechType =
     | Critical
     | Cyclone
     | Bolt
     | Tremor
 
-type [<StructuralEquality; StructuralComparison>] ActionType =
+type ActionType =
     | Attack
     | Consume of ConsumableType
     | Tech of TechType
     | Wound
 
-type [<StructuralEquality; StructuralComparison>] ArchetypeType =
+type ArchetypeType =
     | Squire
     | Mage
     | Fighter
@@ -104,7 +104,7 @@ type [<StructuralEquality; StructuralComparison>] ArchetypeType =
     | Cleric
     | Goblin
 
-type [<StructuralEquality; StructuralComparison>] WeaponSubtype =
+type WeaponSubtype =
     | Melee
     | Sword
     | Heavesword
@@ -112,67 +112,67 @@ type [<StructuralEquality; StructuralComparison>] WeaponSubtype =
     | Staff
     | Rod
 
-type [<StructuralEquality; StructuralComparison>] ArmorSubtype =
+type ArmorSubtype =
     | Robe
     | Vest
     | Mail
     | Pelt
 
-type [<StructuralEquality; StructuralComparison>] ShopType =
+type ShopType =
     | PodunkChemist
     | PodunkArmory
 
-type [<StructuralEquality; StructuralComparison>] ShopkeepAppearanceType =
+type ShopkeepAppearanceType =
     | Male
     | Female
     | Fancy
 
-type [<StructuralEquality; StructuralComparison>] LockType =
+type LockType =
     | BrassKey
 
-type [<StructuralEquality; StructuralComparison>] ChestType =
+type ChestType =
     | WoodenChest
     | BrassChest
 
-type [<StructuralEquality; StructuralComparison>] DoorType =
+type DoorType =
     | WoodenDoor
 
-type [<StructuralEquality; StructuralComparison>] NpcType =
+type NpcType =
     | VillageMan
     | VillageWoman
     | VillageBoy
     | VillageGirl
 
-type [<StructuralEquality; StructuralComparison>] ShopkeepType =
+type ShopkeepType =
     | ShopkeepMan
 
-type [<StructuralEquality; StructuralComparison>] FieldType =
+type FieldType =
     | DebugRoom
     | DebugRoom2
 
-type [<StructuralEquality; StructuralComparison>] SwitchType =
+type SwitchType =
     | ThrowSwitch
     
-type [<StructuralEquality; StructuralComparison>] SensorType =
+type SensorType =
     | AirSensor
     | HiddenSensor
     | StepPlateSensor
 
-type [<StructuralEquality; StructuralComparison>] BattleType =
+type BattleType =
     | DebugBattle
 
-type [<StructuralEquality; StructuralComparison>] PoiseType =
+type PoiseType =
     | Poising
     | Defending
     | Charging
 
-type [<StructuralEquality; StructuralComparison>] AnimationType =
+type AnimationType =
     | LoopedWithDirection
     | LoopedWithoutDirection
     | SaturatedWithDirection
     | SaturatedWithoutDirection
 
-type [<StructuralEquality; StructuralComparison>] CharacterAnimationCycle =
+type CharacterAnimationCycle =
     | WalkCycle
     | CelebrateCycle
     | ReadyCycle
@@ -190,14 +190,14 @@ type [<StructuralEquality; StructuralComparison>] CharacterAnimationCycle =
     | HopBackCycle
     | WoundCycle
 
-type [<StructuralEquality; StructuralComparison>] AllyType =
+type AllyType =
     | Finn
     | Glenn
 
-type [<StructuralEquality; StructuralComparison>] EnemyType =
+type EnemyType =
     | Goblin
 
-type [<StructuralEquality; StructuralComparison>] CharacterType =
+type CharacterType =
     | Ally of AllyType
     | Enemy of EnemyType
 
@@ -206,7 +206,7 @@ type [<StructuralEquality; StructuralComparison>] CharacterType =
         | Ally ty -> string ty
         | Enemy ty -> string ty
 
-type [<StructuralEquality; NoComparison>] WeaponData =
+type WeaponData =
     { WeaponType : string // key
       WeaponSubtype : WeaponSubtype
       PowerBase : int
@@ -214,7 +214,7 @@ type [<StructuralEquality; NoComparison>] WeaponData =
       Cost : int
       Description : string }
 
-type [<StructuralEquality; NoComparison>] ArmorData =
+type ArmorData =
     { ArmorType : string // key
       ArmorSubtype : ArmorSubtype
       HitPointsBase : int
@@ -222,14 +222,14 @@ type [<StructuralEquality; NoComparison>] ArmorData =
       Cost : int
       Description : string }
 
-type [<StructuralEquality; NoComparison>] AccessoryData =
+type AccessoryData =
     { AccessoryType : string // key
       ShieldBase : int
       CounterBase : int
       Cost : int
       Description : string }
 
-type [<StructuralEquality; NoComparison>] ConsumableData =
+type ConsumableData =
     { ConsumableType : ConsumableType // key
       Scalar : single
       Curative : bool
@@ -237,7 +237,7 @@ type [<StructuralEquality; NoComparison>] ConsumableData =
       Cost : int
       Description : string }
 
-type [<StructuralEquality; NoComparison>] TechData =
+type TechData =
     { TechType : TechType // key
       TechCost : int
       EffectType : EffectType
@@ -252,7 +252,7 @@ type [<StructuralEquality; NoComparison>] TechData =
       TargetType : TargetType
       Description : string }
 
-type [<StructuralEquality; NoComparison>] ArchetypeData =
+type ArchetypeData =
     { ArchetypeType : ArchetypeType // key
       Stamina : single // hit points scalar
       Strength : single // power scalar
@@ -265,7 +265,7 @@ type [<StructuralEquality; NoComparison>] ArchetypeData =
       ArmorSubtype : ArmorSubtype
       Techs : Map<int, TechType> } // tech availability according to level
 
-type [<StructuralEquality; NoComparison>] TechAnimationData =
+type TechAnimationData =
     { TechType : TechType // key
       TechStart : int64
       TechingStart : int64
@@ -274,20 +274,20 @@ type [<StructuralEquality; NoComparison>] TechAnimationData =
       TechingStop : int64
       TechStop : int64 }
 
-type [<StructuralEquality; NoComparison>] KeyItemData =
+type KeyItemData =
     { KeyItemData : unit }
 
-type [<StructuralEquality; NoComparison>] DoorData =
+type [<NoComparison>] DoorData =
     { DoorType : DoorType // key
       DoorKeyOpt : string option
       OpenImage : Image AssetTag
       ClosedImage : Image AssetTag }
 
-type [<StructuralEquality; NoComparison>] ShopData =
+type ShopData =
     { ShopType : ShopType // key
       ShopItems : ItemType Set }
 
-type [<StructuralEquality; NoComparison>] PropData =
+type [<NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Advent Set * Advent Set
     | Door of DoorType * Advent Set * Advent Set // for simplicity, we'll just have north / south doors
     | Portal of int * FieldType * Vector2 * Direction * Advent Set // leads to a different portal
@@ -297,7 +297,7 @@ type [<StructuralEquality; NoComparison>] PropData =
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
     static member empty = Chest (WoodenChest, Consumable GreenHerb, Gen.idEmpty, None, Set.empty, Set.empty)
 
-type [<StructuralEquality; NoComparison>] FieldData =
+type [<NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : TileMap AssetTag
       FieldProps : PropData list
@@ -305,17 +305,17 @@ type [<StructuralEquality; NoComparison>] FieldData =
       FieldAmbienceOpt : Song AssetTag option
       FieldBackgroundColor : Color }
 
-type [<StructuralEquality; NoComparison>] EnemyData =
+type EnemyData =
     { EnemyType : EnemyType // key
       EnemyPosition : Vector2 }
 
-type [<StructuralEquality; NoComparison>] BattleData =
+type [<NoComparison>] BattleData =
     { BattleType : BattleType // key
       BattleAllyPositions : Vector2 list
       BattleEnemies : EnemyData list
       BattleSongOpt : Song AssetTag option }
 
-type [<StructuralEquality; NoComparison>] CharacterData =
+type [<NoComparison>] CharacterData =
     { CharacterType : CharacterType // key
       ArchetypeType : ArchetypeType
       LevelBase : int
@@ -325,7 +325,7 @@ type [<StructuralEquality; NoComparison>] CharacterData =
       ExpScalar : single
       Description : string }
 
-type [<StructuralEquality; NoComparison>] CharacterAnimationData =
+type CharacterAnimationData =
     { CharacterAnimationCycle : CharacterAnimationCycle // key
       AnimationType : AnimationType
       LengthOpt : int64 option
@@ -336,7 +336,7 @@ type [<StructuralEquality; NoComparison>] CharacterAnimationData =
 [<AutoOpen>]
 module Data =
 
-    type [<StructuralEquality; NoComparison>] Data =
+    type [<NoComparison>] Data =
         { Weapons : Map<string, WeaponData>
           Armors : Map<string, ArmorData>
           Accessories : Map<string, AccessoryData>

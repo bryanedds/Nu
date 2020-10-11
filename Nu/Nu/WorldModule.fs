@@ -68,7 +68,7 @@ module WorldModule =
     let mutable internal isSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
-    let mutable internal sortSubscriptionsByDepth : SubscriptionEntry array -> obj -> SubscriptionEntry array =
+    let mutable internal sortSubscriptionsByDepth : struct (Guid * SubscriptionEntry) seq -> obj -> struct (Guid * SubscriptionEntry) seq =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
@@ -543,16 +543,16 @@ module WorldModule =
                         sortSubscriptionsByDepth eventAddressObj world.EventSystemDelegate world
                 else
                     let subscriptions = EventSystemDelegate.getSubscriptions world.EventSystemDelegate
-                    match UMap.tryFind eventAddressObj subscriptions with Some subscriptions -> subscriptions | None -> [||]
+                    match UMap.tryFind eventAddressObj subscriptions with Some subscriptions -> OMap.toSeq subscriptions | None -> Seq.empty
 
             // publish to each subscription
             // OPTIMIZATION: inlined foldWhile here in order to compact the call stack.
             let (_, world) =
                 let mutable result = (Cascade, world)
                 let mutable going = true
-                let mutable enr = (subscriptions :> IEnumerable<SubscriptionEntry>).GetEnumerator ()
+                let mutable enr = (subscriptions :> IEnumerable<_>).GetEnumerator ()
                 while going && enr.MoveNext () do
-                    let subscription = enr.Current
+                    let struct (_, subscription) = enr.Current
                     if fst result = Cascade && World.getLiveness (snd result) = Running then
                         let mapped =
                             match subscription.MapperOpt with

@@ -4,7 +4,7 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<StructuralEquality; StructuralComparison>] BattleState =
+type BattleState =
     | BattleReady of int64
     | BattleRunning
     | BattleCease of bool * int64
