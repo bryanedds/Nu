@@ -65,7 +65,7 @@ type MetricsEntityDispatcher () =
 #if ECS
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { RefCount = 0; Entity = entity; Sprite = AssetTag.make Assets.DefaultPackageName "Image4" } typeof<StaticSpriteComponent>.Name (entity.GetId world)
+        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { RefCount = 0; Entity = entity; Sprite = Assets.DefaultImage4 } typeof<StaticSpriteComponent>.Name (entity.GetId world)
         world
 
     override this.Unregister (entity, world) =
