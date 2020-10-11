@@ -443,6 +443,9 @@ module RigidBodyFacetModule =
 
     type Entity with
     
+        member this.GetBodyEnabled world : bool = this.Get Property? BodyEnabled world
+        member this.SetBodyEnabled (value : bool) world = this.SetFast Property? BodyEnabled false false value world
+        member this.BodyEnabled = lens Property? BodyEnabled this.GetBodyEnabled this.SetBodyEnabled this
         member this.GetBodyType world : BodyType = this.Get Property? BodyType world
         member this.SetBodyType (value : BodyType) world = this.SetFast Property? BodyType false false value world
         member this.BodyType = lens Property? BodyType this.GetBodyType this.SetBodyType this
@@ -504,6 +507,7 @@ module RigidBodyFacetModule =
 
         static member Properties =
             [define Entity.PublishChanges true
+             define Entity.BodyEnabled true
              define Entity.BodyType Dynamic
              define Entity.Awake true
              define Entity.Density Constants.Physics.NormalDensity
@@ -523,6 +527,7 @@ module RigidBodyFacetModule =
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyEnabled) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyType) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Awake) entity world
@@ -549,7 +554,7 @@ module RigidBodyFacetModule =
                   BodyShape = getBodyShape entity world
                   BodyType = entity.GetBodyType world
                   Awake = entity.GetAwake world
-                  Enabled = entity.GetEnabled world
+                  Enabled = entity.GetBodyEnabled world
                   Density = entity.GetDensity world
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
@@ -713,7 +718,7 @@ module TileMapFacetModule =
                   BodyShape = BodyShapes bodyShapes
                   BodyType = BodyType.Static
                   Awake = false
-                  Enabled = true
+                  Enabled = tileMap.GetBodyEnabled world
                   Density = Constants.Physics.NormalDensity
                   Friction = tileMap.GetFriction world
                   Restitution = tileMap.GetRestitution world
@@ -732,6 +737,7 @@ module TileMapFacetModule =
         static member Properties =
             [define Entity.Omnipresent true
              define Entity.PublishChanges true
+             define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
@@ -742,6 +748,7 @@ module TileMapFacetModule =
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (tileMap, world) =
+            let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? BodyEnabled) tileMap world
             let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Transform) tileMap world
             let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Friction) tileMap world
             let world = World.monitor (fun _ world -> (Cascade, tileMap.PropagatePhysics world)) (tileMap.ChangeEvent Property? Restitution) tileMap world

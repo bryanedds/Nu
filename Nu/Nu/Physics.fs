@@ -309,6 +309,11 @@ type [<StructuralEquality; NoComparison>] DestroyJointsMessage =
     { PhysicsIds : PhysicsId list }
 
 /// A message to the physics system to destroy a body.
+type [<StructuralEquality; NoComparison>] SetBodyEnabledMessage =
+    { PhysicsId : PhysicsId
+      Enabled : bool }
+
+/// A message to the physics system to destroy a body.
 type [<StructuralEquality; NoComparison>] SetBodyPositionMessage =
     { PhysicsId : PhysicsId
       Position : Vector2 }
@@ -377,6 +382,7 @@ type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | CreateJointsMessage of CreateJointsMessage
     | DestroyJointMessage of DestroyJointMessage
     | DestroyJointsMessage of DestroyJointsMessage
+    | SetBodyEnabledMessage of SetBodyEnabledMessage
     | SetBodyPositionMessage of SetBodyPositionMessage
     | SetBodyRotationMessage of SetBodyRotationMessage
     | SetBodyAngularVelocityMessage of SetBodyAngularVelocityMessage
@@ -723,6 +729,11 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
                 FarseerPhysicsEngine.destroyJoint destroyJointMessage physicsEngine)
             destroyJointsMessage.PhysicsIds
 
+    static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.PhysicsId with
+        | (true, body) -> body.Enabled <- setBodyEnabledMessage.Enabled
+        | (false, _) -> Log.debug ("Could not set enabled of non-existent body with PhysicsId = " + scstring setBodyEnabledMessage.PhysicsId + "'.")
+
     static member private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyPositionMessage.PhysicsId with
         | (true, body) -> body.Position <- FarseerPhysicsEngine.toPhysicsV2 setBodyPositionMessage.Position
@@ -768,6 +779,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         | CreateJointsMessage createJointsMessage -> FarseerPhysicsEngine.createJoints createJointsMessage physicsEngine
         | DestroyJointMessage destroyJointMessage -> FarseerPhysicsEngine.destroyJoint destroyJointMessage physicsEngine
         | DestroyJointsMessage destroyJointsMessage -> FarseerPhysicsEngine.destroyJoints destroyJointsMessage physicsEngine
+        | SetBodyEnabledMessage setBodyEnabledMessage -> FarseerPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
         | SetBodyPositionMessage setBodyPositionMessage -> FarseerPhysicsEngine.setBodyPosition setBodyPositionMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> FarseerPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
         | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> FarseerPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine

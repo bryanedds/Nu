@@ -16,6 +16,7 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
         member this.Junction _ _ _ = this
         member this.Disjunction _ _ _ = ()
 #endif
+
 #if ECS_PURE
 type [<NoEquality; NoComparison; Struct>] Velocity =
     { mutable RefCount : int
