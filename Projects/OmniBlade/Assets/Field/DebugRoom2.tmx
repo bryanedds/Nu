@@ -73,7 +73,7 @@
   </object>
   <object id="38" gid="813" x="192" y="512" width="64" height="64">
    <properties>
-    <property name="I" value="[Chest WoodenChest [Equipment [WeaponType WoodenSword]] 4844339e-e3ac-4f94-96f6-2b446e93c5da]"/>
+    <property name="I" value="[Chest WoodenChest [Equipment [WeaponType OakSword]] 4844339e-e3ac-4f94-96f6-2b446e93c5da]"/>
    </properties>
   </object>
   <object id="39" gid="813" x="192" y="768" width="64" height="64">

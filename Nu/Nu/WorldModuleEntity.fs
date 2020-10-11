@@ -552,9 +552,9 @@ module WorldModuleEntity =
             let publishUpdates =
                 match UMap.tryFind eventAddress (World.getSubscriptions world) with
                 | Some subscriptions ->
-                    match subscriptions with
-                    | [||] -> failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
-                    | _ -> true
+                    if OMap.isEmpty subscriptions
+                    then failwithumf () // NOTE: event system is defined to clean up all empty subscription entries
+                    else true
                 | None -> false
             if World.getEntityExists entity world
             then setFlag publishUpdates entity world
