@@ -23,7 +23,8 @@ module WorldRender =
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage (message : RenderMessage) world =
-            World.updateRenderer (fun renderer -> Renderer.enqueueMessage message renderer; renderer) world
+            Renderer.enqueueMessage message world.Subsystems.Renderer
+            world
 
         /// Enqueue multiple rendering messages to the world.
         static member enqueueRenderMessages (messages : RenderMessage seq) world =
