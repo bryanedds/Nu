@@ -138,7 +138,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
           mutable RenderMessages : RenderMessage List
           LayeredDescriptors : LayeredDescriptor List }
 
-    static member private sortDescriptors (left : LayeredDescriptor) (right : LayeredDescriptor) =
+    static member private compareDescriptors (left : LayeredDescriptor) (right : LayeredDescriptor) =
         let depthCompare = left.Depth.CompareTo right.Depth
         if depthCompare <> 0 then depthCompare else
         let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
@@ -455,7 +455,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
             let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
             let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
-            descriptors.Sort SdlRenderer.sortDescriptors
+            descriptors.Sort SdlRenderer.compareDescriptors
             for descriptor in descriptors do
                 SdlRenderer.renderDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor.RenderDescriptor renderer
         | _ ->

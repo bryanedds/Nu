@@ -23,7 +23,8 @@ module WorldAudio =
 
         /// Enqueue an audio message to the world.
         static member enqueueAudioMessage (message : AudioMessage) world =
-            World.updateAudioPlayer (fun audioPlayer -> AudioPlayer.enqueueMessage message audioPlayer; audioPlayer) world
+            AudioPlayer.enqueueMessage message world.Subsystems.AudioPlayer
+            world
 
         /// Enqueue multiple audio messages to the world.
         static member enqueueAudioMessages (messages : AudioMessage seq) world =
