@@ -268,7 +268,9 @@ module OmniBattle =
             let model =
                 BattleModel.updateCharacters (fun character ->
                     let character =
-                        CharacterModel.updateActionTime ((+) Constants.Battle.ActionTimeInc) character
+                        if character.IsHealthy
+                        then CharacterModel.updateActionTime ((+) Constants.Battle.ActionTimeInc) character
+                        else character
                     let character =
                         if CharacterModel.isReadyForAutoBattle character then
                             let targetIndex = BattleModel.getAllyIndexRandom model
