@@ -1,4 +1,5 @@
 ﻿namespace OmniBlade
+open FSharp.Reflection
 open FSharpx.Collections
 open Prime
 open Nu
@@ -391,15 +392,11 @@ module OmniBattle =
                     | Some ally ->
                         match ally.InputState with
                         | AimReticles (item, _) ->
-                            let command =
-                                match item with
-                                | "GreenHerb" -> ActionCommand.make (Consume GreenHerb) allyIndex (Some targetIndex)
-                                | "RedHerb" -> ActionCommand.make (Consume RedHerb) allyIndex (Some targetIndex)
-                                | "Critical" -> ActionCommand.make (Tech Critical) allyIndex (Some targetIndex)
-                                | "Cyclone" -> ActionCommand.make (Tech Cyclone) allyIndex (Some targetIndex)
-                                | "Bolt" -> ActionCommand.make (Tech Bolt) allyIndex (Some targetIndex)
-                                | "Tremor" -> ActionCommand.make (Tech Tremor) allyIndex (Some targetIndex)
-                                | _ -> ActionCommand.make Attack allyIndex (Some targetIndex)
+                            let actionType =
+                                if typeof<ConsumableType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Consume (scvalue item)
+                                elif typeof<TechType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Tech (scvalue item)
+                                else Attack
+                            let command = ActionCommand.make actionType allyIndex (Some targetIndex)
                             let model = BattleModel.appendActionCommand command model
                             withMsg (ResetCharacter allyIndex) model
                         | _ -> just model
@@ -484,6 +481,7 @@ module OmniBattle =
                 let source = BattleModel.getCharacter sourceIndex model
                 let target = BattleModel.getCharacter targetIndex model
                 let hopOpt =
+                    // TODO: pull behavior from data
                     match techType with
                     | Critical  | Cyclone -> Some { HopStart = source.Bottom; HopStop = target.BottomOffset2 }
                     | Bolt | Tremor -> None
