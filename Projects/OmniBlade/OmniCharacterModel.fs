@@ -194,10 +194,10 @@ module CharacterModel =
     let updateHitPoints updater character =
         let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
         let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
-        let autoBattleOpt = 
+        let autoBattleOpt =
             match character.AutoBattleOpt_ with
             | Some autoBattle when cancel -> Some { autoBattle with AutoTechOpt = None }
-            | _ -> None
+            | autoBattleOpt -> autoBattleOpt // use existing state if not cancelled
         { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
 
     let updateTechPoints updater character =
