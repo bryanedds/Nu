@@ -649,7 +649,7 @@ module OmniBattle =
                 let model =
                     if character.IsAlly
                     then BattleModel.updateCharacter (CharacterModel.updateInputState (constant NoInput)) characterIndex model
-                    else model // BattleModel.updateCharacter (CharacterModel.updateAutoBattleOpt (constant None)) characterIndex model
+                    else BattleModel.updateCharacter (CharacterModel.updateAutoBattleOpt (constant None)) characterIndex model
                 just model
 
             | DestroyCharacter characterIndex ->
