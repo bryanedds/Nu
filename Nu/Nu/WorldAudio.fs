@@ -34,6 +34,12 @@ module WorldAudio =
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]
+        static member getCurrentSongOpt world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.CurrentSongOpt
+
+        /// Send a message to the audio system to play a song.
+        [<FunctionBinding>]
         static member playSong timeToFadeOutSongMs volume song world =
             let playSongMessage = PlaySongMessage { FadeOutMs = timeToFadeOutSongMs; Volume = volume; Song = song }
             World.enqueueAudioMessage playSongMessage world

@@ -49,6 +49,8 @@ type AudioPlayer =
     abstract ClearMessages : unit -> unit
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : AudioMessage -> unit
+    /// Get the current optionally-playing song
+    abstract CurrentSongOpt : SongDescriptor option
     /// 'Play' the audio system. Must be called once per frame.
     abstract Play : AudioMessage List -> unit
 
@@ -61,6 +63,7 @@ type [<ReferenceEquality; NoComparison>] MockAudioPlayer =
         member audioPlayer.PopMessages () = List ()
         member audioPlayer.ClearMessages () = ()
         member audioPlayer.EnqueueMessage _ = ()
+        member audioPlayer.CurrentSongOpt = None
         member audioPlayer.Play _ = ()
 
     static member make () =
@@ -137,7 +140,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
             | OggAsset oggAsset ->
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to somtimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
+                SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
             audioPlayer.CurrentSongOpt <- Some playSongMessage
         | None ->
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
@@ -206,7 +209,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
             SdlAudioPlayer.handleAudioMessage audioMessage audioPlayer
     
     static member private tryUpdateCurrentSong audioPlayer =
-        if SDL_mixer.Mix_PlayingMusic () = 1 then
+        if SDL_mixer.Mix_PlayingMusic () = 0 then
             audioPlayer.CurrentSongOpt <- None
         
     
@@ -233,6 +236,9 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
 
         member audioPlayer.EnqueueMessage audioMessage =
             audioPlayer.AudioMessages.Add audioMessage 
+
+        member audioPlayer.CurrentSongOpt =
+            audioPlayer.CurrentSongOpt
 
         member audioPlayer.Play audioMessages =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
