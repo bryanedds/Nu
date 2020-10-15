@@ -537,6 +537,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         body.GravityScale <- bodyProperties.GravityScale
         body.CollisionCategories <- enum<Category> bodyProperties.CollisionCategories
         body.CollidesWith <- enum<Category> bodyProperties.CollisionMask
+        body.BodyType <- FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType
         body.IsBullet <- bodyProperties.IsBullet
         body.IsSensor <- bodyProperties.IsSensor
         body.SleepingAllowed <- true
@@ -637,7 +638,6 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
                 (physicsEngine.PhysicsContext,
                  FarseerPhysicsEngine.toPhysicsV2 bodyProperties.Position,
                  bodyProperties.Rotation,
-                 FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType,
                  bodySource)
 
         // configure body
@@ -695,9 +695,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         | JointDistance jointDistance ->
             match (physicsEngine.Bodies.TryGetValue jointDistance.TargetId, physicsEngine.Bodies.TryGetValue jointDistance.TargetId2) with
             | ((true, body), (true, body2)) ->
-                let joint = Factories.JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2)
-                joint.LocalAnchorA <- FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor
-                joint.LocalAnchorB <- FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor2
+                let joint = Factories.JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2, FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor, FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor2)
                 joint.Length <- FarseerPhysicsEngine.toPhysics jointDistance.Length
                 joint.Frequency <- jointDistance.Frequency
             | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."

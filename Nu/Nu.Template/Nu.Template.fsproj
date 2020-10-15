@@ -126,7 +126,7 @@
       <Private>True</Private>
     </ProjectReference>
     <Reference Include="FarseerPhysics">
-      <HintPath>..\..\Nu\Nu.Dependencies\Farseer\FarseerPhysics.dll</HintPath>
+      <HintPath>..\..\packages\FarseerPhysics.3.5.0\lib\NET40\FarseerPhysics.dll</HintPath>
     </Reference>
     <Reference Include="FParsec">
       <HintPath>..\..\packages\FParsec.1.0.3\lib\net40-client\FParsec.dll</HintPath>
