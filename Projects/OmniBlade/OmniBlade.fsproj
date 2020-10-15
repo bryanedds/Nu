@@ -79,11 +79,11 @@
     <Compile Include="OmniState.fs" />
     <Compile Include="OmniEvents.fs" />
     <Compile Include="OmniEffects.fs" />
-    <Compile Include="OmniCharacterModel.fs" />
-    <Compile Include="OmniPropModel.fs" />
-    <Compile Include="OmniAvatarModel.fs" />
-    <Compile Include="OmniBattleModel.fs" />
-    <Compile Include="OmniFieldModel.fs" />
+    <Compile Include="OmniCharacter.fs" />
+    <Compile Include="OmniProp.fs" />
+    <Compile Include="OmniAvatar.fs" />
+    <Compile Include="OmniBattle.fs" />
+    <Compile Include="OmniField.fs" />
     <Compile Include="OmniRingMenuModule.fs" />
     <Compile Include="OmniReticlesModule.fs" />
     <Compile Include="OmniCharacterModule.fs" />
