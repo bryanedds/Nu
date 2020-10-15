@@ -36,7 +36,10 @@ module Metadata =
         let properties = tileSet.Properties
         try scvalue<Image AssetTag> properties.["Image"] 
         with :? KeyNotFoundException ->
-            let errorMessage = "TileSet '" + tileSet.Name + "' missing Image property."
+            let errorMessage =
+                "TileSet '" + tileSet.Name + "' missing Image property.\n" +
+                "You must add a Custom Property to the tile set called 'Image' and give it an asset value like '[PackageName AssetName]'.\n" +
+                "This will specify where the engine can find the tile set's associated tile map image."
             raise (TileSetPropertyNotFoundException errorMessage)
 
     let private generateTextureMetadata asset =
