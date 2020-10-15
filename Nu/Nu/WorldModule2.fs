@@ -241,7 +241,10 @@ module WorldModule2 =
                         if selectedScreen.GetTransitionTicks world = 0L then
                             let world =
                                 match (selectedScreen.GetIncoming world).SongOpt with
-                                | Some playSong -> World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world
+                                | Some playSong ->
+                                    if World.getCurrentSongOpt world <> Some playSong
+                                    then World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world
+                                    else world
                                 | None -> world
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
                             World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen false world
@@ -261,7 +264,13 @@ module WorldModule2 =
                     if selectedScreen.GetTransitionTicks world = 0L then
                         let world =
                             match (selectedScreen.GetOutgoing world).SongOpt with
-                            | Some playSong -> World.fadeOutSong playSong.FadeOutMs world
+                            | Some playSong ->
+                                match World.getScreenTransitionDestinationOpt world with
+                                | Some destination ->
+                                    if (selectedScreen.GetIncoming world).SongOpt <> (destination.GetIncoming world).SongOpt
+                                    then World.fadeOutSong playSong.FadeOutMs world
+                                    else world
+                                | None -> world
                             | None -> world
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                         World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen false world
