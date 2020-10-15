@@ -11,7 +11,7 @@ open OmniBlade
 module OmniField =
 
     type [<NoComparison; NoEquality>] FieldMessage =
-        | UpdateAvatar of AvatarModel
+        | UpdateAvatar of Avatar
         | UpdateFieldTransition
         | UpdateDialog
         | UpdatePortal
@@ -40,12 +40,12 @@ module OmniField =
 
     type Screen with
 
-        member this.GetFieldModel = this.GetModel<FieldModel>
-        member this.SetFieldModel = this.SetModel<FieldModel>
-        member this.FieldModel = this.Model<FieldModel> ()
+        member this.GetField = this.GetModel<Field>
+        member this.SetField = this.SetModel<Field>
+        member this.Field = this.Model<Field> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<FieldModel, FieldMessage, FieldCommand> (FieldModel.initial)
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.initial)
 
         static let pageItems pageIndex pageSize items =
             items |>
@@ -55,19 +55,19 @@ module OmniField =
             Seq.tryHead |>
             Option.defaultValue []
 
-        static let isFacingBodyShape bodyShape (avatar : AvatarModel) world =
+        static let isFacingBodyShape bodyShape (avatar : Avatar) world =
             if bodyShape.Entity.Is<PropDispatcher> world then
                 let v = bodyShape.Entity.GetBottom world - avatar.Bottom
                 let direction = Direction.fromVector2 v
                 direction = avatar.Direction
             else false
 
-        static let getFacingBodyShapes (avatar : AvatarModel) world =
+        static let getFacingBodyShapes (avatar : Avatar) world =
             List.filter
                 (fun bodyShape -> isFacingBodyShape bodyShape avatar world)
                 avatar.IntersectedBodyShapes
 
-        static let tryGetFacingProp (avatar : AvatarModel) world =
+        static let tryGetFacingProp (avatar : Avatar) world =
             match getFacingBodyShapes avatar world with
             | head :: _ -> Some head.Entity
             | [] -> None
@@ -90,112 +90,112 @@ module OmniField =
                 then Some "Next"
                 else None
 
-        static let tryGetInteraction dialogOpt advents (avatar : AvatarModel) world =
+        static let tryGetInteraction dialogOpt advents (avatar : Avatar) world =
             match tryGetFacingProp avatar world with
-            | Some prop -> tryGetInteraction3 dialogOpt advents (prop.GetPropModel world).PropData
+            | Some prop -> tryGetInteraction3 dialogOpt advents (prop.GetProp world).PropData
             | None -> None
 
-        static let tryGetTouchingPortal (avatar : AvatarModel) world =
+        static let tryGetTouchingPortal (avatar : Avatar) world =
             avatar.IntersectedBodyShapes |>
             List.choose (fun shape ->
-                match (shape.Entity.GetPropModel world).PropData with
+                match (shape.Entity.GetProp world).PropData with
                 | Portal (_, fieldType, index, direction, _) -> Some (fieldType, index, direction)
                 | _ -> None) |>
             List.tryHead
 
-        static let getTouchedSensors (avatar : AvatarModel) world =
+        static let getTouchedSensors (avatar : Avatar) world =
             List.choose (fun shape ->
-                match (shape.Entity.GetPropModel world).PropData with
+                match (shape.Entity.GetProp world).PropData with
                 | Sensor (sensorType, _, requirements, consequents) -> Some (sensorType, requirements, consequents)
                 | _ -> None)
                 avatar.CollidedBodyShapes
 
-        static let getUntouchedSensors (avatar : AvatarModel) world =
+        static let getUntouchedSensors (avatar : Avatar) world =
             List.choose (fun shape ->
-                match (shape.Entity.GetPropModel world).PropData with
+                match (shape.Entity.GetProp world).PropData with
                 | Sensor (sensorType, _, requirements, consequents) -> Some (sensorType, requirements, consequents)
                 | _ -> None)
                 avatar.SeparatedBodyShapes
 
-        static let interactDialog dialog model =
+        static let interactDialog dialog field =
             if dialog.DialogPage < dialog.DialogText.Split(Constants.Gameplay.DialogSplit).Length - 1 then
                 let dialog = { dialog with DialogProgress = 0; DialogPage = inc dialog.DialogPage }
-                let model = FieldModel.updateDialogOpt (constant (Some dialog)) model
-                just model
-            else just (FieldModel.updateDialogOpt (constant None) model)
+                let field = Field.updateDialogOpt (constant (Some dialog)) field
+                just field
+            else just (Field.updateDialogOpt (constant None) field)
 
-        static let interactChest time itemType chestId battleTypeOpt requirements consequents (model : FieldModel) =
-            if model.Advents.IsSupersetOf requirements then
+        static let interactChest time itemType chestId battleTypeOpt requirements consequents (field : Field) =
+            if field.Advents.IsSupersetOf requirements then
                 match battleTypeOpt with
                 | Some battleType ->
                     match Map.tryFind battleType data.Value.Battles with
                     | Some battleData ->
                         let prizePool = { Items = []; Gold = 0; Exp = 0 }
-                        let battleModel = BattleModel.makeFromLegion (FieldModel.getParty model) model.Inventory prizePool battleData time
-                        let model = FieldModel.updateBattleOpt (constant (Some battleModel)) model
-                        just model
-                    | None -> just model
+                        let battle = Battle.makeFromLegion (Field.getParty field) field.Inventory prizePool battleData time
+                        let field = Field.updateBattleOpt (constant (Some battle)) field
+                        just field
+                    | None -> just field
                 | None ->
-                    let model = FieldModel.updateInventory (Inventory.addItem itemType) model
-                    let model = FieldModel.updateAdvents (Set.add (Opened chestId)) model
-                    let model = FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0 })) model
-                    let model = FieldModel.updateAdvents (Set.addMany consequents) model
-                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound)) model
-            else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
+                    let field = Field.updateInventory (Inventory.addItem itemType) field
+                    let field = Field.updateAdvents (Set.add (Opened chestId)) field
+                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0 })) field
+                    let field = Field.updateAdvents (Set.addMany consequents) field
+                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound)) field
+            else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) field)
 
-        static let interactDoor requirements consequents (propModel : PropModel) (model : FieldModel) =
-            match propModel.PropState with
+        static let interactDoor requirements consequents (prop : Prop) (field : Field) =
+            match prop.PropState with
             | DoorState false ->
-                if model.Advents.IsSupersetOf requirements then
-                    let model = FieldModel.updateAdvents (Set.addMany consequents) model
-                    let model = FieldModel.updatePropStates (Map.add propModel.PropId (DoorState true)) model
-                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenDoorSound)) model
-                else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) model)
+                if field.Advents.IsSupersetOf requirements then
+                    let field = Field.updateAdvents (Set.addMany consequents) field
+                    let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
+                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenDoorSound)) field
+                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) field)
             | _ -> failwithumf ()
 
-        static let interactSwitch requirements consequents (propModel : PropModel) (model : FieldModel) =
-            match propModel.PropState with
+        static let interactSwitch requirements consequents (prop : Prop) (field : Field) =
+            match prop.PropState with
             | SwitchState on ->
-                if model.Advents.IsSupersetOf requirements then
-                    let model = FieldModel.updateAdvents (if on then Set.removeMany consequents else Set.addMany consequents) model
-                    let model = FieldModel.updatePropStates (Map.add propModel.PropId (SwitchState (not on))) model
-                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UseSwitchSound)) model
-                else just (FieldModel.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0 })) model)
+                if field.Advents.IsSupersetOf requirements then
+                    let field = Field.updateAdvents (if on then Set.removeMany consequents else Set.addMany consequents) field
+                    let field = Field.updatePropStates (Map.add prop.PropId (SwitchState (not on))) field
+                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UseSwitchSound)) field
+                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0 })) field)
             | _ -> failwithumf ()
 
-        static let interactNpc dialogs (model : FieldModel) =
-            let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if model.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
+        static let interactNpc dialogs (field : Field) =
+            let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if field.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
             let (dialog, consequents) = match List.tryHead dialogs with Some dialog -> dialog | None -> ("...", Set.empty)
             let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0 }
-            let model = FieldModel.updateDialogOpt (constant (Some dialogForm)) model
-            let model = FieldModel.updateAdvents (Set.addMany consequents) model
-            just model
+            let field = Field.updateDialogOpt (constant (Some dialogForm)) field
+            let field = Field.updateAdvents (Set.addMany consequents) field
+            just field
 
-        static let interactShopkeep shopType (model : FieldModel) =
-            let shopModel = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmModelOpt = None }
-            let model = FieldModel.updateShopOpt (constant (Some shopModel)) model
-            just model
+        static let interactShopkeep shopType (field : Field) =
+            let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
+            let field = Field.updateShopOpt (constant (Some shop)) field
+            just field
 
-        static let sidebar position depth (model : Lens<FieldModel, World>) =
+        static let sidebar position depth (field : Lens<Field, World>) =
             Content.group Gen.name []
                 [Content.button Gen.name
                    [Entity.PositionLocal == position; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "L"
-                    Entity.EnabledLocal <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuLegion _ -> false | _ -> true
+                    Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuLegion _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuLegionOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 72.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "I"
-                    Entity.EnabledLocal <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuItem _ -> false | _ -> true
+                    Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuItem _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuItemOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 144.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "X"
                     Entity.ClickEvent ==> msg SubmenuClose]]
 
-        static let legion (position : Vector2) depth rows (model : Lens<FieldModel, World>) filter fieldMsg =
-            Content.entities model
-                (fun model -> (model.Legion, model.Submenu))
+        static let legion (position : Vector2) depth rows (field : Lens<Field, World>) filter fieldMsg =
+            Content.entities field
+                (fun field -> (field.Legion, field.Submenu))
                 (fun (legion, submenu) _ -> legion |> Map.toValueList |> List.filter (flip filter submenu))
                 (fun i legionnaireLens world ->
                     let legionnaire = Lens.get legionnaireLens world
@@ -206,26 +206,26 @@ module OmniField =
                          Entity.Text == CharacterType.getName legionnaire.CharacterType
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
-        static let items (position : Vector2) depth model fieldMsg =
-            Content.entities model
-                (fun (model : FieldModel) -> (model.Submenu, model.ShopOpt, model.Inventory))
-                (fun (submenu, shopModelOpt, inventory : Inventory) _ ->
+        static let items (position : Vector2) depth field fieldMsg =
+            Content.entities field
+                (fun (field : Field) -> (field.Submenu, field.ShopOpt, field.Inventory))
+                (fun (submenu, shopOpt, inventory : Inventory) _ ->
                     let items =
                         match submenu.SubmenuState with
                         | SubmenuItem submenu -> pageItems submenu.ItemPage 10 (Inventory.indexItems inventory)
                         | _ ->
-                            match shopModelOpt with
-                            | Some shopModel ->
-                                match shopModel.ShopState with
+                            match shopOpt with
+                            | Some shop ->
+                                match shop.ShopState with
                                 | ShopBuying ->
-                                    match Map.tryFind shopModel.ShopType data.Value.Shops with
-                                    | Some shop -> shop.ShopItems |> Set.toSeq |> Seq.indexed |> pageItems shopModel.ShopPage 10
+                                    match Map.tryFind shop.ShopType data.Value.Shops with
+                                    | Some shopData -> shopData.ShopItems |> Set.toSeq |> Seq.indexed |> pageItems shop.ShopPage 10
                                     | None -> []
                                 | ShopSelling ->
                                     inventory |>
                                     Inventory.indexItems |>
                                     Seq.choose (function (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item | (_, KeyItem _) | (_, Stash _) -> None) |>
-                                    pageItems shopModel.ShopPage 10
+                                    pageItems shop.ShopPage 10
                             | None -> []
                     let itemsSorted = List.sortBy snd items
                     itemsSorted)
@@ -240,7 +240,7 @@ module OmniField =
                          Entity.ClickEvent ==> msg (fieldMsg selection)])
 
         override this.Channel (_, field) =
-            [Simulants.FieldAvatar.AvatarModel.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> AvatarModel))
+            [Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
              field.UpdateEvent => msg UpdateDialog
              field.UpdateEvent => msg UpdateFieldTransition
              field.UpdateEvent => msg UpdatePortal
@@ -248,199 +248,199 @@ module OmniField =
              Simulants.FieldInteract.ClickEvent => msg Interact
              field.PostUpdateEvent => cmd UpdateEye]
 
-        override this.Message (model, message, _, world) =
+        override this.Message (field, message, _, world) =
 
             match message with
-            | UpdateAvatar avatarModel ->
-                let model = FieldModel.updateAvatar (constant avatarModel) model
-                just model
+            | UpdateAvatar avatar ->
+                let field = Field.updateAvatar (constant avatar) field
+                just field
 
             | UpdateDialog ->
-                let model =
-                    FieldModel.updateDialogOpt
+                let field =
+                    Field.updateDialogOpt
                         (function
                          | Some dialog ->
                             let increment = if World.getTickTime world % 2L = 0L then 1 else 0
                             let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
                             Some dialog
                          | None -> None)
-                        model
-                just model
+                        field
+                just field
 
             | UpdateFieldTransition ->
-                match model.FieldTransitionOpt with
+                match field.FieldTransitionOpt with
                 | Some fieldTransition ->
                     let tickTime = World.getTickTime world
                     if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
-                        let model = FieldModel.updateFieldType (constant fieldTransition.FieldType) model
-                        let model =
-                            FieldModel.updateAvatar (fun avatar ->
-                                let avatar = AvatarModel.updateDirection (constant fieldTransition.FieldDirection) avatar
-                                let avatar = AvatarModel.updateDirection (constant fieldTransition.FieldDirection) avatar
-                                let avatar = AvatarModel.updateIntersectedBodyShapes (constant []) avatar
+                        let field = Field.updateFieldType (constant fieldTransition.FieldType) field
+                        let field =
+                            Field.updateAvatar (fun avatar ->
+                                let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
+                                let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
+                                let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
                                 avatar)
-                                model
-                        withCmd (MoveAvatar fieldTransition.FieldIndex) model
+                                field
+                        withCmd (MoveAvatar fieldTransition.FieldIndex) field
                     elif tickTime = fieldTransition.FieldTransitionTime then
-                        let model = FieldModel.updateFieldTransitionOpt (constant None) model
-                        just model
-                    else just model
-                | None -> just model
+                        let field = Field.updateFieldTransitionOpt (constant None) field
+                        just field
+                    else just field
+                | None -> just field
 
             | UpdatePortal ->
-                match model.FieldTransitionOpt with
+                match field.FieldTransitionOpt with
                 | None ->
-                    match tryGetTouchingPortal model.Avatar world with
+                    match tryGetTouchingPortal field.Avatar world with
                     | Some (fieldType, index, direction) ->
                         let transition =
                             { FieldType = fieldType
                               FieldIndex = index
                               FieldDirection = direction
                               FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
-                        let model = FieldModel.updateFieldTransitionOpt (constant (Some transition)) model
-                        withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.StairStepsSound)) model
-                    | None -> just model
-                | Some _ -> just model
+                        let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
+                        withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.StairStepsSound)) field
+                    | None -> just field
+                | Some _ -> just field
 
             | UpdateSensor ->
-                match model.FieldTransitionOpt with
+                match field.FieldTransitionOpt with
                 | None ->
-                    let sensors = getTouchedSensors model.Avatar world
+                    let sensors = getTouchedSensors field.Avatar world
                     let results =
-                        List.fold (fun (cmds : Signal<FieldMessage, FieldCommand> list, model : FieldModel) (sensorType, requirements, consequents) ->
-                            if model.Advents.IsSupersetOf requirements then
-                                let model = FieldModel.updateAdvents (constant (Set.union consequents model.Advents)) model
+                        List.fold (fun (cmds : Signal<FieldMessage, FieldCommand> list, field : Field) (sensorType, requirements, consequents) ->
+                            if field.Advents.IsSupersetOf requirements then
+                                let field = Field.updateAdvents (constant (Set.union consequents field.Advents)) field
                                 match sensorType with
-                                | AirSensor -> (cmds, model)
-                                | HiddenSensor | StepPlateSensor -> (Command (PlaySound (0L,  Constants.Audio.DefaultSoundVolume, Assets.TriggerSound)) :: cmds, model)
-                            else (cmds, model))
-                            ([], model) sensors
+                                | AirSensor -> (cmds, field)
+                                | HiddenSensor | StepPlateSensor -> (Command (PlaySound (0L,  Constants.Audio.DefaultSoundVolume, Assets.TriggerSound)) :: cmds, field)
+                            else (cmds, field))
+                            ([], field) sensors
                     results
-                | Some _ -> just model
+                | Some _ -> just field
 
             | SubmenuLegionOpen ->
-                let state = SubmenuLegion { LegionIndex = 0; LegionIndices = Map.toKeyList model.Legion }
-                let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuState = state }) model
-                just model
+                let state = SubmenuLegion { LegionIndex = 0; LegionIndices = Map.toKeyList field.Legion }
+                let field = Field.updateSubmenu (fun submenu -> { submenu with SubmenuState = state }) field
+                just field
 
             | SubmenuLegionAlly index ->
-                let model =
-                    FieldModel.updateSubmenu (fun submenu ->
+                let field =
+                    Field.updateSubmenu (fun submenu ->
                         let state =
                             match submenu.SubmenuState with
                             | SubmenuLegion submenuLegion -> SubmenuLegion { submenuLegion with LegionIndex = index }
                             | state -> state
                         { submenu with SubmenuState = state })
-                        model
-                just model
+                        field
+                just field
 
             | SubmenuItemOpen ->
                 let itemState = SubmenuItem { ItemPage = 0 }
-                let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuState = itemState }) model
-                just model
+                let field = Field.updateSubmenu (fun submenu -> { submenu with SubmenuState = itemState }) field
+                just field
 
             | SubmenuItemSelect selectionLens ->
                 let selection = Lens.get selectionLens world
-                let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuUseOpt = SubmenuUse.tryMakeFromSelection selection }) model
-                just model
+                let field = Field.updateSubmenu (fun submenu -> { submenu with SubmenuUseOpt = SubmenuUse.tryMakeFromSelection selection }) field
+                just field
 
             | SubmenuItemUse index ->
-                match Map.tryFind index model.Legion with
+                match Map.tryFind index field.Legion with
                 | Some legionnaire ->
-                    match model.Submenu.SubmenuUseOpt with
+                    match field.Submenu.SubmenuUseOpt with
                     | Some submenuUse ->
                         let itemType = snd submenuUse.SubmenuUseSelection
                         let (result, displacedOpt, legionnaire) = Legionnaire.tryUseItem itemType legionnaire
-                        let model = if result then FieldModel.updateInventory (Inventory.removeItem itemType) model else model
-                        let model = match displacedOpt with Some displaced -> FieldModel.updateInventory (Inventory.addItem displaced) model | None -> model
-                        let model = FieldModel.updateLegion (Map.add index legionnaire) model
-                        let model = FieldModel.updateSubmenu (constant { model.Submenu with SubmenuUseOpt = None }) model
-                        if result then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) model
-                        else just model
-                    | None -> just model
-                | None -> just model
+                        let field = if result then Field.updateInventory (Inventory.removeItem itemType) field else field
+                        let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.addItem displaced) field | None -> field
+                        let field = Field.updateLegion (Map.add index legionnaire) field
+                        let field = Field.updateSubmenu (constant { field.Submenu with SubmenuUseOpt = None }) field
+                        if result then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) field
+                        else just field
+                    | None -> just field
+                | None -> just field
 
             | SubmenuItemCancel ->
-                let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuUseOpt = None }) model
-                just model
+                let field = Field.updateSubmenu (fun submenu -> { submenu with SubmenuUseOpt = None }) field
+                just field
 
             | SubmenuClose ->
-                let model = FieldModel.updateSubmenu (fun submenu -> { submenu with SubmenuState = SubmenuClosed }) model
-                just model
+                let field = Field.updateSubmenu (fun submenu -> { submenu with SubmenuState = SubmenuClosed }) field
+                just field
 
             | ShopBuy ->
-                let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopState = ShopBuying; ShopPage = 0 })) model
-                just model
+                let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopState = ShopBuying; ShopPage = 0 })) field
+                just field
 
             | ShopSell ->
-                let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopState = ShopSelling; ShopPage = 0 })) model
-                just model
+                let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopState = ShopSelling; ShopPage = 0 })) field
+                just field
 
             | ShopPageUp ->
-                let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopPage = max 0 (dec shopModel.ShopPage) })) model
-                just model
+                let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopPage = max 0 (dec shop.ShopPage) })) field
+                just field
 
             | ShopPageDown ->
-                let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopPage = inc shopModel.ShopPage })) model
-                just model
+                let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopPage = inc shop.ShopPage })) field
+                just field
 
             | ShopSelect selectionLens ->
                 let selection = Lens.get selectionLens world
-                let model =
-                    FieldModel.updateShopOpt (Option.map (fun shopModel ->
-                        let buying = match shopModel.ShopState with ShopBuying -> true | ShopSelling -> false
-                        let shopConfirmModelOpt = ShopConfirmModel.tryMakeFromSelection buying model.Inventory selection
-                        { shopModel with ShopConfirmModelOpt = shopConfirmModelOpt }))
-                        model
-                just model
+                let field =
+                    Field.updateShopOpt (Option.map (fun shop ->
+                        let buying = match shop.ShopState with ShopBuying -> true | ShopSelling -> false
+                        let shopConfirmOpt = ShopConfirm.tryMakeFromSelection buying field.Inventory selection
+                        { shop with ShopConfirmOpt = shopConfirmOpt }))
+                        field
+                just field
 
             | ShopConfirmAccept ->
-                match model.ShopOpt with
-                | Some shopModel ->
-                    match shopModel.ShopConfirmModelOpt with
-                    | Some shopConfirmModel ->
-                        let valid = match shopModel.ShopState with ShopBuying -> model.Inventory.Gold > shopConfirmModel.ShopConfirmPrice | ShopSelling -> true
+                match field.ShopOpt with
+                | Some shop ->
+                    match shop.ShopConfirmOpt with
+                    | Some shopConfirm ->
+                        let valid = match shop.ShopState with ShopBuying -> field.Inventory.Gold > shopConfirm.ShopConfirmPrice | ShopSelling -> true
                         if valid then
-                            let itemType = snd shopConfirmModel.ShopConfirmSelection
-                            let model = FieldModel.updateInventory (match shopModel.ShopState with ShopBuying -> Inventory.addItem itemType | ShopSelling -> Inventory.removeItem itemType) model
-                            let model = FieldModel.updateInventory (match shopModel.ShopState with ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirmModel.ShopConfirmPrice) | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirmModel.ShopConfirmPrice)) model
-                            let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = None })) model
-                            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) model
-                        else withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.MistakeSound)) model
-                    | None -> just model
-                | None -> just model
+                            let itemType = snd shopConfirm.ShopConfirmSelection
+                            let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.addItem itemType | ShopSelling -> Inventory.removeItem itemType) field
+                            let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirm.ShopConfirmPrice) | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirm.ShopConfirmPrice)) field
+                            let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
+                            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) field
+                        else withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.MistakeSound)) field
+                    | None -> just field
+                | None -> just field
 
             | ShopConfirmDecline ->
-                let model = FieldModel.updateShopOpt (Option.map (fun shopModel -> { shopModel with ShopConfirmModelOpt = None })) model
-                just model
+                let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
+                just field
 
             | ShopLeave ->
-                let model = FieldModel.updateShopOpt (constant None) model
-                just model
+                let field = Field.updateShopOpt (constant None) field
+                just field
 
             | Interact ->
-                match model.DialogOpt with
+                match field.DialogOpt with
                 | None ->
-                    match tryGetFacingProp model.Avatar world with
+                    match tryGetFacingProp field.Avatar world with
                     | Some prop ->
-                        let propModel = prop.GetPropModel world
-                        match propModel.PropData with
-                        | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest (World.getTickTime world) itemType chestId battleTypeOpt requirements consequents model
-                        | Door (_, requirements, consequents) -> interactDoor requirements consequents propModel model
-                        | Portal (_, _, _, _, _) -> just model
-                        | Switch (_, requirements, consequents) -> interactSwitch requirements consequents propModel model
-                        | Sensor (_, _, _, _) -> just model
-                        | Npc (_, _, dialogs, _) -> interactNpc dialogs model
-                        | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType model
-                    | None -> just model
-                | Some dialog -> interactDialog dialog model
+                        let prop = prop.GetProp world
+                        match prop.PropData with
+                        | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest (World.getTickTime world) itemType chestId battleTypeOpt requirements consequents field
+                        | Door (_, requirements, consequents) -> interactDoor requirements consequents prop field
+                        | Portal (_, _, _, _, _) -> just field
+                        | Switch (_, requirements, consequents) -> interactSwitch requirements consequents prop field
+                        | Sensor (_, _, _, _) -> just field
+                        | Npc (_, _, dialogs, _) -> interactNpc dialogs field
+                        | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
+                    | None -> just field
+                | Some dialog -> interactDialog dialog field
 
         override this.Command (_, command, _, world) =
 
             match command with
             | UpdateEye ->
-                let avatarModel = Simulants.FieldAvatar.GetAvatarModel world
-                let world = World.setEyeCenter avatarModel.Center world
+                let avatar = Simulants.FieldAvatar.GetAvatar world
+                let world = World.setEyeCenter avatar.Center world
                 just world
 
             | MoveAvatar position ->
@@ -452,26 +452,26 @@ module OmniField =
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
 
-        override this.Content (model, _) =
+        override this.Content (field, _) =
 
             [// main layer
              Content.layer Simulants.FieldScene.Name []
 
                 [// backdrop sprite
                  Content.staticSprite Simulants.FieldBackdrop.Name
-                    [Entity.Bounds <== model ->> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MinValue; Entity.Absolute == true
+                    [Entity.Bounds <== field ->> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MinValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.DefaultImage9
-                     Entity.Color <== model --> fun model ->
-                        match data.Value.Fields.TryGetValue model.FieldType with
+                     Entity.Color <== field --> fun field ->
+                        match data.Value.Fields.TryGetValue field.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
                         | (false, _) -> Color.Black]
 
                  // portal fade sprite
                  Content.staticSprite Simulants.FieldPortalFade.Name
-                   [Entity.Bounds <== model ->> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
+                   [Entity.Bounds <== field ->> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
                     Entity.StaticImage == Assets.DefaultImage9
-                    Entity.Color <== model ->> fun model world ->
-                        match model.FieldTransitionOpt with
+                    Entity.Color <== field ->> fun field world ->
+                        match field.FieldTransitionOpt with
                         | Some transition ->
                             let tickTime = World.getTickTime world
                             let deltaTime = single transition.FieldTransitionTime - single tickTime
@@ -486,8 +486,8 @@ module OmniField =
                  // tile map
                  Content.tileMap Simulants.FieldTileMap.Name
                     [Entity.Depth == Constants.Field.BackgroundDepth
-                     Entity.TileMapAsset <== model --> fun model ->
-                        match Map.tryFind model.FieldType data.Value.Fields with
+                     Entity.TileMapAsset <== field --> fun field ->
+                        match Map.tryFind field.FieldType data.Value.Fields with
                         | Some fieldData -> fieldData.FieldTileMap
                         | None -> Assets.DebugRoomTileMap
                      Entity.TileLayerClearance == 10.0f]
@@ -495,54 +495,54 @@ module OmniField =
                  // avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
                     [Entity.Position == v2 256.0f 256.0f; Entity.Depth == Constants.Field.ForgroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
-                     Entity.Enabled <== model --> fun model ->
-                        model.Submenu.SubmenuState = SubmenuClosed &&
-                        Option.isNone model.DialogOpt &&
-                        Option.isNone model.ShopOpt &&
-                        Option.isNone model.FieldTransitionOpt
+                     Entity.Enabled <== field --> fun field ->
+                        field.Submenu.SubmenuState = SubmenuClosed &&
+                        Option.isNone field.DialogOpt &&
+                        Option.isNone field.ShopOpt &&
+                        Option.isNone field.FieldTransitionOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
-                     Entity.AvatarModel <== model --> fun model -> model.Avatar]
+                     Entity.Avatar <== field --> fun field -> field.Avatar]
 
                  // submenu button
                  Content.button Simulants.FieldSubmenu.Name
                     [Entity.Position == v2 -444.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Text == "Submenu"
-                     Entity.Visible <== model --> fun model ->
-                        model.Submenu.SubmenuState = SubmenuClosed &&
-                        Option.isNone model.DialogOpt &&
-                        Option.isNone model.ShopOpt &&
-                        Option.isNone model.FieldTransitionOpt
+                     Entity.Visible <== field --> fun field ->
+                        field.Submenu.SubmenuState = SubmenuClosed &&
+                        Option.isNone field.DialogOpt &&
+                        Option.isNone field.ShopOpt &&
+                        Option.isNone field.FieldTransitionOpt
                      Entity.ClickEvent ==> msg SubmenuLegionOpen]
 
                  // interact button
                  Content.button Simulants.FieldInteract.Name
                     [Entity.Position == v2 248.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
-                     Entity.Visible <== model ->> fun model world ->
-                        model.Submenu.SubmenuState = SubmenuClosed &&
-                        Option.isNone model.ShopOpt &&
-                        Option.isNone model.FieldTransitionOpt &&
-                        Option.isSome (tryGetInteraction model.DialogOpt model.Advents model.Avatar world)
-                     Entity.Text <== model ->> fun model world ->
-                        match tryGetInteraction model.DialogOpt model.Advents model.Avatar world with
+                     Entity.Visible <== field ->> fun field world ->
+                        field.Submenu.SubmenuState = SubmenuClosed &&
+                        Option.isNone field.ShopOpt &&
+                        Option.isNone field.FieldTransitionOpt &&
+                        Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar world)
+                     Entity.Text <== field ->> fun field world ->
+                        match tryGetInteraction field.DialogOpt field.Advents field.Avatar world with
                         | Some interaction -> interaction
                         | None -> ""
                      Entity.ClickSoundOpt == None]
 
                  // dialog
                  Content.text Simulants.FieldDialog.Name
-                    [Entity.Bounds <== model --> fun model ->
-                        match model.DialogOpt with
+                    [Entity.Bounds <== field --> fun field ->
+                        match field.DialogOpt with
                         | Some dialog ->
                             match dialog.DialogForm with
                             | DialogThin -> v4Bounds (v2 -448.0f 128.0f) (v2 896.0f 112.0f)
                             | DialogMedium -> v4Bounds (v2 -448.0f 0.0f) (v2 640.0f 256.0f)
                             | DialogLarge -> v4Bounds (v2 -448.0f 0.0f) (v2 896.0f 256.0f)
                         | None -> v4Zero
-                     Entity.BackgroundImageOpt <== model --> fun model ->
+                     Entity.BackgroundImageOpt <== field --> fun field ->
                         let image =
-                            match model.DialogOpt with
+                            match field.DialogOpt with
                             | Some dialog ->
                                 match dialog.DialogForm with
                                 | DialogThin -> Assets.DialogThinImage
@@ -550,21 +550,21 @@ module OmniField =
                                 | DialogLarge -> Assets.DialogLargeImage
                             | None -> Assets.DialogLargeImage
                         Some image
-                     Entity.Text <== model --> fun model ->
-                        match model.DialogOpt with
+                     Entity.Text <== field --> fun field ->
+                        match field.DialogOpt with
                         | Some dialog ->
                             let textPage = dialog.DialogPage
                             let text = dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[textPage]
                             let textToShow = String.tryTake dialog.DialogProgress text
                             textToShow
                         | None -> ""
-                     Entity.Visible <== model --> fun model -> Option.isSome model.DialogOpt
+                     Entity.Visible <== field --> fun field -> Option.isSome field.DialogOpt
                      Entity.Justification == Unjustified true
                      Entity.Margins == v2 40.0f 40.0f]
 
                  // props
-                 Content.entities model
-                    (fun model -> (model.FieldType, model.Advents, model.PropStates))
+                 Content.entities field
+                    (fun field -> (field.FieldType, field.Advents, field.PropStates))
                     (fun (fieldType, advents, propStates) world ->
                         match Map.tryFind fieldType data.Value.Fields with
                         | Some fieldData ->
@@ -578,8 +578,8 @@ module OmniField =
                                 else []
                             | None -> []
                         | None -> [])
-                    (fun _ model _ ->
-                        let propModel = flip Lens.map model (fun (object, group, tileMap, advents, propStates) ->
+                    (fun _ field _ ->
+                        let prop = flip Lens.map field (fun (object, group, tileMap, advents, propStates) ->
                             let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
                             let propSize = v2 (single object.Width) (single object.Height)
                             let propBounds = v4Bounds propPosition propSize
@@ -601,22 +601,22 @@ module OmniField =
                                     | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
                                     | _ -> NilState
                                 | Some propState -> propState
-                            PropModel.make propBounds propDepth advents propData propState object.Id)
-                        Content.entity<PropDispatcher> Gen.name [Entity.PropModel <== propModel])
+                            Prop.make propBounds propDepth advents propData propState object.Id)
+                        Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
                  // legion
                  Content.panel Simulants.SubmenuLegion.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogXXLImage
-                     Entity.Visible <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuLegion _ -> true | _ -> false]
-                    [sidebar (v2 40.0f 424.0f) 1.0f model
-                     legion (v2 136.0f 424.0f) 1.0f Int32.MaxValue model tautology2 SubmenuLegionAlly
+                     Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuLegion _ -> true | _ -> false]
+                    [sidebar (v2 40.0f 424.0f) 1.0f field
+                     legion (v2 136.0f 424.0f) 1.0f Int32.MaxValue field tautology2 SubmenuLegionAlly
                      Content.label Gen.name
                         [Entity.PositionLocal == v2 424.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
-                         Entity.LabelImage <== model --> fun model ->
-                            match model.Submenu.SubmenuState with
+                         Entity.LabelImage <== field --> fun field ->
+                            match field.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionData model.Legion submenu with
+                                match SubmenuLegion.tryGetLegionData field.Legion submenu with
                                 | Some characterData ->
                                     match characterData.MugOpt with
                                     | Some mug -> mug
@@ -625,56 +625,56 @@ module OmniField =
                             | _ -> Assets.EmptyImage]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 672.0f 384.0f; Entity.DepthLocal == 1.0f
-                         Entity.Text <== model --> fun model ->
-                            match model.Submenu.SubmenuState with
+                         Entity.Text <== field --> fun field ->
+                            match field.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionData model.Legion submenu with
+                                match SubmenuLegion.tryGetLegionData field.Legion submenu with
                                 | Some characterData -> CharacterType.getName characterData.CharacterType
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 672.0f 328.0f; Entity.DepthLocal == 1.0f
-                         Entity.Text <== model --> fun model ->
-                            match model.Submenu.SubmenuState with
+                         Entity.Text <== field --> fun field ->
+                            match field.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
+                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
                                 | Some legionnaire -> "Level " + string (Algorithms.expPointsToLevel legionnaire.ExpPoints)
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 224.0f; Entity.DepthLocal == 1.0f
-                         Entity.Text <== model --> fun model ->
-                            match model.Submenu.SubmenuState with
+                         Entity.Text <== field --> fun field ->
+                            match field.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
+                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
                                 | Some legionnaire -> "W: " + Option.getOrDefault "None" legionnaire.WeaponOpt
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 184.0f; Entity.DepthLocal == 1.0f
-                         Entity.Text <== model --> fun model ->
-                            match model.Submenu.SubmenuState with
+                         Entity.Text <== field --> fun field ->
+                            match field.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
+                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
                                 | Some legionnaire -> "A: " + Option.getOrDefault "None" legionnaire.ArmorOpt
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 144.0f; Entity.DepthLocal == 1.0f
-                         Entity.Text <== model --> fun model ->
-                            match model.Submenu.SubmenuState with
+                         Entity.Text <== field --> fun field ->
+                            match field.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire model.Legion submenu with
+                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
                                 | Some legionnaire -> "1: " + Option.getOrDefault "None" (List.tryHead legionnaire.Accessories)
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f -104.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 512.0f 256.0f
                          Entity.Justification == Unjustified true
-                         Entity.Text <== model --> fun model ->
-                            match model.Submenu.SubmenuState with
+                         Entity.Text <== field --> fun field ->
+                            match field.Submenu.SubmenuState with
                             | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaireAndLegionData model.Legion submenu with
+                                match SubmenuLegion.tryGetLegionnaireAndLegionData field.Legion submenu with
                                 | Some (legionnaire, characterData) ->
                                     let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
                                     let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
@@ -692,21 +692,21 @@ module OmniField =
                  Content.panel Simulants.SubmenuItem.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogXXLImage
-                     Entity.Visible <== model --> fun model -> match model.Submenu.SubmenuState with SubmenuItem _ -> true | _ -> false
-                     Entity.Enabled <== model --> fun model -> Option.isNone model.Submenu.SubmenuUseOpt]
-                    [sidebar (v2 40.0f 424.0f) 1.0f model
-                     items (v2 136.0f 424.0f) 1.0f model SubmenuItemSelect
+                     Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuItem _ -> true | _ -> false
+                     Entity.Enabled <== field --> fun field -> Option.isNone field.Submenu.SubmenuUseOpt]
+                    [sidebar (v2 40.0f 424.0f) 1.0f field
+                     items (v2 136.0f 424.0f) 1.0f field SubmenuItemSelect
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                         Entity.Text <== model --> (fun model -> string model.Inventory.Gold + "G")]]
+                         Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
                  // use
                  Content.panel Simulants.SubmenuUse.Name
                     [Entity.Position == v2 -448.0f -192.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 384.0f
                      Entity.LabelImage == Assets.DialogXLImage
-                     Entity.Visible <== model --> fun model -> Option.isSome model.Submenu.SubmenuUseOpt]
-                    [legion (v2 160.0f 192.0f) 1.0f 3 model
+                     Entity.Visible <== field --> fun field -> Option.isSome field.Submenu.SubmenuUseOpt]
+                    [legion (v2 160.0f 192.0f) 1.0f 3 field
                         (fun legionnaire submenu ->
                             match submenu.SubmenuUseOpt with
                             | Some submenuUse -> Legionnaire.canUseItem (snd submenuUse.SubmenuUseSelection) legionnaire
@@ -718,23 +718,23 @@ module OmniField =
                          Entity.ClickEvent ==> msg SubmenuItemCancel]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 32.0f 304.0f; Entity.DepthLocal == 2.0f
-                         Entity.Text <== model --> fun model ->
-                            match model.Submenu.SubmenuUseOpt with
+                         Entity.Text <== field --> fun field ->
+                            match field.Submenu.SubmenuUseOpt with
                             | Some submenu -> submenu.SubmenuUseLine1
                             | None -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 64.0f 256.0f; Entity.DepthLocal == 2.0f
-                         Entity.Text <== model --> fun model ->
-                             match model.Submenu.SubmenuUseOpt with
+                         Entity.Text <== field --> fun field ->
+                             match field.Submenu.SubmenuUseOpt with
                              | Some submenu -> submenu.SubmenuUseLine2
                              | None -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 64.0f 208.0f; Entity.DepthLocal == 2.0f
-                         Entity.Text <== model --> fun model ->
-                            match model.ShopOpt with
-                            | Some shopModel ->
-                                match shopModel.ShopConfirmModelOpt with
-                                | Some shopConfirmModel -> shopConfirmModel.ShopConfirmLine2
+                         Entity.Text <== field --> fun field ->
+                            match field.ShopOpt with
+                            | Some shop ->
+                                match shop.ShopConfirmOpt with
+                                | Some shopConfirm -> shopConfirm.ShopConfirmLine2
                                 | None -> ""
                             | None -> ""]]
 
@@ -742,29 +742,29 @@ module OmniField =
                  Content.panel Simulants.FieldShop.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogXXLImage
-                     Entity.Visible <== model --> fun model -> Option.isSome model.ShopOpt
-                     Entity.Enabled <== model --> fun model -> match model.ShopOpt with Some shopModel -> Option.isNone shopModel.ShopConfirmModelOpt | None -> true]
-                    [items (v2 96.0f 368.0f) 1.0f model ShopSelect
+                     Entity.Visible <== field --> fun field -> Option.isSome field.ShopOpt
+                     Entity.Enabled <== field --> fun field -> match field.ShopOpt with Some shop -> Option.isNone shop.ShopConfirmOpt | None -> true]
+                    [items (v2 96.0f 368.0f) 1.0f field ShopSelect
                      Content.button Simulants.FieldShopBuy.Name
                         [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Buy"
-                         Entity.Visible <== model --> fun model -> match model.ShopOpt with Some shopModel -> shopModel.ShopState = ShopSelling | None -> false
+                         Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false
                          Entity.ClickEvent ==> msg ShopBuy]
                      Content.button Simulants.FieldShopSell.Name
                         [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Sell"
-                         Entity.Visible <== model --> fun model -> match model.ShopOpt with Some shopModel -> shopModel.ShopState = ShopBuying | None -> false
+                         Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false
                          Entity.ClickEvent ==> msg ShopSell]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text == "Buy what?"
-                         Entity.Visible <== model --> fun model -> match model.ShopOpt with Some shopModel -> shopModel.ShopState = ShopBuying | None -> false]
+                         Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text == "Sell what?"
-                         Entity.Visible <== model --> fun model -> match model.ShopOpt with Some shopModel -> shopModel.ShopState = ShopSelling | None -> false]
+                         Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false]
                      Content.button Simulants.FieldShopLeave.Name
                         [Entity.PositionLocal == v2 628.0f 440.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Leave"
@@ -780,15 +780,15 @@ module OmniField =
                      Content.text Simulants.FieldShopGold.Name
                         [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                         Entity.Text <== model --> (fun model -> string model.Inventory.Gold + "G")]]
+                         Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
                  // shop confirm
                  Content.panel Simulants.FieldShopConfirm.Name
                     [Entity.Position == v2 -448.0f -128.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 256.0f
                      Entity.LabelImage == Assets.DialogLargeImage
-                     Entity.Visible <== model --> fun model ->
-                        match model.ShopOpt with
-                        | Some shopModel -> Option.isSome shopModel.ShopConfirmModelOpt
+                     Entity.Visible <== field --> fun field ->
+                        match field.ShopOpt with
+                        | Some shop -> Option.isSome shop.ShopConfirmOpt
                         | None -> false]
                     [Content.button Simulants.FieldShopConfirmAccept.Name
                         [Entity.PositionLocal == v2 160.0f 16.0f; Entity.DepthLocal == 2.0f
@@ -800,28 +800,28 @@ module OmniField =
                          Entity.ClickEvent ==> msg ShopConfirmDecline]
                      Content.text Simulants.FieldShopConfirmOffer.Name
                         [Entity.PositionLocal == v2 32.0f 176.0f; Entity.DepthLocal == 2.0f
-                         Entity.Text <== model --> fun model ->
-                            match model.ShopOpt with
-                            | Some shopModel ->
-                                match shopModel.ShopConfirmModelOpt with
-                                | Some shopConfirmModel -> shopConfirmModel.ShopConfirmOffer
+                         Entity.Text <== field --> fun field ->
+                            match field.ShopOpt with
+                            | Some shop ->
+                                match shop.ShopConfirmOpt with
+                                | Some shopConfirm -> shopConfirm.ShopConfirmOffer
                                 | None -> ""
                             | None -> ""]
                      Content.text Simulants.FieldShopConfirmLine1.Name
                         [Entity.PositionLocal == v2 64.0f 128.0f; Entity.DepthLocal == 2.0f
-                         Entity.Text <== model --> fun model ->
-                            match model.ShopOpt with
-                            | Some shopModel ->
-                                match shopModel.ShopConfirmModelOpt with
-                                | Some shopConfirmModel -> shopConfirmModel.ShopConfirmLine1
+                         Entity.Text <== field --> fun field ->
+                            match field.ShopOpt with
+                            | Some shop ->
+                                match shop.ShopConfirmOpt with
+                                | Some shopConfirm -> shopConfirm.ShopConfirmLine1
                                 | None -> ""
                             | None -> ""]
                      Content.text Simulants.FieldShopConfirmLine2.Name
                         [Entity.PositionLocal == v2 64.0f 80.0f; Entity.DepthLocal == 2.0f
-                         Entity.Text <== model --> fun model ->
-                            match model.ShopOpt with
-                            | Some shopModel ->
-                                match shopModel.ShopConfirmModelOpt with
-                                | Some shopConfirmModel -> shopConfirmModel.ShopConfirmLine2
+                         Entity.Text <== field --> fun field ->
+                            match field.ShopOpt with
+                            | Some shop ->
+                                match shop.ShopConfirmOpt with
+                                | Some shopConfirm -> shopConfirm.ShopConfirmLine2
                                 | None -> ""
                             | None -> ""]]]]

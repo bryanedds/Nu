@@ -3,9 +3,9 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module PropModel =
+module Prop =
 
-    type [<ReferenceEquality; NoComparison>] PropModel =
+    type [<ReferenceEquality; NoComparison>] Prop =
         private
             { Bounds_ : Vector4
               Depth_ : single
@@ -28,20 +28,20 @@ module PropModel =
         member this.PropState = this.PropState_
         member this.PropId = this.PropId_
 
-    let updateBounds updater (model : PropModel) =
-        { model with Bounds_ = updater model.Bounds_ }
+    let updateBounds updater (prop : Prop) =
+        { prop with Bounds_ = updater prop.Bounds_ }
 
-    let updatePosition updater (model : PropModel) =
-        { model with Bounds_ = model.Position |> updater |> model.Bounds.WithPosition }
+    let updatePosition updater (prop : Prop) =
+        { prop with Bounds_ = prop.Position |> updater |> prop.Bounds.WithPosition }
 
-    let updateCenter updater (model : PropModel) =
-        { model with Bounds_ = model.Center |> updater |> model.Bounds.WithCenter }
+    let updateCenter updater (prop : Prop) =
+        { prop with Bounds_ = prop.Center |> updater |> prop.Bounds.WithCenter }
 
-    let updateBottom updater (model : PropModel) =
-        { model with Bounds_ = model.Bottom |> updater |> model.Bounds.WithBottom }
+    let updateBottom updater (prop : Prop) =
+        { prop with Bounds_ = prop.Bottom |> updater |> prop.Bounds.WithBottom }
 
-    let updatePropState updater (model : PropModel) =
-        { model with PropState_ = updater model.PropState_ }
+    let updatePropState updater (prop : Prop) =
+        { prop with PropState_ = updater prop.PropState_ }
 
     let make bounds depth advents propData propState propId =
         { Bounds_ = bounds
@@ -59,4 +59,4 @@ module PropModel =
           PropState_ = NilState
           PropId_ = 0 }
 
-type PropModel = PropModel.PropModel
+type Prop = Prop.Prop

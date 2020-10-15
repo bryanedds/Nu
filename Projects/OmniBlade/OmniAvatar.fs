@@ -20,20 +20,20 @@ module AvatarDispatcherModule =
 
     type Entity with
 
-        member this.GetAvatarModel = this.GetModel<AvatarModel>
-        member this.SetAvatarModel = this.SetModel<AvatarModel>
-        member this.AvatarModel = this.Model<AvatarModel> ()
+        member this.GetAvatar = this.GetModel<Avatar>
+        member this.SetAvatar = this.SetModel<Avatar>
+        member this.Avatar = this.Model<Avatar> ()
 
     type AvatarDispatcher () =
-        inherit EntityDispatcher<AvatarModel, AvatarMessage, AvatarCommand>
-            (AvatarModel.make (v4Bounds (v2 128.0f 128.0f) Constants.Gameplay.CharacterSize) Assets.FinnAnimationSheet Downward)
+        inherit EntityDispatcher<Avatar, AvatarMessage, AvatarCommand>
+            (Avatar.make (v4Bounds (v2 128.0f 128.0f) Constants.Gameplay.CharacterSize) Assets.FinnAnimationSheet Downward)
 
         static let coreShapeId = Gen.id
         static let sensorShapeId = Gen.id
 
-        static let getSpriteInset (avatar : Entity) world =
-            let model = avatar.GetAvatarModel world
-            let index = AvatarModel.getAnimationIndex (World.getTickTime world) model
+        static let getSpriteInset (entity : Entity) world =
+            let avatar = entity.GetAvatar world
+            let index = Avatar.getAnimationIndex (World.getTickTime world) avatar
             let offset = v2 (single index.X) (single index.Y) * Constants.Gameplay.CharacterSize
             let inset = v4Bounds offset Constants.Gameplay.CharacterSize
             inset
@@ -42,7 +42,7 @@ module AvatarDispatcherModule =
             if (collider.BodyShapeId = coreShapeId &&
                 collidee.Entity.Exists world &&
                 collidee.Entity.Is<PropDispatcher> world &&
-                match (collidee.Entity.GetPropModel world).PropData with
+                match (collidee.Entity.GetProp world).PropData with
                 | Portal _ -> true
                 | Sensor _ -> true
                 | _ -> false) then
@@ -50,7 +50,7 @@ module AvatarDispatcherModule =
             elif (collider.BodyShapeId = sensorShapeId &&
                   collidee.Entity.Exists world &&
                   collidee.Entity.Is<PropDispatcher> world &&
-                  match (collidee.Entity.GetPropModel world).PropData with
+                  match (collidee.Entity.GetProp world).PropData with
                   | Portal _ -> false
                   | Sensor _ -> false
                   | _ -> true) then
@@ -63,12 +63,12 @@ module AvatarDispatcherModule =
         static member Properties =
             [define Entity.PublishChanges true]
 
-        override this.Initializers (model, entity) =
+        override this.Initializers (avatar, entity) =
             let bodyShapes =
                 BodyShapes
                     [BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
                      BodyCircle { Radius = 0.33f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
-            [entity.Bounds <== model.Map (fun model -> model.Bounds)
+            [entity.Bounds <== avatar --> fun avatar -> avatar.Bounds
              entity.FixedRotation == true
              entity.GravityScale == 0.0f
              entity.BodyShape == bodyShapes]
@@ -92,7 +92,7 @@ module AvatarDispatcherModule =
              entity.CollisionEvent =|> fun evt -> msg (Collision evt.Data)
              entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)]
 
-        override this.Message (model, message, entity, world) =
+        override this.Message (avatar, message, entity, world) =
             let time = World.getTickTime world
             match message with
             | Update ->
@@ -101,63 +101,63 @@ module AvatarDispatcherModule =
                 let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
                 let direction = Direction.fromVector2 velocity
                 let speed = velocity.Length
-                let model =
+                let avatar =
                     if speed > 10.0f then
-                        if direction <> model.Direction || model.AnimationCycle = IdleCycle then
-                            let model = AvatarModel.updateDirection (constant direction) model
-                            AvatarModel.animate time WalkCycle model
-                        else model
-                    else AvatarModel.animate time IdleCycle model
+                        if direction <> avatar.Direction || avatar.AnimationCycle = IdleCycle then
+                            let avatar = Avatar.updateDirection (constant direction) avatar
+                            Avatar.animate time WalkCycle avatar
+                        else avatar
+                    else Avatar.animate time IdleCycle avatar
 
                 // update bounds
-                let model = AvatarModel.updateBounds (constant (entity.GetBounds world)) model
-                just model
+                let avatar = Avatar.updateBounds (constant (entity.GetBounds world)) avatar
+                just avatar
 
             | PostUpdate ->
 
                 // clear all temporary body shapes
-                let model = AvatarModel.updateCollidedBodyShapes (constant []) model
-                let model = AvatarModel.updateSeparatedBodyShapes (constant []) model
-                just model
+                let avatar = Avatar.updateCollidedBodyShapes (constant []) avatar
+                let avatar = Avatar.updateSeparatedBodyShapes (constant []) avatar
+                just avatar
 
             | Face direction ->
 
                 // update facing if enabled, velocity is zero, and direction pressed
-                let model =
+                let avatar =
                     if entity.GetEnabled world then
                         let velocity = entity.GetLinearVelocity world
                         if velocity = v2Zero
-                        then AvatarModel.updateDirection (constant direction) model
-                        else model
-                    else model
-                just model
+                        then Avatar.updateDirection (constant direction) avatar
+                        else avatar
+                    else avatar
+                just avatar
 
             | Separation separation ->
 
                 // add separated body shape
-                let model =
+                let avatar =
                     if isIntersectedBodyShape separation.Separator separation.Separatee world then
-                        let model = AvatarModel.updateSeparatedBodyShapes (fun shapes -> separation.Separatee :: shapes) model
-                        let model = AvatarModel.updateIntersectedBodyShapes (List.remove ((=) separation.Separatee)) model
-                        model
-                    else model
-                just model
+                        let avatar = Avatar.updateSeparatedBodyShapes (fun shapes -> separation.Separatee :: shapes) avatar
+                        let avatar = Avatar.updateIntersectedBodyShapes (List.remove ((=) separation.Separatee)) avatar
+                        avatar
+                    else avatar
+                just avatar
 
             | Collision collision ->
 
                 // add collided body shape
-                let model =
+                let avatar =
                     if isIntersectedBodyShape collision.Collider collision.Collidee world then
-                        let model = AvatarModel.updateCollidedBodyShapes (fun shapes -> collision.Collidee :: shapes) model
-                        let model = AvatarModel.updateIntersectedBodyShapes (fun shapes -> collision.Collidee :: shapes) model
-                        model
-                    else model
-                just model
+                        let avatar = Avatar.updateCollidedBodyShapes (fun shapes -> collision.Collidee :: shapes) avatar
+                        let avatar = Avatar.updateIntersectedBodyShapes (fun shapes -> collision.Collidee :: shapes) avatar
+                        avatar
+                    else avatar
+                just avatar
 
             | Nil ->
 
                 // nothing to do
-                just model
+                just avatar
 
         override this.Command (_, command, entity, world) =
             match command with
@@ -168,15 +168,15 @@ module AvatarDispatcherModule =
                     just world
                 else just world
 
-        override this.View (model, entity, world) =
+        override this.View (avatar, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize model.AnimationSheet,
+                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
                      SpriteDescriptor
                         { Transform = transform
                           Offset = Vector2.Zero
                           InsetOpt = Some (getSpriteInset entity world)
-                          Image = model.AnimationSheet
+                          Image = avatar.AnimationSheet
                           Color = Color.White
                           Glow = Color.Zero
                           Flip = FlipNone })]

@@ -4,9 +4,9 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module AvatarModel =
+module Avatar =
 
-    type [<ReferenceEquality; NoComparison>] AvatarModel =
+    type [<ReferenceEquality; NoComparison>] Avatar =
         private
             { BoundsOriginal_ : Vector4
               Bounds_ : Vector4
@@ -49,28 +49,28 @@ module AvatarModel =
     let getAnimationFinished time avatar =
         CharacterAnimationState.getFinished time avatar.AnimationState_
 
-    let updateCollidedBodyShapes updater (avatar : AvatarModel) =
+    let updateCollidedBodyShapes updater (avatar : Avatar) =
         { avatar with CollidedBodyShapes_ = updater avatar.CollidedBodyShapes_ }
 
-    let updateSeparatedBodyShapes updater (avatar : AvatarModel) =
+    let updateSeparatedBodyShapes updater (avatar : Avatar) =
         { avatar with SeparatedBodyShapes_ = updater avatar.SeparatedBodyShapes_ }
 
-    let updateIntersectedBodyShapes updater (avatar : AvatarModel) =
+    let updateIntersectedBodyShapes updater (avatar : Avatar) =
         { avatar with IntersectedBodyShapes_ = updater avatar.IntersectedBodyShapes_ }
 
-    let updateBounds updater (avatar : AvatarModel) =
+    let updateBounds updater (avatar : Avatar) =
         { avatar with Bounds_ = updater avatar.Bounds_ }
 
-    let updatePosition updater (avatar : AvatarModel) =
+    let updatePosition updater (avatar : Avatar) =
         { avatar with Bounds_ = avatar.Position |> updater |> avatar.Bounds.WithPosition }
 
-    let updateCenter updater (avatar : AvatarModel) =
+    let updateCenter updater (avatar : Avatar) =
         { avatar with Bounds_ = avatar.Center |> updater |> avatar.Bounds.WithCenter }
 
-    let updateBottom updater (avatar : AvatarModel) =
+    let updateBottom updater (avatar : Avatar) =
         { avatar with Bounds_ = avatar.Bottom |> updater |> avatar.Bounds.WithBottom }
 
-    let updateDirection updater (avatar : AvatarModel) =
+    let updateDirection updater (avatar : Avatar) =
         { avatar with AnimationState_ = { avatar.AnimationState_ with Direction = updater avatar.AnimationState_.Direction }}
 
     let animate time cycle avatar =
@@ -94,4 +94,4 @@ module AvatarModel =
           SeparatedBodyShapes_ = []
           IntersectedBodyShapes_ = [] }
 
-type AvatarModel = AvatarModel.AvatarModel
+type Avatar = Avatar.Avatar

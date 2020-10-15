@@ -7,8 +7,8 @@ open OmniBlade
 [<AutoOpen>]
 module OmniReticles =
 
-    type [<ReferenceEquality; NoComparison>] ReticlesModel =
-        { BattleModel : BattleModel
+    type [<ReferenceEquality; NoComparison>] Reticles =
+        { Battle : Battle // TODO: let's see if we can make this reference something smaller.
           AimType : AimType }
 
     type ReticlesCommand =
@@ -17,13 +17,13 @@ module OmniReticles =
 
     type Entity with
 
-        member this.GetReticlesModel = this.GetModel<ReticlesModel>
-        member this.SetReticlesModel = this.SetModel<ReticlesModel>
-        member this.ReticlesModel = this.Model<ReticlesModel> ()
+        member this.GetReticles = this.GetModel<Reticles>
+        member this.SetReticles = this.SetModel<Reticles>
+        member this.Reticles = this.Model<Reticles> ()
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
-        inherit GuiDispatcher<ReticlesModel, unit, ReticlesCommand> ({ BattleModel = BattleModel.empty; AimType = EnemyAim true })
+        inherit GuiDispatcher<Reticles, unit, ReticlesCommand> ({ Battle = Battle.empty; AimType = EnemyAim true })
 
         static member Properties =
             [define Entity.SwallowMouseLeft false
@@ -34,7 +34,7 @@ module OmniReticles =
             | TargetCancel -> just (World.publish () rets.CancelEvent [] rets true world)
             | TargetSelect index -> just (World.publish index rets.TargetSelectEvent [] rets true world)
 
-        override this.Content (model, rets) =
+        override this.Content (reticles, rets) =
             let buttonName = rets.Name + "+" + "Cancel"
             let button = rets.Parent / buttonName
             [Content.button button.Name
@@ -45,15 +45,15 @@ module OmniReticles =
                  Entity.UpImage == asset Assets.BattlePackageName "CancelUp"
                  Entity.DownImage == asset Assets.BattlePackageName "CancelDown"
                  Entity.ClickEvent ==> cmd TargetCancel]
-             Content.entities model
-                (fun model -> (model.AimType, model.BattleModel))
-                (fun (aimType, battleModel) _ -> BattleModel.getTargets aimType battleModel) $ fun index character world ->
+             Content.entities reticles
+                (fun reticles -> (reticles.AimType, reticles.Battle))
+                (fun (aimType, battle) _ -> Battle.getTargets aimType battle) $ fun index character world ->
                 let buttonName = rets.Name + "+" + "Reticle" + "+" + scstring index
                 let button = rets.Parent / buttonName
                 Content.button button.Name
                     [Entity.ParentNodeOpt == None
                      Entity.Size == v2 128.0f 128.0f
-                     Entity.Center <== character --> fun (character : CharacterModel) -> character.CenterOffset
+                     Entity.Center <== character --> fun (character : Character) -> character.CenterOffset
                      Entity.UpImage == asset Assets.BattlePackageName "ReticleUp"
                      Entity.DownImage == asset Assets.BattlePackageName "ReticleDown"
                      Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterIndex)]]

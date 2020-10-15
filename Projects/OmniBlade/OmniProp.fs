@@ -12,12 +12,12 @@ module PropDispatcherModule =
 
     type Entity with
 
-        member this.GetPropModel = this.GetModel<PropModel>
-        member this.SetPropModel = this.SetModel<PropModel>
-        member this.PropModel = this.Model<PropModel> ()
+        member this.GetProp = this.GetModel<Prop>
+        member this.SetProp = this.SetModel<Prop>
+        member this.Prop = this.Model<Prop> ()
 
     type PropDispatcher () =
-        inherit EntityDispatcher<PropModel, PropMessage, unit> (PropModel.empty)
+        inherit EntityDispatcher<Prop, PropMessage, unit> (Prop.empty)
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -30,25 +30,25 @@ module PropDispatcherModule =
         override this.Channel (_, entity) =
             [entity.UpdateEvent => msg Update]
 
-        override this.Initializers (model, entity) =
+        override this.Initializers (prop, entity) =
             [entity.BodyType == Static
              entity.LinearDamping == 0.0f
              entity.GravityScale == 0.0f
-             entity.Bounds <== model --> fun model ->
-                model.Bounds
-             entity.IsSensor <== model --> fun model ->
-                match model.PropData with
+             entity.Bounds <== prop --> fun prop ->
+                prop.Bounds
+             entity.IsSensor <== prop --> fun prop ->
+                match prop.PropData with
                 | Sensor _
                 | Portal _ -> true
                 | _ -> false
-             entity.BodyShape <== model --> fun model ->
-                match model.PropData with
+             entity.BodyShape <== prop --> fun prop ->
+                match prop.PropData with
                 | Npc _ ->
-                    match model.PropState with
+                    match prop.PropState with
                     | NpcState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
                     | _ -> BodyEmpty
                 | Door _ ->
-                    match model.PropState with
+                    match prop.PropState with
                     | DoorState true -> BodyEmpty
                     | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                 | Sensor (_, shapeOpt, _, _) ->
@@ -56,32 +56,32 @@ module PropDispatcherModule =
                     | Some shape -> shape
                     | None -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                 | Shopkeep _ ->
-                    match model.PropState with
+                    match prop.PropState with
                     | ShopkeepState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
                     | _ -> BodyEmpty
                 | _ ->
                     BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
 
-        override this.Message (model, message, entity, world) =
+        override this.Message (prop, message, entity, world) =
             match message with
             | Update ->
-                let model = PropModel.updateBounds (constant (entity.GetBounds world)) model
-                just model
+                let prop = Prop.updateBounds (constant (entity.GetBounds world)) prop
+                just prop
 
-        override this.View (model, entity, world) =
+        override this.View (prop, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
                 let (background, insetOpt, image) =
-                    match model.PropData with
+                    match prop.PropData with
                     | Chest (chestType, _, chestId, _, _, _) ->
                         let image =
                             match chestType with
                             | WoodenChest ->
-                                if Set.contains (Opened chestId) model.Advents
+                                if Set.contains (Opened chestId) prop.Advents
                                 then Assets.WoodenChestOpenedImage
                                 else Assets.WoodenChestClosedImage
                             | BrassChest ->
-                                if Set.contains (Opened chestId) model.Advents
+                                if Set.contains (Opened chestId) prop.Advents
                                 then Assets.BrassChestOpenedImage
                                 else Assets.BrassChestClosedImage
                         (false, None, image)
@@ -89,7 +89,7 @@ module PropDispatcherModule =
                         let image =
                             match doorType with
                             | WoodenDoor ->
-                                match model.PropState with
+                                match prop.PropState with
                                 | DoorState opened -> if opened then Assets.WoodenDoorOpenedImage else Assets.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
                         (false, None, image)
@@ -99,7 +99,7 @@ module PropDispatcherModule =
                         let image =
                             match switchType with
                             | ThrowSwitch ->
-                                match model.PropState with
+                                match prop.PropState with
                                 | SwitchState on -> if on then Assets.ThrowSwitchOnImage else Assets.ThrowSwitchOffImage
                                 | _ -> failwithumf ()
                         (false, None, image)
@@ -109,7 +109,7 @@ module PropDispatcherModule =
                         | HiddenSensor -> (true, None, Assets.EmptyImage)
                         | StepPlateSensor -> (true, None, Assets.StepPlateImage)
                     | Npc (npcType, direction, _, _) ->
-                        match model.PropState with
+                        match prop.PropState with
                         | NpcState true ->
                             let image = Assets.NpcAnimationSheet
                             let row =
@@ -124,7 +124,7 @@ module PropDispatcherModule =
                             (false, Some inset, image)
                         | _ -> (false, None, Assets.EmptyImage)
                     | Shopkeep (shopkeepType, direction, _, _) ->
-                        match model.PropState with
+                        match prop.PropState with
                         | ShopkeepState true ->
                             let image = Assets.ShopkeepAnimationSheet
                             let row = match shopkeepType with ShopkeepMan -> 0
