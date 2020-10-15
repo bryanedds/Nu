@@ -9,7 +9,7 @@ type [<NoComparison>] DialogForm =
     | DialogMedium
     | DialogLarge
 
-type [<ReferenceEquality; NoComparison>] DialogModel =
+type [<ReferenceEquality; NoComparison>] Dialog =
     { DialogForm : DialogForm
       DialogText : string
       DialogProgress : int
@@ -102,7 +102,7 @@ type ShopState =
     | ShopBuying
     | ShopSelling
 
-type [<ReferenceEquality; NoComparison>] ShopConfirmModel =
+type [<ReferenceEquality; NoComparison>] ShopConfirm =
     { ShopConfirmSelection : int * ItemType
       ShopConfirmPrice : int
       ShopConfirmOffer : string
@@ -123,7 +123,7 @@ type [<ReferenceEquality; NoComparison>] ShopConfirmModel =
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
         let effect = "Effect: " + cd.Description
         let stats = "Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirmModel.make selection price offer stats effect
+        ShopConfirm.make selection price offer stats effect
 
     static member makeFromWeaponData buying inventory selection (wd : WeaponData) =
         let itemType = snd selection
@@ -132,7 +132,7 @@ type [<ReferenceEquality; NoComparison>] ShopConfirmModel =
         let effect = "Effect: " + wd.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
         let stats = "Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirmModel.make selection price offer stats effect
+        ShopConfirm.make selection price offer stats effect
 
     static member makeFromArmorData buying inventory selection (ad : ArmorData) =
         let itemType = snd selection
@@ -141,7 +141,7 @@ type [<ReferenceEquality; NoComparison>] ShopConfirmModel =
         let effect = "Effect: " + ad.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
         let stats = "HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirmModel.make selection price offer stats effect
+        ShopConfirm.make selection price offer stats effect
 
     static member makeFromAccessoryData buying inventory selection (ad : AccessoryData) =
         let itemType = snd selection
@@ -150,27 +150,27 @@ type [<ReferenceEquality; NoComparison>] ShopConfirmModel =
         let effect = "Effect: " + ad.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
         let stats = "Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirmModel.make selection price offer stats effect
+        ShopConfirm.make selection price offer stats effect
 
     static member tryMakeFromSelection buying inventory selection =
         match snd selection with
         | Consumable ty ->
             match Map.tryFind ty data.Value.Consumables with
-            | Some cd -> ShopConfirmModel.makeFromConsumableData buying inventory selection cd |> Some
+            | Some cd -> ShopConfirm.makeFromConsumableData buying inventory selection cd |> Some
             | None -> None
         | Equipment ty ->
             match ty with
             | WeaponType name ->
                 match Map.tryFind name data.Value.Weapons with
-                | Some wd -> ShopConfirmModel.makeFromWeaponData buying inventory selection wd |> Some
+                | Some wd -> ShopConfirm.makeFromWeaponData buying inventory selection wd |> Some
                 | None -> None
             | ArmorType name ->
                 match Map.tryFind name data.Value.Armors with
-                | Some ad -> ShopConfirmModel.makeFromArmorData buying inventory selection ad |> Some
+                | Some ad -> ShopConfirm.makeFromArmorData buying inventory selection ad |> Some
                 | None -> None
             | AccessoryType name ->
                 match Map.tryFind name data.Value.Accessories with
-                | Some ad -> ShopConfirmModel.makeFromAccessoryData buying inventory selection ad |> Some
+                | Some ad -> ShopConfirm.makeFromAccessoryData buying inventory selection ad |> Some
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
@@ -178,7 +178,7 @@ type [<ReferenceEquality; NoComparison>] Shop =
     { ShopType : ShopType
       ShopState : ShopState
       ShopPage : int
-      ShopConfirmModelOpt : ShopConfirmModel option }
+      ShopConfirmOpt : ShopConfirm option }
 
 type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
@@ -187,12 +187,12 @@ type [<ReferenceEquality; NoComparison>] FieldTransition =
       FieldTransitionTime : int64 }
 
 [<RequireQualifiedAccess>]
-module FieldModel =
+module Field =
 
-    type [<ReferenceEquality; NoComparison>] FieldModel =
+    type [<ReferenceEquality; NoComparison>] Field =
         private
             { FieldType_ : FieldType
-              Avatar_ : AvatarModel
+              Avatar_ : Avatar
               Legion_ : Legion
               Advents_ : Advent Set
               PropStates_ : Map<int, PropState>
@@ -200,8 +200,8 @@ module FieldModel =
               Submenu_ : Submenu
               ShopOpt_ : Shop option
               FieldTransitionOpt_ : FieldTransition option
-              DialogOpt_ : DialogModel option
-              BattleOpt_ : BattleModel option }
+              DialogOpt_ : Dialog option
+              BattleOpt_ : Battle option }
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
@@ -216,49 +216,49 @@ module FieldModel =
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
 
-    let getParty fieldModel =
-        fieldModel.Legion_ |>
+    let getParty field =
+        field.Legion_ |>
         Map.filter (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt) |>
         Map.toSeq |>
         Seq.tryTake 3 |>
         Map.ofSeq
 
-    let updateFieldType updater fieldModel =
-        { fieldModel with FieldType_ = updater fieldModel.FieldType_ }
+    let updateFieldType updater field =
+        { field with FieldType_ = updater field.FieldType_ }
 
-    let updateAvatar updater fieldModel =
-        { fieldModel with Avatar_ = updater fieldModel.Avatar_ }
+    let updateAvatar updater field =
+        { field with Avatar_ = updater field.Avatar_ }
 
-    let updateLegion updater fieldModel =
-        { fieldModel with Legion_ = updater fieldModel.Legion_ }
+    let updateLegion updater field =
+        { field with Legion_ = updater field.Legion_ }
 
-    let updateAdvents updater fieldModel =
-        { fieldModel with Advents_ = updater fieldModel.Advents_ }
+    let updateAdvents updater field =
+        { field with Advents_ = updater field.Advents_ }
 
-    let updatePropStates updater fieldModel =
-        { fieldModel with PropStates_ = updater fieldModel.PropStates_ }
+    let updatePropStates updater field =
+        { field with PropStates_ = updater field.PropStates_ }
 
-    let updateInventory updater fieldModel =
-        { fieldModel with Inventory_ = updater fieldModel.Inventory_ }
+    let updateInventory updater field =
+        { field with Inventory_ = updater field.Inventory_ }
 
-    let updateSubmenu updater fieldModel =
-        { fieldModel with Submenu_ = updater fieldModel.Submenu_ }
+    let updateSubmenu updater field =
+        { field with Submenu_ = updater field.Submenu_ }
 
-    let updateShopOpt updater fieldModel =
-        { fieldModel with ShopOpt_ = updater fieldModel.ShopOpt_ }
+    let updateShopOpt updater field =
+        { field with ShopOpt_ = updater field.ShopOpt_ }
 
-    let updateDialogOpt updater fieldModel =
-        { fieldModel with DialogOpt_ = updater fieldModel.DialogOpt_ }
+    let updateDialogOpt updater field =
+        { field with DialogOpt_ = updater field.DialogOpt_ }
 
-    let updateFieldTransitionOpt updater fieldModel =
-        { fieldModel with FieldTransitionOpt_ = updater fieldModel.FieldTransitionOpt_ }
+    let updateFieldTransitionOpt updater field =
+        { field with FieldTransitionOpt_ = updater field.FieldTransitionOpt_ }
 
-    let updateBattleOpt updater fieldModel =
-        { fieldModel with BattleOpt_ = updater fieldModel.BattleOpt_ }
+    let updateBattleOpt updater field =
+        { field with BattleOpt_ = updater field.BattleOpt_ }
 
-    let make fieldType avatarModel legion advents inventory =
+    let make fieldType avatar legion advents inventory =
         { FieldType_ = fieldType
-          Avatar_ = avatarModel
+          Avatar_ = avatar
           Legion_ = legion
           Advents_ = advents
           PropStates_ = Map.empty
@@ -271,7 +271,7 @@ module FieldModel =
 
     let empty =
         { FieldType_ = DebugRoom
-          Avatar_ = AvatarModel.empty
+          Avatar_ = Avatar.empty
           Legion_ = Map.empty
           Advents_ = Set.empty
           PropStates_ = Map.empty
@@ -284,7 +284,7 @@ module FieldModel =
 
     let initial =
         { FieldType_ = DebugRoom
-          Avatar_ = AvatarModel.empty
+          Avatar_ = Avatar.empty
           Legion_ = Map.ofList [(0, Legionnaire.finn); (1, Legionnaire.glenn)]
           Advents_ = Set.empty
           PropStates_ = Map.empty
@@ -295,4 +295,4 @@ module FieldModel =
           DialogOpt_ = None
           BattleOpt_ = None }
 
-type FieldModel = FieldModel.FieldModel
+type Field = Field.Field

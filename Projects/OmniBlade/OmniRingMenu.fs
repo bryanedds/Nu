@@ -8,7 +8,7 @@ open OmniBlade
 [<AutoOpen>]
 module OmniRingMenu =
 
-    type [<ReferenceEquality; NoComparison>] RingMenuModel =
+    type [<ReferenceEquality; NoComparison>] RingMenu =
         { Items : (int * (bool * string)) list
           ItemCancelOpt : string option }
 
@@ -22,22 +22,22 @@ module OmniRingMenu =
         member this.GetRadius = this.Get Property? Radius
         member this.SetRadius = this.Set Property? Radius
         member this.Radius = lens<single> Property? Radius this.GetRadius this.SetRadius this
-        member this.GetRingMenuModel = this.GetModel<RingMenuModel>
-        member this.SetRingMenuModel = this.SetModel<RingMenuModel>
-        member this.RingMenuModel = this.Model<RingMenuModel> ()
+        member this.GetRingMenu = this.GetModel<RingMenu>
+        member this.SetRingMenu = this.SetModel<RingMenu>
+        member this.RingMenu = this.Model<RingMenu> ()
         member this.ItemSelectEvent = Events.ItemSelect --> this
         member this.CancelEvent = Events.Cancel --> this
 
     type RingMenuDispatcher () =
-        inherit GuiDispatcher<RingMenuModel, unit, RingMenuCommand> ({ Items = []; ItemCancelOpt = None })
+        inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = []; ItemCancelOpt = None })
 
-        override this.Command (model, command, menu, world) =
+        override this.Command (ringMenu, command, menu, world) =
             match command with
             | ItemCancel -> just (World.publish () menu.CancelEvent [] menu true world)
             | ItemSelect item -> just (World.publish item menu.ItemSelectEvent [] menu true world)
             | ArrangeItemButton (button, index) ->
                 let radius = menu.GetRadius world
-                let itemCount = List.length model.Items
+                let itemCount = List.length ringMenu.Items
                 let progress = single index / single itemCount
                 let rotation = progress * single Math.PI * 2.0f
                 let position = v2 (radius * sin rotation) (radius * cos rotation)
@@ -50,8 +50,8 @@ module OmniRingMenu =
              define Entity.SwallowMouseLeft false
              define Entity.Visible false]
 
-        override this.Content (model, menu) =
-            [Content.entitiesIndexedByFst model (fun model -> model.Items) constant $ fun index item world ->
+        override this.Content (ringMenu, menu) =
+            [Content.entitiesIndexedByFst ringMenu (fun ringMenu -> ringMenu.Items) constant $ fun index item world ->
                 let itemValue = item.Get world |> snd
                 let buttonName = menu.Name + "+" + itemValue
                 let button = menu.Parent / buttonName
@@ -63,7 +63,7 @@ module OmniRingMenu =
                      Entity.DownImage == asset Assets.BattlePackageName (itemValue + "Down")
                      Entity.ClickEvent ==> cmd (ItemSelect itemValue)
                      Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
-             Content.entityOpt model (fun model -> model.ItemCancelOpt) $ fun itemCancel world ->
+             Content.entityOpt ringMenu (fun ringMenu -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
                 let buttonName = menu.Name + "+" + itemCancelValue
                 let button = menu.Parent / buttonName

@@ -11,37 +11,37 @@ module OmniCharacter =
 
     type Entity with
     
-        member this.GetCharacterModel = this.GetModel<CharacterModel>
-        member this.SetCharacterModel = this.SetModel<CharacterModel>
-        member this.CharacterModel = this.Model<CharacterModel> ()
+        member this.GetCharacter = this.GetModel<Character>
+        member this.SetCharacter = this.SetModel<Character>
+        member this.Character = this.Model<Character> ()
 
     type CharacterDispatcher () =
-        inherit EntityDispatcher<CharacterModel, unit, unit> (CharacterModel.empty)
+        inherit EntityDispatcher<Character, unit, unit> (Character.empty)
 
-        static let getSpriteInset (character : Entity) world =
-            let model = character.GetCharacterModel world
-            let index = CharacterModel.getAnimationIndex (World.getTickTime world) model
+        static let getSpriteInset (entity : Entity) world =
+            let character = entity.GetCharacter world
+            let index = Character.getAnimationIndex (World.getTickTime world) character
             let offset = v2 (single index.X) (single index.Y) * Constants.Gameplay.CharacterSize
             let inset = v4Bounds offset Constants.Gameplay.CharacterSize
             inset
 
-        static let getSpriteColor (character : Entity) world =
-            let model = character.GetCharacterModel world
+        static let getSpriteColor (entity : Entity) world =
+            let character = entity.GetCharacter world
             let color =
-                if model.AnimationCycle = CharacterAnimationCycle.WoundCycle && model.IsEnemy then
-                    match CharacterModel.getAnimationProgressOpt (World.getTickTime world) model with
+                if character.AnimationCycle = CharacterAnimationCycle.WoundCycle && character.IsEnemy then
+                    match Character.getAnimationProgressOpt (World.getTickTime world) character with
                     | Some progress -> Color (byte 255, byte 128, byte 255, byte 255 - (byte (progress * 255.0f))) // purple
                     | None -> failwithumf ()
                 else Color.White
             color
 
-        static let getSpriteGlow (character : Entity) world =
+        static let getSpriteGlow (entity : Entity) world =
             let pulseTime = World.getTickTime world % Constants.Battle.CharacterPulseLength
             let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseLength
             let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
-            let model = character.GetCharacterModel world
-            let statuses = model.Statuses
-            if CharacterModel.isAutoBattling model then Color (byte 255, byte 0, byte 0, pulseIntensity) // red
+            let character = entity.GetCharacter world
+            let statuses = character.Statuses
+            if Character.isAutoBattling character then Color (byte 255, byte 0, byte 0, pulseIntensity) // red
             elif Set.contains PoisonStatus statuses then Color (byte 0, byte 255, byte 0, pulseIntensity) // green
             elif Set.contains MuteStatus statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
             elif Set.contains SleepStatus statuses then Color (byte 0, byte 0,byte 255, pulseIntensity) // blue
@@ -50,19 +50,19 @@ module OmniCharacter =
         static member Properties =
             [define Entity.Omnipresent true]
 
-        override this.Initializers (model, _) =
-            [Entity.Bounds <== model --> fun (model : CharacterModel) -> model.Bounds]
+        override this.Initializers (character, _) =
+            [Entity.Bounds <== character --> fun character -> character.Bounds]
 
-        override this.View (model, character, world) =
-            if character.GetVisible world && character.GetInView world then
-                let transform = character.GetTransform world
-                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize model.AnimationSheet,
+        override this.View (character, entity, world) =
+            if entity.GetVisible world && entity.GetInView world then
+                let transform = entity.GetTransform world
+                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize character.AnimationSheet,
                      SpriteDescriptor
                        { Transform = transform
                          Offset = Vector2.Zero
-                         InsetOpt = Some (getSpriteInset character world)
-                         Image = model.AnimationSheet
-                         Color = getSpriteColor character world
-                         Glow = getSpriteGlow character world
+                         InsetOpt = Some (getSpriteInset entity world)
+                         Image = character.AnimationSheet
+                         Color = getSpriteColor entity world
+                         Glow = getSpriteGlow entity world
                          Flip = FlipNone })]
             else []

@@ -8,9 +8,9 @@ type [<ReferenceEquality; NoComparison>] AutoBattle =
       AutoTechOpt : TechType option }
 
 [<RequireQualifiedAccess>]
-module CharacterModel =
+module Character =
 
-    type [<ReferenceEquality; NoComparison>] CharacterModel =
+    type [<ReferenceEquality; NoComparison>] Character =
         private
             { BoundsOriginal_ : Vector4
               Bounds_ : Vector4
@@ -82,7 +82,7 @@ module CharacterModel =
         member this.AutoBattleOpt = this.AutoBattleOpt_
         member this.InputState = this.InputState_
 
-    let isTeammate (character : CharacterModel) (character2 : CharacterModel) =
+    let isTeammate (character : Character) (character2 : Character) =
         CharacterIndex.isTeammate character.CharacterIndex character2.CharacterIndex
 
     let isReadyForAutoBattle character =
@@ -95,14 +95,14 @@ module CharacterModel =
         | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
         | None -> false
 
-    let evaluateAutoBattle source (target : CharacterModel) =
+    let evaluateAutoBattle source (target : Character) =
         let techOpt =
             match Gen.random1 Constants.Battle.AutoBattleTechFrequency with
             | 0 -> CharacterState.tryGetTechRandom source.CharacterState_
             | _ -> None
         { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
 
-    let evaluateAimType aimType (target : CharacterModel) (characters : CharacterModel list) =
+    let evaluateAimType aimType (target : Character) (characters : Character list) =
         match aimType with
         | AnyAim healthy ->
             characters |>
@@ -114,7 +114,7 @@ module CharacterModel =
         | NoAim ->
             []
 
-    let evaluateTargetType targetType (source : CharacterModel) target characters =
+    let evaluateTargetType targetType (source : Character) target characters =
         match targetType with
         | SingleTarget _ ->
             [target]
@@ -151,7 +151,7 @@ module CharacterModel =
             characters |>
             evaluateAimType aimType target
 
-    let evaluateTech techData source (target : CharacterModel) =
+    let evaluateTech techData source (target : Character) =
         let power = source.CharacterState_.Power
         if techData.Curative then
             let healing = single power * techData.Scalar |> int |> max 1
@@ -212,19 +212,19 @@ module CharacterModel =
     let updateAutoBattleOpt updater character =
         { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
 
-    let updateBounds updater (character : CharacterModel) =
+    let updateBounds updater (character : Character) =
         { character with Bounds_ = updater character.Bounds_ }
 
-    let updatePosition updater (character : CharacterModel) =
+    let updatePosition updater (character : Character) =
         { character with Bounds_ = character.Position |> updater |> character.Bounds.WithPosition }
 
-    let updateCenter updater (character : CharacterModel) =
+    let updateCenter updater (character : Character) =
         { character with Bounds_ = character.Center |> updater |> character.Bounds.WithCenter }
 
-    let updateBottom updater (character : CharacterModel) =
+    let updateBottom updater (character : Character) =
         { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
 
-    let autoBattle (source : CharacterModel) (target : CharacterModel) =
+    let autoBattle (source : Character) (target : Character) =
         let sourceToTarget = target.Position - source.Position
         let direction = Direction.fromVector2 sourceToTarget
         let animationState = { source.AnimationState_ with Direction = direction }
@@ -292,4 +292,4 @@ module CharacterModel =
           ActionTime_ = 0
           InputState_ = NoInput }
 
-type CharacterModel = CharacterModel.CharacterModel
+type Character = Character.Character

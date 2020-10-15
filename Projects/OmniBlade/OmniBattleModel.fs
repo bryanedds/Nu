@@ -27,12 +27,12 @@ type [<ReferenceEquality; NoComparison>] CurrentCommand =
         { TimeStart = timeStart; ActionCommand = actionCommand }
 
 [<RequireQualifiedAccess>]
-module BattleModel =
+module Battle =
 
-    type [<ReferenceEquality; NoComparison>] BattleModel =
+    type [<ReferenceEquality; NoComparison>] Battle =
         private
             { BattleState_ : BattleState
-              Characters_ : Map<CharacterIndex, CharacterModel>
+              Characters_ : Map<CharacterIndex, Character>
               Inventory_ : Inventory
               PrizePool_ : PrizePool
               CurrentCommandOpt_ : CurrentCommand option
@@ -45,133 +45,133 @@ module BattleModel =
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
 
-    let getAllies model =
-        model.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+    let getAllies battle =
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
 
-    let getEnemies model =
-        model.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+    let getEnemies battle =
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
 
-    let getAlliesHealthy model =
-        getAllies model |>
+    let getAlliesHealthy battle =
+        getAllies battle |>
         List.filter (fun character -> character.IsHealthy)
 
-    let getAlliesWounded model =
-        getAllies model |>
+    let getAlliesWounded battle =
+        getAllies battle |>
         List.filter (fun character -> character.IsWounded)
 
-    let getAllyIndices model =
-        getAllies model |>
+    let getAllyIndices battle =
+        getAllies battle |>
         List.map (fun ally -> ally.CharacterIndex)
 
-    let getEnemyIndices model =
-        getEnemies model |>
+    let getEnemyIndices battle =
+        getEnemies battle |>
         List.map (fun enemy -> enemy.CharacterIndex)
 
-    let getAlliesHealthyIndices model =
-        getAlliesHealthy model |>
+    let getAlliesHealthyIndices battle =
+        getAlliesHealthy battle |>
         List.map (fun ally -> ally.CharacterIndex)
 
-    let getAlliesWoundedIndices model =
-        getAlliesWounded model |>
+    let getAlliesWoundedIndices battle =
+        getAlliesWounded battle |>
         List.map (fun enemy -> enemy.CharacterIndex)
 
-    let getAllyIndexRandom model =
-        let alliesHealthyIndices = getAlliesHealthyIndices model
+    let getAllyIndexRandom battle =
+        let alliesHealthyIndices = getAlliesHealthyIndices battle
         List.item (Gen.random1 alliesHealthyIndices.Length) alliesHealthyIndices
 
-    let getEnemyIndexRandom model =
-        let enemyIndices = getEnemyIndices model
+    let getEnemyIndexRandom battle =
+        let enemyIndices = getEnemyIndices battle
         let enemyIndex = List.item (Gen.random1 enemyIndices.Length) enemyIndices
         enemyIndex
 
-    let getTargets aimType model =
+    let getTargets aimType battle =
         match aimType with
         | EnemyAim _ ->
-            getEnemies model
+            getEnemies battle
         | AllyAim healthy ->
             if healthy
-            then getAlliesHealthy model
-            else getAlliesWounded model
+            then getAlliesHealthy battle
+            else getAlliesWounded battle
         | AnyAim healthy ->
             let allies =
                 if healthy
-                then getAlliesHealthy model
-                else getAlliesWounded model
-            let enemies = getEnemies model
+                then getAlliesHealthy battle
+                else getAlliesWounded battle
+            let enemies = getEnemies battle
             let characters = allies @ enemies
             characters
         | NoAim -> []
 
-    let addCharacter index character (model : BattleModel) =
-        { model with Characters_ = Map.add index character model.Characters_ }
+    let addCharacter index character (battle : Battle) =
+        { battle with Characters_ = Map.add index character battle.Characters_ }
 
-    let removeCharacter index (model : BattleModel) =
-        { model with Characters_ = Map.remove index model.Characters_ }
+    let removeCharacter index (battle : Battle) =
+        { battle with Characters_ = Map.remove index battle.Characters_ }
 
-    let updateCharactersIf predicate updater (model : BattleModel) =
-        { model with Characters_ = Map.map (fun index character -> if predicate index then updater character else character) model.Characters_ }
+    let updateCharactersIf predicate updater (battle : Battle) =
+        { battle with Characters_ = Map.map (fun index character -> if predicate index then updater character else character) battle.Characters_ }
 
-    let updateCharacters updater model =
-        updateCharactersIf tautology updater model
+    let updateCharacters updater battle =
+        updateCharactersIf tautology updater battle
 
-    let updateAllies updater model =
-        updateCharactersIf (function AllyIndex _ -> true | _ -> false) updater model
+    let updateAllies updater battle =
+        updateCharactersIf (function AllyIndex _ -> true | _ -> false) updater battle
 
-    let updateEnemies updater model =
-        updateCharactersIf (function EnemyIndex _ -> true | _ -> false) updater model
+    let updateEnemies updater battle =
+        updateCharactersIf (function EnemyIndex _ -> true | _ -> false) updater battle
 
-    let getCharacters model =
-        model.Characters_ |> Map.toValueList
+    let getCharacters battle =
+        battle.Characters_ |> Map.toValueList
 
-    let tryGetCharacter characterIndex model =
-        Map.tryFind characterIndex model.Characters_
+    let tryGetCharacter characterIndex battle =
+        Map.tryFind characterIndex battle.Characters_
 
-    let getCharacter characterIndex model =
-        tryGetCharacter characterIndex model |> Option.get
+    let getCharacter characterIndex battle =
+        tryGetCharacter characterIndex battle |> Option.get
 
-    let tryUpdateCharacter updater characterIndex model =
-        match tryGetCharacter characterIndex model with
+    let tryUpdateCharacter updater characterIndex battle =
+        match tryGetCharacter characterIndex battle with
         | Some character ->
             let character = updater character
-            { model with Characters_ = Map.add characterIndex character model.Characters_ }
-        | None -> model
+            { battle with Characters_ = Map.add characterIndex character battle.Characters_ }
+        | None -> battle
 
-    let updateCharacter updater characterIndex model =
-        let character = getCharacter characterIndex model
+    let updateCharacter updater characterIndex battle =
+        let character = getCharacter characterIndex battle
         let character = updater character
-        { model with Characters_ = Map.add characterIndex character model.Characters_ }
+        { battle with Characters_ = Map.add characterIndex character battle.Characters_ }
 
-    let updateBattleState updater model =
-        { model with BattleState_ = updater model.BattleState_ }
+    let updateBattleState updater battle =
+        { battle with BattleState_ = updater battle.BattleState_ }
 
-    let updateInventory updater model =
-        { model with Inventory_ = updater model.Inventory_ }
+    let updateInventory updater battle =
+        { battle with Inventory_ = updater battle.Inventory_ }
 
-    let updateCurrentCommandOpt updater model =
-        { model with CurrentCommandOpt_ = updater model.CurrentCommandOpt_ }
+    let updateCurrentCommandOpt updater battle =
+        { battle with CurrentCommandOpt_ = updater battle.CurrentCommandOpt_ }
 
-    let updateActionCommands updater model =
-        { model with ActionCommands_ = updater model.ActionCommands_ }
+    let updateActionCommands updater battle =
+        { battle with ActionCommands_ = updater battle.ActionCommands_ }
 
-    let appendActionCommand command model =
-        { model with ActionCommands_ = Queue.conj command model.ActionCommands }
+    let appendActionCommand command battle =
+        { battle with ActionCommands_ = Queue.conj command battle.ActionCommands }
 
-    let prependActionCommand command model =
-         { model with ActionCommands_ = Queue.rev model.ActionCommands |> Queue.conj command |> Queue.rev }
+    let prependActionCommand command battle =
+         { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
     let makeFromAllies allies inventory (prizePool : PrizePool) battleData time =
-        let enemies = List.mapi CharacterModel.makeEnemy battleData.BattleEnemies
-        let characters = allies @ enemies |> Map.ofListBy (fun (character : CharacterModel) -> (character.CharacterIndex, character))
-        let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : CharacterModel) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
-        let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : CharacterModel) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
-        let model =
+        let enemies = List.mapi Character.makeEnemy battleData.BattleEnemies
+        let characters = allies @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
+        let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
+        let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
+        let battle =
             { BattleState_ = BattleReady time
               Characters_ = characters
               Inventory_ = inventory
               PrizePool_ = prizePool
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty }
-        model
+        battle
 
     let makeFromLegion (legion : Legion) inventory prizePool battleData time =
         let legionnaires = legion |> Map.toList |> List.tryTake 3
@@ -186,12 +186,12 @@ module BattleModel =
                         let characterState = CharacterState.make characterData leg.HitPoints leg.TechPoints leg.ExpPoints leg.WeaponOpt leg.ArmorOpt leg.Accessories
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.fromVector2 -bounds.Bottom
-                        let character = CharacterModel.make bounds characterIndex characterState animationSheet direction
-                        CharacterModel.updateActionTime (constant (inc index * 333)) character
+                        let character = Character.make bounds characterIndex characterState animationSheet direction
+                        Character.updateActionTime (constant (inc index * 333)) character
                     | None -> failwith ("Could not find CharacterData for '" + scstring leg.CharacterType + "'."))
                 legionnaires
-        let battleModel = makeFromAllies allies inventory prizePool battleData time
-        battleModel
+        let battle = makeFromAllies allies inventory prizePool battleData time
+        battle
 
     let empty =
         { BattleState_ = BattleReady 0L
@@ -201,4 +201,4 @@ module BattleModel =
           CurrentCommandOpt_ = None
           ActionCommands_ = Queue.empty }
 
-type BattleModel = BattleModel.BattleModel
+type Battle = Battle.Battle

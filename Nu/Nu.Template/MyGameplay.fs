@@ -4,7 +4,7 @@ open Nu
 open Nu.Declarative
 
 // this is our Elm-style model type. Currently it's unit because do not yet have any state to model.
-type GameplayModel =
+type Gameplay =
     unit
 
 // this is our Elm-style model type. Currently it's unit because do not yet have any messages.
@@ -21,7 +21,7 @@ type GameplayCommand =
 
 // this is the screen dispatcher that defines the screen where gameplay takes place
 type MyGameplayDispatcher () =
-    inherit ScreenDispatcher<GameplayModel, GameplayMessage, GameplayCommand> ()
+    inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ()
 
     // here we channel from events to signals
     override this.Channel (_, _) =

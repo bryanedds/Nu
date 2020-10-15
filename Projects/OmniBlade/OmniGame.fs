@@ -7,20 +7,20 @@ open OmniBlade
 [<AutoOpen>]
 module OmniGame =
 
-    type GuiModel =
+    type Gui =
         | Splashing
         | Title
         | Credits
 
-    type [<NoComparison>] OmniModel =
-        | Gui of GuiModel
-        | Field of FieldModel
+    type [<NoComparison>] Omni =
+        | Gui of Gui
+        | Field of Field
 
     type [<NoEquality; NoComparison>] OmniMessage =
         | Update
-        | UpdateModel of OmniModel
-        | UpdateFieldModel of FieldModel
-        | UpdateBattleModel of BattleModel
+        | UpdateOmni of Omni
+        | UpdateField of Field
+        | UpdateBattle of Battle
 
     type [<NoEquality; NoComparison>] OmniCommand =
         | Show of Screen
@@ -28,12 +28,12 @@ module OmniGame =
 
     type Game with
 
-        member this.GetOmniModel = this.GetModel<OmniModel>
-        member this.SetOmniModel = this.SetModel<OmniModel>
-        member this.OmniModel = this.Model<OmniModel> ()
+        member this.GetOmni = this.GetModel<Omni>
+        member this.SetOmni = this.SetModel<Omni>
+        member this.Omni = this.Model<Omni> ()
 
     type OmniDispatcher () =
-        inherit GameDispatcher<OmniModel, OmniMessage, OmniCommand> (Gui Splashing)
+        inherit GameDispatcher<Omni, OmniMessage, OmniCommand> (Gui Splashing)
 
         override this.Register (game, world) =
             let world = World.hintRenderPackageUse Assets.GuiPackageName world
@@ -42,40 +42,40 @@ module OmniGame =
 
         override this.Channel (_, _) =
             [Simulants.Game.UpdateEvent => msg Update
-             Simulants.TitleCredits.ClickEvent => msg (UpdateModel (Gui Credits))
-             Simulants.CreditsBack.ClickEvent => msg (UpdateModel (Gui Title))
-             Simulants.FieldBack.ClickEvent => msg (UpdateModel (Gui Title))
-             Simulants.TitlePlay.ClickEvent => msg (UpdateModel (Field FieldModel.initial))
-             Simulants.Field.FieldModel.ChangeEvent =|> fun evt -> msg (UpdateFieldModel (evt.Data.Value :?> FieldModel))
-             Simulants.Battle.BattleModel.ChangeEvent =|> fun evt -> msg (UpdateBattleModel (evt.Data.Value :?> BattleModel))
+             Simulants.TitleCredits.ClickEvent => msg (UpdateOmni (Gui Credits))
+             Simulants.CreditsBack.ClickEvent => msg (UpdateOmni (Gui Title))
+             Simulants.FieldBack.ClickEvent => msg (UpdateOmni (Gui Title))
+             Simulants.TitlePlay.ClickEvent => msg (UpdateOmni (Field Field.initial))
+             Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (UpdateField (evt.Data.Value :?> Field))
+             Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (UpdateBattle (evt.Data.Value :?> Battle))
              Simulants.TitleExit.ClickEvent => cmd Exit]
 
-        override this.Message (model, message, _, world) =
+        override this.Message (omni, message, _, world) =
 
             match message with
-            | UpdateModel model ->
-                just model
+            | UpdateOmni omni ->
+                just omni
 
-            | UpdateFieldModel field ->
-                match model with
-                | Gui _ -> just model
+            | UpdateField field ->
+                match omni with
+                | Gui _ -> just omni
                 | Field _ -> just (Field field)
 
-            | UpdateBattleModel battle ->
-                match model with
-                | Gui _ -> just model
+            | UpdateBattle battle ->
+                match omni with
+                | Gui _ -> just omni
                 | Field field ->
                     match field.BattleOpt with
-                    | None -> just model
-                    | Some _ -> just (Field (FieldModel.updateBattleOpt (constant (Some battle)) field))
+                    | None -> just omni
+                    | Some _ -> just (Field (Field.updateBattleOpt (constant (Some battle)) field))
 
             | Update ->
-                match model with
+                match omni with
                 | Gui gui ->
                     match gui with
-                    | Splashing -> just model
-                    | Title -> withCmd (Show Simulants.Title) model
-                    | Credits -> withCmd (Show Simulants.Credits) model
+                    | Splashing -> just omni
+                    | Title -> withCmd (Show Simulants.Title) omni
+                    | Credits -> withCmd (Show Simulants.Credits) omni
                 | Field field ->
                     match field.BattleOpt with
                     | Some battle ->
@@ -83,10 +83,10 @@ module OmniGame =
                         | BattleCease (result, time) ->
                             if World.getTickTime world - time = 120L then
                                 if result then
-                                    let allies = BattleModel.getAllies battle
+                                    let allies = Battle.getAllies battle
                                     let field =
-                                        List.foldi (fun i field (ally : CharacterModel) ->
-                                            FieldModel.updateLegion (fun legion ->
+                                        List.foldi (fun i field (ally : Character) ->
+                                            Field.updateLegion (fun legion ->
                                                 match Map.tryFind i legion with
                                                 | Some legionnaire ->
                                                     let legionnaire = { legionnaire with HitPoints = ally.HitPoints; ExpPoints = ally.ExpPoints }
@@ -94,21 +94,21 @@ module OmniGame =
                                                 | None -> legion)
                                                 field)
                                             field allies
-                                    let field = FieldModel.updateInventory (constant battle.Inventory) field
-                                    let field = FieldModel.updateBattleOpt (constant None) field
-                                    let model = Field field
-                                    withCmd (Show Simulants.Field) model
+                                    let field = Field.updateInventory (constant battle.Inventory) field
+                                    let field = Field.updateBattleOpt (constant None) field
+                                    let omni = Field field
+                                    withCmd (Show Simulants.Field) omni
                                 else withCmd (Show Simulants.Title) (Gui Title)
-                            else withCmd (Show Simulants.Battle) model
-                        | _ -> withCmd (Show Simulants.Battle) model
-                    | None -> withCmd (Show Simulants.Field) model
+                            else withCmd (Show Simulants.Battle) omni
+                        | _ -> withCmd (Show Simulants.Battle) omni
+                    | None -> withCmd (Show Simulants.Field) omni
 
         override this.Command (_, command, _, world) =
             match command with
             | Show screen -> World.transitionScreen screen world |> just
             | Exit -> World.exit world |> just
 
-        override this.Content (model, _) =
+        override this.Content (omni, _) =
 
             [// splash
              Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, Simulants.Title)) [] []
@@ -121,14 +121,14 @@ module OmniGame =
 
              // field
              Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.FieldSong)))
-                [Screen.FieldModel <== model --> fun model ->
-                    match model with
-                    | Gui _ -> FieldModel.empty
+                [Screen.Field <== omni --> fun omni ->
+                    match omni with
+                    | Gui _ -> Field.empty
                     | Field field -> field] []
 
              // battle
              Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.BattleSong)))
-                [Screen.BattleModel <== model --> fun model ->
-                    match model with
-                    | Gui _ -> BattleModel.empty
-                    | Field field -> Option.getOrDefault BattleModel.empty field.BattleOpt] []]
+                [Screen.Battle <== omni --> fun omni ->
+                    match omni with
+                    | Gui _ -> Battle.empty
+                    | Field field -> Option.getOrDefault Battle.empty field.BattleOpt] []]
