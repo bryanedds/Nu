@@ -5,7 +5,7 @@ open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
-module PropDispatcherModule =
+module PropDispatcher =
 
     type PropMessage =
         | Update

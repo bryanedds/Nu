@@ -5,7 +5,7 @@ open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
-module OmniGame =
+module GameDispatcher =
 
     type Gui =
         | Splashing

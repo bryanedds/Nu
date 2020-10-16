@@ -7,7 +7,7 @@ open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
-module OmniBattle =
+module BattleDispatcher =
 
     type [<ReferenceEquality; NoComparison>] Hop =
         { HopStart : Vector2

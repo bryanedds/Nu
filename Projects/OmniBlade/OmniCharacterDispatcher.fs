@@ -7,7 +7,7 @@ open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
-module OmniCharacter =
+module CharacterDispatcher =
 
     type Entity with
     
