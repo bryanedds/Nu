@@ -91,7 +91,7 @@
     <Compile Include="OmniAvatarDispatcher.fs" />
     <Compile Include="OmniBattleDispatcher.fs" />
     <Compile Include="OmniFieldDispatcher.fs" />
-    <Compile Include="OmniGameDispatcher.fs" />
+    <Compile Include="OmniDispatcher.fs" />
     <Compile Include="OmniPlugin.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />

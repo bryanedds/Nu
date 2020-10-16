@@ -474,7 +474,7 @@ module WorldTypes =
         { Dispatcher : ScreenDispatcher
           Xtension : Xtension
           Model : DesignerProperty
-          Ecs : World Ecs
+          Ecs : World Ecs'
           TransitionState : TransitionState
           TransitionTicks : int64
           Incoming : Transition
@@ -1183,8 +1183,8 @@ module WorldTypes =
         default this.MakeKeyedValues world = ([], world)
 
         /// Make the Ecs for each screen.
-        abstract MakeEcs : unit -> World Ecs
-        default this.MakeEcs () = Ecs<World> ()
+        abstract MakeEcs : unit -> World Ecs'
+        default this.MakeEcs () = Ecs'<World> ()
 
         /// A call-back at the beginning of each frame.
         abstract PreFrame : World -> World
