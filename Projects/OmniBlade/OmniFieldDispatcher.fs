@@ -8,7 +8,7 @@ open TiledSharp
 open OmniBlade
 
 [<AutoOpen>]
-module OmniField =
+module FieldDispatcher =
 
     type [<NoComparison; NoEquality>] FieldMessage =
         | UpdateAvatar of Avatar

@@ -5,7 +5,7 @@ open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
-module AvatarDispatcherModule =
+module AvatarDispatcher =
 
     type [<NoComparison>] AvatarMessage =
         | Update

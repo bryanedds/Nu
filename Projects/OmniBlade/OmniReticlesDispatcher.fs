@@ -5,7 +5,7 @@ open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
-module OmniReticles =
+module ReticlesDispatcher =
 
     type [<ReferenceEquality; NoComparison>] Reticles =
         { Battle : Battle // TODO: let's see if we can make this reference something smaller.

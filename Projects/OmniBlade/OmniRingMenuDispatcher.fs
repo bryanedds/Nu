@@ -6,7 +6,7 @@ open Nu.Declarative
 open OmniBlade
 
 [<AutoOpen>]
-module OmniRingMenu =
+module RingMenuDispatcher =
 
     type [<ReferenceEquality; NoComparison>] RingMenu =
         { Items : (int * (bool * string)) list
