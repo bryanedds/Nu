@@ -818,3 +818,539 @@ module EcsEvents =
     let [<Literal>] Update = "Update"
     let [<Literal>] PostUpdate = "PostUpdate"
     let [<Literal>] Actualize = "Actualize"
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+/// The base component type of an Ecs.
+type Component'<'c when 'c : struct and 'c :> 'c Component'> =
+    interface
+        abstract RefCount : int with get, set
+        abstract AllocateJunctions : 'w Ecs' -> obj array
+        abstract ResizeJunctions : int -> obj array -> 'w Ecs' -> obj array
+        abstract MoveJunction : int -> int -> obj array -> 'w Ecs' -> unit
+        abstract Junction : int -> obj array -> 'w Ecs' -> 'c
+        abstract Disjunction : int -> obj array -> 'w Ecs' -> unit
+        end
+
+/// A storable reference to a component in its containing array.
+and [<NoEquality; NoComparison; Struct>] ComponentRef'<'c when 'c : struct and 'c :> 'c Component'> =
+    { ComponentIndex : int
+      ComponentArrRef : 'c ArrayRef }
+
+    member this.Index
+        with get () = &this.ComponentArrRef.[this.ComponentIndex]
+
+    member this.Assign value =
+        this.ComponentArrRef.[this.ComponentIndex] <- value
+
+    static member (<!) (componentRef, value) =
+        componentRef.ComponentArrRef.Array.[componentRef.ComponentIndex] <- value
+
+    static member (!>) componentRef =
+        &componentRef.ComponentArrRef.Array.[componentRef.ComponentIndex]
+
+    static member make index arr =
+        { ComponentIndex = index
+          ComponentArrRef = arr }
+
+and [<NoEquality; NoComparison>] SystemEvent'<'d, 'w when 'w :> Freezable> =
+    { SystemEventData' : 'd
+      SystemPublisher' : 'w System' }
+
+and SystemCallback'<'d, 'w when 'w :> Freezable> =
+    SystemEvent'<'d, 'w> -> 'w System' -> 'w Ecs' -> 'w -> 'w
+
+and SystemBoxedCallback'<'w when 'w :> Freezable> =
+    SystemEvent<obj, 'w> -> 'w System' -> 'w Ecs' -> 'w -> 'w
+
+/// A base system type of an Ecs.
+and System'<'w when 'w :> Freezable> (name : string) =
+    let pipedKey = Gen.id
+    member this.PipedKey with get () = pipedKey
+    abstract PipedInit : obj
+    default this.PipedInit with get () = () :> obj
+    member this.Name with get () = name
+
+and Ecs'<'w when 'w :> Freezable> () as this =
+
+    let arrayObjs = dictPlus [] : Dictionary<string, obj List>
+    let systemSubscriptions = dictPlus [] : Dictionary<string, Dictionary<Guid, obj>>
+    let systemsUnordered = dictPlus [] : Dictionary<string, 'w System'>
+    let systemsOrdered = List () : (string * 'w System') List
+    let correlations = dictPlus [] : Dictionary<Guid, string List>
+    let pipedValues = ConcurrentDictionary<Guid, obj> ()
+    let globalSystem = System'<'w> "Global"
+    
+    do this.RegisterSystemGeneralized globalSystem
+
+    member this.AllocateArray<'c when 'c : struct and 'c :> 'c Component'> componentName =
+        let arr = Array.zeroCreate Constants.Ecs.ArrayReserve : 'c array
+        match arrayObjs.TryGetValue componentName with
+        | (true, found) -> found.Add (box arr)
+        | (false, _) -> arrayObjs.Add (componentName, List [box arr])
+        { Array = arr }
+
+    member this.GetComponents<'c when 'c : struct and 'c :> 'c Component'> componentName =
+        match arrayObjs.TryGetValue componentName with
+        | (true, found) -> found |> Seq.cast<'c array> |> Seq.toArray
+        | (false, _) -> [||]
+
+    member private this.BoxCallback<'a> (callback : SystemCallback'<'a, 'w>) =
+        let boxableCallback = fun (evt : SystemEvent'<obj, 'w>) world ->
+            let evt =
+                { SystemEventData' = evt.SystemEventData' :?> 'a
+                  SystemPublisher' = evt.SystemPublisher' }
+            callback evt world
+        boxableCallback :> obj
+
+    member internal this.Correlations 
+        with get () = correlations
+
+    member this.GlobalSystem
+        with get () = globalSystem
+
+    /// Thread-safe.
+    member this.RegisterPipedValue<'a> key (value : 'a) =
+        pipedValues.[key] <- value :> obj
+
+    /// Thread-safe.
+    member this.UnregisterPipedValue key =
+        pipedValues.TryRemove (key, ref (obj ()))
+
+    /// Thread-safe.
+    member this.TryIndexPipedValue<'a> key =
+        match pipedValues.TryGetValue key with
+        | (true, value) -> Some (value :?> 'a)
+        | (false, _) -> None
+
+    /// Thread-safe.
+    member this.IndexPipedValue<'a> key =
+        pipedValues.[key] :?> 'a
+
+    member this.RegisterSystemGeneralized (system : 'w System') =
+        systemsUnordered.Add (system.Name, system)
+        systemsOrdered.Add (system.Name, system)
+        //system.RegisterPipedValue this // TODO: see if we can enable this somehow.
+
+    member this.UnregisterSystem (system : 'w System') =
+        //system.UnregisterPipedValue this // TODO: see if we can enable this somehow.
+        systemsOrdered.RemoveAll (fun (systemName', _) -> systemName' = system.Name) |> ignore<int>
+        systemsUnordered.Remove system.Name |> ignore<bool>
+
+    member this.TryIndexSystem<'s when 's :> 'w System'> systemName =
+        match systemsUnordered.TryGetValue systemName with
+        | (true, system) ->
+            match system with
+            | :? 's as systemAsS -> Some systemAsS
+            | _ -> None
+        | (false, _) -> None
+
+    member this.IndexSystem<'s when 's :> 'w System'> systemName =
+        this.TryIndexSystem<'s> systemName |> Option.get
+
+    member this.Subscribe<'d> eventName (callback : SystemCallback'<'d, 'w>) =
+        let subscriptionId = Gen.id
+        match systemSubscriptions.TryGetValue eventName with
+        | (true, subscriptions) ->
+            subscriptions.Add (subscriptionId, this.BoxCallback<'d> callback)
+            subscriptionId
+        | (false, _) ->
+            let subscriptions = dictPlus [(subscriptionId, this.BoxCallback<'d> callback)]
+            systemSubscriptions.Add (eventName, subscriptions)
+            subscriptionId
+
+    member this.Unsubscribe eventName subscriptionId =
+        match systemSubscriptions.TryGetValue eventName with
+        | (true, subscriptions) -> subscriptions.Remove subscriptionId
+        | (false, _) -> false
+
+    member this.Publish<'d> eventName (eventData : 'd) publisher world =
+        match systemSubscriptions.TryGetValue eventName with
+        | (true, subscriptions) ->
+            Seq.fold (fun world (callback : obj) ->
+                match callback with
+                | :? SystemCallback'<obj, 'w> as objCallback ->
+                    let evt = { SystemEventData' = eventData :> obj; SystemPublisher' = publisher }
+                    objCallback evt publisher this world
+                | _ -> failwithumf ())
+                world subscriptions.Values
+        | (false, _) -> world
+
+    member this.PublishParallel<'d> eventName (eventData : 'd) publisher (world : 'w) =
+        match systemSubscriptions.TryGetValue eventName with
+        | (true, subscriptions) ->
+            world.Freeze ()
+            try subscriptions |>
+                Seq.map (fun subscription ->
+                    Task.Run (fun () ->
+                        match subscription.Value with
+                        | :? SystemCallback'<obj, 'w> as objCallback ->
+                            let evt = { SystemEventData' = eventData :> obj; SystemPublisher' = publisher }
+                            objCallback evt publisher this world |> ignore<'w> // ignore returned world
+                        | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
+                Vsync.Parallel |>
+                Vsync.RunSynchronously |>
+                ignore<unit array>
+            finally world.Thaw ()
+            world
+        | (false, _) -> world
+
+    type System'<'w when 'w :> Freezable> with
+        member this.RegisterPipedValue (ecs : 'w Ecs') = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
+        member this.UnregisterPipedValue (ecs : 'w Ecs') = ecs.UnregisterPipedValue this.PipedKey
+        member this.IndexPipedValue<'a> (ecs : 'w Ecs') = ecs.IndexPipedValue<'a> this.PipedKey
+
+[<Extension>]
+type EcsExtensions' =
+
+    [<Extension>]
+    static member RegisterSystem<'s, 'w when 's :> 'w System' and 'w :> Freezable> (this : 'w Ecs', system : 's) =
+        this.RegisterSystemGeneralized system
+        system
+
+/// An Ecs system with just a single component.
+type SystemSingleton'<'c, 'w when 'c : struct and 'c :> 'c Component' and 'w :> Freezable> (name, comp : 'c) =
+    inherit System'<'w> (name)
+
+    let mutable comp = comp
+
+    new (comp) = SystemSingleton' (typeof<'c>.Name, comp)
+
+    member this.Component' with get () = &comp
+
+    type Ecs'<'w when 'w :> Freezable> with
+
+        member this.IndexSingleton<'c, 'w when 'c : struct and 'c :> 'c Component'> systemName =
+            let systemOpt = this.TryIndexSystem<SystemSingleton'<'c, 'w>> systemName 
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            &system.Component'
+
+/// A system with zero to many components.
+type [<AbstractClass>] SystemMany'<'w when 'w :> Freezable> (name) =
+    inherit System'<'w> (name)
+    abstract SizeOfComponent : int
+    abstract ComponentsCount : int
+    abstract ComponentsToBytes : unit -> char array
+    abstract BytesToComponents : char array -> unit
+    abstract PadComponents : int -> unit
+
+/// An Ecs system with components stored by a raw index.
+/// Stores components in an unordered manner.
+type SystemUncorrelated'<'c, 'w when 'c : struct and 'c :> 'c Component' and 'w :> Freezable> (name, ecs : 'w Ecs') =
+    inherit SystemMany'<'w> (name)
+
+    let mutable components = ecs.AllocateArray<'c> name
+    let mutable freeIndex = 0
+    let freeList = HashSet<int> ()
+
+    new (ecs) = SystemUncorrelated' (typeof<'c>.Name, ecs)
+
+    abstract ComponentToBytes : 'c -> char array
+    default this.ComponentToBytes _ = failwithnie ()
+    abstract BytesToComponent : char array -> 'c
+    default this.BytesToComponent _ = failwithnie ()
+
+    override this.SizeOfComponent with get () =
+        sizeof<'c>
+
+    override this.ComponentsCount with get () =
+        freeIndex - 1 - freeList.Count
+
+    override this.ComponentsToBytes () =
+        let byteArrays = Array.map this.ComponentToBytes components.Array
+        Array.concat byteArrays
+
+    override this.BytesToComponents (bytes : char array) =
+        let byteArrays = Array.chunkBySize this.SizeOfComponent bytes
+        if bytes.Length <> components.Length then
+            failwith "Incoming bytes array must have the same number of elements as target system has components."
+        let arr = Array.map this.BytesToComponent byteArrays
+        components.Array <- arr
+
+    override this.PadComponents length =
+        let arr = Array.zeroCreate (components.Length + length)
+        components.Array.CopyTo (arr, 0)
+        components.Array <- arr
+
+    member this.Components with get () = components
+
+    member this.FreeIndex with get () = freeIndex
+
+    member this.IndexUncorrelated index =
+        if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
+        ComponentRef'<'c>.make index components
+
+    member this.RegisterUncorrelated comp =
+        if freeList.Count > 0 then
+            let index = Seq.head freeList
+            freeList.Remove index |> ignore<bool>
+            components.[index] <- comp
+        elif freeIndex < components.Length then
+            components.[freeIndex] <- comp
+            freeIndex <- inc freeIndex
+        else
+            let arr = Array.zeroCreate (components.Length * Constants.Ecs.ArrayGrowth)
+            components.Array.CopyTo (arr, 0)
+            components.Array <- arr
+            components.[freeIndex] <- comp
+            freeIndex <- inc freeIndex
+
+    member this.UnregisterUncorrelated index =
+        if index <> freeIndex then
+            components.[index].RefCount <- dec components.[index].RefCount
+            if components.[index].RefCount = 0 then freeList.Add index |> ignore<bool>
+        else freeIndex <- dec freeIndex
+
+    type Ecs'<'w when 'w :> Freezable> with
+
+        member this.IndexUncorrelated<'c when 'c : struct and 'c :> 'c Component'> systemName index =
+            let systemOpt = this.TryIndexSystem<SystemUncorrelated'<'c, 'w>> systemName
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            system.IndexUncorrelated index
+
+        member this.RegisterUncorrelated<'c when 'c : struct and 'c :> 'c Component'> comp systemName =
+            match this.TryIndexSystem<SystemUncorrelated'<'c, 'w>> systemName with
+            | Some system -> system.RegisterUncorrelated comp
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.UnregisterUncorrelated<'c when 'c : struct and 'c :> 'c Component'> systemName index =
+            match this.TryIndexSystem<SystemUncorrelated'<'c, 'w>> systemName with
+            | Some system -> system.UnregisterUncorrelated index
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.ReadUncorrelated<'c when 'c : struct and 'c :> 'c Component'> (readers : Dictionary<string, StreamReader>) (count : int) =
+            for readerEntry in readers do
+                let (systemName, reader) = (readerEntry.Key, readerEntry.Value)
+                match this.TryIndexSystem<SystemUncorrelated'<'c, 'w>> systemName with
+                | Some system ->
+                    system.PadComponents count
+                    let bytes = system.ComponentsToBytes ()
+                    let _ = reader.ReadBlock (bytes, system.SizeOfComponent * system.Components.Length, system.SizeOfComponent * count)
+                    system.BytesToComponents bytes
+                | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+/// An Ecs system with components stored by entity id.
+type SystemCorrelated'<'c, 'w when 'c : struct and 'c :> 'c Component' and 'w :> Freezable> (name, ecs : 'w Ecs') =
+    inherit SystemMany'<'w> (name)
+
+    let mutable components = ecs.AllocateArray<'c> name
+    let mutable componentsJunctioned = Unchecked.defaultof<'c>.AllocateJunctions ecs
+    let mutable freeIndex = 0
+    let freeList = HashSet<int> ()
+    let correlations = dictPlus [] : Dictionary<Guid, int>
+    let correlationsBack = dictPlus [] : Dictionary<int, Guid>
+
+    new (ecs) = SystemCorrelated' (typeof<'c>.Name, ecs)
+
+    member this.Components with get () = components
+    member this.FreeIndex with get () = freeIndex and internal set value = freeIndex <- value
+
+    abstract ComponentToBytes : 'c -> char array
+    default this.ComponentToBytes _ = failwithnie ()
+    abstract BytesToComponent : char array -> 'c
+    default this.BytesToComponent _ = failwithnie ()
+
+    override this.SizeOfComponent with get () =
+        sizeof<'c>
+
+    override this.ComponentsCount with get () =
+        freeIndex - freeList.Count
+
+    override this.ComponentsToBytes () =
+        let byteArrays = Array.map this.ComponentToBytes components.Array
+        Array.concat byteArrays
+
+    override this.BytesToComponents (bytes : char array) =
+        let byteArrays = Array.chunkBySize this.SizeOfComponent bytes
+        if bytes.Length <> components.Length then
+            failwith "Incoming bytes array must have the same number of elements as target system has components."
+        let arr = Array.map this.BytesToComponent byteArrays
+        components.Array <- arr
+
+    override this.PadComponents length =
+        let arr = Array.zeroCreate (components.Length + length)
+        components.Array.CopyTo (arr, 0)
+        components.Array <- arr
+
+    member internal this.Compact ecs =
+
+        // compact array
+        // TODO: P1: step-debug this.
+        let mutable i = 0
+        let mutable j = 1
+        while j < freeIndex do
+
+            // check if slot is free
+            if  components.[i].RefCount = 0 && freeList.Contains i then
+
+                // find next non-free component
+                while
+                    j < freeIndex &&
+                    components.[j].RefCount = 0 &&
+                    not (freeList.Contains j) do
+                    j <- inc j
+
+                // move components
+                components.[i] <- components.[j]
+                components.[0].MoveJunction j i componentsJunctioned ecs
+
+                // update book-keeping
+                match correlationsBack.TryGetValue j with
+                | (true, entityId) ->
+                    correlations.[entityId] <- i
+                    correlationsBack.Remove j |> ignore<bool>
+                    correlationsBack.Add (i, entityId)
+                | (false, _) -> failwithumf ()
+
+                // loop
+                j <- inc j
+            i <- inc i
+
+        // update book-keeping
+        freeList.Clear ()
+        freeIndex <- j
+
+    member this.GetEntitiesCorrelated () =
+        correlations.Keys :> _ IEnumerable
+
+    member this.QualifyCorrelated entityId =
+        correlations.ContainsKey entityId
+
+    member this.IndexCorrelatedI entityId =
+        let (found, index) = correlations.TryGetValue entityId
+        if not found then raise (InvalidOperationException "entityId")
+        index
+
+    member this.IndexCorrelated entityId =
+        let index = this.IndexCorrelatedI entityId
+        ComponentRef'<'c>.make index components
+
+    member this.RegisterCorrelated (comp : 'c) entityId ecs =
+
+        // check if component is already registered
+        match Dictionary.tryGetValue entityId correlations with
+        | (false, _) ->
+
+            // ensure there is space in the arrays
+            if freeIndex >= components.Length then
+                let length = components.Length * Constants.Ecs.ArrayGrowth
+                let arr = Array.zeroCreate length
+                components.Array.CopyTo (arr, 0)
+                components.Array <- arr
+                componentsJunctioned <- Unchecked.defaultof<'c>.ResizeJunctions length componentsJunctioned ecs
+
+            // allocate component
+            let index = freeIndex in freeIndex <- inc freeIndex
+            let mutable comp = comp.Junction index componentsJunctioned ecs
+            comp.RefCount <- 1
+            correlations.Add (entityId, index)
+            correlationsBack.Add (index, entityId)
+            components.Array.[index] <- comp
+
+            // fin
+            entityId
+
+        // use existing component
+        | (true, index) ->
+            let mutable comp = components.[index]
+            comp.RefCount <- inc comp.RefCount
+            entityId
+
+    member this.UnregisterCorrelated entityId ecs =
+        match correlations.TryGetValue entityId with
+        | (true, index) ->
+            let comp = components.[index]
+            if index <> freeIndex then
+                components.[index].RefCount <- dec components.[index].RefCount
+                if components.[index].RefCount = 0 then freeList.Add index |> ignore<bool>
+            else freeIndex <- dec freeIndex
+            correlations.Remove entityId |> ignore<bool>
+            correlationsBack.Remove index |> ignore<bool>
+            comp.Disjunction index componentsJunctioned ecs
+            if  components.Length < freeList.Count * 2 && // freeList is always empty if unordered
+                components.Length > Constants.Ecs.ArrayReserve then
+                this.Compact ecs
+            true
+        | (false, _) -> false
+
+    type Ecs'<'w when 'w :> Freezable> with
+
+        member this.GetSystemsCorrelated entityId =
+            this.Correlations.[entityId] |>
+            Seq.map (fun systemName -> (systemName, this.IndexSystem<'w System'> systemName)) |>
+            dictPlus
+
+        member this.GetEntitiesCorrelated<'c when 'c : struct and 'c :> 'c Component'> systemName =
+            match this.TryIndexSystem<SystemCorrelated'<'c, 'w>> systemName with
+            | Some system -> system.GetEntitiesCorrelated ()
+            | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.QualifyCorrelated<'c when 'c : struct and 'c :> 'c Component'> systemName entityId =
+            let systemOpt = this.TryIndexSystem<SystemCorrelated'<'c, 'w>> systemName
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            system.QualifyCorrelated entityId
+
+        member inline this.IndexCorrelated<'c when 'c : struct and 'c :> 'c Component'> systemName entityId : 'c ComponentRef' =
+            let systemOpt = this.TryIndexSystem<SystemCorrelated'<'c, 'w>> systemName
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            system.IndexCorrelated entityId
+
+        member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component'> comp systemName entityId =
+            match this.TryIndexSystem<SystemCorrelated'<'c, 'w>> systemName with
+            | Some system ->
+                let entityId = system.RegisterCorrelated comp entityId this
+                match this.Correlations.TryGetValue entityId with
+                | (true, correlation) -> correlation.Add systemName
+                | (false, _) -> this.Correlations.Add (entityId, List [systemName])
+                entityId
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component'> systemName entityId =
+            match this.TryIndexSystem<SystemCorrelated'<'c, 'w>> systemName with
+            | Some system ->
+                let result = system.UnregisterCorrelated entityId this
+                if result then
+                    match this.Correlations.TryGetValue entityId with
+                    | (true, correlation) -> correlation.Remove systemName |> ignore<bool>
+                    | (false, _) -> ()
+                result
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component'> (comp : 'c) (index : int) (componentsObj : obj) =
+            let components = componentsObj :?> 'c ArrayRef
+            components.[index] <- comp
+            components.[index].RefCount <- 1
+            ComponentRef'<'c>.make index components
+
+        member this.Junction<'c when 'c : struct and 'c :> 'c Component'> index components =
+            this.JunctionPlus<'c> Unchecked.defaultof<'c> index components
+
+        member this.Disjunction<'c when 'c : struct and 'c :> 'c Component'> (index : int) (componentsObj : obj) =
+            let components = componentsObj :?> 'c ArrayRef
+            let mutable comp = &components.[index]
+            comp.RefCount <- dec comp.RefCount
+
+        member this.ResizeJunction<'c when 'c : struct and 'c :> 'c Component'> (size : int) (componentsObj : obj) =
+            let components = componentsObj :?> 'c ArrayRef
+            let arr = Array.zeroCreate<'c> size
+            Array.blit components.Array 0 arr 0 size
+
+        member this.MoveJunction<'c when 'c : struct and 'c :> 'c Component'> (src : int) (dst : int) (componentsObj : obj) =
+            let components = componentsObj :?> 'c ArrayRef
+            components.[dst] <- components.[src]
