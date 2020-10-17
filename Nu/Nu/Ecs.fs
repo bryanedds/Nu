@@ -456,7 +456,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
             let mutable comp = comp.Junction index componentsJunctioned ecs
-            comp.RefCount <- 1
+            comp.RefCount <- inc comp.RefCount
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
             components.Array.[index] <- comp
@@ -534,8 +534,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
+            comp.RefCount <- dec comp.RefCount
             components.[index] <- comp
-            components.[index].RefCount <- 1
             ComponentRef<'c>.make index components
 
         member this.Junction<'c when 'c : struct and 'c :> 'c Component> index components =
