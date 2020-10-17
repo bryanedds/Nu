@@ -20,12 +20,13 @@ type Freezable =
         end
 
 /// An array with additional indirection.
+/// NOTE: Inlined everything for speed.
 /// TODO: move to Prime?
 type 'c ArrayRef =
     { mutable Array : 'c array }
-    member this.Length with get () = this.Array.Length
-    member this.Item i = &this.Array.[i]
-    static member make n = { Array = Array.zeroCreate n }
+    member inline this.Length with get () = this.Array.Length
+    member inline this.Item i = &this.Array.[i]
+    static member inline make n = { Array = Array.zeroCreate n }
 
 /// The base component type of an Ecs.
 type Component<'c when 'c : struct and 'c :> 'c Component> =
@@ -508,8 +509,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
         member this.Disjunction<'c when 'c : struct and 'c :> 'c Component> (index : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
-            let mutable comp = &components.[index]
-            comp.Active <- false
+            components.[index].Active <- false
 
         member this.ResizeJunction<'c when 'c : struct and 'c :> 'c Component> (size : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
