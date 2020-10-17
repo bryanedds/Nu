@@ -37,7 +37,9 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
 
     interface Transform Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-        member this.SystemNames = [||]
+        member this.AllocateJunctions _ = [||]
+        member this.ResizeJunctions _ _ _ = ()
+        member this.MoveJunction _ _ _ _ = ()
         member this.Junction _ _ _ = this
         member this.Disjunction _ _ _ = ()
 
