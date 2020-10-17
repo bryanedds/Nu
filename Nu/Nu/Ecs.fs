@@ -78,11 +78,6 @@ and System<'w when 'w :> Freezable> (name : string) =
     member this.Name with get () = name
 
 /// Nu's custom Entity-Component-System implementation.
-/// While this isn't the most efficient ECS, it isn't the least efficient either. Due to the set-associative nature of
-/// modern caches, most cache hits will be of the L2 variety for junctioned components. Uncorrelated components will be
-/// L1-bound as is typical. Degradation of cache-prediction would only occur when a significant number of junctioned
-/// components are very chaotically unregistered in a scenario that the I, the library author, have trouble imagining
-/// for the intended use cases.
 and Ecs<'w when 'w :> Freezable> () as this =
 
     let arrayObjs = dictPlus [] : Dictionary<string, obj List>
