@@ -79,10 +79,10 @@ module EcsTests =
             world)
 
         // create and register our airship
-        let airshipId = ecs.RegisterCorrelated Unchecked.defaultof<Airship> typeof<Airship>.Name Gen.id
+        let airshipId = ecs.RegisterCorrelated Unchecked.defaultof<Airship> Gen.id
 
         // change some airship properties
-        let airship = ecs.IndexCorrelated<Airship> typeof<Airship>.Name airshipId
+        let airship = ecs.IndexCorrelated<Airship> airshipId
         airship.Index.Transform.Index.Position.X <- 0.5f
         airship.Index.Skin.Index.Color.R <- byte 16
 

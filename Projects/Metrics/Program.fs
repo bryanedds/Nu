@@ -112,8 +112,8 @@ type MyGameDispatcher () =
 
         // create movers
         for _ in 0 .. entityCount - 1 do
-            let entityId = ecs.RegisterCorrelated<Mover> Unchecked.defaultof<Mover> typeof<Mover>.Name Gen.id
-            let mover = ecs.IndexCorrelated<Mover> typeof<Mover>.Name entityId
+            let entityId = ecs.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id
+            let mover = ecs.IndexCorrelated<Mover> entityId
             mover.Index.Velocity.Index.Velocity <- v2One
 
         // define update for movers
