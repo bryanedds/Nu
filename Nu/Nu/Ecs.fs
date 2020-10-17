@@ -514,7 +514,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
         member this.ResizeJunction<'c when 'c : struct and 'c :> 'c Component> (size : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
             let arr = Array.zeroCreate<'c> size
-            Array.blit components.Array 0 arr 0 components.Array.Length
+            Array.blit components.Array 0 arr 0 (min components.Array.Length arr.Length)
             components.Array <- arr
 
         member this.MoveJunction<'c when 'c : struct and 'c :> 'c Component> (src : int) (dst : int) (componentsObj : obj) =
