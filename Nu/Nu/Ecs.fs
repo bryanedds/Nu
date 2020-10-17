@@ -197,10 +197,13 @@ and Ecs<'w when 'w :> Freezable> () as this =
         | (false, _) -> arrayObjs.Add (componentName, List [box arr])
         arr
 
-    member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> componentName =
+    member this.GetComponentArraysPlus<'c when 'c : struct and 'c :> 'c Component> componentName =
         match arrayObjs.TryGetValue componentName with
         | (true, found) -> found |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
+
+    member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
+        this.GetComponentArraysPlus<'c> typeof<'c>.Name
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
@@ -213,22 +216,16 @@ type EcsExtensions =
     [<Extension>]
     static member RegisterSystem<'s, 'w when 's :> 'w System and 'w :> Freezable> (this : 'w Ecs, system : 's) =
         this.RegisterSystemGeneralized system
-        system
 
 /// An Ecs system with just a single component.
 type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, comp : 'c) =
     inherit System<'w> (name)
-
     let mutable comp = comp
-
     new (comp) = SystemSingleton (typeof<'c>.Name, comp)
-
     member this.Component with get () = &comp
-
     type Ecs<'w when 'w :> Freezable> with
-
         member this.IndexSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> systemName =
-            let systemOpt = this.TryIndexSystem<SystemSingleton<'c, 'w>> systemName 
+            let systemOpt = this.TryIndexSystem<SystemSingleton<'c, 'w>> systemName
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
             &system.Component
@@ -236,8 +233,8 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Fr
 /// A system with zero to many components.
 type [<AbstractClass>] SystemMany<'w when 'w :> Freezable> (name) =
     inherit System<'w> (name)
-    abstract SizeOfComponent : int
     abstract ComponentsCount : int
+    abstract SizeOfComponent : int
     abstract ComponentsToBytes : unit -> char array
     abstract BytesToComponents : char array -> unit
     abstract PadComponents : int -> unit
@@ -258,11 +255,11 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
     abstract BytesToComponent : char array -> 'c
     default this.BytesToComponent _ = failwithnie ()
 
-    override this.SizeOfComponent with get () =
-        sizeof<'c>
-
     override this.ComponentsCount with get () =
         freeIndex - 1 - freeList.Count
+
+    override this.SizeOfComponent with get () =
+        sizeof<'c>
 
     override this.ComponentsToBytes () =
         let byteArrays = Array.map this.ComponentToBytes components.Array
@@ -280,9 +277,8 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
         components.Array.CopyTo (arr, 0)
         components.Array <- arr
 
-    member this.Components with get () = components
-
-    member this.FreeIndex with get () = freeIndex
+    member this.Components with get () =
+        components
 
     member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
@@ -352,34 +348,13 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     new (ecs) = SystemCorrelated (typeof<'c>.Name, ecs)
 
     member this.Components with get () = components
-    member this.FreeIndex with get () = freeIndex and internal set value = freeIndex <- value
+    member this.ComponentsJunctioned with get () = componentsJunctioned
 
-    abstract ComponentToBytes : 'c -> char array
-    default this.ComponentToBytes _ = failwithnie ()
-    abstract BytesToComponent : char array -> 'c
-    default this.BytesToComponent _ = failwithnie ()
-
-    override this.SizeOfComponent with get () =
-        sizeof<'c>
-
-    override this.ComponentsCount with get () =
-        freeIndex - freeList.Count
-
-    override this.ComponentsToBytes () =
-        let byteArrays = Array.map this.ComponentToBytes components.Array
-        Array.concat byteArrays
-
-    override this.BytesToComponents (bytes : char array) =
-        let byteArrays = Array.chunkBySize this.SizeOfComponent bytes
-        if bytes.Length <> components.Length then
-            failwith "Incoming bytes array must have the same number of elements as target system has components."
-        let arr = Array.map this.BytesToComponent byteArrays
-        components.Array <- arr
-
-    override this.PadComponents length =
-        let arr = Array.zeroCreate (components.Length + length)
-        components.Array.CopyTo (arr, 0)
-        components.Array <- arr
+    override this.ComponentsCount with get () = freeIndex - freeList.Count
+    override this.SizeOfComponent with get () = failwithnie ()
+    override this.ComponentsToBytes () = failwithnie ()
+    override this.BytesToComponents _ = failwithnie ()
+    override this.PadComponents _ = failwithnie ()
 
     member internal this.Compact ecs =
 

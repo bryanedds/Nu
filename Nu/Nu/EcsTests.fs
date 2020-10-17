@@ -60,29 +60,29 @@ module EcsTests =
         let ecs = Ecs<World> ()
 
         // create and register our transform system
-        let _ = ecs.RegisterSystem (SystemCorrelated<Transform, World> ecs)
+        ecs.RegisterSystem (SystemCorrelated<Transform, World> ecs)
 
         // create and register our skin system
-        let _ = ecs.RegisterSystem (SystemCorrelated<Skin, World> ecs)
+        ecs.RegisterSystem (SystemCorrelated<Skin, World> ecs)
 
         // create and register our airship system
-        let airshipSystem = ecs.RegisterSystem (SystemCorrelated<Airship, World> ecs)
+        ecs.RegisterSystem (SystemCorrelated<Airship, World> ecs)
 
         // define our airship system's update behavior
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            let comps = airshipSystem.Components.Array
-            for i in 0 .. comps.Length - 1 do
-                let comp = &comps.[i]
-                if  comp.RefCount > 0 then
-                    comp.Transform.Index.Enabled <- i % 2 = 0
-                    comp.Skin.Index.Color.A <- byte 128
+            for components in ecs.GetComponentArrays<Airship> () do
+                for i in 0 .. components.Length - 1 do
+                    let mutable comp = &components.[i]
+                    if  comp.RefCount > 0 then
+                        comp.Transform.Index.Enabled <- i % 2 = 0
+                        comp.Skin.Index.Color.A <- byte 128
             world)
 
         // create and register our airship
-        let airshipId = ecs.RegisterCorrelated Unchecked.defaultof<Airship> airshipSystem.Name Gen.id
+        let airshipId = ecs.RegisterCorrelated Unchecked.defaultof<Airship> typeof<Airship>.Name Gen.id
 
         // change some airship properties
-        let airship = ecs.IndexCorrelated<Airship> airshipSystem.Name airshipId
+        let airship = ecs.IndexCorrelated<Airship> typeof<Airship>.Name airshipId
         airship.Index.Transform.Index.Position.X <- 0.5f
         airship.Index.Skin.Index.Color.R <- byte 16
 

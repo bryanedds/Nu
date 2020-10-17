@@ -106,11 +106,11 @@ type MyGameDispatcher () =
         let entityCount = 2 ^^^ 21 // ~2M entities
 
         // create systems
-        let velocities = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
-        let positions = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        let movers = ecs.RegisterSystem (SystemCorrelated<Mover, World> ecs)
+        ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
+        ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
+        ecs.RegisterSystem (SystemCorrelated<Mover, World> ecs)
 
-        // create junctions
+        // create movers
         for _ in 0 .. entityCount - 1 do
             let entityId = ecs.RegisterCorrelated<Mover> Unchecked.defaultof<Mover> typeof<Mover>.Name Gen.id
             let mover = ecs.IndexCorrelated<Mover> typeof<Mover>.Name entityId
@@ -118,7 +118,7 @@ type MyGameDispatcher () =
 
         // define update for movers
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            for components in ecs.GetComponentArrays typeof<Mover>.Name do
+            for components in ecs.GetComponentArrays<Mover> () do
                 for i in 0 .. components.Length - 1 do
                     let mutable comp = &components.[i]
                     if comp.RefCount > 0 then
