@@ -17,18 +17,19 @@ module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind self parent grandparent game toData monitor " +
-        "resolve relate reloadAssets tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
-        "isSelectedScreenIdling isSelectedScreenTransitioning selectScreen tryTransitionScreen transitionScreen " +
-        "setScreenSplash createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile createSplashScreen6 " +
-        "createSplashScreen getEntitiesInView2 getEntitiesInBounds3 getEntitiesAtPoint3 " +
-        "getEntitiesInView getEntitiesInBounds getEntitiesAtPoint playSong " +
-        "playSong4 playSound playSound3 fadeOutSong " +
-        "stopSong hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets " +
-        "hintRenderPackageUse hintRenderPackageDisuse reloadRenderAssets bodyExists " +
-        "getBodyContactNormals getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt " +
-        "getBodyToGroundContactTangentOpt isBodyOnGround createBody createBodies " +
-        "destroyBody destroyBodies createJoint createJoints " +
-        "destroyJoint destroyJoints setBodyPosition setBodyRotation " +
+        "resolve relate reloadAssets tryGetIsSelectedScreenIdling " +
+        "tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning selectScreen " +
+        "tryTransitionScreen transitionScreen setScreenSplash createDissolveScreenFromLayerFile6 " +
+        "createDissolveScreenFromLayerFile createSplashScreen6 createSplashScreen getEntitiesInView2 " +
+        "getEntitiesInBounds3 getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds " +
+        "getEntitiesAtPoint getCurrentSongOpt playSong playSong4 " +
+        "playSound playSound3 fadeOutSong stopSong " +
+        "hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse " +
+        "hintRenderPackageDisuse reloadRenderAssets bodyExists getBodyContactNormals " +
+        "getBodyLinearVelocity getBodyToGroundContactNormals getBodyToGroundContactNormalOpt getBodyToGroundContactTangentOpt " +
+        "isBodyOnGround createBody createBodies destroyBody " +
+        "destroyBodies createJoint createJoints destroyJoint " +
+        "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
         "setBodyAngularVelocity setBodyLinearVelocity applyBodyAngularImpulse applyBodyLinearImpulse " +
         "applyBodyForce localizeBodyShape isMouseButtonDown getMousePosition " +
         "getMousePositionF isKeyboardKeyDown expandContent destroy " +
@@ -432,6 +433,17 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesAtPoint' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getCurrentSongOpt world =
+        let oldWorld = world
+        try
+            let result = World.getCurrentSongOpt world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<SongDescriptor>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getCurrentSongOpt' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let playSong timeToFadeOutSongMs volume song world =
@@ -909,6 +921,23 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyJoints' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let setBodyEnabled enabled physicsId world =
+        let oldWorld = world
+        try
+            let enabled =
+                match ScriptingSystem.tryExport typeof<Boolean> enabled world with
+                | Some value -> value :?> Boolean
+                | None -> failwith "Invalid argument type for 'enabled'; expecting a value convertable to Boolean."
+            let physicsId =
+                match ScriptingSystem.tryExport typeof<PhysicsId> physicsId world with
+                | Some value -> value :?> PhysicsId
+                | None -> failwith "Invalid argument type for 'physicsId'; expecting a value convertable to PhysicsId."
+            let result = World.setBodyEnabled enabled physicsId world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setBodyEnabled' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let setBodyPosition position physicsId world =
@@ -2649,6 +2678,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetCurrentSongOptBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getCurrentSongOpt world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalPlaySongBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -2941,6 +2981,17 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|physicsIds|] -> destroyJoints physicsIds world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalSetBodyEnabledBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|enabled; physicsId|] -> setBodyEnabled enabled physicsId world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3921,6 +3972,7 @@ module WorldBindings =
              ("getEntitiesInView", { Fn = evalGetEntitiesInViewBinding; Pars = [||]; DocOpt = None })
              ("getEntitiesInBounds", { Fn = evalGetEntitiesInBoundsBinding; Pars = [|"bounds"|]; DocOpt = None })
              ("getEntitiesAtPoint", { Fn = evalGetEntitiesAtPointBinding; Pars = [|"point"|]; DocOpt = None })
+             ("getCurrentSongOpt", { Fn = evalGetCurrentSongOptBinding; Pars = [||]; DocOpt = None })
              ("playSong", { Fn = evalPlaySongBinding; Pars = [|"timeToFadeOutSongMs"; "volume"; "song"|]; DocOpt = None })
              ("playSong4", { Fn = evalPlaySong4Binding; Pars = [|"timeToFadeOutSongMs"; "volume"; "songPackageName"; "songAssetName"|]; DocOpt = None })
              ("playSound", { Fn = evalPlaySoundBinding; Pars = [|"volume"; "sound"|]; DocOpt = None })
@@ -3948,6 +4000,7 @@ module WorldBindings =
              ("createJoints", { Fn = evalCreateJointsBinding; Pars = [|"entity"; "entityId"; "jointsProperties"|]; DocOpt = None })
              ("destroyJoint", { Fn = evalDestroyJointBinding; Pars = [|"physicsId"|]; DocOpt = None })
              ("destroyJoints", { Fn = evalDestroyJointsBinding; Pars = [|"physicsIds"|]; DocOpt = None })
+             ("setBodyEnabled", { Fn = evalSetBodyEnabledBinding; Pars = [|"enabled"; "physicsId"|]; DocOpt = None })
              ("setBodyPosition", { Fn = evalSetBodyPositionBinding; Pars = [|"position"; "physicsId"|]; DocOpt = None })
              ("setBodyRotation", { Fn = evalSetBodyRotationBinding; Pars = [|"rotation"; "physicsId"|]; DocOpt = None })
              ("setBodyAngularVelocity", { Fn = evalSetBodyAngularVelocityBinding; Pars = [|"angularVelocity"; "physicsId"|]; DocOpt = None })

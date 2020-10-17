@@ -10,7 +10,7 @@ open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module Simulants=
+module Simulants =
 
     /// The default game. Always exists.
     let Game = Game ()
