@@ -13,7 +13,9 @@ module EcsTests =
           mutable Color : Color }
         interface Skin Component with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-            member this.SystemNames = [||]
+            member this.AllocateJunctions _ = [||]
+            member this.ResizeJunctions _ _ _ = ()
+            member this.MoveJunction _ _ _ _ = ()
             member this.Junction _ _ _ = this
             member this.Disjunction _ _ _ = ()
 
@@ -23,28 +25,34 @@ module EcsTests =
           Skin : Skin ComponentRef }
         interface Airship Component with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-            member this.SystemNames = [|"Transform"; "Skin"|]
-            member this.Junction systems entityId ecs = { id this with Transform = ecs.Junction entityId systems.[0]; Skin = ecs.Junction entityId systems.[1] }
-            member this.Disjunction systems entityId ecs = ecs.Disjunction<Transform> entityId systems.[0]; ecs.Disjunction<Skin> entityId systems.[1]
+            member this.AllocateJunctions ecs = [|ecs.AllocateArray<Transform> "Transform"; ecs.AllocateArray<Skin> "Skin"|]
+            member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Transform> size junctions.[0]; ecs.ResizeJunction<Skin> size junctions.[1]
+            member this.MoveJunction src dst junctions ecs = ecs.MoveJunction<Transform> src dst junctions.[0]; ecs.MoveJunction<Skin> src dst junctions.[1]
+            member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Transform> index junctions.[0]; Skin = ecs.Junction<Skin> index junctions.[1] }
+            member this.Disjunction index junctions ecs = ecs.Disjunction<Transform> index junctions.[0]; ecs.Disjunction<Skin> index junctions.[1]
 
     type [<NoEquality; NoComparison; Struct>] Node =
         { mutable RefCount : int
           Transform : Transform }
         interface Node Component with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-            member this.SystemNames = [||]
+            member this.AllocateJunctions _ = [||]
+            member this.ResizeJunctions _ _ _ = ()
+            member this.MoveJunction _ _ _ _ = ()
             member this.Junction _ _ _ = this
             member this.Disjunction _ _ _ = ()
 
     type [<NoEquality; NoComparison; Struct>] Prop =
         { mutable RefCount : int
-          Transform : Transform ComponentRef
+          Transform : Node ComponentRef
           NodeId : Guid }
         interface Prop Component with
             member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-            member this.SystemNames = [|"Node"|]
-            member this.Junction systems entityId ecs = { id this with Transform = ecs.JunctionHierarchical this.NodeId entityId systems.[0] }
-            member this.Disjunction systems entityId ecs = ecs.DisjunctionHierarchical<Transform> this.NodeId entityId systems.[0]
+            member this.AllocateJunctions ecs = [|ecs.AllocateArray<Node> "Node"|]
+            member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Node> size junctions.[0]
+            member this.MoveJunction src dst junctions ecs = ecs.MoveJunction<Node> src dst junctions.[0]
+            member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Node> index junctions.[0] }
+            member this.Disjunction index junctions ecs = ecs.Disjunction<Node> index junctions.[0]
 
     let example (world : World) =
 
@@ -52,13 +60,13 @@ module EcsTests =
         let ecs = Ecs<World> ()
 
         // create and register our transform system
-        let _ = ecs.RegisterSystem (SystemCorrelated<Transform, World> ())
+        let _ = ecs.RegisterSystem (SystemCorrelated<Transform, World> ecs)
 
         // create and register our skin system
-        let _ = ecs.RegisterSystem (SystemCorrelated<Skin, World> ())
+        let _ = ecs.RegisterSystem (SystemCorrelated<Skin, World> ecs)
 
         // create and register our airship system
-        let airshipSystem = ecs.RegisterSystem (SystemCorrelated<Airship, World> ())
+        let airshipSystem = ecs.RegisterSystem (SystemCorrelated<Airship, World> ecs)
 
         // define our airship system's update behavior
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
