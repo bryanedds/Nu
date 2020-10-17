@@ -838,7 +838,7 @@ type Component'<'c when 'c : struct and 'c :> 'c Component'> =
     interface
         abstract RefCount : int with get, set
         abstract AllocateJunctions : 'w Ecs' -> obj array
-        abstract ResizeJunctions : int -> obj array -> 'w Ecs' -> obj array
+        abstract ResizeJunctions : int -> obj array -> 'w Ecs' -> unit
         abstract MoveJunction : int -> int -> obj array -> 'w Ecs' -> unit
         abstract Junction : int -> obj array -> 'w Ecs' -> 'c
         abstract Disjunction : int -> obj array -> 'w Ecs' -> unit
@@ -896,15 +896,15 @@ and Ecs'<'w when 'w :> Freezable> () as this =
     do this.RegisterSystemGeneralized globalSystem
 
     member this.AllocateArray<'c when 'c : struct and 'c :> 'c Component'> componentName =
-        let arr = Array.zeroCreate Constants.Ecs.ArrayReserve : 'c array
+        let arr = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
         match arrayObjs.TryGetValue componentName with
         | (true, found) -> found.Add (box arr)
         | (false, _) -> arrayObjs.Add (componentName, List [box arr])
-        { Array = arr }
+        arr
 
-    member this.GetComponents<'c when 'c : struct and 'c :> 'c Component'> componentName =
+    member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component'> componentName =
         match arrayObjs.TryGetValue componentName with
-        | (true, found) -> found |> Seq.cast<'c array> |> Seq.toArray
+        | (true, found) -> found |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
 
     member private this.BoxCallback<'a> (callback : SystemCallback'<'a, 'w>) =
@@ -1195,7 +1195,7 @@ type SystemCorrelated'<'c, 'w when 'c : struct and 'c :> 'c Component' and 'w :>
         while j < freeIndex do
 
             // check if slot is free
-            if  components.[i].RefCount = 0 && freeList.Contains i then
+            if components.[i].RefCount = 0 && freeList.Contains i then
 
                 // find next non-free component
                 while
@@ -1251,7 +1251,7 @@ type SystemCorrelated'<'c, 'w when 'c : struct and 'c :> 'c Component' and 'w :>
                 let arr = Array.zeroCreate length
                 components.Array.CopyTo (arr, 0)
                 components.Array <- arr
-                componentsJunctioned <- Unchecked.defaultof<'c>.ResizeJunctions length componentsJunctioned ecs
+                Unchecked.defaultof<'c>.ResizeJunctions length componentsJunctioned ecs
 
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
@@ -1349,8 +1349,222 @@ type SystemCorrelated'<'c, 'w when 'c : struct and 'c :> 'c Component' and 'w :>
         member this.ResizeJunction<'c when 'c : struct and 'c :> 'c Component'> (size : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
             let arr = Array.zeroCreate<'c> size
-            Array.blit components.Array 0 arr 0 size
+            Array.blit components.Array 0 arr 0 components.Array.Length
+            components.Array <- arr
 
         member this.MoveJunction<'c when 'c : struct and 'c :> 'c Component'> (src : int) (dst : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
             components.[dst] <- components.[src]
+
+/// Handle to one of an array of multiplexed components.
+type Simplex'<'c when 'c : struct> =
+    { mutable Simplex : 'c }
+
+/// Allows an entity to contain multiple of the same component.
+/// However, it uses a dictionary without a small-object optimization, so this functionality won't get the typical
+/// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
+/// anything else (which is good enough in almost all cases where multi-components are used).
+type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed'<'c when 'c : struct and 'c :> 'c Component'> =
+    { mutable RefCount : int
+      Simplexes : Dictionary<Guid, 'c Simplex'> }
+    interface Component'<'c ComponentMultiplexed'> with
+        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+        member this.AllocateJunctions _ = [||]
+        member this.ResizeJunctions _ _ _ = ()
+        member this.MoveJunction _ _ _ _ = ()
+        member this.Junction _ _ _ = this
+        member this.Disjunction _ _ _ = ()
+    member this.RegisterMultiplexed (multiId, comp) =
+        this.Simplexes.Add (multiId, { Simplex = comp })
+    member this.UnregisterMultiplexed multiId =
+        this.Simplexes.Remove multiId
+
+/// An Ecs system that stores multiple components per entity id.
+type SystemMultiplexed'<'c, 'w when 'c : struct and 'c :> 'c Component' and 'w :> Freezable> (name, ecs : 'w Ecs') =
+    inherit SystemCorrelated'<'c ComponentMultiplexed', 'w> (name, ecs)
+
+    new (ecs) = SystemMultiplexed' (typeof<'c>.Name, ecs)
+
+    member this.QualifyMultiplexed multiId entityId =
+        if this.QualifyCorrelated entityId then
+            let comp = this.IndexCorrelated entityId
+            comp.Index.Simplexes.ContainsKey multiId
+        else false
+
+    member this.IndexMultiplexed multiId entityId =
+        let componentMultiplexed = this.IndexCorrelated entityId
+        componentMultiplexed.Index.Simplexes.[multiId]
+
+    member this.RegisterMultiplexed comp multiId entityId ecs =
+        let entityId = this.RegisterCorrelated Unchecked.defaultof<_> entityId ecs
+        let componentMultiplexed = this.IndexCorrelated entityId
+        componentMultiplexed.Index.RegisterMultiplexed (multiId, comp)
+        multiId
+
+    member this.UnregisterMultiplexed multiId entityId ecs =
+        let componentMultiplexed = this.IndexCorrelated entityId
+        componentMultiplexed.Index.UnregisterMultiplexed multiId |> ignore<bool>
+        this.UnregisterCorrelated entityId ecs
+
+    type Ecs'<'w when 'w :> Freezable> with
+
+        member this.QualifyMultiplexed<'c when 'c : struct and 'c :> 'c Component'> systemName multiId entityId =
+            let systemOpt = this.TryIndexSystem<SystemMultiplexed'<'c, 'w>> systemName
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            system.QualifyMultiplexed multiId entityId
+
+        member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component'> systemName multiId entityId =
+            let systemOpt = this.TryIndexSystem<SystemMultiplexed'<'c, 'w>> systemName
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            let simplex = system.IndexMultiplexed multiId entityId
+            &simplex.Simplex
+
+        member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component'> comp systemName multiId entityId =
+            match this.TryIndexSystem<SystemMultiplexed'<'c, 'w>> systemName with
+            | Some system ->
+                let _ = system.RegisterMultiplexed comp multiId entityId
+                match this.Correlations.TryGetValue entityId with
+                | (true, correlation) -> correlation.Add systemName
+                | (false, _) -> this.Correlations.Add (entityId, List [systemName])
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component'> systemName multiId entityId =
+            match this.TryIndexSystem<SystemMultiplexed'<'c, 'w>> systemName with
+            | Some system ->
+                if system.UnregisterMultiplexed multiId entityId this then
+                    match this.Correlations.TryGetValue entityId with
+                    | (true, correlation) -> correlation.Add systemName
+                    | (false, _) -> this.Correlations.Add (entityId, List [systemName])
+            | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+type SystemHierarchical'<'c, 'w when 'c : struct and 'c :> 'c Component' and 'w :> Freezable> (name, ecs : 'w Ecs') =
+    inherit System'<'w> (name)
+
+    let systemTree = ListTree.makeEmpty<SystemCorrelated'<'c, 'w>> ()
+    let systemDict = dictPlus [] : Dictionary<Guid, SystemCorrelated'<'c, 'w>>
+
+    new (ecs) = SystemHierarchical' (typeof<'c>.Name, ecs)
+
+    member this.Components with get () =
+        systemTree |> ListTree.map (fun system -> system.Components)
+
+    member this.IndexNode nodeId =
+        match systemDict.TryGetValue nodeId with
+        | (true, system) -> system.Components
+        | (false, _) -> failwith ("Node with id '" + scstring nodeId + "'not found.")
+
+    member this.AddNode (parentIdOpt : Guid option) =
+        let nodeId = Gen.id
+        let system = SystemCorrelated'<'c, 'w> (scstring nodeId, ecs)
+        let added =
+            match parentIdOpt with
+            | Some parentId ->
+                let parentIdStr = scstring parentId
+                systemTree |> ListTree.tryInsert (fun system -> system.Name = parentIdStr) system
+            | None ->
+                systemTree |> ListTree.tryAdd tautology system
+        if Option.isSome added then
+            systemDict.Add (nodeId, system)
+            Some nodeId
+        else None
+
+    member this.RemoveNode nodeId =
+        let nodeIdStr = scstring nodeId
+        let _ = systemTree |> ListTree.remove (fun system -> system.Name = nodeIdStr)
+        systemDict.Remove nodeId
+
+    member this.QualifyHierarchical nodeId entityId =
+        match systemDict.TryGetValue nodeId with
+        | (true, system) -> system.QualifyCorrelated entityId
+        | (false, _) -> false
+
+    member this.IndexHierarchical nodeId entityId =
+        let (found, system) = systemDict.TryGetValue nodeId
+        if not found then raise (InvalidOperationException "nodeId")
+        system.IndexCorrelated entityId
+
+    member this.RegisterHierarchical comp nodeId entityId ecs =
+        match systemDict.TryGetValue nodeId with
+        | (true, system) ->
+            let _ = system.RegisterCorrelated comp entityId ecs
+            true
+        | (false, _) -> false
+
+    member this.UnregisterHierarchical nodeId entityId ecs =
+        match systemDict.TryGetValue nodeId with
+        | (true, system) -> system.UnregisterCorrelated entityId ecs
+        | (false, _) -> false
+
+    type Ecs'<'w when 'w :> Freezable> with
+
+        member this.IndexHierarchy<'c when 'c : struct and 'c :> 'c Component'> systemName =
+            match this.TryIndexSystem<SystemHierarchical'<'c, 'w>> systemName with
+            | Some system -> system.Components
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.IndexNode<'c when 'c : struct and 'c :> 'c Component'> systemName nodeId =
+            match this.TryIndexSystem<SystemHierarchical'<'c, 'w>> systemName with
+            | Some system -> system.IndexNode nodeId
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.AddNode<'c when 'c : struct and 'c :> 'c Component'> systemName parentIdOpt =
+            match this.TryIndexSystem<SystemHierarchical'<'c, 'w>> systemName with
+            | Some system -> system.AddNode parentIdOpt
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.RemoveNode<'c when 'c : struct and 'c :> 'c Component'> systemName parentIdOpt =
+            match this.TryIndexSystem<SystemHierarchical'<'c, 'w>> systemName with
+            | Some system -> system.RemoveNode parentIdOpt
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.QualifyHierarchical<'c when 'c : struct and 'c :> 'c Component'> systemName nodeId entityId =
+            let systemOpt = this.TryIndexSystem<SystemHierarchical'<'c, 'w>> systemName
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            system.QualifyHierarchical nodeId entityId
+
+        member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component'> systemName nodeId entityId =
+            let systemOpt = this.TryIndexSystem<SystemHierarchical'<'c, 'w>> systemName
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            system.IndexHierarchical nodeId entityId
+
+        member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component'> comp systemName nodeId entityId =
+            match this.TryIndexSystem<SystemHierarchical'<'c, 'w>> systemName with
+            | Some system ->
+                let _ = system.RegisterHierarchical comp nodeId entityId
+                match this.Correlations.TryGetValue entityId with
+                | (true, correlation) -> correlation.Add systemName
+                | (false, _) -> this.Correlations.Add (entityId, List [systemName])
+            | None -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component'> systemName nodeId entityId =
+            match this.TryIndexSystem<SystemHierarchical'<'c, 'w>> systemName with
+            | Some system ->
+                if system.UnregisterHierarchical nodeId entityId this then
+                    match this.Correlations.TryGetValue entityId with
+                    | (true, correlation) -> correlation.Add systemName
+                    | (false, _) -> this.Correlations.Add (entityId, List [systemName])
+            | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+        member this.JunctionHierarchicalPlus<'c when 'c : struct and 'c :> 'c Component'>
+            (comp : 'c) (nodeId : Guid) (entityId : Guid) (system : 'w System') =
+            let system = system :?> SystemHierarchical'<'c, 'w>
+            if system.RegisterHierarchical comp nodeId entityId this
+            then system.IndexHierarchical nodeId entityId
+            else failwith ("Could not find expected hierarchical system node '" + scstring nodeId + "'.")
+
+        member this.JunctionHierarchical<'c when 'c : struct and 'c :> 'c Component'>
+            (nodeId : Guid) (entityId : Guid) (system : 'w System') =
+            this.JunctionHierarchicalPlus<'c> Unchecked.defaultof<'c> nodeId entityId system
+
+        member this.DisjunctionHierarchicalPlus<'c when 'c : struct and 'c :> 'c Component'>
+            (nodeId : Guid) (entityId : Guid) (system : 'w System') =
+            let system = system :?> SystemHierarchical'<'c, 'w>
+            system.UnregisterHierarchical nodeId entityId this |> ignore<bool>
+
+        member this.DisjunctionHierarchical<'c when 'c : struct and 'c :> 'c Component'>
+            (nodeId : Guid) (entityId : Guid) (system : 'w System') =
+            this.DisjunctionHierarchicalPlus<'c> nodeId entityId system

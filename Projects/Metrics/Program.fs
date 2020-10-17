@@ -23,9 +23,9 @@ type [<NoEquality; NoComparison; Struct>] Velocity =
       mutable Velocity : Vector2 }
     interface Velocity Component' with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-        member this.AllocateJunctions ecs = [||]
-        member this.ResizeJunctions _ js _ = js
-        member this.MoveJunction _ _ js _ = ()
+        member this.AllocateJunctions _ = [||]
+        member this.ResizeJunctions _ _ _ = ()
+        member this.MoveJunction _ _ _ _ = ()
         member this.Junction _ _ _ = this
         member this.Disjunction _ _ _ = ()
 
@@ -34,9 +34,9 @@ type [<NoEquality; NoComparison; Struct>] Position =
       mutable Position : Vector2 }
     interface Position Component' with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-        member this.AllocateJunctions ecs = [||]
-        member this.ResizeJunctions _ js _ = js
-        member this.MoveJunction _ _ js _ = ()
+        member this.AllocateJunctions _ = [||]
+        member this.ResizeJunctions _ _ _ = ()
+        member this.MoveJunction _ _ _ _ = ()
         member this.Junction _ _ _ = this
         member this.Disjunction _ _ _ = ()
 
@@ -47,7 +47,7 @@ type [<NoEquality; NoComparison; Struct>] Mover =
     interface Mover Component' with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
         member this.AllocateJunctions ecs = [|ecs.AllocateArray<Velocity> "Velocity"; ecs.AllocateArray<Position> "Position"|]
-        member this.ResizeJunctions size junctions ecs = [|ecs.ResizeJunction<Velocity> size junctions.[0]; ecs.ResizeJunction<Position> size junctions.[1]|]
+        member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Velocity> size junctions.[0]; ecs.ResizeJunction<Position> size junctions.[1]
         member this.MoveJunction src dst junctions ecs = ecs.MoveJunction<Velocity> src dst junctions.[0]; ecs.MoveJunction<Position> src dst junctions.[1]
         member this.Junction index junctions ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0]; Position = ecs.Junction<Position> index junctions.[1] }
         member this.Disjunction index junctions ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
@@ -103,7 +103,7 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // entity count
-        let entityCount = 4//000000
+        let entityCount = 4000000
 
         // create systems
         let velocities = ecs.RegisterSystem (SystemCorrelated'<Velocity, World> ecs)
@@ -118,11 +118,9 @@ type MyGameDispatcher () =
 
         // define update for movers
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            let components = ecs.GetComponents typeof<Mover>.Name
-            for i in 0 .. components.Length - 1 do
-                let components = components.[i]
-                for j in 0 .. components.Length - 1 do
-                    let mutable comp = &components.[j]
+            for components in ecs.GetComponentArrays typeof<Mover>.Name do
+                for i in 0 .. components.Length - 1 do
+                    let mutable comp = &components.[i]
                     if comp.RefCount > 0 then
                         let velocity = &comp.Velocity.Index
                         let position = &comp.Position.Index
