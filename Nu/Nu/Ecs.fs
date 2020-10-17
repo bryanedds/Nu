@@ -110,10 +110,6 @@ and Ecs<'w when 'w :> Freezable> () as this =
         pipedValues.[key] <- value :> obj
 
     /// Thread-safe.
-    member this.UnregisterPipedValue key =
-        pipedValues.TryRemove (key, ref (obj ()))
-
-    /// Thread-safe.
     member this.TryIndexPipedValue<'a> key =
         match pipedValues.TryGetValue key with
         | (true, value) -> Some (value :?> 'a)
@@ -126,7 +122,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
     member this.RegisterSystemGeneralized (system : 'w System) =
         systemsUnordered.Add (system.Name, system)
         systemsOrdered.Add (system.Name, system)
-        //system.RegisterPipedValue this // TODO: see if we can enable this somehow.
+        this.RegisterPipedValue<obj> system.PipedKey system.PipedInit
 
     member this.TryIndexSystem<'s when 's :> 'w System> systemName =
         match systemsUnordered.TryGetValue systemName with
@@ -202,7 +198,6 @@ and Ecs<'w when 'w :> Freezable> () as this =
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
-        member this.UnregisterPipedValue (ecs : 'w Ecs) = ecs.UnregisterPipedValue this.PipedKey
         member this.IndexPipedValue<'a> (ecs : 'w Ecs) = ecs.IndexPipedValue<'a> this.PipedKey
 
 [<Extension>]
