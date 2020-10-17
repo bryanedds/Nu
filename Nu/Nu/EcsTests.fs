@@ -25,7 +25,7 @@ module EcsTests =
           Skin : Skin ComponentRef }
         interface Airship Component with
             member this.Active with get () = this.Active and set value = this.Active <- value
-            member this.AllocateJunctions ecs = [|ecs.AllocateArray<Transform> "Transform"; ecs.AllocateArray<Skin> "Skin"|]
+            member this.AllocateJunctions ecs = [|ecs.AllocateArray<Transform> (); ecs.AllocateArray<Skin> ()|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Transform> size junctions.[0]; ecs.ResizeJunction<Skin> size junctions.[1]
             member this.MoveJunction src dst junctions ecs = ecs.MoveJunction<Transform> src dst junctions.[0]; ecs.MoveJunction<Skin> src dst junctions.[1]
             member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Transform> index junctions.[0]; Skin = ecs.Junction<Skin> index junctions.[1] }
@@ -48,7 +48,7 @@ module EcsTests =
           NodeId : Guid }
         interface Prop Component with
             member this.Active with get () = this.Active and set value = this.Active <- value
-            member this.AllocateJunctions ecs = [|ecs.AllocateArray<Node> "Node"|]
+            member this.AllocateJunctions ecs = [|ecs.AllocateArray<Node> ()|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Node> size junctions.[0]
             member this.MoveJunction src dst junctions ecs = ecs.MoveJunction<Node> src dst junctions.[0]
             member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Node> index junctions.[0] }

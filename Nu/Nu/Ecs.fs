@@ -191,20 +191,19 @@ and Ecs<'w when 'w :> Freezable> () as this =
             world
         | (false, _) -> world
 
-    member this.AllocateArray<'c when 'c : struct and 'c :> 'c Component> componentName =
+    member this.AllocateArray<'c when 'c : struct and 'c :> 'c Component> () =
+        let componentName = typeof<'c>.Name
         let arr = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
         match arrayObjs.TryGetValue componentName with
         | (true, found) -> found.Add (box arr)
         | (false, _) -> arrayObjs.Add (componentName, List [box arr])
         arr
 
-    member this.GetComponentArraysPlus<'c when 'c : struct and 'c :> 'c Component> componentName =
+    member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
+        let componentName = typeof<'c>.Name
         match arrayObjs.TryGetValue componentName with
         | (true, found) -> found |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
-
-    member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
-        this.GetComponentArraysPlus<'c> typeof<'c>.Name
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
@@ -246,7 +245,7 @@ type [<AbstractClass>] SystemMany<'w when 'w :> Freezable> (name) =
 type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, ecs : 'w Ecs) =
     inherit SystemMany<'w> (name)
 
-    let mutable components = ecs.AllocateArray<'c> name
+    let mutable components = ecs.AllocateArray<'c> ()
     let mutable freeIndex = 0
     let freeList = HashSet<int> ()
 
@@ -343,7 +342,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, ecs : 'w Ecs) =
     inherit SystemMany<'w> (name)
 
-    let mutable components = ecs.AllocateArray<'c> name
+    let mutable components = ecs.AllocateArray<'c> ()
     let mutable junctions = Unchecked.defaultof<'c>.AllocateJunctions ecs
     let mutable freeIndex = 0
     let freeList = HashSet<int> ()
@@ -425,7 +424,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
                 let arr = Array.zeroCreate length
                 components.Array.CopyTo (arr, 0)
                 components.Array <- arr
-                Unchecked.defaultof<'c>.ResizeJunctions length junctions ecs
+                comp.ResizeJunctions length junctions ecs
 
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
