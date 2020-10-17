@@ -514,7 +514,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
-            comp.RefCount <- dec comp.RefCount
+            comp.RefCount <- inc comp.RefCount
             components.[index] <- comp
             ComponentRef<'c>.make index components
 
