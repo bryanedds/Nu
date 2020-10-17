@@ -30,7 +30,7 @@ type 'c ArrayRef =
 /// The base component type of an Ecs.
 type Component<'c when 'c : struct and 'c :> 'c Component> =
     interface
-        abstract RefCount : int with get, set
+        abstract Active : bool with get, set
         abstract AllocateJunctions : 'w Ecs -> obj array
         abstract ResizeJunctions : int -> obj array -> 'w Ecs -> unit
         abstract MoveJunction : int -> int -> obj array -> 'w Ecs -> unit
@@ -303,8 +303,8 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 
     member this.UnregisterUncorrelated index =
         if index <> freeIndex then
-            components.[index].RefCount <- dec components.[index].RefCount
-            if components.[index].RefCount = 0 then freeList.Add index |> ignore<bool>
+            components.[index].Active <- false
+            freeList.Add index |> ignore<bool>
         else freeIndex <- dec freeIndex
 
     type Ecs<'w when 'w :> Freezable> with
@@ -370,12 +370,12 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
         while j < freeIndex do
 
             // check if slot is free
-            if components.[i].RefCount = 0 && freeList.Contains i then
+            if not components.[i].Active && freeList.Contains i then
 
                 // find next non-free component
                 while
                     j < freeIndex &&
-                    components.[j].RefCount = 0 &&
+                    not components.[j].Active &&
                     not (freeList.Contains j) do
                     j <- inc j
 
@@ -417,8 +417,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     member this.RegisterCorrelated (comp : 'c) entityId ecs =
 
         // check if component is already registered
-        match Dictionary.tryGetValue entityId correlations with
-        | (false, _) ->
+        if not (correlations.ContainsKey entityId) then
 
             // ensure there is space in the arrays
             if freeIndex >= components.Length then
@@ -431,7 +430,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
             let mutable comp = comp.Junction index junctions ecs
-            comp.RefCount <- inc comp.RefCount
+            comp.Active <- true
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
             components.Array.[index] <- comp
@@ -439,19 +438,16 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             // fin
             entityId
 
-        // use existing component
-        | (true, index) ->
-            let mutable comp = components.[index]
-            comp.RefCount <- inc comp.RefCount
-            entityId
+        // component is already registered
+        else failwith ("Component registered multiple times for entity '" + string entityId + "'.")
 
     member this.UnregisterCorrelated entityId ecs =
         match correlations.TryGetValue entityId with
         | (true, index) ->
             let comp = components.[index]
             if index <> freeIndex then
-                components.[index].RefCount <- dec components.[index].RefCount
-                if components.[index].RefCount = 0 then freeList.Add index |> ignore<bool>
+                components.[index].Active <- false
+                freeList.Add index |> ignore<bool>
             else freeIndex <- dec freeIndex
             correlations.Remove entityId |> ignore<bool>
             correlationsBack.Remove index |> ignore<bool>
@@ -514,7 +510,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
-            comp.RefCount <- inc comp.RefCount
+            comp.Active <- true
             components.[index] <- comp
             ComponentRef<'c>.make index components
 
@@ -524,7 +520,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
         member this.Disjunction<'c when 'c : struct and 'c :> 'c Component> (index : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
             let mutable comp = &components.[index]
-            comp.RefCount <- dec comp.RefCount
+            comp.Active <- false
 
         member this.ResizeJunction<'c when 'c : struct and 'c :> 'c Component> (size : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
@@ -563,10 +559,10 @@ type Simplex<'c when 'c : struct> =
 /// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
 /// anything else (which is good enough in almost all cases where multi-components are used).
 type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : struct and 'c :> 'c Component> =
-    { mutable RefCount : int
+    { mutable Active : bool
       Simplexes : Dictionary<Guid, 'c Simplex> }
     interface Component<'c ComponentMultiplexed> with
-        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+        member this.Active with get () = this.Active and set value = this.Active <- value
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.MoveJunction _ _ _ _ = ()

@@ -499,8 +499,7 @@ module EffectSystem =
                       Size = slice.Size
                       Rotation = slice.Rotation
                       Depth = slice.Depth
-                      Flags = 0
-                      RefCount = 0 }
+                      Flags = 0 }
                 transform.Absolute <- effectSystem.Absolute
                 let spriteView =
                     Render (transform.Depth, transform.Position.Y, AssetTag.generalize image,
@@ -544,8 +543,7 @@ module EffectSystem =
                           Size = slice.Size
                           Rotation = slice.Rotation
                           Depth = slice.Depth
-                          Flags = 0
-                          RefCount = 0 }
+                          Flags = 0 }
                     transform.Absolute <- effectSystem.Absolute
                     let animatedSpriteView =
                         Render (transform.Depth, transform.Position.Y, AssetTag.generalize image,
@@ -582,8 +580,7 @@ module EffectSystem =
                       Size = slice.Size
                       Rotation = slice.Rotation
                       Depth = slice.Depth
-                      Flags = 0
-                      RefCount = 0 }
+                      Flags = 0 }
                 transform.Absolute <- effectSystem.Absolute
                 let spriteView =
                     Render (transform.Depth, transform.Position.Y, font,
