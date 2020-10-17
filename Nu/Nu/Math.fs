@@ -39,7 +39,7 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
         member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
-        member this.MoveJunction _ _ _ _ = ()
+        member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ = this
         member this.Disjunction _ _ _ = ()
 
