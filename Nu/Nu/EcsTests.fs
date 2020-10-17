@@ -9,10 +9,10 @@ open Nu
 module EcsTests =
 
     type [<NoEquality; NoComparison; Struct>] Skin =
-        { mutable RefCount : int
+        { mutable Active : bool
           mutable Color : Color }
         interface Skin Component with
-            member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+            member this.Active with get () = this.Active and set value = this.Active <- value
             member this.AllocateJunctions _ = [||]
             member this.ResizeJunctions _ _ _ = ()
             member this.MoveJunction _ _ _ _ = ()
@@ -20,11 +20,11 @@ module EcsTests =
             member this.Disjunction _ _ _ = ()
 
     type [<NoEquality; NoComparison; Struct>] Airship =
-        { mutable RefCount : int
+        { mutable Active : bool
           Transform : Transform ComponentRef
           Skin : Skin ComponentRef }
         interface Airship Component with
-            member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+            member this.Active with get () = this.Active and set value = this.Active <- value
             member this.AllocateJunctions ecs = [|ecs.AllocateArray<Transform> "Transform"; ecs.AllocateArray<Skin> "Skin"|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Transform> size junctions.[0]; ecs.ResizeJunction<Skin> size junctions.[1]
             member this.MoveJunction src dst junctions ecs = ecs.MoveJunction<Transform> src dst junctions.[0]; ecs.MoveJunction<Skin> src dst junctions.[1]
@@ -32,10 +32,10 @@ module EcsTests =
             member this.Disjunction index junctions ecs = ecs.Disjunction<Transform> index junctions.[0]; ecs.Disjunction<Skin> index junctions.[1]
 
     type [<NoEquality; NoComparison; Struct>] Node =
-        { mutable RefCount : int
+        { mutable Active : bool
           Transform : Transform }
         interface Node Component with
-            member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+            member this.Active with get () = this.Active and set value = this.Active <- value
             member this.AllocateJunctions _ = [||]
             member this.ResizeJunctions _ _ _ = ()
             member this.MoveJunction _ _ _ _ = ()
@@ -43,11 +43,11 @@ module EcsTests =
             member this.Disjunction _ _ _ = ()
 
     type [<NoEquality; NoComparison; Struct>] Prop =
-        { mutable RefCount : int
+        { mutable Active : bool
           Transform : Node ComponentRef
           NodeId : Guid }
         interface Prop Component with
-            member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+            member this.Active with get () = this.Active and set value = this.Active <- value
             member this.AllocateJunctions ecs = [|ecs.AllocateArray<Node> "Node"|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Node> size junctions.[0]
             member this.MoveJunction src dst junctions ecs = ecs.MoveJunction<Node> src dst junctions.[0]
@@ -73,7 +73,7 @@ module EcsTests =
             for components in ecs.GetComponentArrays<Airship> () do
                 for i in 0 .. components.Length - 1 do
                     let mutable comp = &components.[i]
-                    if  comp.RefCount > 0 then
+                    if  comp.Active then
                         comp.Transform.Index.Enabled <- i % 2 = 0
                         comp.Skin.Index.Color.A <- byte 128
             world)

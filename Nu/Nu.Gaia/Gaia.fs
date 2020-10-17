@@ -860,8 +860,7 @@ module Gaia =
                       Size = entity.GetQuickSize world
                       Rotation = entity.GetRotation world
                       Depth = getCreationDepth form
-                      Flags = entity.GetFlags world
-                      RefCount = 0 }
+                      Flags = entity.GetFlags world }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 selectEntity entity form world
                 world

@@ -600,15 +600,15 @@ module WorldTypes =
         { // cache line 1
           Dispatcher : EntityDispatcher
           mutable Transform : Transform
-          // cache line 2 start at second-to-last field of Transform
+          // cache line 2
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
-          // cache line 3
           mutable FacetNames : string Set
           mutable ScriptFrame : Scripting.DeclarationFrame
+          // cache line 3
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
           Name : string }
@@ -624,8 +624,7 @@ module WorldTypes =
                   Size = Constants.Engine.DefaultEntitySize
                   Rotation = 0.0f
                   Depth = 0.0f
-                  Flags = 0b100011000000
-                  RefCount = 0 }
+                  Flags = 0b0001000110000001 }
               Dispatcher = dispatcher
               Facets = [||]
               Xtension = Xtension.makeSafe ()

@@ -421,8 +421,7 @@ module TextFacetModule =
                       Size = text.GetSize world - text.GetMargins world * 2.0f
                       Rotation = 0.0f
                       Depth = text.GetDepth world + 0.5f
-                      Flags = text.GetFlags world
-                      RefCount = 0 }
+                      Flags = text.GetFlags world }
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Depth = transform.Depth
@@ -798,8 +797,7 @@ module TileMapFacetModule =
                                           Size = size
                                           Rotation = rotation
                                           Depth = depth
-                                          Flags = tileMap.GetFlags world
-                                          RefCount = 0 }
+                                          Flags = tileMap.GetFlags world }
                                     let image = List.head images // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                     let tiles =
                                         layer.Tiles |>
@@ -1860,16 +1858,14 @@ module FillBarDispatcherModule =
                       Size = fillBar.GetSize world
                       Rotation = 0.0f
                       Depth = fillBar.GetDepth world + 0.5f
-                      Flags = fillBar.GetFlags world
-                      RefCount = 0 }
+                      Flags = fillBar.GetFlags world }
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
                 let fillBarSpriteTransform =
                     { Position = fillBarSpritePosition
                       Size = fillBarSpriteSize
                       Rotation = 0.0f
                       Depth = fillBar.GetDepth world
-                      Flags = fillBar.GetFlags world
-                      RefCount = 0 }
+                      Flags = fillBar.GetFlags world }
                 let fillBarColor = if fillBar.GetEnabled world then Color.White else fillBar.GetDisabledColor world
                 World.enqueueRenderMessage
                     (LayeredDescriptorsMessage

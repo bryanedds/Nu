@@ -11,18 +11,19 @@ open Nu
 module internal TransformMasks =
 
     // OPTIMIZATION: Transform flag bit-masks for performance.
-    let [<Literal>] DirtyMask =                0b000000000001
-    let [<Literal>] InvalidatedMask =          0b000000000010
-    let [<Literal>] OmnipresentMask =          0b000000000100
-    let [<Literal>] AbsoluteMask =             0b000000001000
-    let [<Literal>] ImperativeMask =           0b000000010000
-    let [<Literal>] PublishChangesMask =       0b000000100000
-    let [<Literal>] EnabledMask =              0b000001000000
-    let [<Literal>] VisibleMask =              0b000010000000
-    let [<Literal>] AlwaysUpdateMask =         0b000100000000
-    let [<Literal>] PublishUpdatesMask =       0b001000000000
-    let [<Literal>] PublishPostUpdatesMask =   0b010000000000
-    let [<Literal>] PersistentMask =           0b100000000000
+    let [<Literal>] ActiveMask =               0b0000000000000001
+    let [<Literal>] DirtyMask =                0b0000000000000010
+    let [<Literal>] InvalidatedMask =          0b0000000000000100
+    let [<Literal>] OmnipresentMask =          0b0000000000001000
+    let [<Literal>] AbsoluteMask =             0b0000000000010000
+    let [<Literal>] ImperativeMask =           0b0000000000100000
+    let [<Literal>] PublishChangesMask =       0b0000000001000000
+    let [<Literal>] EnabledMask =              0b0000000010000000
+    let [<Literal>] VisibleMask =              0b0000000100000000
+    let [<Literal>] AlwaysUpdateMask =         0b0000001000000000
+    let [<Literal>] PublishUpdatesMask =       0b0000010000000000
+    let [<Literal>] PublishPostUpdatesMask =   0b0000100000000000
+    let [<Literal>] PersistentMask =           0b0001000000000000
 
 /// Carries transformation data specific to an Entity.
 type [<StructuralEquality; NoComparison; Struct>] Transform =
@@ -31,12 +32,11 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
       mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Depth : single // NOTE: will become part of position if Nu gets 3D capabilities
-      mutable Flags : int
-      mutable RefCount : int }
-      // cache line end
+      mutable Flags : int }
+      // 4 bytes free
 
     interface Transform Component with
-        member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
+        member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.MoveJunction _ _ _ _ = ()
@@ -70,8 +70,7 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
           Size = Vector2.One
           Rotation = 0.0f
           Depth = 0.0f
-          Flags = 0
-          RefCount = 0 }
+          Flags = 0 }
 
 [<AutoOpen>]
 module Vector2 =
