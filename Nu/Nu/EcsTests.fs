@@ -15,7 +15,7 @@ module EcsTests =
             member this.Active with get () = this.Active and set value = this.Active <- value
             member this.AllocateJunctions _ = [||]
             member this.ResizeJunctions _ _ _ = ()
-            member this.MoveJunction _ _ _ _ = ()
+            member this.MoveJunctions _ _ _ _ = ()
             member this.Junction _ _ _ = this
             member this.Disjunction _ _ _ = ()
 
@@ -27,7 +27,7 @@ module EcsTests =
             member this.Active with get () = this.Active and set value = this.Active <- value
             member this.AllocateJunctions ecs = [|ecs.AllocateArray<Transform> (); ecs.AllocateArray<Skin> ()|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Transform> size junctions.[0]; ecs.ResizeJunction<Skin> size junctions.[1]
-            member this.MoveJunction src dst junctions ecs = ecs.MoveJunction<Transform> src dst junctions.[0]; ecs.MoveJunction<Skin> src dst junctions.[1]
+            member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Transform> src dst junctions.[0]; ecs.MoveJunction<Skin> src dst junctions.[1]
             member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Transform> index junctions.[0]; Skin = ecs.Junction<Skin> index junctions.[1] }
             member this.Disjunction index junctions ecs = ecs.Disjunction<Transform> index junctions.[0]; ecs.Disjunction<Skin> index junctions.[1]
 
@@ -38,7 +38,7 @@ module EcsTests =
             member this.Active with get () = this.Active and set value = this.Active <- value
             member this.AllocateJunctions _ = [||]
             member this.ResizeJunctions _ _ _ = ()
-            member this.MoveJunction _ _ _ _ = ()
+            member this.MoveJunctions _ _ _ _ = ()
             member this.Junction _ _ _ = this
             member this.Disjunction _ _ _ = ()
 
@@ -50,7 +50,7 @@ module EcsTests =
             member this.Active with get () = this.Active and set value = this.Active <- value
             member this.AllocateJunctions ecs = [|ecs.AllocateArray<Node> ()|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Node> size junctions.[0]
-            member this.MoveJunction src dst junctions ecs = ecs.MoveJunction<Node> src dst junctions.[0]
+            member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Node> src dst junctions.[0]
             member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Node> index junctions.[0] }
             member this.Disjunction index junctions ecs = ecs.Disjunction<Node> index junctions.[0]
 

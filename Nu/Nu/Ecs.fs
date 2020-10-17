@@ -33,7 +33,7 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         abstract Active : bool with get, set
         abstract AllocateJunctions : 'w Ecs -> obj array
         abstract ResizeJunctions : int -> obj array -> 'w Ecs -> unit
-        abstract MoveJunction : int -> int -> obj array -> 'w Ecs -> unit
+        abstract MoveJunctions : int -> int -> obj array -> 'w Ecs -> unit
         abstract Junction : int -> obj array -> 'w Ecs -> 'c
         abstract Disjunction : int -> obj array -> 'w Ecs -> unit
         end
@@ -380,7 +380,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
                 // move components
                 components.[i] <- components.[j]
-                components.[0].MoveJunction j i junctions ecs
+                components.[0].MoveJunctions j i junctions ecs
 
                 // update book-keeping
                 match correlationsBack.TryGetValue j with
@@ -564,7 +564,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         member this.Active with get () = this.Active and set value = this.Active <- value
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
-        member this.MoveJunction _ _ _ _ = ()
+        member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ = this
         member this.Disjunction _ _ _ = ()
     member this.RegisterMultiplexed (multiId, comp) =
