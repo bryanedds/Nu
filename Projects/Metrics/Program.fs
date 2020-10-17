@@ -105,7 +105,7 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // entity count
-        let entityCount = 2 ^^^ 22 // ~4M entities
+        let entityCount = int (Math.Pow (2.0, 22.0)) // ~4M entities
 
         // create systems
         ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
