@@ -128,11 +128,6 @@ and Ecs<'w when 'w :> Freezable> () as this =
         systemsOrdered.Add (system.Name, system)
         //system.RegisterPipedValue this // TODO: see if we can enable this somehow.
 
-    member this.UnregisterSystem (system : 'w System) =
-        //system.UnregisterPipedValue this // TODO: see if we can enable this somehow.
-        systemsOrdered.RemoveAll (fun (systemName', _) -> systemName' = system.Name) |> ignore<int>
-        systemsUnordered.Remove system.Name |> ignore<bool>
-
     member this.TryIndexSystem<'s when 's :> 'w System> systemName =
         match systemsUnordered.TryGetValue systemName with
         | (true, system) ->
