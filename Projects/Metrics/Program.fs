@@ -12,7 +12,9 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
       mutable Sprite : Image AssetTag }
     interface StaticSpriteComponent Component with
         member this.RefCount with get () = this.RefCount and set value = this.RefCount <- value
-        member this.SystemNames = [||]
+        member this.AllocateJunctions _ = [||]
+        member this.ResizeJunctions _ _ _ = ()
+        member this.MoveJunction _ _ _ _ = ()
         member this.Junction _ _ _ = this
         member this.Disjunction _ _ _ = ()
 #endif
@@ -74,12 +76,12 @@ type MetricsEntityDispatcher () =
 #if ECS
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { RefCount = 0; Entity = entity; Sprite = Assets.DefaultImage4 } typeof<StaticSpriteComponent>.Name (entity.GetId world)
+        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { RefCount = 0; Entity = entity; Sprite = Assets.DefaultImage4 } (entity.GetId world)
         world
 
     override this.Unregister (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
-        let _ : bool = ecs.UnregisterCorrelated<StaticSpriteComponent> typeof<StaticSpriteComponent>.Name (entity.GetId world)
+        let _ : bool = ecs.UnregisterCorrelated<StaticSpriteComponent> (entity.GetId world)
         world
 #endif
 
@@ -96,7 +98,7 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create static sprite system
-        let staticSprites = ecs.RegisterSystem (SystemCorrelated<StaticSpriteComponent, World> ())
+        ecs.RegisterSystem (SystemCorrelated<StaticSpriteComponent, World> ecs)
 #endif
 #if ECS_PURE
         // get ecs
@@ -152,26 +154,26 @@ type MyGameDispatcher () =
 #if ECS
         // define update for static sprites
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            let comps = staticSprites.Components
-            for i in 0 .. comps.Length - 1 do
-                let comp = &comps.[i]
-                if comp.RefCount > 0 then
-                    let entity = comp.Entity.State world
-                    entity.Rotation <- entity.Rotation + 0.03f
+            for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
+                for i in 0 .. components.Length - 1 do
+                    let mutable comp = &components.[i]
+                    if comp.RefCount > 0 then
+                        let entity = comp.Entity.State world
+                        entity.Rotation <- entity.Rotation + 0.03f
             world)
 
         // define actualize for static sprites
         let _ = ecs.Subscribe EcsEvents.Actualize (fun _ _ _ world ->
             let messages = List ()
-            let comps = staticSprites.Components
-            for i in 0 ..comps.Length - 1 do
-                let comp = &comps.[i]
-                if comp.RefCount > 0 then
-                    let entity = comp.Entity.State world
-                    if entity.Visible then
-                        let spriteDescriptor = SpriteDescriptor { Transform = entity.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
-                        let message = LayeredDescriptorMessage { Depth = entity.Depth; PositionY = entity.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
-                        messages.Add message
+            for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
+                for i in 0 .. components.Length - 1 do
+                    let mutable comp = &components.[i]
+                    if comp.RefCount > 0 then
+                        let entity = comp.Entity.State world
+                        if entity.Visible then
+                            let spriteDescriptor = SpriteDescriptor { Transform = entity.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
+                            let message = LayeredDescriptorMessage { Depth = entity.Depth; PositionY = entity.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
+                            messages.Add message
             World.enqueueRenderMessages messages world)
 #else
         ignore screen
