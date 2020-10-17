@@ -39,23 +39,24 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         end
 
 /// A storable reference to a component in its containing array.
+/// NOTE: Inlined everything for speed.
 and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c :> 'c Component> =
     { ComponentIndex : int
       ComponentArrRef : 'c ArrayRef }
 
-    member this.Index
+    member inline this.Index
         with get () = &this.ComponentArrRef.[this.ComponentIndex]
 
-    member this.Assign value =
+    member inline this.Assign value =
         this.ComponentArrRef.[this.ComponentIndex] <- value
 
-    static member (<!) (componentRef, value) =
+    static member inline (<!) (componentRef, value) =
         componentRef.ComponentArrRef.Array.[componentRef.ComponentIndex] <- value
 
-    static member (!>) componentRef =
+    static member inline (!>) componentRef =
         &componentRef.ComponentArrRef.Array.[componentRef.ComponentIndex]
 
-    static member make index arr =
+    static member inline make index arr =
         { ComponentIndex = index
           ComponentArrRef = arr }
 
