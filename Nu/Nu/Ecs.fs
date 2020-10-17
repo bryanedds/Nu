@@ -343,7 +343,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     inherit SystemMany<'w> (name)
 
     let mutable components = ecs.AllocateArray<'c> name
-    let mutable componentsJunctioned = Unchecked.defaultof<'c>.AllocateJunctions ecs
+    let mutable junctions = Unchecked.defaultof<'c>.AllocateJunctions ecs
     let mutable freeIndex = 0
     let freeList = HashSet<int> ()
     let correlations = dictPlus [] : Dictionary<Guid, int>
@@ -352,7 +352,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     new (ecs) = SystemCorrelated (typeof<'c>.Name, ecs)
 
     member this.Components with get () = components
-    member this.ComponentsJunctioned with get () = componentsJunctioned
+    member this.Junctions with get () = junctions
 
     override this.ComponentsCount with get () = freeIndex - freeList.Count
     override this.SizeOfComponent with get () = failwithnie ()
@@ -380,7 +380,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
                 // move components
                 components.[i] <- components.[j]
-                components.[0].MoveJunction j i componentsJunctioned ecs
+                components.[0].MoveJunction j i junctions ecs
 
                 // update book-keeping
                 match correlationsBack.TryGetValue j with
@@ -425,11 +425,11 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
                 let arr = Array.zeroCreate length
                 components.Array.CopyTo (arr, 0)
                 components.Array <- arr
-                Unchecked.defaultof<'c>.ResizeJunctions length componentsJunctioned ecs
+                Unchecked.defaultof<'c>.ResizeJunctions length junctions ecs
 
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
-            let mutable comp = comp.Junction index componentsJunctioned ecs
+            let mutable comp = comp.Junction index junctions ecs
             comp.RefCount <- inc comp.RefCount
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
@@ -454,7 +454,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             else freeIndex <- dec freeIndex
             correlations.Remove entityId |> ignore<bool>
             correlationsBack.Remove index |> ignore<bool>
-            comp.Disjunction index componentsJunctioned ecs
+            comp.Disjunction index junctions ecs
             if  components.Length < freeList.Count * 2 && // freeList is always empty if unordered
                 components.Length > Constants.Ecs.ArrayReserve then
                 this.Compact ecs
@@ -654,7 +654,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
     member this.IndexNode nodeId =
         match systemDict.TryGetValue nodeId with
         | (true, system) -> system.Components
-        | (false, _) -> failwith ("Node with id '" + scstring nodeId + "'not found.")
+        | (false, _) -> failwith ("Node with id '" + scstring nodeId + "' not found.")
 
     member this.AddNode (parentIdOpt : Guid option) =
         let nodeId = Gen.id
