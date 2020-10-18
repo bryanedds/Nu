@@ -416,13 +416,16 @@ module GameplayDispatcher =
                 [Content.button Simulants.HudSaveGame.Name
                     [Entity.Position == v2 88.0f -184.0f; Entity.Size == v2 384.0f 64.0f; Entity.Depth == 10.0f
                      Entity.UpImage == asset "Gui" "SaveGameUp"; Entity.DownImage == asset "Gui" "SaveGameDown"
-                     Entity.Enabled <== gameplay --> fun gameplay -> not (Gameplay.anyTurnsInProgress gameplay)
+                     Entity.Enabled <== gameplay --> fun gameplay -> if Gameplay.anyTurnsInProgress gameplay then false else true
                      Entity.ClickEvent ==> cmd SaveGame]
 
                  Content.button Simulants.HudHalt.Name
                     [Entity.Position == v2 88.0f -112.0f; Entity.Size == v2 384.0f 64.0f; Entity.Depth == 10.0f
                      Entity.UpImage == asset "Gui" "HaltUp"; Entity.DownImage == asset "Gui" "HaltDown"
-                     Entity.Enabled <== gameplay --> fun gameplay -> match gameplay.Player.Turn with NavigationTurn _ -> true | _ -> false
+                     Entity.Enabled <== gameplay --> fun gameplay ->
+                        match gameplay.Player.Turn with
+                        | NavigationTurn nav -> Option.isSome nav.NavigationPathOpt
+                        | _ -> false
                      Entity.ClickEvent ==> msg TryMakePlayerHalt]
 
                  Content.button Simulants.HudBack.Name
