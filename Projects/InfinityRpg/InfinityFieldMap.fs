@@ -7,11 +7,11 @@ type FieldTileType =
     | Impassable
     | Passable
 
-type FieldTile =
+type [<ReferenceEquality; NoComparison>] FieldTile =
     { TileSheetPositionM : Vector2i
       TileType : FieldTileType }
 
-type FieldMapUnit =
+type [<ReferenceEquality; NoComparison>] FieldMapUnit =
     { RandSeed : uint64
       OffsetCount : Vector2i
       IsHorizontal : bool
@@ -39,7 +39,7 @@ type FieldMapUnit =
           PathStart = pathStart
           PathEnd = pathEnd }
 
-type [<StructuralEquality; NoComparison>] FieldMap =
+type [<ReferenceEquality; NoComparison>] FieldMap =
     { FieldSizeM : Vector2i
       FieldTiles : Map<Vector2i, FieldTile>
       FieldTileSheet : Image AssetTag }

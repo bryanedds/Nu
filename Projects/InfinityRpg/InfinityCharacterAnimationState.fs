@@ -7,7 +7,7 @@ type CharacterAnimationType =
     | CharacterAnimationSpecial // works for jump, cast magic, being healed, and perhaps others!
     | CharacterAnimationSlain
 
-type CharacterAnimationState =
+type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     { StartTime : int64
       AnimationType : CharacterAnimationType
       Direction : Direction }

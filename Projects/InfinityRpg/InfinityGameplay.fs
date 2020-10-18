@@ -5,7 +5,7 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
-type MapModeler =
+type [<ReferenceEquality; NoComparison>] MapModeler =
     { FieldMapUnits : Map<Vector2i, FieldMapUnit>
       CurrentFieldOffset : Vector2i }
 
@@ -69,7 +69,7 @@ type [<NoComparison>] Move =
             let direction = Math.directionToTarget positionM path.Head.PositionM
             Turn.makeNavigation (Some path) positionM direction
 
-type [<NoComparison>] Chessboard =
+type [<ReferenceEquality; NoComparison>] Chessboard =
     { PassableCoordinates : Map<Vector2i, PickupType Option>
       CharacterCoordinates : Map<CharacterIndex, Vector2i>
       CurrentMoves : Map<CharacterIndex, Move> }
@@ -149,7 +149,7 @@ type [<NoComparison>] Chessboard =
         let passableCoordinates = fieldMap.FieldTiles |> Map.filter (fun _ fieldTile -> fieldTile.TileType = Passable) |> Map.map (fun _ _ -> None)
         Chessboard.updatePassableCoordinates passableCoordinates chessboard                    
 
-type [<StructuralEquality; NoComparison>] Gameplay =
+type [<ReferenceEquality; NoComparison>] Gameplay =
     { MapModeler : MapModeler
       Chessboard : Chessboard
       ShallLoadGame : bool

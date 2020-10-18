@@ -5,7 +5,7 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
-type [<StructuralEquality; NoComparison>] Field =
+type [<ReferenceEquality; NoComparison>] Field =
     { FieldMapNp : FieldMap }
 
     static member initial =

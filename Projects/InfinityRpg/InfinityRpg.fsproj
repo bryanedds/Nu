@@ -74,9 +74,9 @@
     <Compile Include="InfinityConstants.fs" />
     <Compile Include="InfinitySimulants.fs" />
     <Compile Include="InfinityMath.fs" />
-    <Compile Include="InfinityCharacterActivityState.fs" />
-    <Compile Include="InfinityCharacterAnimationState.fs" />
     <Compile Include="InfinityCharacterState.fs" />
+    <Compile Include="InfinityCharacterAnimationState.fs" />
+    <Compile Include="InfinityCharacterActivityState.fs" />
     <Compile Include="InfinityMetaMap.fs" />
     <Compile Include="InfinityFieldMap.fs" />
     <Compile Include="InfinityOccupationMap.fs" />
