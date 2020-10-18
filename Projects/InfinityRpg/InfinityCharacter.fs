@@ -5,7 +5,7 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
-type [<StructuralEquality; NoComparison>] Character =
+type [<ReferenceEquality; NoComparison>] Character =
     { Index : CharacterIndex
       Turn : Turn
       CharacterState : CharacterState

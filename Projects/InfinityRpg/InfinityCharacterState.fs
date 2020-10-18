@@ -165,7 +165,7 @@ type ControlType =
     | Chaos
     | Uncontrolled
 
-type CharacterState =
+type [<ReferenceEquality; NoComparison>] CharacterState =
     { CharacterType : CharacterType
       ControlType : ControlType
       ExpPoints : int

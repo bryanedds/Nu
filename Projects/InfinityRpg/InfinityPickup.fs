@@ -8,7 +8,7 @@ open InfinityRpg
 type PickupType =
     | Health
 
-type [<StructuralEquality; NoComparison>] Pickup =
+type [<ReferenceEquality; NoComparison>] Pickup =
     { PickupType : PickupType
       PickupSheet : Image AssetTag
       PickupSheetPositionM : Vector2i

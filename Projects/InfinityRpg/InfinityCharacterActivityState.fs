@@ -37,7 +37,7 @@ type WalkState =
     | WalkFinished
     | WalkContinuing
 
-type WalkDescriptor =
+type [<ReferenceEquality; NoComparison>] WalkDescriptor =
     { WalkDirection : Direction
       WalkOriginM : Vector2i }
 
@@ -48,7 +48,7 @@ type WalkDescriptor =
         { WalkDirection = direction
           WalkOriginM = origin }
 
-type [<StructuralEquality; NoComparison>] NavigationDescriptor =
+type [<ReferenceEquality; NoComparison>] NavigationDescriptor =
     { WalkDescriptor : WalkDescriptor
       NavigationPathOpt : NavigationNode list option }
 
@@ -68,7 +68,7 @@ type [<StructuralEquality; NoComparison>] NavigationDescriptor =
         { WalkDescriptor = WalkDescriptor.make origin direction
           NavigationPathOpt = pathOpt }
 
-type [<StructuralEquality; NoComparison>] ActionDescriptor =
+type [<ReferenceEquality; NoComparison>] ActionDescriptor =
     { ActionTicks : int64 // an arbitrary number to show a hacky action animation
       ActionTargetIndexOpt : CharacterIndex option
       ActionDataName : string }
@@ -86,7 +86,7 @@ type TurnStatus =
     | TurnFinishing
     | Idle
 
-type [<StructuralEquality; NoComparison>] Turn =
+type [<NoComparison>] Turn =
     | ActionTurn of ActionDescriptor
     | NavigationTurn of NavigationDescriptor
     | CancelTurn
@@ -104,7 +104,7 @@ type [<StructuralEquality; NoComparison>] Turn =
     static member makeNavigation pathOpt origin direction =
         NavigationTurn (NavigationDescriptor.make pathOpt origin direction)
 
-type [<StructuralEquality; NoComparison>] CharacterActivityState =
+type [<NoComparison>] CharacterActivityState =
     | Action of ActionDescriptor
     | Navigation of NavigationDescriptor
     | NoActivity
