@@ -232,11 +232,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getEnemyTurns gameplay =
         List.map (fun enemy -> enemy.Turn) gameplay.Enemies
     
-    static member getCharacterTurnStati gameplay =
+    static member getCharacterTurns gameplay =
         Gameplay.getCharacters gameplay |> List.map (fun character -> character.TurnStatus)
     
     static member anyTurnsInProgress gameplay =
-        Gameplay.getCharacterTurnStati gameplay |> List.exists (fun turnStatus -> turnStatus <> Idle)
+        Gameplay.getCharacterTurns gameplay |> List.exists (fun turnStatus -> turnStatus <> Idle)
     
     static member updateCharacterBy updater index newValue gameplay =
         match index with
