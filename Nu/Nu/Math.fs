@@ -87,6 +87,10 @@ module Vector2 =
     let v2Zero = Vector2.Zero
     let v2UnitX = Vector2.UnitX
     let v2UnitY = Vector2.UnitY
+    let v2Up = Vector2.Up
+    let v2Right = Vector2.Right
+    let v2Down = Vector2.Down
+    let v2Left = Vector2.Left
     let v2Center (position : Vector2) (size : Vector2) = position + size * 0.5f
 
 /// The Vector2 value that can be plugged into the scripting language.
@@ -339,6 +343,10 @@ module Vector2i =
     let v2iZero = Vector2i.Zero
     let v2iUnitX = Vector2i.UnitX
     let v2iUnitY = Vector2i.UnitY
+    let v2iUp = Vector2i.Up
+    let v2iRight = Vector2i.Right
+    let v2iDown = Vector2i.Down
+    let v2iLeft = Vector2i.Left
 
 /// The Vector2i value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector2iPluggable =

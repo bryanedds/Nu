@@ -11,7 +11,7 @@ type [<ReferenceEquality; NoComparison>] MapModeler =
 
     static member empty =
         { FieldMapUnits = Map.empty
-          CurrentFieldOffset = Vector2i.Zero }
+          CurrentFieldOffset = v2iZero }
 
     member this.AddFieldMapUnit fieldMapUnit =
         let fieldMapUnits = Map.add fieldMapUnit.OffsetCount fieldMapUnit this.FieldMapUnits
@@ -420,7 +420,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.setCharacterPositionToCoordinates PlayerIndex gameplay
     
     static member makePlayer gameplay =
-        let gameplay = Gameplay.updateChessboardBy Chessboard.placeCharacter PlayerIndex Vector2i.Zero gameplay
+        let gameplay = Gameplay.updateChessboardBy Chessboard.placeCharacter PlayerIndex v2iZero gameplay
         Gameplay.createPlayer gameplay
 
     static member makeEnemy index gameplay =

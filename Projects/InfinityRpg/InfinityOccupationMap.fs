@@ -17,10 +17,10 @@ module OccupationMap =
     let getOpenDirectionsAtPositionM positionM (occupationMap : OccupationMap) =
         Set.ofSeq $
             seq {
-                if isOpenAtPositionM (positionM + Vector2i.Up) occupationMap then yield Upward
-                if isOpenAtPositionM (positionM + Vector2i.Right) occupationMap then yield Rightward
-                if isOpenAtPositionM (positionM + Vector2i.Down) occupationMap then yield Downward
-                if isOpenAtPositionM (positionM + Vector2i.Left) occupationMap then yield Leftward }
+                if isOpenAtPositionM (positionM + v2iUp) occupationMap then yield Upward
+                if isOpenAtPositionM (positionM + v2iRight) occupationMap then yield Rightward
+                if isOpenAtPositionM (positionM + v2iDown) occupationMap then yield Downward
+                if isOpenAtPositionM (positionM + v2iLeft) occupationMap then yield Leftward }
 
     let getOpenNeighborPositionMsAtPositionM positionM occupationMap =
         let openDirections = getOpenDirectionsAtPositionM positionM occupationMap

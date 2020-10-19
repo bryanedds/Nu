@@ -388,7 +388,12 @@ namespace Nu
         /// <summary>
         /// Defines an instance with all components set to 1.
         /// </summary>
-        public static readonly Vector2 One = new Vector2(1, 1);
+        public static readonly Vector2 One = new Vector2(1.0f, 1.0f);
+
+        public static Vector2 Up { get { return new Vector2(0.0f, 1.0f); } }
+        public static Vector2 Right { get { return new Vector2(1.0f, 0.0f); } }
+        public static Vector2 Down { get { return new Vector2(0.0f, -1.0f); } }
+        public static Vector2 Left { get { return new Vector2(-1.0f, 0.0f); } }
 
         /// <summary>
         /// Defines the size of the Vector2 struct in bytes.

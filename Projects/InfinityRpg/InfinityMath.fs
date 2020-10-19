@@ -99,10 +99,10 @@ module Direction =
                  | NoBackTracking -> not (Set.contains destination trail)
                  | NoAdjacentTracking ->
                     let contains =
-                        [Set.contains (destination + Vector2i.Up) trail
-                         Set.contains (destination + Vector2i.Right) trail
-                         Set.contains (destination + Vector2i.Down) trail
-                         Set.contains (destination + Vector2i.Left) trail]
+                        [Set.contains (destination + v2iUp) trail
+                         Set.contains (destination + v2iRight) trail
+                         Set.contains (destination + v2iDown) trail
+                         Set.contains (destination + v2iLeft) trail]
                     let containCount = List.filter ((=) true) contains |> List.length
                     containCount <= 1)
         let pathHead = (source, rand)
@@ -203,10 +203,10 @@ module MathOperators =
 
     let dtovm d =
         match d with
-        | Upward -> Vector2i.Up
-        | Rightward -> Vector2i.Right
-        | Downward -> Vector2i.Down
-        | Leftward -> Vector2i.Left
+        | Upward -> v2iUp
+        | Rightward -> v2iRight
+        | Downward -> v2iDown
+        | Leftward -> v2iLeft
 
     let dtovi d =
         dtovm d |> vmtovi
@@ -240,10 +240,10 @@ module Math =
         target - current |> vmtod
 
     let arePositionMsAdjacent positionM positionM2 =
-        positionM = positionM2 + Vector2i.Up ||
-        positionM = positionM2 + Vector2i.Right ||
-        positionM = positionM2 + Vector2i.Down ||
-        positionM = positionM2 + Vector2i.Left
+        positionM = positionM2 + v2iUp ||
+        positionM = positionM2 + v2iRight ||
+        positionM = positionM2 + v2iDown ||
+        positionM = positionM2 + v2iLeft
 
     let arePositionIsAdjacent positionI positionI2 =
         arePositionMsAdjacent (vitovm positionI) (vitovm positionI2)
