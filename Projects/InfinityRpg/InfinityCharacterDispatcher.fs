@@ -72,7 +72,7 @@ module CharacterDispatcherModule =
                 [Render (transform.Depth, transform.Position.Y, AssetTag.generalize character.CharacterAnimationSheet,
                      SpriteDescriptor
                        { Transform = transform
-                         Offset = Vector2.Zero
+                         Offset = v2Zero
                          InsetOpt = getSpriteInsetOpt character world
                          Image = character.CharacterAnimationSheet
                          Color = Color.White

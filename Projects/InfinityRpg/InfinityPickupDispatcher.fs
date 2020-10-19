@@ -38,7 +38,7 @@ module PickupDispatcher =
                 [Render (transform.Depth, transform.Position.Y, AssetTag.generalize pickup.PickupSheet,
                      SpriteDescriptor
                        { Transform = transform
-                         Offset = Vector2.Zero
+                         Offset = v2Zero
                          InsetOpt = getSpriteInsetOpt pickup
                          Image = pickup.PickupSheet
                          Color = Color.White

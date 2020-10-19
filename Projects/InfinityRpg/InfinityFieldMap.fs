@@ -30,8 +30,8 @@ type [<ReferenceEquality; NoComparison>] FieldMapUnit =
             match fieldMapUnitOpt with
             | Some fieldMapUnit ->
                 match fieldMapUnit.IsHorizontal with
-                | true -> (fieldMapUnit.OffsetCount + Vector2i.Right, v2i 1 fieldMapUnit.PathEnd.Y)
-                | false -> (fieldMapUnit.OffsetCount + Vector2i.Up, v2i fieldMapUnit.PathEnd.X 1)
+                | true -> (fieldMapUnit.OffsetCount + v2iRight, v2i 1 fieldMapUnit.PathEnd.Y)
+                | false -> (fieldMapUnit.OffsetCount + v2iUp, v2i fieldMapUnit.PathEnd.X 1)
             | None -> (v2iZero, v2iOne)
         { RandSeed = randSeed
           OffsetCount = offsetCount
@@ -118,10 +118,10 @@ module FieldMap =
                 let tile = Map.find positionM originalMap
                 if  tile <> PathTile &&
                     MapBounds.isPointInBounds positionM buildBoundsM then
-                    let upPositionM = positionM + Vector2i.Up
-                    let rightPositionM = positionM + Vector2i.Right
-                    let downPositionM = positionM + Vector2i.Down
-                    let leftPositionM = positionM + Vector2i.Left
+                    let upPositionM = positionM + v2iUp
+                    let rightPositionM = positionM + v2iRight
+                    let downPositionM = positionM + v2iDown
+                    let leftPositionM = positionM + v2iLeft
                     if  MapBounds.isPointInBounds upPositionM buildBoundsM && Map.find upPositionM originalMap = TreeTile ||
                         MapBounds.isPointInBounds rightPositionM buildBoundsM && Map.find rightPositionM originalMap = TreeTile ||
                         MapBounds.isPointInBounds downPositionM buildBoundsM && Map.find downPositionM originalMap = TreeTile ||
@@ -141,10 +141,10 @@ module FieldMap =
             Seq.fold
                 (fun (generatedMap, rand) positionM ->
                     let (n, rand) = Rand.nextIntUnder 128 rand
-                    let upPositionM = positionM + Vector2i.Up
-                    let rightPositionM = positionM + Vector2i.Right
-                    let downPositionM = positionM + Vector2i.Down
-                    let leftPositionM = positionM + Vector2i.Left
+                    let upPositionM = positionM + v2iUp
+                    let rightPositionM = positionM + v2iRight
+                    let downPositionM = positionM + v2iDown
+                    let leftPositionM = positionM + v2iLeft
                     if  MapBounds.isPointInBounds upPositionM buildBoundsM && Map.find upPositionM generatedMap = GrassTile &&
                         MapBounds.isPointInBounds rightPositionM buildBoundsM && Map.find rightPositionM generatedMap = GrassTile &&
                         MapBounds.isPointInBounds downPositionM buildBoundsM && Map.find downPositionM generatedMap = GrassTile &&
@@ -164,10 +164,10 @@ module FieldMap =
             Seq.fold
                 (fun (generatedMap, rand) positionM ->
                     let (n, rand) = Rand.nextIntUnder 2 rand
-                    let upPositionM = positionM + Vector2i.Up
-                    let rightPositionM = positionM + Vector2i.Right
-                    let downPositionM = positionM + Vector2i.Down
-                    let leftPositionM = positionM + Vector2i.Left
+                    let upPositionM = positionM + v2iUp
+                    let rightPositionM = positionM + v2iRight
+                    let downPositionM = positionM + v2iDown
+                    let leftPositionM = positionM + v2iLeft
                     if  MapBounds.isPointInBounds upPositionM buildBoundsM && Map.find upPositionM generatedMap = WaterTile ||
                         MapBounds.isPointInBounds rightPositionM buildBoundsM && Map.find rightPositionM generatedMap = WaterTile ||
                         MapBounds.isPointInBounds downPositionM buildBoundsM && Map.find downPositionM generatedMap = WaterTile ||
@@ -188,10 +188,10 @@ module FieldMap =
             Seq.fold
                 (fun (generatedMap, rand) positionM ->
                     let (n, rand) = Rand.nextIntUnder 1 rand
-                    let upPositionM = positionM + Vector2i.Up
-                    let rightPositionM = positionM + Vector2i.Right
-                    let downPositionM = positionM + Vector2i.Down
-                    let leftPositionM = positionM + Vector2i.Left
+                    let upPositionM = positionM + v2iUp
+                    let rightPositionM = positionM + v2iRight
+                    let downPositionM = positionM + v2iDown
+                    let leftPositionM = positionM + v2iLeft
                     if  MapBounds.isPointInBounds upPositionM buildBoundsM && Map.find upPositionM originalMap = WaterTile ||
                         MapBounds.isPointInBounds rightPositionM buildBoundsM && Map.find rightPositionM originalMap = WaterTile ||
                         MapBounds.isPointInBounds downPositionM buildBoundsM && Map.find downPositionM originalMap = WaterTile ||
@@ -209,10 +209,10 @@ module FieldMap =
         Seq.fold
             (fun (generatedMap, rand) positionM ->
                 if Map.find positionM generatedMap = GrassTile then
-                    let upPositionM = positionM + Vector2i.Up
-                    let rightPositionM = positionM + Vector2i.Right
-                    let downPositionM = positionM + Vector2i.Down
-                    let leftPositionM = positionM + Vector2i.Left
+                    let upPositionM = positionM + v2iUp
+                    let rightPositionM = positionM + v2iRight
+                    let downPositionM = positionM + v2iDown
+                    let leftPositionM = positionM + v2iLeft
                     if  Map.find upPositionM generatedMap = PathTile &&
                         Map.find rightPositionM generatedMap = PathTile &&
                         Map.find downPositionM generatedMap = PathTile &&
@@ -241,4 +241,4 @@ module FieldMap =
 
     let makeFromFieldMapUnit fieldMapUnit =
         let rand = Rand.makeFromSeedState fieldMapUnit.RandSeed
-        make Assets.FieldTileSheetImage Vector2i.Zero Constants.Layout.FieldUnitSizeM [(fieldMapUnit.PathStart, fieldMapUnit.PathEnd)] rand |> fst
+        make Assets.FieldTileSheetImage v2iZero Constants.Layout.FieldUnitSizeM [(fieldMapUnit.PathStart, fieldMapUnit.PathEnd)] rand |> fst
