@@ -306,7 +306,7 @@ module GameplayDispatcher =
                 let gameplay = Gameplay.yankPlayer newCoordinates gameplay
                 let gameplay = Gameplay.transitionMap direction gameplay
                 let gameplay = Gameplay.setFieldMap (FieldMap.makeFromFieldMapUnit gameplay.MapModeler.Current) gameplay
-                let gameplay = Gameplay.makeEnemies 1 gameplay
+                let gameplay = Gameplay.makeEnemies 4 gameplay
                 just gameplay
 
             | HandleMapChange playerInput ->
@@ -335,7 +335,7 @@ module GameplayDispatcher =
                     let gameplay = Gameplay.initial
                     let gameplay = Gameplay.setFieldMap (FieldMap.makeFromFieldMapUnit gameplay.MapModeler.Current) gameplay
                     let gameplay = Gameplay.makePlayer gameplay
-                    let gameplay = Gameplay.makeEnemies 1 gameplay
+                    let gameplay = Gameplay.makeEnemies 4 gameplay
                     just gameplay
 
         override this.Command (gameplay, command, _, world) =
