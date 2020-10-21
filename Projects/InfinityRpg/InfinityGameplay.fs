@@ -51,27 +51,22 @@ type [<ReferenceEquality; NoComparison>] MapModeler =
     static member make =
         MapModeler.empty.AddFieldMapUnit (FieldMapUnit.make None)
 
-type SingleRoundMove =
+type [<NoComparison>] Move =
     | Step of Direction
     | Attack of CharacterIndex
-
-type [<NoComparison>] Move =
-    | SingleRoundMove of SingleRoundMove
-    | MultiRoundMove of NavigationNode list
+    | Travel of NavigationNode list
 
     member this.MakeTurn positionM =
         match this with
-        | SingleRoundMove singleRoundMove ->
-            match singleRoundMove with
-            | Step direction -> Turn.makeNavigation false positionM direction
-            | Attack index -> Turn.makeAttack index
-        | MultiRoundMove path ->
+        | Step direction -> Turn.makeNavigation false positionM direction
+        | Attack index -> Turn.makeAttack index
+        | Travel path ->
             let direction = Math.directionToTarget positionM path.Head.PositionM
             Turn.makeNavigation true positionM direction
 
     member this.TruncatePath =
         match this with
-        | MultiRoundMove (head :: _) -> MultiRoundMove [head]
+        | Travel (head :: _) -> Travel [head]
         | _ -> this
 
 type [<ReferenceEquality; NoComparison>] Chessboard =
@@ -148,6 +143,10 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     
     static member addMove index move chessboard =
         let currentMoves = Map.add index move chessboard.CurrentMoves
+        Chessboard.updateCurrentMoves currentMoves chessboard
+    
+    static member removeMove index _ chessboard =
+        let currentMoves = Map.remove index chessboard.CurrentMoves
         Chessboard.updateCurrentMoves currentMoves chessboard
     
     static member truncatePlayerPath _ _ chessboard =
@@ -341,6 +340,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member addMove index (move : Move) gameplay =
         Gameplay.updateChessboardBy Chessboard.addMove index move gameplay
+
+    static member removeMove index gameplay =
+        Gameplay.updateChessboardBy Chessboard.removeMove index () gameplay
     
     static member truncatePlayerPath gameplay =
         Gameplay.updateChessboardBy Chessboard.truncatePlayerPath () () gameplay
@@ -369,6 +371,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateTurnStatus index TurnPending gameplay
     
     static member finishMove index gameplay =
+        let gameplay = Gameplay.removeMove index gameplay
         let gameplay = Gameplay.updateTurn index NoTurn gameplay
         let gameplay = Gameplay.updateCharacterActivityState index NoActivity gameplay
         Gameplay.updateTurnStatus index Idle gameplay
@@ -399,13 +402,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member applyMove index gameplay =
         let move = Gameplay.getCurrentMove index gameplay
         match move with
-        | SingleRoundMove singleRoundMove ->
-            match singleRoundMove with
-            | Step direction -> Gameplay.applyStep index direction gameplay
-            | Attack reactorIndex ->
-                let gameplay = Gameplay.applyAttack reactorIndex gameplay
-                Gameplay.stopTravelingPlayer reactorIndex gameplay
-        | MultiRoundMove path ->
+        | Step direction -> Gameplay.applyStep index direction gameplay
+        | Attack reactorIndex ->
+            let gameplay = Gameplay.applyAttack reactorIndex gameplay
+            Gameplay.stopTravelingPlayer reactorIndex gameplay
+        | Travel path ->
             match path with
             | head :: _ ->
                 let currentCoordinates = Gameplay.getCoordinates index gameplay
