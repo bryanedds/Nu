@@ -1,4 +1,7 @@
-﻿namespace OmniBlade
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2020.
+
+namespace OmniBlade
 open System
 open FSharpx.Collections
 open Prime
