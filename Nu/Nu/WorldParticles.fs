@@ -36,20 +36,24 @@ module Scope =
           Out = fun struct (field, output) (particle : 'p) -> struct (setField field particle, output) : struct ('p * Output) }
 
 type Behavior =
-    abstract Run : int64 -> obj -> obj
+    abstract Run : int64 -> obj -> (obj * Output array)
 
 type [<NoEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
     { Scope : Scope<'a, 'b>
       Transformer : 'b Transformer }
 
     static member run currentTime (behavior : Behavior<'a, 'b>) (particles : 'a array) =
-        let particles' = Array.map (behavior.Scope.In currentTime) particles
-        let particles'' = Array.map (fun struct (progress, b) -> behavior.Transformer progress b) particles'
-        Array.map2 behavior.Scope.Out particles'' particles
+        let particles2 = Array.map (behavior.Scope.In currentTime) particles
+        let particles3 = Array.map (fun struct (progress, field) -> behavior.Transformer progress field) particles2
+        let particles4 = Array.map2 behavior.Scope.Out particles3 particles
+        let particles5 = Array.map fst' particles4
+        let outputs = particles4 |> Array.filter (function (_, NoOutput) -> false | (_, _) -> true) |> Array.map snd'
+        (particles5, outputs)
 
     interface Behavior with
         member this.Run currentTime particlesObj =
-            Behavior<'a, 'b>.run currentTime this (particlesObj :?> 'a array) :> obj
+            let (particles, outputs) = Behavior<'a, 'b>.run currentTime this (particlesObj :?> 'a array)
+            (particles :> obj, outputs)
 
 type [<NoEquality; NoComparison>] Behaviors =
     { Behaviors : Behavior FStack }
@@ -57,13 +61,14 @@ type [<NoEquality; NoComparison>] Behaviors =
         { Behaviors = FStack.empty }
     static member add behavior behaviors =
         { Behaviors = FStack.conj behavior behaviors.Behaviors }
-    static member run progress behaviors (particles : 'a array) =
-        let result =
-            Seq.fold (fun particles (behavior : Behavior) ->
-                behavior.Run progress particles)
-                (particles :> obj)
+    static member run currentTime behaviors (particles : 'a array) =
+        let (particles, outputs) =
+            Seq.fold (fun (particles, output) (behavior : Behavior) ->
+                let (particles2, output2) = behavior.Run currentTime particles
+                (particles2, Array.append output output2))
+                (particles :> obj, [||])
                 behaviors
-        result :?> 'a array
+        (particles :?> 'a array, outputs)
 
 type [<NoEquality; NoComparison>] Emitter<'a when 'a : struct> =
     { LifeTime : int64
