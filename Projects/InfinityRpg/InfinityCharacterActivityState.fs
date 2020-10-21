@@ -50,7 +50,7 @@ type [<ReferenceEquality; NoComparison>] WalkDescriptor =
 
 type [<ReferenceEquality; NoComparison>] NavigationDescriptor =
     { WalkDescriptor : WalkDescriptor
-      NavigationPathOpt : NavigationNode list option }
+      MultiRoundContext : bool }
 
     member this.NextPositionM =
         this.WalkDescriptor.NextPositionM 
@@ -61,12 +61,9 @@ type [<ReferenceEquality; NoComparison>] NavigationDescriptor =
     member this.NextPosition =
         this.NextPositionI |> vitovf
     
-    member this.CancelNavigation =
-        { this with NavigationPathOpt = None }
-
-    static member make pathOpt origin direction =
+    static member make multiRoundContext origin direction =
         { WalkDescriptor = WalkDescriptor.make origin direction
-          NavigationPathOpt = pathOpt }
+          MultiRoundContext = multiRoundContext }
 
 type [<ReferenceEquality; NoComparison>] ActionDescriptor =
     { ActionTicks : int64 // an arbitrary number to show a hacky action animation
@@ -101,8 +98,8 @@ type [<NoComparison>] Turn =
               ActionTargetIndexOpt = Some index
               ActionDataName = Constants.InfinityRpg.AttackName }
 
-    static member makeNavigation pathOpt origin direction =
-        NavigationTurn (NavigationDescriptor.make pathOpt origin direction)
+    static member makeNavigation multiRoundContext origin direction =
+        NavigationTurn (NavigationDescriptor.make multiRoundContext origin direction)
 
 type [<NoComparison>] CharacterActivityState =
     | Action of ActionDescriptor
@@ -127,7 +124,7 @@ type [<NoComparison>] CharacterActivityState =
 
     member this.IsNavigatingPath =
         match this with
-        | Navigation navigationDescriptor -> Option.isSome navigationDescriptor.NavigationPathOpt
+        | Navigation navigationDescriptor -> navigationDescriptor.MultiRoundContext
         | Action _ | NoActivity -> false
 
     static member makeFromTurn turn =

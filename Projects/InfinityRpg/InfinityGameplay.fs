@@ -63,11 +63,16 @@ type [<NoComparison>] Move =
         match this with
         | SingleRoundMove singleRoundMove ->
             match singleRoundMove with
-            | Step direction -> Turn.makeNavigation None positionM direction
+            | Step direction -> Turn.makeNavigation false positionM direction
             | Attack index -> Turn.makeAttack index
         | MultiRoundMove path ->
             let direction = Math.directionToTarget positionM path.Head.PositionM
-            Turn.makeNavigation (Some path) positionM direction
+            Turn.makeNavigation true positionM direction
+
+    member this.TruncatePath =
+        match this with
+        | MultiRoundMove (head :: _) -> MultiRoundMove [head]
+        | _ -> this
 
 type [<ReferenceEquality; NoComparison>] Chessboard =
     { PassableCoordinates : Map<Vector2i, PickupType Option>
@@ -144,6 +149,10 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member addMove index move chessboard =
         let currentMoves = Map.add index move chessboard.CurrentMoves
         Chessboard.updateCurrentMoves currentMoves chessboard
+    
+    static member truncatePlayerPath _ _ chessboard =
+        let move = chessboard.CurrentMoves.[PlayerIndex].TruncatePath
+        Chessboard.addMove PlayerIndex move chessboard
     
     static member setPassableCoordinates _ fieldMap chessboard =
         let passableCoordinates = fieldMap.FieldTiles |> Map.filter (fun _ fieldTile -> fieldTile.TileType = Passable) |> Map.map (fun _ _ -> None)
@@ -333,6 +342,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member addMove index (move : Move) gameplay =
         Gameplay.updateChessboardBy Chessboard.addMove index move gameplay
     
+    static member truncatePlayerPath gameplay =
+        Gameplay.updateChessboardBy Chessboard.truncatePlayerPath () () gameplay
+    
     static member addHealth coordinates gameplay =
         Gameplay.updateChessboardBy Chessboard.updateCoordinatesValue (Some Health) coordinates gameplay
 
@@ -381,11 +393,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let reactorState = Gameplay.getCharacterState reactorIndex gameplay
         Gameplay.updateCharacterState reactorIndex { reactorState with HitPoints = reactorState.HitPoints - reactorDamage } gameplay
     
-    static member stopTraveler reactorIndex gameplay =
-        match Gameplay.getTurn reactorIndex gameplay with
-        | NavigationTurn navigationDescriptor ->
-            Gameplay.updateTurn reactorIndex (NavigationTurn navigationDescriptor.CancelNavigation) gameplay
-        | _ -> gameplay
+    static member stopTravelingPlayer reactorIndex gameplay =
+        if reactorIndex = PlayerIndex then Gameplay.truncatePlayerPath gameplay else gameplay
     
     static member applyMove index gameplay =
         let move = Gameplay.getCurrentMove index gameplay
@@ -395,7 +404,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | Step direction -> Gameplay.applyStep index direction gameplay
             | Attack reactorIndex ->
                 let gameplay = Gameplay.applyAttack reactorIndex gameplay
-                Gameplay.stopTraveler reactorIndex gameplay
+                Gameplay.stopTravelingPlayer reactorIndex gameplay
         | MultiRoundMove path ->
             match path with
             | head :: _ ->
