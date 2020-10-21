@@ -88,13 +88,13 @@ module GameplayDispatcher =
                     match gameplay.Player.TurnStatus with
                     | TurnFinishing ->
                         match Gameplay.getCurrentMove PlayerIndex gameplay with
-                        | MultiRoundMove path ->
+                        | Travel path ->
                             match path with
                             | _ :: [] -> None
                             | _ :: navigationPath ->
                                 let targetPositionM = (List.head navigationPath).PositionM
                                 if List.exists (fun x -> x = targetPositionM) gameplay.Chessboard.AvailableCoordinates
-                                then Some (MultiRoundMove navigationPath)
+                                then Some (Travel navigationPath)
                                 else None
                             | [] -> failwithumf ()
                         | _ -> None
@@ -228,13 +228,13 @@ module GameplayDispatcher =
                                     match attackerOpt with
                                     | Some attackerIndex ->
                                         if index = attackerIndex
-                                        then Some (SingleRoundMove (Attack PlayerIndex))
+                                        then Some (Attack PlayerIndex)
                                         else None
                                     | None ->
                                         let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
                                         let direction = Gen.random1 4 |> Direction.fromInt
                                         if List.exists (fun x -> x = direction) openDirections
-                                        then Some (SingleRoundMove (Step direction))
+                                        then Some (Step direction)
                                         else None
                                 else None
                             | _ -> None
@@ -262,17 +262,17 @@ module GameplayDispatcher =
                             let direction = Math.directionToTarget currentCoordinates coordinates
                             let opponents = Gameplay.getOpponentIndices PlayerIndex gameplay
                             if List.exists (fun x -> x = direction) openDirections
-                            then Some (SingleRoundMove (Step direction))
+                            then Some (Step direction)
                             elif List.exists (fun index -> (Gameplay.getCoordinates index gameplay) = coordinates) opponents then
                                 let targetIndex = Gameplay.getIndexByCoordinates coordinates gameplay
-                                Some (SingleRoundMove (Attack targetIndex))
+                                Some (Attack targetIndex)
                             else None
                         else
                             match tryGetNavigationPath PlayerIndex coordinates gameplay with
                             | Some navigationPath ->
                                 match navigationPath with
                                 | [] -> None
-                                | _ -> Some (MultiRoundMove navigationPath)
+                                | _ -> Some (Travel navigationPath)
                             | None -> None
                     | None -> None
                 
@@ -347,8 +347,7 @@ module GameplayDispatcher =
                 else just world
 
             | SaveGame ->
-                let gameplayWithoutMoves = { gameplay with Chessboard = { gameplay.Chessboard with CurrentMoves = Map.empty }}
-                let gameplayStr = scstring gameplayWithoutMoves
+                let gameplayStr = scstring gameplay
                 File.WriteAllText (Assets.SaveFilePath, gameplayStr)
                 just world
 
