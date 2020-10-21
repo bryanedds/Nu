@@ -38,7 +38,7 @@
 #load "OmniAvatarDispatcher.fs"
 #load "OmniBattleDispatcher.fs"
 #load "OmniFieldDispatcher.fs"
-#load "OmniGameDispatcher.fs"
+#load "OmniDispatcher.fs"
 #load "OmniPlugin.fs"
 
 open System.IO
