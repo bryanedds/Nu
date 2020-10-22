@@ -240,13 +240,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member anyTurnsInProgress gameplay =
         Gameplay.getCharacterTurns gameplay |> List.exists (fun turnStatus -> turnStatus <> Idle)
     
-    static member saveImpossible gameplay =
-        Gameplay.anyTurnsInProgress gameplay ||
-        KeyboardState.isKeyDown KeyboardKey.Up ||
-        KeyboardState.isKeyDown KeyboardKey.Right ||
-        KeyboardState.isKeyDown KeyboardKey.Down ||
-        KeyboardState.isKeyDown KeyboardKey.Left
-    
     static member updateCharacterBy updater index newValue gameplay =
         match index with
         | PlayerIndex ->
