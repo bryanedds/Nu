@@ -103,7 +103,7 @@ module Program =
                 Process.Start("dotnet", "new -u \"" + templateIdentifier + "\"").WaitForExit()
                 Process.Start("dotnet", "new -i ./").WaitForExit()
 
-                // new up nu template
+                // instantiate nu template
                 Directory.SetCurrentDirectory projectsDir
                 Directory.CreateDirectory name |> ignore<DirectoryInfo>
                 Directory.SetCurrentDirectory newProjDir

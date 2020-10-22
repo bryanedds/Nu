@@ -115,6 +115,11 @@
     <None Include="Assets\Gui\Credits.nulyr" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Nu\Nu\Nu.fsproj">
+      <Name>Nu</Name>
+      <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj">
       <Name>Nu.Pipe</Name>
       <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
@@ -169,11 +174,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\..\Nu\Nu\Nu.fsproj">
-      <Name>Nu</Name>
-      <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <Reference Include="System.Xml.Linq">
       <Private>True</Private>
     </Reference>
