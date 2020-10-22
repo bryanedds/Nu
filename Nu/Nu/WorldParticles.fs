@@ -15,8 +15,19 @@ module Particles =
     type Particle =
         abstract Life : Life
 
+    type Body =
+        { Position : Vector2
+          Velocity : Vector2
+          Gravity : Vector2 }
+
+    type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Constraint =
+        | Rectangle of Vector4
+        | Circle of single * Vector2
+        | Constraints of Constraint array
+        | Unconstrained // OPTIMIZATION: elide Option indirection
+
     type Emitter =
-        abstract Run : int64 -> Liveness * Emitter
+        abstract Run : int64 -> Constraint -> Liveness * Emitter
 
     type [<NoEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Output =
         | EmitterOutput of Emitter
@@ -109,15 +120,15 @@ module Particles =
           Particles : 'a array
           Id : Guid }
 
-        static member run (_ : int64) emitter =
+        static member run (_ : int64) (_ : Constraint) emitter =
             let particles = emitter.Particles
             let liveness = Running
             // TODO: and now for the tricky bit...
             (liveness, { emitter with Particles = particles })
 
         interface Emitter with
-            member this.Run currentTime =
-                let (liveness, emitter) = Emitter<'a>.run currentTime this
+            member this.Run currentTime constrain =
+                let (liveness, emitter) = Emitter<'a>.run currentTime constrain this
                 (liveness, emitter :> Emitter)
             end
 
@@ -131,10 +142,10 @@ module Particles =
 
     type [<Struct>] Pex =
         { Life : Life
-          Pos : Vector2
+          Bod : Body
           Col : Color
           Ins : Vector4 }
         interface Particle with member this.Life = this.Life
-        static member inline pos = Scope.make (fun pex -> pex.Pos) (fun pos pex -> { pex with Pos = pos })
+        static member inline bod = Scope.make (fun pex -> pex.Bod) (fun bod pex -> { pex with Bod = bod })
         static member inline col = Scope.make (fun pex -> pex.Col) (fun col pex -> { pex with Col = col })
         static member inline ins = Scope.make (fun pex -> pex.Ins) (fun ins pex -> { pex with Ins = ins })
