@@ -106,7 +106,7 @@ module GameplayDispatcher =
                 match playerMoveOpt with
                 | Some move ->
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
-                    let gameplay = Gameplay.unpackMove PlayerIndex gameplay
+                    let gameplay = Gameplay.updateTurnStatus PlayerIndex TurnPending gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ -> just gameplay
@@ -198,10 +198,8 @@ module GameplayDispatcher =
                         match gameplay.Player.CharacterActivityState with
                         | Action _ -> gameplay
                         | Navigation _ 
-                        | NoActivity -> // TODO: find out why using activateCharacter here triggered "turn status is TurnBeginning..." exception
-                            let enemyActivities = Gameplay.getEnemyTurns gameplay |> List.map CharacterActivityState.makeFromTurn
-                            let gameplay = Gameplay.forEachIndex (fun index gameplay -> Gameplay.updateTurnStatus index TurnBeginning gameplay) indices gameplay
-                            Gameplay.updateEnemyActivityStates enemyActivities gameplay
+                        | NoActivity ->
+                            Gameplay.forEachIndex (fun index gameplay -> Gameplay.activateCharacter index gameplay) indices gameplay
                     else gameplay
                 let indices = List.filter (fun x -> (Gameplay.getTurnStatus x gameplay) <> TurnPending) indices
                 let indices =
@@ -241,7 +239,7 @@ module GameplayDispatcher =
                         match enemyMoveOpt with
                         | Some move ->
                             let gameplay = Gameplay.addMove index move gameplay
-                            let gameplay = Gameplay.unpackMove index gameplay
+                            let gameplay = Gameplay.updateTurnStatus index TurnPending gameplay
                             Gameplay.applyMove index gameplay
                         | None -> gameplay)
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
@@ -279,7 +277,7 @@ module GameplayDispatcher =
                 match playerMoveOpt with
                 | Some move ->
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
-                    let gameplay = Gameplay.unpackMove PlayerIndex gameplay
+                    let gameplay = Gameplay.updateTurnStatus PlayerIndex TurnPending gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ -> just gameplay
@@ -420,8 +418,8 @@ module GameplayDispatcher =
                     [Entity.Position == v2 88.0f -112.0f; Entity.Size == v2 384.0f 64.0f; Entity.Depth == 10.0f
                      Entity.UpImage == asset "Gui" "HaltUp"; Entity.DownImage == asset "Gui" "HaltDown"
                      Entity.Enabled <== gameplay --> fun gameplay ->
-                        match gameplay.Player.Turn with
-                        | NavigationTurn nav -> nav.MultiRoundContext
+                        match gameplay.Player.CharacterActivityState with
+                        | Navigation nav -> nav.MultiRoundContext
                         | _ -> false
                      Entity.ClickEvent ==> msg TryMakePlayerHalt]
 

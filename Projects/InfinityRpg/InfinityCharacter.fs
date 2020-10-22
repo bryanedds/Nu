@@ -7,7 +7,6 @@ open InfinityRpg
 
 type [<ReferenceEquality; NoComparison>] Character =
     { Index : CharacterIndex
-      Turn : Turn
       CharacterState : CharacterState
       TurnStatus : TurnStatus
       CharacterActivityState : CharacterActivityState
@@ -17,16 +16,12 @@ type [<ReferenceEquality; NoComparison>] Character =
 
     static member initial =
         { Index = PlayerIndex
-          Turn = NoTurn
           CharacterState = CharacterState.empty
           TurnStatus = Idle
           CharacterActivityState = NoActivity
           CharacterAnimationState = CharacterAnimationState.initial
           CharacterAnimationSheet = Assets.PlayerImage
           Position = v2Zero }
-
-    static member updateTurn newValue (character : Character) =
-        { character with Turn = newValue }
 
     static member updateCharacterState newValue (character : Character) =
         { character with CharacterState = newValue }
