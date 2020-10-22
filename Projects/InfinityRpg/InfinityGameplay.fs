@@ -424,11 +424,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboardBy Chessboard.placeCharacter index coordinates gameplay
 
     static member makeEnemies quantity gameplay =
-        let quantity = quantity - 1
         let rec recursion count gameplay =
-            let gameplay = Gameplay.makeEnemy (EnemyIndex count) gameplay
             if count = quantity then gameplay
-            else recursion (count + 1) gameplay
+            else
+                let gameplay = Gameplay.makeEnemy (EnemyIndex count) gameplay
+                recursion (count + 1) gameplay
         recursion 0 gameplay
     
     static member forEachIndex updater indices gameplay =
