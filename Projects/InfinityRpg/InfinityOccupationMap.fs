@@ -26,13 +26,6 @@ module OccupationMap =
         let openDirections = getOpenDirectionsAtPositionM positionM occupationMap
         Set.map (fun direction -> positionM + dtovm direction) openDirections
 
-    let occupyByDesiredTurn desiredTurn (occupationMap : OccupationMap) =
-        match desiredTurn with
-        | ActionTurn _ -> occupationMap
-        | NavigationTurn navigationDescriptor -> Map.add navigationDescriptor.NextPositionM true occupationMap
-        | CancelTurn -> occupationMap
-        | NoTurn -> occupationMap
-
     let occupyByCharacter characterPosition (occupationMap : OccupationMap) =
         let characterPositionM = vftovm characterPosition
         Map.add characterPositionM true occupationMap
@@ -56,13 +49,6 @@ module OccupationMap =
     let unoccupyByCharacters characterPositions occupationMap =
         Seq.fold (flip unoccupyByCharacter) occupationMap characterPositions
 
-    let transferByDesiredTurn desiredTurn characterPosition occupationMap =
-        match desiredTurn with
-        | ActionTurn _ -> occupationMap
-        | NavigationTurn _ -> unoccupyByCharacter characterPosition occupationMap |> occupyByDesiredTurn desiredTurn
-        | CancelTurn -> occupationMap
-        | NoTurn -> occupationMap
-
     // NOTE: the function 'makeFromFieldTiles' makes an FSharp.Map from every single tile, creating a performance
     // bottleneck for larger maps. solution is to simply leave the entry empty when the tile is passable, only adding entries for tiles that are not passable.
     let makeFromFieldTiles fieldTiles =
@@ -77,10 +63,6 @@ module OccupationMap =
     let makeFromFieldTilesAndCharacters fieldTiles characterPositions =
         let occupationMap = makeFromFieldTiles fieldTiles
         occupyByCharacters characterPositions occupationMap
-
-    let makeFromFieldTilesAndCharactersAndDesiredTurn fieldTiles characterPositions desiredTurn =
-        let occupationMap = makeFromFieldTilesAndCharacters fieldTiles characterPositions
-        occupyByDesiredTurn desiredTurn occupationMap
 
     let makeFromFieldTilesAndAdjacentCharacters positionM fieldTiles characterPositions =
         let occupationMap = makeFromFieldTiles fieldTiles

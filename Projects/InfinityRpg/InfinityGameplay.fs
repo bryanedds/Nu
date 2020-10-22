@@ -56,13 +56,13 @@ type [<NoComparison>] Move =
     | Attack of CharacterIndex
     | Travel of NavigationNode list
 
-    member this.MakeTurn positionM =
+    member this.MakeActivity positionM =
         match this with
-        | Step direction -> Turn.makeNavigation false positionM direction
-        | Attack index -> Turn.makeAttack index
+        | Step direction -> CharacterActivityState.makeNavigation false positionM direction
+        | Attack index -> CharacterActivityState.makeAttack index
         | Travel path ->
             let direction = Math.directionToTarget positionM path.Head.PositionM
-            Turn.makeNavigation true positionM direction
+            CharacterActivityState.makeNavigation true positionM direction
 
     member this.TruncatePath =
         match this with
@@ -211,9 +211,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getCharacterByIndex index gameplay =
         Gameplay.tryGetCharacterByIndex index gameplay |> Option.get
 
-    static member getTurn index gameplay =
-        (Gameplay.getCharacterByIndex index gameplay).Turn
-
     static member getCharacterState index gameplay =
         (Gameplay.getCharacterByIndex index gameplay).CharacterState
     
@@ -236,9 +233,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         match index with
         | PlayerIndex -> Gameplay.getEnemyIndices gameplay
         | _ -> [PlayerIndex]
-    
-    static member getEnemyTurns gameplay =
-        List.map (fun enemy -> enemy.Turn) gameplay.Enemies
     
     static member getCharacterTurns gameplay =
         Gameplay.getCharacters gameplay |> List.map (fun character -> character.TurnStatus)
@@ -264,9 +258,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 List.map (fun enemy -> if enemy.Index = index then updater newValue enemy else enemy)
             Gameplay.updateEnemies enemies gameplay
     
-    static member updateTurn index newValue gameplay =
-        Gameplay.updateCharacterBy Character.updateTurn index newValue gameplay
-
     static member updateCharacterState index newValue gameplay =
         Gameplay.updateCharacterBy Character.updateCharacterState index newValue gameplay
     
@@ -281,13 +272,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     static member updatePosition index newValue gameplay =
         Gameplay.updateCharacterBy Character.updatePosition index newValue gameplay
-    
-    static member updateEnemiesBy updater newValues gameplay =
-        let enemies = List.map2 (fun newValue gameplay -> updater newValue gameplay) newValues gameplay.Enemies
-        Gameplay.updateEnemies enemies gameplay
-
-    static member updateEnemyActivityStates newValues gameplay =
-        Gameplay.updateEnemiesBy Character.updateCharacterActivityState newValues gameplay
     
     static member getCoordinates index gameplay =
         gameplay.Chessboard.CharacterCoordinates.[index]
@@ -364,15 +348,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member clearEnemies gameplay =
         Gameplay.updateChessboardBy Chessboard.clearEnemies () () gameplay
 
-    static member unpackMove index gameplay =
-        let move = Gameplay.getCurrentMove index gameplay
-        let turn = Gameplay.getCoordinates index gameplay |> move.MakeTurn
-        let gameplay = Gameplay.updateTurn index turn gameplay
-        Gameplay.updateTurnStatus index TurnPending gameplay
-    
     static member finishMove index gameplay =
         let gameplay = Gameplay.removeMove index gameplay
-        let gameplay = Gameplay.updateTurn index NoTurn gameplay
         let gameplay = Gameplay.updateCharacterActivityState index NoActivity gameplay
         Gameplay.updateTurnStatus index Idle gameplay
     
@@ -415,9 +392,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | [] -> failwithumf ()
     
     static member activateCharacter index gameplay =
-        let activity = CharacterActivityState.makeFromTurn (Gameplay.getTurn index gameplay)
+        let move = Gameplay.getCurrentMove index gameplay
+        let activity = Gameplay.getPosition index gameplay |> vftovm |> move.MakeActivity
         let gameplay = Gameplay.updateCharacterActivityState index activity gameplay
-        Gameplay.updateTurnStatus PlayerIndex TurnBeginning gameplay
+        Gameplay.updateTurnStatus index TurnBeginning gameplay
     
     static member setFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboardBy Chessboard.setPassableCoordinates () fieldMap gameplay

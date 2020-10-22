@@ -83,24 +83,6 @@ type TurnStatus =
     | TurnFinishing
     | Idle
 
-type [<NoComparison>] Turn =
-    | ActionTurn of ActionDescriptor
-    | NavigationTurn of NavigationDescriptor
-    | CancelTurn
-    | NoTurn
-
-    member this.IsAction =
-        match this with ActionTurn _ -> true | _ -> false
-    
-    static member makeAttack index =
-        ActionTurn
-            { ActionTicks = 0L
-              ActionTargetIndexOpt = Some index
-              ActionDataName = Constants.InfinityRpg.AttackName }
-
-    static member makeNavigation multiRoundContext origin direction =
-        NavigationTurn (NavigationDescriptor.make multiRoundContext origin direction)
-
 type [<NoComparison>] CharacterActivityState =
     | Action of ActionDescriptor
     | Navigation of NavigationDescriptor
@@ -127,9 +109,11 @@ type [<NoComparison>] CharacterActivityState =
         | Navigation navigationDescriptor -> navigationDescriptor.MultiRoundContext
         | Action _ | NoActivity -> false
 
-    static member makeFromTurn turn =
-        match turn with
-        | ActionTurn actionDescriptor -> Action actionDescriptor
-        | NavigationTurn navigationDescriptor -> Navigation navigationDescriptor
-        | CancelTurn -> NoActivity
-        | NoTurn -> NoActivity
+    static member makeAttack index =
+        Action
+            { ActionTicks = 0L
+              ActionTargetIndexOpt = Some index
+              ActionDataName = Constants.InfinityRpg.AttackName }
+
+    static member makeNavigation multiRoundContext origin direction =
+        Navigation (NavigationDescriptor.make multiRoundContext origin direction)
