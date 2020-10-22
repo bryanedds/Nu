@@ -88,25 +88,35 @@ module Program =
                 
                 // compute directories
                 let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
+                let slnDir = Path.Combine (programDir, "../../../..") |> Path.Simplify
                 let templateDir = Path.Combine (programDir, "../../../Nu.Template") |> Path.Simplify
+                let templateIdentifier = templateDir.Replace("/", "\\") // this is what dotnet knows the template as for uninstall...
                 let projectsDir = Path.Combine (programDir, "../../../../Projects") |> Path.Simplify
-                let newDir = Path.Combine (projectsDir, name) |> Path.Simplify
+                let newProjDir = Path.Combine (projectsDir, name) |> Path.Simplify
+                let newProj = Path.Combine (newProjDir, "MyGame.fsproj") |> Path.Simplify
                 Console.WriteLine ("Creating project '" + name + "' in '" + projectsDir + "'...")
 
                 // install nu template
                 Directory.SetCurrentDirectory templateDir
-                Process.Start("cmd", "/C dotnet new -i ./").WaitForExit()
+                Process.Start("cmd", "/C dotnet new -u \"" + templateIdentifier + "\" & pause").WaitForExit()
+                Process.Start("cmd", "/C dotnet new -i ./ & pause").WaitForExit()
 
                 // new up nu template
                 Directory.SetCurrentDirectory projectsDir
                 Directory.CreateDirectory name |> ignore<DirectoryInfo>
-                Directory.SetCurrentDirectory newDir
-                Process.Start("cmd", "/C dotnet new nu-game").WaitForExit()
+                Directory.SetCurrentDirectory newProjDir
+                Process.Start("cmd", "/C dotnet new nu-game & pause").WaitForExit()
 
                 // rename project file
                 if File.Exists "Nu.Template.fsproj" then
                     File.Copy ("Nu.Template.fsproj", "MyGame.fsproj")
                     File.Delete "Nu.Template.fsproj"
+
+                // add project to sln file (not currently working due to project in old file format)
+                //Directory.SetCurrentDirectory slnDir
+                //Process.Start("cmd", "/C dotnet sln add Nu.sln \"" + newProj + "\" & pause").WaitForExit()
+                
+                // fin
                 Constants.Engine.SuccessExitCode
 
             // invalid name
