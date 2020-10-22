@@ -3,6 +3,8 @@
 
 namespace Nu
 open System
+open System.Diagnostics
+open System.IO
 open Prime
 module Program =
 
@@ -50,17 +52,6 @@ module Program =
     buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only
     applies to 2D ~ will not apply to 3D once implemented in Nu (for obvious reasons). *)
 
-    (* WISDOM: On avoiding threads where possible...
-    
-    Beyond the cases where persistent threads are absolutely required or where transient threads
-    implement embarassingly parallel processes, threads should be AVOIDED as a rule.
-    
-    If it were the case that physics were processed on a separate hardware component and thereby
-    ought to be run on a separate persistent thread, then the proper way to approach the problem of
-    physics system queries is to copy the relevant portion of the physics state from the PPU to main
-    memory every frame. This way, queries against the physics state can be done IMMEDIATELY with no
-    need for complex intermediate states (albeit against a physics state that is one frame old). *)
-
     (* WISDOM: On threading physics...
     
     A simulation that would put physics on another thread should likely do so in a different app
@@ -75,33 +66,53 @@ module Program =
     (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
     need to move the app from 60fps to 30fps. *)
 
-    (* WISDOM: No need for multiple instances of the same Facet...
-    
-    Unity allows users to have multiple instances of the same Component (the OO equivalent of Nu's
-    Facets). Nu does not want or need this because -
-    
-    a) Nu's programming models allows interfacing with Facet properties directly rather than having
-    to dig out the desired Facet then interfacing with it.
-    
-    b) If a user wants an Entity to be composed of multiple reusable pieces, that's what child Entities
-    are for.
-    
-    Now, one may take an exception to point b for performance issues, but in those cases, one would
-    instead contrive a Facet that contains multiples of the desired element in the same way that
-    the EffectFacet can host multiple Effects. It can be inconvenient, but the inconvenience seems
-    otherwise marginal. *)
-
-    (* IDEA: Networking
-
-    Networking will be done with Chain'd network events.
-    For server-based networking, we will use the input-propagation approach like is done with Overwatch.
-    For peer-to-peer networking, we will use simulant state-propagation like is done with my AR project
-    with Unity. *)
-
     (* IDEA: it was suggested that time-travel debugging a la Elm or http://vimeo.com/36579366
     would be appropriate to this engine given its pure functional nature. *)
 
     (* TODO: investigate Gaia extensibility mechanism. *)
 
+    /// Program entry point.
     let [<EntryPoint; STAThread>] main _ =
-        Constants.Engine.SuccessExitCode
+
+        // query user to create new project
+        Console.Write "Create a new game with the Nu Game Engine? [y/n]: "
+        let result = Console.ReadLine ()
+        match result.ToUpper () with
+        | "Y" ->
+
+            // execute name entry
+            Console.Write "Please enter your project's name (no spaces, tabs or dots, PascalCase is preferred): "
+            let name = Console.ReadLine ()
+            let name = name.Replace(" ", "").Replace("\t", "").Replace(".", "")
+            if Array.notExists (fun char -> name.Contains (string char)) (Path.GetInvalidPathChars ()) then
+                
+                // compute directories
+                let programDir = Reflection.Assembly.GetEntryAssembly().Location |> Path.GetDirectoryName 
+                let templateDir = Path.Combine (programDir, "../../../Nu.Template") |> Path.Simplify
+                let projectsDir = Path.Combine (programDir, "../../../../Projects") |> Path.Simplify
+                let newDir = Path.Combine (projectsDir, name) |> Path.Simplify
+                Console.WriteLine ("Creating project '" + name + "' in '" + projectsDir + "'...")
+
+                // install nu template
+                Directory.SetCurrentDirectory templateDir
+                Process.Start("cmd", "/C dotnet new -i ./").WaitForExit()
+
+                // new up nu template
+                Directory.SetCurrentDirectory projectsDir
+                Directory.CreateDirectory name |> ignore<DirectoryInfo>
+                Directory.SetCurrentDirectory newDir
+                Process.Start("cmd", "/C dotnet new nu-game").WaitForExit()
+
+                // rename project file
+                if File.Exists "Nu.Template.fsproj" then
+                    File.Copy ("Nu.Template.fsproj", "MyGame.fsproj")
+                    File.Delete "Nu.Template.fsproj"
+                Constants.Engine.SuccessExitCode
+
+            // invalid name
+            else
+                Console.WriteLine ("Project name '" + name + "' contains invalid path characters.")
+                Constants.Engine.FailureExitCode
+
+        // rejected
+        | _ -> Constants.Engine.SuccessExitCode
