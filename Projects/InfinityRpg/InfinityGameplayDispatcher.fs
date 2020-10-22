@@ -15,7 +15,7 @@ module GameplayDispatcher =
         | NoInput
 
     type [<StructuralEquality; NoComparison>] GameplayMessage =
-        | TryContinuePlayerMove
+        | TryContinuePlayerNavigation
         | FinishTurns of CharacterIndex list
         | ProgressTurns of CharacterIndex list
         | BeginTurns of CharacterIndex list
@@ -30,6 +30,7 @@ module GameplayDispatcher =
     type [<NoEquality; NoComparison>] GameplayCommand =
         | HandlePlayerInput of PlayerInput
         | SaveGame
+        | ListenKeyboard
         | Update
         | PostUpdate
         | Nop
@@ -83,7 +84,7 @@ module GameplayDispatcher =
         override this.Message (gameplay, message, _, world) =
             
             match message with
-            | TryContinuePlayerMove ->
+            | TryContinuePlayerNavigation ->
                 let playerMoveOpt =
                     match gameplay.Player.TurnStatus with
                     | TurnFinishing ->
@@ -109,7 +110,8 @@ module GameplayDispatcher =
                     let gameplay = Gameplay.updateTurnStatus PlayerIndex TurnPending gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
                     withMsg MakeEnemyMoves gameplay
-                | _ -> just gameplay
+                | _ ->
+                    if not (Gameplay.anyTurnsInProgress gameplay) then withCmd ListenKeyboard gameplay else just gameplay
             
             | FinishTurns indices ->
                 let updater index gameplay =
@@ -135,7 +137,7 @@ module GameplayDispatcher =
                         | _ -> failwith "TurnStatus is TurnFinishing; CharacterActivityState should not be NoActivity"
                     | _ -> failwith "non-finishing turns should be filtered out by this point"
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
-                withMsg TryContinuePlayerMove gameplay
+                withMsg TryContinuePlayerNavigation gameplay
             
             | ProgressTurns indices ->
                 let updater index gameplay =
@@ -349,13 +351,16 @@ module GameplayDispatcher =
                 File.WriteAllText (Assets.SaveFilePath, gameplayStr)
                 just world
 
-            | Update ->
-                if (Gameplay.anyTurnsInProgress gameplay) then withMsg RunCharacterActivation world
-                elif KeyboardState.isKeyDown KeyboardKey.Up then withCmd (HandlePlayerInput (DetailInput Upward)) world
+            | ListenKeyboard ->
+                if KeyboardState.isKeyDown KeyboardKey.Up then withCmd (HandlePlayerInput (DetailInput Upward)) world
                 elif KeyboardState.isKeyDown KeyboardKey.Right then withCmd (HandlePlayerInput (DetailInput Rightward)) world
                 elif KeyboardState.isKeyDown KeyboardKey.Down then withCmd (HandlePlayerInput (DetailInput Downward)) world
                 elif KeyboardState.isKeyDown KeyboardKey.Left then withCmd (HandlePlayerInput (DetailInput Leftward)) world
                 else just world
+            
+            | Update ->
+                if (Gameplay.anyTurnsInProgress gameplay) then withMsg RunCharacterActivation world
+                else withCmd ListenKeyboard world
 
             | PostUpdate ->
                 let playerCenter = Simulants.Player.GetCenter world
@@ -411,7 +416,7 @@ module GameplayDispatcher =
                 [Content.button Simulants.HudSaveGame.Name
                     [Entity.Position == v2 88.0f -184.0f; Entity.Size == v2 384.0f 64.0f; Entity.Depth == 10.0f
                      Entity.UpImage == asset "Gui" "SaveGameUp"; Entity.DownImage == asset "Gui" "SaveGameDown"
-                     Entity.Enabled <== gameplay --> fun gameplay -> if Gameplay.saveImpossible gameplay then false else true
+                     Entity.Enabled <== gameplay --> fun gameplay -> if Gameplay.anyTurnsInProgress gameplay then false else true
                      Entity.ClickEvent ==> cmd SaveGame]
 
                  Content.button Simulants.HudHalt.Name
