@@ -22,7 +22,7 @@ module GameplayDispatcher =
         | RunCharacterActivation
         | MakeEnemyMoves
         | TryMakePlayerMove of PlayerInput
-        | TryMakePlayerHalt
+        | TryHaltPlayer
         | TransitionMap of Direction
         | HandleMapChange of PlayerInput
         | StartGameplay
@@ -282,7 +282,7 @@ module GameplayDispatcher =
                     withMsg MakeEnemyMoves gameplay
                 | _ -> just gameplay
 
-            | TryMakePlayerHalt ->
+            | TryHaltPlayer ->
                 match Map.tryFind PlayerIndex gameplay.Chessboard.CurrentMoves with
                 | Some _ ->
                     let gameplay = Gameplay.truncatePlayerPath gameplay
@@ -421,7 +421,7 @@ module GameplayDispatcher =
                         match gameplay.Player.CharacterActivityState with
                         | Navigation nav -> nav.MultiRoundContext
                         | _ -> false
-                     Entity.ClickEvent ==> msg TryMakePlayerHalt]
+                     Entity.ClickEvent ==> msg TryHaltPlayer]
 
                  Content.button Simulants.HudBack.Name
                     [Entity.Position == v2 88.0f -256.0f; Entity.Size == v2 384.0f 64.0f; Entity.Depth == 10.0f
