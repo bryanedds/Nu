@@ -94,7 +94,7 @@ module Program =
                 let templateFileName = "Nu.Template.fsproj"
                 let projectsDir = Path.Combine (programDir, "../../../../Projects") |> Path.Simplify
                 let newProjDir = Path.Combine (projectsDir, name) |> Path.Simplify
-                let newFileName = "MyGame.fsproj"
+                let newFileName = name + ".fsproj"
                 let newProj = Path.Combine (newProjDir, newFileName) |> Path.Simplify
                 Console.WriteLine ("Creating project '" + name + "' in '" + projectsDir + "'...")
 
@@ -110,9 +110,14 @@ module Program =
                 Process.Start("dotnet", "new nu-game").WaitForExit()
 
                 // rename project file
-                if File.Exists templateFileName then
+                if  File.Exists templateFileName then
                     File.Copy (templateFileName, newFileName)
                     File.Delete templateFileName
+
+                // substitute $safeprojectname$ in project file
+                let newProjStr = File.ReadAllText newProj
+                let newProjStr = newProjStr.Replace("$safeprojectname$", name)
+                File.WriteAllText (newProj, newProjStr)
 
                 // add project to sln file (not currently working due to project in old file format - user is instructed to do this manually)
                 //Directory.SetCurrentDirectory slnDir
