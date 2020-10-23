@@ -1,5 +1,6 @@
 ﻿namespace InfinityRpg
 open System
+open System.Numerics
 open System.IO
 open Prime
 open Nu

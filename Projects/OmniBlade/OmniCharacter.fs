@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.Numerics
 open Prime
 open Nu
 
@@ -126,13 +127,13 @@ module Character =
             evaluateAimType aimType target |>
             List.filter (fun character ->
                 let v = character.Bottom - source.Bottom
-                v.Length <= radius)
+                v.Length () <= radius)
         | RadialTarget (aimType, radius) ->
             characters |>
             evaluateAimType aimType target |>
             List.filter (fun character ->
                 let v = character.Bottom - target.Bottom
-                v.Length <= radius)
+                v.Length () <= radius)
         | LineTarget (aimType, width) ->
             characters |>
             evaluateAimType aimType target |>

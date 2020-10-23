@@ -24,6 +24,8 @@
 #load "BlazeDispatcher.fs"
 #load "BlazePlugin.fs"
 
+open System
+open System.Numerics
 open System.IO
 open Prime
 open Nu

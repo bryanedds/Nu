@@ -20,6 +20,8 @@
 #load "MyGame.fs"
 #load "MyPlugin.fs"
 
+open System
+open System.Numerics
 open System.IO
 open Prime
 open Nu

@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.Numerics
 open System.IO
 open FSharpx.Collections
 open Prime
@@ -308,7 +309,7 @@ type [<NoComparison>] FieldData =
       FieldAmbienceOpt : Song AssetTag option
       FieldBackgroundColor : Color }
 
-type EnemyData =
+type [<NoComparison>] EnemyData =
     { EnemyType : EnemyType // key
       EnemyPosition : Vector2 }
 
