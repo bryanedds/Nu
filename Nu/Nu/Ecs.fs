@@ -82,11 +82,11 @@ and System<'w when 'w :> Freezable> (name : string) =
 /// Nu's custom Entity-Component-System implementation.
 and Ecs<'w when 'w :> Freezable> () as this =
 
-    let arrayObjs = dictPlus [] : Dictionary<string, obj List>
-    let systemSubscriptions = dictPlus [] : Dictionary<string, Dictionary<Guid, obj>>
-    let systemsUnordered = dictPlus [] : Dictionary<string, 'w System>
-    let systemsOrdered = List () : (string * 'w System) List
-    let correlations = dictPlus [] : Dictionary<Guid, string List>
+    let arrayObjs = dictPlus<string, obj List> []
+    let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> []
+    let systemsUnordered = dictPlus<string, 'w System> []
+    let systemsOrdered = List<string * 'w System> ()
+    let correlations = dictPlus<Guid, string List> []
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
     let globalSystem = System<'w> "Global"
     
@@ -337,8 +337,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     let mutable junctions = Unchecked.defaultof<'c>.AllocateJunctions ecs
     let mutable freeIndex = 0
     let freeList = HashSet<int> ()
-    let correlations = dictPlus [] : Dictionary<Guid, int>
-    let correlationsBack = dictPlus [] : Dictionary<int, Guid>
+    let correlations = dictPlus<Guid, int> []
+    let correlationsBack = dictPlus<int, Guid> []
 
     new (ecs) = SystemCorrelated (typeof<'c>.Name, ecs)
 
@@ -631,7 +631,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
     inherit System<'w> (name)
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
-    let systemDict = dictPlus [] : Dictionary<Guid, SystemCorrelated<'c, 'w>>
+    let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> []
 
     new (ecs) = SystemHierarchical (typeof<'c>.Name, ecs)
 
