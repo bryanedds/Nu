@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.ComponentModel
+open System.Numerics
 open Prime
 open Nu
 
@@ -87,11 +88,10 @@ module Vector2 =
     let v2Zero = Vector2.Zero
     let v2UnitX = Vector2.UnitX
     let v2UnitY = Vector2.UnitY
-    let v2Up = Vector2.Up
-    let v2Right = Vector2.Right
-    let v2Down = Vector2.Down
-    let v2Left = Vector2.Left
-    let v2Center (position : Vector2) (size : Vector2) = position + size * 0.5f
+    let v2Up = v2 0.0f 1.0f
+    let v2Right = v2 1.0f 0.0f
+    let v2Down = v2 0.0f -1.0f
+    let v2Left = v2 -1.0f 0.0f
 
 /// The Vector2 value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] Vector2Pluggable =
@@ -220,6 +220,13 @@ type Vector3Converter () =
 module Vector4 =
 
     type Vector4 with
+        member this.Position = v2 this.X this.Y
+        member this.Size = v2 this.Z this.W
+        member this.Center = v2 (this.X + (this.Z * 0.5f)) (this.Y + (this.W * 0.5f))
+        member this.Bottom = v2 (this.X + (this.Z * 0.5f)) this.Y
+        member this.Top = v2 (this.X + (this.Z * 0.5f)) (this.Y + this.W)
+        member this.Left = v2 this.X (this.Y + (this.W * 0.5f))
+        member this.Right = v2 (this.X + this.Z) (this.Y + (this.W * 0.5f))
         member this.Translate (translation : Vector2) = Vector4 (this.X + translation.X, this.Y + translation.Y, this.Z, this.W)
         member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
@@ -673,9 +680,9 @@ type ColorConverter () =
         | _ -> failconv "Invalid ColorConverter conversion from source." None
 
 [<AutoOpen>]
-module Matrix3 =
+module Matrix3x3 =
 
-    type Matrix3 with
+    type Matrix3x3 with
 
         /// Gets the inverse view matrix with a terribly hacky method custom-designed to satisfy SDL2's
         /// SDL_RenderCopyEx requirement that all corrdinates be arbitrarily converted to ints.
@@ -688,9 +695,9 @@ module Matrix3 =
             m.M22 <- 1.0f / m.M22
             m
 
-    let inline m3 r0 r1 r2 = Matrix3 (r0, r1, r2)
-    let m3Identity = Matrix3.Identity
-    let m3Zero = Matrix3.Zero
+    let inline m3 r0 r1 r2 = Matrix3x3 (r0, r1, r2)
+    let m3Identity = Matrix3x3.Identity
+    let m3Zero = Matrix3x3.Zero
 
 [<RequireQualifiedAccess>]
 module Math =
@@ -760,22 +767,22 @@ module Math =
 
     /// Get the view of the eye in absolute terms (world space).
     let getViewAbsolute (_ : Vector2) (_ : Vector2) =
-        Matrix3.Identity
+        Matrix3x3.Identity
         
     /// Get the view of the eye in absolute terms (world space) with translation sliced on
     /// integers.
     let getViewAbsoluteI (_ : Vector2) (_ : Vector2) =
-        Matrix3.Identity
+        Matrix3x3.Identity
 
     /// The relative view of the eye with original single values. Due to the problems with
     /// SDL_RenderCopyEx as described in Math.fs, using this function to decide on sprite
     /// coordinates is very, very bad for rendering.
     let getViewRelative (eyeCenter : Vector2) (_ : Vector2) =
         let translation = eyeCenter
-        Matrix3.CreateFromTranslation translation
+        Matrix3x3.CreateTranslation translation
 
     /// The relative view of the eye with translation sliced on integers. Good for rendering.
     let getViewRelativeI (eyeCenter : Vector2) (_ : Vector2) =
         let translation = eyeCenter
         let translationI = Vector2 (single (int translation.X), single (int translation.Y))
-        Matrix3.CreateFromTranslation translationI
+        Matrix3x3.CreateTranslation translationI

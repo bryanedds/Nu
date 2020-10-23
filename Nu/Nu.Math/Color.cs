@@ -10,6 +10,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Globalization;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace Nu
@@ -19,6 +20,8 @@ namespace Nu
     /// </summary>
     /// <remarks>
     /// The Color structure is suitable for interoperation with unmanaged code requiring four consecutive bytes.
+    /// Copied from - https://github.com/opentk/opentk/blob/3.x/src/OpenTK/Math/Vector4.cs
+    /// Modified by BGE to represent color.
     /// </remarks>
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
@@ -112,51 +115,19 @@ namespace Nu
         {
             get
             {
-                if (index == 0)
-                {
-                    return R;
-                }
-
-                if (index == 1)
-                {
-                    return G;
-                }
-
-                if (index == 2)
-                {
-                    return B;
-                }
-
-                if (index == 3)
-                {
-                    return A;
-                }
-
+                if (index == 0) return R;
+                if (index == 1) return G;
+                if (index == 2) return B;
+                if (index == 3) return A;
                 throw new IndexOutOfRangeException("You tried to access this color at index: " + index);
             }
-
             set
             {
-                if (index == 0)
-                {
-                    R = value;
-                }
-                else if (index == 1)
-                {
-                    G = value;
-                }
-                else if (index == 2)
-                {
-                    B = value;
-                }
-                else if (index == 3)
-                {
-                    A = value;
-                }
-                else
-                {
-                    throw new IndexOutOfRangeException("You tried to set this color at index: " + index);
-                }
+                if (index == 0) R = value;
+                else if (index == 1) G = value;
+                else if (index == 2) B = value;
+                else if (index == 3) A = value;
+                else throw new IndexOutOfRangeException("You tried to set this color at index: " + index);
             }
         }
 
@@ -588,8 +559,6 @@ namespace Nu
             a = A;
         }
 
-        #region Equatable and Comparable Members
-
         /// <summary>
         /// Returns the hashcode for this instance.
         /// </summary>
@@ -651,7 +620,5 @@ namespace Nu
             if (obj is Color) return CompareTo((Color)obj);
             return -1;
         }
-
-        #endregion
     }
 }

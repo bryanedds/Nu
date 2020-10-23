@@ -40,6 +40,8 @@
 #load "InfinityDispatcher.fs"
 #load "InfinityPlugin.fs"
 
+open System
+open System.Numerics
 open System.IO
 open Prime
 open Nu

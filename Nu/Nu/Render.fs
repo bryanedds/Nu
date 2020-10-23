@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open System.IO
 open SDL2
 open TiledSharp
@@ -234,8 +235,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             SdlRenderer.handleRenderMessage renderMessage renderer
 
     static member private renderSprite
-        (viewAbsolute : Matrix3)
-        (viewRelative : Matrix3)
+        (viewAbsolute : Matrix3x3)
+        (viewRelative : Matrix3x3)
         (_ : Vector2)
         (eyeSize : Vector2)
         (descriptor : SpriteDescriptor)
@@ -267,7 +268,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     sourceRect.w <- textureSizeX
                     sourceRect.h <- textureSizeY
                 let mutable destRect = SDL.SDL_Rect ()
-                destRect.x <- int (positionView.X + eyeSize.X * 0.5f)
+                destRect.x <- int (+positionView.X + eyeSize.X * 0.5f)
                 destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f - sizeView.Y) // negation for right-handedness
                 destRect.w <- int sizeView.X
                 destRect.h <- int sizeView.Y
@@ -294,8 +295,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             SdlRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
 
     static member private renderTileLayerDescriptor
-        (viewAbsolute : Matrix3)
-        (viewRelative : Matrix3)
+        (viewAbsolute : Matrix3x3)
+        (viewRelative : Matrix3x3)
         (_ : Vector2)
         (eyeSize : Vector2)
         (descriptor : TileLayerDescriptor)
@@ -367,8 +368,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | _ -> Log.info ("TileLayerDescriptor failed due to unloadable assets for '" + scstring tileSetImage + "'.")
 
     static member private renderTextDescriptor
-        (viewAbsolute : Matrix3)
-        (viewRelative : Matrix3)
+        (viewAbsolute : Matrix3x3)
+        (viewRelative : Matrix3x3)
         (_ : Vector2)
         (eyeSize : Vector2)
         (descriptor : TextDescriptor)
@@ -435,8 +436,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
 
     static member private renderDescriptor
-        (viewAbsolute : Matrix3)
-        (viewRelative : Matrix3)
+        (viewAbsolute : Matrix3x3)
+        (viewRelative : Matrix3x3)
         (eyeCenter : Vector2)
         (eyeSize : Vector2)
         descriptor
