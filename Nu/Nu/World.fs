@@ -45,6 +45,14 @@ module Nu =
         then tryPropagateByLens left right world
         else tryPropagateByName simulant left.Name right world
 
+    /// TODO: P1: remove this after updating Prime.
+    let private sortSubscriptionsBy by (subscriptions : (Guid * SubscriptionEntry) seq) (world : 'w) =
+        EventSystem.getSortableSubscriptions by subscriptions world |>
+        Array.ofSeq |>
+        Array.sortWith (fun (struct ((p : IComparable), _)) (struct ((p2 : IComparable), _)) -> p.CompareTo p2) |>
+        Array.map (fun (struct (_, subscription)) -> (subscription.CompressionId, subscription)) |>
+        Array.toSeq
+
     /// Initialize the Nu game engine.
     let init nuConfig =
 
@@ -253,7 +261,7 @@ module Nu =
             // init sortSubscriptionByDepth F# reach-around
             WorldModule.sortSubscriptionsByDepth <- fun subscriptions worldObj ->
                 let world = worldObj :?> World
-                EventSystem.sortSubscriptionsBy
+                sortSubscriptionsBy
                     (fun (simulant : Simulant) _ ->
                         match simulant with
                         | :? Entity as entity -> { SortDepth = entity.GetDepth world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
@@ -465,7 +473,7 @@ module WorldModule3 =
                   AudioPlayer = MockAudioPlayer.make () }
 
             // make the world's scripting environment
-            let scriptingEnv = Scripting.Env.Env.make ()
+            let scriptingEnv = Scripting.Env.make ()
 
             // make the world's ambient state
             let ambientState =
@@ -564,7 +572,7 @@ module WorldModule3 =
                 | Right overlayer ->
 
                     // make the world's scripting environment
-                    let scriptingEnv = Scripting.Env.Env.make ()
+                    let scriptingEnv = Scripting.Env.make ()
 
                     // make the world's ambient state
                     let ambientState =

@@ -111,7 +111,7 @@
       <HintPath>..\..\packages\FsCheck.Xunit.2.11.0\lib\net452\FsCheck.Xunit.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.Core">
-      <HintPath>..\..\packages\FSharp.Core.4.5.2\lib\net45\FSharp.Core.dll</HintPath>
+      <HintPath>..\..\packages\FSharp.Core.4.7.2\lib\net45\FSharp.Core.dll</HintPath>
     </Reference>
     <Reference Include="FSharpx.Collections">
       <HintPath>..\..\packages\FSharpx.Collections.2.1.3\lib\net45\FSharpx.Collections.dll</HintPath>
@@ -127,10 +127,10 @@
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.5.25.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.6.0.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
-      <HintPath>..\..\packages\Prime.Scripting.5.3.0\lib\net472\Prime.Scripting.exe</HintPath>
+      <HintPath>..\..\packages\Prime.Scripting.6.0.0\lib\net472\Prime.Scripting.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\..\packages\SDL2-CS.dll.2.0.0.0\lib\net20\SDL2-CS.dll</HintPath>
