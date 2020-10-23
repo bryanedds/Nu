@@ -4,10 +4,9 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open FarseerPhysics
-open FarseerPhysics.Dynamics
-open FarseerPhysics.Dynamics.Contacts
-open Microsoft.Xna
+open tainicom.Aether.Physics2D
+open tainicom.Aether.Physics2D.Dynamics
+open tainicom.Aether.Physics2D.Dynamics.Contacts
 open Prime
 open Nu
 
@@ -457,11 +456,11 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
     static member private toPhysics value =
         value * Constants.Physics.PixelToPhysicsRatio
 
-    static member private toPixelV2 (v2 : Framework.Vector2) =
+    static member private toPixelV2 (v2 : Common.Vector2) =
         Vector2 (FarseerPhysicsEngine.toPixel v2.X, FarseerPhysicsEngine.toPixel v2.Y)
 
     static member private toPhysicsV2 (v2 : Vector2) =
-        Framework.Vector2 (FarseerPhysicsEngine.toPhysics v2.X, FarseerPhysicsEngine.toPhysics v2.Y)
+        Common.Vector2 (FarseerPhysicsEngine.toPhysics v2.X, FarseerPhysicsEngine.toPhysics v2.Y)
 
     static member private toPhysicsPolygonDiameter value =
         let value = FarseerPhysicsEngine.toPhysics value
@@ -584,8 +583,8 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         let list = List<Common.Vertices> ()
         list.Add rectangle
         let bodyShapes = Factories.FixtureFactory.AttachCompoundPolygon (list, density, body, bodyShapeSource)
-        let bodyShapeTop = Factories.FixtureFactory.AttachCircle (endRadius, density, body, Framework.Vector2 (0.0f, height * 0.5f), bodyShapeSource)
-        let bodyShapeBottom = Factories.FixtureFactory.AttachCircle (endRadius, density, body, Framework.Vector2 (0.0f, 0.0f - height * 0.5f), bodyShapeSource)
+        let bodyShapeTop = Factories.FixtureFactory.AttachCircle (endRadius, density, body, Common.Vector2 (0.0f, height * 0.5f), bodyShapeSource)
+        let bodyShapeBottom = Factories.FixtureFactory.AttachCircle (endRadius, density, body, Common.Vector2 (0.0f, 0.0f - height * 0.5f), bodyShapeSource)
         bodyShapes.Add bodyShapeTop
         bodyShapes.Add bodyShapeBottom
         for bodyShape in bodyShapes do
@@ -671,7 +670,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         match physicsEngine.Bodies.TryGetValue physicsId with
         | (true, body) ->
             physicsEngine.Bodies.Remove physicsId |> ignore
-            physicsEngine.PhysicsContext.RemoveBody body
+            physicsEngine.PhysicsContext.Remove body
         | (false, _) ->
             if not physicsEngine.RebuildingHack then
                 Log.debug ("Could not destroy non-existent body with PhysicsId = " + scstring physicsId + "'.")
@@ -804,7 +803,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         //
         // In truth, we just need a better physics engine implementation :)
         for body in physicsEngine.PhysicsContext.BodyList do
-            if body.Awake && not body.IsStatic then
+            if body.Awake && body.BodyType <> Dynamics.BodyType.Static then
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodySource = body.UserData :?> BodySourceInternal
@@ -815,7 +814,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
     /// Make a physics engine.
     static member make gravity =
         let physicsEngine =
-            { PhysicsContext = FarseerPhysics.Dynamics.World (FarseerPhysicsEngine.toPhysicsV2 gravity)
+            { PhysicsContext = World (FarseerPhysicsEngine.toPhysicsV2 gravity)
               Bodies = BodyDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
               Joints = JointDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
               PhysicsMessages = UList.makeEmpty Constants.Physics.MessageListConfig
