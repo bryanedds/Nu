@@ -107,7 +107,7 @@ module GameplayDispatcher =
                 match playerMoveOpt with
                 | Some move ->
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
-                    let gameplay = Gameplay.updateTurnStatus PlayerIndex TurnPending gameplay
+                    let gameplay = Gameplay.updateTurnStatus PlayerIndex (constant TurnPending) gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ ->
@@ -123,10 +123,10 @@ module GameplayDispatcher =
                             let reactorIndex = Option.get actionDescriptor.ActionTargetIndexOpt
                             let reactorState = Gameplay.getCharacterState reactorIndex gameplay
                             let characterAnimationState = Gameplay.getCharacterAnimationState index gameplay
-                            let gameplay = Gameplay.updateCharacterAnimationState index (characterAnimationState.Facing (World.getTickTime world)) gameplay
+                            let gameplay = Gameplay.updateCharacterAnimationState index (constant (characterAnimationState.Facing (World.getTickTime world))) gameplay
                             if reactorState.HitPoints <= 0 then
                                 match reactorIndex with
-                                | PlayerIndex -> Gameplay.updateCharacterState reactorIndex {reactorState with ControlType = Uncontrolled} gameplay // TODO: reimplement screen transition
+                                | PlayerIndex -> Gameplay.updateCharacterState reactorIndex (constant {reactorState with ControlType = Uncontrolled}) gameplay // TODO: reimplement screen transition
                                 | EnemyIndex _ -> Gameplay.removeEnemy reactorIndex gameplay
                             else gameplay
                         | Navigation navigationDescriptor ->
@@ -151,17 +151,17 @@ module GameplayDispatcher =
                                 if actionDescriptor.ActionTicks = Constants.InfinityRpg.ReactionTick then
                                     if reactorState.HitPoints <= 0 then
                                         let reactorCharacterAnimationState = Gameplay.getCharacterAnimationState reactorIndex gameplay
-                                        Gameplay.updateCharacterAnimationState reactorIndex reactorCharacterAnimationState.Slain gameplay
+                                        Gameplay.updateCharacterAnimationState reactorIndex (constant reactorCharacterAnimationState.Slain) gameplay
                                     else gameplay
                                 else gameplay
                             if actionDescriptor.ActionTicks = Constants.InfinityRpg.ActionTicksMax
-                            then Gameplay.updateTurnStatus index TurnFinishing gameplay
-                            else Gameplay.updateCharacterActivityState index (Action actionDescriptor.Inc) gameplay
+                            then Gameplay.updateTurnStatus index (constant TurnFinishing) gameplay
+                            else Gameplay.updateCharacterActivityState index (constant (Action actionDescriptor.Inc)) gameplay
                         | Navigation navigationDescriptor ->
                             let (newPosition, walkState) = Gameplay.getPosition index gameplay |> walk navigationDescriptor.WalkDescriptor
-                            let gameplay = Gameplay.updatePosition index newPosition gameplay
+                            let gameplay = Gameplay.updatePosition index (constant newPosition) gameplay
                             match walkState with
-                            | WalkFinished -> Gameplay.updateTurnStatus index TurnFinishing gameplay
+                            | WalkFinished -> Gameplay.updateTurnStatus index (constant TurnFinishing) gameplay
                             | WalkContinuing -> gameplay
                         | NoActivity -> failwith "TurnStatus is TurnProgressing; CharacterActivityState should not be NoActivity"
                     | _ -> gameplay
@@ -184,8 +184,8 @@ module GameplayDispatcher =
                             | Navigation navigationDescriptor ->
                                 characterAnimationState.UpdateDirection navigationDescriptor.WalkDescriptor.WalkDirection
                             | _ -> failwith "TurnStatus is TurnBeginning; CharacterActivityState should not be NoActivity"
-                        let gameplay = Gameplay.updateCharacterAnimationState index characterAnimationState gameplay
-                        Gameplay.updateTurnStatus index TurnProgressing gameplay // "TurnProgressing" for normal animation; "TurnFinishing" for roguelike mode
+                        let gameplay = Gameplay.updateCharacterAnimationState index (constant characterAnimationState) gameplay
+                        Gameplay.updateTurnStatus index (constant TurnProgressing) gameplay // "TurnProgressing" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withMsg (ProgressTurns indices) gameplay
@@ -241,7 +241,7 @@ module GameplayDispatcher =
                         match enemyMoveOpt with
                         | Some move ->
                             let gameplay = Gameplay.addMove index move gameplay
-                            let gameplay = Gameplay.updateTurnStatus index TurnPending gameplay
+                            let gameplay = Gameplay.updateTurnStatus index (constant TurnPending) gameplay
                             Gameplay.applyMove index gameplay
                         | None -> gameplay)
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
@@ -279,7 +279,7 @@ module GameplayDispatcher =
                 match playerMoveOpt with
                 | Some move ->
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
-                    let gameplay = Gameplay.updateTurnStatus PlayerIndex TurnPending gameplay
+                    let gameplay = Gameplay.updateTurnStatus PlayerIndex (constant TurnPending) gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ -> just gameplay

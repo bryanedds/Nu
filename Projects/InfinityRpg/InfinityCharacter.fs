@@ -23,20 +23,20 @@ type [<ReferenceEquality; NoComparison>] Character =
           CharacterAnimationSheet = Assets.PlayerImage
           Position = v2Zero }
 
-    static member updateCharacterState newValue (character : Character) =
-        { character with CharacterState = newValue }
+    static member updateCharacterState updater (character : Character) =
+        { character with CharacterState = updater character.CharacterState }
     
-    static member updateTurnStatus newValue (character : Character) =
-        { character with TurnStatus = newValue }
+    static member updateTurnStatus updater (character : Character) =
+        { character with TurnStatus = updater character.TurnStatus }
     
-    static member updateCharacterActivityState newValue (character : Character) =
-        { character with CharacterActivityState = newValue }
+    static member updateCharacterActivityState updater (character : Character) =
+        { character with CharacterActivityState = updater character.CharacterActivityState }
 
-    static member updateCharacterAnimationState newValue (character : Character) =
-        { character with CharacterAnimationState = newValue }
+    static member updateCharacterAnimationState updater (character : Character) =
+        { character with CharacterAnimationState = updater character.CharacterAnimationState }
 
-    static member updatePosition newValue (character : Character) =
-        { character with Position = newValue }
+    static member updatePosition updater (character : Character) =
+        { character with Position = updater character.Position }
     
     static member makePlayer positionM =
         let characterState = { CharacterState.empty with HitPoints = 30; ControlType = PlayerControlled }
