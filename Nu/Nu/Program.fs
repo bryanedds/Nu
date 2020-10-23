@@ -107,12 +107,11 @@ module Program =
                 Directory.SetCurrentDirectory projectsDir
                 Directory.CreateDirectory name |> ignore<DirectoryInfo>
                 Directory.SetCurrentDirectory newProjDir
-                Process.Start("dotnet", "new nu-game").WaitForExit()
+                Process.Start("dotnet", "new nu-game --force").WaitForExit()
 
                 // rename project file
-                if  File.Exists templateFileName then
-                    File.Copy (templateFileName, newFileName)
-                    File.Delete templateFileName
+                File.Copy (templateFileName, newFileName, true)
+                File.Delete templateFileName
 
                 // substitute $safeprojectname$ in project file
                 let newProjStr = File.ReadAllText newProj
