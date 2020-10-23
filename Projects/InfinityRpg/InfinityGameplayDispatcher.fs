@@ -15,12 +15,12 @@ module GameplayDispatcher =
         | NoInput
 
     type [<StructuralEquality; NoComparison>] GameplayMessage =
-        | TryContinuePlayerNavigation
         | FinishTurns of CharacterIndex list
-        | ProgressTurns of CharacterIndex list
+        | TickTurns of CharacterIndex list
         | BeginTurns of CharacterIndex list
         | RunCharacterActivation
         | MakeEnemyMoves
+        | TryContinuePlayerNavigation
         | TryMakePlayerMove of PlayerInput
         | TryHaltPlayer
         | TransitionMap of Direction
@@ -84,35 +84,6 @@ module GameplayDispatcher =
         override this.Message (gameplay, message, _, world) =
             
             match message with
-            | TryContinuePlayerNavigation ->
-                let playerMoveOpt =
-                    match gameplay.Player.TurnStatus with
-                    | TurnFinishing ->
-                        match Gameplay.getCurrentMove PlayerIndex gameplay with
-                        | Travel path ->
-                            match path with
-                            | _ :: [] -> None
-                            | _ :: navigationPath ->
-                                let targetPositionM = (List.head navigationPath).PositionM
-                                if List.exists (fun x -> x = targetPositionM) gameplay.Chessboard.AvailableCoordinates
-                                then Some (Travel navigationPath)
-                                else None
-                            | [] -> failwithumf ()
-                        | _ -> None
-                    | _ -> None
-                let gameplay =
-                    match gameplay.Player.TurnStatus with
-                    | TurnFinishing -> Gameplay.finishMove PlayerIndex gameplay
-                    | _ -> gameplay
-                match playerMoveOpt with
-                | Some move ->
-                    let gameplay = Gameplay.addMove PlayerIndex move gameplay
-                    let gameplay = Gameplay.updateTurnStatus PlayerIndex (constant TurnPending) gameplay
-                    let gameplay = Gameplay.applyMove PlayerIndex gameplay
-                    withMsg MakeEnemyMoves gameplay
-                | _ ->
-                    if not (Gameplay.anyTurnsInProgress gameplay) then withCmd ListenKeyboard gameplay else just gameplay
-            
             | FinishTurns indices ->
                 let updater index gameplay =
                     match (Gameplay.getTurnStatus index gameplay) with
@@ -131,15 +102,15 @@ module GameplayDispatcher =
                             else gameplay
                         | Navigation navigationDescriptor ->
                             let gameplay = Gameplay.setCharacterPositionToCoordinates index gameplay
-                            if not navigationDescriptor.MultiRoundContext then
+                            if index.IsEnemy then
                                 Gameplay.finishMove index gameplay
                             else gameplay
                         | _ -> failwith "TurnStatus is TurnFinishing; CharacterActivityState should not be NoActivity"
                     | _ -> failwith "non-finishing turns should be filtered out by this point"
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
-                withMsg TryContinuePlayerNavigation gameplay
+                just gameplay
             
-            | ProgressTurns indices ->
+            | TickTurns indices ->
                 let updater index gameplay =
                     match (Gameplay.getTurnStatus index gameplay) with
                     | TurnProgressing ->
@@ -188,7 +159,7 @@ module GameplayDispatcher =
                         Gameplay.updateTurnStatus index (constant TurnProgressing) gameplay // "TurnProgressing" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
-                withMsg (ProgressTurns indices) gameplay
+                withMsg (TickTurns indices) gameplay
             
             | RunCharacterActivation ->
                 let gameplay = // NOTE: player's turn is converted to activity at the beginning of the round, activating the observable playback of his move
@@ -247,6 +218,35 @@ module GameplayDispatcher =
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withMsg RunCharacterActivation gameplay
 
+            | TryContinuePlayerNavigation ->
+                let playerMoveOpt =
+                    match gameplay.Player.TurnStatus with
+                    | TurnFinishing ->
+                        match Gameplay.getCurrentMove PlayerIndex gameplay with
+                        | Travel path ->
+                            match path with
+                            | _ :: [] -> None
+                            | _ :: navigationPath ->
+                                let targetPositionM = (List.head navigationPath).PositionM
+                                if List.exists (fun x -> x = targetPositionM) gameplay.Chessboard.AvailableCoordinates
+                                then Some (Travel navigationPath)
+                                else None
+                            | [] -> failwithumf ()
+                        | _ -> None
+                    | _ -> None
+                let gameplay =
+                    match gameplay.Player.TurnStatus with
+                    | TurnFinishing -> Gameplay.finishMove PlayerIndex gameplay
+                    | _ -> gameplay
+                match playerMoveOpt with
+                | Some move ->
+                    let gameplay = Gameplay.addMove PlayerIndex move gameplay
+                    let gameplay = Gameplay.updateTurnStatus PlayerIndex (constant TurnPending) gameplay
+                    let gameplay = Gameplay.applyMove PlayerIndex gameplay
+                    withMsg MakeEnemyMoves gameplay
+                | _ ->
+                    if not (Gameplay.anyTurnsInProgress gameplay) then withCmd ListenKeyboard gameplay else withMsg RunCharacterActivation gameplay
+            
             | TryMakePlayerMove playerInput ->
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
                 let targetCoordinatesOpt =
@@ -359,7 +359,7 @@ module GameplayDispatcher =
                 else just world
             
             | Update ->
-                if (Gameplay.anyTurnsInProgress gameplay) then withMsg RunCharacterActivation world
+                if (Gameplay.anyTurnsInProgress gameplay) then withMsg TryContinuePlayerNavigation world
                 else withCmd ListenKeyboard world
 
             | PostUpdate ->
