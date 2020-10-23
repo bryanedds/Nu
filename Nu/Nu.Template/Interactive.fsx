@@ -1,7 +1,4 @@
-﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2020.
-
-#I __SOURCE_DIRECTORY__
+﻿#I __SOURCE_DIRECTORY__
 #r "../../packages/Magick.NET-Q8-x64.7.16.1/lib/net40/Magick.NET-Q8-x64.dll"
 #r "../../packages/TiledSharp.1.0.1/lib/netstandard2.0/TiledSharp.dll"
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
