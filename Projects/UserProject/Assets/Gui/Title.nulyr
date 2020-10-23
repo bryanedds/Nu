@@ -1,0 +1,23 @@
+[LayerDispatcher
+ [[Depth 0]
+  [Name Gui]
+  [Persistent True]
+  [Visible True]]
+ [[ButtonDispatcher
+   [[Name Credits]
+    [Position [-128.0f -160.0f]]
+    [Text Credits]]]
+  [ButtonDispatcher
+   [[Name Exit]
+    [Position [-128.0f -224.0f]]
+    [Text Exit]]]
+  [ButtonDispatcher
+   [[Name Play]
+    [Position [-128.0f -96.0f]]
+    [Text Play]]]
+  [TextDispatcher
+   [[BackgroundImageOpt [Some [Default Image3]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
+    [Position [-320.0f 96.0f]]
+    [Size [640.0f 128.0f]]
+    [Text MyGame]]]]]
