@@ -68,7 +68,7 @@ module WorldModule =
     let mutable internal isSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
-    let mutable internal sortSubscriptionsByDepth : struct (Guid * SubscriptionEntry) seq -> obj -> struct (Guid * SubscriptionEntry) seq =
+    let mutable internal sortSubscriptionsByDepth : (Guid * SubscriptionEntry) seq -> obj -> (Guid * SubscriptionEntry) seq =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
@@ -552,7 +552,7 @@ module WorldModule =
                 let mutable going = true
                 let mutable enr = (subscriptions :> IEnumerable<_>).GetEnumerator ()
                 while going && enr.MoveNext () do
-                    let struct (_, subscription) = enr.Current
+                    let (_, subscription) = enr.Current
                     if fst result = Cascade && World.getLiveness (snd result) = Running then
                         let mapped =
                             match subscription.MapperOpt with
