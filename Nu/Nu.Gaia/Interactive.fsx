@@ -21,6 +21,7 @@
 #r "../../Nu/Nu.Gaia/bin/Debug/Nu.Gaia.exe"
 
 open System
+open System.Numerics
 open System.IO
 open System.Windows.Forms
 open FSharpx

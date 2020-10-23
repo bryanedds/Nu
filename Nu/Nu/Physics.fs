@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open FarseerPhysics
 open FarseerPhysics.Dynamics
 open FarseerPhysics.Dynamics.Contacts
@@ -907,7 +908,7 @@ module PhysicsEngine =
         | BodyCircle bodyCircle -> BodyCircle { Radius = extent.X * bodyCircle.Radius; Center = extent.X * bodyCircle.Center; PropertiesOpt = bodyCircle.PropertiesOpt }
         | BodyCapsule bodyCapsule -> BodyCapsule { Height = extent.Y * bodyCapsule.Height; Radius = extent.Y * bodyCapsule.Radius; Center = extent.Y * bodyCapsule.Center; PropertiesOpt = bodyCapsule.PropertiesOpt }
         | BodyPolygon bodyPolygon ->
-            let vertices = Array.map (fun vertex -> Vector2.Multiply (vertex, extent)) bodyPolygon.Vertices
+            let vertices = Array.map (fun vertex -> vertex * extent) bodyPolygon.Vertices
             BodyPolygon { Vertices = vertices; Center = Vector2.Multiply (extent, bodyPolygon.Center); PropertiesOpt = bodyPolygon.PropertiesOpt }
         | BodyShapes bodyShapes ->
             let bodyShapes = List.map (localizeBodyShape extent) bodyShapes

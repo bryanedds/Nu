@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open Nito.Collections
 open TiledSharp
 open Prime
