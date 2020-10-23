@@ -2,6 +2,8 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace OmniBlade
+open System
+open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
@@ -103,7 +105,7 @@ module AvatarDispatcher =
                 // update animation generally
                 let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
                 let direction = Direction.fromVector2 velocity
-                let speed = velocity.Length
+                let speed = velocity.Length ()
                 let avatar =
                     if speed > 10.0f then
                         if direction <> avatar.Direction || avatar.AnimationCycle = IdleCycle then

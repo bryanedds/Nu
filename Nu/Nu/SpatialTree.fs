@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open Prime
 
 [<RequireQualifiedAccess>]
@@ -75,7 +76,7 @@ module internal SpatialNode =
                     [|for i in 0 .. granularity * granularity - 1 do
                         let childDepth = depth - 1
                         let childSize = v2 bounds.Z bounds.W / single granularity
-                        let childPosition = bounds.Xy + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
+                        let childPosition = v2 bounds.X bounds.Y + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
                         let childBounds = v4Bounds childPosition childSize
                         yield make granularity childDepth childBounds|]
                 Left nodes
