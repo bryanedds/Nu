@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open System.IO
 open System.Threading.Tasks
 open SDL2

@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open Prime
 module Effects =
 
@@ -35,7 +36,7 @@ module Effects =
         | Ratio
         | Set
 
-    type [<StructuralEquality; StructuralComparison>] Slice =
+    type [<StructuralEquality; NoComparison>] Slice =
         { Position : Vector2
           Size : Vector2
           Rotation : single
@@ -50,49 +51,49 @@ module Effects =
     type KeyFrame =
         abstract KeyFrameLength : int64
 
-    type [<StructuralEquality; StructuralComparison>] LogicKeyFrame =
+    type [<StructuralEquality; NoComparison>] LogicKeyFrame =
         { LogicValue : bool
           LogicLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.LogicLength
 
-    type [<StructuralEquality; StructuralComparison>] TweenKeyFrame =
+    type [<StructuralEquality; NoComparison>] TweenKeyFrame =
         { TweenValue : single
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; StructuralComparison>] Tween2KeyFrame =
+    type [<StructuralEquality; NoComparison>] Tween2KeyFrame =
         { TweenValue : Vector2
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; StructuralComparison>] Tween3KeyFrame =
+    type [<StructuralEquality; NoComparison>] Tween3KeyFrame =
         { TweenValue : Vector3
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; StructuralComparison>] Tween4KeyFrame =
+    type [<StructuralEquality; NoComparison>] Tween4KeyFrame =
         { TweenValue : Vector4
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; StructuralComparison>] TweenCKeyFrame =
+    type [<StructuralEquality; NoComparison>] TweenCKeyFrame =
         { TweenValue : Color
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; StructuralComparison>] TweenIKeyFrame =
+    type [<StructuralEquality; NoComparison>] TweenIKeyFrame =
         { TweenValue : int
           TweenLength : int64 }
         interface KeyFrame with
             member this.KeyFrameLength = this.TweenLength
 
-    type [<StructuralEquality; StructuralComparison>] Tween2IKeyFrame =
+    type [<StructuralEquality; NoComparison>] Tween2IKeyFrame =
         { TweenValue : Vector2i
           TweenLength : int64 }
         interface KeyFrame with
@@ -381,7 +382,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let oriented = Vector2.Transform (tweened, Quaternion.FromAxisAngle (Vector3.UnitZ, slice.Rotation))
+                let oriented = Vector2.Transform (tweened, Quaternion.CreateFromAxisAngle (Vector3.UnitZ, slice.Rotation))
                 let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
                 { slice with Position = applied }
             else slice
@@ -431,7 +432,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.ToVector4 ()) (keyFrame2.TweenValue.ToVector4 ()) progress algorithm effectSystem
-                let applied = applyTween Color.Multiply Color.Divide slice.Color (tweened.ToColor ()) applicator
+                let applied = applyTween Color.Multiply Color.Divide slice.Color (Nu.Color tweened) applicator
                 { slice with Color = applied }
             else slice
         | Glow (applicator, algorithm, playback, keyFrames) ->

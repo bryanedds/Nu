@@ -20,6 +20,7 @@ open System.Collections.Generic
 #if DEBUG
 open System.Diagnostics
 #endif
+open System.Numerics
 open TiledSharp
 open Prime
 open Nu

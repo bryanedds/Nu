@@ -19,6 +19,7 @@
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
 
 open System
+open System.Numerics
 open System.IO
 open FSharpx
 open FSharpx.Collections

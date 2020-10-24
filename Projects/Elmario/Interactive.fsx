@@ -21,6 +21,8 @@
 #load "Elmario.fs"
 #load "ElmarioPlugin.fs"
 
+open System
+open System.Numerics
 open System.IO
 open Prime
 open Nu

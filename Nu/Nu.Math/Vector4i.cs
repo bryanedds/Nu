@@ -10,6 +10,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Globalization;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -1545,8 +1546,6 @@ namespace Nu
             w = W;
         }
 
-        #region Locales
-
         public Vector2i Position { get { return new Vector2i(X, Y); } }
 
         public Vector2i Size { get { return new Vector2i(Z - X, W - Y); } }
@@ -1560,10 +1559,6 @@ namespace Nu
         public Vector2i Left { get { return new Vector2i(X, Y + Size.Y / 2); } }
 
         public Vector2i Right { get { return new Vector2i(X + Size.X, Y + Size.Y / 2); } }
-
-        #endregion
-
-        #region Equatable and Comparable Members
 
         /// <summary>
         /// Returns the hashcode for this instance.
@@ -1626,7 +1621,5 @@ namespace Nu
             if (obj is Vector4i) return CompareTo((Vector4i)obj);
             return -1;
         }
-
-        #endregion
     }
 }

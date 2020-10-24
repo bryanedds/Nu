@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open System.IO
 open Prime
 open Nu
@@ -214,12 +215,12 @@ module WorldModuleEntity =
                 boundsOverflow // no need to transform when unrotated
             | _ ->
                 let boundsOverflow = v4BoundsOverflow transform.Position transform.Size entityState.Overflow
-                let position = boundsOverflow.Xy
-                let size = boundsOverflow.Zw
+                let position = boundsOverflow.Position
+                let size = boundsOverflow.Size
                 let center = position + size * 0.5f
                 let corner = position + size
                 let centerToCorner = corner - center
-                let quaternion = Quaternion.FromAxisAngle (Vector3.UnitZ, Constants.Math.DegreesToRadiansF * 45.0f)
+                let quaternion = Quaternion.CreateFromAxisAngle (Vector3.UnitZ, Constants.Math.DegreesToRadiansF * 45.0f)
                 let newSizeOver2 = v2Dup (Vector2.Transform (centerToCorner, quaternion)).Y
                 let newPosition = center - newSizeOver2
                 let newSize = newSizeOver2 * 2.0f
@@ -372,8 +373,8 @@ module WorldModuleEntity =
 
         static member internal setEntityBounds (value : Vector4) entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
-            let position = value.Xy
-            let size = value.Zw
+            let position = value.Position
+            let size = value.Size
             if transform.Position <> position || transform.Size <> size
             then World.setEntityTransform { transform with Position = position; Size = size } entity world
             else world

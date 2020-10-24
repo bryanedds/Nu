@@ -10,6 +10,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Globalization;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -726,8 +727,6 @@ namespace Nu
             z = Z;
         }
 
-        #region Equatable and Comparable Members
-
         /// <summary>
         /// Returns the hashcode for this instance.
         /// </summary>
@@ -785,7 +784,5 @@ namespace Nu
             if (obj is Vector3i) return CompareTo((Vector3i)obj);
             return -1;
         }
-
-        #endregion
     }
 }
