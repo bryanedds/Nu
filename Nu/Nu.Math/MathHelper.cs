@@ -151,58 +151,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// Returns an approximation of the inverse square root of left number.
-        /// </summary>
-        /// <param name="x">A number.</param>
-        /// <returns>An approximation of the inverse square root of the specified number, with an upper error bound of 0.001</returns>
-        /// <remarks>
-        /// This is an improved implementation of the the method known as Carmack's inverse square root
-        /// which is found in the Quake III source code. This implementation comes from
-        /// http://www.codemaestro.com/reviews/review00000105.html. For the history of this method, see
-        /// http://www.beyond3d.com/content/articles/8/
-        /// </remarks>
-        public static float InverseSqrtFast(float x)
-        {
-            unsafe
-            {
-                float xhalf = 0.5f * x;
-                int i = *(int*)&x;              // Read bits as integer.
-                i = 0x5f375a86 - (i >> 1);      // Make an initial guess for Newton-Raphson approximation
-                x = *(float*)&i;                // Convert bits back to float
-                x = x * (1.5f - xhalf * x * x); // Perform left single Newton-Raphson step.
-                return x;
-            }
-        }
-
-        /// <summary>
-        /// Returns an approximation of the inverse square root of left number.
-        /// </summary>
-        /// <param name="x">A number.</param>
-        /// <returns>An approximation of the inverse square root of the specified number, with an upper error bound of 0.001</returns>
-        /// <remarks>
-        /// This is an improved implementation of the the method known as Carmack's inverse square root
-        /// which is found in the Quake III source code. This implementation comes from
-        /// http://www.codemaestro.com/reviews/review00000105.html. For the history of this method, see
-        /// http://www.beyond3d.com/content/articles/8/
-        /// </remarks>
-        public static double InverseSqrtFast(double x)
-        {
-            return InverseSqrtFast((float)x);
-            // TODO: The following code is wrong. Fix it, to improve precision.
-#if false
-            unsafe
-            {
-                double xhalf = 0.5f * x;
-                int i = *(int*)&x;              // Read bits as integer.
-                i = 0x5f375a86 - (i >> 1);      // Make an initial guess for Newton-Raphson approximation
-                x = *(float*)&i;                // Convert bits back to float
-                x = x * (1.5f - xhalf * x * x); // Perform left single Newton-Raphson step.
-                return x;
-            }
-#endif
-        }
-
-        /// <summary>
         /// Convert degrees to radians
         /// </summary>
         /// <param name="degrees">An angle in degrees</param>
@@ -304,40 +252,6 @@ namespace Nu
         public static double Clamp(double n, double min, double max)
         {
             return Math.Max(Math.Min(n, max), min);
-        }
-
-        private static unsafe int FloatToInt32Bits(float f)
-        {
-            return *((int*)&f);
-        }
-
-        /// <summary>
-        /// Approximates floating point equality with a maximum number of different bits.
-        /// This is typically used in place of an epsilon comparison.
-        /// see: https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
-        /// see: https://stackoverflow.com/questions/3874627/floating-point-comparison-functions-for-c-sharp
-        /// </summary>
-        /// <param name="a">the first value to compare</param>
-        /// <param name="b">>the second value to compare</param>
-        /// <param name="maxDeltaBits">the number of floating point bits to check</param>
-        /// <returns></returns>
-        public static bool ApproximatelyEqual(float a, float b, int maxDeltaBits)
-        {
-            // we use longs here, otherwise we run into a two's complement problem, causing this to fail with -2 and 2.0
-            long aInt = FloatToInt32Bits(a);
-            if (aInt < 0)
-            {
-                aInt = Int32.MinValue - aInt;
-            }
-
-            long bInt = FloatToInt32Bits(b);
-            if (bInt < 0)
-            {
-                bInt = Int32.MinValue - bInt;
-            }
-
-            long intDiff = Math.Abs(aInt - bInt);
-            return intDiff <= (1 << maxDeltaBits);
         }
 
         /// <summary>
