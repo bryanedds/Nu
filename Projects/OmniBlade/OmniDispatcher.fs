@@ -30,7 +30,6 @@ module GameDispatcher =
         | Exit
 
     type Game with
-
         member this.GetOmni = this.GetModel<Omni>
         member this.SetOmni = this.SetModel<Omni>
         member this.Omni = this.Model<Omni> ()
@@ -86,7 +85,7 @@ module GameDispatcher =
                         | BattleCease (result, time) ->
                             if World.getTickTime world - time = 120L then
                                 if result
-                                then withCmd (Show Simulants.Field) (Field (Field.synchronize battle field))
+                                then withCmd (Show Simulants.Field) (Field (Field.synchronizeFromBattle battle field))
                                 else withCmd (Show Simulants.Title) (Gui Title)
                             else withCmd (Show Simulants.Battle) omni
                         | _ -> withCmd (Show Simulants.Battle) omni

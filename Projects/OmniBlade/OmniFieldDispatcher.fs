@@ -43,7 +43,6 @@ module FieldDispatcher =
         | UpdateEye
 
     type Screen with
-
         member this.GetField = this.GetModel<Field>
         member this.SetField = this.SetModel<Field>
         member this.Field = this.Model<Field> ()

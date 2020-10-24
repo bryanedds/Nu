@@ -24,7 +24,6 @@ module AvatarDispatcher =
         | Move of Vector2
 
     type Entity with
-
         member this.GetAvatar = this.GetModel<Avatar>
         member this.SetAvatar = this.SetModel<Avatar>
         member this.Avatar = this.Model<Avatar> ()

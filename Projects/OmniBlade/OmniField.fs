@@ -260,7 +260,7 @@ module Field =
     let updateBattleOpt updater field =
         { field with BattleOpt_ = updater field.BattleOpt_ }
 
-    let synchronizeLegion allies field =
+    let synchronizeLegionFromAllies allies field =
         List.foldi (fun i field (ally : Character) ->
             updateLegion (fun legion ->
                 match Map.tryFind i legion with
@@ -271,9 +271,9 @@ module Field =
                 field)
             field allies
 
-    let synchronize battle field =
+    let synchronizeFromBattle battle field =
         let allies = Battle.getAllies battle
-        let field = synchronizeLegion allies field
+        let field = synchronizeLegionFromAllies allies field
         let field = updateInventory (constant battle.Inventory) field
         let field = updateBattleOpt (constant None) field
         field
