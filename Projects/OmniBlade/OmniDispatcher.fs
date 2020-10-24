@@ -85,22 +85,8 @@ module GameDispatcher =
                         match battle.BattleState with
                         | BattleCease (result, time) ->
                             if World.getTickTime world - time = 120L then
-                                if result then
-                                    let allies = Battle.getAllies battle
-                                    let field =
-                                        List.foldi (fun i field (ally : Character) ->
-                                            Field.updateLegion (fun legion ->
-                                                match Map.tryFind i legion with
-                                                | Some legionnaire ->
-                                                    let legionnaire = { legionnaire with HitPoints = ally.HitPoints; ExpPoints = ally.ExpPoints }
-                                                    Map.add i legionnaire legion
-                                                | None -> legion)
-                                                field)
-                                            field allies
-                                    let field = Field.updateInventory (constant battle.Inventory) field
-                                    let field = Field.updateBattleOpt (constant None) field
-                                    let omni = Field field
-                                    withCmd (Show Simulants.Field) omni
+                                if result
+                                then withCmd (Show Simulants.Field) (Field (Field.synchronize battle field))
                                 else withCmd (Show Simulants.Title) (Gui Title)
                             else withCmd (Show Simulants.Battle) omni
                         | _ -> withCmd (Show Simulants.Battle) omni
