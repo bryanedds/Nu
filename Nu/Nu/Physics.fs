@@ -8,6 +8,7 @@ open System.Numerics
 open tainicom.Aether.Physics2D
 open tainicom.Aether.Physics2D.Dynamics
 open tainicom.Aether.Physics2D.Dynamics.Contacts
+open tainicom.Aether.Physics2D.Dynamics.Joints
 open Prime
 open Nu
 
@@ -481,8 +482,8 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         physicsEngine (bodyShape : Dynamics.Fixture) (bodyShape2 : Dynamics.Fixture) (contact : Dynamics.Contacts.Contact) =
         let normal = fst (contact.GetWorldManifold ())
         let bodyCollisionMessage =
-            { BodyShapeSource = bodyShape.UserData :?> BodyShapeSourceInternal
-              BodyShapeSource2 = bodyShape2.UserData :?> BodyShapeSourceInternal
+            { BodyShapeSource = bodyShape.Tag :?> BodyShapeSourceInternal
+              BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeSourceInternal
               Normal = Vector2 (normal.X, normal.Y)
               Speed = contact.TangentSpeed * Constants.Physics.PhysicsToPixelRatio }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
@@ -492,8 +493,8 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
     static member private handleSeparation
         physicsEngine (bodyShape : Dynamics.Fixture) (bodyShape2 : Dynamics.Fixture) =
         let bodySeparationMessage =
-            { BodyShapeSource = bodyShape.UserData :?> BodyShapeSourceInternal
-              BodyShapeSource2 = bodyShape2.UserData :?> BodyShapeSourceInternal }
+            { BodyShapeSource = bodyShape.Tag :?> BodyShapeSourceInternal
+              BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeSourceInternal }
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
@@ -527,55 +528,48 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         body.Awake <- bodyProperties.Awake
         body.Enabled <- bodyProperties.Enabled
         body.Rotation <- bodyProperties.Rotation
-        body.Friction <- bodyProperties.Friction
-        body.Restitution <- bodyProperties.Restitution
+        body.SetFriction bodyProperties.Friction
+        body.SetRestitution bodyProperties.Restitution
         body.FixedRotation <- bodyProperties.FixedRotation
         body.AngularVelocity <- bodyProperties.AngularVelocity
         body.AngularDamping <- bodyProperties.AngularDamping
         body.LinearVelocity <- FarseerPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         body.LinearDamping <- bodyProperties.LinearDamping
-        body.GravityScale <- bodyProperties.GravityScale
-        body.CollisionCategories <- enum<Category> bodyProperties.CollisionCategories
-        body.CollidesWith <- enum<Category> bodyProperties.CollisionMask
+        // body.Inertia <- bodyProperties.Inertia TODO: P1: should we implement this? what does the value mean?
+        // body.GravityScale <- bodyProperties.GravityScale TODO: P1: figure out how to deal with this missing functionality.
+        body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
+        body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         body.BodyType <- FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType
         body.IsBullet <- bodyProperties.IsBullet
-        body.IsSensor <- bodyProperties.IsSensor
+        body.SetIsSensor bodyProperties.IsSensor
         body.SleepingAllowed <- true
 
-    static member private attachBoxBody sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) body =
-        let bodyShapeSource =
-            { Simulant = sourceSimulant
-              BodyId = bodyProperties.BodyId
-              ShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+    static member private attachBoxBody sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =
         let bodyShape =
-            Factories.FixtureFactory.AttachRectangle
+            body.CreateRectangle
                 (FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
                  FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.Y * 2.0f),
                  bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 bodyBox.Center,
-                 body,
-                 bodyShapeSource)
+                 FarseerPhysicsEngine.toPhysicsV2 bodyBox.Center)
+        bodyShape.Tag <-
+            { Simulant = sourceSimulant
+              BodyId = bodyProperties.BodyId
+              ShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
         FarseerPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt bodyShape
 
-    static member private attachBodyCircle sourceSimulant (bodyProperties : BodyProperties) (bodyCircle : BodyCircle) body =
-        let bodyShapeSource =
+    static member private attachBodyCircle sourceSimulant (bodyProperties : BodyProperties) (bodyCircle : BodyCircle) (body : Body) =
+        let bodyShape =
+            body.CreateCircle
+                (FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
+                 bodyProperties.Density,
+                 FarseerPhysicsEngine.toPhysicsV2 bodyCircle.Center)
+        bodyShape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
               ShapeId = match bodyCircle.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
-        let bodyShape =
-            Factories.FixtureFactory.AttachCircle
-                (FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
-                 bodyProperties.Density,
-                 body,
-                 FarseerPhysicsEngine.toPhysicsV2 bodyCircle.Center,
-                 bodyShapeSource)
         FarseerPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCircle.PropertiesOpt bodyShape
 
-    static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) body =
-        let bodyShapeSource =
-            { Simulant = sourceSimulant
-              BodyId = bodyProperties.BodyId
-              ShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+    static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (body : Body) =
         let height = FarseerPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height
         let endRadius = FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius
         let density = bodyProperties.Density
@@ -583,30 +577,29 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         let rectangle = Common.PolygonTools.CreateRectangle (endRadius * 0.75f, height * 0.5f, center, 0.0f) // scaled in the capsule's box by 0.75f to stop corner sticking
         let list = List<Common.Vertices> ()
         list.Add rectangle
-        let bodyShapes = Factories.FixtureFactory.AttachCompoundPolygon (list, density, body, bodyShapeSource)
-        let bodyShapeTop = Factories.FixtureFactory.AttachCircle (endRadius, density, body, Common.Vector2 (0.0f, height * 0.5f), bodyShapeSource)
-        let bodyShapeBottom = Factories.FixtureFactory.AttachCircle (endRadius, density, body, Common.Vector2 (0.0f, 0.0f - height * 0.5f), bodyShapeSource)
+        let bodyShapes = body.CreateCompoundPolygon (list, density)
+        let bodyShapeTop = body.CreateCircle (endRadius, density, Common.Vector2 (0.0f, height * 0.5f))
+        let bodyShapeBottom = body.CreateCircle (endRadius, density, Common.Vector2 (0.0f, 0.0f - height * 0.5f))
         bodyShapes.Add bodyShapeTop
         bodyShapes.Add bodyShapeBottom
         for bodyShape in bodyShapes do
+            bodyShape.Tag <- 
+                { Simulant = sourceSimulant
+                  BodyId = bodyProperties.BodyId
+                  ShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
             FarseerPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
-    static member private attachBodyPolygon sourceSimulant bodyProperties bodyPolygon body =
-        let bodyShapeSource =
-            { Simulant = sourceSimulant
-              BodyId = bodyProperties.BodyId
-              ShapeId = match bodyPolygon.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
+    static member private attachBodyPolygon sourceSimulant bodyProperties bodyPolygon (body : Body) =
         let vertices =
             bodyPolygon.Vertices |>
             Array.map (fun vertex -> vertex + bodyPolygon.Center) |>
             Array.map FarseerPhysicsEngine.toPhysicsV2
-        let bodyShape =
-            Factories.FixtureFactory.AttachPolygon
-                (FarseerPhysics.Common.Vertices vertices,
-                 bodyProperties.Density,
-                 body,
-                 bodyShapeSource)
+        let bodyShape = body.CreatePolygon (Common.Vertices vertices, bodyProperties.Density)
+        bodyShape.Tag <-
+            { Simulant = sourceSimulant
+              BodyId = bodyProperties.BodyId
+              ShapeId = match bodyPolygon.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
         FarseerPhysicsEngine.configureBodyShapeProperties bodyProperties bodyPolygon.PropertiesOpt bodyShape
 
     static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes (body : Body) =
@@ -633,12 +626,8 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         let bodySource = { Simulant = sourceSimulant; BodyId = bodyProperties.BodyId }
 
         // make the body
-        let body =
-            Factories.BodyFactory.CreateBody
-                (physicsEngine.PhysicsContext,
-                 FarseerPhysicsEngine.toPhysicsV2 bodyProperties.Position,
-                 bodyProperties.Rotation,
-                 bodySource)
+        let body = physicsEngine.PhysicsContext.CreateBody (FarseerPhysicsEngine.toPhysicsV2 bodyProperties.Position, bodyProperties.Rotation)
+        body.Tag <- bodySource
 
         // configure body
         FarseerPhysicsEngine.configureBodyProperties bodyProperties body
@@ -650,7 +639,8 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         body.add_OnCollision (fun fn fn2 collision -> FarseerPhysicsEngine.handleCollision physicsEngine fn fn2 collision)
 
         // listen for separations
-        body.add_OnSeparation (fun fn fn2 -> FarseerPhysicsEngine.handleSeparation physicsEngine fn fn2)
+        // TODO: P1: use the contact variable as well?
+        body.add_OnSeparation (fun fn fn2 _ -> FarseerPhysicsEngine.handleSeparation physicsEngine fn fn2)
 
         // attempt to add the body
         if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, body)) then
@@ -688,14 +678,14 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         | JointAngle jointAngle ->
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
             | ((true, body), (true, body2)) ->
-                let joint = Factories.JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
+                let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
                 joint.TargetAngle <- jointAngle.TargetAngle
                 joint.Softness <- jointAngle.Softness
             | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."
         | JointDistance jointDistance ->
             match (physicsEngine.Bodies.TryGetValue jointDistance.TargetId, physicsEngine.Bodies.TryGetValue jointDistance.TargetId2) with
             | ((true, body), (true, body2)) ->
-                let joint = Factories.JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2, FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor, FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor2)
+                let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2, FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor, FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor2)
                 joint.Length <- FarseerPhysicsEngine.toPhysics jointDistance.Length
                 joint.Frequency <- jointDistance.Frequency
             | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."
@@ -715,7 +705,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         match physicsEngine.Joints.TryGetValue destroyJointMessage.PhysicsId with
         | (true, joint) ->
             physicsEngine.Joints.Remove destroyJointMessage.PhysicsId |> ignore
-            physicsEngine.PhysicsContext.RemoveJoint joint
+            physicsEngine.PhysicsContext.Remove joint
         | (false, _) ->
             if not physicsEngine.RebuildingHack then
                 Log.debug ("Could not destroy non-existent joint with PhysicsId = " + scstring destroyJointMessage.PhysicsId + "'.")
@@ -807,7 +797,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
             if body.Awake && body.BodyType <> Dynamics.BodyType.Static then
                 let bodyTransformMessage =
                     BodyTransformMessage
-                        { BodySource = body.UserData :?> BodySourceInternal
+                        { BodySource = body.Tag :?> BodySourceInternal
                           Position = FarseerPhysicsEngine.toPixelV2 body.Position
                           Rotation = body.Rotation }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
