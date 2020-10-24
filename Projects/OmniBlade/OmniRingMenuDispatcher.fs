@@ -21,7 +21,6 @@ module RingMenuDispatcher =
         | ArrangeItemButton of Entity * int
 
     type Entity with
-        
         member this.GetRadius = this.Get Property? Radius
         member this.SetRadius = this.Set Property? Radius
         member this.Radius = lens<single> Property? Radius this.GetRadius this.SetRadius this
@@ -33,6 +32,12 @@ module RingMenuDispatcher =
 
     type RingMenuDispatcher () =
         inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = []; ItemCancelOpt = None })
+
+        static member Properties =
+            [define Entity.Radius 112.0f
+             define Entity.Rotation 0.0f
+             define Entity.SwallowMouseLeft false
+             define Entity.Visible false]
 
         override this.Command (ringMenu, command, menu, world) =
             match command with
@@ -46,12 +51,6 @@ module RingMenuDispatcher =
                 let position = v2 (radius * sin rotation) (radius * cos rotation)
                 let world = button.SetPositionLocal (position - button.GetSize world * 0.5f) world
                 just world
-
-        static member Properties =
-            [define Entity.Radius 112.0f
-             define Entity.Rotation 0.0f
-             define Entity.SwallowMouseLeft false
-             define Entity.Visible false]
 
         override this.Content (ringMenu, menu) =
             [Content.entitiesIndexedByFst ringMenu (fun ringMenu -> ringMenu.Items) constant $ fun index item world ->
