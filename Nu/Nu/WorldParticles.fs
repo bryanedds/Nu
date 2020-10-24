@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open Prime
 module Particles =
 
@@ -15,12 +16,12 @@ module Particles =
     type Particle =
         abstract Life : Life
 
-    type Body =
+    type [<StructuralEquality; NoComparison>] Body =
         { Position : Vector2
           Velocity : Vector2
           Gravity : Vector2 }
 
-    type [<CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Constraint =
+    type [<StructuralEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Constraint =
         | Rectangle of Vector4
         | Circle of single * Vector2
         | Constraints of Constraint array
@@ -79,7 +80,7 @@ module Particles =
             let particles3 = Array.map (fun struct (progress, field) -> behavior.Transformer progress field) particles2
             let particles4 = Array.map2 behavior.Scope.Out particles3 particles
             let particles5 = Array.map fst' particles4
-            let outputs = particles4 |> Array.filter (function struct (_, NoOutput) -> false | (_, _) -> true) |> Array.map snd'
+            let outputs = particles4 |> Array.filter (function struct (_, NoOutput) -> false | struct (_, _) -> true) |> Array.map snd'
             let output = match outputs with [||] -> NoOutput | [|output|] -> output | outputs -> Outputs outputs
             (particles5, output)
 
@@ -140,7 +141,7 @@ module Particles =
             // TODO: ...
             { Emitters = Map.removeMany emittersExpired particleSystem.Emitters }
 
-    type [<Struct>] Pex =
+    type [<StructuralEquality; NoComparison; Struct>] Pex =
         { Life : Life
           Bod : Body
           Col : Color

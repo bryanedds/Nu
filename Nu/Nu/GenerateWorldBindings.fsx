@@ -356,6 +356,7 @@ let generateBindingsCode bindings =
         "\n" +
         "namespace Nu\n" +
         "open System\n" +
+        "open System.Numerics\n" +
         "open Prime\n" +
         "open Nu\n" +
         "\n" +

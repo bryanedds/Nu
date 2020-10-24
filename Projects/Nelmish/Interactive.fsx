@@ -21,6 +21,8 @@
 #load "Nelmish.fs"
 #load "NelmishPlugin.fs"
 
+open System
+open System.Numerics
 open System.IO
 open Prime
 open Nu
