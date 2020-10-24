@@ -80,7 +80,7 @@ module Particles =
             let particles3 = Array.map (fun struct (progress, field) -> behavior.Transformer progress field) particles2
             let particles4 = Array.map2 behavior.Scope.Out particles3 particles
             let particles5 = Array.map fst' particles4
-            let outputs = particles4 |> Array.filter (function struct (_, NoOutput) -> false | (_, _) -> true) |> Array.map snd'
+            let outputs = particles4 |> Array.filter (function struct (_, NoOutput) -> false | struct (_, _) -> true) |> Array.map snd'
             let output = match outputs with [||] -> NoOutput | [|output|] -> output | outputs -> Outputs outputs
             (particles5, output)
 
