@@ -260,6 +260,24 @@ module Field =
     let updateBattleOpt updater field =
         { field with BattleOpt_ = updater field.BattleOpt_ }
 
+    let synchronizeLegion allies field =
+        List.foldi (fun i field (ally : Character) ->
+            updateLegion (fun legion ->
+                match Map.tryFind i legion with
+                | Some legionnaire ->
+                    let legionnaire = { legionnaire with HitPoints = ally.HitPoints; ExpPoints = ally.ExpPoints }
+                    Map.add i legionnaire legion
+                | None -> legion)
+                field)
+            field allies
+
+    let synchronize battle field =
+        let allies = Battle.getAllies battle
+        let field = synchronizeLegion allies field
+        let field = updateInventory (constant battle.Inventory) field
+        let field = updateBattleOpt (constant None) field
+        field
+
     let make fieldType avatar legion advents inventory =
         { FieldType_ = fieldType
           Avatar_ = avatar
