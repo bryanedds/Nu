@@ -48,7 +48,7 @@
   </object>
   <object id="30" gid="488" x="1728" y="288" width="128" height="64">
    <properties>
-    <property name="I" value="[Portal North Downward TombOuter South]"/>
+    <property name="I" value="[Portal North Downward Tomb South]"/>
    </properties>
   </object>
  </objectgroup>
