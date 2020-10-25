@@ -26,9 +26,9 @@
     <property name="I" value="[Npc VillageMan Downward [[&quot;Welcome to Debug Room!^Aye aye aye!&quot;]]]"/>
    </properties>
   </object>
-  <object id="25" gid="488" x="960" y="1024" width="128" height="64">
+  <object id="25" gid="488" x="958.667" y="1056" width="128" height="64">
    <properties>
-    <property name="I" value="[Portal 0 DebugRoom2 [1024 768] Downward]"/>
+    <property name="I" value="[Portal South Upward DebugRoom2 North]"/>
    </properties>
   </object>
   <object id="27" gid="488" x="1728" y="320" width="128" height="192">

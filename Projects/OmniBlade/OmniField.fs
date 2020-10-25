@@ -186,7 +186,7 @@ type [<ReferenceEquality; NoComparison>] Shop =
 
 type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
-      FieldIndex : Vector2
+      FieldDestination : Vector2
       FieldDirection : Direction
       FieldTransitionTime : int64 }
 
