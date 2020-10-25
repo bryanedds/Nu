@@ -6,6 +6,7 @@ open System
 open System.Numerics
 open System.IO
 open FSharpx.Collections
+open TiledSharp
 open Prime
 open Nu
 
@@ -21,6 +22,7 @@ type Direction =
     | Leftward
     | Upward
     | Rightward
+
     static member fromVector2 (v2 : Vector2) =
         let angle = double (atan2 v2.Y v2.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
@@ -30,6 +32,13 @@ type Direction =
             elif    angle > Math.PI * 0.75 && angle <= Math.PI * 1.25 then  Leftward
             else                                                            Downward
         direction
+
+    static member toVector2 direction =
+        match direction with
+        | Rightward -> v2Right
+        | Upward -> v2Up
+        | Leftward -> v2Left
+        | Downward -> v2Down
 
 type EffectType =
     | Physical
@@ -140,6 +149,18 @@ type ChestType =
 
 type DoorType =
     | WoodenDoor
+
+type PortalType =
+    | Center
+    | North
+    | East
+    | South
+    | West
+    | NE
+    | SE
+    | NW
+    | SW
+    | IX of int
 
 type NpcType =
     | VillageMan
@@ -294,20 +315,68 @@ type ShopData =
 type [<NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Advent Set * Advent Set
     | Door of DoorType * Advent Set * Advent Set // for simplicity, we'll just have north / south doors
-    | Portal of int * FieldType * Vector2 * Direction * Advent Set // leads to a different portal
+    | Portal of PortalType * Direction * FieldType * PortalType * Advent Set // leads to a different portal
     | Switch of SwitchType * Advent Set * Advent Set // anything that can affect another thing on the field through interaction
     | Sensor of SensorType * BodyShape option * Advent Set * Advent Set // anything that can affect another thing on the field through traversal
     | Npc of NpcType * Direction * (string * Advent Set * Advent Set) list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
     static member empty = Chest (WoodenChest, Consumable GreenHerb, Gen.idEmpty, None, Set.empty, Set.empty)
 
+type [<NoComparison>] PropDescriptor =
+    { PropBounds : Vector4
+      PropDepth : single
+      PropData : PropData }
+
 type [<NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : TileMap AssetTag
-      FieldProps : PropData list
       FieldSongOpt : Song AssetTag option
       FieldAmbienceOpt : Song AssetTag option
       FieldBackgroundColor : Color }
+
+[<RequireQualifiedAccess>]
+module FieldData =
+
+    let mutable propsMemoized = Map.empty<FieldType, PropDescriptor list>
+
+    let objectToProp (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
+        let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
+        let propSize = v2 (single object.Width) (single object.Height)
+        let propBounds = v4Bounds propPosition propSize
+        let propDepth =
+            match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
+            | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
+            | (false, _) -> Constants.Field.ForgroundDepth
+        let propData =
+            match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
+            | (true, propDataStr) -> scvalue propDataStr
+            | (false, _) -> PropData.empty
+        { PropBounds = propBounds; PropDepth = propDepth; PropData = propData }
+
+    let getProps fieldData world =
+        match Map.tryFind fieldData.FieldType propsMemoized with
+        | None ->
+            let props =
+                match World.tryGetTileMapMetadata fieldData.FieldTileMap world with
+                | Some (_, _, tileMap) ->
+                    if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
+                        let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
+                        let objects = enumerable<TmxObject> group.Objects |> Seq.toList
+                        let props = List.map (fun (object : TmxObject) -> objectToProp object group tileMap) objects
+                        props
+                    else []
+                | None -> []
+            propsMemoized <- Map.add fieldData.FieldType props propsMemoized
+            props
+        | Some props -> props
+
+    let getPortals fieldData world =
+        let props = getProps fieldData world
+        List.filter (fun prop -> match prop.PropData with Portal _ -> true | _ -> false) props
+
+    let tryGetPortal portalType fieldData world =
+        let portals = getPortals fieldData world
+        List.tryFind (fun prop -> match prop.PropData with Portal (portalType2, _, _, _, _) -> portalType2 = portalType | _ -> failwithumf ()) portals
 
 type [<NoComparison>] EnemyData =
     { EnemyType : EnemyType // key

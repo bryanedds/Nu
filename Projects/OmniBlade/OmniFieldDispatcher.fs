@@ -102,7 +102,25 @@ module FieldDispatcher =
             avatar.IntersectedBodyShapes |>
             List.choose (fun shape ->
                 match (shape.Entity.GetProp world).PropData with
-                | Portal (_, fieldType, index, direction, _) -> Some (fieldType, index, direction)
+                | Portal (_, _, fieldType, portalType, _) ->
+                    match Map.tryFind fieldType data.Value.Fields with
+                    | Some fieldData ->
+                        match FieldData.tryGetPortal portalType fieldData world with
+                        | Some portal ->
+                            match portal.PropData with
+                            | Portal (_, direction, _, _, _) ->
+                                let destinationCenter =
+                                    match direction with
+                                    | Upward -> portal.PropBounds.Top
+                                    | Rightward -> portal.PropBounds.Right
+                                    | Downward -> portal.PropBounds.Bottom
+                                    | Leftward -> portal.PropBounds.Left
+                                let destinationOffset = Direction.toVector2 direction * v2Dup 72.0f // TODO: use constant.
+                                let destination = destinationCenter + destinationOffset
+                                Some (fieldType, destination, direction)
+                            | _ -> None
+                        | None -> None
+                    | None -> None
                 | _ -> None) |>
             List.tryHead
 
@@ -283,7 +301,7 @@ module FieldDispatcher =
                                 let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
                                 avatar)
                                 field
-                        withCmd (MoveAvatar fieldTransition.FieldIndex) field
+                        withCmd (MoveAvatar fieldTransition.FieldDestination) field
                     elif tickTime = fieldTransition.FieldTransitionTime then
                         let field = Field.updateFieldTransitionOpt (constant None) field
                         just field
@@ -294,10 +312,10 @@ module FieldDispatcher =
                 match field.FieldTransitionOpt with
                 | None ->
                     match tryGetTouchingPortal field.Avatar world with
-                    | Some (fieldType, index, direction) ->
+                    | Some (fieldType, destination, direction) ->
                         let transition =
                             { FieldType = fieldType
-                              FieldIndex = index
+                              FieldDestination = destination
                               FieldDirection = direction
                               FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
                         let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
@@ -447,8 +465,8 @@ module FieldDispatcher =
                 just world
 
             | MoveAvatar position ->
-                let world = Simulants.FieldAvatar.SetCenter position world
-                let world = World.setBodyPosition position (Simulants.FieldAvatar.GetPhysicsId world) world
+                let positionOffset = position - Constants.Field.AvatarBottomInset
+                let world = Simulants.FieldAvatar.SetBottom positionOffset world
                 just world
 
             | PlaySound (delay, volume, sound) ->
