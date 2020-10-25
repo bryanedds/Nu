@@ -163,7 +163,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       Chessboard : Chessboard
       ShallLoadGame : bool
       Field : Field
-      Pickups : Pickup list
       Enemies : Character list
       Player : Character }
 
@@ -172,12 +171,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
           Chessboard = Chessboard.empty
           ShallLoadGame = false
           Field = Field.initial
-          Pickups = []
           Enemies = []
           Player = Character.initial }
-
-    member this.PickupCount =
-        this.Pickups.Length
 
     member this.EnemyCount =
         this.Enemies.Length
@@ -188,9 +183,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updateField updater gameplay =
         { gameplay with Field = updater gameplay.Field }
 
-    static member updatePickups updater gameplay =
-        { gameplay with Pickups = updater gameplay.Pickups }
-    
     static member updateEnemies updater gameplay =
         { gameplay with Enemies = updater gameplay.Enemies }
 
@@ -200,9 +192,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getCharacters gameplay =
         gameplay.Player :: gameplay.Enemies
     
-    static member pickupAtCoordinates coordinates gameplay =
-        gameplay.Pickups |> List.exists (fun pickup -> pickup.Position = vmtovf coordinates)
-
     static member characterExists index gameplay =
         Gameplay.getCharacters gameplay |> List.exists (fun gameplay -> gameplay.Index = index)
     
@@ -284,18 +273,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     // a basic sync mechanism that relies on never adding and removing *at the same time*
     static member syncLists (gameplay : Gameplay) =
         let chessboard = gameplay.Chessboard
-        let gameplay =
-            if gameplay.PickupCount <> chessboard.PickupCount then
-                let pickups =
-                    if gameplay.PickupCount > chessboard.PickupCount then
-                        List.filter (fun (pickup : Pickup) -> Chessboard.pickupAtCoordinates (vftovm pickup.Position) chessboard) gameplay.Pickups
-                    else 
-                        let generator k _ = Pickup.makeHealth k
-                        let pickups = Map.filter (fun k _ -> not (Gameplay.pickupAtCoordinates k gameplay)) chessboard.PickupItems |> Map.toListBy generator
-                        pickups @ gameplay.Pickups
-                Gameplay.updatePickups (constant pickups) gameplay
-            else gameplay
-
         if gameplay.EnemyCount <> chessboard.EnemyCount then
             let enemies =
                 if gameplay.EnemyCount > chessboard.EnemyCount then
