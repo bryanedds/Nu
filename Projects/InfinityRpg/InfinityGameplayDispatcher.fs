@@ -400,7 +400,10 @@ module GameplayDispatcher =
                        [Entity.Field <== gameplay --> fun gameplay -> gameplay.Field]
 
                      Content.entities gameplay
-                        (fun gameplay -> gameplay.Pickups) constant
+                        (fun gameplay ->
+                            let generator k _ = Pickup.makeHealth k
+                            Map.toListBy generator gameplay.Chessboard.PickupItems)
+                        constant
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Pickup <== pickup])
 
                      Content.entitiesIndexedBy gameplay
