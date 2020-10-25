@@ -460,8 +460,8 @@ module FieldDispatcher =
 
             match command with
             | UpdateEye ->
-                let avatar = Simulants.FieldAvatar.GetAvatar world
-                let world = World.setEyeCenter avatar.Center world
+                let center = Simulants.FieldAvatar.GetCenter world
+                let world = World.setEyeCenter center world
                 just world
 
             | MoveAvatar position ->
