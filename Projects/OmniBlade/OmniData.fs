@@ -174,6 +174,8 @@ type ShopkeepType =
 type FieldType =
     | DebugRoom
     | DebugRoom2
+    | TombOuter
+    | Tomb
 
 type SwitchType =
     | ThrowSwitch
