@@ -1,5 +1,5 @@
 Type,FieldTileMap,FieldSongOpt,FieldAmbienceOpt,FieldBackgroundColor
 DebugRoom,[Field DebugRoom],[Some [Field Field]],None,[8 8 8 255]
 DebugRoom2,[Field DebugRoom2],[Some [Field Field]],None,[8 8 8 255]
-TombOuter,[Field TombOuter],[Some [Field TombOuter]],[Some [Field Wind]],[8 8 8 255]
+TombOuter,[Field TombOuter],[Some [Field TombOuter]],[Some [Field Wind]],[131 156 172 255]
 Tomb,[Field Tomb],[Some [Field Tomb]],None,[8 8 8 255]

@@ -4,7 +4,7 @@
  <tileset firstgid="257" source="Tent.tsx"/>
  <layer id="2" name="Floor" width="80" height="80">
   <data encoding="base64" compression="zlib">
-   eJzt0zENwDAQBMHjEggPwcTCwYSTIgxc2B9NMf1ppZtJJgAAAAAAAAAAAAAAAAAAAAAAAAD8RCV3HbCjK/302+n67N7RlX5ryn/1068t/daMt984YAcAQHcPpaxYMw==
+   eJzt07ENwCAUQ0FXLJIRGIHFGD0psgEFfHTF9daT3JI0AAAAAAAAAAAAAAAAAAAAAAAAALhET2Y/YEdV+um30/PbvaMq/db4r3761aXfmvH1GwfsAACo7gWYDZ1l
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="80" height="80">
