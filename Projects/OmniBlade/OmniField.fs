@@ -227,6 +227,11 @@ module Field =
         Seq.tryTake 3 |>
         Map.ofSeq
 
+    let getFieldSongOpt field =
+        match data.Value.Fields.TryGetValue field.FieldType_ with
+        | (true, fieldData) -> fieldData.FieldSongOpt
+        | (false, _) -> None
+
     let updateFieldType updater field =
         { field with FieldType_ = updater field.FieldType_ }
 
