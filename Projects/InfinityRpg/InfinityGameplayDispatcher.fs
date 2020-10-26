@@ -114,28 +114,29 @@ module GameplayDispatcher =
             | TickTurns indices ->
                 let updater index gameplay =
                     match (Gameplay.getTurnStatus index gameplay) with
-                    | TurnProgressing ->
+                    | TurnTicking tickCount ->
                         match Gameplay.getCharacterActivityState index gameplay with
                         | Action actionDescriptor ->
                             let reactorIndex = Option.get actionDescriptor.ActionTargetIndexOpt
                             let reactorState = Gameplay.getCharacterState reactorIndex gameplay
                             let gameplay = 
-                                if actionDescriptor.ActionTicks = Constants.InfinityRpg.ReactionTick then
+                                if tickCount = Constants.InfinityRpg.ReactionTick then
                                     if reactorState.HitPoints <= 0 then
                                         let reactorCharacterAnimationState = Gameplay.getCharacterAnimationState reactorIndex gameplay
                                         Gameplay.updateCharacterAnimationState reactorIndex (constant reactorCharacterAnimationState.Slain) gameplay
                                     else gameplay
                                 else gameplay
-                            if actionDescriptor.ActionTicks = Constants.InfinityRpg.ActionTicksMax
+                            if tickCount = Constants.InfinityRpg.ActionTicksMax
                             then Gameplay.updateTurnStatus index (constant TurnFinishing) gameplay
-                            else Gameplay.updateCharacterActivityState index (constant (Action actionDescriptor.Inc)) gameplay
+                            else gameplay
                         | Navigation navigationDescriptor ->
                             let (newPosition, walkState) = Gameplay.getPosition index gameplay |> walk navigationDescriptor.WalkDescriptor
                             let gameplay = Gameplay.updatePosition index (constant newPosition) gameplay
                             match walkState with
                             | WalkFinished -> Gameplay.updateTurnStatus index (constant TurnFinishing) gameplay
                             | WalkContinuing -> gameplay
-                        | NoActivity -> failwith "TurnStatus is TurnProgressing; CharacterActivityState should not be NoActivity"
+                        | NoActivity -> failwith "TurnStatus is TurnTicking; CharacterActivityState should not be NoActivity"
+                        |> Gameplay.updateTurnStatus index TurnStatus.incTickCount
                     | _ -> gameplay
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 let indices = List.filter (fun x -> (Gameplay.getTurnStatus x gameplay) = TurnFinishing) indices
@@ -157,7 +158,7 @@ module GameplayDispatcher =
                                 characterAnimationState.UpdateDirection navigationDescriptor.WalkDescriptor.WalkDirection
                             | _ -> failwith "TurnStatus is TurnBeginning; CharacterActivityState should not be NoActivity"
                         let gameplay = Gameplay.updateCharacterAnimationState index (constant characterAnimationState) gameplay
-                        Gameplay.updateTurnStatus index (constant TurnProgressing) gameplay // "TurnProgressing" for normal animation; "TurnFinishing" for roguelike mode
+                        Gameplay.updateTurnStatus index (constant (TurnTicking 0L)) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withMsg (TickTurns indices) gameplay

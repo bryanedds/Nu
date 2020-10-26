@@ -66,12 +66,8 @@ type [<ReferenceEquality; NoComparison>] NavigationDescriptor =
           MultiRoundContext = multiRoundContext }
 
 type [<ReferenceEquality; NoComparison>] ActionDescriptor =
-    { ActionTicks : int64 // an arbitrary number to show a hacky action animation
-      ActionTargetIndexOpt : CharacterIndex option
+    { ActionTargetIndexOpt : CharacterIndex option
       ActionDataName : string }
-
-    member this.Inc =
-        { this with ActionTicks = inc this.ActionTicks }
 
     static member computeActionDirection currentPosition targetPositionM =
         targetPositionM - vftovm currentPosition |> vmtod
@@ -79,9 +75,14 @@ type [<ReferenceEquality; NoComparison>] ActionDescriptor =
 type TurnStatus =
     | TurnPending
     | TurnBeginning
-    | TurnProgressing
+    | TurnTicking of int64
     | TurnFinishing
     | Idle
+
+    static member incTickCount turnStatus =
+        match turnStatus with
+        | TurnTicking tickCount -> TurnTicking (inc tickCount)
+        | _ -> turnStatus
 
 type [<NoComparison>] CharacterActivityState =
     | Action of ActionDescriptor
@@ -111,8 +112,7 @@ type [<NoComparison>] CharacterActivityState =
 
     static member makeAttack index =
         Action
-            { ActionTicks = 0L
-              ActionTargetIndexOpt = Some index
+            { ActionTargetIndexOpt = Some index
               ActionDataName = Constants.InfinityRpg.AttackName }
 
     static member makeNavigation multiRoundContext origin direction =
