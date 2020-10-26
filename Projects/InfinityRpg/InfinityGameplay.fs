@@ -57,13 +57,13 @@ type [<NoComparison>] Move =
     | Attack of CharacterIndex
     | Travel of NavigationNode list
 
-    member this.MakeActivity positionM =
+    member this.MakeActivity coordinates =
         match this with
-        | Step direction -> CharacterActivityState.makeNavigation false positionM direction
+        | Step direction -> CharacterActivityState.makeNavigation false coordinates direction
         | Attack index -> CharacterActivityState.makeAttack index
         | Travel path ->
-            let direction = Math.directionToTarget positionM path.Head.PositionM
-            CharacterActivityState.makeNavigation true positionM direction
+            let direction = Math.directionToTarget coordinates path.Head.PositionM
+            CharacterActivityState.makeNavigation true coordinates direction
 
     member this.TruncatePath =
         match this with
@@ -364,9 +364,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member activateCharacter index gameplay =
         let move = Gameplay.getCurrentMove index gameplay
-        let activity = Gameplay.getPosition index gameplay |> vftovm |> move.MakeActivity
+        let activity = Gameplay.getCoordinates index gameplay |> move.MakeActivity
         let gameplay = Gameplay.updateCharacterActivityState index (constant activity) gameplay
-        Gameplay.updateTurnStatus index (constant TurnBeginning) gameplay
+        Gameplay.updateTurnStatus index (constant TurnPending) gameplay
     
     static member setFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboardBy Chessboard.setPassableCoordinates () fieldMap gameplay
