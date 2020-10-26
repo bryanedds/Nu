@@ -108,7 +108,7 @@ module GameDispatcher =
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.CreditsLayerFilePath
 
              // field
-             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.FieldSong)))
+             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, None))
                 [Screen.Field <== omni --> fun omni ->
                     match omni with
                     | Gui _ -> Field.empty

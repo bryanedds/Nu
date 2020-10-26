@@ -333,7 +333,6 @@ type [<NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : TileMap AssetTag
       FieldSongOpt : Song AssetTag option
-      FieldAmbienceOpt : Song AssetTag option
       FieldBackgroundColor : Color }
 
 [<RequireQualifiedAccess>]

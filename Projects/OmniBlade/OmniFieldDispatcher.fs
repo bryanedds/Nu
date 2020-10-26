@@ -16,10 +16,10 @@ module FieldDispatcher =
 
     type [<NoComparison; NoEquality>] FieldMessage =
         | UpdateAvatar of Avatar
-        | UpdateFieldTransition
         | UpdateDialog
         | UpdatePortal
         | UpdateSensor
+        | UpdateFieldTransition
         | SubmenuLegionOpen
         | SubmenuLegionAlly of int
         | SubmenuItemOpen
@@ -39,8 +39,11 @@ module FieldDispatcher =
 
     type [<NoComparison>] FieldCommand =
         | PlaySound of int64 * single * Sound AssetTag
+        | PlaySong of int * single * Song AssetTag
+        | FadeOutSong of int
         | MoveAvatar of Vector2
         | UpdateEye
+        | Nop
 
     type Screen with
         member this.GetField = this.GetModel<Field>
@@ -263,9 +266,9 @@ module FieldDispatcher =
         override this.Channel (_, field) =
             [Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
              field.UpdateEvent => msg UpdateDialog
-             field.UpdateEvent => msg UpdateFieldTransition
              field.UpdateEvent => msg UpdatePortal
              field.UpdateEvent => msg UpdateSensor
+             field.UpdateEvent => msg UpdateFieldTransition
              Simulants.FieldInteract.ClickEvent => msg Interact
              field.PostUpdateEvent => cmd UpdateEye]
 
@@ -292,7 +295,15 @@ module FieldDispatcher =
                 match field.FieldTransitionOpt with
                 | Some fieldTransition ->
                     let tickTime = World.getTickTime world
-                    if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                    let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
+                    if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
+                        match data.Value.Fields.TryGetValue fieldTransition.FieldType with
+                        | (true, fieldData) ->
+                            if currentSongOpt <> fieldData.FieldSongOpt
+                            then withCmd (FadeOutSong Constants.Audio.DefaultFadeOutMs) field
+                            else just field
+                        | (false, _) -> just field
+                    elif tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
                         let field = Field.updateFieldType (constant fieldTransition.FieldType) field
                         let field =
                             Field.updateAvatar (fun avatar ->
@@ -301,7 +312,14 @@ module FieldDispatcher =
                                 let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
                                 avatar)
                                 field
-                        withCmd (MoveAvatar fieldTransition.FieldDestination) field
+                        let moveCmd = MoveAvatar fieldTransition.FieldDestination
+                        let songCmd =
+                            match Field.getFieldSongOpt field with
+                            | Some fieldSong ->
+                                if currentSongOpt = Some fieldSong then Nop
+                                else PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)
+                            | None -> Nop
+                        withCmds [moveCmd; songCmd] field
                     elif tickTime = fieldTransition.FieldTransitionTime then
                         let field = Field.updateFieldTransitionOpt (constant None) field
                         just field
@@ -472,6 +490,16 @@ module FieldDispatcher =
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
+
+            | PlaySong (fade, volume, assetTag) ->
+                let world = World.playSong fade volume assetTag world
+                just world
+
+            | FadeOutSong fade ->
+                let world = World.fadeOutSong fade world
+                just world
+
+            | Nop -> just world
 
         override this.Content (field, _) =
 
