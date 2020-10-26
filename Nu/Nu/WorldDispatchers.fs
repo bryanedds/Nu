@@ -649,51 +649,66 @@ module TileMapFacetModule =
                 Some { TileMap = tileMap; TileMapSizeM = tileMapSizeM; TileSizeI = tileSizeI; TileSizeF = tileSizeF; TileMapSizeI = tileMapSizeI; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
             | None -> None
 
-        let makeTileDescriptor (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
+        let tryMakeTileDescriptor (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
             let tileMapRun = tmd.TileMapSizeM.X
-            let tileSetRun = tmd.TileSetSize.X
             let (i, j) = (tileIndex % tileMapRun, tileIndex / tileMapRun)
             let tile = tl.Tiles.[tileIndex]
-            let gid = tile.Gid - tmd.TileSet.FirstGid
-            let gidPosition = gid * tmd.TileSizeI.X
-            let gid2 = Vector2i (gid % tileSetRun, gid / tileSetRun)
-            let tileMapPosition = tm.GetPosition world
-            let tilePositionI =
-                Vector2i
-                    (int tileMapPosition.X + tmd.TileSizeI.X * i,
-                     int tileMapPosition.Y - tmd.TileSizeI.Y * (j + 1) + tmd.TileMapSizeI.Y) // invert y coords
-            let tilePositionF = v2 (single tilePositionI.X) (single tilePositionI.Y)
-            let tileSetTileOpt =
-                match tmd.TileSet.Tiles.TryGetValue (tile.Gid - 1) with
-                | (true, tile) -> Some tile
-                | (false, _) -> None
-            { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePositionI = tilePositionI; TilePositionF = tilePositionF; TileSetTileOpt = tileSetTileOpt }
+            if tile.Gid <> 0 then // not the empty tile
+                let mutable tileOffset = 1 // gid 0 is the empty tile
+                let mutable tileSetIndex = 0
+                let mutable tileSetFound = false
+                let mutable enr = tmd.TileMap.Tilesets.GetEnumerator ()
+                while enr.MoveNext () && not tileSetFound do
+                    let set = enr.Current
+                    let tileCountOpt = set.TileCount
+                    if  tile.Gid >= set.FirstGid &&
+                        tile.Gid < set.FirstGid + tileCountOpt.Value then
+                        tileSetFound <- true
+                    else
+                        tileSetIndex <- inc tileSetIndex
+                        tileOffset <- tileOffset + tileCountOpt.Value
+                let tileId = tile.Gid - tileOffset
+                let tileSet = tmd.TileMap.Tilesets.[tileSetIndex]
+                let tileMapPosition = tm.GetPosition world
+                let tilePositionI =
+                    v2i
+                        (int tileMapPosition.X + tmd.TileSizeI.X * i)
+                        (int tileMapPosition.Y - tmd.TileSizeI.Y * inc j + tmd.TileMapSizeI.Y) // invert y coords
+                let tilePositionF = v2 (single tilePositionI.X) (single tilePositionI.Y)
+                let tileSetTileOpt =
+                    match tileSet.Tiles.TryGetValue tileId with
+                    | (true, tileSetTile) -> Some tileSetTile
+                    | (false, _) -> None
+                Some { Tile = tile; I = i; J = j; TilePositionI = tilePositionI; TilePositionF = tilePositionF; TileSetTileOpt = tileSetTileOpt }
+            else None
 
-        let getTileLayerBodyShape tm tmd (tl : TmxLayer) ti world =
-            let td = makeTileDescriptor tm tmd tl ti world
-            match td.TileSetTileOpt with
-            | Some tileSetTile ->
-                match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
-                | (true, cexpr) ->
-                    let tileCenter =
-                        Vector2
-                            (td.TilePositionF.X + tmd.TileSizeF.X * 0.5f,
-                             td.TilePositionF.Y + tmd.TileSizeF.Y * 0.5f)
-                    let tileBody =
-                        match cexpr with
-                        | "" -> BodyBox { Extent = tmd.TileSizeF * 0.5f; Center = tileCenter; PropertiesOpt = None }
-                        | _ ->
-                            let tileShape = scvalue<BodyShape> cexpr
-                            let tileShapeImported = importShape tileShape tmd.TileSizeF tileCenter
-                            tileShapeImported
-                    Some tileBody
-                | (false, _) -> None
+        let tryGetTileLayerBodyShape tm tmd (tl : TmxLayer) ti world =
+            match tryMakeTileDescriptor tm tmd tl ti world with
+            | Some td ->
+                match td.TileSetTileOpt with
+                | Some tileSetTile ->
+                    match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
+                    | (true, cexpr) ->
+                        let tileCenter =
+                            Vector2
+                                (td.TilePositionF.X + tmd.TileSizeF.X * 0.5f,
+                                 td.TilePositionF.Y + tmd.TileSizeF.Y * 0.5f)
+                        let tileBody =
+                            match cexpr with
+                            | "" -> BodyBox { Extent = tmd.TileSizeF * 0.5f; Center = tileCenter; PropertiesOpt = None }
+                            | _ ->
+                                let tileShape = scvalue<BodyShape> cexpr
+                                let tileShapeImported = importShape tileShape tmd.TileSizeF tileCenter
+                                tileShapeImported
+                        Some tileBody
+                    | (false, _) -> None
+                | None -> None
             | None -> None
 
         let getTileLayerBodyShapes tileMap tileMapDescriptor (tileLayer : TmxLayer) world =
             Seq.foldi
                 (fun i bodyShapes _ ->
-                    match getTileLayerBodyShape tileMap tileMapDescriptor tileLayer i world with
+                    match tryGetTileLayerBodyShape tileMap tileMapDescriptor tileLayer i world with
                     | Some bodyShape -> bodyShape :: bodyShapes
                     | None -> bodyShapes)
                 [] tileLayer.Tiles |>
@@ -768,8 +783,9 @@ module TileMapFacetModule =
 
         override this.Actualize (tileMap, world) =
             if tileMap.GetVisible world then
-                match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
-                | Some (_, images, map) ->
+                let tileMapAsset = tileMap.GetTileMapAsset world
+                match Metadata.tryGetTileMapMetadata tileMapAsset (World.getMetadata world) with
+                | Some (_, tileSets, map) ->
                     let absolute = tileMap.GetAbsolute world
                     let layers = List.ofSeq map.Layers
                     let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
@@ -799,7 +815,6 @@ module TileMapFacetModule =
                                           Rotation = rotation
                                           Depth = depth
                                           Flags = tileMap.GetFlags world }
-                                    let image = List.head images // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
                                     let tiles =
                                         layer.Tiles |>
                                         enumerable<_> |>
@@ -811,7 +826,7 @@ module TileMapFacetModule =
                                             (LayeredDescriptorMessage
                                                 { Depth = transform.Depth
                                                   PositionY = transform.Position.Y
-                                                  AssetTag = AssetTag.generalize image
+                                                  AssetTag = AssetTag.generalize tileMapAsset
                                                   RenderDescriptor =
                                                     TileLayerDescriptor
                                                         { Transform = transform
@@ -819,8 +834,7 @@ module TileMapFacetModule =
                                                           Tiles = tiles
                                                           TileSourceSize = tileSourceSize
                                                           TileSize = tileSize
-                                                          TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                                          TileSetImage = image }})
+                                                          TileSets = tileSets }})
                                             world
                                     else world)
                                 world [|0 .. dec map.Height|])

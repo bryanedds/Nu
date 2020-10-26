@@ -30,12 +30,9 @@ type [<StructuralEquality; NoComparison>] TileDescriptor =
     { Tile : TmxLayerTile
       I : int
       J : int
-      Gid : int
-      GidPosition : int
-      Gid2 : Vector2i
-      TileSetTileOpt : TmxTilesetTile option
       TilePositionI : Vector2i
-      TilePositionF : Vector2 }
+      TilePositionF : Vector2
+      TileSetTileOpt : TmxTilesetTile option }
 
 /// Describes a Tiled tile map.
 type [<StructuralEquality; NoComparison>] TileMapDescriptor =
