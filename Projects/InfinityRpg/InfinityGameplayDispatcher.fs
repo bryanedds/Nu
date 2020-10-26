@@ -164,7 +164,7 @@ module GameplayDispatcher =
             
             | RunCharacterActivation ->
                 let gameplay = // NOTE: player's turn is converted to activity at the beginning of the round, activating the observable playback of his move
-                    if gameplay.Player.TurnStatus = TurnPending then Gameplay.activateCharacter PlayerIndex gameplay else gameplay
+                    if gameplay.Player.TurnStatus = TurnPending then Gameplay.updateTurnStatus PlayerIndex (constant TurnBeginning) gameplay else gameplay
                 let indices = // NOTE: enemies are activated at the same time during player movement, or after player's action has finished playback
                     Gameplay.getEnemyIndices gameplay |> List.filter (fun x -> (Gameplay.getTurnStatus x gameplay) <> Idle)
                 let gameplay =
@@ -173,7 +173,7 @@ module GameplayDispatcher =
                         | Action _ -> gameplay
                         | Navigation _ 
                         | NoActivity ->
-                            Gameplay.forEachIndex (fun index gameplay -> Gameplay.activateCharacter index gameplay) indices gameplay
+                            Gameplay.forEachIndex (fun index gameplay -> Gameplay.updateTurnStatus index (constant TurnBeginning) gameplay) indices gameplay
                     else gameplay
                 let indices = List.filter (fun x -> (Gameplay.getTurnStatus x gameplay) <> TurnPending) indices
                 let indices =
@@ -213,7 +213,7 @@ module GameplayDispatcher =
                         match enemyMoveOpt with
                         | Some move ->
                             let gameplay = Gameplay.addMove index move gameplay
-                            let gameplay = Gameplay.updateTurnStatus index (constant TurnPending) gameplay
+                            let gameplay = Gameplay.activateCharacter index gameplay
                             Gameplay.applyMove index gameplay
                         | None -> gameplay)
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
@@ -242,7 +242,7 @@ module GameplayDispatcher =
                 match playerMoveOpt with
                 | Some move ->
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
-                    let gameplay = Gameplay.updateTurnStatus PlayerIndex (constant TurnPending) gameplay
+                    let gameplay = Gameplay.activateCharacter PlayerIndex gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ ->
@@ -280,7 +280,7 @@ module GameplayDispatcher =
                 match playerMoveOpt with
                 | Some move ->
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
-                    let gameplay = Gameplay.updateTurnStatus PlayerIndex (constant TurnPending) gameplay
+                    let gameplay = Gameplay.activateCharacter PlayerIndex gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ -> just gameplay
