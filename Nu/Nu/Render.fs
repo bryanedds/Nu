@@ -347,13 +347,14 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                                 let mutable tileSetTexture = nativeint 0
                                 for (set, _, texture) in tileSetTextures do
                                     let tileCountOpt = set.TileCount
-                                    if  tile.Gid >= set.FirstGid &&
-                                        tile.Gid < set.FirstGid + tileCountOpt.Value then
+                                    let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
+                                    if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
+                                        not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
                                         tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
                                         tileSetTexture <- texture
                                     if  tileSetTexture = nativeint 0 then
                                         tileSetIndex <- inc tileSetIndex
-                                        tileOffset <- tileOffset + tileCountOpt.Value
+                                        tileOffset <- tileOffset + tileCount
                                 let tileId = tile.Gid - tileOffset
                                 let tileIdPosition = tileId * tileSourceSize.X
                                 let tileSourcePosition =
