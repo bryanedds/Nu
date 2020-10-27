@@ -202,6 +202,11 @@ module MathOperators =
     let vftovm vf =
         vf |> vftovi |> vitovm
 
+    let v2UpBy i = v2 0.0f (float32 i)
+    let v2RightBy i = v2 (float32 i) 0.0f
+    let v2DownBy i = v2 0.0f -(float32 i)
+    let v2LeftBy i = v2 -(float32 i) 0.0f
+    
     let dtovm d =
         match d with
         | Upward -> v2iUp
@@ -213,7 +218,20 @@ module MathOperators =
         dtovm d |> vmtovi
 
     let dtovf d =
-        d |> dtovi |> vitovf
+        dtovi d |> vitovf
+
+    let dtovfBy d i =
+        match d with
+        | Upward -> v2UpBy i
+        | Rightward -> v2RightBy i
+        | Downward -> v2DownBy i
+        | Leftward -> v2LeftBy i
+
+    let dtoviBy d i =
+        dtovfBy d i |> vftovi
+
+    let dtovmBy d i =
+        dtovfBy d i |> vftovm
 
     let vftod v =
         if v <> v2Zero then
@@ -226,10 +244,10 @@ module MathOperators =
         else failwith "Direction cannot be derived from [0.0f 0.0f]."
 
     let vitod v =
-        v |> vitovf |> vftod
+        vitovf v |> vftod
 
     let vmtod v =
-        v |> vmtovf |> vftod
+        vmtovf v |> vftod
 
 [<RequireQualifiedAccess>]
 module Math =

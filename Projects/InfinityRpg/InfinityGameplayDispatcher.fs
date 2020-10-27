@@ -61,22 +61,6 @@ module GameplayDispatcher =
             | null -> None
             | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
-        static let walk3 positive current destination =
-            let walkSpeed = if positive then Constants.Layout.CharacterWalkSpeed else -Constants.Layout.CharacterWalkSpeed
-            let next = current + walkSpeed
-            let delta = if positive then destination - next else next - destination
-            if delta < Constants.Layout.CharacterWalkSpeed then (destination, WalkFinished) else (next, WalkContinuing)
-
-        static let walk walkDescriptor (position : Vector2) =
-            let walkOrigin = vmtovf walkDescriptor.WalkOriginM
-            let walkVector = dtovf walkDescriptor.WalkDirection
-            let walkDestination = walkOrigin + walkVector
-            match walkDescriptor.WalkDirection with
-            | Upward -> let (newY, arrival) = walk3 true position.Y walkDestination.Y in (v2 position.X newY, arrival)
-            | Rightward -> let (newX, arrival) = walk3 true position.X walkDestination.X in (v2 newX position.Y, arrival)
-            | Downward -> let (newY, arrival) = walk3 false position.Y walkDestination.Y in (v2 position.X newY, arrival)
-            | Leftward -> let (newX, arrival) = walk3 false position.X walkDestination.X in (v2 newX position.Y, arrival)
-        
         override this.Channel (_, _) =
             [Simulants.Gameplay.SelectEvent => msg StartGameplay
              Simulants.Gameplay.UpdateEvent => cmd Update
@@ -130,11 +114,13 @@ module GameplayDispatcher =
                             then Gameplay.updateTurnStatus index (constant TurnFinishing) gameplay
                             else gameplay
                         | Navigation navigationDescriptor ->
-                            let (newPosition, walkState) = Gameplay.getPosition index gameplay |> walk navigationDescriptor.WalkDescriptor
+                            let offset = (int Constants.InfinityRpg.CharacterWalkResolution) * (int tickCount |> inc)
+                            let offsetVector = dtovfBy navigationDescriptor.WalkDescriptor.WalkDirection offset
+                            let newPosition = vmtovf navigationDescriptor.WalkDescriptor.WalkOriginM + offsetVector
                             let gameplay = Gameplay.updatePosition index (constant newPosition) gameplay
-                            match walkState with
-                            | WalkFinished -> Gameplay.updateTurnStatus index (constant TurnFinishing) gameplay
-                            | WalkContinuing -> gameplay
+                            if tickCount = (int64 Constants.InfinityRpg.CharacterWalkResolution) - 1L
+                            then Gameplay.updateTurnStatus index (constant TurnFinishing) gameplay
+                            else gameplay
                         | NoActivity -> failwith "TurnStatus is TurnTicking; CharacterActivityState should not be NoActivity"
                         |> Gameplay.updateTurnStatus index TurnStatus.incTickCount
                     | _ -> gameplay
