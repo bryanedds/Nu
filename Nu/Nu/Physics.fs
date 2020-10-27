@@ -368,7 +368,7 @@ type [<StructuralEquality; NoComparison>] BodyTransformMessage =
       Rotation : single }
 
 /// Tracks physics bodies by their PhysicsIds.
-type BodyDictionary = Dictionary<PhysicsId, Dynamics.Body>
+type BodyDictionary = Dictionary<PhysicsId, single * Dynamics.Body>
 
 /// Tracks physics joints by their PhysicsIds.
 type JointDictionary = Dictionary<PhysicsId, Dynamics.Joints.Joint>
@@ -499,7 +499,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         physicsEngine.IntegrationMessages.Add integrationMessage
 
     static member private getBodyContacts physicsId physicsEngine =
-        let body = physicsEngine.Bodies.[physicsId]
+        let (_, body) = physicsEngine.Bodies.[physicsId]
         let contacts = List<Contact> ()
         let mutable current = body.ContactList
         while current <> null do
@@ -536,7 +536,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         body.LinearVelocity <- FarseerPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         body.LinearDamping <- bodyProperties.LinearDamping
         // body.Inertia <- bodyProperties.Inertia TODO: P1: should we implement this? what does the value mean?
-        // body.GravityScale <- bodyProperties.GravityScale TODO: P1: figure out how to deal with this missing functionality.
+        body.IgnoreGravity <- true // we do all gravity processing ourselves due to - https://github.com/tainicom/Aether.Physics2D/issues/85#issuecomment-716051707
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         body.BodyType <- FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType
@@ -643,7 +643,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         body.add_OnSeparation (fun fn fn2 _ -> FarseerPhysicsEngine.handleSeparation physicsEngine fn fn2)
 
         // attempt to add the body
-        if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, body)) then
+        if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityScale, body))) then
             Log.debug ("Could not add body via '" + scstring bodyProperties + "'.")
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
@@ -659,7 +659,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
         let physicsId = destroyBodyMessage.PhysicsId
         match physicsEngine.Bodies.TryGetValue physicsId with
-        | (true, body) ->
+        | (true, (_, body)) ->
             physicsEngine.Bodies.Remove physicsId |> ignore
             physicsEngine.PhysicsContext.Remove body
         | (false, _) ->
@@ -677,14 +677,14 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
             ()
         | JointAngle jointAngle ->
             match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
-            | ((true, body), (true, body2)) ->
+            | ((true, (_, body)), (true, (_, body2))) ->
                 let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
                 joint.TargetAngle <- jointAngle.TargetAngle
                 joint.Softness <- jointAngle.Softness
             | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."
         | JointDistance jointDistance ->
             match (physicsEngine.Bodies.TryGetValue jointDistance.TargetId, physicsEngine.Bodies.TryGetValue jointDistance.TargetId2) with
-            | ((true, body), (true, body2)) ->
+            | ((true, (_, body)), (true, (_, body2))) ->
                 let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2, FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor, FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor2)
                 joint.Length <- FarseerPhysicsEngine.toPhysics jointDistance.Length
                 joint.Frequency <- jointDistance.Frequency
@@ -719,42 +719,42 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.PhysicsId with
-        | (true, body) -> body.Enabled <- setBodyEnabledMessage.Enabled
+        | (true, (_, body)) -> body.Enabled <- setBodyEnabledMessage.Enabled
         | (false, _) -> Log.debug ("Could not set enabled of non-existent body with PhysicsId = " + scstring setBodyEnabledMessage.PhysicsId + "'.")
 
     static member private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyPositionMessage.PhysicsId with
-        | (true, body) -> body.Position <- FarseerPhysicsEngine.toPhysicsV2 setBodyPositionMessage.Position
+        | (true, (_, body)) -> body.Position <- FarseerPhysicsEngine.toPhysicsV2 setBodyPositionMessage.Position
         | (false, _) -> Log.debug ("Could not set position of non-existent body with PhysicsId = " + scstring setBodyPositionMessage.PhysicsId + "'.")
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.PhysicsId with
-        | (true, body) -> body.Rotation <- setBodyRotationMessage.Rotation
+        | (true, (_, body)) -> body.Rotation <- setBodyRotationMessage.Rotation
         | (false, _) -> Log.debug ("Could not set rotation of non-existent body with PhysicsId = " + scstring setBodyRotationMessage.PhysicsId + "'.")
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.PhysicsId with
-        | (true, body) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
+        | (true, (_, body)) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
         | (false, _) -> Log.debug ("Could not set angular velocity of non-existent body with PhysicsId = " + scstring setBodyAngularVelocityMessage.PhysicsId + "'.")
 
     static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyAngularImpulseMessage.PhysicsId with
-        | (true, body) -> body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse)
+        | (true, (_, body)) -> body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse)
         | (false, _) -> Log.debug ("Could not apply angular impulse to non-existent body with PhysicsId = " + scstring applyBodyAngularImpulseMessage.PhysicsId + "'.")
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.PhysicsId with
-        | (true, body) -> body.LinearVelocity <- FarseerPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
+        | (true, (_, body)) -> body.LinearVelocity <- FarseerPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
         | (false, _) -> Log.debug ("Could not set linear velocity of non-existent body with PhysicsId = " + scstring setBodyLinearVelocityMessage.PhysicsId + "'.")
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.PhysicsId with
-        | (true, body) -> body.ApplyLinearImpulse (FarseerPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
+        | (true, (_, body)) -> body.ApplyLinearImpulse (FarseerPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
         | (false, _) -> Log.debug ("Could not apply linear impulse to non-existent body with PhysicsId = " + scstring applyBodyLinearImpulseMessage.PhysicsId + "'.")
 
     static member private applyBodyForce applyBodyForceMessage physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.PhysicsId with
-        | (true, body) -> body.ApplyForce (FarseerPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force)
+        | (true, (_, body)) -> body.ApplyForce (FarseerPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force)
         | (false, _) -> Log.debug ("Could not apply force to non-existent body with PhysicsId = " + scstring applyBodyForceMessage.PhysicsId + "'.")
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
@@ -801,6 +801,11 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
                           Position = FarseerPhysicsEngine.toPixelV2 body.Position
                           Rotation = body.Rotation }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
+                
+    static member applyGravity physicsStepAmount physicsEngine =
+        for (gravityScale, body) in physicsEngine.Bodies.Values do
+            let linearVelocity = body.LinearVelocity + physicsEngine.PhysicsContext.Gravity * Common.Vector2 (0.0f, gravityScale) * physicsStepAmount
+            body.LinearVelocity <- linearVelocity
 
     /// Make a physics engine.
     static member make gravity =
@@ -824,7 +829,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
             Array.toList
 
         member physicsEngine.GetBodyLinearVelocity physicsId =
-            let body = physicsEngine.Bodies.[physicsId]
+            let (_, body) = physicsEngine.Bodies.[physicsId]
             FarseerPhysicsEngine.toPixelV2 body.LinearVelocity
 
         member physicsEngine.GetBodyToGroundContactNormals physicsId =
@@ -868,6 +873,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         member physicsEngine.Integrate tickRate physicsMessages =
             FarseerPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
             let physicsStepAmount = Constants.Physics.PhysicsStepRate * single tickRate
+            FarseerPhysicsEngine.applyGravity physicsStepAmount physicsEngine
             physicsEngine.PhysicsContext.Step physicsStepAmount
             FarseerPhysicsEngine.createTransformMessages physicsEngine
             let integrationMessages = List<IntegrationMessage> physicsEngine.IntegrationMessages
