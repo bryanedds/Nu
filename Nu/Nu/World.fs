@@ -551,7 +551,7 @@ module WorldModule3 =
 
                 // make the world's subsystems
                 let subsystems =
-                    let physicsEngine = FarseerPhysicsEngine.make Constants.Physics.Gravity
+                    let physicsEngine = AetherPhysicsEngine.make Constants.Physics.Gravity
                     let renderer =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
