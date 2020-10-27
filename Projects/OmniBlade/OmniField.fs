@@ -186,7 +186,7 @@ type [<ReferenceEquality; NoComparison>] Shop =
 
 type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
-      FieldIndex : Vector2
+      FieldDestination : Vector2
       FieldDirection : Direction
       FieldTransitionTime : int64 }
 
@@ -227,6 +227,11 @@ module Field =
         Seq.tryTake 3 |>
         Map.ofSeq
 
+    let getFieldSongOpt field =
+        match data.Value.Fields.TryGetValue field.FieldType_ with
+        | (true, fieldData) -> fieldData.FieldSongOpt
+        | (false, _) -> None
+
     let updateFieldType updater field =
         { field with FieldType_ = updater field.FieldType_ }
 
@@ -259,6 +264,24 @@ module Field =
 
     let updateBattleOpt updater field =
         { field with BattleOpt_ = updater field.BattleOpt_ }
+
+    let synchronizeLegionFromAllies allies field =
+        List.foldi (fun i field (ally : Character) ->
+            updateLegion (fun legion ->
+                match Map.tryFind i legion with
+                | Some legionnaire ->
+                    let legionnaire = { legionnaire with HitPoints = ally.HitPoints; ExpPoints = ally.ExpPoints }
+                    Map.add i legionnaire legion
+                | None -> legion)
+                field)
+            field allies
+
+    let synchronizeFromBattle battle field =
+        let allies = Battle.getAllies battle
+        let field = synchronizeLegionFromAllies allies field
+        let field = updateInventory (constant battle.Inventory) field
+        let field = updateBattleOpt (constant None) field
+        field
 
     let make fieldType avatar legion advents inventory =
         { FieldType_ = fieldType

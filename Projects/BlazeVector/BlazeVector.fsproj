@@ -114,7 +114,7 @@
       <HintPath>..\..\packages\FSharpx.Core.1.8.32\lib\40\FSharpx.Core.dll</HintPath>
     </Reference>
     <Reference Include="Magick.NET-Q8-x64">
-      <HintPath>..\..\packages\Magick.NET-Q8-x64.7.16.1\lib\net40\Magick.NET-Q8-x64.dll</HintPath>
+      <HintPath>..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\net40\Magick.NET-Q8-x64.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="Nito.Collections.Deque">
@@ -131,6 +131,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj">
@@ -177,14 +178,14 @@
     <Error Condition="!Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.core.2.4.0\build\xunit.core.props'))" />
     <Error Condition="!Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.core.2.4.0\build\xunit.core.targets'))" />
     <Error Condition="!Exists('..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props'))" />
-    <Error Condition="!Exists('..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets'))" />
+    <Error Condition="!Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets'))" />
   </Target>
   <Import Project="..\..\packages\xunit.core.2.4.0\build\xunit.core.targets" Condition="Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" />
-  <Import Project="..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets" Condition="Exists('..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets')" />
   <Target Name="BeforeBuild">
-    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.16.1\runtimes\linux-x64\native\Magick.Native-Q8-x64.dll.so" DestinationFiles="$(TargetDir)libMagick.Native-Q8-x64.dll.so" ContinueOnError="false" />
+    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\runtimes\linux-x64\native\Magick.NET-Q8-x64.Native.dll.so" DestinationFiles="$(TargetDir)libMagick.NET-Q8-x64.Native.dll.so" ContinueOnError="false" />
   </Target>
   <Target Name="AfterBuild">
-    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.16.1\lib\netstandard20\Magick.NET-Q8-x64.dll" DestinationFiles="$(TargetDir)Magick.NET-Q8-x64.dll" ContinueOnError="false" />
+    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\netstandard20\Magick.NET-Q8-x64.dll" DestinationFiles="$(TargetDir)Magick.NET-Q8-x64.dll" ContinueOnError="false" />
   </Target>
+  <Import Project="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets" Condition="Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" />
 </Project>

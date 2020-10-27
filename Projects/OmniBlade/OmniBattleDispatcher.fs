@@ -58,7 +58,6 @@ module BattleDispatcher =
         | PlaySound of int64 * single * AssetTag<Sound>
 
     type Screen with
-
         member this.GetBattle = this.GetModel<Battle>
         member this.SetBattle = this.SetModel<Battle>
         member this.Battle = this.Model<Battle> ()

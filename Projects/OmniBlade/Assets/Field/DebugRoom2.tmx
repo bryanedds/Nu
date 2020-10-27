@@ -26,9 +26,9 @@
     <property name="I" value="[Npc VillageWoman Rightward [[&quot;I swear I heard that chest over there rattling....&quot;]]]"/>
    </properties>
   </object>
-  <object id="25" gid="488" x="960" y="256" width="128" height="64">
+  <object id="25" gid="488" x="960" y="288" width="128" height="64">
    <properties>
-    <property name="I" value="[Portal 0 DebugRoom [1024 192] Upward]"/>
+    <property name="I" value="[Portal North Downward DebugRoom South]"/>
    </properties>
   </object>
   <object id="29" gid="488" x="960" y="320" width="128" height="192">
