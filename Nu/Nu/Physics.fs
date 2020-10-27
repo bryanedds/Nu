@@ -446,8 +446,8 @@ type [<ReferenceEquality; NoComparison>] MockPhysicsEngine =
         member physicsEngine.EnqueueMessage _ = physicsEngine :> PhysicsEngine
         member physicsEngine.Integrate _ _ = List<IntegrationMessage> ()
 
-/// The Farseer implementation of PhysicsEngine.
-type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
+/// The Aether implementation of PhysicsEngine.
+type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
     private
         { PhysicsContext : Dynamics.World
           Bodies : BodyDictionary
@@ -463,17 +463,17 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         value * Constants.Physics.PixelToPhysicsRatio
 
     static member private toPixelV2 (v2 : Common.Vector2) =
-        Vector2 (FarseerPhysicsEngine.toPixel v2.X, FarseerPhysicsEngine.toPixel v2.Y)
+        Vector2 (AetherPhysicsEngine.toPixel v2.X, AetherPhysicsEngine.toPixel v2.Y)
 
     static member private toPhysicsV2 (v2 : Vector2) =
-        Common.Vector2 (FarseerPhysicsEngine.toPhysics v2.X, FarseerPhysicsEngine.toPhysics v2.Y)
+        Common.Vector2 (AetherPhysicsEngine.toPhysics v2.X, AetherPhysicsEngine.toPhysics v2.Y)
 
     static member private toPhysicsPolygonDiameter value =
-        let value = FarseerPhysicsEngine.toPhysics value
+        let value = AetherPhysicsEngine.toPhysics value
         value - Settings.PolygonRadius * 2.0f
 
     static member private toPhysicsPolygonRadius value =
-        let value = FarseerPhysicsEngine.toPhysics value
+        let value = AetherPhysicsEngine.toPhysics value
         value - Settings.PolygonRadius
 
     static member private toPhysicsBodyType bodyType =
@@ -537,13 +537,13 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         body.FixedRotation <- bodyProperties.FixedRotation
         body.AngularVelocity <- bodyProperties.AngularVelocity
         body.AngularDamping <- bodyProperties.AngularDamping
-        body.LinearVelocity <- FarseerPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
+        body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         body.LinearDamping <- bodyProperties.LinearDamping
         body.Inertia <- bodyProperties.Inertia
         body.IgnoreGravity <- true // we do all gravity processing ourselves due to: https://github.com/tainicom/Aether.Physics2D/issues/85#issuecomment-716051707
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
-        body.BodyType <- FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType
+        body.BodyType <- AetherPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType
         body.IgnoreCCD <- bodyProperties.IgnoreCCD
         body.IsBullet <- bodyProperties.IsBullet
         body.SetIsSensor bodyProperties.IsSensor
@@ -552,33 +552,33 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
     static member private attachBoxBody sourceSimulant (bodyProperties : BodyProperties) (bodyBox : BodyBox) (body : Body) =
         let bodyShape =
             body.CreateRectangle
-                (FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
-                 FarseerPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.Y * 2.0f),
+                (AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.X * 2.0f),
+                 AetherPhysicsEngine.toPhysicsPolygonDiameter (bodyBox.Extent.Y * 2.0f),
                  bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 bodyBox.Center)
+                 AetherPhysicsEngine.toPhysicsV2 bodyBox.Center)
         bodyShape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
               ShapeId = match bodyBox.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
-        FarseerPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt bodyShape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyBox.PropertiesOpt bodyShape
 
     static member private attachBodyCircle sourceSimulant (bodyProperties : BodyProperties) (bodyCircle : BodyCircle) (body : Body) =
         let bodyShape =
             body.CreateCircle
-                (FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
+                (AetherPhysicsEngine.toPhysicsPolygonRadius bodyCircle.Radius,
                  bodyProperties.Density,
-                 FarseerPhysicsEngine.toPhysicsV2 bodyCircle.Center)
+                 AetherPhysicsEngine.toPhysicsV2 bodyCircle.Center)
         bodyShape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
               ShapeId = match bodyCircle.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
-        FarseerPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCircle.PropertiesOpt bodyShape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCircle.PropertiesOpt bodyShape
 
     static member private attachBodyCapsule sourceSimulant (bodyProperties : BodyProperties) (bodyCapsule : BodyCapsule) (body : Body) =
-        let height = FarseerPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height
-        let endRadius = FarseerPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius
+        let height = AetherPhysicsEngine.toPhysicsPolygonDiameter bodyCapsule.Height
+        let endRadius = AetherPhysicsEngine.toPhysicsPolygonRadius bodyCapsule.Radius
         let density = bodyProperties.Density
-        let center = FarseerPhysicsEngine.toPhysicsV2 bodyCapsule.Center
+        let center = AetherPhysicsEngine.toPhysicsV2 bodyCapsule.Center
         let rectangle = Common.PolygonTools.CreateRectangle (endRadius * 0.75f, height * 0.5f, center, 0.0f) // scaled in the capsule's box by 0.75f to stop corner sticking
         let list = List<Common.Vertices> ()
         list.Add rectangle
@@ -592,36 +592,36 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
                 { Simulant = sourceSimulant
                   BodyId = bodyProperties.BodyId
                   ShapeId = match bodyCapsule.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
-            FarseerPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt bodyShape |> ignore
+            AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyCapsule.PropertiesOpt bodyShape |> ignore
         Array.ofSeq bodyShapes
 
     static member private attachBodyPolygon sourceSimulant bodyProperties bodyPolygon (body : Body) =
         let vertices =
             bodyPolygon.Vertices |>
             Array.map (fun vertex -> vertex + bodyPolygon.Center) |>
-            Array.map FarseerPhysicsEngine.toPhysicsV2
+            Array.map AetherPhysicsEngine.toPhysicsV2
         let bodyShape = body.CreatePolygon (Common.Vertices vertices, bodyProperties.Density)
         bodyShape.Tag <-
             { Simulant = sourceSimulant
               BodyId = bodyProperties.BodyId
               ShapeId = match bodyPolygon.PropertiesOpt with Some p -> p.BodyShapeId | None -> Gen.idEmpty }
-        FarseerPhysicsEngine.configureBodyShapeProperties bodyProperties bodyPolygon.PropertiesOpt bodyShape
+        AetherPhysicsEngine.configureBodyShapeProperties bodyProperties bodyPolygon.PropertiesOpt bodyShape
 
     static member private attachBodyShapes sourceSimulant bodyProperties bodyShapes (body : Body) =
         let list = List () // NOTE: was too lazy to write a fold, so used mutation and left this comment...
         for bodyShape in bodyShapes do
-            let bodyShapes = FarseerPhysicsEngine.attachBodyShape sourceSimulant bodyProperties bodyShape body
+            let bodyShapes = AetherPhysicsEngine.attachBodyShape sourceSimulant bodyProperties bodyShape body
             list.AddRange bodyShapes
         Array.ofSeq list
 
     static member private attachBodyShape sourceSimulant bodyProperties bodyShape (body : Body) =
         match bodyShape with
         | BodyEmpty -> [||]
-        | BodyBox bodyBox -> FarseerPhysicsEngine.attachBoxBody sourceSimulant bodyProperties bodyBox body |> Array.singleton
-        | BodyCircle bodyCircle -> FarseerPhysicsEngine.attachBodyCircle sourceSimulant bodyProperties bodyCircle body |> Array.singleton
-        | BodyCapsule bodyCapsule -> FarseerPhysicsEngine.attachBodyCapsule sourceSimulant bodyProperties bodyCapsule body |> Array.ofSeq
-        | BodyPolygon bodyPolygon -> FarseerPhysicsEngine.attachBodyPolygon sourceSimulant bodyProperties bodyPolygon body |> Array.singleton
-        | BodyShapes bodyShapes -> FarseerPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes body
+        | BodyBox bodyBox -> AetherPhysicsEngine.attachBoxBody sourceSimulant bodyProperties bodyBox body |> Array.singleton
+        | BodyCircle bodyCircle -> AetherPhysicsEngine.attachBodyCircle sourceSimulant bodyProperties bodyCircle body |> Array.singleton
+        | BodyCapsule bodyCapsule -> AetherPhysicsEngine.attachBodyCapsule sourceSimulant bodyProperties bodyCapsule body |> Array.ofSeq
+        | BodyPolygon bodyPolygon -> AetherPhysicsEngine.attachBodyPolygon sourceSimulant bodyProperties bodyPolygon body |> Array.singleton
+        | BodyShapes bodyShapes -> AetherPhysicsEngine.attachBodyShapes sourceSimulant bodyProperties bodyShapes body
         
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
 
@@ -631,21 +631,21 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         let bodySource = { Simulant = sourceSimulant; BodyId = bodyProperties.BodyId }
 
         // make the body
-        let body = physicsEngine.PhysicsContext.CreateBody (FarseerPhysicsEngine.toPhysicsV2 bodyProperties.Position, bodyProperties.Rotation)
+        let body = physicsEngine.PhysicsContext.CreateBody (AetherPhysicsEngine.toPhysicsV2 bodyProperties.Position, bodyProperties.Rotation)
         body.Tag <- bodySource
 
         // configure body
-        FarseerPhysicsEngine.configureBodyProperties bodyProperties body
+        AetherPhysicsEngine.configureBodyProperties bodyProperties body
 
         // attach body shape
-        FarseerPhysicsEngine.attachBodyShape sourceSimulant bodyProperties bodyProperties.BodyShape body |> ignore
+        AetherPhysicsEngine.attachBodyShape sourceSimulant bodyProperties bodyProperties.BodyShape body |> ignore
 
         // listen for collisions
-        body.add_OnCollision (fun fn fn2 collision -> FarseerPhysicsEngine.handleCollision physicsEngine fn fn2 collision)
+        body.add_OnCollision (fun fn fn2 collision -> AetherPhysicsEngine.handleCollision physicsEngine fn fn2 collision)
 
         // listen for separations
         // TODO: P1: use the contact variable as well?
-        body.add_OnSeparation (fun fn fn2 _ -> FarseerPhysicsEngine.handleSeparation physicsEngine fn fn2)
+        body.add_OnSeparation (fun fn fn2 _ -> AetherPhysicsEngine.handleSeparation physicsEngine fn fn2)
 
         // attempt to add the body
         if not (physicsEngine.Bodies.TryAdd ({ SourceId = createBodyMessage.SourceId; CorrelationId = bodyProperties.BodyId }, (bodyProperties.GravityScale, body))) then
@@ -658,7 +658,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
                     { SourceSimulant = createBodiesMessage.SourceSimulant
                       SourceId = createBodiesMessage.SourceId
                       BodyProperties = bodyProperties }
-                FarseerPhysicsEngine.createBody createBodyMessage physicsEngine)
+                AetherPhysicsEngine.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
@@ -673,7 +673,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter
-            (fun physicsId -> FarseerPhysicsEngine.destroyBody { PhysicsId = physicsId } physicsEngine)
+            (fun physicsId -> AetherPhysicsEngine.destroyBody { PhysicsId = physicsId } physicsEngine)
             destroyBodiesMessage.PhysicsIds
 
     static member private createJoint (createJointMessage : CreateJointMessage) physicsEngine =
@@ -690,8 +690,8 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         | JointDistance jointDistance ->
             match (physicsEngine.Bodies.TryGetValue jointDistance.TargetId, physicsEngine.Bodies.TryGetValue jointDistance.TargetId2) with
             | ((true, (_, body)), (true, (_, body2))) ->
-                let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2, FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor, FarseerPhysicsEngine.toPhysicsV2 jointDistance.Anchor2)
-                joint.Length <- FarseerPhysicsEngine.toPhysics jointDistance.Length
+                let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2, AetherPhysicsEngine.toPhysicsV2 jointDistance.Anchor, AetherPhysicsEngine.toPhysicsV2 jointDistance.Anchor2)
+                joint.Length <- AetherPhysicsEngine.toPhysics jointDistance.Length
                 joint.Frequency <- jointDistance.Frequency
             | (_, _) -> Log.debug "Could not set create a joint for one or more non-existent bodies."
         | _ -> failwithnie ()
@@ -703,7 +703,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
                     { SourceSimulant = createJointsMessage.SourceSimulant
                       SourceId = createJointsMessage.SourceId
                       JointProperties = jointProperties }
-                FarseerPhysicsEngine.createJoint createJointMessage physicsEngine)
+                AetherPhysicsEngine.createJoint createJointMessage physicsEngine)
             createJointsMessage.JointsProperties
 
     static member private destroyJoint (destroyJointMessage : DestroyJointMessage) physicsEngine =
@@ -719,7 +719,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         List.iter
             (fun physicsId ->
                 let destroyJointMessage = { PhysicsId = physicsId }
-                FarseerPhysicsEngine.destroyJoint destroyJointMessage physicsEngine)
+                AetherPhysicsEngine.destroyJoint destroyJointMessage physicsEngine)
             destroyJointsMessage.PhysicsIds
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
@@ -729,7 +729,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
 
     static member private setBodyPosition (setBodyPositionMessage : SetBodyPositionMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyPositionMessage.PhysicsId with
-        | (true, (_, body)) -> body.Position <- FarseerPhysicsEngine.toPhysicsV2 setBodyPositionMessage.Position
+        | (true, (_, body)) -> body.Position <- AetherPhysicsEngine.toPhysicsV2 setBodyPositionMessage.Position
         | (false, _) -> Log.debug ("Could not set position of non-existent body with PhysicsId = " + scstring setBodyPositionMessage.PhysicsId + "'.")
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
@@ -749,38 +749,38 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.PhysicsId with
-        | (true, (_, body)) -> body.LinearVelocity <- FarseerPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
+        | (true, (_, body)) -> body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
         | (false, _) -> Log.debug ("Could not set linear velocity of non-existent body with PhysicsId = " + scstring setBodyLinearVelocityMessage.PhysicsId + "'.")
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.PhysicsId with
-        | (true, (_, body)) -> body.ApplyLinearImpulse (FarseerPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
+        | (true, (_, body)) -> body.ApplyLinearImpulse (AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
         | (false, _) -> Log.debug ("Could not apply linear impulse to non-existent body with PhysicsId = " + scstring applyBodyLinearImpulseMessage.PhysicsId + "'.")
 
     static member private applyBodyForce applyBodyForceMessage physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.PhysicsId with
-        | (true, (_, body)) -> body.ApplyForce (FarseerPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force)
+        | (true, (_, body)) -> body.ApplyForce (AetherPhysicsEngine.toPhysicsV2 applyBodyForceMessage.Force)
         | (false, _) -> Log.debug ("Could not apply force to non-existent body with PhysicsId = " + scstring applyBodyForceMessage.PhysicsId + "'.")
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
-        | CreateBodyMessage createBodyMessage -> FarseerPhysicsEngine.createBody createBodyMessage physicsEngine
-        | CreateBodiesMessage createBodiesMessage -> FarseerPhysicsEngine.createBodies createBodiesMessage physicsEngine
-        | DestroyBodyMessage destroyBodyMessage -> FarseerPhysicsEngine.destroyBody destroyBodyMessage physicsEngine
-        | DestroyBodiesMessage destroyBodiesMessage -> FarseerPhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
-        | CreateJointMessage createJointMessage -> FarseerPhysicsEngine.createJoint createJointMessage physicsEngine
-        | CreateJointsMessage createJointsMessage -> FarseerPhysicsEngine.createJoints createJointsMessage physicsEngine
-        | DestroyJointMessage destroyJointMessage -> FarseerPhysicsEngine.destroyJoint destroyJointMessage physicsEngine
-        | DestroyJointsMessage destroyJointsMessage -> FarseerPhysicsEngine.destroyJoints destroyJointsMessage physicsEngine
-        | SetBodyEnabledMessage setBodyEnabledMessage -> FarseerPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
-        | SetBodyPositionMessage setBodyPositionMessage -> FarseerPhysicsEngine.setBodyPosition setBodyPositionMessage physicsEngine
-        | SetBodyRotationMessage setBodyRotationMessage -> FarseerPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
-        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> FarseerPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
-        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> FarseerPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
-        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> FarseerPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
-        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> FarseerPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
-        | ApplyBodyForceMessage applyBodyForceMessage -> FarseerPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
-        | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- FarseerPhysicsEngine.toPhysicsV2 gravity
+        | CreateBodyMessage createBodyMessage -> AetherPhysicsEngine.createBody createBodyMessage physicsEngine
+        | CreateBodiesMessage createBodiesMessage -> AetherPhysicsEngine.createBodies createBodiesMessage physicsEngine
+        | DestroyBodyMessage destroyBodyMessage -> AetherPhysicsEngine.destroyBody destroyBodyMessage physicsEngine
+        | DestroyBodiesMessage destroyBodiesMessage -> AetherPhysicsEngine.destroyBodies destroyBodiesMessage physicsEngine
+        | CreateJointMessage createJointMessage -> AetherPhysicsEngine.createJoint createJointMessage physicsEngine
+        | CreateJointsMessage createJointsMessage -> AetherPhysicsEngine.createJoints createJointsMessage physicsEngine
+        | DestroyJointMessage destroyJointMessage -> AetherPhysicsEngine.destroyJoint destroyJointMessage physicsEngine
+        | DestroyJointsMessage destroyJointsMessage -> AetherPhysicsEngine.destroyJoints destroyJointsMessage physicsEngine
+        | SetBodyEnabledMessage setBodyEnabledMessage -> AetherPhysicsEngine.setBodyEnabled setBodyEnabledMessage physicsEngine
+        | SetBodyPositionMessage setBodyPositionMessage -> AetherPhysicsEngine.setBodyPosition setBodyPositionMessage physicsEngine
+        | SetBodyRotationMessage setBodyRotationMessage -> AetherPhysicsEngine.setBodyRotation setBodyRotationMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> AetherPhysicsEngine.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> AetherPhysicsEngine.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> AetherPhysicsEngine.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
+        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> AetherPhysicsEngine.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | ApplyBodyForceMessage applyBodyForceMessage -> AetherPhysicsEngine.applyBodyForce applyBodyForceMessage physicsEngine
+        | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- AetherPhysicsEngine.toPhysicsV2 gravity
         | RebuildPhysicsHackMessage ->
             physicsEngine.RebuildingHack <- true
             physicsEngine.PhysicsContext.Clear ()
@@ -789,12 +789,12 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
 
     static member private handlePhysicsMessages physicsMessages physicsEngine =
         for physicsMessage in physicsMessages do
-            FarseerPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
+            AetherPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
         physicsEngine.RebuildingHack <- false
 
     static member private createTransformMessages physicsEngine =
         // NOTE: We should really be querying these bodies from the physics engine's internally-maintained awake-body
-        // list. Note also that I tried building Farseer with #define USE_AWAKE_BODY_SET so we can query from that
+        // list. Note also that I tried building Aether with #define USE_AWAKE_BODY_SET so we can query from that
         // AwakeBodyList, but there are compilation errors that, when I tried to fix, broke the whole system :)
         //
         // In truth, we just need a better physics engine implementation :)
@@ -803,7 +803,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodySource = body.Tag :?> BodySourceInternal
-                          Position = FarseerPhysicsEngine.toPixelV2 body.Position
+                          Position = AetherPhysicsEngine.toPixelV2 body.Position
                           Rotation = body.Rotation }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
                 
@@ -815,7 +815,7 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
     /// Make a physics engine.
     static member make gravity =
         let physicsEngine =
-            { PhysicsContext = World (FarseerPhysicsEngine.toPhysicsV2 gravity)
+            { PhysicsContext = World (AetherPhysicsEngine.toPhysicsV2 gravity)
               Bodies = BodyDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
               Joints = JointDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
               PhysicsMessages = UList.makeEmpty Constants.Physics.MessageListConfig
@@ -829,13 +829,13 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
             physicsEngine.Bodies.ContainsKey physicsId
 
         member physicsEngine.GetBodyContactNormals physicsId =
-            FarseerPhysicsEngine.getBodyContacts physicsId physicsEngine |>
+            AetherPhysicsEngine.getBodyContacts physicsId physicsEngine |>
             Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector2 (normal.X, normal.Y)) |>
             Array.toList
 
         member physicsEngine.GetBodyLinearVelocity physicsId =
             let (_, body) = physicsEngine.Bodies.[physicsId]
-            FarseerPhysicsEngine.toPixelV2 body.LinearVelocity
+            AetherPhysicsEngine.toPixelV2 body.LinearVelocity
 
         member physicsEngine.GetBodyToGroundContactNormals physicsId =
             List.filter
@@ -876,11 +876,11 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
             physicsEngine :> PhysicsEngine
 
         member physicsEngine.Integrate tickRate physicsMessages =
-            FarseerPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
+            AetherPhysicsEngine.handlePhysicsMessages physicsMessages physicsEngine
             let physicsStepAmount = Constants.Physics.PhysicsStepRate * single tickRate
-            FarseerPhysicsEngine.applyGravity physicsStepAmount physicsEngine
+            AetherPhysicsEngine.applyGravity physicsStepAmount physicsEngine
             physicsEngine.PhysicsContext.Step physicsStepAmount
-            FarseerPhysicsEngine.createTransformMessages physicsEngine
+            AetherPhysicsEngine.createTransformMessages physicsEngine
             let integrationMessages = List<IntegrationMessage> physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
             integrationMessages
