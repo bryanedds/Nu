@@ -133,7 +133,7 @@ module AssetGraph =
         | ".png" ->
             use stream = File.OpenWrite filePath
             if psdHack then
-                // HACK: this is a shite ass hack that deals with an image magick bug that causes the transparent
+                // HACK: this is a hack that deals with a more recent image magick bug that causes the transparent
                 // pixels of an image to be turned pure white or black. The side-effect of this hack is that your
                 // psd images cannot contain full white or black as a color.
                 image.ColorFuzz <- Percentage 0.0
@@ -158,9 +158,8 @@ module AssetGraph =
         Directory.CreateDirectory (Path.GetDirectoryName refinementFilePath) |> ignore
         match refinement with
         | PsdToPng ->
-            //Diagnostics.Debugger.Launch ()
             use image = new MagickImage (intermediateFilePath)
-            writeMagickImageAsPng true refinementFilePath image
+            writeMagickImageAsPng false refinementFilePath image
         | Retro ->
             use image = new MagickImage (intermediateFilePath)
             image.Scale (Percentage 400)
