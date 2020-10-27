@@ -809,8 +809,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
                 
     static member applyGravity physicsStepAmount physicsEngine =
         for (gravityScale, body) in physicsEngine.Bodies.Values do
-            let linearVelocity = body.LinearVelocity + physicsEngine.PhysicsContext.Gravity * Common.Vector2 (0.0f, gravityScale) * physicsStepAmount
-            body.LinearVelocity <- linearVelocity
+            body.LinearVelocity <- body.LinearVelocity + physicsEngine.PhysicsContext.Gravity * gravityScale * physicsStepAmount
 
     /// Make a physics engine.
     static member make gravity =
