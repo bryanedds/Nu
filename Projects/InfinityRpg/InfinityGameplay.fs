@@ -70,8 +70,26 @@ type [<NoComparison>] Move =
         | Travel (head :: _) -> Travel [head]
         | _ -> this
 
+type FieldSpace =
+    { PickupItemOpt : PickupType Option }
+
+    member this.ContainsPickup =
+        match this.PickupItemOpt with Some _ -> true | None -> false
+    
+    static member updatePickupItemOpt updater fieldSpace =
+        { fieldSpace with PickupItemOpt = updater fieldSpace.PickupItemOpt }
+    
+    static member addHealth fieldSpace =
+        FieldSpace.updatePickupItemOpt (constant (Some Health)) fieldSpace
+    
+    static member removePickup fieldSpace =
+        FieldSpace.updatePickupItemOpt (constant None) fieldSpace
+    
+    static member empty =
+        { PickupItemOpt = None }
+
 type [<ReferenceEquality; NoComparison>] Chessboard =
-    { PassableCoordinates : Map<Vector2i, PickupType Option>
+    { PassableCoordinates : Map<Vector2i, FieldSpace>
       CharacterCoordinates : Map<CharacterIndex, Vector2i>
       CurrentMoves : Map<CharacterIndex, Move> }
 
@@ -87,7 +105,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Map.filter (fun (k : CharacterIndex) _ -> not k.IsEnemy) this.CharacterCoordinates
     
     member this.PickupItems =
-        Map.filter (fun _ v -> v <> None) this.PassableCoordinates
+        Map.filter (fun _ (v : FieldSpace) -> v.ContainsPickup) this.PassableCoordinates
 
     member this.EnemyCount =
         this.EnemyCoordinates.Count
@@ -116,16 +134,14 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Map.exists (fun k _ -> k = index) chessboard.CharacterCoordinates
     
     static member pickupAtCoordinates coordinates chessboard =
-        match chessboard.PassableCoordinates.[coordinates] with
-        | Some _ -> true
-        | None -> false
+        chessboard.PassableCoordinates.[coordinates].ContainsPickup
     
-    static member updateCoordinatesValue newValue coordinates chessboard =
-        let passableCoordinates = Map.add coordinates newValue chessboard.PassableCoordinates
+    static member updateCoordinatesValue updater coordinates chessboard =
+        let passableCoordinates = Map.add coordinates (updater chessboard.PassableCoordinates.[coordinates]) chessboard.PassableCoordinates
         Chessboard.updatePassableCoordinates (constant passableCoordinates) chessboard
     
     static member clearPickups _ _ chessboard =
-        let passableCoordinates = Map.map (fun _ _ -> None) chessboard.PassableCoordinates
+        let passableCoordinates = Map.map (fun _ v -> FieldSpace.removePickup v) chessboard.PassableCoordinates
         Chessboard.updatePassableCoordinates (constant passableCoordinates) chessboard
     
     // used for both adding and relocating
@@ -155,7 +171,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Chessboard.addMove PlayerIndex move chessboard
     
     static member setPassableCoordinates _ fieldMap chessboard =
-        let passableCoordinates = fieldMap.FieldTiles |> Map.filter (fun _ fieldTile -> fieldTile.TileType = Passable) |> Map.map (fun _ _ -> None)
+        let passableCoordinates = fieldMap.FieldTiles |> Map.filter (fun _ fieldTile -> fieldTile.TileType = Passable) |> Map.map (fun _ _ -> FieldSpace.empty)
         Chessboard.updatePassableCoordinates (constant passableCoordinates) chessboard                    
 
 type [<ReferenceEquality; NoComparison>] Gameplay =
@@ -303,10 +319,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboardBy Chessboard.truncatePlayerPath () () gameplay
     
     static member addHealth coordinates gameplay =
-        Gameplay.updateChessboardBy Chessboard.updateCoordinatesValue (Some Health) coordinates gameplay
+        Gameplay.updateChessboardBy Chessboard.updateCoordinatesValue FieldSpace.addHealth coordinates gameplay
 
     static member removeHealth coordinates gameplay =
-        Gameplay.updateChessboardBy Chessboard.updateCoordinatesValue None coordinates gameplay
+        Gameplay.updateChessboardBy Chessboard.updateCoordinatesValue FieldSpace.removePickup coordinates gameplay
     
     static member clearPickups gameplay =
         Gameplay.updateChessboardBy Chessboard.clearPickups () () gameplay
