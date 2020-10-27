@@ -661,12 +661,13 @@ module TileMapFacetModule =
                 while enr.MoveNext () && not tileSetFound do
                     let set = enr.Current
                     let tileCountOpt = set.TileCount
-                    if  tile.Gid >= set.FirstGid &&
-                        tile.Gid < set.FirstGid + tileCountOpt.Value then
+                    let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
+                    if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
+                        not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
                         tileSetFound <- true
                     else
                         tileSetIndex <- inc tileSetIndex
-                        tileOffset <- tileOffset + tileCountOpt.Value
+                        tileOffset <- tileOffset + tileCount
                 let tileId = tile.Gid - tileOffset
                 let tileSet = tmd.TileMap.Tilesets.[tileSetIndex]
                 let tileMapPosition = tm.GetPosition world
