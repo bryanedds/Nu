@@ -24,7 +24,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;ECS_PURE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;ECS</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Metrics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
@@ -95,8 +95,8 @@
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <Reference Include="FarseerPhysics">
-      <HintPath>..\..\packages\FarseerPhysics.3.5.0\lib\NET40\FarseerPhysics.dll</HintPath>
+    <Reference Include="Aether.Physics2D">
+      <HintPath>..\..\packages\Aether.Physics2D.1.5.0\lib\net40\Aether.Physics2D.dll</HintPath>
     </Reference>
     <Reference Include="FParsec">
       <HintPath>..\..\packages\FParsec.1.0.3\lib\net40-client\FParsec.dll</HintPath>

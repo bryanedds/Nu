@@ -89,8 +89,8 @@
       <Project>{85d631a5-821a-4755-a68e-c1ffc64e469a}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <Reference Include="FarseerPhysics">
-      <HintPath>..\..\packages\FarseerPhysics.3.5.0\lib\NET40\FarseerPhysics.dll</HintPath>
+    <Reference Include="Aether.Physics2D">
+      <HintPath>..\..\packages\Aether.Physics2D.1.5.0\lib\net40\Aether.Physics2D.dll</HintPath>
     </Reference>
     <Reference Include="FParsec">
       <HintPath>..\..\packages\FParsec.1.0.3\lib\net40-client\FParsec.dll</HintPath>

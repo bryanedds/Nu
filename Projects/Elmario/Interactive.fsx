@@ -12,7 +12,7 @@
 #r "../../packages/Prime.Scripting.6.0.0/lib/net472/Prime.Scripting.exe"
 #r "../../packages/FSharpx.Core.1.8.32/lib/40/FSharpx.Core.dll"
 #r "../../packages/FSharpx.Collections.2.1.3/lib/net45/FSharpx.Collections.dll"
-#r "../../packages/FarseerPhysics.3.5.0/lib/NET40/FarseerPhysics.dll"
+#r "../../packages/Aether.Physics2D.1.5.0/lib/net40/Aether.Physics2D.dll"
 #r "../../packages/Nito.Collections.Deque.1.1.0/lib/netstandard2.0/Nito.Collections.Deque.dll"
 #r "../../packages/SDL2-CS.dll.2.0.0.0/lib/net20/SDL2-CS.dll"
 #r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"
