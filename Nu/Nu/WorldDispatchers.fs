@@ -476,6 +476,9 @@ module RigidBodyFacetModule =
         member this.GetLinearDamping world : single = this.Get Property? LinearDamping world
         member this.SetLinearDamping (value : single) world = this.SetFast Property? LinearDamping false false value world
         member this.LinearDamping = lens Property? LinearDamping this.GetLinearDamping this.SetLinearDamping this
+        member this.GetInertia world : single = this.Get Property? Inertia world
+        member this.SetInertia (value : single) world = this.SetFast Property? Inertia false false value world
+        member this.Inertia = lens Property? Inertia this.GetInertia this.SetInertia this
         member this.GetGravityScale world : single = this.Get Property? GravityScale world
         member this.SetGravityScale (value : single) world = this.SetFast Property? GravityScale false false value world
         member this.GravityScale = lens Property? GravityScale this.GetGravityScale this.SetGravityScale this
@@ -488,6 +491,9 @@ module RigidBodyFacetModule =
         member this.GetBodyShape world : BodyShape = this.Get Property? BodyShape world
         member this.SetBodyShape (value : BodyShape) world = this.SetFast Property? BodyShape false false value world
         member this.BodyShape = lens Property? BodyShape this.GetBodyShape this.SetBodyShape this
+        member this.GetIgnoreCCD world : bool = this.Get Property? IgnoreCCD world
+        member this.SetIgnoreCCD (value : bool) world = this.SetFast Property? IgnoreCCD false false value world
+        member this.IgnoreCCD = lens Property? IgnoreCCD this.GetIgnoreCCD this.SetIgnoreCCD this
         member this.GetIsBullet world : bool = this.Get Property? IsBullet world
         member this.SetIsBullet (value : bool) world = this.SetFast Property? IsBullet false false value world
         member this.IsBullet = lens Property? IsBullet this.GetIsBullet this.SetIsBullet this
@@ -518,10 +524,12 @@ module RigidBodyFacetModule =
              define Entity.AngularDamping 0.0f
              define Entity.LinearVelocity Vector2.Zero
              define Entity.LinearDamping 0.0f
+             define Entity.Inertia 0.0f
              define Entity.GravityScale 1.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.BodyShape (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero; PropertiesOpt = None })
+             define Entity.IgnoreCCD false
              define Entity.IsBullet false
              define Entity.IsSensor false
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
@@ -538,10 +546,12 @@ module RigidBodyFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularDamping) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? LinearVelocity) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? LinearDamping) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Inertia) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? GravityScale) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyShape) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IgnoreCCD) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IsBullet) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IsSensor) entity world
             world
@@ -563,9 +573,11 @@ module RigidBodyFacetModule =
                   AngularDamping = entity.GetAngularDamping world
                   LinearVelocity = entity.GetLinearVelocity world
                   LinearDamping = entity.GetLinearDamping world
+                  Inertia = entity.GetInertia world
                   GravityScale = entity.GetGravityScale world
                   CollisionCategories = PhysicsEngine.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = PhysicsEngine.categorizeCollisionMask (entity.GetCollisionMask world)
+                  IgnoreCCD = entity.GetIgnoreCCD world
                   IsBullet = entity.GetIsBullet world
                   IsSensor = entity.GetIsSensor world }
             World.createBody entity (entity.GetId world) bodyProperties world
@@ -743,9 +755,11 @@ module TileMapFacetModule =
                   AngularDamping = 0.0f
                   LinearVelocity = Vector2.Zero
                   LinearDamping = 0.0f
+                  Inertia = 0.0f
                   GravityScale = 0.0f
                   CollisionCategories = PhysicsEngine.categorizeCollisionMask (tileMap.GetCollisionCategories world)
                   CollisionMask = PhysicsEngine.categorizeCollisionMask (tileMap.GetCollisionMask world)
+                  IgnoreCCD = false
                   IsBullet = false
                   IsSensor = false }
             World.createBody tileMap (tileMap.GetId world) bodyProperties world
