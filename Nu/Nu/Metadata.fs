@@ -18,7 +18,7 @@ exception TileSetPropertyNotFoundException of string
 /// full asset loaded into memory.
 type [<StructuralEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of Vector2i * PixelFormat
-    | TileMapMetadata of string * Image AssetTag list * TmxMap
+    | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
     | SoundMetadata
     | SongMetadata
     | OtherMetadata of obj
@@ -58,9 +58,11 @@ module Metadata =
 
     let private generateTileMapMetadata asset =
         try let tmxMap = TmxMap asset.FilePath
-            let tileSets = List.ofSeq tmxMap.Tilesets
-            let tileSetImages = List.map getTileSetProperties tileSets
-            TileMapMetadata (asset.FilePath, tileSetImages, tmxMap)
+            let tileSets =
+                tmxMap.Tilesets |>
+                Array.ofSeq |>
+                Array.map (fun (tileSet : TmxTileset) -> (tileSet, getTileSetProperties tileSet))
+            TileMapMetadata (asset.FilePath, tileSets, tmxMap)
         with _ as exn ->
             let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to: " + scstring exn
             Log.trace errorMessage

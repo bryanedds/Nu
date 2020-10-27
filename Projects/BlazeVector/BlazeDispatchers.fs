@@ -10,7 +10,6 @@ open BlazeVector
 module BulletModule =
 
     type Entity with
-    
         member this.GetAge = this.Get Property? Age
         member this.SetAge = this.Set Property? Age
         member this.Age = lens<int64> Property? Age this.GetAge this.SetAge this
@@ -64,11 +63,9 @@ module BulletModule =
 module EnemyModule =
 
     type Entity with
-    
         member this.GetHealth = this.Get Property? Health
         member this.SetHealth = this.Set Property? Health
         member this.Health = lens<int> Property? Health this.GetHealth this.SetHealth this
-        
         member this.IsOnScreen world =
             let viewBounds = World.getViewBoundsRelative world
             Math.isPointInBounds (this.GetCenter world) viewBounds
@@ -132,7 +129,6 @@ module EnemyModule =
 module PlayerModule =
 
     type Entity with
-
         member this.GetLastTimeOnGroundNp = this.Get Property? LastTimeOnGroundNp
         member this.SetLastTimeOnGroundNp = this.Set Property? LastTimeOnGroundNp
         member this.LastTimeOnGroundNp = lens<int64> Property? LastTimeOnGroundNp this.GetLastTimeOnGroundNp this.SetLastTimeOnGroundNp this

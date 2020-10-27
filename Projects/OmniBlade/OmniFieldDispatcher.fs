@@ -16,10 +16,10 @@ module FieldDispatcher =
 
     type [<NoComparison; NoEquality>] FieldMessage =
         | UpdateAvatar of Avatar
-        | UpdateFieldTransition
         | UpdateDialog
         | UpdatePortal
         | UpdateSensor
+        | UpdateFieldTransition
         | SubmenuLegionOpen
         | SubmenuLegionAlly of int
         | SubmenuItemOpen
@@ -38,12 +38,15 @@ module FieldDispatcher =
         | Interact
 
     type [<NoComparison>] FieldCommand =
-        | PlaySound of int64 * single * Sound AssetTag
-        | MoveAvatar of Vector2
         | UpdateEye
+        | PlayFieldSong
+        | MoveAvatar of Vector2
+        | PlaySound of int64 * single * Sound AssetTag
+        | PlaySong of int * single * Song AssetTag
+        | FadeOutSong of int
+        | Nop
 
     type Screen with
-
         member this.GetField = this.GetModel<Field>
         member this.SetField = this.SetModel<Field>
         member this.Field = this.Model<Field> ()
@@ -103,7 +106,25 @@ module FieldDispatcher =
             avatar.IntersectedBodyShapes |>
             List.choose (fun shape ->
                 match (shape.Entity.GetProp world).PropData with
-                | Portal (_, fieldType, index, direction, _) -> Some (fieldType, index, direction)
+                | Portal (_, _, fieldType, portalType, _) ->
+                    match Map.tryFind fieldType data.Value.Fields with
+                    | Some fieldData ->
+                        match FieldData.tryGetPortal portalType fieldData world with
+                        | Some portal ->
+                            match portal.PropData with
+                            | Portal (_, direction, _, _, _) ->
+                                let destinationCenter =
+                                    match direction with
+                                    | Upward -> portal.PropBounds.Top
+                                    | Rightward -> portal.PropBounds.Right
+                                    | Downward -> portal.PropBounds.Bottom
+                                    | Leftward -> portal.PropBounds.Left
+                                let destinationOffset = Direction.toVector2 direction * v2Dup 72.0f // TODO: use constant.
+                                let destination = destinationCenter + destinationOffset
+                                Some (fieldType, destination, direction)
+                            | _ -> None
+                        | None -> None
+                    | None -> None
                 | _ -> None) |>
             List.tryHead
 
@@ -244,11 +265,12 @@ module FieldDispatcher =
                          Entity.ClickEvent ==> msg (fieldMsg selection)])
 
         override this.Channel (_, field) =
-            [Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+            [field.SelectEvent => cmd PlayFieldSong
+             Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
              field.UpdateEvent => msg UpdateDialog
-             field.UpdateEvent => msg UpdateFieldTransition
              field.UpdateEvent => msg UpdatePortal
              field.UpdateEvent => msg UpdateSensor
+             field.UpdateEvent => msg UpdateFieldTransition
              Simulants.FieldInteract.ClickEvent => msg Interact
              field.PostUpdateEvent => cmd UpdateEye]
 
@@ -275,7 +297,15 @@ module FieldDispatcher =
                 match field.FieldTransitionOpt with
                 | Some fieldTransition ->
                     let tickTime = World.getTickTime world
-                    if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                    let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
+                    if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
+                        match data.Value.Fields.TryGetValue fieldTransition.FieldType with
+                        | (true, fieldData) ->
+                            if currentSongOpt <> fieldData.FieldSongOpt
+                            then withCmd (FadeOutSong Constants.Audio.DefaultFadeOutMs) field
+                            else just field
+                        | (false, _) -> just field
+                    elif tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
                         let field = Field.updateFieldType (constant fieldTransition.FieldType) field
                         let field =
                             Field.updateAvatar (fun avatar ->
@@ -284,7 +314,15 @@ module FieldDispatcher =
                                 let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
                                 avatar)
                                 field
-                        withCmd (MoveAvatar fieldTransition.FieldIndex) field
+                        let moveCmd = MoveAvatar fieldTransition.FieldDestination
+                        let songCmd =
+                            match Field.getFieldSongOpt field with
+                            | Some fieldSong ->
+                                if currentSongOpt <> Some fieldSong
+                                then PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)
+                                else Nop
+                            | None -> Nop
+                        withCmds [moveCmd; songCmd] field
                     elif tickTime = fieldTransition.FieldTransitionTime then
                         let field = Field.updateFieldTransitionOpt (constant None) field
                         just field
@@ -295,10 +333,10 @@ module FieldDispatcher =
                 match field.FieldTransitionOpt with
                 | None ->
                     match tryGetTouchingPortal field.Avatar world with
-                    | Some (fieldType, index, direction) ->
+                    | Some (fieldType, destination, direction) ->
                         let transition =
                             { FieldType = fieldType
-                              FieldIndex = index
+                              FieldDestination = destination
                               FieldDirection = direction
                               FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
                         let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
@@ -439,22 +477,39 @@ module FieldDispatcher =
                     | None -> just field
                 | Some dialog -> interactDialog dialog field
 
-        override this.Command (_, command, _, world) =
+        override this.Command (field, command, _, world) =
 
             match command with
             | UpdateEye ->
-                let avatar = Simulants.FieldAvatar.GetAvatar world
-                let world = World.setEyeCenter avatar.Center world
+                let world = World.setEyeCenter field.Avatar.Center world
                 just world
 
+            | PlayFieldSong ->
+                match data.Value.Fields.TryGetValue field.FieldType with
+                | (true, fieldData) ->
+                    match fieldData.FieldSongOpt with
+                    | Some fieldSong -> withCmd (PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)) world
+                    | None -> just world
+                | (false, _) -> just world
+
             | MoveAvatar position ->
-                let world = Simulants.FieldAvatar.SetCenter position world
-                let world = World.setBodyPosition position (Simulants.FieldAvatar.GetPhysicsId world) world
+                let positionOffset = position - Constants.Field.AvatarBottomInset
+                let world = Simulants.FieldAvatar.SetBottom positionOffset world
                 just world
 
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
+
+            | PlaySong (fade, volume, assetTag) ->
+                let world = World.playSong fade volume assetTag world
+                just world
+
+            | FadeOutSong fade ->
+                let world = World.fadeOutSong fade world
+                just world
+
+            | Nop -> just world
 
         override this.Content (field, _) =
 
