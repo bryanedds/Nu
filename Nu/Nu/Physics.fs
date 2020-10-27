@@ -143,9 +143,11 @@ type [<StructuralEquality; NoComparison>] BodyProperties =
       AngularDamping : single
       LinearVelocity : Vector2
       LinearDamping : single
+      Inertia : single
       GravityScale : single
       CollisionCategories : int
       CollisionMask : int
+      IgnoreCCD : bool
       IsBullet : bool
       IsSensor : bool }
 
@@ -168,9 +170,11 @@ module BodyProperties =
           AngularDamping = 0.0f
           LinearVelocity = Vector2.Zero
           LinearDamping = 0.0f
+          Inertia = 0.0f
           GravityScale = 1.0f
           CollisionCategories = 1
           CollisionMask = -1
+          IgnoreCCD = false
           IsBullet = false
           IsSensor = false }
 
@@ -535,11 +539,12 @@ type [<ReferenceEquality; NoComparison>] FarseerPhysicsEngine =
         body.AngularDamping <- bodyProperties.AngularDamping
         body.LinearVelocity <- FarseerPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         body.LinearDamping <- bodyProperties.LinearDamping
-        // body.Inertia <- bodyProperties.Inertia TODO: P1: should we implement this? what does the value mean?
-        body.IgnoreGravity <- true // we do all gravity processing ourselves due to - https://github.com/tainicom/Aether.Physics2D/issues/85#issuecomment-716051707
+        body.Inertia <- bodyProperties.Inertia
+        body.IgnoreGravity <- true // we do all gravity processing ourselves due to: https://github.com/tainicom/Aether.Physics2D/issues/85#issuecomment-716051707
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         body.BodyType <- FarseerPhysicsEngine.toPhysicsBodyType bodyProperties.BodyType
+        body.IgnoreCCD <- bodyProperties.IgnoreCCD
         body.IsBullet <- bodyProperties.IsBullet
         body.SetIsSensor bodyProperties.IsSensor
         body.SleepingAllowed <- true
