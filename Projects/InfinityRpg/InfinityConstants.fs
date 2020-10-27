@@ -15,7 +15,6 @@ module Constants =
         let FieldUnitSizeM = v2iDup 22
         let CharacterDepth = 1.0f
         let PickupDepth = 0.5f
-        let CharacterWalkSpeed = 8.0f // original value is 4.0f
 
     [<RequireQualifiedAccess>]
     module InfinityRpg =
@@ -34,6 +33,8 @@ module Constants =
 
         // general data
         let AttackName = "Attack"
+        let CharacterWalkSpeed = 8.0f // original value is 4.0f
+        let CharacterWalkResolution = Layout.TileSize.X / CharacterWalkSpeed
         let CharacterAnimationFacingDelay = 16L
         let CharacterAnimationActingDelay = 12L // original value is 24L
         let ReactionTick = CharacterAnimationActingDelay * 2L

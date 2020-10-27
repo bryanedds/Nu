@@ -33,10 +33,6 @@ type [<CustomEquality; NoComparison>] NavigationNode =
     override this.GetHashCode () =
         this.PositionM.GetHashCode ()
 
-type WalkState =
-    | WalkFinished
-    | WalkContinuing
-
 type [<ReferenceEquality; NoComparison>] WalkDescriptor =
     { WalkDirection : Direction
       WalkOriginM : Vector2i }
