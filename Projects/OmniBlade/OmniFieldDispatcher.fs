@@ -38,11 +38,12 @@ module FieldDispatcher =
         | Interact
 
     type [<NoComparison>] FieldCommand =
+        | UpdateEye
+        | PlayFieldSong
+        | MoveAvatar of Vector2
         | PlaySound of int64 * single * Sound AssetTag
         | PlaySong of int * single * Song AssetTag
         | FadeOutSong of int
-        | MoveAvatar of Vector2
-        | UpdateEye
         | Nop
 
     type Screen with
@@ -264,7 +265,8 @@ module FieldDispatcher =
                          Entity.ClickEvent ==> msg (fieldMsg selection)])
 
         override this.Channel (_, field) =
-            [Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+            [field.SelectEvent => cmd PlayFieldSong
+             Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
              field.UpdateEvent => msg UpdateDialog
              field.UpdateEvent => msg UpdatePortal
              field.UpdateEvent => msg UpdateSensor
@@ -316,8 +318,9 @@ module FieldDispatcher =
                         let songCmd =
                             match Field.getFieldSongOpt field with
                             | Some fieldSong ->
-                                if currentSongOpt = Some fieldSong then Nop
-                                else PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)
+                                if currentSongOpt <> Some fieldSong
+                                then PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)
+                                else Nop
                             | None -> Nop
                         withCmds [moveCmd; songCmd] field
                     elif tickTime = fieldTransition.FieldTransitionTime then
@@ -474,13 +477,20 @@ module FieldDispatcher =
                     | None -> just field
                 | Some dialog -> interactDialog dialog field
 
-        override this.Command (_, command, _, world) =
+        override this.Command (field, command, _, world) =
 
             match command with
             | UpdateEye ->
-                let center = Simulants.FieldAvatar.GetCenter world
-                let world = World.setEyeCenter center world
+                let world = World.setEyeCenter field.Avatar.Center world
                 just world
+
+            | PlayFieldSong ->
+                match data.Value.Fields.TryGetValue field.FieldType with
+                | (true, fieldData) ->
+                    match fieldData.FieldSongOpt with
+                    | Some fieldSong -> withCmd (PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)) world
+                    | None -> just world
+                | (false, _) -> just world
 
             | MoveAvatar position ->
                 let positionOffset = position - Constants.Field.AvatarBottomInset
