@@ -291,7 +291,7 @@ module GameplayDispatcher =
                 let gameplay = Gameplay.clearPickups gameplay
                 let gameplay = Gameplay.yankPlayer newCoordinates gameplay
                 let gameplay = Gameplay.transitionMap direction gameplay
-                let gameplay = Gameplay.setFieldMap (FieldMap.makeFromFieldMapUnit gameplay.MapModeler.Current) gameplay
+                let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromFieldMapUnit gameplay.MapModeler.Current) gameplay
                 let gameplay = Gameplay.makeEnemies 4 gameplay
                 just gameplay
 
