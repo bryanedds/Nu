@@ -13,9 +13,9 @@
   </data>
  </layer>
  <objectgroup id="4" name="Props">
-  <object id="4" gid="37" x="2688" y="5120" width="128" height="64">
+  <object id="4" gid="37" x="2688" y="4288" width="128" height="64">
    <properties>
-    <property name="I" value="[Portal South Upward DebugRoom North]"/>
+    <property name="I" value="[Portal South Downward TombInner South]"/>
    </properties>
   </object>
  </objectgroup>

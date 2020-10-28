@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.2" tiledversion="1.3.4" name="Cave" tilewidth="64" tileheight="64" tilecount="256" columns="16">
+<tileset version="1.2" tiledversion="1.3.4" name="CaveInner" tilewidth="64" tileheight="64" tilecount="256" columns="16">
  <properties>
-  <property name="Image" value="[Field Cave]"/>
+  <property name="Image" value="[Field CaveInner]"/>
  </properties>
- <image source="Cave.png" width="1024" height="1024"/>
+ <image source="CaveInner.png" width="1024" height="1024"/>
  <tile id="39">
   <properties>
    <property name="C" value=""/>
@@ -225,6 +225,16 @@
   </properties>
  </tile>
  <tile id="190">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="193">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="194">
   <properties>
    <property name="C" value=""/>
   </properties>

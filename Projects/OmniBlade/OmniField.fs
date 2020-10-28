@@ -310,12 +310,12 @@ module Field =
           BattleOpt_ = None }
 
     let initial =
-        { FieldType_ = DebugRoom
+        { FieldType_ = TombOuter
           Avatar_ = Avatar.empty
-          Legion_ = Map.ofList [(0, Legionnaire.finn); (1, Legionnaire.glenn)]
+          Legion_ = Map.ofList [(0, Legionnaire.finn)]
           Advents_ = Set.empty
           PropStates_ = Map.empty
-          Inventory_ = { Items = Map.empty; Gold = 0 }
+          Inventory_ = { Items = Map.empty; Gold = 50 }
           Submenu_ = { SubmenuState = SubmenuClosed; SubmenuUseOpt = None }
           ShopOpt_ = None
           FieldTransitionOpt_ = None

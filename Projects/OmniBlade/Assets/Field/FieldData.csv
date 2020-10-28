@@ -2,4 +2,4 @@ Type,FieldTileMap,FieldSongOpt,FieldBackgroundColor
 DebugRoom,[Field DebugRoom],[Some [Field Field]],[8 8 8 255]
 DebugRoom2,[Field DebugRoom2],[Some [Field Field]],[8 8 8 255]
 TombOuter,[Field TombOuter],[Some [Field TombOuter]],[131 156 172 255]
-Tomb,[Field Tomb],[Some [Field Tomb]],[8 8 8 255]
+TombInner,[Field TombInner],[Some [Field TombInner]],[8 8 8 255]
