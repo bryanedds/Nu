@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="64" tileheight="64" infinite="0" nextlayerid="4" nextobjectid="4">
+ <tileset firstgid="1" source="CaveInner.tsx"/>
+ <layer id="2" name="Floor" width="64" height="64" visible="0">
+  <data encoding="base64" compression="zlib">
+   eJzt1EsOwyAMBFCu1PtfruqiUlWRxJ+xxwZGyqoingekY6yR18+zW16TZ4VIPTN/933QWO78nfbA4nha02UPLAapvZJf0/nO4FnLiMf9b/DuXXYQdo+fEZT5WI/92Ov52d5j39vOCNvMcg9Br93tnrWr2jXvWNkvfU81+5h0ueoX9S2wgz6zTvZPIu5tZTviv0piqOYeky6R/tk8drL92j7ROf4a9ux9tsysYkfMZZrR35ylzypmS8cMd6ZX23dlt6T76u4nB9LO9ln2AOXPvreeudL1LLsn2hlV/Mhk+pnmp3d5/ZK+We6Ijtb+1cySeUx/pFM6l+FnmK86aH+Lsme5Jecc1amS3Xo30H62VdKzuv8ulXtG3y3LHNR7sv2I7tpU898Z0HaLxbIG4Y+2S2dpe6H2gH3u1nNB+CPPPPpeRt1/VLr4o4Lo1dX+DaJbV/s3iG5d7bN4unW3I7Kbd5Zd3b/Z1V0hb8yHgSw=
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="64" height="64">
+  <data encoding="base64" compression="zlib">
+   eJzlmktuFDEQhvsywAFGaIAdCybAPuKxD5yMLQgmbEFDwr2wpf5FpVQvP3psSEm1iDSd9veXu1wue7csy+4/8AfJHyZ/NMFYzu375E+SP03+LPmLCcZ0zphm/pfJXyV/nfzbqsFhAoZav2Axfez89m3yd8nfJ/+1agAdRrNE/bB65rlmMdX482+Py107rRpAB0u7WRwcx5X9hsVUYoBOHxbZoMNM/AfBwXFD/Ddj4Qz0mVuFX3t2FDfGfGQOjihDCfsM/JjbPMZWvLnRPGaxY82gPnKe87ntcWqGXH7hsI9kpcwlcztiyOX5/32aiJ2ycma49o1KcxX1DjfkcknLkezaN+3Nc2/MkgaajchvlL30m47Ea9/xf23JHll/uEVqUo8f386/xp4tUpdfTMbdiz0bcjk04Ps8qaYH+wjuCLuUy7UchlwODeg+T6vpZ2fXno1oQPd50ntGsu8b2KMa0H2e9J6R9fveYI+OLbqWSTYy9pGxazmMu5UPZmWP8Es5zFrbohrMwJ5dW4dhUg7zek6WBiPXdz6Pkfctk3JYpOckaTA65ryP3rJ3jeTFGfoUnJ/O45Y6r8ea9Zz5OfjpPG6xXvznPNfycl3UWr9j2kfi64rUP+7Ffmxklr7jknkr9c74unIUvPWsCzWudo5QylwbazDTPhKvjSXnOpRqYfVULe4WZt43hP6lOfe0PnO13J0f0TmB2G/JrfWFwVvSN9QMdQh0gBZenwX7m624LebbBl7LuBaWBpE+Wwv3uZglyzp4Glj8pewadwuzdkYQ3U96Glj8JTVMT+6SdSXab9M00PhLYk/Xz1ruHmvprkIDjb8m9qXcvZilOaGdoUED8Gn80XszNPZR9l57/JqeEzTw+DFPvHfQ2EeYa7mlM2ZpbxD5Jk4BfvR16Du0c26vbq7dD0l1E1zaG1j33rgGHj9qCPoOaQyZ3TvfLo1ttFbke4OrJZ7nPX6Yt/+w2GtjKzFH9wTRPE/ze2lf2jOLXWKWYtvSe4rkecrfcj7BzWKn3DWxLTFogHzAezt8fe81B7S6IWtMuUutpg7+uvzdB/I9rjTOHhpY91RbYu3VI9rYcWcoeqbYqoH0f3PsrXUiYpdLvQbcvNxcuseipvG3fuP5W+6hQU0tUqKFxt9qyGeXyjvod6ZZj/MlT4da/s/Jvzi/oTldy7FvlGd7n61pGpTyg/tH8p+Lr0PWQJsDOfYfBe4t9lrSPNM0tvg5N/62jO7feOy/B8ZT4/yO0lEYl7X2exbh9ri2Ok/l56LaWUkLf4md+z4QPxfV6pjaOw8lNuqOQO3a11OD0fcjrLooOraammoGdiueNWOL1Gkz3Q3ZUj+Je/TYRsyh+8RN/b5yz+B/AFdaGyk=
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props">
+  <object id="2" gid="54" x="2112" y="3968" width="64" height="64">
+   <properties>
+    <property name="I" value="[Portal South Upward TombOuter South]"/>
+   </properties>
+  </object>
+  <object id="3" gid="54" x="3008" y="2720" width="192" height="64">
+   <properties>
+    <property name="I" value="[Portal [IX 0] Downward DebugRoom North]"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>
