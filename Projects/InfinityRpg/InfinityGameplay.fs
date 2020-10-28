@@ -80,6 +80,9 @@ type FieldSpace =
     member this.ContainsPickup =
         match this.PickupItemOpt with Some _ -> true | None -> false
     
+    static member containsPickup (fieldSpace : FieldSpace) =
+        fieldSpace.ContainsPickup
+
     static member updateCharacterOpt updater fieldSpace =
         { fieldSpace with CharacterOpt = updater fieldSpace.CharacterOpt }
     
@@ -150,21 +153,26 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member pickupAtCoordinates coordinates chessboard =
         chessboard.PassableCoordinates.[coordinates].ContainsPickup
     
-    static member updateCoordinatesValueInternal updater coordinates (passableCoordinates : Map<Vector2i, FieldSpace>) =
+    static member updateByCoordinatesInternal coordinates updater (passableCoordinates : Map<Vector2i, FieldSpace>) =
         Map.add coordinates (updater passableCoordinates.[coordinates]) passableCoordinates
 
-    static member updateCoordinatesValue updater coordinates chessboard =
-        Chessboard.updatePassableCoordinates (Chessboard.updateCoordinatesValueInternal updater coordinates) chessboard
+    static member updateByPredicateInternal predicate updater (passableCoordinates : Map<Vector2i, FieldSpace>) =
+        Map.map (fun _ v -> if predicate v then updater v else v ) passableCoordinates
+    
+    static member updateByCoordinates coordinates updater chessboard =
+        Chessboard.updatePassableCoordinates (Chessboard.updateByCoordinatesInternal coordinates updater) chessboard
+    
+    static member updateByPredicate predicate updater chessboard =
+        Chessboard.updatePassableCoordinates (Chessboard.updateByPredicateInternal predicate updater) chessboard
     
     static member addHealth _ coordinates chessboard =
-        Chessboard.updateCoordinatesValue FieldSpace.addHealth coordinates chessboard
+        Chessboard.updateByCoordinates coordinates FieldSpace.addHealth chessboard
 
     static member removePickup _ coordinates chessboard =
-        Chessboard.updateCoordinatesValue FieldSpace.removePickup coordinates chessboard
+        Chessboard.updateByCoordinates coordinates FieldSpace.removePickup chessboard
     
     static member clearPickups _ _ chessboard =
-        let passableCoordinates = Map.map (fun _ v -> FieldSpace.removePickup v) chessboard.PassableCoordinates
-        Chessboard.updatePassableCoordinates (constant passableCoordinates) chessboard
+        Chessboard.updateByPredicate FieldSpace.containsPickup FieldSpace.removePickup chessboard
     
     // used for both adding and relocating
     static member placeCharacter index coordinates (chessboard : Chessboard) =
