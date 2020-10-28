@@ -81,7 +81,7 @@ type [<StructuralEquality; NoComparison>] DissolveDescriptor =
 type [<StructuralEquality; NoComparison>] SplashDescriptor =
     { DissolveDescriptor : DissolveDescriptor
       IdlingTime : int64
-      SplashImage : Image AssetTag }
+      SplashImageOpt : Image AssetTag option }
 
 /// Describes the shape of a desired overlay.
 type [<StructuralEquality; StructuralComparison>] OverlayNameDescriptor =

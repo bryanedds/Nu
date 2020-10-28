@@ -18,12 +18,13 @@ module WorldBindings =
 
     let [<Literal>] BindingKeywords =
         "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind self parent grandparent game toData monitor " +
-        "resolve relate reloadAssets tryGetIsSelectedScreenIdling " +
-        "tryGetIsSelectedScreenTransitioning isSelectedScreenIdling isSelectedScreenTransitioning selectScreen " +
-        "tryTransitionScreen transitionScreen setScreenSplash createDissolveScreenFromLayerFile6 " +
-        "createDissolveScreenFromLayerFile createSplashScreen6 createSplashScreen getEntitiesInView2 " +
-        "getEntitiesInBounds3 getEntitiesAtPoint3 getEntitiesInView getEntitiesInBounds " +
-        "getEntitiesAtPoint getCurrentSongOpt playSong playSong4 " +
+        "resolve relate reloadAssets tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning " +
+        "isSelectedScreenIdling isSelectedScreenTransitioning selectScreenOpt selectScreen tryTransitionScreen " +
+        "transitionScreen setScreenSplash createDissolveScreenFromLayerFile6 createDissolveScreenFromLayerFile createSplashScreen6 " +
+        "createSplashScreen getEntitiesInView2 getEntitiesInBounds3 getEntitiesAtPoint3 " +
+        "getEntitiesInView getEntitiesInBounds getEntitiesAtPoint getCurrentSongOpt " +
+        "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
+        "setMasterSoundVolume setMasterSongVolume playSong playSong4 " +
         "playSound playSound3 fadeOutSong stopSong " +
         "hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse " +
         "hintRenderPackageDisuse reloadRenderAssets bodyExists getBodyContactNormals " +
@@ -142,6 +143,19 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'isSelectedScreenTransitioning' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let selectScreenOpt screenOpt world =
+        let oldWorld = world
+        try
+            let screenOpt =
+                match ScriptingSystem.tryExport typeof<FSharpOption<Screen>> screenOpt world with
+                | Some value -> value :?> FSharpOption<Screen>
+                | None -> failwith "Invalid argument type for 'screenOpt'; expecting a value convertable to FSharpOption`1."
+            let result = World.selectScreenOpt screenOpt world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'selectScreenOpt' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let selectScreen screen world =
         let oldWorld = world
         try
@@ -201,23 +215,17 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'transitionScreen' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let setScreenSplash splashDataOpt destination screen world =
+    let setScreenSplash splashDataOpt destinationOpt screen world =
         let oldWorld = world
         try
             let splashDataOpt =
                 match ScriptingSystem.tryExport typeof<FSharpOption<SplashDescriptor>> splashDataOpt world with
                 | Some value -> value :?> FSharpOption<SplashDescriptor>
                 | None -> failwith "Invalid argument type for 'splashDataOpt'; expecting a value convertable to FSharpOption`1."
-            let struct (destination, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal destination world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let destinationOpt =
+                match ScriptingSystem.tryExport typeof<FSharpOption<Screen>> destinationOpt world with
+                | Some value -> value :?> FSharpOption<Screen>
+                | None -> failwith "Invalid argument type for 'destinationOpt'; expecting a value convertable to FSharpOption`1."
             let struct (screen, world) =
                 let context = World.getScriptContext world
                 match World.evalInternal screen world with
@@ -228,7 +236,7 @@ module WorldBindings =
                     struct (Screen address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.setScreenSplash splashDataOpt destination screen world
+            let result = World.setScreenSplash splashDataOpt destinationOpt screen world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setScreenSplash' due to: " + scstring exn, None)
@@ -307,16 +315,10 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<SplashDescriptor> splashDescriptor world with
                 | Some value -> value :?> SplashDescriptor
                 | None -> failwith "Invalid argument type for 'splashDescriptor'; expecting a value convertable to SplashDescriptor."
-            let struct (destination, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal destination world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let destination =
+                match ScriptingSystem.tryExport typeof<FSharpOption<Screen>> destination world with
+                | Some value -> value :?> FSharpOption<Screen>
+                | None -> failwith "Invalid argument type for 'destination'; expecting a value convertable to FSharpOption`1."
             let result = World.createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
@@ -336,16 +338,10 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<SplashDescriptor> splashDescriptor world with
                 | Some value -> value :?> SplashDescriptor
                 | None -> failwith "Invalid argument type for 'splashDescriptor'; expecting a value convertable to SplashDescriptor."
-            let struct (destination, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal destination world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Screen address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let destination =
+                match ScriptingSystem.tryExport typeof<FSharpOption<Screen>> destination world with
+                | Some value -> value :?> FSharpOption<Screen>
+                | None -> failwith "Invalid argument type for 'destination'; expecting a value convertable to FSharpOption`1."
             let result = World.createSplashScreen nameOpt splashDescriptor destination world
             let (value, world) = result
             let value = let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str
@@ -445,6 +441,78 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getCurrentSongOpt' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getMasterAudioVolume world =
+        let oldWorld = world
+        try
+            let result = World.getMasterAudioVolume world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Single> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMasterAudioVolume' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getMasterSoundVolume world =
+        let oldWorld = world
+        try
+            let result = World.getMasterSoundVolume world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Single> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMasterSoundVolume' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getMasterSongVolume world =
+        let oldWorld = world
+        try
+            let result = World.getMasterSongVolume world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Single> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMasterSongVolume' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let setMasterAudioVolume volume world =
+        let oldWorld = world
+        try
+            let volume =
+                match ScriptingSystem.tryExport typeof<Single> volume world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let result = World.setMasterAudioVolume volume world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterAudioVolume' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let setMasterSoundVolume volume world =
+        let oldWorld = world
+        try
+            let volume =
+                match ScriptingSystem.tryExport typeof<Single> volume world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let result = World.setMasterSoundVolume volume world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSoundVolume' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let setMasterSongVolume volume world =
+        let oldWorld = world
+        try
+            let volume =
+                match ScriptingSystem.tryExport typeof<Single> volume world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let result = World.setMasterSongVolume volume world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSongVolume' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let playSong timeToFadeOutSongMs volume song world =
@@ -1135,8 +1203,8 @@ module WorldBindings =
         let oldWorld = world
         try
             let setScreenSplash =
-                match ScriptingSystem.tryExport typeof<FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>> setScreenSplash world with
-                | Some value -> value :?> FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<Screen, FSharpFunc<Screen, FSharpFunc<World, World>>>>
+                match ScriptingSystem.tryExport typeof<FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<FSharpOption<Screen>, FSharpFunc<Screen, FSharpFunc<World, World>>>>> setScreenSplash world with
+                | Some value -> value :?> FSharpFunc<FSharpOption<SplashDescriptor>, FSharpFunc<FSharpOption<Screen>, FSharpFunc<Screen, FSharpFunc<World, World>>>>
                 | None -> failwith "Invalid argument type for 'setScreenSplash'; expecting a value convertable to FSharpFunc`2."
             let content =
                 match ScriptingSystem.tryExport typeof<SimulantContent> content world with
@@ -2525,6 +2593,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalSelectScreenOptBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|screenOpt|] -> selectScreenOpt screenOpt world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalSelectScreenBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -2563,7 +2642,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|splashDataOpt; destination; screen|] -> setScreenSplash splashDataOpt destination screen world
+            | [|splashDataOpt; destinationOpt; screen|] -> setScreenSplash splashDataOpt destinationOpt screen world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2685,6 +2764,72 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [||] -> getCurrentSongOpt world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetMasterAudioVolumeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getMasterAudioVolume world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetMasterSoundVolumeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getMasterSoundVolume world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetMasterSongVolumeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getMasterSongVolume world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalSetMasterAudioVolumeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|volume|] -> setMasterAudioVolume volume world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalSetMasterSoundVolumeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|volume|] -> setMasterSoundVolume volume world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalSetMasterSongVolumeBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|volume|] -> setMasterSongVolume volume world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3959,10 +4104,11 @@ module WorldBindings =
              ("tryGetIsSelectedScreenTransitioning", { Fn = evalTryGetIsSelectedScreenTransitioningBinding; Pars = [||]; DocOpt = None })
              ("isSelectedScreenIdling", { Fn = evalIsSelectedScreenIdlingBinding; Pars = [||]; DocOpt = None })
              ("isSelectedScreenTransitioning", { Fn = evalIsSelectedScreenTransitioningBinding; Pars = [||]; DocOpt = None })
+             ("selectScreenOpt", { Fn = evalSelectScreenOptBinding; Pars = [|"screenOpt"|]; DocOpt = None })
              ("selectScreen", { Fn = evalSelectScreenBinding; Pars = [|"screen"|]; DocOpt = None })
              ("tryTransitionScreen", { Fn = evalTryTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
              ("transitionScreen", { Fn = evalTransitionScreenBinding; Pars = [|"destination"|]; DocOpt = None })
-             ("setScreenSplash", { Fn = evalSetScreenSplashBinding; Pars = [|"splashDataOpt"; "destination"; "screen"|]; DocOpt = None })
+             ("setScreenSplash", { Fn = evalSetScreenSplashBinding; Pars = [|"splashDataOpt"; "destinationOpt"; "screen"|]; DocOpt = None })
              ("createDissolveScreenFromLayerFile6", { Fn = evalCreateDissolveScreenFromLayerFile6Binding; Pars = [|"dispatcherName"; "nameOpt"; "dissolveDescriptor"; "songOpt"; "layerFilePath"|]; DocOpt = None })
              ("createDissolveScreenFromLayerFile", { Fn = evalCreateDissolveScreenFromLayerFileBinding; Pars = [|"nameOpt"; "dissolveDescriptor"; "songOpt"; "layerFilePath"|]; DocOpt = None })
              ("createSplashScreen6", { Fn = evalCreateSplashScreen6Binding; Pars = [|"dispatcherName"; "nameOpt"; "splashDescriptor"; "destination"|]; DocOpt = None })
@@ -3974,6 +4120,12 @@ module WorldBindings =
              ("getEntitiesInBounds", { Fn = evalGetEntitiesInBoundsBinding; Pars = [|"bounds"|]; DocOpt = None })
              ("getEntitiesAtPoint", { Fn = evalGetEntitiesAtPointBinding; Pars = [|"point"|]; DocOpt = None })
              ("getCurrentSongOpt", { Fn = evalGetCurrentSongOptBinding; Pars = [||]; DocOpt = None })
+             ("getMasterAudioVolume", { Fn = evalGetMasterAudioVolumeBinding; Pars = [||]; DocOpt = None })
+             ("getMasterSoundVolume", { Fn = evalGetMasterSoundVolumeBinding; Pars = [||]; DocOpt = None })
+             ("getMasterSongVolume", { Fn = evalGetMasterSongVolumeBinding; Pars = [||]; DocOpt = None })
+             ("setMasterAudioVolume", { Fn = evalSetMasterAudioVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
+             ("setMasterSoundVolume", { Fn = evalSetMasterSoundVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
+             ("setMasterSongVolume", { Fn = evalSetMasterSongVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
              ("playSong", { Fn = evalPlaySongBinding; Pars = [|"timeToFadeOutSongMs"; "volume"; "song"|]; DocOpt = None })
              ("playSong4", { Fn = evalPlaySong4Binding; Pars = [|"timeToFadeOutSongMs"; "volume"; "songPackageName"; "songAssetName"|]; DocOpt = None })
              ("playSound", { Fn = evalPlaySoundBinding; Pars = [|"volume"; "sound"|]; DocOpt = None })
