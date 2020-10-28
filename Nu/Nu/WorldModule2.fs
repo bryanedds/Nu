@@ -166,7 +166,7 @@ module WorldModule2 =
                     let world = World.setSelectedScreen screen world
                     let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
                     World.publish () (Events.Select --> screen) eventTrace screen false world
-                | None -> world
+                | None -> World.setSelectedScreenOpt None world
             world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
@@ -196,7 +196,9 @@ module WorldModule2 =
                     let world = World.subscribeWith<unit, Screen> subscriptionId subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
                     (true, world)
                 else (false, world)
-            | None -> (false, world)
+            | None ->
+                let world = World.selectScreen destination world
+                (true, world)
 
         /// Transition to the given screen (failing with an exception if another transition is in
         /// progress).
