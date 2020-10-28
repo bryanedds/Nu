@@ -961,20 +961,24 @@ module NodeFacetModule =
             | _ -> world
 
         static let updatePropertyFromLocal propertyName (node : Entity) (entity : Entity) world =
-            match propertyName with
-            | "PositionLocal" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-            | "DepthLocal" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
-            | "VisibleLocal" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
-            | "EnabledLocal" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
-            | _ -> world
+            if node.Exists world then
+                match propertyName with
+                | "PositionLocal" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
+                | "DepthLocal" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
+                | "VisibleLocal" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
+                | "EnabledLocal" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
+                | _ -> world
+            else world
 
         static let updatePropertyFromNode propertyName (node : Entity) (entity : Entity) world =
-            match propertyName with
-            | "Position" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-            | "Depth" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
-            | "Visible" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
-            | "Enabled" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
-            | _ -> world
+            if node.Exists world then
+                match propertyName with
+                | "Position" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
+                | "Depth" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
+                | "Visible" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
+                | "Enabled" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
+                | _ -> world
+            else world
 
         static let updateFromNode (node : Entity) (entity : Entity) world =
             let world = updatePropertyFromNode "Position" node entity world
