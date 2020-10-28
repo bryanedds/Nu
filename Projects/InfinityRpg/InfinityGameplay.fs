@@ -77,6 +77,16 @@ type FieldSpace =
     member this.ContainsCharacter =
         match this.CharacterOpt with Some _ -> true | None -> false
 
+    static member containsEnemy fieldSpace =
+        match fieldSpace.CharacterOpt with
+        | None -> false // more efficient order
+        | Some i -> i.IsEnemy
+    
+    static member containsSpecifiedCharacter index fieldSpace =
+        match fieldSpace.CharacterOpt with
+        | None -> false // more efficient order
+        | Some i -> i = index
+
     member this.ContainsPickup =
         match this.PickupItemOpt with Some _ -> true | None -> false
     
@@ -157,7 +167,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Map.add coordinates (updater passableCoordinates.[coordinates]) passableCoordinates
 
     static member updateByPredicateInternal predicate updater (passableCoordinates : Map<Vector2i, FieldSpace>) =
-        Map.map (fun _ v -> if predicate v then updater v else v ) passableCoordinates
+        Map.map (fun _ v -> if predicate v then updater v else v) passableCoordinates
     
     static member updateByCoordinates coordinates updater chessboard =
         Chessboard.updatePassableCoordinates (Chessboard.updateByCoordinatesInternal coordinates updater) chessboard
@@ -174,6 +184,9 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member clearPickups _ _ chessboard =
         Chessboard.updateByPredicate FieldSpace.containsPickup FieldSpace.removePickup chessboard
     
+    static member getCharacterCoordinates index chessboard =
+        Map.findKey (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.PassableCoordinates
+    
     // used for both adding and relocating
     static member placeCharacter index coordinates (chessboard : Chessboard) =
         if List.exists (fun x -> x = coordinates) chessboard.AvailableCoordinates then
@@ -182,16 +195,23 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         else failwith "character placement failed; coordinates unavailable"
 
     static member addCharacter index coordinates (chessboard : Chessboard) =
+    //    let chessboard = Chessboard.updateByCoordinates coordinates (FieldSpace.addCharacter index) chessboard
         Chessboard.placeCharacter index coordinates chessboard
 
-    static member relocateCharacter index coordinates (chessboard : Chessboard) =
-        Chessboard.placeCharacter index coordinates chessboard
-    
     static member removeCharacter index _ chessboard =
+    //    let coordinates = Chessboard.getCharacterCoordinates index chessboard
+    //    let chessboard = Chessboard.updateByCoordinates coordinates FieldSpace.removeCharacter chessboard
         let characterCoordinates = Map.remove index chessboard.CharacterCoordinates
         Chessboard.updateCharacterCoordinates (constant characterCoordinates) chessboard
     
+    static member relocateCharacter index coordinates (chessboard : Chessboard) =
+    //    let oldCoordinates = Chessboard.getCharacterCoordinates index chessboard
+    //    let chessboard = Chessboard.updateByCoordinates oldCoordinates FieldSpace.removeCharacter chessboard
+    //    let chessboard = Chessboard.updateByCoordinates coordinates (FieldSpace.addCharacter index) chessboard
+        Chessboard.placeCharacter index coordinates chessboard
+    
     static member clearEnemies _ _ (chessboard : Chessboard) =
+    //    let chessboard = Chessboard.updateByPredicate FieldSpace.containsEnemy FieldSpace.removeCharacter chessboard
         Chessboard.updateCharacterCoordinates (constant chessboard.PlayerCoordinates) chessboard
     
     static member addMove index move chessboard =
