@@ -1014,6 +1014,12 @@ module Gaia =
             Globals.pushPastWorld pastWorld
             world
 
+    let private handleFormSongPlayback (form : GaiaForm) (_ : EventArgs) =
+        addWorldChanger $ fun world ->
+            if form.songPlaybackButton.Checked
+            then World.setMasterAudioVolume 1.0f world
+            else World.setMasterAudioVolume 0.0f world
+
     let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             match form.entityPropertyGrid.SelectedObject with
@@ -1466,6 +1472,7 @@ module Gaia =
         selectLayer defaultLayer form Globals.World
         form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
         form.tickingButton.CheckState <- CheckState.Unchecked
+        form.songPlaybackButton.CheckState <- if World.getMasterSongVolume world = 0.0f then CheckState.Unchecked else CheckState.Checked
         form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
             let WM_KEYDOWN = 0x0100
             let WM_SYSKEYDOWN = 0x0104
@@ -1583,6 +1590,7 @@ module Gaia =
         form.resetTickTime.Click.Add (handleFormResetTickTime form)
         form.incTickTime.Click.Add (handleFormIncTickTime form)
         form.decTickTime.Click.Add (handleFormDecTickTime form)
+        form.songPlaybackButton.Click.Add (handleFormSongPlayback form)
         form.cutToolStripMenuItem.Click.Add (handleFormCut form)
         form.cutContextMenuItem.Click.Add (handleFormCut form)
         form.copyToolStripMenuItem.Click.Add (handleFormCopy form)

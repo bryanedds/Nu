@@ -373,6 +373,29 @@
         TgDQASA1MVpwzwAAAABJRU5ErkJggg==
 </value>
   </data>
+  <data name="songPlaybackButton.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAPSSURBVFhH7ZZLSFRhFMedXmYWFObo+H7NqDOMLhRG6OGg
+        Fr2EQgccbBEE0aJNK1sEBWG0D9q0soigBwUFQSBEBSLRzoXQpqRFSEK1SEny9vtfvi/u1ZkYHwSCBw5z
+        /+c7j/93vvPdO3kbsq4lHo83ptPpvQb+XxkcHDzQ1dU1E4vFksa0ROrq6oLl5eVDEN1jTGsjVVVV/Y2N
+        jbO9vb1Od3d3VgIVFRXDZWVlTigUGk2lUpuNeXVC0gvs6rcS19TUOPX19VkJsJ4IBoOz8iXusjGvWALV
+        1dU32L2SOUoqLSoqWkwgwPrJSCTizkZlZeV5+YlIQ0NDveuxAtlKorvs3N01z1kJ1NbWnpAfbR+nYL7j
+        OAH8XsnGBkaMW+5SXFy8k+CXSqDdq6g6YElkIBBh7Yf88RuWLRwOJxQLqV+QKHUdc5GmpqYQid57i1uV
+        TSQsAYrUkXy3nvE9LZ+SkpI5ulAhG/6vZSPmovASIagNhiNeJehjpuJW1QnWkyJqhm2ipaWlUPlUULEc
+        mdsFcpxTDHlHhZcI7NPe5NJ/FZeqAyKge87vV9n4vWbynVJsaWnpB2GIVGudrvzs7OzcIptPRMBbLJfi
+        6oA9AnxTslNgJhqNbuvo6Cjg2b2CELTHMC1MrSZhn5AsbYvmWlzPniEMYP+kWK7gfhlYf2dieoRp/5hi
+        mYvDwj4RATkrMa9QX0GvKoHUYu8twP6YW6AdnhGGzBP5UDgtjP258uOTEvaJJaAdWLVFrKqwEthf2bwE
+        IP5AcXTvrDA+j+TDgLoEIPJMGCIDwj6xBLKpt6gXewlgnzBrh4RZfysMoePCkHsjjP2IsE/6+vrSap8c
+        MmmmjkgtAXa/T1jXkQ/VLn18iPkuos3NzWH5gKfkQ50WYZ8wuen29vaMRbIpw+QkEomkJp7kk8Z+W/lo
+        c1LFsX8BBvRt0Dp4nmu4XT4+6enpCZPwElfnr5JgzBZbrCre1tamhEmS1+o4eJ6m3SHlg8BDsGy3hFkf
+        UBxzMC6ck1BgByTcSfYqbz6ntbXVvaqeIzhG0WY981o+SMEFfBdod1w2iDxVLL9XhZcjmwi6aYI1wQ4F
+        Mt4CifkX5J41Pndk03cCPA9hEYq4jssVOjFE4gXtWqoCmQhQoN8cxxSdKpKN2Hsiz9oL12mlwrkPMuVz
+        SmZJLCZA8QLe+1dYjwrTsaOG+IL+IblOqxESdTFI30RCU76YgFcoXoOfBlNk3duxJsIu49ySz5k64BUK
+        X5cPJCb1bjDmtRH+jFaywwmSZyWAT4z1+wym+yJac6ELhcxFvoEbsh4lL+8PxC7KAYHWiXgAAAAASUVO
+        RK5CYII=
+</value>
+  </data>
   <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>51</value>
   </metadata>
