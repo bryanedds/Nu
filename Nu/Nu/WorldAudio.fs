@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open Prime
 open Nu
 
@@ -37,6 +36,42 @@ module WorldAudio =
         static member getCurrentSongOpt world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.CurrentSongOpt
+
+        /// Get the master volume.
+        [<FunctionBinding>]
+        static member getMasterAudioVolume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterAudioVolume
+
+        /// Get the master sound volume.
+        [<FunctionBinding>]
+        static member getMasterSoundVolume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterSoundVolume
+
+        /// Get the master song volume.
+        [<FunctionBinding>]
+        static member getMasterSongVolume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterSongVolume
+
+        /// Set the master volume.
+        [<FunctionBinding>]
+        static member setMasterAudioVolume volume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterAudioVolume <- volume
+
+        /// Set the master sound volume.
+        [<FunctionBinding>]
+        static member setMasterSoundVolume volume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterSoundVolume <- volume
+
+        /// Set the master song volume.
+        [<FunctionBinding>]
+        static member setMasterSongVolume volume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterSongVolume <- volume
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]
