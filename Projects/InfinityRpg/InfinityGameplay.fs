@@ -71,13 +71,26 @@ type [<NoComparison>] Move =
         | _ -> this
 
 type FieldSpace =
-    { PickupItemOpt : PickupType Option }
+    { CharacterOpt : CharacterIndex Option
+      PickupItemOpt : PickupType Option }
+
+    member this.ContainsCharacter =
+        match this.CharacterOpt with Some _ -> true | None -> false
 
     member this.ContainsPickup =
         match this.PickupItemOpt with Some _ -> true | None -> false
     
+    static member updateCharacterOpt updater fieldSpace =
+        { fieldSpace with CharacterOpt = updater fieldSpace.CharacterOpt }
+    
     static member updatePickupItemOpt updater fieldSpace =
         { fieldSpace with PickupItemOpt = updater fieldSpace.PickupItemOpt }
+    
+    static member addCharacter index fieldSpace =
+        FieldSpace.updateCharacterOpt (constant (Some index)) fieldSpace
+
+    static member removeCharacter fieldSpace =
+        FieldSpace.updateCharacterOpt (constant None) fieldSpace
     
     static member addHealth fieldSpace =
         FieldSpace.updatePickupItemOpt (constant (Some Health)) fieldSpace
@@ -86,7 +99,8 @@ type FieldSpace =
         FieldSpace.updatePickupItemOpt (constant None) fieldSpace
     
     static member empty =
-        { PickupItemOpt = None }
+        { CharacterOpt = None
+          PickupItemOpt = None }
 
 type [<ReferenceEquality; NoComparison>] Chessboard =
     { PassableCoordinates : Map<Vector2i, FieldSpace>
@@ -136,9 +150,17 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member pickupAtCoordinates coordinates chessboard =
         chessboard.PassableCoordinates.[coordinates].ContainsPickup
     
+    static member updateCoordinatesValueInternal updater coordinates (passableCoordinates : Map<Vector2i, FieldSpace>) =
+        Map.add coordinates (updater passableCoordinates.[coordinates]) passableCoordinates
+
     static member updateCoordinatesValue updater coordinates chessboard =
-        let passableCoordinates = Map.add coordinates (updater chessboard.PassableCoordinates.[coordinates]) chessboard.PassableCoordinates
-        Chessboard.updatePassableCoordinates (constant passableCoordinates) chessboard
+        Chessboard.updatePassableCoordinates (Chessboard.updateCoordinatesValueInternal updater coordinates) chessboard
+    
+    static member addHealth _ coordinates chessboard =
+        Chessboard.updateCoordinatesValue FieldSpace.addHealth coordinates chessboard
+
+    static member removePickup _ coordinates chessboard =
+        Chessboard.updateCoordinatesValue FieldSpace.removePickup coordinates chessboard
     
     static member clearPickups _ _ chessboard =
         let passableCoordinates = Map.map (fun _ v -> FieldSpace.removePickup v) chessboard.PassableCoordinates
@@ -151,6 +173,12 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
             Chessboard.updateCharacterCoordinates (constant characterCoordinates) chessboard
         else failwith "character placement failed; coordinates unavailable"
 
+    static member addCharacter index coordinates (chessboard : Chessboard) =
+        Chessboard.placeCharacter index coordinates chessboard
+
+    static member relocateCharacter index coordinates (chessboard : Chessboard) =
+        Chessboard.placeCharacter index coordinates chessboard
+    
     static member removeCharacter index _ chessboard =
         let characterCoordinates = Map.remove index chessboard.CharacterCoordinates
         Chessboard.updateCharacterCoordinates (constant characterCoordinates) chessboard
@@ -307,7 +335,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.syncLists gameplay
     
     static member relocateCharacter index coordinates gameplay =
-        Gameplay.updateChessboardBy Chessboard.placeCharacter index coordinates gameplay
+        Gameplay.updateChessboardBy Chessboard.relocateCharacter index coordinates gameplay
     
     static member addMove index (move : Move) gameplay =
         Gameplay.updateChessboardBy Chessboard.addMove index move gameplay
@@ -319,10 +347,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboardBy Chessboard.truncatePlayerPath () () gameplay
     
     static member addHealth coordinates gameplay =
-        Gameplay.updateChessboardBy Chessboard.updateCoordinatesValue FieldSpace.addHealth coordinates gameplay
+        Gameplay.updateChessboardBy Chessboard.addHealth () coordinates gameplay
 
     static member removeHealth coordinates gameplay =
-        Gameplay.updateChessboardBy Chessboard.updateCoordinatesValue FieldSpace.removePickup coordinates gameplay
+        Gameplay.updateChessboardBy Chessboard.removePickup () coordinates gameplay
     
     static member clearPickups gameplay =
         Gameplay.updateChessboardBy Chessboard.clearPickups () () gameplay
@@ -402,13 +430,13 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.setCharacterPositionToCoordinates PlayerIndex gameplay
     
     static member makePlayer gameplay =
-        let gameplay = Gameplay.updateChessboardBy Chessboard.placeCharacter PlayerIndex v2iZero gameplay
+        let gameplay = Gameplay.updateChessboardBy Chessboard.addCharacter PlayerIndex v2iZero gameplay
         Gameplay.createPlayer gameplay
 
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.AvailableCoordinates
         let coordinates = availableCoordinates.Item(Gen.random1 availableCoordinates.Length)
-        Gameplay.updateChessboardBy Chessboard.placeCharacter index coordinates gameplay
+        Gameplay.updateChessboardBy Chessboard.addCharacter index coordinates gameplay
 
     static member makeEnemies quantity gameplay =
         let rec recursion count gameplay =
