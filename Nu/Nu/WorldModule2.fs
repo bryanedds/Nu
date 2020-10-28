@@ -275,7 +275,10 @@ module WorldModule2 =
                                     if (selectedScreen.GetIncoming world).SongOpt <> (destination.GetIncoming world).SongOpt
                                     then World.fadeOutSong playSong.FadeOutMs world
                                     else world
-                                | None -> world
+                                | None ->
+                                    match World.getCurrentSongOpt world with
+                                    | Some currentSong -> World.fadeOutSong currentSong.FadeOutMs world
+                                    | None -> world
                             | None -> world
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                         World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen false world
@@ -313,7 +316,8 @@ module WorldModule2 =
                     Log.trace "Program Error: Could not handle splash screen update due to no selected screen."
                     (Resolve, World.exit world)
 
-        static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) evt world =
+        static member private handleSplashScreenIdle idlingTime destinationOpt (splashScreen : Screen) evt world =
+            let world = World.setScreenTransitionDestinationOpt destinationOpt world
             let world = World.subscribeWith SplashScreenUpdateId (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
             (Cascade, world)
 
@@ -342,7 +346,7 @@ module WorldModule2 =
                         let world = splashSprite.SetStaticImage Assets.DefaultImage10 world
                         let world = splashSprite.SetVisible false world
                         world
-                let (unsub, world) = World.monitorCompressed Gen.id None None None (Left (World.handleSplashScreenIdle splashDescriptor.IdlingTime screen)) (Events.IncomingFinish --> screen) screen world
+                let (unsub, world) = World.monitorCompressed Gen.id None None None (Left (World.handleSplashScreenIdle splashDescriptor.IdlingTime destinationOpt screen)) (Events.IncomingFinish --> screen) screen world
                 let (unsub2, world) = World.monitorCompressed Gen.id None None None (Left (World.handleAsScreenTransitionFromSplash destinationOpt)) (Events.OutgoingFinish --> screen) screen world
                 let world = World.monitor (fun _ -> unsub >> unsub2 >> pair Cascade) (Events.Unregistering --> splashLayer) screen world
                 world
