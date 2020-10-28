@@ -151,7 +151,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 Log.info ("Cannot play wav file as song '" + scstring song + "'.")
             | OggAsset oggAsset ->
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play
-                SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
+                SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                 SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
             audioPlayer.CurrentSongOpt <- Some playSongMessage
         | None ->
@@ -219,6 +219,11 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
     static member private handleAudioMessages audioMessages audioPlayer =
         for audioMessage in audioMessages do
             SdlAudioPlayer.handleAudioMessage audioMessage audioPlayer
+
+    static member private tryUpdateCurrentSongVolume audioPlayer =
+        match audioPlayer.CurrentSongOpt with
+        | Some currentSong -> SDL_mixer.Mix_VolumeMusic (int (currentSong.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
+        | None -> ()
     
     static member private tryUpdateCurrentSong audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 0 then
@@ -243,11 +248,8 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         member audioPlayer.MasterAudioVolume
             with get () = audioPlayer.MasterAudioVolume
             and  set volume =
-                SDL_mixer.Mix_Volume (-1, int (audioPlayer.MasterAudioVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                match audioPlayer.CurrentSongOpt with
-                | Some currentSong -> SDL_mixer.Mix_VolumeMusic (int (currentSong.Volume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                | None -> ()
                 audioPlayer.MasterAudioVolume <- volume
+                SdlAudioPlayer.tryUpdateCurrentSongVolume audioPlayer
 
         member audioPlayer.MasterSoundVolume
             with get () = audioPlayer.MasterSoundVolume
@@ -255,7 +257,9 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
 
         member audioPlayer.MasterSongVolume
             with get () = audioPlayer.MasterSongVolume
-            and  set volume = audioPlayer.MasterSongVolume <- volume
+            and  set volume =
+                audioPlayer.MasterSongVolume <- volume
+                SdlAudioPlayer.tryUpdateCurrentSongVolume audioPlayer
 
         member audioPlayer.PopMessages () =
             let messages = audioPlayer.AudioMessages

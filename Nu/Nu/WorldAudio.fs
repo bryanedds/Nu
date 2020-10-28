@@ -60,18 +60,21 @@ module WorldAudio =
         static member setMasterAudioVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterAudioVolume <- volume
+            world
 
         /// Set the master sound volume.
         [<FunctionBinding>]
         static member setMasterSoundVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterSoundVolume <- volume
+            world
 
         /// Set the master song volume.
         [<FunctionBinding>]
         static member setMasterSongVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterSongVolume <- volume
+            world
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]
