@@ -5,15 +5,15 @@
   [Persistent True]
   [Visible True]]
  [[TextDispatcher
-   [[TextColor [0 0 0 255]]
-    [Justification [Justified JustifyCenter JustifyMiddle]]
+   [[Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "It appears I am not the first to find it..."]]
     [Optimized False]
     [Position [-32 -32]]
     [Size [64 64]]
     [Text "it appears I am not the first to find it."]]]
   [StaticSpriteDispatcher
-   [[Depth -10]
+   [[Color [0 0 0 255]]
+    [Depth -10]
     [Optimized True]
     [Position [-480 -272]]
     [Size [960 544]]

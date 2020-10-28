@@ -111,11 +111,11 @@ module GameDispatcher =
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.CreditsLayerFilePath
 
              // intros
-             Content.screenFromLayerFile Simulants.Intro1.Name (Splash (Constants.Dissolve.Default, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro2)) Assets.Intro1LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro2.Name (Splash (Constants.Dissolve.Default, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro3)) Assets.Intro2LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro3.Name (Splash (Constants.Dissolve.Default, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro4)) Assets.Intro3LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro4.Name (Splash (Constants.Dissolve.Default, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro5)) Assets.Intro4LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro5.Name (Splash (Constants.Dissolve.Default, Constants.Intro.Splash, Some Assets.WindSong, None)) Assets.Intro5LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro1.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro2)) Assets.Intro1LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro2.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro3)) Assets.Intro2LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro3.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro4)) Assets.Intro3LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro4.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro5)) Assets.Intro4LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro5.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, None)) Assets.Intro5LayerFilePath
 
              // field
              Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, None))
