@@ -152,17 +152,27 @@ module WorldModule2 =
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         [<FunctionBinding>]
-        static member selectScreen screen world =
+        static member selectScreenOpt screenOpt world =
             let world =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     let eventTrace = EventTrace.record4 "World" "selectScreen" "Deselect" EventTrace.empty
                     World.publish () (Events.Deselect --> selectedScreen) eventTrace selectedScreen false world
                 | None -> world
-            let world = World.setScreenTransitionStatePlus IncomingState screen world
-            let world = World.setSelectedScreen screen world
-            let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
-            World.publish () (Events.Select --> screen) eventTrace screen false world
+            let world =
+                match screenOpt with
+                | Some screen ->
+                    let world = World.setScreenTransitionStatePlus IncomingState screen world
+                    let world = World.setSelectedScreen screen world
+                    let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
+                    World.publish () (Events.Select --> screen) eventTrace screen false world
+                | None -> world
+            world
+
+        /// Select the given screen without transitioning, even if another transition is taking place.
+        [<FunctionBinding>]
+        static member selectScreen screen world =
+            World.selectScreenOpt (Some screen) world
 
         /// Try to transition to the given screen if no other transition is in progress.
         [<FunctionBinding>]
@@ -195,21 +205,13 @@ module WorldModule2 =
             World.tryTransitionScreen destination world |> snd
             
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
-        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destination (_ : Event<'a, 's>) world =
-            let world = World.selectScreen destination world
-            (handling, world)
+        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destinationOpt (_ : Event<'a, 's>) world =
+            (handling, World.selectScreenOpt destinationOpt world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen.
-        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination evt world =
-            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination evt world
-
-        /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the given destination screen, as well as with additional
-        /// handling provided via the 'by' procedure.
-        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destination evt (world : World) =
-            let (handling, world) = by evt world
-            World.handleAsScreenTransitionFromSplash4<'a, 's> handling destination evt world
+        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destinationOpt evt world =
+            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destinationOpt evt world
 
         static member private handleAsScreenTransitionPlus<'a, 's when 's :> Simulant>
             handling destination (_ : Event<'a, 's>) world =
@@ -315,22 +317,31 @@ module WorldModule2 =
 
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
-        static member setScreenSplash splashDataOpt destination (screen : Screen) world =
+        static member setScreenSplash splashDataOpt destinationOpt (screen : Screen) world =
             let splashLayer = screen / "SplashLayer"
-            let splashLabel = splashLayer / "SplashLabel"
+            let splashSprite = splashLayer / "SplashSprite"
             let world = World.destroyLayerImmediate splashLayer world
             match splashDataOpt with
             | Some splashDescriptor ->
                 let cameraEyeSize = World.getEyeSize world
                 let world = World.createLayer<LayerDispatcher> (Some splashLayer.Name) screen world |> snd
                 let world = splashLayer.SetPersistent false world
-                let world = World.createEntity<LabelDispatcher> (Some splashLabel.Name) DefaultOverlay splashLayer world |> snd
-                let world = splashLabel.SetPersistent false world
-                let world = splashLabel.SetSize cameraEyeSize world
-                let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
-                let world = splashLabel.SetLabelImage splashDescriptor.SplashImage world
+                let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashLayer world |> snd
+                let world = splashSprite.SetPersistent false world
+                let world = splashSprite.SetSize cameraEyeSize world
+                let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
+                let world =
+                    match splashDescriptor.SplashImageOpt with
+                    | Some splashImage ->
+                        let world = splashSprite.SetStaticImage splashImage world
+                        let world = splashSprite.SetVisible true world
+                        world
+                    | None ->
+                        let world = splashSprite.SetStaticImage Assets.DefaultImage10 world
+                        let world = splashSprite.SetVisible false world
+                        world
                 let (unsub, world) = World.monitorCompressed Gen.id None None None (Left (World.handleSplashScreenIdle splashDescriptor.IdlingTime screen)) (Events.IncomingFinish --> screen) screen world
-                let (unsub2, world) = World.monitorCompressed Gen.id None None None (Left (World.handleAsScreenTransitionFromSplash destination)) (Events.OutgoingFinish --> screen) screen world
+                let (unsub2, world) = World.monitorCompressed Gen.id None None None (Left (World.handleAsScreenTransitionFromSplash destinationOpt)) (Events.OutgoingFinish --> screen) screen world
                 let world = World.monitor (fun _ -> unsub >> unsub2 >> pair Cascade) (Events.Unregistering --> splashLayer) screen world
                 world
             | None -> world

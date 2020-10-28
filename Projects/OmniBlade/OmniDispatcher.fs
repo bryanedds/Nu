@@ -12,6 +12,7 @@ module GameDispatcher =
 
     type Gui =
         | Splashing
+        | Intro
         | Title
         | Credits
 
@@ -46,7 +47,8 @@ module GameDispatcher =
             [Simulants.TitleCredits.ClickEvent => msg (Change (Gui Credits))
              Simulants.CreditsBack.ClickEvent => msg (Change (Gui Title))
              Simulants.FieldBack.ClickEvent => msg (Change (Gui Title))
-             Simulants.TitlePlay.ClickEvent => msg (Change (Field Field.initial))
+             Simulants.TitlePlay.ClickEvent => cmd (Show Simulants.Intro1)
+             Simulants.Intro5.DeselectEvent => msg (Change (Field Field.initial))
              Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
              Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
              Simulants.TitleExit.ClickEvent => cmd Exit
@@ -75,6 +77,7 @@ module GameDispatcher =
                 match omni with
                 | Gui gui ->
                     match gui with
+                    | Intro -> just omni
                     | Splashing -> just omni
                     | Title -> withCmd (Show Simulants.Title) omni
                     | Credits -> withCmd (Show Simulants.Credits) omni
@@ -99,13 +102,20 @@ module GameDispatcher =
         override this.Content (omni, _) =
 
             [// splash
-             Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, Simulants.Title)) [] []
+             Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Some Simulants.Title)) [] []
 
              // title
              Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.TitleLayerFilePath
 
              // credits
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.CreditsLayerFilePath
+
+             // intros
+             Content.screenFromLayerFile Simulants.Intro1.Name (Splash (Constants.Dissolve.Default, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro2)) Assets.Intro1LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro2.Name (Splash (Constants.Dissolve.Default, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro3)) Assets.Intro2LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro3.Name (Splash (Constants.Dissolve.Default, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro4)) Assets.Intro3LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro4.Name (Splash (Constants.Dissolve.Default, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro5)) Assets.Intro4LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro5.Name (Splash (Constants.Dissolve.Default, Constants.Intro.Splash, Some Assets.WindSong, None)) Assets.Intro5LayerFilePath
 
              // field
              Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, None))
