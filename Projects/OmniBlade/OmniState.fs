@@ -36,6 +36,40 @@ type SegmentRand =
     | Segment3W = 0b1101
     | Segment4 = 0b1111
 
+type [<NoComparison>] SegmentsRand =
+    { Segment1N : TiledSharp.TmxMap
+      Segment1E : TiledSharp.TmxMap
+      Segment1S : TiledSharp.TmxMap
+      Segment1W : TiledSharp.TmxMap
+      Segment2NE : TiledSharp.TmxMap
+      Segment2NW : TiledSharp.TmxMap
+      Segment2SE : TiledSharp.TmxMap
+      Segment2SW : TiledSharp.TmxMap
+      Segment2NS : TiledSharp.TmxMap
+      Segment2EW : TiledSharp.TmxMap
+      Segment3N : TiledSharp.TmxMap
+      Segment3E : TiledSharp.TmxMap
+      Segment3S : TiledSharp.TmxMap
+      Segment3W : TiledSharp.TmxMap
+      Segment4 : TiledSharp.TmxMap }
+
+    static member load (filePath : string) =
+      { Segment1N = TiledSharp.TmxMap (filePath + "+1N.tmx")
+        Segment1E = TiledSharp.TmxMap (filePath + "+1E.tmx")
+        Segment1S = TiledSharp.TmxMap (filePath + "+1S.tmx")
+        Segment1W = TiledSharp.TmxMap (filePath + "+1W.tmx")
+        Segment2NE = TiledSharp.TmxMap (filePath + "+2NE.tmx")
+        Segment2NW = TiledSharp.TmxMap (filePath + "+2NW.tmx")
+        Segment2SE = TiledSharp.TmxMap (filePath + "+2SE.tmx")
+        Segment2SW = TiledSharp.TmxMap (filePath + "+2SW.tmx")
+        Segment2NS = TiledSharp.TmxMap (filePath + "+2NS.tmx")
+        Segment2EW = TiledSharp.TmxMap (filePath + "+2EW.tmx")
+        Segment3N = TiledSharp.TmxMap (filePath + "+3N.tmx")
+        Segment3E = TiledSharp.TmxMap (filePath + "+3E.tmx")
+        Segment3S = TiledSharp.TmxMap (filePath + "+3S.tmx")
+        Segment3W = TiledSharp.TmxMap (filePath + "+3W.tmx")
+        Segment4 = TiledSharp.TmxMap (filePath + "+4A.tmx") }
+
 type MapRand =
     { MapSegments : SegmentRand array array
       MapOriginOpt : Vector2i option
@@ -130,6 +164,44 @@ type MapRand =
         { MapSegments = Array.init size.X (fun _ -> Array.init size.Y (constant SegmentRand.Segment0))
           MapOriginOpt = None
           MapSize = size }
+
+    static member toTmx abstractPath map =
+        let mapTmx = TiledSharp.TmxMap (abstractPath + "+7x7.tmx")
+        let segments = SegmentsRand.load abstractPath
+        for l in 0 .. 2 - 1 do
+            mapTmx.Layers.[l].Tiles.Clear ()
+            for i in 0 .. 7 - 1 do
+                for ii in 0 .. 32 - 1 do
+                    for j in 0 .. 7 - 1 do
+                        for jj in 0 .. 32 - 1 do
+                            let x = i + ii * 32
+                            let y = j + jj * 32
+                            let segment = map.MapSegments.[i].[j]
+                            let tile =
+                                match segment with
+                                | SegmentRand.Segment0 -> TiledSharp.TmxLayerTile (0u, x, y)
+                                | SegmentRand.Segment1N -> segments.Segment1N.Layers.[l].Tiles.[ii * segments.Segment1N.Width + jj]
+                                | SegmentRand.Segment1E -> segments.Segment1E.Layers.[l].Tiles.[ii * segments.Segment1E.Width + jj]
+                                | SegmentRand.Segment1S -> segments.Segment1S.Layers.[l].Tiles.[ii * segments.Segment1S.Width + jj]
+                                | SegmentRand.Segment1W -> segments.Segment1W.Layers.[l].Tiles.[ii * segments.Segment1W.Width + jj]
+                                | SegmentRand.Segment2NE -> segments.Segment2NE.Layers.[l].Tiles.[ii * segments.Segment2NE.Width + jj]
+                                | SegmentRand.Segment2NW -> segments.Segment2NW.Layers.[l].Tiles.[ii * segments.Segment2NW.Width + jj]
+                                | SegmentRand.Segment2SE -> segments.Segment2SE.Layers.[l].Tiles.[ii * segments.Segment2SE.Width + jj]
+                                | SegmentRand.Segment2SW -> segments.Segment2SW.Layers.[l].Tiles.[ii * segments.Segment2SW.Width + jj]
+                                | SegmentRand.Segment2EW -> segments.Segment2EW.Layers.[l].Tiles.[ii * segments.Segment2EW.Width + jj]
+                                | SegmentRand.Segment2NS -> segments.Segment2NS.Layers.[l].Tiles.[ii * segments.Segment2NS.Width + jj]
+                                | SegmentRand.Segment3N -> segments.Segment3N.Layers.[l].Tiles.[ii * segments.Segment3N.Width + jj]
+                                | SegmentRand.Segment3E -> segments.Segment3E.Layers.[l].Tiles.[ii * segments.Segment3E.Width + jj]
+                                | SegmentRand.Segment3S -> segments.Segment3S.Layers.[l].Tiles.[ii * segments.Segment3S.Width + jj]
+                                | SegmentRand.Segment3W -> segments.Segment3W.Layers.[l].Tiles.[ii * segments.Segment3W.Width + jj]
+                                | SegmentRand.Segment4 -> segments.Segment4.Layers.[l].Tiles.[ii * segments.Segment4.Width + jj]
+                                | _ -> failwithumf ()
+                            let tileType = tile.GetType ()
+                            let xProp = (tileType.GetProperties "X").[0]
+                            let yProp = (tileType.GetProperties "Y").[0]
+                            xProp.SetValue (tile, x)
+                            yProp.SetValue (tile, y)
+                            mapTmx.Layers.[l].Tiles.Add tile
 
 type PropState =
     | DoorState of bool
