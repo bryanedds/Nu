@@ -108,6 +108,14 @@ type FieldSpace =
     static member addCharacter character fieldSpace =
         FieldSpace.updateCharacterOpt (constant (Some character)) fieldSpace
 
+    static member updateCharacterStateInternal updater characterOpt =
+        match characterOpt with
+        | Some character -> Some (fst character, updater (snd character))
+        | None -> failwithumf ()
+    
+    static member updateCharacterState updater fieldSpace =
+        FieldSpace.updateCharacterOpt (FieldSpace.updateCharacterStateInternal updater) fieldSpace
+    
     static member removeCharacter fieldSpace =
         FieldSpace.updateCharacterOpt (constant None) fieldSpace
     
@@ -189,9 +197,17 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member getCharacterAtCoordinates coordinates chessboard =
         chessboard.PassableCoordinates.[coordinates].GetCharacter
     
+    static member getCharacterState index chessboard =
+        let coordinates = Chessboard.getCharacterCoordinates index chessboard
+        Chessboard.getCharacterAtCoordinates coordinates chessboard |> snd
+    
     static member addCharacter character coordinates (chessboard : Chessboard) =
         Chessboard.updateByCoordinates coordinates (FieldSpace.addCharacter character) chessboard
 
+    static member updateCharacterState index updater chessboard =
+        let coordinates = Chessboard.getCharacterCoordinates index chessboard
+        Chessboard.updateByCoordinates coordinates (FieldSpace.updateCharacterState updater) chessboard
+    
     static member removeCharacter index _ chessboard =
         let coordinates = Chessboard.getCharacterCoordinates index chessboard
         Chessboard.updateByCoordinates coordinates FieldSpace.removeCharacter chessboard
@@ -270,9 +286,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getCharacterByIndex index gameplay =
         Gameplay.tryGetCharacterByIndex index gameplay |> Option.get
 
-    static member getCharacterState index gameplay =
-        (Gameplay.getCharacterByIndex index gameplay).CharacterState
-    
     static member getTurnStatus index gameplay =
         (Gameplay.getCharacterByIndex index gameplay).TurnStatus
     
@@ -310,9 +323,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 List.map (fun enemy -> if enemy.Index = index then by updater enemy else enemy)
             Gameplay.updateEnemies (constant enemies) gameplay
     
-    static member updateCharacterState index updater gameplay =
-        Gameplay.updateCharacterBy Character.updateCharacterState index updater gameplay
-    
     static member updateTurnStatus index updater gameplay =
         Gameplay.updateCharacterBy Character.updateTurnStatus index updater gameplay
     
@@ -331,6 +341,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getIndexByCoordinates coordinates gameplay =
         Chessboard.getCharacterAtCoordinates coordinates gameplay.Chessboard |> fst
 
+    static member getCharacterState index gameplay =
+        Chessboard.getCharacterState index gameplay.Chessboard
+    
     static member getCurrentMove index gameplay =
         gameplay.Chessboard.CurrentMoves.[index]
     
@@ -359,6 +372,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let gameplay = { gameplay with Chessboard = chessboard }
         Gameplay.syncLists gameplay
     
+    static member updateCharacterState index updater gameplay =
+        Gameplay.updateChessboardBy Chessboard.updateCharacterState index updater gameplay
+
     static member relocateCharacter index coordinates gameplay =
         Gameplay.updateChessboardBy Chessboard.relocateCharacter index coordinates gameplay
     
@@ -396,7 +412,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member tryPickupHealth index coordinates gameplay =
         match index with
         | PlayerIndex ->
-            let gameplay = Gameplay.updateCharacterState index (constant { gameplay.Player.CharacterState with HitPoints = 30 }) gameplay
+            let gameplay = Gameplay.updateCharacterState index (CharacterState.updateHitPoints (constant 30)) gameplay
             Gameplay.removeHealth coordinates gameplay
         | _ -> gameplay
     
@@ -410,8 +426,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member applyAttack reactorIndex gameplay =
         let reactorDamage = 4 // NOTE: just hard-coding damage for now
-        let reactorState = Gameplay.getCharacterState reactorIndex gameplay
-        Gameplay.updateCharacterState reactorIndex (constant { reactorState with HitPoints = reactorState.HitPoints - reactorDamage }) gameplay
+        Gameplay.updateCharacterState reactorIndex (CharacterState.updateHitPoints (fun x -> x - reactorDamage)) gameplay
     
     static member stopTravelingPlayer reactorIndex gameplay =
         if reactorIndex = PlayerIndex then Gameplay.truncatePlayerPath gameplay else gameplay

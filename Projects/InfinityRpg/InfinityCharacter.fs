@@ -8,7 +8,6 @@ open InfinityRpg
 
 type [<ReferenceEquality; NoComparison>] Character =
     { Index : CharacterIndex
-      CharacterState : CharacterState
       TurnStatus : TurnStatus
       CharacterActivityState : CharacterActivityState
       CharacterAnimationState : CharacterAnimationState
@@ -17,16 +16,12 @@ type [<ReferenceEquality; NoComparison>] Character =
 
     static member initial =
         { Index = PlayerIndex
-          CharacterState = CharacterState.empty
           TurnStatus = Idle
           CharacterActivityState = NoActivity
           CharacterAnimationState = CharacterAnimationState.initial
           CharacterAnimationSheet = Assets.PlayerImage
           Position = v2Zero }
 
-    static member updateCharacterState updater (character : Character) =
-        { character with CharacterState = updater character.CharacterState }
-    
     static member updateTurnStatus updater (character : Character) =
         { character with TurnStatus = updater character.TurnStatus }
     
@@ -40,15 +35,11 @@ type [<ReferenceEquality; NoComparison>] Character =
         { character with Position = updater character.Position }
     
     static member makePlayer positionM =
-        let characterState = { CharacterState.empty with HitPoints = 30; ControlType = PlayerControlled }
         { Character.initial with
-            CharacterState = characterState
             Position = vmtovf positionM }
 
     static member makeEnemy index positionM =
-        let characterState = { CharacterState.empty with HitPoints = 10; ControlType = Chaos }
         { Character.initial with
             Index = index
-            CharacterState = characterState
             CharacterAnimationSheet = Assets.GoopyImage
             Position = vmtovf positionM }
