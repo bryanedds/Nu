@@ -82,7 +82,7 @@ module GameplayDispatcher =
                             let gameplay = Gameplay.updateCharacterAnimationState index (constant (characterAnimationState.Facing (World.getTickTime world))) gameplay
                             if reactorState.HitPoints <= 0 then
                                 match reactorIndex with
-                                | PlayerIndex -> Gameplay.updateCharacterState reactorIndex (constant {reactorState with ControlType = Uncontrolled}) gameplay // TODO: reimplement screen transition
+                                | PlayerIndex -> Gameplay.updateCharacterState reactorIndex (CharacterState.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
                                 | EnemyIndex _ -> Gameplay.removeEnemy reactorIndex gameplay
                             else gameplay
                         | Navigation navigationDescriptor ->
@@ -329,7 +329,7 @@ module GameplayDispatcher =
             match command with
             | HandlePlayerInput playerInput ->
                 if not (Gameplay.anyTurnsInProgress gameplay) then
-                    match gameplay.Player.CharacterState.ControlType with
+                    match (Gameplay.getCharacterState PlayerIndex gameplay).ControlType with
                     | PlayerControlled -> withMsg (HandleMapChange playerInput) world
                     | _ -> just world
                 else just world
