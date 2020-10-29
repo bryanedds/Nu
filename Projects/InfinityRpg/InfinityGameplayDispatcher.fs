@@ -46,7 +46,7 @@ module GameplayDispatcher =
 
         static let tryGetNavigationPath (_ : CharacterIndex) positionM gameplay =
             let fieldTiles = gameplay.Field.FieldMapNp.FieldTiles
-            let characterPositions = gameplay.Chessboard.CharacterCoordinates |> Map.toValueList |> List.map (fun positionM -> vmtovf positionM)
+            let characterPositions = gameplay.Chessboard.OccupiedCoordinates |> List.map (fun positionM -> vmtovf positionM)
             let currentPositionM = Gameplay.getCoordinates PlayerIndex gameplay
             let occupationMap = OccupationMap.makeFromFieldTilesAndAdjacentCharacters currentPositionM fieldTiles characterPositions
             let nodes = OccupationMap.makeNavigationNodes occupationMap
