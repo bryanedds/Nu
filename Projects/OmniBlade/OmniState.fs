@@ -7,6 +7,130 @@ open FSharpx.Collections
 open Prime
 open Nu
 
+type OriginRand =
+    | OriginC
+    | OriginN
+    | OriginE
+    | OriginS
+    | OriginW
+    | OriginNE
+    | OriginNW
+    | OriginSE
+    | OriginSW
+
+type SegmentRand =
+    | Segment0 = 0b0000
+    | Segment1N = 0b0001
+    | Segment1E = 0b0010
+    | Segment1S = 0b0100
+    | Segment1W = 0b1000
+    | Segment2NE = 0b0011
+    | Segment2NW = 0b1001
+    | Segment2SE = 0b0110
+    | Segment2SW = 0b1100
+    | Segment2EW = 0b1010
+    | Segment2NS = 0b0101
+    | Segment3N = 0b1011
+    | Segment3E = 0b0111
+    | Segment3S = 0b1110
+    | Segment3W = 0b1101
+    | Segment4 = 0b1111
+
+type MapRand =
+    { MapSegments : SegmentRand array array
+      MapOriginOpt : Vector2i option
+      MapSize : Vector2i }
+
+    static member printfn map =
+        match map.MapOriginOpt with
+        | Some start ->
+            printfn "Start: %s" (scstring start)
+            for j in map.MapSize.Y - 1 .. -1 .. 0 do
+                for i in 0 .. map.MapSize.X - 1 do
+                    printf "%s\t" (scstring map.MapSegments.[i].[j])
+                printfn ""
+        | None -> ()
+
+    static member clone map =
+        { MapSegments = Seq.toArray (Array.map Seq.toArray map.MapSegments)
+          MapOriginOpt = map.MapOriginOpt
+          MapSize = map.MapSize }
+
+    static member concat left right =
+        if left.MapOriginOpt = right.MapOriginOpt then
+            if left.MapSize = right.MapSize then
+                let map = MapRand.clone left
+                for i in 0 .. map.MapSize.X - 1 do
+                    for j in 0 .. map.MapSize.Y - 1 do
+                        map.MapSegments.[i].[j] <- left.MapSegments.[i].[j] ||| right.MapSegments.[i].[j]
+                map
+            else failwith "Cannot concat two RandMaps of differing sizes."
+        else failwith "Cannot concat two RandMaps with different origins."
+
+    static member private walk biasChance bias (cursor : Vector2i) map rand =
+        let bounds = v4iBounds v2iZero map.MapSize
+        let mutable cursor = cursor
+        let (i, rand) = Rand.nextIntUnder 4 rand
+        let (chance, rand) = Rand.nextSingleUnder 1.0f rand
+        let direction = if chance < biasChance then bias else i
+        match direction with
+        | 0 ->
+            // try go north
+            if  cursor.Y < dec bounds.W then
+                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1N
+                cursor.Y <- inc cursor.Y
+                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1S
+        | 1 ->
+            // try go east
+            if  cursor.X < dec bounds.Z then
+                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1E
+                cursor.X <- inc cursor.X
+                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1W
+        | 2 ->
+            // try go south
+            if  cursor.Y > 1 then
+                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1S
+                cursor.Y <- dec cursor.Y
+                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1N
+        | 3 ->
+            // try go west
+            if  cursor.X > 1 then
+                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1W
+                cursor.X <- dec cursor.X
+                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1E
+        | _ -> failwithumf ()
+        (cursor, rand)
+
+    static member makeFromRand biasChance length (size : Vector2i) origin rand =
+        if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."
+        let bounds = v4iBounds v2iZero size
+        let (cursor, biases) =
+            match origin with
+            | OriginC ->        (bounds.Center,                     [0; 1; 2; 3]) // 0 = n; 1 = e; 2 = s; 3 = w
+            | OriginN ->        (bounds.Top - v2iUp,                [2; 2; 1; 3])
+            | OriginE ->        (bounds.Right - v2iRight,           [3; 3; 0; 2])
+            | OriginS ->        (bounds.Bottom,                     [0; 0; 1; 3])
+            | OriginW ->        (bounds.Left,                       [1; 1; 0; 2])
+            | OriginNE ->       (v2i (dec bounds.Z) (dec bounds.W), [0; 1; 2; 3])
+            | OriginNW ->       (v2i bounds.X (dec bounds.W),       [0; 1; 2; 3])
+            | OriginSE ->       (v2i (dec bounds.Z) bounds.Y,       [0; 1; 2; 3])
+            | OriginSW ->       (v2i bounds.X bounds.Y,             [0; 1; 2; 3])
+        let (maps, rand) =
+            List.fold (fun (maps, rand) bias ->
+                let map = { MapRand.make size with MapOriginOpt = Some cursor }
+                let (_, rand) = List.fold (fun (cursor, rand) _ -> MapRand.walk biasChance bias cursor map rand) (cursor, rand) [0 .. dec length]
+                (map :: maps, rand))
+                ([], rand)
+                biases
+        let map = List.reduce MapRand.concat maps
+        (map, rand)
+
+    static member make (size : Vector2i) =
+        if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."
+        { MapSegments = Array.init size.X (fun _ -> Array.init size.Y (constant SegmentRand.Segment0))
+          MapOriginOpt = None
+          MapSize = size }
+
 type PropState =
     | DoorState of bool
     | SwitchState of bool
