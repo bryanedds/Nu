@@ -12,7 +12,6 @@ module GameDispatcher =
 
     type Gui =
         | Splashing
-        | Intro
         | Title
         | Credits
 
@@ -77,7 +76,6 @@ module GameDispatcher =
                 match omni with
                 | Gui gui ->
                     match gui with
-                    | Intro -> just omni
                     | Splashing -> just omni
                     | Title -> withCmd (Show Simulants.Title) omni
                     | Credits -> withCmd (Show Simulants.Credits) omni
@@ -105,10 +103,10 @@ module GameDispatcher =
              Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Some Simulants.Title)) [] []
 
              // title
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some Assets.TitleSong)) Assets.TitleLayerFilePath
 
              // credits
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.CreditsLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some Assets.TitleSong)) Assets.CreditsLayerFilePath
 
              // intros
              Content.screenFromLayerFile Simulants.Intro1.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro2)) Assets.Intro1LayerFilePath
@@ -125,7 +123,7 @@ module GameDispatcher =
                     | Field field -> field] []
 
              // battle
-             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.BattleSong)))
+             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Dissolve.Default, Some Assets.BattleSong))
                 [Screen.Battle <== omni --> fun omni ->
                     match omni with
                     | Gui _ -> Battle.empty
