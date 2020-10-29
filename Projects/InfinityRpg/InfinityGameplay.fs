@@ -71,11 +71,14 @@ type [<NoComparison>] Move =
         | _ -> this
 
 type FieldSpace =
-    { CharacterOpt : CharacterIndex Option
+    { CharacterOpt : (CharacterIndex * CharacterState) Option
       PickupItemOpt : PickupType Option }
 
     member this.GetCharacter =
-        match this.CharacterOpt with Some index -> index | None -> failwithumf ()
+        match this.CharacterOpt with Some character -> character | None -> failwithumf ()
+    
+    member this.GetCharacterIndex =
+        match this.CharacterOpt with Some (index, _) -> index | None -> failwithumf ()
     
     member this.ContainsCharacter =
         match this.CharacterOpt with Some _ -> true | None -> false
@@ -83,12 +86,12 @@ type FieldSpace =
     static member containsEnemy fieldSpace =
         match fieldSpace.CharacterOpt with
         | None -> false // more efficient order
-        | Some i -> i.IsEnemy
+        | Some (i, _) -> i.IsEnemy
     
     static member containsSpecifiedCharacter index fieldSpace =
         match fieldSpace.CharacterOpt with
         | None -> false // more efficient order
-        | Some i -> i = index
+        | Some (i, _) -> i = index
 
     member this.ContainsPickup =
         match this.PickupItemOpt with Some _ -> true | None -> false
@@ -102,8 +105,8 @@ type FieldSpace =
     static member updatePickupItemOpt updater fieldSpace =
         { fieldSpace with PickupItemOpt = updater fieldSpace.PickupItemOpt }
     
-    static member addCharacter index fieldSpace =
-        FieldSpace.updateCharacterOpt (constant (Some index)) fieldSpace
+    static member addCharacter character fieldSpace =
+        FieldSpace.updateCharacterOpt (constant (Some character)) fieldSpace
 
     static member removeCharacter fieldSpace =
         FieldSpace.updateCharacterOpt (constant None) fieldSpace
@@ -186,16 +189,18 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member getCharacterAtCoordinates coordinates chessboard =
         chessboard.PassableCoordinates.[coordinates].GetCharacter
     
-    static member addCharacter index coordinates (chessboard : Chessboard) =
-        Chessboard.updateByCoordinates coordinates (FieldSpace.addCharacter index) chessboard
+    static member addCharacter character coordinates (chessboard : Chessboard) =
+        Chessboard.updateByCoordinates coordinates (FieldSpace.addCharacter character) chessboard
 
     static member removeCharacter index _ chessboard =
         let coordinates = Chessboard.getCharacterCoordinates index chessboard
         Chessboard.updateByCoordinates coordinates FieldSpace.removeCharacter chessboard
     
     static member relocateCharacter index coordinates (chessboard : Chessboard) =
-        let chessboard = Chessboard.removeCharacter index () chessboard
-        Chessboard.updateByCoordinates coordinates (FieldSpace.addCharacter index) chessboard
+        let oldCoordinates = Chessboard.getCharacterCoordinates index chessboard
+        let character = Chessboard.getCharacterAtCoordinates oldCoordinates chessboard
+        let chessboard = Chessboard.updateByCoordinates oldCoordinates FieldSpace.removeCharacter chessboard
+        Chessboard.addCharacter character coordinates chessboard
     
     static member clearEnemies _ _ (chessboard : Chessboard) =
         Chessboard.updateByPredicate FieldSpace.containsEnemy FieldSpace.removeCharacter chessboard
@@ -218,8 +223,9 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
 
     static member transitionMap _ fieldMap chessboard =
         let playerCoordinates = Chessboard.getCharacterCoordinates PlayerIndex chessboard
+        let player = Chessboard.getCharacterAtCoordinates playerCoordinates chessboard
         let chessboard = Chessboard.setPassableCoordinates () fieldMap chessboard
-        Chessboard.updateByCoordinates playerCoordinates (FieldSpace.addCharacter PlayerIndex) chessboard
+        Chessboard.addCharacter player playerCoordinates chessboard
 
 type [<ReferenceEquality; NoComparison>] Gameplay =
     { MapModeler : MapModeler
@@ -323,7 +329,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Chessboard.getCharacterCoordinates index gameplay.Chessboard
 
     static member getIndexByCoordinates coordinates gameplay =
-        Chessboard.getCharacterAtCoordinates coordinates gameplay.Chessboard
+        Chessboard.getCharacterAtCoordinates coordinates gameplay.Chessboard |> fst
 
     static member getCurrentMove index gameplay =
         gameplay.Chessboard.CurrentMoves.[index]
@@ -341,8 +347,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 if gameplay.EnemyCount > chessboard.EnemyCount then
                     List.filter (fun (character : Character) -> Chessboard.characterExists character.Index chessboard) gameplay.Enemies
                 else
-                    let generator k (v : FieldSpace) = Character.makeEnemy v.GetCharacter k
-                    let enemies = Map.filter (fun _ (v : FieldSpace) -> not (Gameplay.characterExists v.GetCharacter gameplay)) chessboard.EnemyCoordinates |> Map.toListBy generator
+                    let generator k (v : FieldSpace) = Character.makeEnemy v.GetCharacterIndex k
+                    let enemies = Map.filter (fun _ (v : FieldSpace) -> not (Gameplay.characterExists v.GetCharacterIndex gameplay)) chessboard.EnemyCoordinates |> Map.toListBy generator
                     enemies @ gameplay.Enemies
             Gameplay.updateEnemies (constant enemies) gameplay
         else gameplay
@@ -454,13 +460,13 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.setCharacterPositionToCoordinates PlayerIndex gameplay
     
     static member makePlayer gameplay =
-        let gameplay = Gameplay.updateChessboardBy Chessboard.addCharacter PlayerIndex v2iZero gameplay
+        let gameplay = Gameplay.updateChessboardBy Chessboard.addCharacter (PlayerIndex, CharacterState.makePlayer) v2iZero gameplay
         Gameplay.createPlayer gameplay
 
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.AvailableCoordinates
         let coordinates = availableCoordinates.Item(Gen.random1 availableCoordinates.Length)
-        Gameplay.updateChessboardBy Chessboard.addCharacter index coordinates gameplay
+        Gameplay.updateChessboardBy Chessboard.addCharacter (index, CharacterState.makeEnemy) coordinates gameplay
 
     static member makeEnemies quantity gameplay =
         let rec recursion count gameplay =
