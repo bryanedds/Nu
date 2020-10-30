@@ -115,7 +115,8 @@ module WorldModuleEntity =
             World.entityStateRemover entity world
 
         static member private shouldPublishEntityChange alwaysPublish nonPersistent (entityState : EntityState) =
-            not nonPersistent && (alwaysPublish || entityState.PublishChanges)
+            (alwaysPublish || entityState.PublishChanges) && not nonPersistent ||
+            (alwaysPublish && nonPersistent)
 
         static member private publishEntityChange propertyName (propertyValue : obj) (entity : Entity) world =
             let world =

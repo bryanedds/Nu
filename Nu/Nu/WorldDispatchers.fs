@@ -309,7 +309,6 @@ module EffectFacetModule =
 module ScriptFacetModule =
 
     type Entity with
-    
         member this.GetScriptOpt world : Symbol AssetTag option = this.Get Property? ScriptOpt world
         member this.SetScriptOpt (value : Symbol AssetTag option) world = this.SetFast Property? ScriptOpt true false value world
         member this.ScriptOpt = lens Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
@@ -383,7 +382,6 @@ module ScriptFacetModule =
 module TextFacetModule =
 
     type Entity with
-    
         member this.GetText world : string = this.Get Property? Text world
         member this.SetText (value : string) world = this.SetFast Property? Text false false value world
         member this.Text = lens Property? Text this.GetText this.SetText this
@@ -442,7 +440,6 @@ module TextFacetModule =
 module RigidBodyFacetModule =
 
     type Entity with
-    
         member this.GetBodyEnabled world : bool = this.Get Property? BodyEnabled world
         member this.SetBodyEnabled (value : bool) world = this.SetFast Property? BodyEnabled false false value world
         member this.BodyEnabled = lens Property? BodyEnabled this.GetBodyEnabled this.SetBodyEnabled this
@@ -589,7 +586,6 @@ module RigidBodyFacetModule =
 module JointFacetModule =
 
     type Entity with
-
         member this.GetJointDevice world : JointDevice = this.Get Property? JointDevice world
         member this.SetJointDevice (value : JointDevice) world = this.SetFast Property? JointDevice false false value world
         member this.JointDevice = lens Property? JointDevice this.GetJointDevice this.SetJointDevice this
@@ -620,10 +616,12 @@ module JointFacetModule =
 module TileMapFacetModule =
 
     type Entity with
-
         member this.GetTileMapAsset world : TileMap AssetTag = this.Get Property? TileMapAsset world
         member this.SetTileMapAsset (value : TileMap AssetTag) world = this.SetFast Property? TileMapAsset false false value world
         member this.TileMapAsset = lens Property? TileMapAsset this.GetTileMapAsset this.SetTileMapAsset this
+        member this.GetTileMapOverride world : TmxMap option = this.Get Property? TileMapOverride world
+        member this.SetTileMapOverride (value : TmxMap option) world = this.SetFast Property? TileMapOverride true true value world
+        member this.TileMapOverride = lens Property? TileMapOverride this.GetTileMapOverride this.SetTileMapOverride this
         member this.GetTileLayerClearance world : single = this.Get Property? TileLayerClearance world
         member this.SetTileLayerClearance (value : single) world = this.SetFast Property? TileLayerClearance false false value world
         member this.TileLayerClearance = lens Property? TileLayerClearance this.GetTileLayerClearance this.SetTileLayerClearance this
@@ -644,10 +642,17 @@ module TileMapFacetModule =
             | BodyPolygon polygon -> BodyPolygon { polygon with Vertices = Array.map (fun point -> point * tileSize) polygon.Vertices; Center = polygon.Center * tileSize + tileOffset }
             | BodyShapes shapes -> BodyShapes (List.map (fun shape -> importShape shape tileSize tileOffset) shapes)
 
-        let tryMakeTileMapDescriptor (tileMapAsset : TileMap AssetTag) world =
-            let metadataMap = World.getMetadata world
-            match Metadata.tryGetTileMapMetadata tileMapAsset metadataMap with
-            | Some (_, _, tileMap) ->
+        let tryGetTileMap (tileMapAsset : TileMap AssetTag) (entity : Entity) world =
+            match entity.GetTileMapOverride world with
+            | None ->
+                match World.tryGetTileMapMetadata tileMapAsset world with
+                | None -> None
+                | Some (_, _, tileMap) -> Some tileMap
+            | Some tileMap -> Some tileMap
+
+        let tryMakeTileMapDescriptor (tileMapAsset : TileMap AssetTag) (entity : Entity) world =
+            match tryGetTileMap tileMapAsset entity world with
+            | Some tileMap ->
                 let tileSizeI = Vector2i (tileMap.TileWidth, tileMap.TileHeight)
                 let tileSizeF = Vector2 (single tileSizeI.X, single tileSizeI.Y)
                 let tileMapSizeM = Vector2i (tileMap.Width, tileMap.Height)
@@ -773,6 +778,7 @@ module TileMapFacetModule =
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
              define Entity.TileMapAsset Assets.DefaultTileMap
+             define Entity.TileMapOverride None
              define Entity.TileLayerClearance 2.0f
              define Entity.Parallax 0.0f
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
@@ -785,11 +791,12 @@ module TileMapFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TileMapAsset) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TileMapOverride) entity world
             world
 
         override this.RegisterPhysics (entity, world) =
             let tileMapAsset = entity.GetTileMapAsset world
-            match tryMakeTileMapDescriptor tileMapAsset world with
+            match tryMakeTileMapDescriptor tileMapAsset entity world with
             | Some tileMapDescriptor -> registerTileMapPhysics entity tileMapDescriptor world
             | None -> Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'."); world
 
@@ -799,18 +806,18 @@ module TileMapFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let tileMapAsset = entity.GetTileMapAsset world
-                match Metadata.tryGetTileMapMetadata tileMapAsset (World.getMetadata world) with
-                | Some (_, tileSets, map) ->
+                match tryGetTileMap tileMapAsset entity world with
+                | Some tileMap ->
                     let absolute = entity.GetAbsolute world
-                    let layers = List.ofSeq map.Layers
-                    let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
-                    let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
+                    let layers = List.ofSeq tileMap.Layers
+                    let tileSourceSize = Vector2i (tileMap.TileWidth, tileMap.TileHeight)
+                    let tileSize = Vector2 (single tileMap.TileWidth, single tileMap.TileHeight)
                     let tileLayerClearance = entity.GetTileLayerClearance world
                     List.foldi
                         (fun i world (layer : TmxLayer) ->
                             Array.fold
                                 (fun world j ->
-                                    let yOffset = single (map.Height - j - 1) * tileSize.Y
+                                    let yOffset = single (tileMap.Height - j - 1) * tileSize.Y
                                     let position = entity.GetPosition world + v2 0.0f yOffset
                                     let depthOffset =
                                         match layer.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
@@ -822,7 +829,7 @@ module TileMapFacetModule =
                                         then Vector2.Zero
                                         else entity.GetParallax world * depth * -World.getEyeCenter world
                                     let parallaxPosition = position + parallaxTranslation
-                                    let size = Vector2 (tileSize.X * single map.Width, tileSize.Y)
+                                    let size = Vector2 (tileSize.X * single tileMap.Width, tileSize.Y)
                                     let rotation = entity.GetRotation world
                                     let transform =
                                         { Position = parallaxPosition
@@ -833,8 +840,8 @@ module TileMapFacetModule =
                                     let tiles =
                                         layer.Tiles |>
                                         enumerable<_> |>
-                                        Seq.skip (j * map.Width) |>
-                                        Seq.take map.Width |>
+                                        Seq.skip (j * tileMap.Width) |>
+                                        Seq.take tileMap.Width |>
                                         Seq.toArray
                                     if  World.isBoundsInView absolute (v4Bounds parallaxPosition size) world then
                                         World.enqueueRenderMessage
@@ -845,14 +852,14 @@ module TileMapFacetModule =
                                                   RenderDescriptor =
                                                     TileLayerDescriptor
                                                         { Transform = transform
-                                                          MapSize = Vector2i (map.Width, map.Height)
+                                                          MapSize = Vector2i (tileMap.Width, tileMap.Height)
                                                           Tiles = tiles
                                                           TileSourceSize = tileSourceSize
                                                           TileSize = tileSize
-                                                          TileSets = tileSets }})
+                                                          TileImageAssets = tileMap.ImageAssets }})
                                             world
                                     else world)
-                                world [|0 .. dec map.Height|])
+                                world [|0 .. tileMap.Height - 1|])
                         world layers
                 | None -> world
             else world
@@ -866,7 +873,7 @@ module TileMapFacetModule =
 module NodeFacetModule =
 
     type Entity with
-    
+
         member this.GetParentNodeOpt world : Entity Relation option = this.Get Property? ParentNodeOpt world
         member this.SetParentNodeOpt (value : Entity Relation option) world = this.SetFast Property? ParentNodeOpt true false value world
         member this.ParentNodeOpt = lens Property? ParentNodeOpt this.GetParentNodeOpt this.SetParentNodeOpt this
@@ -1070,7 +1077,6 @@ module NodeFacetModule =
 module StaticSpriteFacetModule =
 
     type Entity with
-
         member this.GetStaticImage world : Image AssetTag = this.Get Property? StaticImage world
         member this.SetStaticImage (value : Image AssetTag) world = this.SetFast Property? StaticImage false false value world
         member this.StaticImage = lens Property? StaticImage this.GetStaticImage this.SetStaticImage this
@@ -1126,7 +1132,6 @@ module StaticSpriteFacetModule =
 module AnimatedSpriteFacetModule =
 
     type Entity with
-    
         member this.GetCelSize world : Vector2 = this.Get Property? CelSize world
         member this.SetCelSize (value : Vector2) world = this.SetFast Property? CelSize false false value world
         member this.CelSize = lens Property? CelSize this.GetCelSize this.SetCelSize this
@@ -1362,7 +1367,6 @@ module NodeDispatcherModule =
 module GuiDispatcherModule =
 
     type Entity with
-
         member this.GetDisabledColor world : Color = this.Get Property? DisabledColor world
         member this.SetDisabledColor (value : Color) world = this.SetFast Property? DisabledColor false false value world
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
@@ -1440,7 +1444,6 @@ module GuiDispatcherModule =
 module ButtonDispatcherModule =
 
     type Entity with
-    
         member this.GetDown world : bool = this.Get Property? Down world
         member this.SetDown (value : bool) world = this.SetFast Property? Down false false value world
         member this.Down = lens Property? Down this.GetDown this.SetDown this
@@ -1549,7 +1552,6 @@ module ButtonDispatcherModule =
 module LabelDispatcherModule =
 
     type Entity with
-    
         member this.GetLabelImage world : Image AssetTag = this.Get Property? LabelImage world
         member this.SetLabelImage (value : Image AssetTag) world = this.SetFast Property? LabelImage false false value world
         member this.LabelImage = lens Property? LabelImage this.GetLabelImage this.SetLabelImage this
@@ -1591,7 +1593,6 @@ module LabelDispatcherModule =
 module TextDispatcherModule =
 
     type Entity with
-    
         member this.GetBackgroundImageOpt world : Image AssetTag option = this.Get Property? BackgroundImageOpt world
         member this.SetBackgroundImageOpt (value : Image AssetTag option) world = this.SetFast Property? BackgroundImageOpt false false value world
         member this.BackgroundImageOpt = lens Property? BackgroundImageOpt this.GetBackgroundImageOpt this.SetBackgroundImageOpt this
@@ -1648,7 +1649,6 @@ module TextDispatcherModule =
 module ToggleDispatcherModule =
 
     type Entity with
-    
         member this.GetOpen world : bool = this.Get Property? Open world
         member this.SetOpen (value : bool) world = this.SetFast Property? Open false false value world
         member this.Open = lens Property? Open this.GetOpen this.SetOpen this
@@ -1764,7 +1764,6 @@ module ToggleDispatcherModule =
 module FpsDispatcherModule =
 
     type Entity with
-    
         member this.GetStartTickTime world : int64 = this.Get Property? StartTickTime world
         member this.SetStartTickTime (value : int64) world = this.SetFast Property? StartTickTime false false value world
         member this.StartTickTime = lens Property? StartTickTime this.GetStartTickTime this.SetStartTickTime this
@@ -1804,7 +1803,6 @@ module FpsDispatcherModule =
 module FeelerDispatcherModule =
 
     type Entity with
-    
         member this.GetTouched world : bool = this.Get Property? Touched world
         member this.SetTouched (value : bool) world = this.SetFast Property? Touched false false value world
         member this.Touched = lens Property? Touched this.GetTouched this.SetTouched this
@@ -1859,7 +1857,6 @@ module FeelerDispatcherModule =
 module FillBarDispatcherModule =
 
     type Entity with
-    
         member this.GetFill world : single = this.Get Property? Fill world
         member this.SetFill (value : single) world = this.SetFast Property? Fill false false value world
         member this.Fill = lens Property? Fill this.GetFill this.SetFill this
@@ -1980,7 +1977,6 @@ module BoxDispatcherModule =
 module CharacterDispatcherModule =
 
     type Entity with
-
         member this.GetCharacterIdleImage world = this.Get Property? CharacterIdleImage world
         member this.SetCharacterIdleImage value world = this.SetFast Property? CharacterIdleImage false false value world
         member this.CharacterIdleImage = lens<Image AssetTag> Property? CharacterIdleImage this.GetCharacterIdleImage this.SetCharacterIdleImage this
