@@ -33,40 +33,9 @@ type [<CustomEquality; NoComparison>] NavigationNode =
     override this.GetHashCode () =
         this.PositionM.GetHashCode ()
 
-type [<ReferenceEquality; NoComparison>] WalkDescriptor =
-    { WalkDirection : Direction
-      WalkOriginM : Vector2i }
-
-    member this.NextPositionM =
-        this.WalkOriginM + dtovm this.WalkDirection
-
-    static member make origin direction =
-        { WalkDirection = direction
-          WalkOriginM = origin }
-
-type [<ReferenceEquality; NoComparison>] NavigationDescriptor =
-    { WalkDescriptor : WalkDescriptor
-      MultiRoundContext : bool }
-
-    member this.NextPositionM =
-        this.WalkDescriptor.NextPositionM 
-
-    member this.NextPositionI =
-        this.NextPositionM |> vmtovi
-
-    member this.NextPosition =
-        this.NextPositionI |> vitovf
-    
-    static member make multiRoundContext origin direction =
-        { WalkDescriptor = WalkDescriptor.make origin direction
-          MultiRoundContext = multiRoundContext }
-
-type [<ReferenceEquality; NoComparison>] ActionDescriptor =
-    { ActionTargetIndexOpt : CharacterIndex option
-      ActionDataName : string }
-
-    static member computeActionDirection currentPosition targetPositionM =
-        targetPositionM - vftovm currentPosition |> vmtod
+type TurnType =
+    | WalkTurn of bool
+    | AttackTurn
 
 type TurnStatus =
     | TurnPending
@@ -78,44 +47,6 @@ type TurnStatus =
         match turnStatus with
         | TurnTicking tickCount -> TurnTicking (inc tickCount)
         | _ -> turnStatus
-
-type [<NoComparison>] CharacterActivityState =
-    | Action of ActionDescriptor
-    | Navigation of NavigationDescriptor
-    | NoActivity
-
-    member this.IsActing =
-        match this with
-        | Action _ -> true
-        | Navigation _ | NoActivity -> false
-
-    member this.IsNotActing =
-        not this.IsActing
-
-    member this.IsNavigating =
-        match this with
-        | Action _ | NoActivity -> false
-        | Navigation _ -> true
-
-    member this.IsNotNavigating =
-        not this.IsNavigating
-
-    member this.IsNavigatingPath =
-        match this with
-        | Navigation navigationDescriptor -> navigationDescriptor.MultiRoundContext
-        | Action _ | NoActivity -> false
-
-    static member makeAttack index =
-        Action
-            { ActionTargetIndexOpt = Some index
-              ActionDataName = Constants.InfinityRpg.AttackName }
-
-    static member makeNavigation multiRoundContext origin direction =
-        Navigation (NavigationDescriptor.make multiRoundContext origin direction)
-
-type TurnType =
-    | Walk of bool
-    | Attack
 
 type Turn =
     { TurnType : TurnType
@@ -132,7 +63,7 @@ type Turn =
         Turn.updateTurnStatus TurnStatus.incTickCount turn
     
     static member makeWalk index multiRoundContext originM direction =
-        { TurnType = Walk multiRoundContext
+        { TurnType = WalkTurn multiRoundContext
           TurnStatus = TurnPending
           Actor = index
           ReactorOpt = None
@@ -140,7 +71,7 @@ type Turn =
           Direction = direction }
 
     static member makeAttack index targetIndex originM direction =
-        { TurnType = Attack
+        { TurnType = AttackTurn
           TurnStatus = TurnPending
           Actor = index
           ReactorOpt = Some targetIndex

@@ -57,14 +57,6 @@ type [<NoComparison>] Move =
     | Attack of CharacterIndex
     | Travel of NavigationNode list
 
-    member this.MakeActivity coordinates =
-        match this with
-        | Step direction -> CharacterActivityState.makeNavigation false coordinates direction
-        | Attack index -> CharacterActivityState.makeAttack index
-        | Travel path ->
-            let direction = Math.directionToTarget coordinates path.Head.PositionM
-            CharacterActivityState.makeNavigation true coordinates direction
-
     member this.TruncatePath =
         match this with
         | Travel (head :: _) -> Travel [head]
@@ -291,9 +283,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getCharacterByIndex index gameplay =
         Gameplay.tryGetCharacterByIndex index gameplay |> Option.get
 
-    static member getCharacterActivityState index gameplay =
-        (Gameplay.getCharacterByIndex index gameplay).CharacterActivityState
-
     static member getCharacterAnimationState index gameplay =
         (Gameplay.getCharacterByIndex index gameplay).CharacterAnimationState
     
@@ -322,9 +311,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 List.map (fun enemy -> if enemy.Index = index then by updater enemy else enemy)
             Gameplay.updateEnemies (constant enemies) gameplay
     
-    static member updateCharacterActivityState index updater gameplay =
-        Gameplay.updateCharacterBy Character.updateCharacterActivityState index updater gameplay
-
     static member updateCharacterAnimationState index updater gameplay =
         Gameplay.updateCharacterBy Character.updateCharacterAnimationState index updater gameplay
 
@@ -351,6 +337,19 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member turnInProgress index gameplay =
         List.exists (fun x -> x.Actor = index) gameplay.CharacterTurns
+    
+    static member isPlayerAttacking gameplay =
+        match Gameplay.tryGetCharacterTurn PlayerIndex gameplay with
+        | Some turn -> turn.TurnType = AttackTurn
+        | None -> false
+
+    static member isPlayerTraveling gameplay =
+        match Gameplay.tryGetCharacterTurn PlayerIndex gameplay with
+        | Some turn ->
+            match turn.TurnType with
+            | WalkTurn multiRoundContext -> multiRoundContext
+            | _ -> false
+        | None -> false
     
     static member updateCharacterTurn index updater gameplay =
         Gameplay.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) gameplay
@@ -417,9 +416,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     static member finishMove index gameplay =
         let gameplay = Gameplay.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) gameplay
-        
-        let gameplay = Gameplay.removeMove index gameplay
-        Gameplay.updateCharacterActivityState index (constant NoActivity) gameplay
+        Gameplay.removeMove index gameplay
     
     static member tryPickupHealth index coordinates gameplay =
         match index with
@@ -472,11 +469,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 let direction = Math.directionToTarget coordinates path.Head.PositionM
                 Turn.makeWalk index true coordinates direction
 
-        let gameplay = Gameplay.updateCharacterTurns (fun x -> turn :: x) gameplay
+        Gameplay.updateCharacterTurns (fun x -> turn :: x) gameplay
 
-        let activity = move.MakeActivity coordinates
-        Gameplay.updateCharacterActivityState index (constant activity) gameplay
-    
     static member setFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboardBy Chessboard.setPassableCoordinates () fieldMap gameplay
         let field = { FieldMapNp = fieldMap }
