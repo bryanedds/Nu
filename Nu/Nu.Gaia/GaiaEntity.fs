@@ -120,8 +120,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                         | (Left error, world) -> Log.trace error; world
                     | _ ->
                         let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                        let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
-                        PropertyDescriptor.trySetValue alwaysPublish nonPersistent propertyDescriptor value entity world |> snd
+                        PropertyDescriptor.trySetValue alwaysPublish propertyDescriptor value entity world |> snd
                 Globals.World <- world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world

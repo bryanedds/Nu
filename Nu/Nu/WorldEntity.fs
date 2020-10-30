@@ -137,16 +137,16 @@ module WorldEntityModule =
             (World.getEntityProperty propertyName this world).PropertyValue :?> 'a
 
         /// Try to set a property value with explicit type.
-        member this.TrySetProperty propertyName alwaysPublish nonPersistent property world =
-            World.trySetEntityProperty propertyName alwaysPublish nonPersistent property this world
+        member this.TrySetProperty propertyName alwaysPublish property world =
+            World.trySetEntityProperty propertyName alwaysPublish property this world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName alwaysPublish nonPersistent property world =
-            World.setEntityProperty propertyName alwaysPublish nonPersistent property this world
+        member this.SetProperty propertyName alwaysPublish property world =
+            World.setEntityProperty propertyName alwaysPublish property this world
 
         /// Attach a property.
-        member this.AttachProperty propertyName alwaysPublish nonPersistent property world =
-            World.attachEntityProperty propertyName alwaysPublish nonPersistent property this world
+        member this.AttachProperty propertyName alwaysPublish property world =
+            World.attachEntityProperty propertyName alwaysPublish property this world
 
         /// Detach a property.
         member this.DetachProperty propertyName world =
@@ -155,12 +155,11 @@ module WorldEntityModule =
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world =
             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-            let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
-            this.SetFast propertyName alwaysPublish nonPersistent value world
+            this.SetFast propertyName alwaysPublish value world
 
         /// Set a property value.
-        member this.SetFast<'a> propertyName alwaysPublish nonPersistent (value : 'a) world =
-            World.setEntityProperty propertyName alwaysPublish nonPersistent { PropertyType = typeof<'a>; PropertyValue = value } this world
+        member this.SetFast<'a> propertyName alwaysPublish (value : 'a) world =
+            World.setEntityProperty propertyName alwaysPublish { PropertyType = typeof<'a>; PropertyValue = value } this world
 
         /// Get an entity's sorting priority.
         member this.GetSortingPriority world = World.getEntitySortingPriority this world
@@ -379,7 +378,7 @@ module WorldEntityModule =
                             // only set parent node if one was not specified by the descriptor properties
                             if not (List.exists (fun (name, _) -> name = Property? ParentNodeOpt) descriptor.SimulantProperties) then
                                 let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
-                                entity.TrySetProperty Property? ParentNodeOpt true false property world |> snd
+                                entity.TrySetProperty Property? ParentNodeOpt true property world |> snd
                             else world
                         | _ -> world
                     let world =
