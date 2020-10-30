@@ -51,8 +51,8 @@ module Reflection =
         | (false, _) ->
             let result =
                 propertyName.EndsWith ("Model", StringComparison.Ordinal) ||
-                propertyName.EndsWith ("Tp", StringComparison.Ordinal) ||
-                propertyName.EndsWith ("Ap", StringComparison.Ordinal)
+                propertyName.EndsWith ("Ap", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Tp", StringComparison.Ordinal)
             AlwaysPublishPropertyNames.Add (propertyName, result)
             result
 
