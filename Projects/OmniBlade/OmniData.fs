@@ -176,6 +176,7 @@ type FieldType =
     | DebugRoom2
     | TombInner
     | TombOuter
+    | Cave
 
 type SwitchType =
     | ThrowSwitch
@@ -329,15 +330,21 @@ type [<NoComparison>] PropDescriptor =
       PropDepth : single
       PropData : PropData }
 
+type [<NoComparison>] FieldTileMap =
+    | FieldStatic of TileMap AssetTag
+    | FieldRandom of int * single * OriginRand * string
+
 type [<NoComparison>] FieldData =
     { FieldType : FieldType // key
-      FieldTileMap : TileMap AssetTag
+      FieldTileMap : FieldTileMap
       FieldSongOpt : Song AssetTag option
       FieldBackgroundColor : Color }
 
 [<RequireQualifiedAccess>]
 module FieldData =
 
+    let mutable tileMapsMemoized = Map.empty<FieldType, TmxMap option>
+    let mutable propObjectsMemoized = Map.empty<FieldType, (TmxMap * TmxObjectGroup * TmxObject) list>
     let mutable propsMemoized = Map.empty<FieldType, PropDescriptor list>
 
     let objectToProp (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
@@ -354,19 +361,44 @@ module FieldData =
             | (false, _) -> PropData.empty
         { PropBounds = propBounds; PropDepth = propDepth; PropData = propData }
 
+    let tryGetTileMap fieldData world =
+        match Map.tryFind fieldData.FieldType tileMapsMemoized with
+        | None ->
+            let tileMapOpt =
+                match fieldData.FieldTileMap with
+                | FieldStatic fieldAsset ->
+                    match World.tryGetTileMapMetadata fieldAsset world with
+                    | Some (_, _, tileMap) -> Some tileMap
+                    | None -> None
+                | FieldRandom (walkLength, bias, origin, fieldPath) ->
+                    let rand = Rand.make () // TODO: P1: pass this in and out
+                    let (mapRand, rand) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin rand
+                    let mapTmx = MapRand.toTmx fieldPath mapRand
+                    Some mapTmx
+            tileMapsMemoized <- Map.add fieldData.FieldType tileMapOpt tileMapsMemoized
+            tileMapOpt
+        | Some tileMapOpt -> tileMapOpt
+
+    let getPropObjects fieldData world =
+        match Map.tryFind fieldData.FieldType propObjectsMemoized with
+        | None ->
+            let propObjects =
+                match tryGetTileMap fieldData world with
+                | Some tileMap ->
+                    if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
+                        let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
+                        enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (tileMap, group, propObject)) |> Seq.toList
+                    else []
+                | None -> []
+            propObjectsMemoized <- Map.add fieldData.FieldType propObjects propObjectsMemoized
+            propObjects
+        | Some propObjects -> propObjects
+
     let getProps fieldData world =
         match Map.tryFind fieldData.FieldType propsMemoized with
         | None ->
-            let props =
-                match World.tryGetTileMapMetadata fieldData.FieldTileMap world with
-                | Some (_, _, tileMap) ->
-                    if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
-                        let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
-                        let objects = enumerable<TmxObject> group.Objects |> Seq.toList
-                        let props = List.map (fun (object : TmxObject) -> objectToProp object group tileMap) objects
-                        props
-                    else []
-                | None -> []
+            let propObjects = getPropObjects fieldData world
+            let props = List.map (fun (tileMap, group, object) -> objectToProp object group tileMap) propObjects
             propsMemoized <- Map.add fieldData.FieldType props propsMemoized
             props
         | Some props -> props

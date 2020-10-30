@@ -545,10 +545,13 @@ module FieldDispatcher =
                  // tile map
                  Content.tileMap Simulants.FieldTileMap.Name
                     [Entity.Depth == Constants.Field.BackgroundDepth
-                     Entity.TileMapAsset <== field --> fun field ->
+                     Entity.TileMapOverride <== field ->> fun field world ->
                         match Map.tryFind field.FieldType data.Value.Fields with
-                        | Some fieldData -> fieldData.FieldTileMap
-                        | None -> Assets.DebugRoomTileMap
+                        | Some fieldData ->
+                            match FieldData.tryGetTileMap fieldData world with
+                            | Some tileMap -> Some tileMap
+                            | None -> None
+                        | None -> None
                      Entity.TileLayerClearance == 10.0f]
 
                  // avatar
@@ -627,18 +630,11 @@ module FieldDispatcher =
                     (fun (fieldType, advents, propStates) world ->
                         match Map.tryFind fieldType data.Value.Fields with
                         | Some fieldData ->
-                            match World.tryGetTileMapMetadata fieldData.FieldTileMap world with
-                            | Some (_, _, tileMap) ->
-                                if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
-                                    let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
-                                    let objects = enumerable<TmxObject> group.Objects
-                                    let results = Seq.map (fun object -> (object, group, tileMap, advents, propStates)) objects
-                                    Seq.toList results
-                                else []
-                            | None -> []
+                            let propObjects = FieldData.getPropObjects fieldData world
+                            List.map (fun (tileMap, group, object) -> (tileMap, group, object, advents, propStates)) propObjects
                         | None -> [])
-                    (fun _ field _ ->
-                        let prop = flip Lens.map field (fun (object, group, tileMap, advents, propStates) ->
+                    (fun _ propMetadata _ ->
+                        let prop = flip Lens.map propMetadata (fun (tileMap, group, object, advents, propStates) ->
                             let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
                             let propSize = v2 (single object.Width) (single object.Height)
                             let propBounds = v4Bounds propPosition propSize

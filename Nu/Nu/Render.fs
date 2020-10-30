@@ -63,7 +63,7 @@ type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
       Tiles : TmxLayerTile array
       TileSourceSize : Vector2i
       TileSize : Vector2
-      TileSets : (TmxTileset * Image AssetTag) array }
+      TileImageAssets : (TmxTileset * Image AssetTag) array }
 
 /// Describes how to render text to the rendering system.
 type [<StructuralEquality; NoComparison>] TextDescriptor =
@@ -309,7 +309,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let tiles = descriptor.Tiles
         let tileSourceSize = descriptor.TileSourceSize
         let tileSize = descriptor.TileSize
-        let tileSets = descriptor.TileSets
+        let tileSets = descriptor.TileImageAssets
         let (allFound, tileSetTextures) =
             tileSets |>
             Array.map (fun (tileSet, tileSetImage) ->
