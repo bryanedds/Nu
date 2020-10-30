@@ -146,11 +146,10 @@ module WorldScripting =
                 | Some property ->
                     let struct (propertyValue, world) = World.evalInternal propertyValueExpr world
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                    let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                     match ScriptingSystem.tryExport property.PropertyType propertyValue world with
                     | Some propertyValue ->
                         let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                        match World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world with
+                        match World.trySetProperty propertyName alwaysPublish property simulant world with
                         | (true, world) -> struct (Unit, world)
                         | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
                     | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
@@ -174,11 +173,10 @@ module WorldScripting =
                                         match World.tryGetProperty propertyName simulant world with
                                         | Some property ->
                                             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                                            let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                                             match ScriptingSystem.tryExport property.PropertyType expr world with
                                             | Some propertyValue ->
                                                 let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                                                let (_, world) = World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
+                                                let (_, world) = World.trySetProperty propertyName alwaysPublish property simulant world
                                                 (Cascade, world)
                                             | None -> (Cascade, world)
                                         | None -> (Cascade, world)

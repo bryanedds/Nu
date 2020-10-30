@@ -1110,9 +1110,8 @@ module GameDispatcherModule =
                 | PropertyDefinition def ->
                     let propertyName = def.PropertyName
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                    let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
-                    World.setProperty def.PropertyName alwaysPublish nonPersistent property game world
+                    World.setProperty def.PropertyName alwaysPublish property game world
                 | EventHandlerDefinition (handler, partialAddress) ->
                     let eventAddress = partialAddress --> game
                     World.monitor (fun (evt : Event) world ->

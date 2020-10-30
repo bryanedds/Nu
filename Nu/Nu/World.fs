@@ -32,9 +32,8 @@ module Nu =
             | Some property ->
                 if property.PropertyValue <> value then // OPTIMIZATION: avoid reflection when value doesn't change
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
-                    let nonPersistent = Reflection.isPropertyNonPersistentByName leftName
                     let property = { property with PropertyValue = value }
-                    let world = World.trySetProperty leftName alwaysPublish nonPersistent property simulant world |> snd
+                    let world = World.trySetProperty leftName alwaysPublish property simulant world |> snd
                     (Cascade, world)
                 else (Cascade, world)
             | None -> (Cascade, world)
@@ -112,9 +111,8 @@ module Nu =
                             let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
                             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                            let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                             let property = { PropertyValue = value; PropertyType = ty }
-                            World.attachEntityProperty propertyName alwaysPublish nonPersistent property entity world |> box
+                            World.attachEntityProperty propertyName alwaysPublish property entity world |> box
                         | (None, (true, _)) ->
                             World.destroyEntity entity world |> box
                         | (None, (false, _)) ->

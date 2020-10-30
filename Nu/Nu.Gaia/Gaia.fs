@@ -1240,10 +1240,9 @@ module Gaia =
                             | Some dv ->
                                 let propertyName = form.entityDesignerPropertyNameTextBox.Text
                                 let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                                let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                                 let dp = { DesignerType = dt; DesignerValue = dv }
                                 let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = dp }
-                                let world = entity.AttachProperty propertyName alwaysPublish nonPersistent property world
+                                let world = entity.AttachProperty propertyName alwaysPublish property world
                                 Globals.World <- world // must be set for property grid
                                 form.entityPropertyGrid.Refresh ()
                                 world
