@@ -52,21 +52,21 @@ type [<ReferenceEquality; NoComparison>] SubmenuUse =
     static member tryMakeFromSelection selection =
         match snd selection with
         | Consumable ty ->
-            match Map.tryFind ty data.Value.Consumables with
+            match Map.tryFind ty Data.Value.Consumables with
             | Some cd -> SubmenuUse.makeFromConsumableData selection cd |> Some
             | None -> None
         | Equipment ty ->
             match ty with
             | WeaponType name ->
-                match Map.tryFind name data.Value.Weapons with
+                match Map.tryFind name Data.Value.Weapons with
                 | Some wd -> SubmenuUse.makeFromWeaponData selection wd |> Some
                 | None -> None
             | ArmorType name ->
-                match Map.tryFind name data.Value.Armors with
+                match Map.tryFind name Data.Value.Armors with
                 | Some ad -> SubmenuUse.makeFromArmorData selection ad |> Some
                 | None -> None
             | AccessoryType name ->
-                match Map.tryFind name data.Value.Accessories with
+                match Map.tryFind name Data.Value.Accessories with
                 | Some ad -> SubmenuUse.makeFromAccessoryData selection ad |> Some
                 | None -> None
         | KeyItem _ | Stash _ -> None
@@ -81,7 +81,7 @@ type [<ReferenceEquality; NoComparison>] SubmenuLegion =
     static member tryGetLegionnaireAndLegionData legion submenuLegion =
         match SubmenuLegion.tryGetLegionnaire legion submenuLegion with
         | Some legionnaire ->
-            match Map.tryFind legionnaire.CharacterType data.Value.Characters with
+            match Map.tryFind legionnaire.CharacterType Data.Value.Characters with
             | Some characterData -> Some (legionnaire, characterData)
             | None -> None
         | None -> None
@@ -159,21 +159,21 @@ type [<ReferenceEquality; NoComparison>] ShopConfirm =
     static member tryMakeFromSelection buying inventory selection =
         match snd selection with
         | Consumable ty ->
-            match Map.tryFind ty data.Value.Consumables with
+            match Map.tryFind ty Data.Value.Consumables with
             | Some cd -> ShopConfirm.makeFromConsumableData buying inventory selection cd |> Some
             | None -> None
         | Equipment ty ->
             match ty with
             | WeaponType name ->
-                match Map.tryFind name data.Value.Weapons with
+                match Map.tryFind name Data.Value.Weapons with
                 | Some wd -> ShopConfirm.makeFromWeaponData buying inventory selection wd |> Some
                 | None -> None
             | ArmorType name ->
-                match Map.tryFind name data.Value.Armors with
+                match Map.tryFind name Data.Value.Armors with
                 | Some ad -> ShopConfirm.makeFromArmorData buying inventory selection ad |> Some
                 | None -> None
             | AccessoryType name ->
-                match Map.tryFind name data.Value.Accessories with
+                match Map.tryFind name Data.Value.Accessories with
                 | Some ad -> ShopConfirm.makeFromAccessoryData buying inventory selection ad |> Some
                 | None -> None
         | KeyItem _ | Stash _ -> None
@@ -196,6 +196,7 @@ module Field =
     type [<ReferenceEquality; NoComparison>] Field =
         private
             { FieldType_ : FieldType
+              RandSeedState_ : uint64
               Avatar_ : Avatar
               Legion_ : Legion
               Advents_ : Advent Set
@@ -209,6 +210,7 @@ module Field =
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
+        member this.RandSeedState = FieldType.rotateRandSeedState this.RandSeedState_ this.FieldType_
         member this.Avatar = this.Avatar_
         member this.Legion = this.Legion_
         member this.Advents = this.Advents_
@@ -228,7 +230,7 @@ module Field =
         Map.ofSeq
 
     let getFieldSongOpt field =
-        match data.Value.Fields.TryGetValue field.FieldType_ with
+        match Data.Value.Fields.TryGetValue field.FieldType_ with
         | (true, fieldData) -> fieldData.FieldSongOpt
         | (false, _) -> None
 
@@ -283,8 +285,9 @@ module Field =
         let field = updateBattleOpt (constant None) field
         field
 
-    let make fieldType avatar legion advents inventory =
+    let make fieldType randSeedState avatar legion advents inventory =
         { FieldType_ = fieldType
+          RandSeedState_ = randSeedState
           Avatar_ = avatar
           Legion_ = legion
           Advents_ = advents
@@ -298,6 +301,7 @@ module Field =
 
     let empty =
         { FieldType_ = DebugRoom
+          RandSeedState_ = Rand.DefaultSeedState
           Avatar_ = Avatar.empty
           Legion_ = Map.empty
           Advents_ = Set.empty
@@ -309,8 +313,9 @@ module Field =
           DialogOpt_ = None
           BattleOpt_ = None }
 
-    let initial =
+    let initial randSeedState =
         { FieldType_ = TombOuter
+          RandSeedState_ = randSeedState
           Avatar_ = Avatar.empty
           Legion_ = Map.ofList [(0, Legionnaire.finn)]
           Advents_ = Set.empty

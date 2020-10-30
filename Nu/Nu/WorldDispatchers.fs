@@ -702,7 +702,7 @@ module TmxMapFacetModule =
 
     type Entity with
         member this.GetTmxMap world : TmxMap = this.Get Property? TmxMap world
-        member this.SetTmxMap (value : TmxMap) world = this.SetFast Property? TmxMap true value world
+        member this.SetTmxMap (value : TmxMap) world = this.SetFast Property? TmxMap false value world
         member this.TmxMap = lens Property? TmxMap this.GetTmxMap this.SetTmxMap this
 
     type TmxMapFacet () =

@@ -18,7 +18,7 @@ module Gen =
 
         /// Get the next random number integer.
         static member random =
-            lock Lock (fun () -> Random.Next)
+            lock Lock (fun () -> Random.Next ())
             
         /// Get the next random number integer below maxValue.
         static member random1 maxValue =

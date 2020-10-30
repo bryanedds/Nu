@@ -52,7 +52,7 @@ module FieldDispatcher =
         member this.Field = this.Model<Field> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.initial)
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
 
         static let pageItems pageIndex pageSize items =
             items |>
@@ -102,14 +102,14 @@ module FieldDispatcher =
             | Some prop -> tryGetInteraction3 dialogOpt advents (prop.GetProp world).PropData
             | None -> None
 
-        static let tryGetTouchingPortal (avatar : Avatar) world =
+        static let tryGetTouchingPortal randSeedState (avatar : Avatar) world =
             avatar.IntersectedBodyShapes |>
             List.choose (fun shape ->
                 match (shape.Entity.GetProp world).PropData with
                 | Portal (_, _, fieldType, portalType, _) ->
-                    match Map.tryFind fieldType data.Value.Fields with
+                    match Map.tryFind fieldType Data.Value.Fields with
                     | Some fieldData ->
-                        match FieldData.tryGetPortal portalType fieldData world with
+                        match FieldData.tryGetPortal portalType randSeedState fieldData world with
                         | Some portal ->
                             match portal.PropData with
                             | Portal (_, direction, _, _, _) ->
@@ -153,7 +153,7 @@ module FieldDispatcher =
             if field.Advents.IsSupersetOf requirements then
                 match battleTypeOpt with
                 | Some battleType ->
-                    match Map.tryFind battleType data.Value.Battles with
+                    match Map.tryFind battleType Data.Value.Battles with
                     | Some battleData ->
                         let prizePool = { Items = []; Gold = 0; Exp = 0 }
                         let battle = Battle.makeFromLegion (Field.getParty field) field.Inventory prizePool battleData time
@@ -243,7 +243,7 @@ module FieldDispatcher =
                             | Some shop ->
                                 match shop.ShopState with
                                 | ShopBuying ->
-                                    match Map.tryFind shop.ShopType data.Value.Shops with
+                                    match Map.tryFind shop.ShopType Data.Value.Shops with
                                     | Some shopData -> shopData.ShopItems |> Set.toSeq |> Seq.indexed |> pageItems shop.ShopPage 10
                                     | None -> []
                                 | ShopSelling ->
@@ -299,7 +299,7 @@ module FieldDispatcher =
                     let tickTime = World.getTickTime world
                     let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
                     if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
-                        match data.Value.Fields.TryGetValue fieldTransition.FieldType with
+                        match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
                         | (true, fieldData) ->
                             if currentSongOpt <> fieldData.FieldSongOpt
                             then withCmd (FadeOutSong Constants.Audio.DefaultFadeOutMs) field
@@ -332,7 +332,7 @@ module FieldDispatcher =
             | UpdatePortal ->
                 match field.FieldTransitionOpt with
                 | None ->
-                    match tryGetTouchingPortal field.Avatar world with
+                    match tryGetTouchingPortal field.RandSeedState field.Avatar world with
                     | Some (fieldType, destination, direction) ->
                         let transition =
                             { FieldType = fieldType
@@ -485,7 +485,7 @@ module FieldDispatcher =
                 just world
 
             | PlayFieldSong ->
-                match data.Value.Fields.TryGetValue field.FieldType with
+                match Data.Value.Fields.TryGetValue field.FieldType with
                 | (true, fieldData) ->
                     match fieldData.FieldSongOpt with
                     | Some fieldSong -> withCmd (PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)) world
@@ -518,18 +518,18 @@ module FieldDispatcher =
 
                 [// backdrop sprite
                  Content.staticSprite Simulants.FieldBackdrop.Name
-                    [Entity.Bounds <== field ->> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MinValue; Entity.Absolute == true
+                    [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MinValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.DefaultImage9
                      Entity.Color <== field --> fun field ->
-                        match data.Value.Fields.TryGetValue field.FieldType with
+                        match Data.Value.Fields.TryGetValue field.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
                         | (false, _) -> Color.Black]
 
                  // portal fade sprite
                  Content.staticSprite Simulants.FieldPortalFade.Name
-                   [Entity.Bounds <== field ->> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
+                   [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
                     Entity.StaticImage == Assets.DefaultImage9
-                    Entity.Color <== field ->> fun field world ->
+                    Entity.Color <== field --|> fun field world ->
                         match field.FieldTransitionOpt with
                         | Some transition ->
                             let tickTime = World.getTickTime world
@@ -542,13 +542,13 @@ module FieldDispatcher =
                             Color.Black.WithA (byte (progress * 255.0f))
                         | None -> Color.Zero]
 
-                 // tile map
+                 // tmx map
                  Content.tmxMap Simulants.FieldTileMap.Name
                     [Entity.Depth == Constants.Field.BackgroundDepth
-                     Entity.TmxMap <== field ->> fun field world ->
-                        match Map.tryFind field.FieldType data.Value.Fields with
+                     Entity.TmxMap <== field --|> fun field world ->
+                        match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
-                            match FieldData.tryGetTileMap fieldData world with
+                            match FieldData.tryGetTileMap field.RandSeedState fieldData world with
                             | Some tileMap -> tileMap
                             | None -> failwithumf ()
                         | None -> failwithumf ()
@@ -581,12 +581,12 @@ module FieldDispatcher =
                  Content.button Simulants.FieldInteract.Name
                     [Entity.Position == v2 248.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
-                     Entity.Visible <== field ->> fun field world ->
+                     Entity.Visible <== field --|> fun field world ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
                         Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar world)
-                     Entity.Text <== field ->> fun field world ->
+                     Entity.Text <== field --|> fun field world ->
                         match tryGetInteraction field.DialogOpt field.Advents field.Avatar world with
                         | Some interaction -> interaction
                         | None -> ""
@@ -626,11 +626,11 @@ module FieldDispatcher =
 
                  // props
                  Content.entities field
-                    (fun field -> (field.FieldType, field.Advents, field.PropStates))
-                    (fun (fieldType, advents, propStates) world ->
-                        match Map.tryFind fieldType data.Value.Fields with
+                    (fun field -> (field.FieldType, field.RandSeedState, field.Advents, field.PropStates))
+                    (fun (fieldType, randSeedState, advents, propStates) world ->
+                        match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
-                            let propObjects = FieldData.getPropObjects fieldData world
+                            let propObjects = FieldData.getPropObjects randSeedState fieldData world
                             List.map (fun (tileMap, group, object) -> (tileMap, group, object, advents, propStates)) propObjects
                         | None -> [])
                     (fun _ propMetadata _ ->

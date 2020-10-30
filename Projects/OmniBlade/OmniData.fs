@@ -177,6 +177,10 @@ type FieldType =
     | TombInner
     | TombOuter
     | Cave
+    static member rotateRandSeedState randSeedState fieldType =
+        match fieldType with
+        | DebugRoom | DebugRoom2 | TombInner | TombOuter -> randSeedState
+        | Cave -> rotl64 1 randSeedState
 
 type SwitchType =
     | ThrowSwitch
@@ -361,7 +365,7 @@ module FieldData =
             | (false, _) -> PropData.empty
         { PropBounds = propBounds; PropDepth = propDepth; PropData = propData }
 
-    let tryGetTileMap fieldData world =
+    let tryGetTileMap randSeedState fieldData world =
         match Map.tryFind fieldData.FieldType tileMapsMemoized with
         | None ->
             let tileMapOpt =
@@ -371,19 +375,19 @@ module FieldData =
                     | Some (_, _, tileMap) -> Some tileMap
                     | None -> None
                 | FieldRandom (walkLength, bias, origin, fieldPath) ->
-                    let rand = Rand.make () // TODO: P1: pass this in and out
-                    let (mapRand, rand) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin rand
+                    let rand = Rand.makeFromSeedState randSeedState
+                    let (mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin rand
                     let mapTmx = MapRand.toTmx fieldPath mapRand
                     Some mapTmx
             tileMapsMemoized <- Map.add fieldData.FieldType tileMapOpt tileMapsMemoized
             tileMapOpt
         | Some tileMapOpt -> tileMapOpt
 
-    let getPropObjects fieldData world =
+    let getPropObjects randSeedState fieldData world =
         match Map.tryFind fieldData.FieldType propObjectsMemoized with
         | None ->
             let propObjects =
-                match tryGetTileMap fieldData world with
+                match tryGetTileMap randSeedState fieldData world with
                 | Some tileMap ->
                     if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
                         let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
@@ -394,21 +398,21 @@ module FieldData =
             propObjects
         | Some propObjects -> propObjects
 
-    let getProps fieldData world =
+    let getProps randSeedState fieldData world =
         match Map.tryFind fieldData.FieldType propsMemoized with
         | None ->
-            let propObjects = getPropObjects fieldData world
+            let propObjects = getPropObjects randSeedState fieldData world
             let props = List.map (fun (tileMap, group, object) -> objectToProp object group tileMap) propObjects
             propsMemoized <- Map.add fieldData.FieldType props propsMemoized
             props
         | Some props -> props
 
-    let getPortals fieldData world =
-        let props = getProps fieldData world
+    let getPortals randSeedState fieldData world =
+        let props = getProps randSeedState fieldData world
         List.filter (fun prop -> match prop.PropData with Portal _ -> true | _ -> false) props
 
-    let tryGetPortal portalType fieldData world =
-        let portals = getPortals fieldData world
+    let tryGetPortal portalType randSeedState fieldData world =
+        let portals = getPortals randSeedState fieldData world
         List.tryFind (fun prop -> match prop.PropData with Portal (portalType2, _, _, _, _) -> portalType2 = portalType | _ -> failwithumf ()) portals
 
 type [<NoComparison>] EnemyData =
@@ -439,10 +443,10 @@ type CharacterAnimationData =
       Stutter : int64
       Offset : Vector2i }
 
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module Data =
 
-    type [<NoComparison>] Data =
+    type [<NoComparison>] OmniData =
         { Weapons : Map<string, WeaponData>
           Armors : Map<string, ArmorData>
           Accessories : Map<string, AccessoryData>
@@ -476,7 +480,5 @@ module Data =
           TechAnimations = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
           CharacterAnimations = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
 
-    let data =
-        lazy (readFromFiles ())
-
-type Data = Data.Data
+    let Value =
+        readFromFiles ()

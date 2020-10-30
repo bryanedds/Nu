@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace OmniBlade
+open System
 open Prime
 open Nu
 open Nu.Declarative
@@ -47,7 +48,7 @@ module GameDispatcher =
              Simulants.CreditsBack.ClickEvent => msg (Change (Gui Title))
              Simulants.FieldBack.ClickEvent => msg (Change (Gui Title))
              Simulants.TitlePlay.ClickEvent => cmd (Show Simulants.Intro1)
-             Simulants.Intro5.DeselectEvent => msg (Change (Field Field.initial))
+             Simulants.Intro5.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
              Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
              Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
              Simulants.TitleExit.ClickEvent => cmd Exit
