@@ -73,7 +73,6 @@ type TurnStatus =
     | TurnBeginning
     | TurnTicking of int64
     | TurnFinishing
-    | Idle
 
     static member incTickCount turnStatus =
         match turnStatus with
