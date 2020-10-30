@@ -291,9 +291,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getCharacterByIndex index gameplay =
         Gameplay.tryGetCharacterByIndex index gameplay |> Option.get
 
-    static member getTurnStatus index gameplay =
-        (Gameplay.getCharacterByIndex index gameplay).TurnStatus
-    
     static member getCharacterActivityState index gameplay =
         (Gameplay.getCharacterByIndex index gameplay).CharacterActivityState
 
@@ -311,11 +308,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         | PlayerIndex -> Gameplay.getEnemyIndices gameplay
         | _ -> [PlayerIndex]
     
-    static member getCharacterTurns gameplay =
-        Gameplay.getCharacters gameplay |> List.map (fun character -> character.TurnStatus)
-    
-    static member anyTurnsInProgress gameplay =
-        Gameplay.getCharacterTurns gameplay |> List.exists (fun turnStatus -> turnStatus <> Idle)
+    static member anyTurnsInProgress gameplay = 
+        List.notEmpty gameplay.CharacterTurns
     
     static member updateCharacterBy by index updater gameplay =
         match index with
@@ -327,9 +321,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 gameplay.Enemies |>
                 List.map (fun enemy -> if enemy.Index = index then by updater enemy else enemy)
             Gameplay.updateEnemies (constant enemies) gameplay
-    
-    static member updateTurnStatus index updater gameplay =
-        Gameplay.updateCharacterBy Character.updateTurnStatus index updater gameplay
     
     static member updateCharacterActivityState index updater gameplay =
         Gameplay.updateCharacterBy Character.updateCharacterActivityState index updater gameplay
@@ -352,8 +343,14 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getCurrentMove index gameplay =
         gameplay.Chessboard.CurrentMoves.[index]
     
+    static member tryGetCharacterTurn index gameplay =
+        List.tryFind (fun x -> x.Actor = index) gameplay.CharacterTurns
+    
     static member getCharacterTurn index gameplay =
         List.find (fun x -> x.Actor = index) gameplay.CharacterTurns
+    
+    static member turnInProgress index gameplay =
+        List.exists (fun x -> x.Actor = index) gameplay.CharacterTurns
     
     static member updateCharacterTurn index updater gameplay =
         Gameplay.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) gameplay
@@ -422,8 +419,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let gameplay = Gameplay.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) gameplay
         
         let gameplay = Gameplay.removeMove index gameplay
-        let gameplay = Gameplay.updateCharacterActivityState index (constant NoActivity) gameplay
-        Gameplay.updateTurnStatus index (constant Idle) gameplay
+        Gameplay.updateCharacterActivityState index (constant NoActivity) gameplay
     
     static member tryPickupHealth index coordinates gameplay =
         match index with
@@ -479,8 +475,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let gameplay = Gameplay.updateCharacterTurns (fun x -> turn :: x) gameplay
 
         let activity = move.MakeActivity coordinates
-        let gameplay = Gameplay.updateCharacterActivityState index (constant activity) gameplay
-        Gameplay.updateTurnStatus index (constant TurnPending) gameplay
+        Gameplay.updateCharacterActivityState index (constant activity) gameplay
     
     static member setFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboardBy Chessboard.setPassableCoordinates () fieldMap gameplay
