@@ -421,7 +421,7 @@ module WorldModule2 =
             let entityDispatchers = Map.toValueListBy box entityDispatchers
             let sources = facets @ entityDispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
-            Reflection.makeIntrinsicOverlays requiresFacetNames sourceTypes
+            Overlay.makeIntrinsicOverlays requiresFacetNames sourceTypes
 
         /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlays inputDirectory outputDirectory world =
