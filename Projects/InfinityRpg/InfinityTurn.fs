@@ -56,6 +56,19 @@ type Turn =
       OriginM : Vector2i
       Direction : Direction }
     
+    static member calculatePosition turn =
+        match turn.TurnType with
+        | WalkTurn _ ->
+            match turn.TurnStatus with
+            | TurnPending
+            | TurnBeginning -> vmtovf turn.OriginM
+            | TurnTicking tickCount ->
+                let offset = (int Constants.InfinityRpg.CharacterWalkResolution) * (int tickCount |> inc)
+                let offsetVector = dtovfBy turn.Direction offset
+                vmtovf turn.OriginM + offsetVector
+            | TurnFinishing -> turn.OriginM + dtovm turn.Direction |> vmtovf
+        | _ -> vmtovf turn.OriginM
+    
     static member updateTurnStatus updater turn =
         { turn with TurnStatus = updater turn.TurnStatus }
 
