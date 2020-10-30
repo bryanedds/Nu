@@ -113,3 +113,37 @@ type [<NoComparison>] CharacterActivityState =
 
     static member makeNavigation multiRoundContext origin direction =
         Navigation (NavigationDescriptor.make multiRoundContext origin direction)
+
+type TurnType =
+    | Walk of bool
+    | Attack
+
+type Turn =
+    { TurnType : TurnType
+      TurnStatus : TurnStatus
+      Actor : CharacterIndex
+      ReactorOpt : CharacterIndex option
+      OriginM : Vector2i
+      Direction : Direction }
+    
+    static member updateTurnStatus updater turn =
+        { turn with TurnStatus = updater turn.TurnStatus }
+
+    static member incTickCount turn =
+        Turn.updateTurnStatus TurnStatus.incTickCount turn
+    
+    static member makeWalk index multiRoundContext originM direction =
+        { TurnType = Walk multiRoundContext
+          TurnStatus = TurnPending
+          Actor = index
+          ReactorOpt = None
+          OriginM = originM
+          Direction = direction }
+
+    static member makeAttack index targetIndex originM direction =
+        { TurnType = Attack
+          TurnStatus = TurnPending
+          Actor = index
+          ReactorOpt = Some targetIndex
+          OriginM = originM
+          Direction = direction } 

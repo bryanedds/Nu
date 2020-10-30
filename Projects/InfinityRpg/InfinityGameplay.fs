@@ -248,6 +248,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       Chessboard : Chessboard
       ShallLoadGame : bool
       Field : Field
+      CharacterTurns : Turn list
       Enemies : Character list
       Player : Character }
 
@@ -256,6 +257,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
           Chessboard = Chessboard.empty
           ShallLoadGame = false
           Field = Field.initial
+          CharacterTurns = []
           Enemies = []
           Player = Character.initial }
 
@@ -268,6 +270,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updateField updater gameplay =
         { gameplay with Field = updater gameplay.Field }
 
+    static member updateCharacterTurns updater gameplay =
+        { gameplay with CharacterTurns = updater gameplay.CharacterTurns }
+    
     static member updateEnemies updater gameplay =
         { gameplay with Enemies = updater gameplay.Enemies }
 
@@ -347,6 +352,15 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getCurrentMove index gameplay =
         gameplay.Chessboard.CurrentMoves.[index]
     
+    static member getCharacterTurn index gameplay =
+        List.find (fun x -> x.Actor = index) gameplay.CharacterTurns
+    
+    static member updateCharacterTurn index updater gameplay =
+        Gameplay.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) gameplay
+    
+    static member setCharacterTurnStatus index status gameplay =
+        Gameplay.updateCharacterTurn index (Turn.updateTurnStatus (constant status)) gameplay
+    
     static member createPlayer gameplay =
         let coordinates = Gameplay.getCoordinates PlayerIndex gameplay
         let player = Character.makePlayer coordinates
@@ -405,6 +419,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboardBy Chessboard.clearEnemies () () gameplay
 
     static member finishMove index gameplay =
+        let gameplay = Gameplay.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) gameplay
+        
         let gameplay = Gameplay.removeMove index gameplay
         let gameplay = Gameplay.updateCharacterActivityState index (constant NoActivity) gameplay
         Gameplay.updateTurnStatus index (constant Idle) gameplay
@@ -448,7 +464,21 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member activateCharacter index gameplay =
         let move = Gameplay.getCurrentMove index gameplay
-        let activity = Gameplay.getCoordinates index gameplay |> move.MakeActivity
+        let coordinates = Gameplay.getCoordinates index gameplay
+        
+        let turn =
+            match move with
+            | Step direction -> Turn.makeWalk index false coordinates direction
+            | Attack reactorIndex ->
+                let direction = Gameplay.getCoordinates reactorIndex gameplay |> Math.directionToTarget coordinates
+                Turn.makeAttack index reactorIndex coordinates direction
+            | Travel path ->
+                let direction = Math.directionToTarget coordinates path.Head.PositionM
+                Turn.makeWalk index true coordinates direction
+
+        let gameplay = Gameplay.updateCharacterTurns (fun x -> turn :: x) gameplay
+
+        let activity = move.MakeActivity coordinates
         let gameplay = Gameplay.updateCharacterActivityState index (constant activity) gameplay
         Gameplay.updateTurnStatus index (constant TurnPending) gameplay
     
