@@ -241,6 +241,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       ShallLoadGame : bool
       Field : Field
       CharacterTurns : Turn list
+      LastActionStart : int64
       Enemies : Character list
       Player : Character }
 
@@ -250,6 +251,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
           ShallLoadGame = false
           Field = Field.initial
           CharacterTurns = []
+          LastActionStart = 0L
           Enemies = []
           Player = Character.initial }
 
@@ -265,6 +267,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updateCharacterTurns updater gameplay =
         { gameplay with CharacterTurns = updater gameplay.CharacterTurns }
     
+    static member updateLastActionStart updater gameplay =
+        { gameplay with LastActionStart = updater gameplay.LastActionStart }
+
     static member updateEnemies updater gameplay =
         { gameplay with Enemies = updater gameplay.Enemies }
 
@@ -427,14 +432,19 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member applyStep index direction gameplay =
         let coordinates = (Gameplay.getCoordinates index gameplay) + dtovm direction
+        let gameplay = Gameplay.updateCharacterState index (CharacterState.updateFacingDirection (constant direction)) gameplay
         let gameplay =
             if Chessboard.pickupAtCoordinates coordinates gameplay.Chessboard then
                 Gameplay.tryPickupHealth index coordinates gameplay
             else gameplay
         Gameplay.relocateCharacter index coordinates gameplay
     
-    static member applyAttack reactorIndex gameplay =
+    static member applyAttack index reactorIndex gameplay =
         let reactorDamage = 4 // NOTE: just hard-coding damage for now
+        let coordinates = Gameplay.getCoordinates index gameplay
+        let reactorCoordinates = Gameplay.getCoordinates reactorIndex gameplay
+        let direction = Math.directionToTarget coordinates reactorCoordinates
+        let gameplay = Gameplay.updateCharacterState index (CharacterState.updateFacingDirection (constant direction)) gameplay
         Gameplay.updateCharacterState reactorIndex (CharacterState.updateHitPoints (fun x -> x - reactorDamage)) gameplay
     
     static member stopTravelingPlayer reactorIndex gameplay =
@@ -445,7 +455,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         match move with
         | Step direction -> Gameplay.applyStep index direction gameplay
         | Attack reactorIndex ->
-            let gameplay = Gameplay.applyAttack reactorIndex gameplay
+            let gameplay = Gameplay.applyAttack index reactorIndex gameplay
             Gameplay.stopTravelingPlayer reactorIndex gameplay
         | Travel path ->
             match path with

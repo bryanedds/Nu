@@ -168,6 +168,7 @@ type ControlType =
 type [<ReferenceEquality; NoComparison>] CharacterState =
     { CharacterType : CharacterType
       ControlType : ControlType
+      FacingDirection : Direction
       ExpPoints : int
       HitPoints : int
       SpecialPoints : int
@@ -214,12 +215,16 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     static member updateControlType updater characterState =
         { characterState with ControlType = updater characterState.ControlType }
     
+    static member updateFacingDirection updater characterState =
+        { characterState with FacingDirection = updater characterState.FacingDirection }
+    
     static member updateHitPoints updater characterState =
         { characterState with HitPoints = updater characterState.HitPoints }
 
     static member empty =
         { CharacterType = Ally Avatar
           ControlType = PlayerControlled
+          FacingDirection = Upward
           ExpPoints = 0
           HitPoints = 10 // note this is an arbitrary number as hp max is calculated
           SpecialPoints = 1 // sp max is calculated

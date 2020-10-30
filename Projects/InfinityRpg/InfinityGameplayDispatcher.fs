@@ -113,9 +113,7 @@ module GameplayDispatcher =
                             then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                             else gameplay
                         | WalkTurn _ ->
-                            let offset = (int Constants.InfinityRpg.CharacterWalkResolution) * (int tickCount |> inc)
-                            let offsetVector = dtovfBy characterTurn.Direction offset
-                            let newPosition = vmtovf characterTurn.OriginM + offsetVector
+                            let newPosition = Turn.calculatePosition characterTurn
                             let gameplay = Gameplay.updatePosition index (constant newPosition) gameplay
                             if tickCount = (int64 Constants.InfinityRpg.CharacterWalkResolution) - 1L
                             then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
@@ -132,11 +130,15 @@ module GameplayDispatcher =
                     let characterAnimationState = Gameplay.getCharacterAnimationState index gameplay
                     match characterTurn.TurnStatus with
                     | TurnBeginning ->
-                        let characterAnimationState =
+                        let gameplay =
                             match characterTurn.TurnType with
-                            | AttackTurn -> CharacterAnimationState.makeAction (World.getTickTime world) characterTurn.Direction
-                            | WalkTurn _ -> characterAnimationState.UpdateDirection characterTurn.Direction
-                        let gameplay = Gameplay.updateCharacterAnimationState index (constant characterAnimationState) gameplay
+                            | AttackTurn ->
+                                let gameplay = Gameplay.updateLastActionStart (constant (World.getTickTime world)) gameplay
+                                let characterAnimationState = CharacterAnimationState.makeAction gameplay.LastActionStart characterTurn.Direction
+                                Gameplay.updateCharacterAnimationState index (constant characterAnimationState) gameplay
+                            | WalkTurn _ ->
+                                let characterAnimationState = characterAnimationState.UpdateDirection characterTurn.Direction
+                                Gameplay.updateCharacterAnimationState index (constant characterAnimationState) gameplay
                         Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
