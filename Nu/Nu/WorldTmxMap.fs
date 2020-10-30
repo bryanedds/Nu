@@ -26,11 +26,11 @@ module TmxMap =
         | None -> None
 
     let tryGetDescriptor tileMapPosition (tileMap : TmxMap) =
-        let tileSizeI = Vector2i (tileMap.TileWidth, tileMap.TileHeight)
-        let tileSizeF = Vector2 (single tileSizeI.X, single tileSizeI.Y)
-        let tileMapSizeM = Vector2i (tileMap.Width, tileMap.Height)
-        let tileMapSizeI = Vector2i (tileMapSizeM.X * tileSizeI.X, tileMapSizeM.Y * tileSizeI.Y)
-        let tileMapSizeF = Vector2 (single tileMapSizeI.X, single tileMapSizeI.Y)
+        let tileSizeI = v2i tileMap.TileWidth tileMap.TileHeight
+        let tileSizeF = v2 (single tileSizeI.X) (single tileSizeI.Y)
+        let tileMapSizeM = v2i tileMap.Width tileMap.Height
+        let tileMapSizeI = v2i (tileMapSizeM.X * tileSizeI.X) (tileMapSizeM.Y * tileSizeI.Y)
+        let tileMapSizeF = v2 (single tileMapSizeI.X) (single tileMapSizeI.Y)
         Some
             { TileMap = tileMap
               TileSizeI = tileSizeI; TileSizeF = tileSizeF
@@ -78,9 +78,9 @@ module TmxMap =
                 match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
                 | (true, cexpr) ->
                     let tileCenter =
-                        Vector2
-                            (td.TilePositionF.X + tmd.TileSizeF.X * 0.5f,
-                             td.TilePositionF.Y + tmd.TileSizeF.Y * 0.5f)
+                        v2
+                            (td.TilePositionF.X + tmd.TileSizeF.X * 0.5f)
+                            (td.TilePositionF.Y + tmd.TileSizeF.Y * 0.5f)
                     let tileBody =
                         match cexpr with
                         | "" -> BodyBox { Extent = tmd.TileSizeF * 0.5f; Center = tileCenter; PropertiesOpt = None }
@@ -126,7 +126,7 @@ module TmxMap =
               FixedRotation = true
               AngularVelocity = 0.0f
               AngularDamping = 0.0f
-              LinearVelocity = Vector2.Zero
+              LinearVelocity = v2Zero
               LinearDamping = 0.0f
               Inertia = 0.0f
               GravityScale = 0.0f
@@ -139,8 +139,8 @@ module TmxMap =
 
     let getRenderMessages absolute (viewBounds : Vector4) tileLayerClearance tileMapPosition tileMapDepth tileMapParallax (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.Layers
-        let tileSourceSize = Vector2i (tileMap.TileWidth, tileMap.TileHeight)
-        let tileSize = Vector2 (single tileMap.TileWidth, single tileMap.TileHeight)
+        let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
+        let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
         let messagess =
             List.foldi
                 (fun i messagess (layer : TmxLayer) ->
@@ -155,10 +155,10 @@ module TmxMap =
                                     | (false, _) -> single i * tileLayerClearance
                                 let depth = tileMapDepth + depthOffset
                                 let parallaxTranslation =
-                                    if absolute then Vector2.Zero
+                                    if absolute then v2Zero
                                     else tileMapParallax * depth * -viewBounds.Center
                                 let parallaxPosition = position + parallaxTranslation
-                                let size = Vector2 (tileSize.X * single tileMap.Width, tileSize.Y)
+                                let size = v2 (tileSize.X * single tileMap.Width) tileSize.Y
                                 let transform =
                                     { Position = parallaxPosition
                                       Size = size
