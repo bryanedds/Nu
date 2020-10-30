@@ -21,7 +21,7 @@ module Reflection =
              ("ParentNodeOpt", true)
              ("ScriptOpt", true)
              ("Script", true)
-             ("TileMapOverride", true)
+             ("TmxMap", true)
              ("EffectsOpt", true)]
 
     let private NonPersistentPropertyNames =
@@ -39,7 +39,7 @@ module Reflection =
              ("CreationTimeStamp", true)
              ("Optimized", true)
              ("NodeUnsubscribe", true)
-             ("TileMapOverride", true)
+             ("TmxMap", true)
              ("EffectPhysicsShapes", true)
              ("EffectTags", true)
              ("EffectHistory", true)]
