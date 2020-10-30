@@ -419,7 +419,8 @@ module WorldModule3 =
                  BlockDispatcher () :> EntityDispatcher
                  BoxDispatcher () :> EntityDispatcher
                  CharacterDispatcher () :> EntityDispatcher
-                 TileMapDispatcher () :> EntityDispatcher]
+                 TileMapDispatcher () :> EntityDispatcher
+                 TmxMapDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we shoud reflectively generate these
@@ -431,6 +432,7 @@ module WorldModule3 =
                  (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
                  (typeof<JointFacet>.Name, JointFacet () :> Facet)
                  (typeof<TileMapFacet>.Name, TileMapFacet () :> Facet)
+                 (typeof<TmxMapFacet>.Name, TmxMapFacet () :> Facet)
                  (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 

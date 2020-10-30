@@ -543,15 +543,15 @@ module FieldDispatcher =
                         | None -> Color.Zero]
 
                  // tile map
-                 Content.tileMap Simulants.FieldTileMap.Name
+                 Content.tmxMap Simulants.FieldTileMap.Name
                     [Entity.Depth == Constants.Field.BackgroundDepth
-                     Entity.TileMapOverride <== field ->> fun field world ->
+                     Entity.TmxMap <== field ->> fun field world ->
                         match Map.tryFind field.FieldType data.Value.Fields with
                         | Some fieldData ->
                             match FieldData.tryGetTileMap fieldData world with
-                            | Some tileMap -> Some tileMap
-                            | None -> None
-                        | None -> None
+                            | Some tileMap -> tileMap
+                            | None -> failwithumf ()
+                        | None -> failwithumf ()
                      Entity.TileLayerClearance == 10.0f]
 
                  // avatar

@@ -616,12 +616,9 @@ module JointFacetModule =
 module TileMapFacetModule =
 
     type Entity with
-        member this.GetTileMapAsset world : TileMap AssetTag = this.Get Property? TileMapAsset world
-        member this.SetTileMapAsset (value : TileMap AssetTag) world = this.SetFast Property? TileMapAsset false false value world
-        member this.TileMapAsset = lens Property? TileMapAsset this.GetTileMapAsset this.SetTileMapAsset this
-        member this.GetTileMapOverride world : TmxMap option = this.Get Property? TileMapOverride world
-        member this.SetTileMapOverride (value : TmxMap option) world = this.SetFast Property? TileMapOverride true true value world
-        member this.TileMapOverride = lens Property? TileMapOverride this.GetTileMapOverride this.SetTileMapOverride this
+        member this.GetTileMap world : TileMap AssetTag = this.Get Property? TileMap world
+        member this.SetTileMap (value : TileMap AssetTag) world = this.SetFast Property? TileMap false false value world
+        member this.TileMap = lens Property? TileMap this.GetTileMap this.SetTileMap this
         member this.GetTileLayerClearance world : single = this.Get Property? TileLayerClearance world
         member this.SetTileLayerClearance (value : single) world = this.SetFast Property? TileLayerClearance false false value world
         member this.TileLayerClearance = lens Property? TileLayerClearance this.GetTileLayerClearance this.SetTileLayerClearance this
@@ -632,143 +629,6 @@ module TileMapFacetModule =
     type TileMapFacet () =
         inherit Facet ()
 
-        let rec importShape shape (tileSize : Vector2) (tileOffset : Vector2) =
-            let tileExtent = tileSize * 0.5f
-            match shape with
-            | BodyEmpty as be -> be
-            | BodyBox box -> BodyBox { box with Extent = box.Extent * tileExtent; Center = box.Center * tileSize + tileOffset }
-            | BodyCircle circle -> BodyCircle { circle with Radius = circle.Radius * tileExtent.Y; Center = circle.Center * tileSize + tileOffset }
-            | BodyCapsule capsule -> BodyCapsule { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileExtent.Y; Center = capsule.Center * tileSize + tileOffset }
-            | BodyPolygon polygon -> BodyPolygon { polygon with Vertices = Array.map (fun point -> point * tileSize) polygon.Vertices; Center = polygon.Center * tileSize + tileOffset }
-            | BodyShapes shapes -> BodyShapes (List.map (fun shape -> importShape shape tileSize tileOffset) shapes)
-
-        let tryGetTileMap (tileMapAsset : TileMap AssetTag) (entity : Entity) world =
-            match entity.GetTileMapOverride world with
-            | None ->
-                match World.tryGetTileMapMetadata tileMapAsset world with
-                | None -> None
-                | Some (_, _, tileMap) -> Some tileMap
-            | Some tileMap -> Some tileMap
-
-        let tryMakeTileMapDescriptor (tileMapAsset : TileMap AssetTag) (entity : Entity) world =
-            match tryGetTileMap tileMapAsset entity world with
-            | Some tileMap ->
-                let tileSizeI = Vector2i (tileMap.TileWidth, tileMap.TileHeight)
-                let tileSizeF = Vector2 (single tileSizeI.X, single tileSizeI.Y)
-                let tileMapSizeM = Vector2i (tileMap.Width, tileMap.Height)
-                let tileMapSizeI = Vector2i (tileMapSizeM.X * tileSizeI.X, tileMapSizeM.Y * tileSizeI.Y)
-                let tileMapSizeF = Vector2 (single tileMapSizeI.X, single tileMapSizeI.Y)
-                let tileSet = tileMap.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
-                let tileSetSize =
-                    let tileSetWidthOpt = tileSet.Image.Width
-                    let tileSetHeightOpt = tileSet.Image.Height
-                    Vector2i (tileSetWidthOpt.Value / tileSizeI.X, tileSetHeightOpt.Value / tileSizeI.Y)
-                Some { TileMap = tileMap; TileMapSizeM = tileMapSizeM; TileSizeI = tileSizeI; TileSizeF = tileSizeF; TileMapSizeI = tileMapSizeI; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
-            | None -> None
-
-        let tryMakeTileDescriptor (entity : Entity) tmd (tl : TmxLayer) tileIndex world =
-            let tileMapRun = tmd.TileMapSizeM.X
-            let (i, j) = (tileIndex % tileMapRun, tileIndex / tileMapRun)
-            let tile = tl.Tiles.[tileIndex]
-            if tile.Gid <> 0 then // not the empty tile
-                let mutable tileOffset = 1 // gid 0 is the empty tile
-                let mutable tileSetIndex = 0
-                let mutable tileSetFound = false
-                let mutable enr = tmd.TileMap.Tilesets.GetEnumerator ()
-                while enr.MoveNext () && not tileSetFound do
-                    let set = enr.Current
-                    let tileCountOpt = set.TileCount
-                    let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
-                    if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
-                        not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
-                        tileSetFound <- true
-                    else
-                        tileSetIndex <- inc tileSetIndex
-                        tileOffset <- tileOffset + tileCount
-                let tileId = tile.Gid - tileOffset
-                let tileSet = tmd.TileMap.Tilesets.[tileSetIndex]
-                let tileMapPosition = entity.GetPosition world
-                let tilePositionI =
-                    v2i
-                        (int tileMapPosition.X + tmd.TileSizeI.X * i)
-                        (int tileMapPosition.Y - tmd.TileSizeI.Y * inc j + tmd.TileMapSizeI.Y) // invert y coords
-                let tilePositionF = v2 (single tilePositionI.X) (single tilePositionI.Y)
-                let tileSetTileOpt =
-                    match tileSet.Tiles.TryGetValue tileId with
-                    | (true, tileSetTile) -> Some tileSetTile
-                    | (false, _) -> None
-                Some { Tile = tile; I = i; J = j; TilePositionI = tilePositionI; TilePositionF = tilePositionF; TileSetTileOpt = tileSetTileOpt }
-            else None
-
-        let tryGetTileLayerBodyShape entity tmd (tl : TmxLayer) ti world =
-            match tryMakeTileDescriptor entity tmd tl ti world with
-            | Some td ->
-                match td.TileSetTileOpt with
-                | Some tileSetTile ->
-                    match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
-                    | (true, cexpr) ->
-                        let tileCenter =
-                            Vector2
-                                (td.TilePositionF.X + tmd.TileSizeF.X * 0.5f,
-                                 td.TilePositionF.Y + tmd.TileSizeF.Y * 0.5f)
-                        let tileBody =
-                            match cexpr with
-                            | "" -> BodyBox { Extent = tmd.TileSizeF * 0.5f; Center = tileCenter; PropertiesOpt = None }
-                            | _ ->
-                                let tileShape = scvalue<BodyShape> cexpr
-                                let tileShapeImported = importShape tileShape tmd.TileSizeF tileCenter
-                                tileShapeImported
-                        Some tileBody
-                    | (false, _) -> None
-                | None -> None
-            | None -> None
-
-        let getTileLayerBodyShapes entity tileMapDescriptor (tileLayer : TmxLayer) world =
-            Seq.foldi
-                (fun i bodyShapes _ ->
-                    match tryGetTileLayerBodyShape entity tileMapDescriptor tileLayer i world with
-                    | Some bodyShape -> bodyShape :: bodyShapes
-                    | None -> bodyShapes)
-                [] tileLayer.Tiles |>
-            Seq.toList
-
-        let getTileMapBodyShapes entity tileMapDescriptor world =
-            tileMapDescriptor.TileMap.Layers |>
-            Seq.fold (fun shapess tileLayer ->
-                let shapes = getTileLayerBodyShapes entity tileMapDescriptor tileLayer world
-                shapes :: shapess)
-                [] |>
-            Seq.concat |>
-            Seq.toList
-
-        let registerTileMapPhysics (entity : Entity) tileMapDescriptor world =
-            let bodyId = (entity.GetPhysicsId world).CorrelationId
-            let bodyShapes = getTileMapBodyShapes entity tileMapDescriptor world
-            let bodyProperties =
-                { BodyId = bodyId
-                  Position = v2Zero
-                  Rotation = 0.0f
-                  BodyShape = BodyShapes bodyShapes
-                  BodyType = BodyType.Static
-                  Awake = false
-                  Enabled = entity.GetBodyEnabled world
-                  Density = Constants.Physics.NormalDensity
-                  Friction = entity.GetFriction world
-                  Restitution = entity.GetRestitution world
-                  FixedRotation = true
-                  AngularVelocity = 0.0f
-                  AngularDamping = 0.0f
-                  LinearVelocity = Vector2.Zero
-                  LinearDamping = 0.0f
-                  Inertia = 0.0f
-                  GravityScale = 0.0f
-                  CollisionCategories = PhysicsEngine.categorizeCollisionMask (entity.GetCollisionCategories world)
-                  CollisionMask = PhysicsEngine.categorizeCollisionMask (entity.GetCollisionMask world)
-                  IgnoreCCD = false
-                  IsBullet = false
-                  IsSensor = false }
-            World.createBody entity (entity.GetId world) bodyProperties world
-
         static member Properties =
             [define Entity.Omnipresent true
              define Entity.PublishChanges true
@@ -777,8 +637,7 @@ module TileMapFacetModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMapAsset Assets.DefaultTileMap
-             define Entity.TileMapOverride None
+             define Entity.TileMap Assets.DefaultTileMap
              define Entity.TileLayerClearance 2.0f
              define Entity.Parallax 0.0f
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
@@ -790,84 +649,127 @@ module TileMapFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Restitution) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TileMapAsset) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TileMapOverride) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TileMap) entity world
             world
 
         override this.RegisterPhysics (entity, world) =
-            let tileMapAsset = entity.GetTileMapAsset world
-            match tryMakeTileMapDescriptor tileMapAsset entity world with
-            | Some tileMapDescriptor -> registerTileMapPhysics entity tileMapDescriptor world
-            | None -> Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'."); world
+            match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
+            | Some tileMap ->
+                let tileMapPosition = entity.GetPosition world
+                match TmxMap.tryGetDescriptor tileMapPosition tileMap with
+                | Some tileMapDescriptor ->
+                    let bodyProperties =
+                        TmxMap.getBodyProperties
+                            (entity.GetEnabled world)
+                            (entity.GetFriction world)
+                            (entity.GetRestitution world)
+                            (entity.GetCollisionCategories world)
+                            (entity.GetCollisionMask world)
+                            (entity.GetPhysicsId world).CorrelationId
+                            tileMapDescriptor
+                    World.createBody entity (entity.GetId world) bodyProperties world
+                | None -> world
+            | None -> world
 
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetPhysicsId world) world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
-                let tileMapAsset = entity.GetTileMapAsset world
-                match tryGetTileMap tileMapAsset entity world with
+                match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
                 | Some tileMap ->
                     let absolute = entity.GetAbsolute world
-                    let layers = List.ofSeq tileMap.Layers
-                    let tileSourceSize = Vector2i (tileMap.TileWidth, tileMap.TileHeight)
-                    let tileSize = Vector2 (single tileMap.TileWidth, single tileMap.TileHeight)
-                    let tileLayerClearance = entity.GetTileLayerClearance world
-                    List.foldi
-                        (fun i world (layer : TmxLayer) ->
-                            Array.fold
-                                (fun world j ->
-                                    let yOffset = single (tileMap.Height - j - 1) * tileSize.Y
-                                    let position = entity.GetPosition world + v2 0.0f yOffset
-                                    let depthOffset =
-                                        match layer.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-                                        | (true, depth) -> scvalue depth
-                                        | (false, _) -> single i * tileLayerClearance
-                                    let depth = entity.GetDepth world + depthOffset
-                                    let parallaxTranslation =
-                                        if absolute
-                                        then Vector2.Zero
-                                        else entity.GetParallax world * depth * -World.getEyeCenter world
-                                    let parallaxPosition = position + parallaxTranslation
-                                    let size = Vector2 (tileSize.X * single tileMap.Width, tileSize.Y)
-                                    let rotation = entity.GetRotation world
-                                    let transform =
-                                        { Position = parallaxPosition
-                                          Size = size
-                                          Rotation = rotation
-                                          Depth = depth
-                                          Flags = entity.GetFlags world }
-                                    let tiles =
-                                        layer.Tiles |>
-                                        enumerable<_> |>
-                                        Seq.skip (j * tileMap.Width) |>
-                                        Seq.take tileMap.Width |>
-                                        Seq.toArray
-                                    if  World.isBoundsInView absolute (v4Bounds parallaxPosition size) world then
-                                        World.enqueueRenderMessage
-                                            (LayeredDescriptorMessage
-                                                { Depth = transform.Depth
-                                                  PositionY = transform.Position.Y
-                                                  AssetTag = AssetTag.generalize tileMapAsset
-                                                  RenderDescriptor =
-                                                    TileLayerDescriptor
-                                                        { Transform = transform
-                                                          MapSize = Vector2i (tileMap.Width, tileMap.Height)
-                                                          Tiles = tiles
-                                                          TileSourceSize = tileSourceSize
-                                                          TileSize = tileSize
-                                                          TileImageAssets = tileMap.ImageAssets }})
-                                            world
-                                    else world)
-                                world [|0 .. tileMap.Height - 1|])
-                        world layers
+                    let viewBounds = World.getViewBounds absolute world
+                    let tileMapRenderMessages =
+                        TmxMap.getRenderMessages
+                            absolute
+                            viewBounds
+                            (entity.GetTileLayerClearance world)
+                            (entity.GetPosition world)
+                            (entity.GetDepth world)
+                            (entity.GetParallax world)
+                            tileMap
+                    World.enqueueRenderMessages tileMapRenderMessages world
                 | None -> world
             else world
 
-        override this.GetQuickSize (tileMap, world) =
-            match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
-            | Some (_, _, map) -> Vector2 (single (map.Width * map.TileWidth), single (map.Height * map.TileHeight))
+        override this.GetQuickSize (entity, world) =
+            match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
+            | Some tileMap -> TmxMap.getQuickSize tileMap
             | None -> Constants.Engine.DefaultEntitySize
+
+[<AutoOpen>]
+module TmxMapFacetModule =
+
+    type Entity with
+        member this.GetTmxMap world : TmxMap = this.Get Property? TmxMap world
+        member this.SetTmxMap (value : TmxMap) world = this.SetFast Property? TmxMap true true value world
+        member this.TmxMap = lens Property? TmxMap this.GetTmxMap this.SetTmxMap this
+
+    type TmxMapFacet () =
+        inherit Facet ()
+
+        static member Properties =
+            [define Entity.Omnipresent true
+             define Entity.PublishChanges true
+             define Entity.BodyEnabled true
+             define Entity.Friction 0.0f
+             define Entity.Restitution 0.0f
+             define Entity.CollisionCategories "1"
+             define Entity.CollisionMask "@"
+             define Entity.TmxMap (TmxMap Assets.DefaultTmxFilePath)
+             define Entity.TileLayerClearance 2.0f
+             define Entity.Parallax 0.0f
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+
+        override this.Register (entity, world) =
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyEnabled) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Friction) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Restitution) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TmxMap) entity world
+            world
+
+        override this.RegisterPhysics (entity, world) =
+            let tileMapPosition = entity.GetPosition world
+            let tileMap = entity.GetTmxMap world
+            match TmxMap.tryGetDescriptor tileMapPosition tileMap with
+            | Some tileMapDescriptor ->
+                let bodyProperties =
+                    TmxMap.getBodyProperties
+                        (entity.GetEnabled world)
+                        (entity.GetFriction world)
+                        (entity.GetRestitution world)
+                        (entity.GetCollisionCategories world)
+                        (entity.GetCollisionMask world)
+                        (entity.GetPhysicsId world).CorrelationId
+                        tileMapDescriptor
+                World.createBody entity (entity.GetId world) bodyProperties world
+            | None -> world
+
+        override this.UnregisterPhysics (entity, world) =
+            World.destroyBody (entity.GetPhysicsId world) world
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let absolute = entity.GetAbsolute world
+                let viewBounds = World.getViewBounds absolute world
+                let tileMapRenderMessages =
+                    TmxMap.getRenderMessages
+                        absolute
+                        viewBounds
+                        (entity.GetTileLayerClearance world)
+                        (entity.GetPosition world)
+                        (entity.GetDepth world)
+                        (entity.GetParallax world)
+                        (entity.GetTmxMap world)
+                World.enqueueRenderMessages tileMapRenderMessages world
+            else world
+
+        override this.GetQuickSize (entity, world) =
+            TmxMap.getQuickSize (entity.GetTmxMap world)
 
 [<AutoOpen>]
 module NodeFacetModule =
@@ -1124,7 +1026,7 @@ module StaticSpriteFacetModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) (World.getMetadata world) with
+            match World.tryGetTextureSizeF (entity.GetStaticImage world) world with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1544,7 +1446,7 @@ module ButtonDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetUpImage world) (World.getMetadata world) with
+            match World.tryGetTextureSizeF (entity.GetUpImage world) world with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1585,7 +1487,7 @@ module LabelDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetLabelImage world) (World.getMetadata world) with
+            match World.tryGetTextureSizeF (entity.GetLabelImage world) world with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1640,7 +1542,7 @@ module TextDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match entity.GetBackgroundImageOpt world with
             | Some image ->
-                match Metadata.tryGetTextureSizeF image (World.getMetadata world) with
+                match World.tryGetTextureSizeF image world with
                 | Some size -> size
                 | None -> Constants.Engine.DefaultEntitySize
             | None -> Constants.Engine.DefaultEntitySize
@@ -1756,7 +1658,7 @@ module ToggleDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetOpenImage world) (World.getMetadata world) with
+            match World.tryGetTextureSizeF (entity.GetOpenImage world) world with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
             
@@ -1940,7 +1842,7 @@ module FillBarDispatcherModule =
             else world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetBorderImage world) (World.getMetadata world) with
+            match World.tryGetTextureSizeF (entity.GetBorderImage world) world with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -2079,7 +1981,26 @@ module TileMapDispatcherModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMapAsset Assets.DefaultTileMap
+             define Entity.TileMap Assets.DefaultTileMap
+             define Entity.Parallax 0.0f]
+
+[<AutoOpen>]
+module TmxMapDispatcherModule =
+
+    type TmxMapDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<TmxMapFacet>]
+
+        static member Properties =
+            [define Entity.Omnipresent true
+             define Entity.PublishChanges true
+             define Entity.Friction 0.0f
+             define Entity.Restitution 0.0f
+             define Entity.CollisionCategories "1"
+             define Entity.CollisionMask "@"
+             define Entity.TmxMap (TmxMap Assets.DefaultTmxFilePath)
              define Entity.Parallax 0.0f]
 
 [<AutoOpen>]

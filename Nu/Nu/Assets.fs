@@ -29,6 +29,7 @@ module Assets =
     let [<Literal>] DefaultFontString = "[Default Font]"
     let [<Literal>] DefaultSoundString = "[Default Sound]"
     let [<Literal>] DefaultSongString = "[Default Song]"
+    let [<Literal>] DefaultTmxFilePath = "./Assets/Default/TileMap.tmx" // HACK: need to reach out to this directly due to lack of TmxMap mock object
     let [<Literal>] AssetGraphFilePath = "AssetGraph.nuag"
     let [<Literal>] OverlayerFilePath = "Overlayer.nuol"
     let [<Literal>] PreludeFilePath = "Prelude.nuscript"

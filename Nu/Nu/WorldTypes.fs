@@ -42,8 +42,7 @@ type [<StructuralEquality; NoComparison>] TileMapDescriptor =
       TileMapSizeM : Vector2i
       TileMapSizeI : Vector2i
       TileMapSizeF : Vector2
-      TileSet : TmxTileset
-      TileSetSize : Vector2i }
+      TileMapPosition : Vector2 }
 
 /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
 /// means an existing screen being hidden.
