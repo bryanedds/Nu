@@ -93,20 +93,20 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
       Accessories : string list }
 
     static member canUseItem itemType legionnaire =
-        match Map.tryFind legionnaire.CharacterType data.Value.Characters with
+        match Map.tryFind legionnaire.CharacterType Data.Value.Characters with
         | Some characterData ->
-            match Map.tryFind characterData.ArchetypeType data.Value.Archetypes with
+            match Map.tryFind characterData.ArchetypeType Data.Value.Archetypes with
             | Some archetypeData ->
                 match itemType with
                 | Consumable _ -> true
                 | Equipment equipmentType ->
                     match equipmentType with
                     | WeaponType weaponType ->
-                        match Map.tryFind weaponType data.Value.Weapons with
+                        match Map.tryFind weaponType Data.Value.Weapons with
                         | Some weaponData -> weaponData.WeaponSubtype = archetypeData.WeaponSubtype
                         | None -> false
                     | ArmorType armorType ->
-                        match Map.tryFind armorType data.Value.Armors with
+                        match Map.tryFind armorType Data.Value.Armors with
                         | Some armorData -> armorData.ArmorSubtype = archetypeData.ArmorSubtype
                         | None -> false
                     | AccessoryType _ -> true
@@ -117,7 +117,7 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
 
     static member tryUseItem itemType legionnaire =
         if Legionnaire.canUseItem itemType legionnaire then
-            match Map.tryFind legionnaire.CharacterType data.Value.Characters with
+            match Map.tryFind legionnaire.CharacterType Data.Value.Characters with
             | Some characterData ->
                 match itemType with
                 | Consumable consumableType ->
@@ -145,7 +145,7 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
     static member finn =
         let index = 0
         let characterType = Ally Finn
-        let character = Map.find characterType data.Value.Characters
+        let character = Map.find characterType Data.Value.Characters
         let expPoints = Algorithms.levelToExpPoints character.LevelBase
         let archetypeType = character.ArchetypeType
         let weaponOpt = None
@@ -163,7 +163,7 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
     static member glenn =
         let index = 1
         let characterType = Ally Glenn
-        let character = Map.find characterType data.Value.Characters
+        let character = Map.find characterType Data.Value.Characters
         let expPoints = Algorithms.levelToExpPoints character.LevelBase
         let archetypeType = character.ArchetypeType
         let weaponOpt = None
@@ -355,7 +355,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
         position
 
     static member index time state =
-        match Map.tryFind state.AnimationCycle data.Value.CharacterAnimations with
+        match Map.tryFind state.AnimationCycle Data.Value.CharacterAnimations with
         | Some animationData ->
             match animationData.AnimationType with
             | LoopedWithDirection -> CharacterAnimationState.indexLoopedWithDirection animationData.Run animationData.Stutter animationData.Offset time state
@@ -365,7 +365,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
         | None -> v2iZero
 
     static member progressOpt time state =
-        match Map.tryFind state.AnimationCycle data.Value.CharacterAnimations with
+        match Map.tryFind state.AnimationCycle Data.Value.CharacterAnimations with
         | Some animationData ->
             let timeLocal = CharacterAnimationState.timeLocal time state
             match animationData.LengthOpt with

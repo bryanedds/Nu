@@ -270,9 +270,9 @@ module Character =
           InputState_ = NoInput }
 
     let makeEnemy index enemyData =
-        // TODO: error checking
+        // TODO: better error checking
         let characterData =
-            match Map.tryFind (Enemy enemyData.EnemyType) data.Value.Characters with
+            match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
             | Some characterData -> characterData
             | None -> failwith ("Could not find CharacterData for '" + scstring enemyData.EnemyType + "'")
         let archetypeType = characterData.ArchetypeType

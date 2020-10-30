@@ -98,6 +98,9 @@
     <Reference Include="Aether.Physics2D">
       <HintPath>..\..\packages\Aether.Physics2D.1.5.0\lib\net40\Aether.Physics2D.dll</HintPath>
     </Reference>
+    <Reference Include="Csv">
+      <HintPath>..\..\packages\Csv.1.0.58\lib\net40\Csv.dll</HintPath>
+    </Reference>
     <Reference Include="FParsec">
       <HintPath>..\..\packages\FParsec.1.0.3\lib\net40-client\FParsec.dll</HintPath>
     </Reference>
@@ -122,15 +125,16 @@
     <Reference Include="Magick.NET-Q8-x64">
       <HintPath>..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\net40\Magick.NET-Q8-x64.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="mscorlib" />
     <Reference Include="Nito.Collections.Deque">
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.6.0.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.6.1.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
-      <HintPath>..\..\packages\Prime.Scripting.6.0.0\lib\net472\Prime.Scripting.exe</HintPath>
+      <HintPath>..\..\packages\Prime.Scripting.6.1.0\lib\net472\Prime.Scripting.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\..\packages\SDL2-CS.dll.2.0.0.0\lib\net20\SDL2-CS.dll</HintPath>
