@@ -74,10 +74,10 @@ module GameplayDispatcher =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
                     | TurnFinishing ->
-                        match Gameplay.getCharacterActivityState index gameplay with
-                        | Action actionDescriptor ->
+                        match characterTurn.TurnType with
+                        | AttackTurn ->
                             let gameplay = Gameplay.finishMove index gameplay
-                            let reactorIndex = Option.get actionDescriptor.ActionTargetIndexOpt
+                            let reactorIndex = Option.get characterTurn.ReactorOpt
                             let reactorState = Gameplay.getCharacterState reactorIndex gameplay
                             let characterAnimationState = Gameplay.getCharacterAnimationState index gameplay
                             let gameplay = Gameplay.updateCharacterAnimationState index (constant (characterAnimationState.Facing (World.getTickTime world))) gameplay
@@ -86,12 +86,9 @@ module GameplayDispatcher =
                                 | PlayerIndex -> Gameplay.updateCharacterState reactorIndex (CharacterState.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
                                 | EnemyIndex _ -> Gameplay.removeEnemy reactorIndex gameplay
                             else gameplay
-                        | Navigation navigationDescriptor ->
+                        | WalkTurn _ ->
                             let gameplay = Gameplay.setCharacterPositionToCoordinates index gameplay
-                            if index.IsEnemy then
-                                Gameplay.finishMove index gameplay
-                            else gameplay
-                        | _ -> failwith "TurnStatus is TurnFinishing; CharacterActivityState should not be NoActivity"
+                            if index.IsEnemy then Gameplay.finishMove index gameplay else gameplay
                     | _ -> failwith "non-finishing turns should be filtered out by this point"
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 just gameplay
@@ -101,9 +98,9 @@ module GameplayDispatcher =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
                     | TurnTicking tickCount ->
-                        match Gameplay.getCharacterActivityState index gameplay with
-                        | Action actionDescriptor ->
-                            let reactorIndex = Option.get actionDescriptor.ActionTargetIndexOpt
+                        match characterTurn.TurnType with
+                        | AttackTurn ->
+                            let reactorIndex = Option.get characterTurn.ReactorOpt
                             let reactorState = Gameplay.getCharacterState reactorIndex gameplay
                             let gameplay = 
                                 if tickCount = Constants.InfinityRpg.ReactionTick then
@@ -115,15 +112,14 @@ module GameplayDispatcher =
                             if tickCount = Constants.InfinityRpg.ActionTicksMax
                             then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                             else gameplay
-                        | Navigation navigationDescriptor ->
+                        | WalkTurn _ ->
                             let offset = (int Constants.InfinityRpg.CharacterWalkResolution) * (int tickCount |> inc)
-                            let offsetVector = dtovfBy navigationDescriptor.WalkDescriptor.WalkDirection offset
-                            let newPosition = vmtovf navigationDescriptor.WalkDescriptor.WalkOriginM + offsetVector
+                            let offsetVector = dtovfBy characterTurn.Direction offset
+                            let newPosition = vmtovf characterTurn.OriginM + offsetVector
                             let gameplay = Gameplay.updatePosition index (constant newPosition) gameplay
                             if tickCount = (int64 Constants.InfinityRpg.CharacterWalkResolution) - 1L
                             then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                             else gameplay
-                        | NoActivity -> failwith "TurnStatus is TurnTicking; CharacterActivityState should not be NoActivity"
                         |> Gameplay.updateCharacterTurn index Turn.incTickCount
                     | _ -> gameplay
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
@@ -137,15 +133,9 @@ module GameplayDispatcher =
                     match characterTurn.TurnStatus with
                     | TurnBeginning ->
                         let characterAnimationState =
-                            match (Gameplay.getCharacterActivityState index gameplay) with
-                            | Action actionDescriptor ->
-                                let reactorIndex = Option.get actionDescriptor.ActionTargetIndexOpt
-                                let characterPosition = Gameplay.getPosition index gameplay
-                                let direction = ActionDescriptor.computeActionDirection characterPosition (Gameplay.getCoordinates reactorIndex gameplay)
-                                CharacterAnimationState.makeAction (World.getTickTime world) direction
-                            | Navigation navigationDescriptor ->
-                                characterAnimationState.UpdateDirection navigationDescriptor.WalkDescriptor.WalkDirection
-                            | _ -> failwith "TurnStatus is TurnBeginning; CharacterActivityState should not be NoActivity"
+                            match characterTurn.TurnType with
+                            | AttackTurn -> CharacterAnimationState.makeAction (World.getTickTime world) characterTurn.Direction
+                            | WalkTurn _ -> characterAnimationState.UpdateDirection characterTurn.Direction
                         let gameplay = Gameplay.updateCharacterAnimationState index (constant characterAnimationState) gameplay
                         Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
@@ -162,11 +152,9 @@ module GameplayDispatcher =
                     Gameplay.getEnemyIndices gameplay |> List.filter (fun x -> Gameplay.turnInProgress x gameplay)
                 let gameplay =
                     if (List.exists (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnPending) indices) then
-                        match gameplay.Player.CharacterActivityState with
-                        | Action _ -> gameplay
-                        | Navigation _ 
-                        | NoActivity ->
+                        if not (Gameplay.isPlayerAttacking gameplay) then
                             Gameplay.forEachIndex (fun index gameplay -> Gameplay.setCharacterTurnStatus index TurnBeginning gameplay) indices gameplay
+                        else gameplay
                     else gameplay
                 let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus <> TurnPending) indices
                 let indices =
@@ -426,10 +414,7 @@ module GameplayDispatcher =
                  Content.button Simulants.HudHalt.Name
                     [Entity.Position == v2 88.0f -112.0f; Entity.Size == v2 384.0f 64.0f; Entity.Depth == 10.0f
                      Entity.UpImage == asset "Gui" "HaltUp"; Entity.DownImage == asset "Gui" "HaltDown"
-                     Entity.Enabled <== gameplay --> fun gameplay ->
-                        match gameplay.Player.CharacterActivityState with
-                        | Navigation nav -> nav.MultiRoundContext
-                        | _ -> false
+                     Entity.Enabled <== gameplay --> fun gameplay -> Gameplay.isPlayerTraveling gameplay
                      Entity.ClickEvent ==> msg TryHaltPlayer]
 
                  Content.button Simulants.HudBack.Name
