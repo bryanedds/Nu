@@ -41,6 +41,7 @@ module Constants =
         let GuiEffectDepth = 30.0f
         let PropsLayerName = "Props"
         let TransitionTime = 60L
+        let MapRandSize = v2iDup 7
         let AvatarBottomInset = v2 0.0f 32.0f
 
     [<RequireQualifiedAccess>]

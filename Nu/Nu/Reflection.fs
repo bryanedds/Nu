@@ -21,6 +21,7 @@ module Reflection =
              ("ParentNodeOpt", true)
              ("ScriptOpt", true)
              ("Script", true)
+             ("TileMapOverride", true)
              ("EffectsOpt", true)]
 
     let private NonPersistentPropertyNames =
@@ -36,7 +37,9 @@ module Reflection =
              ("ScriptFrame", true)
              ("ScriptUnsubscriptions", true)
              ("CreationTimeStamp", true)
+             ("Optimized", true)
              ("NodeUnsubscribe", true)
+             ("TileMapOverride", true)
              ("EffectPhysicsShapes", true)
              ("EffectTags", true)
              ("EffectHistory", true)]
@@ -48,7 +51,8 @@ module Reflection =
         | (false, _) ->
             let result =
                 propertyName.EndsWith ("Model", StringComparison.Ordinal) ||
-                propertyName.EndsWith ("Ap", StringComparison.Ordinal)
+                propertyName.EndsWith ("Ap", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Tp", StringComparison.Ordinal)
             AlwaysPublishPropertyNames.Add (propertyName, result)
             result
 
@@ -59,6 +63,7 @@ module Reflection =
         | (false, _) ->
             let result =
                 propertyName.EndsWith ("Np", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Tp", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Id", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Ids", StringComparison.Ordinal)
             NonPersistentPropertyNames.Add (propertyName, result)
