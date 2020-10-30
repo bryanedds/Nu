@@ -38,7 +38,6 @@ module Reflection =
              ("CreationTimeStamp", true)
              ("Optimized", true)
              ("NodeUnsubscribe", true)
-             ("TileMapOverride", true)
              ("EffectPhysicsShapes", true)
              ("EffectTags", true)
              ("EffectHistory", true)]
