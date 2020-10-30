@@ -51,6 +51,7 @@ module Reflection =
         | (false, _) ->
             let result =
                 propertyName.EndsWith ("Model", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Tp", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Ap", StringComparison.Ordinal)
             AlwaysPublishPropertyNames.Add (propertyName, result)
             result
@@ -62,6 +63,7 @@ module Reflection =
         | (false, _) ->
             let result =
                 propertyName.EndsWith ("Np", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Tp", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Id", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Ids", StringComparison.Ordinal)
             NonPersistentPropertyNames.Add (propertyName, result)
