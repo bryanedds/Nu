@@ -23,13 +23,3 @@ type [<ReferenceEquality; NoComparison>] Character =
 
     static member updatePosition updater (character : Character) =
         { character with Position = updater character.Position }
-    
-    static member makePlayer positionM =
-        { Character.initial with
-          Position = vmtovf positionM }
-
-    static member makeEnemy index positionM =
-        { Character.initial with
-          Index = index
-          CharacterAnimationSheet = Assets.GoopyImage
-          Position = vmtovf positionM }

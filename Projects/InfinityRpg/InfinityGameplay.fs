@@ -129,12 +129,18 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         { PassableCoordinates = Map.empty
           CurrentMoves = Map.empty }
 
+    member this.CharacterCoordinates =
+        Map.filter (fun _ (v : FieldSpace) -> v.ContainsCharacter) this.PassableCoordinates
+    
     member this.EnemyCoordinates =
-        Map.filter (fun _ v -> FieldSpace.containsEnemy v ) this.PassableCoordinates
+        Map.filter (fun _ v -> FieldSpace.containsEnemy v) this.PassableCoordinates
 
     member this.PickupItems =
         Map.filter (fun _ (v : FieldSpace) -> v.ContainsPickup) this.PassableCoordinates
 
+    member this.EnemyIndices =
+        Map.toListBy (fun _ (v : FieldSpace) -> v.GetCharacterIndex) this.EnemyCoordinates
+    
     member this.EnemyCount =
         this.EnemyCoordinates.Count
 
@@ -240,22 +246,15 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       Chessboard : Chessboard
       ShallLoadGame : bool
       Field : Field
-      CharacterTurns : Turn list
-      Enemies : Character list
-      Player : Character }
+      CharacterTurns : Turn list }
 
     static member initial =
         { MapModeler = MapModeler.make
           Chessboard = Chessboard.empty
           ShallLoadGame = false
           Field = Field.initial
-          CharacterTurns = []
-          Enemies = []
-          Player = Character.initial }
+          CharacterTurns = [] }
 
-    member this.EnemyCount =
-        this.Enemies.Length
-    
     static member updateMapModeler updater gameplay =
         { gameplay with MapModeler = updater gameplay.MapModeler }
     
@@ -265,32 +264,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updateCharacterTurns updater gameplay =
         { gameplay with CharacterTurns = updater gameplay.CharacterTurns }
     
-    static member updateEnemies updater gameplay =
-        { gameplay with Enemies = updater gameplay.Enemies }
-
-    static member updatePlayer updater gameplay =
-        { gameplay with Player = updater gameplay.Player }
-    
-    static member getCharacters gameplay =
-        gameplay.Player :: gameplay.Enemies
-    
-    static member characterExists index gameplay =
-        Gameplay.getCharacters gameplay |> List.exists (fun gameplay -> gameplay.Index = index)
-    
-    static member tryGetCharacterByIndex index gameplay =
-        Gameplay.getCharacters gameplay |> List.tryFind (fun gameplay -> gameplay.Index = index)
-    
-    static member getCharacterByIndex index gameplay =
-        Gameplay.tryGetCharacterByIndex index gameplay |> Option.get
-
-    static member getCharacterAnimationState index gameplay =
-        (Gameplay.getCharacterByIndex index gameplay).CharacterAnimationState
-    
-    static member getPosition index gameplay =
-        (Gameplay.getCharacterByIndex index gameplay).Position
-    
     static member getEnemyIndices gameplay =
-        List.map (fun gameplay -> gameplay.Index) gameplay.Enemies
+        gameplay.Chessboard.EnemyIndices
 
     static member getOpponentIndices index gameplay =
         match index with
@@ -299,23 +274,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member anyTurnsInProgress gameplay = 
         List.notEmpty gameplay.CharacterTurns
-    
-    static member updateCharacterBy by index updater gameplay =
-        match index with
-        | PlayerIndex ->
-            let player = by updater gameplay.Player
-            Gameplay.updatePlayer (constant player) gameplay
-        | EnemyIndex _ as index ->
-            let enemies =
-                gameplay.Enemies |>
-                List.map (fun enemy -> if enemy.Index = index then by updater enemy else enemy)
-            Gameplay.updateEnemies (constant enemies) gameplay
-    
-    static member updateCharacterAnimationState index updater gameplay =
-        Gameplay.updateCharacterBy Character.updateCharacterAnimationState index updater gameplay
-
-    static member updatePosition index updater gameplay =
-        Gameplay.updateCharacterBy Character.updatePosition index updater gameplay
     
     static member getCoordinates index gameplay =
         Chessboard.getCharacterCoordinates index gameplay.Chessboard
@@ -357,30 +315,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member setCharacterTurnStatus index status gameplay =
         Gameplay.updateCharacterTurn index (Turn.updateTurnStatus (constant status)) gameplay
     
-    static member createPlayer gameplay =
-        let coordinates = Gameplay.getCoordinates PlayerIndex gameplay
-        let player = Character.makePlayer coordinates
-        Gameplay.updatePlayer (constant player) gameplay
-
-    // a basic sync mechanism that relies on never adding and removing *at the same time*
-    static member syncLists (gameplay : Gameplay) =
-        let chessboard = gameplay.Chessboard
-        if gameplay.EnemyCount <> chessboard.EnemyCount then
-            let enemies =
-                if gameplay.EnemyCount > chessboard.EnemyCount then
-                    List.filter (fun (character : Character) -> Chessboard.characterExists character.Index chessboard) gameplay.Enemies
-                else
-                    let generator k (v : FieldSpace) = Character.makeEnemy v.GetCharacterIndex k
-                    let enemies = Map.filter (fun _ (v : FieldSpace) -> not (Gameplay.characterExists v.GetCharacterIndex gameplay)) chessboard.EnemyCoordinates |> Map.toListBy generator
-                    enemies @ gameplay.Enemies
-            Gameplay.updateEnemies (constant enemies) gameplay
-        else gameplay
-
     // if updater takes index, index is arg1; if updater takes coordinates, coordinates is arg2
     static member updateChessboardBy updater arg1 arg2 gameplay =
         let chessboard = updater arg1 arg2 gameplay.Chessboard
-        let gameplay = { gameplay with Chessboard = chessboard }
-        Gameplay.syncLists gameplay
+        { gameplay with Chessboard = chessboard }
     
     static member updateCharacterState index updater gameplay =
         Gameplay.updateChessboardBy Chessboard.updateCharacterState index updater gameplay
@@ -490,13 +428,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let mapModeler = gameplay.MapModeler.Transition direction
         Gameplay.updateMapModeler (constant mapModeler) gameplay
 
-    static member setCharacterPositionToCoordinates index gameplay =
-        let position = Gameplay.getCoordinates index gameplay |> vmtovf
-        Gameplay.updatePosition index (constant position) gameplay
-    
-    static member yankPlayer coordinates gameplay =
-        let gameplay = Gameplay.relocateCharacter PlayerIndex coordinates gameplay
-        Gameplay.setCharacterPositionToCoordinates PlayerIndex gameplay
+    static member determineCharacterPosition index gameplay =
+        match Gameplay.tryGetCharacterTurn index gameplay with
+        | Some turn -> Turn.calculatePosition turn
+        | None -> Gameplay.getCoordinates index gameplay |> vmtovf
     
     static member makeCharacterAnimationState index gameplay =
         match Gameplay.tryGetCharacterTurn index gameplay with
@@ -519,8 +454,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             CharacterAnimationState.make 0L characterAnimationState direction
 
     static member makePlayer gameplay =
-        let gameplay = Gameplay.updateChessboardBy Chessboard.addCharacter (PlayerIndex, CharacterState.makePlayer) v2iZero gameplay
-        Gameplay.createPlayer gameplay
+        Gameplay.updateChessboardBy Chessboard.addCharacter (PlayerIndex, CharacterState.makePlayer) v2iZero gameplay
 
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.AvailableCoordinates
@@ -538,10 +472,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             if indices.Length = 0 then gameplay
             else
                 let index = indices.Head
-                let characterOpt = Gameplay.tryGetCharacterByIndex index gameplay
-                let gameplay =
-                    match characterOpt with
-                    | None -> gameplay
-                    | Some _ -> updater index gameplay
+                let gameplay = updater index gameplay
                 recursion indices.Tail gameplay
         recursion indices gameplay
