@@ -241,7 +241,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       ShallLoadGame : bool
       Field : Field
       CharacterTurns : Turn list
-      LastActionStart : int64
       Enemies : Character list
       Player : Character }
 
@@ -251,7 +250,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
           ShallLoadGame = false
           Field = Field.initial
           CharacterTurns = []
-          LastActionStart = 0L
           Enemies = []
           Player = Character.initial }
 
@@ -267,9 +265,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updateCharacterTurns updater gameplay =
         { gameplay with CharacterTurns = updater gameplay.CharacterTurns }
     
-    static member updateLastActionStart updater gameplay =
-        { gameplay with LastActionStart = updater gameplay.LastActionStart }
-
     static member updateEnemies updater gameplay =
         { gameplay with Enemies = updater gameplay.Enemies }
 
@@ -503,6 +498,26 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let gameplay = Gameplay.relocateCharacter PlayerIndex coordinates gameplay
         Gameplay.setCharacterPositionToCoordinates PlayerIndex gameplay
     
+    static member makeCharacterAnimationState index gameplay =
+        match Gameplay.tryGetCharacterTurn index gameplay with
+        | Some turn -> Turn.toCharacterAnimationState turn
+        | None ->
+            let characterState = Gameplay.getCharacterState index gameplay
+            let direction = characterState.FacingDirection
+            let characterAnimationState =
+                if characterState.IsAlive then CharacterAnimationFacing
+                else
+                    match List.tryFind (fun x -> x.ReactorOpt = Some index) gameplay.CharacterTurns with
+                    | Some attackerTurn ->
+                        match attackerTurn.TurnStatus with
+                        | TurnPending
+                        | TurnBeginning -> CharacterAnimationFacing
+                        | TurnTicking tickCount ->
+                            if tickCount < Constants.InfinityRpg.ReactionTick then CharacterAnimationFacing else CharacterAnimationSlain
+                        | TurnFinishing -> CharacterAnimationSlain
+                    | None -> CharacterAnimationSlain
+            CharacterAnimationState.make 0L characterAnimationState direction
+
     static member makePlayer gameplay =
         let gameplay = Gameplay.updateChessboardBy Chessboard.addCharacter (PlayerIndex, CharacterState.makePlayer) v2iZero gameplay
         Gameplay.createPlayer gameplay
