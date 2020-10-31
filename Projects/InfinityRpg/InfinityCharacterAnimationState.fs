@@ -17,16 +17,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
           AnimationType = CharacterAnimationFacing
           Direction = Upward }
 
-    member this.UpdateDirection direction =
-        { this with Direction = direction }
-
-    member this.Slain =
-        { this with AnimationType = CharacterAnimationSlain }
-
-    member this.Facing time =
-        { this with StartTime = time; AnimationType = CharacterAnimationFacing }
-
-    static member makeAction time direction =
+    static member make time animationType direction =
         { StartTime = time
-          AnimationType = CharacterAnimationActing
+          AnimationType = animationType
           Direction = direction }

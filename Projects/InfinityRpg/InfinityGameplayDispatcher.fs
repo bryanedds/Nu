@@ -79,8 +79,8 @@ module GameplayDispatcher =
                             let gameplay = Gameplay.finishMove index gameplay
                             let reactorIndex = Option.get characterTurn.ReactorOpt
                             let reactorState = Gameplay.getCharacterState reactorIndex gameplay
-                            let characterAnimationState = Gameplay.getCharacterAnimationState index gameplay
-                            let gameplay = Gameplay.updateCharacterAnimationState index (constant (characterAnimationState.Facing (World.getTickTime world))) gameplay
+                            let characterAnimationState = Turn.toCharacterAnimationState characterTurn
+                            let gameplay = Gameplay.updateCharacterAnimationState index (constant characterAnimationState) gameplay
                             if reactorState.HitPoints <= 0 then
                                 match reactorIndex with
                                 | PlayerIndex -> Gameplay.updateCharacterState reactorIndex (CharacterState.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
@@ -101,14 +101,8 @@ module GameplayDispatcher =
                         match characterTurn.TurnType with
                         | AttackTurn ->
                             let reactorIndex = Option.get characterTurn.ReactorOpt
-                            let reactorState = Gameplay.getCharacterState reactorIndex gameplay
-                            let gameplay = 
-                                if tickCount = Constants.InfinityRpg.ReactionTick then
-                                    if reactorState.HitPoints <= 0 then
-                                        let reactorCharacterAnimationState = Gameplay.getCharacterAnimationState reactorIndex gameplay
-                                        Gameplay.updateCharacterAnimationState reactorIndex (constant reactorCharacterAnimationState.Slain) gameplay
-                                    else gameplay
-                                else gameplay
+                            let reactorCharacterAnimationState = Gameplay.makeCharacterAnimationState reactorIndex gameplay
+                            let gameplay = Gameplay.updateCharacterAnimationState reactorIndex (constant reactorCharacterAnimationState) gameplay
                             if tickCount = Constants.InfinityRpg.ActionTicksMax
                             then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                             else gameplay
@@ -133,11 +127,11 @@ module GameplayDispatcher =
                         let gameplay =
                             match characterTurn.TurnType with
                             | AttackTurn ->
-                                let gameplay = Gameplay.updateLastActionStart (constant (World.getTickTime world)) gameplay
-                                let characterAnimationState = CharacterAnimationState.makeAction gameplay.LastActionStart characterTurn.Direction
+                                let gameplay = Gameplay.updateCharacterTurn index (Turn.updateStartTick (constant (World.getTickTime world))) gameplay
+                                let characterAnimationState = Gameplay.getCharacterTurn index gameplay |> Turn.toCharacterAnimationState
                                 Gameplay.updateCharacterAnimationState index (constant characterAnimationState) gameplay
                             | WalkTurn _ ->
-                                let characterAnimationState = characterAnimationState.UpdateDirection characterTurn.Direction
+                                let characterAnimationState = Turn.toCharacterAnimationState characterTurn
                                 Gameplay.updateCharacterAnimationState index (constant characterAnimationState) gameplay
                         Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay

@@ -54,7 +54,8 @@ type Turn =
       Actor : CharacterIndex
       ReactorOpt : CharacterIndex option
       OriginM : Vector2i
-      Direction : Direction }
+      Direction : Direction
+      StartTick : int64 }
     
     static member calculatePosition turn =
         match turn.TurnType with
@@ -69,8 +70,22 @@ type Turn =
             | TurnFinishing -> turn.OriginM + dtovm turn.Direction |> vmtovf
         | _ -> vmtovf turn.OriginM
     
+    static member toCharacterAnimationState turn =
+        let animationType =
+            match turn.TurnType with
+            | WalkTurn _ -> CharacterAnimationFacing
+            | AttackTurn ->
+                match turn.TurnStatus with
+                | TurnBeginning
+                | TurnTicking _ -> CharacterAnimationActing
+                | _ -> CharacterAnimationFacing
+        CharacterAnimationState.make turn.StartTick animationType turn.Direction
+    
     static member updateTurnStatus updater turn =
         { turn with TurnStatus = updater turn.TurnStatus }
+
+    static member updateStartTick updater turn =
+        { turn with StartTick = updater turn.StartTick }
 
     static member incTickCount turn =
         Turn.updateTurnStatus TurnStatus.incTickCount turn
@@ -81,7 +96,8 @@ type Turn =
           Actor = index
           ReactorOpt = None
           OriginM = originM
-          Direction = direction }
+          Direction = direction
+          StartTick = 0L }
 
     static member makeAttack index targetIndex originM direction =
         { TurnType = AttackTurn
@@ -89,4 +105,5 @@ type Turn =
           Actor = index
           ReactorOpt = Some targetIndex
           OriginM = originM
-          Direction = direction } 
+          Direction = direction
+          StartTick = 0L } 
