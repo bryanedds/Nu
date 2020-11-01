@@ -86,3 +86,9 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
+
+    /// The modulus (not remainder!) operator.
+    /// TODO: P1: move this into Prime.Generics.
+    let inline modulus left right =
+        let remainder = left % right
+        if remainder < zero () then remainder + right else remainder

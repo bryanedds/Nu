@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open Prime
 open TiledSharp
@@ -137,58 +138,91 @@ module TmxMap =
               IsSensor = false }
         bodyProperties
 
-    let getRenderMessages absolute (viewBounds : Vector4) tileLayerClearance tileMapPosition tileMapDepth tileMapParallax (tileMap : TmxMap) =
+    let getRenderMessages absolute (viewBounds : Vector4) tileLayerClearance (tileMapPosition : Vector2) tileMapDepth tileMapParallax (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.Layers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
+        let tileMapSize = v2 (tileSize.X * single tileMap.Width) (tileSize.Y * single tileMap.Height)
         let messagess =
             List.foldi
                 (fun i messagess (layer : TmxLayer) ->
-                    let messages =
-                        Array.fold
-                            (fun messages j ->
-                                let yOffset = single (tileMap.Height - j - 1) * tileSize.Y
-                                let position = tileMapPosition + v2 0.0f yOffset
-                                let depthOffset =
-                                    match layer.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-                                    | (true, depth) -> scvalue depth
-                                    | (false, _) -> single i * tileLayerClearance
-                                let depth = tileMapDepth + depthOffset
-                                let parallaxTranslation =
-                                    if absolute then v2Zero
-                                    else tileMapParallax * depth * -viewBounds.Center
-                                let parallaxPosition = position + parallaxTranslation
-                                let size = v2 (tileSize.X * single tileMap.Width) tileSize.Y
-                                let transform =
-                                    { Position = parallaxPosition
-                                      Size = size
-                                      Rotation = 0.0f
-                                      Depth = depth
-                                      Flags = 0 }
-                                let tiles =
-                                    layer.Tiles |>
-                                    enumerable<_> |>
-                                    Seq.skip (j * tileMap.Width) |>
-                                    Seq.take tileMap.Width |>
-                                    Seq.toArray
-                                if Math.isBoundsIntersectingBounds (v4Bounds parallaxPosition size) viewBounds then
-                                    let message =
-                                        LayeredDescriptorMessage
-                                            { Depth = transform.Depth
-                                              PositionY = transform.Position.Y
-                                              AssetTag = AssetTag.make "" "" // just disregard asset for render ordering
-                                              RenderDescriptor =
-                                                TileLayerDescriptor
-                                                    { Transform = transform
-                                                      MapSize = Vector2i (tileMap.Width, tileMap.Height)
-                                                      Tiles = tiles
-                                                      TileSourceSize = tileSourceSize
-                                                      TileSize = tileSize
-                                                      TileImageAssets = tileMap.ImageAssets }}
-                                    message :: messages
-                                else messages)
-                            [] [|0 .. tileMap.Height - 1|]
-                    messages :: messagess)
+
+                    // compute depth value
+                    let depthOffset =
+                        match layer.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
+                        | (true, depth) -> scvalue depth
+                        | (false, _) -> single i * tileLayerClearance
+                    let depth = tileMapDepth + depthOffset
+
+                    // compute parallax position
+                    let parallaxPosition =
+                        if absolute
+                        then tileMapPosition
+                        else tileMapPosition + tileMapParallax * depth * -viewBounds.Center
+
+                    // compute positions relative to tile map
+                    let (r, r2) =
+                        if absolute then
+                            let r = v2Zero
+                            let r2 = viewBounds.Size
+                            (r, r2)
+                        else
+                            let r = viewBounds.Position - parallaxPosition
+                            let r2 = r + viewBounds.Size
+                            (r, r2)
+
+                    // accumulate messages
+                    let messages = List ()
+                    let mutable yC = r.Y
+                    while yC < r2.Y + tileSize.Y do
+
+                        // compute y index and ensure it's in bounds
+                        let yI = tileMap.Height - 1 - int (yC / tileSize.Y)
+                        if yC >= 0.0f && yI >= 0 && yI < tileMap.Height then
+
+                            // accumulate strip tiles
+                            let tiles = List ()
+                            let mutable xS = 0.0f
+                            let mutable xC = r.X
+                            while xC < r2.X + tileSize.X do
+                                let xI = int (xC / tileSize.X)
+                                if xC >= 0.0f && xI >= 0 then
+                                    if xI < tileMap.Width then
+                                        let xTile = layer.Tiles.[xI + yI * tileMap.Width]
+                                        tiles.Add xTile
+                                else xS <- xS + tileSize.X
+                                xC <- xC + tileSize.X
+
+                            // compute strip transform
+                            let transform =
+                                { Position = viewBounds.Position + v2 xS (yC - r.Y) + v2 (0.0f - modulus r.X tileSize.X) (0.0f - modulus r.Y tileSize.Y)
+                                  Size = v2 (single tiles.Count * tileSize.X) tileSize.Y
+                                  Rotation = 0.0f
+                                  Depth = depth
+                                  Flags = 0 }
+
+                            // check if in view bounds
+                            if Math.isBoundsIntersectingBounds (v4Bounds transform.Position transform.Size) viewBounds then
+
+                                // accumulate message
+                                messages.Add $
+                                    LayeredDescriptorMessage
+                                        { Depth = transform.Depth
+                                          PositionY = transform.Position.Y
+                                          AssetTag = AssetTag.make "" "" // just disregard asset for render ordering
+                                          RenderDescriptor =
+                                            TileLayerDescriptor
+                                                { Transform = transform
+                                                  MapSize = Vector2i (tileMap.Width, tileMap.Height)
+                                                  Tiles = Seq.toArray tiles
+                                                  TileSourceSize = tileSourceSize
+                                                  TileSize = tileSize
+                                                  TileImageAssets = tileMap.ImageAssets }}
+                        
+                        // loop
+                        yC <- yC + tileSize.Y
+                                    
+                    Seq.toList messages :: messagess)
                 [] layers
         List.concat messagess
 
