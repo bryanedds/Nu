@@ -1017,8 +1017,8 @@ module Gaia =
     let private handleFormSongPlayback (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             if form.songPlaybackButton.Checked
-            then World.setMasterAudioVolume 1.0f world
-            else World.setMasterAudioVolume 0.0f world
+            then World.setMasterSongVolume 1.0f world
+            else World.setMasterSongVolume 0.0f world
 
     let private handleFormCopy (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
@@ -1462,6 +1462,7 @@ module Gaia =
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
         let (defaultLayer, world) = attachToWorld targetDir form Globals.World
+        let world = World.setMasterSongVolume 0.0f world // no song playback in editor by default
         Globals.World <- world
         refreshOverlayComboBox form Globals.World
         refreshCreateComboBox form Globals.World

@@ -314,7 +314,7 @@ module Field =
           BattleOpt_ = None }
 
     let initial randSeedState =
-        { FieldType_ = TombOuter
+        { FieldType_ = Cave
           RandSeedState_ = randSeedState
           Avatar_ = Avatar.empty
           Legion_ = Map.ofList [(0, Legionnaire.finn)]
