@@ -32,7 +32,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Field =
 
-        let WalkForce = 26000.0f * 3.0f
+        let WalkForce = 26000.0f
         let LinearDamping = 19.0f
         let BackgroundDepth = -10.0f
         let ForgroundDepth = 0.0f
