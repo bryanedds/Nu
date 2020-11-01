@@ -80,8 +80,8 @@ type MapRand =
         match map.MapOriginOpt with
         | Some start ->
             printfn "Start: %s" (scstring start)
-            for j in map.MapSize.Y - 1 .. -1 .. 0 do
-                for i in 0 .. map.MapSize.X - 1 do
+            for i in 0 .. map.MapSize.Y - 1 do
+                for j in 0 .. map.MapSize.X - 1 do
                     printf "%s\t" (scstring map.MapSegments.[i].[j])
                 printfn ""
         | None -> ()
@@ -111,28 +111,28 @@ type MapRand =
         match direction with
         | 0 ->
             // try go north
-            if  cursor.Y < dec bounds.W then
-                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1N
-                cursor.Y <- inc cursor.Y
-                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1S
+            if  cursor.Y > 1 then
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1N
+                cursor.Y <- dec cursor.Y
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1S
         | 1 ->
             // try go east
             if  cursor.X < dec bounds.Z then
-                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1E
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1E
                 cursor.X <- inc cursor.X
-                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1W
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1W
         | 2 ->
             // try go south
-            if  cursor.Y > 1 then
-                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1S
-                cursor.Y <- dec cursor.Y
-                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1N
+            if  cursor.Y < dec bounds.W then
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1S
+                cursor.Y <- inc cursor.Y
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1N
         | 3 ->
             // try go west
             if  cursor.X > 1 then
-                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1W
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1W
                 cursor.X <- dec cursor.X
-                map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| SegmentRand.Segment1E
+                map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1E
         | _ -> failwithumf ()
         (cursor, rand)
 
@@ -142,14 +142,14 @@ type MapRand =
         let (cursor, biases) =
             match origin with
             | OriginC ->        (bounds.Center,                     [0; 1; 2; 3]) // 0 = n; 1 = e; 2 = s; 3 = w
-            | OriginN ->        (bounds.Top - v2iUp,                [2; 2; 1; 3])
+            | OriginN ->        (bounds.Bottom,                     [2; 2; 1; 3])
             | OriginE ->        (bounds.Right - v2iRight,           [3; 3; 0; 2])
-            | OriginS ->        (bounds.Bottom,                     [0; 0; 1; 3])
+            | OriginS ->        (bounds.Top - v2iUp,                [0; 0; 1; 3])
             | OriginW ->        (bounds.Left,                       [1; 1; 0; 2])
-            | OriginNE ->       (v2i (dec bounds.Z) (dec bounds.W), [0; 1; 2; 3])
-            | OriginNW ->       (v2i bounds.X (dec bounds.W),       [0; 1; 2; 3])
-            | OriginSE ->       (v2i (dec bounds.Z) bounds.Y,       [0; 1; 2; 3])
-            | OriginSW ->       (v2i bounds.X bounds.Y,             [0; 1; 2; 3])
+            | OriginNE ->       (v2i (dec bounds.Z) bounds.Y,       [0; 1; 2; 3])
+            | OriginNW ->       (v2i bounds.X bounds.Y,             [0; 1; 2; 3])
+            | OriginSE ->       (v2i (dec bounds.Z) (dec bounds.W), [0; 1; 2; 3])
+            | OriginSW ->       (v2i bounds.X (dec bounds.W),       [0; 1; 2; 3])
         let (maps, rand) =
             List.fold (fun (maps, rand) bias ->
                 let map = { MapRand.make size with MapOriginOpt = Some cursor }
@@ -171,36 +171,36 @@ type MapRand =
         let segments = SegmentsRand.load abstractPath
         for l in 0 .. 2 - 1 do
             mapTmx.Layers.[l].Tiles.Clear ()
-            for i in 0 .. 7 - 1 do
-                for ii in 0 .. 32 - 1 do
-                    for j in 0 .. 7 - 1 do
-                        for jj in 0 .. 32 - 1 do
-                            let x = i + ii * 32
-                            let y = j + jj * 32
-                            let segment = map.MapSegments.[i].[j]
-                            let tile =
+            for j in 0 .. 7 - 1 do
+                for jj in 0 .. 32 - 1 do
+                    for i in 0 .. 7 - 1 do
+                        for ii in 0 .. 32 - 1 do
+                            let iii = i * 32 + ii
+                            let jjj = j * 32 + jj
+                            let segment = map.MapSegments.[j].[i]
+                            let tileRef =
                                 match segment with
-                                | SegmentRand.Segment0 -> TmxLayerTile (0u, x, y)
-                                | SegmentRand.Segment1N -> segments.Segment1N.Layers.[l].Tiles.[ii * segments.Segment1N.Width + jj]
-                                | SegmentRand.Segment1E -> segments.Segment1E.Layers.[l].Tiles.[ii * segments.Segment1E.Width + jj]
-                                | SegmentRand.Segment1S -> segments.Segment1S.Layers.[l].Tiles.[ii * segments.Segment1S.Width + jj]
-                                | SegmentRand.Segment1W -> segments.Segment1W.Layers.[l].Tiles.[ii * segments.Segment1W.Width + jj]
-                                | SegmentRand.Segment2NE -> segments.Segment2NE.Layers.[l].Tiles.[ii * segments.Segment2NE.Width + jj]
-                                | SegmentRand.Segment2NW -> segments.Segment2NW.Layers.[l].Tiles.[ii * segments.Segment2NW.Width + jj]
-                                | SegmentRand.Segment2SE -> segments.Segment2SE.Layers.[l].Tiles.[ii * segments.Segment2SE.Width + jj]
-                                | SegmentRand.Segment2SW -> segments.Segment2SW.Layers.[l].Tiles.[ii * segments.Segment2SW.Width + jj]
-                                | SegmentRand.Segment2EW -> segments.Segment2EW.Layers.[l].Tiles.[ii * segments.Segment2EW.Width + jj]
-                                | SegmentRand.Segment2NS -> segments.Segment2NS.Layers.[l].Tiles.[ii * segments.Segment2NS.Width + jj]
-                                | SegmentRand.Segment3N -> segments.Segment3N.Layers.[l].Tiles.[ii * segments.Segment3N.Width + jj]
-                                | SegmentRand.Segment3E -> segments.Segment3E.Layers.[l].Tiles.[ii * segments.Segment3E.Width + jj]
-                                | SegmentRand.Segment3S -> segments.Segment3S.Layers.[l].Tiles.[ii * segments.Segment3S.Width + jj]
-                                | SegmentRand.Segment3W -> segments.Segment3W.Layers.[l].Tiles.[ii * segments.Segment3W.Width + jj]
-                                | SegmentRand.Segment4 -> segments.Segment4.Layers.[l].Tiles.[ii * segments.Segment4.Width + jj]
+                                | SegmentRand.Segment0 -> TmxLayerTile (0u, iii, jjj)
+                                | SegmentRand.Segment1N -> segments.Segment1N.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment1E -> segments.Segment1E.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment1S -> segments.Segment1S.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment1W -> segments.Segment1W.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment2NE -> segments.Segment2NE.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment2NW -> segments.Segment2NW.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment2SE -> segments.Segment2SE.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment2SW -> segments.Segment2SW.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment2EW -> segments.Segment2EW.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment2NS -> segments.Segment2NS.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment3N -> segments.Segment3N.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment3E -> segments.Segment3E.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment3S -> segments.Segment3S.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment3W -> segments.Segment3W.Layers.[l].Tiles.[ii + jj * 32]
+                                | SegmentRand.Segment4 -> segments.Segment4.Layers.[l].Tiles.[ii + jj * 32]
                                 | _ -> failwithumf ()
-                            let tileType = tile.GetType ()
-                            let xProp = (tileType.GetProperties "X").[0]
-                            let yProp = (tileType.GetProperties "Y").[0]
-                            xProp.SetValue (tile, x)
-                            yProp.SetValue (tile, y)
+                            let tileGidPlus =
+                                uint32 tileRef.Gid |||
+                                (if tileRef.HorizontalFlip then 0x40000000u else 0x0u) |||
+                                (if tileRef.VerticalFlip then 0x20000000u else 0x0u)
+                            let tile = TmxLayerTile (tileGidPlus, iii, jjj)
                             mapTmx.Layers.[l].Tiles.Add tile
         mapTmx

@@ -377,6 +377,7 @@ module FieldData =
                 | FieldRandom (walkLength, bias, origin, fieldPath) ->
                     let rand = Rand.makeFromSeedState randSeedState
                     let (mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin rand
+                    MapRand.printfn mapRand
                     let mapTmx = MapRand.toTmx fieldPath mapRand
                     Some mapTmx
             tileMapsMemoized <- Map.add fieldData.FieldType tileMapOpt tileMapsMemoized
