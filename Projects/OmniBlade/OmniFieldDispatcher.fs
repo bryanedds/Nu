@@ -568,14 +568,14 @@ module FieldDispatcher =
                  // avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
                     [Entity.Position == v2 256.0f 256.0f; Entity.Depth == Constants.Field.ForgroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
-                     Entity.TraverseEvent ==|> fun evt -> msg (Traverse evt.Data)
                      Entity.Enabled <== field --> fun field ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
-                     Entity.Avatar <== field --> fun field -> field.Avatar]
+                     Entity.Avatar <== field --> fun field -> field.Avatar
+                     Entity.TraverseEvent ==|> fun evt -> msg (Traverse evt.Data)]
 
                  // submenu button
                  Content.button Simulants.FieldSubmenu.Name
