@@ -21,7 +21,7 @@ module AvatarDispatcher =
         | Nil
 
     type [<NoComparison>] AvatarCommand =
-        | Travel of Vector2
+        | TryTravel of Vector2
 
     type Entity with
         member this.GetAvatar = this.GetModel<Avatar>
@@ -80,20 +80,20 @@ module AvatarDispatcher =
 
         override this.Channel (_, entity) =
             [entity.UpdateEvent => msg Update
-             entity.Parent.PostUpdateEvent => msg PostUpdate
              entity.UpdateEvent =|> fun _ ->
                 let force = v2Zero
                 let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.WalkForce 0.0f + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.WalkForce 0.0f + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Up then v2 0.0f Constants.Field.WalkForce + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.WalkForce + force else force
-                cmd (Travel force)
+                cmd (TryTravel force)
              entity.UpdateEvent =|> fun _ ->
                 if KeyboardState.isKeyDown KeyboardKey.Right then msg (Face Rightward)
                 elif KeyboardState.isKeyDown KeyboardKey.Left then msg (Face Leftward)
                 elif KeyboardState.isKeyDown KeyboardKey.Up then msg (Face Upward)
                 elif KeyboardState.isKeyDown KeyboardKey.Down then msg (Face Downward)
                 else msg Nil
+             entity.Parent.PostUpdateEvent => msg PostUpdate
              entity.CollisionEvent =|> fun evt -> msg (Collision evt.Data)
              entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)]
 
@@ -166,15 +166,17 @@ module AvatarDispatcher =
 
         override this.Command (_, command, entity, world) =
             match command with
-            | Travel force ->
-                let world =
-                    if force <> v2Zero && entity.GetEnabled world then
-                        let physicsId = Simulants.FieldAvatar.GetPhysicsId world
-                        World.applyBodyForce force physicsId world
-                    else world
-                let eventTrace = EventTrace.record4 "Avatar" "Command" "Traverse" EventTrace.empty
-                let world = World.publish (entity.GetLinearVelocity world) entity.TraverseEvent eventTrace entity world
-                just world
+            | TryTravel force ->
+                if not (World.isSelectedScreenTransitioning world) then
+                    let world =
+                        if force <> v2Zero && entity.GetEnabled world then
+                            let physicsId = Simulants.FieldAvatar.GetPhysicsId world
+                            World.applyBodyForce force physicsId world
+                        else world
+                    let eventTrace = EventTrace.record4 "Avatar" "Command" "Traverse" EventTrace.empty
+                    let world = World.publish (entity.GetLinearVelocity world) entity.TraverseEvent eventTrace entity world
+                    just world
+                else just world
 
         override this.View (avatar, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
