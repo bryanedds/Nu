@@ -622,11 +622,10 @@ module WorldModuleEntity =
             | Some property -> property
             | None -> failwithf "Could not find property '%s'." propertyName
 
-        static member internal trySetEntityProperty propertyName alwaysPublish property entity world =
+        static member internal trySetEntityPropertyWithoutEvent propertyName property entity world =
             match World.getEntityStateOpt entity world with
             | Some entityState ->
                 match Setters.TryGetValue propertyName with
-                | (true, setter) -> setter property entity world
                 | (false, _) ->
                     let (success, changed, world) =
                         match EntityState.tryGetProperty propertyName entityState with
@@ -653,12 +652,26 @@ module WorldModuleEntity =
                                     | (false, _) -> (false, false, world)
                                 else (true, false, world)
                         | None -> (false, false, world)
-                    let world =
-                        if changed
-                        then World.updateEntityState Some alwaysPublish propertyName property.PropertyValue entity world
-                        else world
-                    (success, world)
-            | None -> (false, world)
+                    (success, changed, world)
+                | (true, setter) ->
+                    let (changed, world) = setter property entity world
+                    (true, changed, world)
+            | None -> (false, false, world)
+
+        static member internal setEntityPropertyWithoutEvent propertyName property entity world =
+            match World.trySetEntityPropertyWithoutEvent propertyName property entity world with
+            | (true, changed, world) -> (true, changed, world)
+            | (false, _, _) -> failwithf "Could not find property '%s'." propertyName
+
+        static member internal trySetEntityProperty propertyName alwaysPublish property entity world =
+            match World.trySetEntityPropertyWithoutEvent propertyName property entity world with
+            | (true, changed, world) ->
+                let world =
+                    if changed
+                    then World.updateEntityState Some alwaysPublish propertyName property.PropertyValue entity world
+                    else world
+                (true, world)
+            | (false, _, world) -> (false, world)
 
         static member internal setEntityProperty propertyName alwaysPublish property entity world =
             match World.trySetEntityProperty propertyName alwaysPublish property entity world with
@@ -742,13 +755,13 @@ module WorldModuleEntity =
             let world = World.updateEntityPublishFlags entity world
             let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Register"; "Event"|] --> entity)
-            let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity false world) world eventAddresses
+            let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             world
 
         static member internal unregisterEntity (entity : Entity) world =
             let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Unregistering"; "Event"|] --> entity)
-            let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity false world) world eventAddresses
+            let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
             let facets = World.getEntityFacets entity world
             let world = dispatcher.Unregister (entity, world)

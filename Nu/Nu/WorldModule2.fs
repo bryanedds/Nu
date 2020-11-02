@@ -157,7 +157,7 @@ module WorldModule2 =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     let eventTrace = EventTrace.record4 "World" "selectScreen" "Deselect" EventTrace.empty
-                    World.publish () (Events.Deselect --> selectedScreen) eventTrace selectedScreen false world
+                    World.publish () (Events.Deselect --> selectedScreen) eventTrace selectedScreen world
                 | None -> world
             let world =
                 match screenOpt with
@@ -165,7 +165,7 @@ module WorldModule2 =
                     let world = World.setScreenTransitionStatePlus IncomingState screen world
                     let world = World.setSelectedScreen screen world
                     let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
-                    World.publish () (Events.Select --> screen) eventTrace screen false world
+                    World.publish () (Events.Select --> screen) eventTrace screen world
                 | None -> World.setSelectedScreenOpt None world
             world
 
@@ -252,7 +252,7 @@ module WorldModule2 =
                                     else world
                                 | None -> world
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
-                            World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen false world
+                            World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
                         else world
                     match World.getLiveness world with
                     | Running ->
@@ -260,7 +260,7 @@ module WorldModule2 =
                         if finished then
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingFinish" EventTrace.empty
                             let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
-                            World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen false world
+                            World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
                         else world
                     | Exiting -> world
                 | Exiting -> world
@@ -281,7 +281,7 @@ module WorldModule2 =
                                     | None -> world
                             | None -> world
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
-                        World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen false world
+                        World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
                     else world
                 match World.getLiveness world with
                 | Running ->
@@ -291,7 +291,7 @@ module WorldModule2 =
                         match World.getLiveness world with
                         | Running ->
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingFinish" EventTrace.empty
-                            World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen false world
+                            World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
                         | Exiting -> world
                     else world
                 | Exiting -> world
@@ -481,7 +481,7 @@ module WorldModule2 =
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
                     World.reloadSymbols world
-                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Simulants.Game false world
+                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Simulants.Game world
                     (Right assetGraph, world)
         
                 // propagate errors
@@ -625,7 +625,7 @@ module WorldModule2 =
                               Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                        World.publish collisionData collisionAddress eventTrace Simulants.Game false world
+                        World.publish collisionData collisionAddress eventTrace Simulants.Game world
                     else world
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
@@ -635,7 +635,7 @@ module WorldModule2 =
                             { Separator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
                               Separatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                        World.publish separationData separationAddress eventTrace Simulants.Game false world
+                        World.publish separationData separationAddress eventTrace Simulants.Game world
                     else world
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
@@ -643,6 +643,8 @@ module WorldModule2 =
                     let transform = entity.GetTransform world
                     let position = bodyTransformMessage.Position - transform.Size * 0.5f
                     let rotation = bodyTransformMessage.Rotation
+                    let angularVelocity = bodyTransformMessage.AngularVelocity
+                    let linearVelocity = bodyTransformMessage.LinearVelocity
                     let world =
                         if bodyTransformMessage.BodySource.BodyId = Gen.idEmpty then
                             let transform2 = { transform with Position = position; Rotation = rotation }
@@ -650,10 +652,12 @@ module WorldModule2 =
                             then entity.SetTransformWithoutEvent transform2 world
                             else world
                         else world
+                    let world = entity.SetWithoutEvent Entity.Lens.AngularVelocity.Name angularVelocity world
+                    let world = entity.SetWithoutEvent Entity.Lens.LinearVelocity.Name linearVelocity world
                     let transformAddress = Events.Transform --> entity.EntityAddress
                     let transformData = { BodySource = BodySource.fromInternal bodySource; Position = position; Rotation = rotation }
                     let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                    World.publish transformData transformAddress eventTrace Simulants.Game false world
+                    World.publish transformData transformAddress eventTrace Simulants.Game world
             | Exiting -> world
 
         static member private getEntities3 getElementsFromTree world =

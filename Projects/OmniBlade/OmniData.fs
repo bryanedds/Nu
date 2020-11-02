@@ -192,7 +192,7 @@ type SensorType =
 
 type BattleType =
     | DebugBattle
-    | CaveBattle1
+    | CaveBattle
     | CaveBattle2
     | CaveBattle3
 
@@ -348,8 +348,9 @@ type [<NoComparison>] FieldTileMap =
 type [<NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : FieldTileMap
+      FieldBackgroundColor : Color
       FieldSongOpt : Song AssetTag option
-      FieldBackgroundColor : Color }
+      EncounterTypeOpt : EncounterType option }
 
 [<RequireQualifiedAccess>]
 module FieldData =

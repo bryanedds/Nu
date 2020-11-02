@@ -590,8 +590,8 @@ module WorldModule =
 
         /// Publish an event with no subscription sorting.
         static member publish<'a, 'p when 'p :> Simulant>
-            eventData eventAddress eventTrace publisher sorted world =
-            World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher sorted world
+            eventData eventAddress eventTrace publisher world =
+            World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher false world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionId world =

@@ -1,6 +1,6 @@
-Type,FieldTileMap,FieldSongOpt,FieldBackgroundColor
-DebugRoom,[FieldStatic [Field DebugRoom]],[Some [Field Field]],[8 8 8 255]
-DebugRoom2,[FieldStatic [Field DebugRoom2]],[Some [Field Field]],[8 8 8 255]
-TombOuter,[FieldStatic [Field TombOuter]],[Some [Field TombOuter]],[131 156 172 255]
-TombInner,[FieldStatic [Field TombInner]],[Some [Field TombInner]],[8 8 8 255]
-Cave,"[FieldRandom 15 0.3 OriginSW ""Assets/Field/Cave""]",[Some [Field Stirrings]],[8 8 8 255]
+Type,FieldTileMap,FieldBackgroundColor,FieldSongOpt,EncounterTypeOpt
+DebugRoom,[FieldStatic [Field DebugRoom]],[8 8 8 255],[Some [Field Field]],None
+DebugRoom2,[FieldStatic [Field DebugRoom2]],[8 8 8 255],[Some [Field Field]],[Some DebugEncounter]
+TombOuter,[FieldStatic [Field TombOuter]],[131 156 172 255],[Some [Field TombOuter]],None
+TombInner,[FieldStatic [Field TombInner]],[8 8 8 255],[Some [Field TombInner]],None
+Cave,"[FieldRandom 15 0.3 OriginSW ""Assets/Field/Cave""]",[8 8 8 255],[Some [Field Stirrings]],[Some CaveEncounter]

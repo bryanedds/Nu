@@ -153,13 +153,20 @@ module WorldEntityModule =
             World.detachEntityProperty propertyName this world
 
         /// Set a property value.
+        member this.SetFast<'a> propertyName alwaysPublish (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.setEntityProperty propertyName alwaysPublish property this world
+
+        /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world =
             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
             this.SetFast propertyName alwaysPublish value world
 
-        /// Set a property value.
-        member this.SetFast<'a> propertyName alwaysPublish (value : 'a) world =
-            World.setEntityProperty propertyName alwaysPublish { PropertyType = typeof<'a>; PropertyValue = value } this world
+        /// Set a property value with publishing an event.
+        member this.SetWithoutEvent<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            let (_, _, world) = World.setEntityPropertyWithoutEvent propertyName property this world
+            world
 
         /// Get an entity's sorting priority.
         member this.GetSortingPriority world = World.getEntitySortingPriority this world

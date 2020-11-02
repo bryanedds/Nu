@@ -35,6 +35,7 @@ module FieldDispatcher =
         | ShopConfirmAccept
         | ShopConfirmDecline
         | ShopLeave
+        | Traverse of Vector2
         | Interact
 
     type [<NoComparison>] FieldCommand =
@@ -460,6 +461,16 @@ module FieldDispatcher =
                 let field = Field.updateShopOpt (constant None) field
                 just field
 
+            | Traverse velocity ->
+                let (battleDataOpt, field) = Field.advanceEncounterCreep velocity field
+                match battleDataOpt with
+                | Some battleData ->
+                    let prizePool = { Items = []; Gold = 0; Exp = 0 }
+                    let battle = Battle.makeFromLegion field.Legion field.Inventory prizePool battleData (World.getTickTime world)
+                    let field = Field.updateBattleOpt (constant (Some battle)) field
+                    just field
+                | None -> just field
+
             | Interact ->
                 match field.DialogOpt with
                 | None ->
@@ -557,6 +568,7 @@ module FieldDispatcher =
                  // avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
                     [Entity.Position == v2 256.0f 256.0f; Entity.Depth == Constants.Field.ForgroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
+                     Entity.TraverseEvent ==|> fun evt -> msg (Traverse evt.Data)
                      Entity.Enabled <== field --> fun field ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone field.DialogOpt &&

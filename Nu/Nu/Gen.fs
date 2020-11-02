@@ -32,6 +32,13 @@ module Gen =
         static member randomf =
             lock Lock (fun () -> single (Random.NextDouble ()))
 
+        /// Get a random element from a sequence if there are any elements..
+        static member randomItem seq =
+            let arr = Seq.toArray seq
+            if Array.notEmpty arr
+            then Some arr.[Gen.random1 arr.Length]
+            else None
+
         /// Generate a unique counter.
         static member counter =
             lock Lock (fun () -> Counter <- inc Counter; Counter)
