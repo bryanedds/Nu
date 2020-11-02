@@ -41,6 +41,7 @@ module GameDispatcher =
         override this.Register (game, world) =
             let world = World.hintRenderPackageUse Assets.GuiPackageName world
             let world = World.hintAudioPackageUse Assets.GuiPackageName world
+            let world = World.setMasterSongVolume 0.0f world
             base.Register (game, world)
 
         override this.Channel (_, _) =
