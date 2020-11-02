@@ -31,7 +31,7 @@ module TmxExtensions =
 
     type TmxTileset with
         member this.ImageAsset =
-            try scvalue<Image AssetTag> this.Properties.["Image"] 
+            try scvalue<Image AssetTag> this.Properties.["Image"]
             with :? KeyNotFoundException ->
                 let errorMessage =
                     "Tileset '" + this.Name + "' missing Image property.\n" +

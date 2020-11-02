@@ -220,7 +220,7 @@ type MapRand =
             | OriginSE ->   (31 * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal East Leftward TombInner [IX 1]]")
             | OriginSW ->   (14 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Upward TombInner [IX 0]]")
         let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
-        let openingYY = openingY + cursor.Y * mapTmx.TileHeight * 32
+        let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * 32
         let object = objects.[0]
         let objectType = typeof<TmxObject>
         (objectType.GetProperties "Id").[0].SetValue (object, 0)
