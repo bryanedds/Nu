@@ -28,6 +28,10 @@ module Gen =
         static member random2 minValue maxValue =
             lock Lock (fun () -> Random.Next (minValue, maxValue))
 
+        /// Get the next random number single.
+        static member randomf =
+            lock Lock (fun () -> single (Random.NextDouble ()))
+
         /// Generate a unique counter.
         static member counter =
             lock Lock (fun () -> Counter <- inc Counter; Counter)

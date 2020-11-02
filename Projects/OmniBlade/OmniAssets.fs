@@ -84,5 +84,6 @@ module Assets =
     let ShopDataFilePath = "Assets/Field/ShopData.csv"
     let FieldDataFilePath = "Assets/Field/FieldData.csv"
     let BattleDataFilePath = "Assets/Field/BattleData.csv"
+    let EncounterDataFilePath = "Assets/Field/EncounterData.csv"
     let TechAnimationDataFilePath = "Assets/Field/TechAnimationData.csv"
     let CharacterAnimationDataFilePath = "Assets/Field/CharacterAnimationData.csv"
