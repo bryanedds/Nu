@@ -199,6 +199,7 @@ module Field =
               RandSeedState_ : uint64
               Avatar_ : Avatar
               Legion_ : Legion
+              EncounterCreep_ : single
               Advents_ : Advent Set
               PropStates_ : Map<int, PropState>
               Inventory_ : Inventory
@@ -213,6 +214,7 @@ module Field =
         member this.RandSeedState = FieldType.rotateRandSeedState this.RandSeedState_ this.FieldType_
         member this.Avatar = this.Avatar_
         member this.Legion = this.Legion_
+        member this.EncounterCreep = this.EncounterCreep_
         member this.Advents = this.Advents_
         member this.PropStates = this.PropStates_
         member this.Inventory = this.Inventory_
@@ -267,6 +269,15 @@ module Field =
     let updateBattleOpt updater field =
         { field with BattleOpt_ = updater field.BattleOpt_ }
 
+    let getEncountered field =
+        field.EncounterCreep_ >= 100.0f
+
+    let applyEncounterVelocity (velocity : Vector2) field =
+        let speed = velocity.Length () / 60.0f
+        let creep = speed * Gen.randomf
+        let field = { field with EncounterCreep_ = field.EncounterCreep_ + creep }
+        (getEncountered field, field)
+
     let synchronizeLegionFromAllies allies field =
         List.foldi (fun i field (ally : Character) ->
             updateLegion (fun legion ->
@@ -289,6 +300,7 @@ module Field =
         { FieldType_ = fieldType
           RandSeedState_ = randSeedState
           Avatar_ = avatar
+          EncounterCreep_ = 0.0f
           Legion_ = legion
           Advents_ = advents
           PropStates_ = Map.empty
@@ -304,6 +316,7 @@ module Field =
           RandSeedState_ = Rand.DefaultSeedState
           Avatar_ = Avatar.empty
           Legion_ = Map.empty
+          EncounterCreep_ = 0.0f
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
@@ -318,6 +331,7 @@ module Field =
           RandSeedState_ = randSeedState
           Avatar_ = Avatar.empty
           Legion_ = Map.ofList [(0, Legionnaire.finn)]
+          EncounterCreep_ = 0.0f
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 50 }

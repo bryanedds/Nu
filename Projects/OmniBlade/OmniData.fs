@@ -192,6 +192,13 @@ type SensorType =
 
 type BattleType =
     | DebugBattle
+    | CaveBattle1
+    | CaveBattle2
+    | CaveBattle3
+
+type EncounterType =
+    | DebugEncounter
+    | CaveEncounter
 
 type PoiseType =
     | Poising
@@ -425,6 +432,11 @@ type [<NoComparison>] BattleData =
       BattleEnemies : EnemyData list
       BattleSongOpt : Song AssetTag option }
 
+type EncounterData =
+    { EncounterType : EncounterType // key
+      BattleTypes : BattleType list
+      Threshold : single }
+
 type [<NoComparison>] CharacterData =
     { CharacterType : CharacterType // key
       ArchetypeType : ArchetypeType
@@ -457,6 +469,7 @@ module Data =
           Shops : Map<ShopType, ShopData>
           Fields : Map<FieldType, FieldData>
           Battles : Map<BattleType, BattleData>
+          Encounters : Map<EncounterType, EncounterData>
           TechAnimations : Map<TechType, TechAnimationData>
           CharacterAnimations : Map<CharacterAnimationCycle, CharacterAnimationData> }
 
@@ -477,6 +490,7 @@ module Data =
           Shops = readSheet Assets.ShopDataFilePath (fun data -> data.ShopType)
           Fields = readSheet Assets.FieldDataFilePath (fun data -> data.FieldType)
           Battles = readSheet Assets.BattleDataFilePath (fun data -> data.BattleType)
+          Encounters = readSheet Assets.EncounterDataFilePath (fun data -> data.EncounterType)
           TechAnimations = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
           CharacterAnimations = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
 
