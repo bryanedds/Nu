@@ -210,12 +210,12 @@ module WorldModuleLayer =
             let dispatcher = World.getLayerDispatcher layer world
             let world = dispatcher.Register (layer, world)
             let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
-            World.publish () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer true world
+            World.publishPlus () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer true world
 
         static member internal unregisterLayer layer world =
             let dispatcher = World.getLayerDispatcher layer world
             let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
-            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer true world
+            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer true world
             dispatcher.Unregister (layer, world)
 
         static member internal addLayer mayReplace layerState layer world =

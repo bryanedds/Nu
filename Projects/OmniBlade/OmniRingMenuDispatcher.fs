@@ -41,8 +41,8 @@ module RingMenuDispatcher =
 
         override this.Command (ringMenu, command, menu, world) =
             match command with
-            | ItemCancel -> just (World.publish () menu.CancelEvent [] menu true world)
-            | ItemSelect item -> just (World.publish item menu.ItemSelectEvent [] menu true world)
+            | ItemCancel -> just (World.publishPlus () menu.CancelEvent [] menu true world)
+            | ItemSelect item -> just (World.publishPlus item menu.ItemSelectEvent [] menu true world)
             | ArrangeItemButton (button, index) ->
                 let radius = menu.GetRadius world
                 let itemCount = List.length ringMenu.Items

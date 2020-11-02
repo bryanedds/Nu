@@ -237,7 +237,9 @@ module Field =
         | (false, _) -> None
 
     let updateFieldType updater field =
-        { field with FieldType_ = updater field.FieldType_ }
+        { field with
+            FieldType_ = updater field.FieldType_
+            EncounterCreep_ = 0.0f }
 
     let updateAvatar updater field =
         { field with Avatar_ = updater field.Avatar_ }
@@ -267,16 +269,33 @@ module Field =
         { field with FieldTransitionOpt_ = updater field.FieldTransitionOpt_ }
 
     let updateBattleOpt updater field =
-        { field with BattleOpt_ = updater field.BattleOpt_ }
+        let battleOpt = updater field.BattleOpt_
+        { field with
+            BattleOpt_ = battleOpt
+            EncounterCreep_ = if Option.isSome battleOpt then 0.0f else field.EncounterCreep_ }
 
-    let getEncountered field =
-        field.EncounterCreep_ >= 100.0f
-
-    let applyEncounterVelocity (velocity : Vector2) field =
-        let speed = velocity.Length () / 60.0f
-        let creep = speed * Gen.randomf
-        let field = { field with EncounterCreep_ = field.EncounterCreep_ + creep }
-        (getEncountered field, field)
+    let advanceEncounterCreep (velocity : Vector2) (field : Field) =
+        match Data.Value.Fields.TryGetValue field.FieldType with
+        | (true, fieldData) ->
+            match fieldData.EncounterTypeOpt with
+            | Some encounterType ->
+                match Data.Value.Encounters.TryGetValue encounterType with
+                | (true, encounterData) ->
+                    match Gen.randomItem encounterData.BattleTypes with
+                    | Some battleType ->
+                        match Data.Value.Battles.TryGetValue battleType with
+                        | (true, battleData) ->
+                            let speed = velocity.Length () / 60.0f
+                            let creep = speed * Gen.randomf
+                            let field = { field with EncounterCreep_ = field.EncounterCreep_ + creep }
+                            if field.EncounterCreep_ >= encounterData.Threshold
+                            then (Some battleData, field)
+                            else (None, field)
+                        | (false, _) -> (None, field)
+                    | None -> (None, field)
+                | (false, _) -> (None, field)
+            | None -> (None, field)
+        | (false, _) -> (None, field)
 
     let synchronizeLegionFromAllies allies field =
         List.foldi (fun i field (ally : Character) ->
