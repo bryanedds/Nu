@@ -41,15 +41,21 @@ module GameDispatcher =
         override this.Register (game, world) =
             let world = World.hintRenderPackageUse Assets.GuiPackageName world
             let world = World.hintAudioPackageUse Assets.GuiPackageName world
+#if DEV
             let world = World.setMasterSongVolume 0.0f world
+#endif
             base.Register (game, world)
 
         override this.Channel (_, _) =
             [Simulants.TitleCredits.ClickEvent => msg (Change (Gui Credits))
              Simulants.CreditsBack.ClickEvent => msg (Change (Gui Title))
              Simulants.FieldBack.ClickEvent => msg (Change (Gui Title))
-             Simulants.TitlePlay.ClickEvent => (*cmd (Show Simulants.Intro1)
-             Simulants.Intro5.DeselectEvent =>*) msg (Change (Field (Field.initial (uint64 Gen.random))))
+#if DEV
+             Simulants.TitlePlay.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
+#else
+             Simulants.TitlePlay.ClickEvent => cmd (Show Simulants.Intro1)
+             Simulants.Intro5.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
+#endif
              Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
              Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
              Simulants.TitleExit.ClickEvent => cmd Exit
