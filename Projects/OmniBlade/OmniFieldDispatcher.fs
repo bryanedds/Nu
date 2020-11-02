@@ -8,7 +8,6 @@ open FSharpx.Collections
 open Prime
 open Nu
 open Nu.Declarative
-open TiledSharp
 open OmniBlade
 
 [<AutoOpen>]
