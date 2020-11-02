@@ -97,4 +97,13 @@ module Avatar =
           SeparatedBodyShapes_ = []
           IntersectedBodyShapes_ = [] }
 
+    let initial =
+        let position = v2 2752.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
+        let bounds = v4Bounds position Constants.Gameplay.CharacterSize
+        let animationState = CharacterAnimationState.initial
+        { empty with
+            BoundsOriginal_ = bounds
+            Bounds_ = bounds
+            AnimationState_ = animationState }
+
 type Avatar = Avatar.Avatar

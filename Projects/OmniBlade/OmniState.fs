@@ -384,6 +384,9 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
           AnimationCycle = IdleCycle
           Direction = Downward }
 
+    static member initial =
+        { CharacterAnimationState.empty with Direction = Upward }
+
 type CharacterInputState =
     | NoInput
     | RegularMenu
