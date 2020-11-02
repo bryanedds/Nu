@@ -190,9 +190,9 @@ type MapRand =
             | OriginSE -> Some SegmentRand.Segment1E
             | OriginSW -> Some SegmentRand.Segment1S
         match openingOpt with
-        | Some opening -> map.MapSegments.[cursor.X].[cursor.Y] <- map.MapSegments.[cursor.X].[cursor.Y] ||| opening
+        | Some opening -> map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
         | None -> ()
-        (openingOpt, map, rand)
+        (cursor, map, rand)
 
     static member make (size : Vector2i) =
         if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."
@@ -200,12 +200,35 @@ type MapRand =
           MapOriginOpt = None
           MapSize = size }
 
-    static member toTmx abstractPath openingOpt map =
+    static member toTmx abstractPath origin (cursor : Vector2i) map =
 
         // locals
         let mapTmx = TmxMap (abstractPath + "+7x7.tmx")
         let objects = mapTmx.ObjectGroups.[0].Objects
         let segments = SegmentsRand.load abstractPath
+
+        // configure opening prop
+        let (openingX, openingY, openingWidth, openingHeight, openingInfo) =
+            match origin with
+            | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2, mapTmx.TileHeight * 2, "[Portal Center Downward TombInner [IX 8]]")
+            | OriginN ->    (14 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal North Downward TombInner [IX 7]]")
+            | OriginE ->    (31 * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal East Leftward TombInner [IX 6]]")
+            | OriginS ->    (14 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Upward TombInner [IX 5]]")
+            | OriginW ->    (0  * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal West Rightward TombInner [IX 4]]")
+            | OriginNE ->   (14 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Downward TombInner [IX 3]]")
+            | OriginNW ->   (0  * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal West Rightward TombInner [IX 2]]")
+            | OriginSE ->   (31 * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal East Leftward TombInner [IX 1]]")
+            | OriginSW ->   (14 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Upward TombInner [IX 0]]")
+        let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
+        let openingYY = openingY + cursor.Y * mapTmx.TileHeight * 32
+        let object = objects.[0]
+        let objectType = typeof<TmxObject>
+        (objectType.GetProperties "Id").[0].SetValue (object, 0)
+        (objectType.GetProperties "X").[0].SetValue (object, openingXX)
+        (objectType.GetProperties "Y").[0].SetValue (object, openingYY)
+        (objectType.GetProperties "Width").[0].SetValue (object, openingWidth)
+        (objectType.GetProperties "Height").[0].SetValue (object, openingHeight)
+        object.Properties.Add ("I", openingInfo)
 
         // add objects from segments
         for i in 0 .. 7 - 1 do
@@ -214,9 +237,10 @@ type MapRand =
                 | Some segment ->
                     if segment.ObjectGroups.Count <> 0 then
                         for object in segment.ObjectGroups.[0].Objects do
+                            ((getType object).GetProperties "Id").[0].SetValue (object, i + j * 7)
                             objects.Add object
                 | None -> ()
-                
+
         // add tiles from segments
         for l in 0 .. 2 - 1 do
             let layer = mapTmx.Layers.[l]

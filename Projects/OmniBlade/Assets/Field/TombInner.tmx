@@ -19,7 +19,7 @@
   </object>
   <object id="3" gid="54" x="3008" y="2720" width="192" height="64">
    <properties>
-    <property name="I" value="[Portal [IX 0] Downward DebugRoom North]"/>
+    <property name="I" value="[Portal [IX 0] Downward Cave South]"/>
    </properties>
   </object>
  </objectgroup>
