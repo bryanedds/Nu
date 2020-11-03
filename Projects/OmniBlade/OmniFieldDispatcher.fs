@@ -158,7 +158,7 @@ module FieldDispatcher =
                         let prizePool = { Items = []; Gold = 0; Exp = 0 }
                         let battle = Battle.makeFromLegion (Field.getParty field) field.Inventory prizePool battleData time
                         let field = Field.updateBattleOpt (constant (Some battle)) field
-                        just field
+                        withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
                     | None -> just field
                 | None ->
                     let field = Field.updateInventory (Inventory.addItem itemType) field
@@ -199,7 +199,7 @@ module FieldDispatcher =
         static let interactShopkeep shopType (field : Field) =
             let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
             let field = Field.updateShopOpt (constant (Some shop)) field
-            just field
+            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)) field
 
         static let sidebar position depth (field : Lens<Field, World>) =
             Content.group Gen.name []
@@ -441,7 +441,7 @@ module FieldDispatcher =
                 | Some shop ->
                     match shop.ShopConfirmOpt with
                     | Some shopConfirm ->
-                        let valid = match shop.ShopState with ShopBuying -> field.Inventory.Gold > shopConfirm.ShopConfirmPrice | ShopSelling -> true
+                        let valid = match shop.ShopState with ShopBuying -> field.Inventory.Gold >= shopConfirm.ShopConfirmPrice | ShopSelling -> true
                         if valid then
                             let itemType = snd shopConfirm.ShopConfirmSelection
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.addItem itemType | ShopSelling -> Inventory.removeItem itemType) field
@@ -467,7 +467,7 @@ module FieldDispatcher =
                     let prizePool = { Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromLegion field.Legion field.Inventory prizePool battleData (World.getTickTime world)
                     let field = Field.updateBattleOpt (constant (Some battle)) field
-                    just field
+                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
                 | None -> just field
 
             | Interact ->

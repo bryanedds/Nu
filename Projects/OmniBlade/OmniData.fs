@@ -67,6 +67,8 @@ type EquipmentType =
 type ConsumableType =
     | GreenHerb
     | RedHerb
+    | GoldHerb
+    | GreenIncense
 
 type KeyItemType =
     | BrassKey
@@ -132,8 +134,8 @@ type ArmorSubtype =
     | Pelt
 
 type ShopType =
-    | PodunkChemist
-    | PodunkArmory
+    | Chemist
+    | Armory
 
 type ShopkeepAppearanceType =
     | Male
