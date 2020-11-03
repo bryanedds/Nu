@@ -10,6 +10,19 @@ open OmniBlade
 module Constants =
 
     [<RequireQualifiedAccess>]
+    module Gui =
+
+        let Dissolve =
+            { IncomingTime = 40L
+              OutgoingTime = 60L
+              DissolveImage = Assets.DefaultImage8 }
+
+        let Splash =
+            { DissolveDescriptor = Constants.Dissolve.Default
+              IdlingTime = 60L
+              SplashImageOpt = Some Assets.DefaultImage5 }
+
+    [<RequireQualifiedAccess>]
     module Intro =
 
         let Dissolve =
