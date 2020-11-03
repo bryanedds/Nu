@@ -196,7 +196,6 @@ type BattleType =
     | DebugBattle
     | CaveBattle
     | CaveBattle2
-    | CaveBattle3
 
 type EncounterType =
     | DebugEncounter
