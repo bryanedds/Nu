@@ -145,6 +145,16 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
             | None -> (false, None, legionnaire)
         else (false, None, legionnaire)
 
+    static member getExpPointsForNextLevel legionnaire =
+        let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
+        let (_, nextExp) = Algorithms.levelToExpPointsRange level
+        nextExp
+
+    static member getExpPointsRemainingForNextLevel legionnaire =
+        match Legionnaire.getExpPointsForNextLevel legionnaire with
+        | Int32.MaxValue -> 0
+        | nextExp -> nextExp - legionnaire.ExpPoints
+
     static member finn =
         let index = 0
         let characterType = Ally Finn

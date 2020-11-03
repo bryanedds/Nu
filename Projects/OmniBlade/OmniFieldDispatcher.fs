@@ -750,7 +750,7 @@ module FieldDispatcher =
                                     "HP  "   + (string legionnaire.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
                                     "\nTP  " + (string legionnaire.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
                                     "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
-                                    "\nExp " + (string legionnaire.ExpPoints).PadLeft 3
+                                    "\nExp " + (string legionnaire.ExpPoints).PadLeft 3 + "/" + string (Legionnaire.getExpPointsForNextLevel legionnaire)
                                 | None -> ""
                             | _ -> ""]]
 
