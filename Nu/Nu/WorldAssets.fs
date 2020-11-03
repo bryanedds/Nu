@@ -28,6 +28,7 @@ module Assets =
     let (*Literal*) DefaultFont = asset<Font> DefaultPackageName DefaultFontName
     let (*Literal*) DefaultSound = asset<Sound> DefaultPackageName DefaultSoundName
     let (*Literal*) DefaultSong = asset<Song> DefaultPackageName DefaultSongName
+    let [<Literal>] DefaultTmxFilePath = Assets.DefaultTmxFilePath
     let [<Literal>] AssetGraphFilePath = Assets.AssetGraphFilePath
     let [<Literal>] OverlayerFilePath = Assets.OverlayerFilePath
     let [<Literal>] PreludeFilePath = Assets.PreludeFilePath

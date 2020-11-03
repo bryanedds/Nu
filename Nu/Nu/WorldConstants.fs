@@ -12,7 +12,7 @@ module Dissolve =
     let Default =
         { IncomingTime = 20L
           OutgoingTime = 30L
-          DissolveImage = AssetTag.make Assets.DefaultPackageName "Image9" }
+          DissolveImage = Assets.DefaultImage9 }
 
 [<RequireQualifiedAccess>]
 module Splash =
@@ -21,4 +21,4 @@ module Splash =
     let Default =
         { DissolveDescriptor = Dissolve.Default
           IdlingTime = 60L
-          SplashImage = AssetTag.make Assets.DefaultPackageName "Image5" }
+          SplashImageOpt = Some Assets.DefaultImage5 }

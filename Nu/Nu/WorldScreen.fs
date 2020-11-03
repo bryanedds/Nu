@@ -278,8 +278,8 @@ module WorldScreenModule =
                 world
             | Dissolve (dissolveDescriptor, songOpt) ->
                 World.setScreenDissolve dissolveDescriptor songOpt screen world
-            | Splash (dissolveDescriptor, splashDescriptor, destination) ->
-                let world = World.setScreenDissolve dissolveDescriptor None screen world
+            | Splash (dissolveDescriptor, splashDescriptor, songOpt, destination) ->
+                let world = World.setScreenDissolve dissolveDescriptor songOpt screen world
                 setScreenSplash (Some splashDescriptor) destination screen world
             | OmniScreen ->
                 World.setOmniScreen screen world

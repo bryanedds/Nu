@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace OmniBlade
+open System
 open Prime
 open Nu
 open Nu.Declarative
@@ -20,17 +21,16 @@ module GameDispatcher =
         | Field of Field
 
     type [<NoEquality; NoComparison>] OmniMessage =
+        | Change of Omni
+        | ChangeField of Field
+        | ChangeBattle of Battle
         | Update
-        | UpdateOmni of Omni
-        | UpdateField of Field
-        | UpdateBattle of Battle
 
     type [<NoEquality; NoComparison>] OmniCommand =
         | Show of Screen
         | Exit
 
     type Game with
-
         member this.GetOmni = this.GetModel<Omni>
         member this.SetOmni = this.SetModel<Omni>
         member this.Omni = this.Model<Omni> ()
@@ -41,30 +41,38 @@ module GameDispatcher =
         override this.Register (game, world) =
             let world = World.hintRenderPackageUse Assets.GuiPackageName world
             let world = World.hintAudioPackageUse Assets.GuiPackageName world
+#if DEV
+            let world = World.setMasterSongVolume 0.0f world
+#endif
             base.Register (game, world)
 
         override this.Channel (_, _) =
-            [Simulants.Game.UpdateEvent => msg Update
-             Simulants.TitleCredits.ClickEvent => msg (UpdateOmni (Gui Credits))
-             Simulants.CreditsBack.ClickEvent => msg (UpdateOmni (Gui Title))
-             Simulants.FieldBack.ClickEvent => msg (UpdateOmni (Gui Title))
-             Simulants.TitlePlay.ClickEvent => msg (UpdateOmni (Field Field.initial))
-             Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (UpdateField (evt.Data.Value :?> Field))
-             Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (UpdateBattle (evt.Data.Value :?> Battle))
-             Simulants.TitleExit.ClickEvent => cmd Exit]
+            [Simulants.TitleCredits.ClickEvent => msg (Change (Gui Credits))
+             Simulants.CreditsBack.ClickEvent => msg (Change (Gui Title))
+             Simulants.FieldBack.ClickEvent => msg (Change (Gui Title))
+#if DEV
+             Simulants.TitlePlay.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
+#else
+             Simulants.TitlePlay.ClickEvent => cmd (Show Simulants.Intro1)
+             Simulants.Intro5.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
+#endif
+             Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
+             Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
+             Simulants.TitleExit.ClickEvent => cmd Exit
+             Simulants.Game.UpdateEvent => msg Update]
 
         override this.Message (omni, message, _, world) =
 
             match message with
-            | UpdateOmni omni ->
+            | Change omni ->
                 just omni
 
-            | UpdateField field ->
+            | ChangeField field ->
                 match omni with
                 | Gui _ -> just omni
                 | Field _ -> just (Field field)
 
-            | UpdateBattle battle ->
+            | ChangeBattle battle ->
                 match omni with
                 | Gui _ -> just omni
                 | Field field ->
@@ -85,22 +93,8 @@ module GameDispatcher =
                         match battle.BattleState with
                         | BattleCease (result, time) ->
                             if World.getTickTime world - time = 120L then
-                                if result then
-                                    let allies = Battle.getAllies battle
-                                    let field =
-                                        List.foldi (fun i field (ally : Character) ->
-                                            Field.updateLegion (fun legion ->
-                                                match Map.tryFind i legion with
-                                                | Some legionnaire ->
-                                                    let legionnaire = { legionnaire with HitPoints = ally.HitPoints; ExpPoints = ally.ExpPoints }
-                                                    Map.add i legionnaire legion
-                                                | None -> legion)
-                                                field)
-                                            field allies
-                                    let field = Field.updateInventory (constant battle.Inventory) field
-                                    let field = Field.updateBattleOpt (constant None) field
-                                    let omni = Field field
-                                    withCmd (Show Simulants.Field) omni
+                                if result
+                                then withCmd (Show Simulants.Field) (Field (Field.synchronizeFromBattle battle field))
                                 else withCmd (Show Simulants.Title) (Gui Title)
                             else withCmd (Show Simulants.Battle) omni
                         | _ -> withCmd (Show Simulants.Battle) omni
@@ -114,23 +108,30 @@ module GameDispatcher =
         override this.Content (omni, _) =
 
             [// splash
-             Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, Simulants.Title)) [] []
+             Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Some Simulants.Title)) [] []
 
              // title
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some Assets.TitleSong)) Assets.TitleLayerFilePath
 
              // credits
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.TitleSong))) Assets.CreditsLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some Assets.TitleSong)) Assets.CreditsLayerFilePath
+
+             // intros
+             Content.screenFromLayerFile Simulants.Intro1.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro2)) Assets.Intro1LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro2.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro3)) Assets.Intro2LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro3.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro4)) Assets.Intro3LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro4.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, Some Simulants.Intro5)) Assets.Intro4LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro5.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.WindSong, None)) Assets.Intro5LayerFilePath
 
              // field
-             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.FieldSong)))
+             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Dissolve.Default, None))
                 [Screen.Field <== omni --> fun omni ->
                     match omni with
                     | Gui _ -> Field.empty
                     | Field field -> field] []
 
              // battle
-             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.BattleSong)))
+             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Dissolve.Default, Some Assets.BattleSong))
                 [Screen.Battle <== omni --> fun omni ->
                     match omni with
                     | Gui _ -> Battle.empty

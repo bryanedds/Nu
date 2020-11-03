@@ -6,6 +6,7 @@ open System
 open System.Numerics
 open System.IO
 open FSharpx.Collections
+open TiledSharp
 open Prime
 open Nu
 
@@ -21,6 +22,7 @@ type Direction =
     | Leftward
     | Upward
     | Rightward
+
     static member fromVector2 (v2 : Vector2) =
         let angle = double (atan2 v2.Y v2.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
@@ -30,6 +32,13 @@ type Direction =
             elif    angle > Math.PI * 0.75 && angle <= Math.PI * 1.25 then  Leftward
             else                                                            Downward
         direction
+
+    static member toVector2 direction =
+        match direction with
+        | Rightward -> v2Right
+        | Upward -> v2Up
+        | Leftward -> v2Left
+        | Downward -> v2Down
 
 type EffectType =
     | Physical
@@ -141,6 +150,18 @@ type ChestType =
 type DoorType =
     | WoodenDoor
 
+type PortalType =
+    | Center
+    | North
+    | East
+    | South
+    | West
+    | NE
+    | SE
+    | NW
+    | SW
+    | IX of int
+
 type NpcType =
     | VillageMan
     | VillageWoman
@@ -153,6 +174,13 @@ type ShopkeepType =
 type FieldType =
     | DebugRoom
     | DebugRoom2
+    | TombInner
+    | TombOuter
+    | Cave
+    static member rotateRandSeedState randSeedState fieldType =
+        match fieldType with
+        | DebugRoom | DebugRoom2 | TombInner | TombOuter -> randSeedState
+        | Cave -> rotl64 1 randSeedState
 
 type SwitchType =
     | ThrowSwitch
@@ -164,6 +192,13 @@ type SensorType =
 
 type BattleType =
     | DebugBattle
+    | CaveBattle
+    | CaveBattle2
+    | CaveBattle3
+
+type EncounterType =
+    | DebugEncounter
+    | CaveEncounter
 
 type PoiseType =
     | Poising
@@ -294,20 +329,99 @@ type ShopData =
 type [<NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Advent Set * Advent Set
     | Door of DoorType * Advent Set * Advent Set // for simplicity, we'll just have north / south doors
-    | Portal of int * FieldType * Vector2 * Direction * Advent Set // leads to a different portal
+    | Portal of PortalType * Direction * FieldType * PortalType * Advent Set // leads to a different portal
     | Switch of SwitchType * Advent Set * Advent Set // anything that can affect another thing on the field through interaction
     | Sensor of SensorType * BodyShape option * Advent Set * Advent Set // anything that can affect another thing on the field through traversal
     | Npc of NpcType * Direction * (string * Advent Set * Advent Set) list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
     static member empty = Chest (WoodenChest, Consumable GreenHerb, Gen.idEmpty, None, Set.empty, Set.empty)
 
+type [<NoComparison>] PropDescriptor =
+    { PropBounds : Vector4
+      PropDepth : single
+      PropData : PropData }
+
+type [<NoComparison>] FieldTileMap =
+    | FieldStatic of TileMap AssetTag
+    | FieldRandom of int * single * OriginRand * string
+
 type [<NoComparison>] FieldData =
     { FieldType : FieldType // key
-      FieldTileMap : TileMap AssetTag
-      FieldProps : PropData list
+      FieldTileMap : FieldTileMap
+      FieldBackgroundColor : Color
       FieldSongOpt : Song AssetTag option
-      FieldAmbienceOpt : Song AssetTag option
-      FieldBackgroundColor : Color }
+      EncounterTypeOpt : EncounterType option }
+
+[<RequireQualifiedAccess>]
+module FieldData =
+
+    let mutable tileMapsMemoized = Map.empty<FieldType, TmxMap option>
+    let mutable propObjectsMemoized = Map.empty<FieldType, (TmxMap * TmxObjectGroup * TmxObject) list>
+    let mutable propsMemoized = Map.empty<FieldType, PropDescriptor list>
+
+    let objectToProp (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
+        let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
+        let propSize = v2 (single object.Width) (single object.Height)
+        let propBounds = v4Bounds propPosition propSize
+        let propDepth =
+            match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
+            | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
+            | (false, _) -> Constants.Field.ForgroundDepth
+        let propData =
+            match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
+            | (true, propDataStr) -> scvalue propDataStr
+            | (false, _) -> PropData.empty
+        { PropBounds = propBounds; PropDepth = propDepth; PropData = propData }
+
+    let tryGetTileMap randSeedState fieldData world =
+        match Map.tryFind fieldData.FieldType tileMapsMemoized with
+        | None ->
+            let tileMapOpt =
+                match fieldData.FieldTileMap with
+                | FieldStatic fieldAsset ->
+                    match World.tryGetTileMapMetadata fieldAsset world with
+                    | Some (_, _, tileMap) -> Some tileMap
+                    | None -> None
+                | FieldRandom (walkLength, bias, origin, fieldPath) ->
+                    let rand = Rand.makeFromSeedState randSeedState
+                    let (cursor, mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin rand
+                    let mapTmx = MapRand.toTmx fieldPath origin cursor mapRand
+                    Some mapTmx
+            tileMapsMemoized <- Map.add fieldData.FieldType tileMapOpt tileMapsMemoized
+            tileMapOpt
+        | Some tileMapOpt -> tileMapOpt
+
+    let getPropObjects randSeedState fieldData world =
+        match Map.tryFind fieldData.FieldType propObjectsMemoized with
+        | None ->
+            let propObjects =
+                match tryGetTileMap randSeedState fieldData world with
+                | Some tileMap ->
+                    if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
+                        let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
+                        enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (tileMap, group, propObject)) |> Seq.toList
+                    else []
+                | None -> []
+            propObjectsMemoized <- Map.add fieldData.FieldType propObjects propObjectsMemoized
+            propObjects
+        | Some propObjects -> propObjects
+
+    let getProps randSeedState fieldData world =
+        match Map.tryFind fieldData.FieldType propsMemoized with
+        | None ->
+            let propObjects = getPropObjects randSeedState fieldData world
+            let props = List.map (fun (tileMap, group, object) -> objectToProp object group tileMap) propObjects
+            propsMemoized <- Map.add fieldData.FieldType props propsMemoized
+            props
+        | Some props -> props
+
+    let getPortals randSeedState fieldData world =
+        let props = getProps randSeedState fieldData world
+        List.filter (fun prop -> match prop.PropData with Portal _ -> true | _ -> false) props
+
+    let tryGetPortal portalType randSeedState fieldData world =
+        let portals = getPortals randSeedState fieldData world
+        List.tryFind (fun prop -> match prop.PropData with Portal (portalType2, _, _, _, _) -> portalType2 = portalType | _ -> failwithumf ()) portals
 
 type [<NoComparison>] EnemyData =
     { EnemyType : EnemyType // key
@@ -318,6 +432,11 @@ type [<NoComparison>] BattleData =
       BattleAllyPositions : Vector2 list
       BattleEnemies : EnemyData list
       BattleSongOpt : Song AssetTag option }
+
+type EncounterData =
+    { EncounterType : EncounterType // key
+      BattleTypes : BattleType list
+      Threshold : single }
 
 type [<NoComparison>] CharacterData =
     { CharacterType : CharacterType // key
@@ -337,10 +456,10 @@ type CharacterAnimationData =
       Stutter : int64
       Offset : Vector2i }
 
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module Data =
 
-    type [<NoComparison>] Data =
+    type [<NoComparison>] OmniData =
         { Weapons : Map<string, WeaponData>
           Armors : Map<string, ArmorData>
           Accessories : Map<string, AccessoryData>
@@ -351,6 +470,7 @@ module Data =
           Shops : Map<ShopType, ShopData>
           Fields : Map<FieldType, FieldData>
           Battles : Map<BattleType, BattleData>
+          Encounters : Map<EncounterType, EncounterData>
           TechAnimations : Map<TechType, TechAnimationData>
           CharacterAnimations : Map<CharacterAnimationCycle, CharacterAnimationData> }
 
@@ -371,10 +491,9 @@ module Data =
           Shops = readSheet Assets.ShopDataFilePath (fun data -> data.ShopType)
           Fields = readSheet Assets.FieldDataFilePath (fun data -> data.FieldType)
           Battles = readSheet Assets.BattleDataFilePath (fun data -> data.BattleType)
+          Encounters = readSheet Assets.EncounterDataFilePath (fun data -> data.EncounterType)
           TechAnimations = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
           CharacterAnimations = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
 
-    let data =
-        lazy (readFromFiles ())
-
-type Data = Data.Data
+    let Value =
+        readFromFiles ()

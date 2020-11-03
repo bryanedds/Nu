@@ -23,6 +23,13 @@ module Simulants =
     let CreditsGui = Credits / "Gui"
     let CreditsBack = CreditsGui / "Back"
 
+    // intro
+    let Intro1 = Screen "Intro1"
+    let Intro2 = Screen "Intro2"
+    let Intro3 = Screen "Intro3"
+    let Intro4 = Screen "Intro4"
+    let Intro5 = Screen "Intro5"
+
     // field
     let Field = Simulants.DefaultScreen
     let FieldHud = Field / "Hud"

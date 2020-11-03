@@ -182,7 +182,7 @@ module Battle =
         let allies =
             List.map
                 (fun (index, leg) ->
-                    match Map.tryFind leg.CharacterType data.Value.Characters with
+                    match Map.tryFind leg.CharacterType Data.Value.Characters with
                     | Some characterData ->
                         // TODO: bounds checking
                         let bounds = v4Bounds battleData.BattleAllyPositions.[index] Constants.Gameplay.CharacterSize

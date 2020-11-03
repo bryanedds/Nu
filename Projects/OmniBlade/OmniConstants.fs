@@ -10,6 +10,19 @@ open OmniBlade
 module Constants =
 
     [<RequireQualifiedAccess>]
+    module Intro =
+
+        let Dissolve =
+            { IncomingTime = 40L
+              OutgoingTime = 60L
+              DissolveImage = Assets.DefaultImage8 }
+
+        let Splash =
+            { DissolveDescriptor = Constants.Dissolve.Default
+              IdlingTime = 180L
+              SplashImageOpt = None }
+
+    [<RequireQualifiedAccess>]
     module Gameplay =
 
         let TileSize = v2 64.0f 64.0f
@@ -28,6 +41,8 @@ module Constants =
         let GuiEffectDepth = 30.0f
         let PropsLayerName = "Props"
         let TransitionTime = 60L
+        let MapRandSize = v2iDup 7
+        let AvatarBottomInset = v2 0.0f 32.0f
 
     [<RequireQualifiedAccess>]
     module Battle =
@@ -51,19 +66,3 @@ module Constants =
         let EffectDepth = 10.0f
         let GuiDepth = 20.0f
         let GuiEffectDepth = 30.0f
-
-    [<RequireQualifiedAccess>]
-    module Dissolve =
-    
-        let Default =
-            { IncomingTime = 20L
-              OutgoingTime = 30L
-              DissolveImage = asset<Image> Assets.GuiPackageName "Dissolve" }
-                  
-    [<RequireQualifiedAccess>]
-    module Splash =
-    
-        let Default =
-            { DissolveDescriptor = Dissolve.Default
-              IdlingTime = 60L
-              SplashImage = asset<Image> Assets.GuiPackageName "Nu" }

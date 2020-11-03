@@ -16,7 +16,6 @@ module PropDispatcher =
         | Update
 
     type Entity with
-
         member this.GetProp = this.GetModel<Prop>
         member this.SetProp = this.SetModel<Prop>
         member this.Prop = this.Model<Prop> ()

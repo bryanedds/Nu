@@ -21,6 +21,7 @@ module Reflection =
              ("ParentNodeOpt", true)
              ("ScriptOpt", true)
              ("Script", true)
+             ("TmxMap", true)
              ("EffectsOpt", true)]
 
     let private NonPersistentPropertyNames =
@@ -36,7 +37,9 @@ module Reflection =
              ("ScriptFrame", true)
              ("ScriptUnsubscriptions", true)
              ("CreationTimeStamp", true)
+             ("Optimized", true)
              ("NodeUnsubscribe", true)
+             ("TmxMap", true)
              ("EffectPhysicsShapes", true)
              ("EffectTags", true)
              ("EffectHistory", true)]
@@ -48,7 +51,8 @@ module Reflection =
         | (false, _) ->
             let result =
                 propertyName.EndsWith ("Model", StringComparison.Ordinal) ||
-                propertyName.EndsWith ("Ap", StringComparison.Ordinal)
+                propertyName.EndsWith ("Ap", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Tp", StringComparison.Ordinal)
             AlwaysPublishPropertyNames.Add (propertyName, result)
             result
 
@@ -59,6 +63,7 @@ module Reflection =
         | (false, _) ->
             let result =
                 propertyName.EndsWith ("Np", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Tp", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Id", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Ids", StringComparison.Ordinal)
             NonPersistentPropertyNames.Add (propertyName, result)
@@ -497,51 +502,3 @@ module Reflection =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames copyTarget dispatcherMap facetMap instrinsicFacetNames target world
-
-    /// Make intrinsic overlays.
-    let makeIntrinsicOverlays requiresFacetNames sourceTypes =
-
-        // get the unique, decomposed source types
-        let sourceTypeHashSet = HashSet HashIdentity.Structural
-        for sourceType in sourceTypes do
-            for sourceTypeDecomposed in sourceType :: getBaseTypesExceptObject sourceType do
-                sourceTypeHashSet.Add sourceTypeDecomposed |> ignore
-        let sourceTypes = List.ofSeq sourceTypeHashSet
-
-        // get the descriptors needed to construct the overlays
-        let overlayDescriptors =
-            List.map
-                (fun (sourceType : Type) ->
-                    let includeNames = if sourceType.BaseType <> typeof<obj> then [sourceType.BaseType.Name] else []
-                    let definitions = getPropertyDefinitionsNoInherit sourceType
-                    let requiresFacetNames = requiresFacetNames sourceType
-                    (sourceType.Name, includeNames, definitions, requiresFacetNames))
-                sourceTypes
-
-        // create the intrinsic overlays with the above descriptors
-        let overlays =
-            List.map
-                (fun (overlayName, includeNames, definitions, requiresFacetNames) ->
-                    let overlayProperties =
-                        List.foldBack
-                            (fun definition overlayProperties ->
-                                match definition.PropertyExpr with
-                                | DefineExpr value ->
-                                    let converter = SymbolicConverter (false, None, definition.PropertyType)
-                                    let overlayProperty = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
-                                    Map.add definition.PropertyName overlayProperty overlayProperties
-                                | VariableExpr _ -> overlayProperties
-                                | ComputedExpr _ -> overlayProperties)
-                            definitions
-                            Map.empty
-                    let overlayProperties =
-                        if requiresFacetNames
-                        then Map.add Property? FacetNames (Symbols ([], None)) overlayProperties
-                        else overlayProperties
-                    { OverlayName = overlayName
-                      OverlayIncludeNames = includeNames
-                      OverlayProperties = overlayProperties })
-                overlayDescriptors
-
-        // fin
-        overlays

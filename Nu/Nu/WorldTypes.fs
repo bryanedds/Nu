@@ -30,12 +30,9 @@ type [<StructuralEquality; NoComparison>] TileDescriptor =
     { Tile : TmxLayerTile
       I : int
       J : int
-      Gid : int
-      GidPosition : int
-      Gid2 : Vector2i
-      TileSetTileOpt : TmxTilesetTile option
       TilePositionI : Vector2i
-      TilePositionF : Vector2 }
+      TilePositionF : Vector2
+      TileSetTileOpt : TmxTilesetTile option }
 
 /// Describes a Tiled tile map.
 type [<StructuralEquality; NoComparison>] TileMapDescriptor =
@@ -45,8 +42,7 @@ type [<StructuralEquality; NoComparison>] TileMapDescriptor =
       TileMapSizeM : Vector2i
       TileMapSizeI : Vector2i
       TileMapSizeF : Vector2
-      TileSet : TmxTileset
-      TileSetSize : Vector2i }
+      TileMapPosition : Vector2 }
 
 /// The type of a screen transition. Incoming means a new screen is being shown, and Outgoing
 /// means an existing screen being hidden.
@@ -84,7 +80,7 @@ type [<StructuralEquality; NoComparison>] DissolveDescriptor =
 type [<StructuralEquality; NoComparison>] SplashDescriptor =
     { DissolveDescriptor : DissolveDescriptor
       IdlingTime : int64
-      SplashImage : Image AssetTag }
+      SplashImageOpt : Image AssetTag option }
 
 /// Describes the shape of a desired overlay.
 type [<StructuralEquality; StructuralComparison>] OverlayNameDescriptor =

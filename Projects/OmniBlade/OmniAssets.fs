@@ -23,6 +23,7 @@ module Assets =
     let ButtonShortDownImage = asset<Image> GuiPackageName "ButtonShortDown"
     let AffirmSound = asset<Sound> GuiPackageName "Affirm"
     let MistakeSound = asset<Sound> GuiPackageName "Mistake"
+    let WindSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> GuiPackageName "Wind" }
     let TitleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> GuiPackageName "Title" }
 
     // field assets
@@ -66,8 +67,11 @@ module Assets =
     // layer file paths
     let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
     let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
-    let ShopLayerFilePath = "Assets/Field/Shop.nulyr"
-    let ShopConfirmLayerFilePath = "Assets/Field/ShopConfirm.nulyr"
+    let Intro1LayerFilePath = "Assets/Gui/Intro1.nulyr"
+    let Intro2LayerFilePath = "Assets/Gui/Intro2.nulyr"
+    let Intro3LayerFilePath = "Assets/Gui/Intro3.nulyr"
+    let Intro4LayerFilePath = "Assets/Gui/Intro4.nulyr"
+    let Intro5LayerFilePath = "Assets/Gui/Intro5.nulyr"
 
     // data file paths
     let WeaponDataFilePath = "Assets/Field/WeaponData.csv"
@@ -80,5 +84,6 @@ module Assets =
     let ShopDataFilePath = "Assets/Field/ShopData.csv"
     let FieldDataFilePath = "Assets/Field/FieldData.csv"
     let BattleDataFilePath = "Assets/Field/BattleData.csv"
+    let EncounterDataFilePath = "Assets/Field/EncounterData.csv"
     let TechAnimationDataFilePath = "Assets/Field/TechAnimationData.csv"
     let CharacterAnimationDataFilePath = "Assets/Field/CharacterAnimationData.csv"

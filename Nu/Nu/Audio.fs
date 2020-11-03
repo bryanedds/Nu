@@ -43,6 +43,12 @@ type [<StructuralEquality; NoComparison>] AudioAsset =
 
 /// The audio player. Represents the audio subsystem of Nu generally.
 type AudioPlayer =
+    /// The master audio volume.
+    abstract MasterAudioVolume : single with get, set
+    /// The master sound volume.
+    abstract MasterSoundVolume : single with get, set
+    /// The master song volume.
+    abstract MasterSongVolume : single with get, set
     /// Pop all of the audio messages that have been enqueued.
     abstract PopMessages : unit -> AudioMessage List
     /// Clear all of the audio messages that have been enqueued.
@@ -65,6 +71,9 @@ type [<ReferenceEquality; NoComparison>] MockAudioPlayer =
         member audioPlayer.EnqueueMessage _ = ()
         member audioPlayer.CurrentSongOpt = None
         member audioPlayer.Play _ = ()
+        member audioPlayer.MasterAudioVolume with get () = 1.0f and set _ = ()
+        member audioPlayer.MasterSoundVolume with get () = 1.0f and set _ = ()
+        member audioPlayer.MasterSongVolume with get () = 1.0f and set _ = ()
 
     static member make () =
         { MockAudioPlayer = () }
@@ -75,6 +84,9 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         { AudioContext : unit // audio context, interestingly, is global. Good luck encapsulating that!
           AudioPackages : AudioAsset Packages
           mutable AudioMessages : AudioMessage List
+          mutable MasterAudioVolume : single
+          mutable MasterSoundVolume : single
+          mutable MasterSongVolume : single
           mutable CurrentSongOpt : SongDescriptor option }
 
     static member private haltSound () =
@@ -139,7 +151,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 Log.info ("Cannot play wav file as song '" + scstring song + "'.")
             | OggAsset oggAsset ->
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play
-                SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
+                SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                 SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 256) |> ignore // Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a fade is used instead... |> ignore
             audioPlayer.CurrentSongOpt <- Some playSongMessage
         | None ->
@@ -167,7 +179,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         | Some audioAsset ->
             match audioAsset with
             | WavAsset wavAsset ->
-                SDL_mixer.Mix_VolumeChunk (wavAsset, int (playSoundMessage.Volume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
+                SDL_mixer.Mix_VolumeChunk (wavAsset, int (playSoundMessage.Volume * audioPlayer.MasterSoundVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                 SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0) |> ignore
             | OggAsset _ -> Log.info ("Cannot play ogg file as sound '" + scstring sound + "'.")
         | None ->
@@ -207,11 +219,15 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
     static member private handleAudioMessages audioMessages audioPlayer =
         for audioMessage in audioMessages do
             SdlAudioPlayer.handleAudioMessage audioMessage audioPlayer
+
+    static member private tryUpdateCurrentSongVolume audioPlayer =
+        match audioPlayer.CurrentSongOpt with
+        | Some currentSong -> SDL_mixer.Mix_VolumeMusic (int (currentSong.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
+        | None -> ()
     
     static member private tryUpdateCurrentSong audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 0 then
             audioPlayer.CurrentSongOpt <- None
-        
     
     /// Make a NuAudioPlayer.
     static member make () =
@@ -221,10 +237,29 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
             { AudioContext = ()
               AudioPackages = dictPlus []
               AudioMessages = List ()
+              MasterAudioVolume = 1.0f
+              MasterSoundVolume = 1.0f
+              MasterSongVolume = 1.0f
               CurrentSongOpt = None }
         audioPlayer
     
     interface AudioPlayer with
+    
+        member audioPlayer.MasterAudioVolume
+            with get () = audioPlayer.MasterAudioVolume
+            and  set volume =
+                audioPlayer.MasterAudioVolume <- volume
+                SdlAudioPlayer.tryUpdateCurrentSongVolume audioPlayer
+
+        member audioPlayer.MasterSoundVolume
+            with get () = audioPlayer.MasterSoundVolume
+            and  set volume = audioPlayer.MasterSoundVolume <- volume
+
+        member audioPlayer.MasterSongVolume
+            with get () = audioPlayer.MasterSongVolume
+            and  set volume =
+                audioPlayer.MasterSongVolume <- volume
+                SdlAudioPlayer.tryUpdateCurrentSongVolume audioPlayer
 
         member audioPlayer.PopMessages () =
             let messages = audioPlayer.AudioMessages
