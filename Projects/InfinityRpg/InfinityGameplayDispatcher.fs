@@ -375,18 +375,32 @@ module GameplayDispatcher =
                         constant
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Pickup <== pickup])
 
-                     Content.entitiesIndexedBy gameplay
-                        (fun gameplay ->
-                            let generator _ (v : FieldSpace) =
-                                let index = v.GetCharacterIndex
-                                { Index = index
-                                  CharacterAnimationState = Gameplay.makeCharacterAnimationState index gameplay
-                                  CharacterAnimationSheet = match index with PlayerIndex -> Assets.PlayerImage | EnemyIndex _ -> Assets.GoopyImage
-                                  Position = Gameplay.determineCharacterPosition index gameplay }
-                            Map.toListBy generator gameplay.Chessboard.CharacterCoordinates)
-                        constant
-                        (fun character -> match character.Index with PlayerIndex -> 0 | EnemyIndex i -> inc i)
-                        (fun index character _ -> Content.entity<CharacterDispatcher> (if index = 0 then Simulants.Player.Name else "Enemy+" + scstring index) [Entity.Character <== character])])
+                     Content.entitiesIndexedByFst gameplay
+                        (fun gameplay -> (gameplay.Chessboard, gameplay.CharacterTurns))
+                        (fun (chessboard, characterTurns) _ ->
+                            Map.toList chessboard.PassableCoordinates |>
+                            List.map
+                                (fun (characterPosition, fieldSpace) ->
+                                    match fieldSpace.CharacterOpt with
+                                    | Some (characterIndex, characterState) ->
+                                        let index = match characterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
+                                        Some (index, (characterIndex, characterPosition, characterState, characterTurns))
+                                    | None -> None) |>
+                            List.definitize)
+                        (fun index binding _ ->
+                            let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
+                            Content.entity<CharacterDispatcher> name
+                                [Entity.Position <== binding --> fun (characterIndex, characterPosition, _, characterTurns) ->
+                                    match List.tryFind (fun x -> x.Actor = characterIndex) characterTurns with
+                                    | None -> vmtovf characterPosition
+                                    | Some turn -> Turn.calculatePosition turn
+                                 Entity.CharacterAnimationSheet <== binding --> fun (characterIndex, _, _, _) ->
+                                    match characterIndex with
+                                    | PlayerIndex -> Assets.PlayerImage
+                                    | EnemyIndex _ -> Assets.GoopyImage // TODO: pull this from data
+                                 Entity.CharacterAnimationState <== binding --> fun (characterIndex, _, characterState, characterTurns) ->
+                                    let animationState = Turn.turnsToCharacterAnimationState characterIndex characterState characterTurns
+                                    animationState])])
 
              // hud layer
              Content.layer Simulants.Hud.Name []

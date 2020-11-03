@@ -62,7 +62,7 @@ type [<NoComparison>] Move =
         | Travel (head :: _) -> Travel [head]
         | _ -> this
 
-type FieldSpace =
+type [<ReferenceEquality; NoComparison>] FieldSpace =
     { CharacterOpt : (CharacterIndex * CharacterState) Option
       PickupItemOpt : PickupType Option }
 
@@ -432,26 +432,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         match Gameplay.tryGetCharacterTurn index gameplay with
         | Some turn -> Turn.calculatePosition turn
         | None -> Gameplay.getCoordinates index gameplay |> vmtovf
-    
-    static member makeCharacterAnimationState index gameplay =
-        match Gameplay.tryGetCharacterTurn index gameplay with
-        | Some turn -> Turn.toCharacterAnimationState turn
-        | None ->
-            let characterState = Gameplay.getCharacterState index gameplay
-            let direction = characterState.FacingDirection
-            let characterAnimationState =
-                if characterState.IsAlive then CharacterAnimationFacing
-                else
-                    match List.tryFind (fun x -> x.ReactorOpt = Some index) gameplay.CharacterTurns with
-                    | Some attackerTurn ->
-                        match attackerTurn.TurnStatus with
-                        | TurnPending
-                        | TurnBeginning -> CharacterAnimationFacing
-                        | TurnTicking tickCount ->
-                            if tickCount < Constants.InfinityRpg.ReactionTick then CharacterAnimationFacing else CharacterAnimationSlain
-                        | TurnFinishing -> CharacterAnimationSlain
-                    | None -> CharacterAnimationSlain
-            CharacterAnimationState.make 0L characterAnimationState direction
 
     static member makePlayer gameplay =
         Gameplay.updateChessboardBy Chessboard.addCharacter (PlayerIndex, CharacterState.makePlayer) v2iZero gameplay

@@ -82,7 +82,6 @@
     <Compile Include="InfinityOccupationMap.fs" />
     <Compile Include="InfinityPickup.fs" />
     <Compile Include="InfinityField.fs" />
-    <Compile Include="InfinityCharacter.fs" />
     <Compile Include="InfinityGameplay.fs" />
     <Compile Include="InfinityPickupDispatcher.fs" />
     <Compile Include="InfinityFieldDispatcher.fs" />

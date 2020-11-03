@@ -73,13 +73,33 @@ type Turn =
     static member toCharacterAnimationState turn =
         let animationType =
             match turn.TurnType with
-            | WalkTurn _ -> CharacterAnimationFacing
             | AttackTurn ->
                 match turn.TurnStatus with
                 | TurnBeginning
                 | TurnTicking _ -> CharacterAnimationActing
                 | _ -> CharacterAnimationFacing
+            | WalkTurn _ -> CharacterAnimationFacing
         CharacterAnimationState.make turn.StartTick animationType turn.Direction
+
+    static member turnsToCharacterAnimationState characterIndex (characterState : CharacterState) characterTurns =
+        match List.tryFind (fun turn -> turn.Actor = characterIndex) characterTurns with
+        | None ->
+            let animationType =
+                if not characterState.IsAlive then
+                    match List.tryFind (fun (turn : Turn) -> turn.ReactorOpt = Some characterIndex) characterTurns with
+                    | Some attackerTurn ->
+                        match attackerTurn.TurnStatus with
+                        | TurnPending
+                        | TurnBeginning -> CharacterAnimationFacing
+                        | TurnTicking tickCount ->
+                            if tickCount < Constants.InfinityRpg.ReactionTick
+                            then CharacterAnimationFacing
+                            else CharacterAnimationSlain
+                        | TurnFinishing -> CharacterAnimationSlain
+                    | None -> CharacterAnimationSlain
+                else CharacterAnimationFacing
+            CharacterAnimationState.make 0L animationType characterState.FacingDirection
+        | Some turn -> Turn.toCharacterAnimationState turn
     
     static member updateTurnStatus updater turn =
         { turn with TurnStatus = updater turn.TurnStatus }
@@ -106,4 +126,4 @@ type Turn =
           ReactorOpt = Some targetIndex
           OriginM = originM
           Direction = direction
-          StartTick = 0L } 
+          StartTick = 0L }
