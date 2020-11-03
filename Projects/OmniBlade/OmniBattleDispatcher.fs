@@ -239,7 +239,8 @@ module BattleDispatcher =
         and tickNoNextCommand time (battle : Battle) =
             let (allySignalsRev, battle) =
                 List.fold (fun (signals, battle) (ally : Character) ->
-                    if ally.ActionTime = Constants.Battle.ActionTime then
+                    if  ally.ActionTime >= Constants.Battle.ActionTime &&
+                        ally.InputState = NoInput then
                         let battle =
                             Battle.updateCharacter
                                 (fun character ->
@@ -255,7 +256,8 @@ module BattleDispatcher =
                     (Battle.getAllies battle)
             let (enemySignalsRev, battle) =
                 List.fold (fun (signals, battle) (enemy : Character) ->
-                    if enemy.ActionTime = Constants.Battle.ActionTime then
+                    if  enemy.ActionTime >= Constants.Battle.ActionTime &&
+                        not (Battle.characterAppendedActionCommand enemy.CharacterIndex battle) then
                         let enemyIndex = enemy.CharacterIndex
                         match enemy.AutoBattleOpt with
                         | Some autoBattle ->
@@ -271,9 +273,13 @@ module BattleDispatcher =
                     (Battle.getEnemies battle)
             let battle =
                 Battle.updateCharacters (fun character ->
+                    let actionTimeDelta =
+                        if character.IsAlly
+                        then Constants.Battle.AllyActionTimeDelta
+                        else Constants.Battle.EnemyActionTimeDelta
                     let character =
                         if character.IsHealthy
-                        then Character.updateActionTime ((+) Constants.Battle.ActionTimeInc) character
+                        then Character.updateActionTime ((+) actionTimeDelta) character
                         else character
                     let character =
                         if Character.isReadyForAutoBattle character then
