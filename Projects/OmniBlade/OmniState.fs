@@ -81,6 +81,9 @@ type [<ReferenceEquality; NoComparison>] Inventory =
     static member updateGold updater (inventory : Inventory) =
         { inventory with Gold = updater inventory.Gold }
 
+    static member initial =
+        { Items = Map.empty; Gold = 0 }
+
 type [<ReferenceEquality; NoComparison>] Legionnaire =
     { LegionIndex : int // key
       PartyIndexOpt : int option
@@ -121,17 +124,17 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
             | Some characterData ->
                 match itemType with
                 | Consumable consumableType ->
-                    match consumableType with
-                    | GreenHerb ->
-                        let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
-                        let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
-                        let legionnaire = { legionnaire with HitPoints = min hpm (legionnaire.HitPoints + 50) } // TODO: pull from data!
-                        (true, None, legionnaire)
-                    | RedHerb ->
-                        let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
-                        let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
-                        let legionnaire = { legionnaire with HitPoints = min hpm (legionnaire.HitPoints + 250) } // TODO: pull from data!
-                        (true, None, legionnaire)
+                    match Data.Value.Consumables.TryGetValue consumableType with
+                    | (true, consumableData) ->
+                        match consumableType with
+                        | GreenHerb | RedHerb | GoldHerb ->
+                            let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
+                            let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
+                            let legionnaire = { legionnaire with HitPoints = min hpm (legionnaire.HitPoints + int consumableData.Scalar) }
+                            (true, None, legionnaire)
+                        | GreenIncense ->
+                            (false, None, legionnaire)
+                    | (false, _) -> (false, None, legionnaire)
                 | Equipment equipmentType ->
                     match equipmentType with
                     | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) legionnaire.WeaponOpt, { legionnaire with WeaponOpt = Some weaponType })
@@ -148,8 +151,8 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
         let character = Map.find characterType Data.Value.Characters
         let expPoints = Algorithms.levelToExpPoints character.LevelBase
         let archetypeType = character.ArchetypeType
-        let weaponOpt = None
-        let armorOpt = None
+        let weaponOpt = Some "OakSword"
+        let armorOpt = Some "LeatherMail"
         { LegionIndex = index
           PartyIndexOpt = Some index
           CharacterType = characterType
@@ -166,7 +169,7 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
         let character = Map.find characterType Data.Value.Characters
         let expPoints = Algorithms.levelToExpPoints character.LevelBase
         let archetypeType = character.ArchetypeType
-        let weaponOpt = None
+        let weaponOpt = Some "StoneSword"
         let armorOpt = None
         { LegionIndex = index
           PartyIndexOpt = Some index
