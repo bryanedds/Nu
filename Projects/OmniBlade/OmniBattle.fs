@@ -191,7 +191,7 @@ module Battle =
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.fromVector2 -bounds.Bottom
                         let character = Character.make bounds characterIndex characterState animationSheet direction
-                        Character.updateActionTime (constant (inc index * 333)) character
+                        Character.updateActionTime (constant (inc index * 666)) character
                     | None -> failwith ("Could not find CharacterData for '" + scstring leg.CharacterType + "'."))
                 legionnaires
         let battle = makeFromAllies allies inventory prizePool battleData time
