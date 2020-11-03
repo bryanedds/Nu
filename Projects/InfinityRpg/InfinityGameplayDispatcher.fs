@@ -365,9 +365,11 @@ module GameplayDispatcher =
             [Content.layerIfScreenSelected screen (fun _ _ ->
                 Content.layer Simulants.Scene.Name []
 
+                    // field
                     [Content.entity<FieldDispatcher> Simulants.Field.Name
                        [Entity.Field <== gameplay --> fun gameplay -> gameplay.Field]
 
+                     // pickups
                      Content.entities gameplay
                         (fun gameplay ->
                             let generator k _ = Pickup.makeHealth k
@@ -375,32 +377,33 @@ module GameplayDispatcher =
                         constant
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Pickup <== pickup])
 
+                     // characters
                      Content.entitiesIndexedByFst gameplay
                         (fun gameplay -> (gameplay.Chessboard, gameplay.CharacterTurns))
                         (fun (chessboard, characterTurns) _ ->
-                            Map.toList chessboard.PassableCoordinates |>
-                            List.map
-                                (fun (characterPosition, fieldSpace) ->
-                                    match fieldSpace.CharacterOpt with
-                                    | Some (characterIndex, characterState) ->
-                                        let index = match characterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
-                                        Some (index, (characterIndex, characterPosition, characterState, characterTurns))
-                                    | None -> None) |>
-                            List.definitize)
-                        (fun index binding _ ->
+                            let characterDataOpts =
+                                List.map
+                                    (fun (characterPosition, fieldSpace) ->
+                                        match fieldSpace.CharacterOpt with
+                                        | Some (characterIndex, characterState) ->
+                                            let index = match characterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
+                                            Some (index, (characterIndex, characterPosition, characterState, characterTurns))
+                                        | None -> None)
+                                    (Map.toList chessboard.PassableCoordinates)
+                            List.definitize characterDataOpts)
+                        (fun index characterData _ ->
                             let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.Position <== binding --> fun (characterIndex, characterPosition, _, characterTurns) ->
+                                [Entity.Position <== characterData --> fun (characterIndex, characterPosition, _, characterTurns) ->
                                     match List.tryFind (fun x -> x.Actor = characterIndex) characterTurns with
-                                    | None -> vmtovf characterPosition
                                     | Some turn -> Turn.calculatePosition turn
-                                 Entity.CharacterAnimationSheet <== binding --> fun (characterIndex, _, _, _) ->
+                                    | None -> vmtovf characterPosition
+                                 Entity.CharacterAnimationSheet <== characterData --> fun (characterIndex, _, _, _) ->
                                     match characterIndex with
                                     | PlayerIndex -> Assets.PlayerImage
                                     | EnemyIndex _ -> Assets.GoopyImage // TODO: pull this from data
-                                 Entity.CharacterAnimationState <== binding --> fun (characterIndex, _, characterState, characterTurns) ->
-                                    let animationState = Turn.turnsToCharacterAnimationState characterIndex characterState characterTurns
-                                    animationState])])
+                                 Entity.CharacterAnimationState <== characterData --> fun (characterIndex, _, characterState, characterTurns) ->
+                                    Turn.turnsToCharacterAnimationState characterIndex characterState characterTurns])])
 
              // hud layer
              Content.layer Simulants.Hud.Name []
