@@ -1,4 +1,4 @@
 Type,Subtype,HitPointsBase,SpecialPointsBase,Cost,Description
-LeatherMail,Mail,12,4,10,
-LeatherVest,Vest,11,6,20,
-LeatherRobe,Robe,10,8,5,
+LeatherMail,Mail,4,1,10,
+LeatherVest,Vest,3,2,20,
+LeatherRobe,Robe,2,3,5,

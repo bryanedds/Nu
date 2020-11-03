@@ -68,7 +68,6 @@ type ConsumableType =
     | GreenHerb
     | RedHerb
     | GoldHerb
-    | GreenIncense
 
 type KeyItemType =
     | BrassKey
