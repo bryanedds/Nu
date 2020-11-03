@@ -132,8 +132,6 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
                             let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
                             let legionnaire = { legionnaire with HitPoints = min hpm (legionnaire.HitPoints + int consumableData.Scalar) }
                             (true, None, legionnaire)
-                        | GreenIncense ->
-                            (false, None, legionnaire)
                     | (false, _) -> (false, None, legionnaire)
                 | Equipment equipmentType ->
                     match equipmentType with
