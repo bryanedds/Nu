@@ -168,6 +168,7 @@ type ControlType =
 type [<ReferenceEquality; NoComparison>] CharacterState =
     { CharacterType : CharacterType
       ControlType : ControlType
+      FacingDirection : Direction
       ExpPoints : int
       HitPoints : int
       SpecialPoints : int
@@ -208,9 +209,22 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         elif this.ExpPoints < 10000 then 19
         else 20
 
+    member this.IsAlive =
+        this.HitPoints > 0
+    
+    static member updateControlType updater characterState =
+        { characterState with ControlType = updater characterState.ControlType }
+    
+    static member updateFacingDirection updater characterState =
+        { characterState with FacingDirection = updater characterState.FacingDirection }
+    
+    static member updateHitPoints updater characterState =
+        { characterState with HitPoints = updater characterState.HitPoints }
+
     static member empty =
         { CharacterType = Ally Avatar
           ControlType = PlayerControlled
+          FacingDirection = Upward
           ExpPoints = 0
           HitPoints = 10 // note this is an arbitrary number as hp max is calculated
           SpecialPoints = 1 // sp max is calculated
@@ -222,3 +236,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
           WeaponOpt = Option<WeaponType>.None
           ArmorOpt = Option<ArmorType>.None
           Accessories = [] } // level is calculated from base experience + added experience
+
+    static member makePlayer = { CharacterState.empty with HitPoints = 30; ControlType = PlayerControlled }
+
+    static member makeEnemy = { CharacterState.empty with HitPoints = 10; ControlType = Chaos }

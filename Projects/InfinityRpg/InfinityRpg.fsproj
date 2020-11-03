@@ -76,13 +76,12 @@
     <Compile Include="InfinityMath.fs" />
     <Compile Include="InfinityCharacterState.fs" />
     <Compile Include="InfinityCharacterAnimationState.fs" />
-    <Compile Include="InfinityCharacterActivityState.fs" />
+    <Compile Include="InfinityTurn.fs" />
     <Compile Include="InfinityMetaMap.fs" />
     <Compile Include="InfinityFieldMap.fs" />
     <Compile Include="InfinityOccupationMap.fs" />
     <Compile Include="InfinityPickup.fs" />
     <Compile Include="InfinityField.fs" />
-    <Compile Include="InfinityCharacter.fs" />
     <Compile Include="InfinityGameplay.fs" />
     <Compile Include="InfinityPickupDispatcher.fs" />
     <Compile Include="InfinityFieldDispatcher.fs" />
