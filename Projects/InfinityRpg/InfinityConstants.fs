@@ -29,7 +29,7 @@ module Constants =
         let SplashData =
             { DissolveDescriptor = DissolveDescriptor
               IdlingTime = 60L
-              SplashImage = asset<Image> Assets.GuiPackageName "Nu" }
+              SplashImageOpt = Some (asset<Image> Assets.GuiPackageName "Nu") }
 
         // general data
         let AttackName = "Attack"

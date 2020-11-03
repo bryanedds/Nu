@@ -203,12 +203,12 @@ module WorldModuleScreen =
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.Register (screen, world)
             let eventTrace = EventTrace.record "World" "registerScreen" EventTrace.empty
-            World.publish () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen true world
+            World.publishPlus () (rtoa<unit> [|"Register"; "Event"; screen.Name|]) eventTrace screen true world
 
         static member internal unregisterScreen screen world =
             let dispatcher = World.getScreenDispatcher screen world
             let eventTrace = EventTrace.record "World" "unregisteringScreen" EventTrace.empty
-            let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"; screen.Name|]) eventTrace screen true world
+            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"; screen.Name|]) eventTrace screen true world
             dispatcher.Unregister (screen, world)
 
         static member internal addScreen mayReplace screenState screen world =

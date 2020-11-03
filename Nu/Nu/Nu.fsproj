@@ -75,9 +75,9 @@
     <Compile Include="Ecs.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="SpatialTree.fs" />
+    <Compile Include="Reflection.fs" />
     <Compile Include="Overlayer.fs" />
     <Compile Include="OverlayRouter.fs" />
-    <Compile Include="Reflection.fs" />
     <Compile Include="AssetGraph.fs" />
     <Compile Include="Physics.fs" />
     <Compile Include="Render.fs" />
@@ -110,6 +110,7 @@
     <Compile Include="WorldAudio.fs" />
     <Compile Include="WorldEffects.fs" />
     <Compile Include="WorldParticles.fs" />
+    <Compile Include="WorldTmxMap.fs" />
     <Compile Include="WorldDispatchers.fs" />
     <Compile Include="WorldContent.fs" />
     <Compile Include="WorldScripting.fs" />
@@ -195,8 +196,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="FarseerPhysics">
-      <HintPath>..\..\packages\FarseerPhysics.3.5.0\lib\NET40\FarseerPhysics.dll</HintPath>
+    <Reference Include="Aether.Physics2D">
+      <HintPath>..\..\packages\Aether.Physics2D.1.5.0\lib\net40\Aether.Physics2D.dll</HintPath>
+    </Reference>
+    <Reference Include="Csv">
+      <HintPath>..\..\packages\Csv.1.0.58\lib\net40\Csv.dll</HintPath>
     </Reference>
     <Reference Include="FParsec">
       <HintPath>..\..\packages\FParsec.1.0.3\lib\net40-client\FParsec.dll</HintPath>
@@ -220,17 +224,18 @@
       <HintPath>..\..\packages\FSharpx.Core.1.8.32\lib\40\FSharpx.Core.dll</HintPath>
     </Reference>
     <Reference Include="Magick.NET-Q8-x64">
-      <HintPath>..\..\packages\Magick.NET-Q8-x64.7.16.1\lib\net40\Magick.NET-Q8-x64.dll</HintPath>
+      <HintPath>..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\net40\Magick.NET-Q8-x64.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="mscorlib" />
     <Reference Include="Nito.Collections.Deque">
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.6.0.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.6.1.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
-      <HintPath>..\..\packages\Prime.Scripting.6.0.0\lib\net472\Prime.Scripting.exe</HintPath>
+      <HintPath>..\..\packages\Prime.Scripting.6.1.0\lib\net472\Prime.Scripting.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\..\packages\SDL2-CS.dll.2.0.0.0\lib\net20\SDL2-CS.dll</HintPath>
@@ -238,6 +243,7 @@
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq">
@@ -273,14 +279,14 @@
     <Error Condition="!Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.core.2.4.0\build\xunit.core.props'))" />
     <Error Condition="!Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.core.2.4.0\build\xunit.core.targets'))" />
     <Error Condition="!Exists('..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\xunit.runner.visualstudio.2.4.0\build\net20\xunit.runner.visualstudio.props'))" />
-    <Error Condition="!Exists('..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets'))" />
+    <Error Condition="!Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets'))" />
   </Target>
   <Import Project="..\..\packages\xunit.core.2.4.0\build\xunit.core.targets" Condition="Exists('..\..\packages\xunit.core.2.4.0\build\xunit.core.targets')" />
-  <Import Project="..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets" Condition="Exists('..\..\packages\Magick.NET-Q8-x64.7.16.1\build\net40\Magick.NET-Q8-x64.targets')" />
   <Target Name="BeforeBuild">
-    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.16.1\runtimes\linux-x64\native\Magick.Native-Q8-x64.dll.so" DestinationFiles="$(TargetDir)libMagick.Native-Q8-x64.dll.so" ContinueOnError="false" />
+    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\runtimes\linux-x64\native\Magick.NET-Q8-x64.Native.dll.so" DestinationFiles="$(TargetDir)libMagick.NET-Q8-x64.Native.dll.so" ContinueOnError="false" />
   </Target>
   <Target Name="AfterBuild">
-    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.16.1\lib\netstandard20\Magick.NET-Q8-x64.dll" DestinationFiles="$(TargetDir)Magick.NET-Q8-x64.dll" ContinueOnError="false" />
+    <Copy SourceFiles="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\netstandard20\Magick.NET-Q8-x64.dll" DestinationFiles="$(TargetDir)Magick.NET-Q8-x64.dll" ContinueOnError="false" />
   </Target>
+  <Import Project="..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets" Condition="Exists('..\..\packages\Magick.NET-Q8-x64.7.5.0.1\build\net40\Magick.NET-Q8-x64.targets')" />
 </Project>

@@ -39,7 +39,8 @@ type NelmishDispatcher () =
                      Entity.ClickEvent ==> msg Increment]
                  Content.text "Counter"
                     [Entity.Text <== model --> scstring
-                     Entity.Position == v2 -128.0f -32.0f]
+                     Entity.Position == v2 -128.0f -32.0f
+                     Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
                  Content.entityIf model isNonZero $ fun _ _ ->
                     Content.button "Reset"
                         [Entity.Text == "Reset"

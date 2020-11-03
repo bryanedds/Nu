@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="64" tileheight="64" infinite="0" nextlayerid="5" nextobjectid="30">
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="16" tilewidth="64" tileheight="64" infinite="0" nextlayerid="5" nextobjectid="31">
  <tileset firstgid="1" source="Colloseum.tsx"/>
  <layer id="2" name="Floor" width="32" height="16">
   <properties>
@@ -26,14 +26,14 @@
     <property name="I" value="[Npc VillageMan Downward [[&quot;Welcome to Debug Room!^Aye aye aye!&quot;]]]"/>
    </properties>
   </object>
-  <object id="25" gid="488" x="960" y="1024" width="128" height="64">
+  <object id="25" gid="488" x="960" y="1058" width="128" height="64">
    <properties>
-    <property name="I" value="[Portal 0 DebugRoom2 [1024 768] Downward]"/>
+    <property name="I" value="[Portal South Upward DebugRoom2 North]"/>
    </properties>
   </object>
   <object id="27" gid="488" x="1728" y="320" width="128" height="192">
    <properties>
-    <property name="I" value="[Door WoodenDoor [SavedPrincess]]"/>
+    <property name="I" value="[Door WoodenDoor]"/>
    </properties>
   </object>
   <object id="28" gid="813" x="640" y="640" width="64" height="64">
@@ -44,6 +44,11 @@
   <object id="29" gid="813" x="448" y="640" width="64" height="64">
    <properties>
     <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 7ced2215-353f-4653-86f4-05200b99f641]"/>
+   </properties>
+  </object>
+  <object id="30" gid="488" x="1728" y="288" width="128" height="64">
+   <properties>
+    <property name="I" value="[Portal North Downward TombInner [IX 0]]"/>
    </properties>
   </object>
  </objectgroup>

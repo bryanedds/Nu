@@ -2,7 +2,6 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace OmniBlade
-open System
 open System.Numerics
 open Prime
 open Nu
@@ -90,12 +89,21 @@ module Avatar =
           IntersectedBodyShapes_ = [] }
 
     let empty =
-        let bounds = v4Bounds (v2Dup 128.0f) Constants.Gameplay.CharacterSize
+        let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           AnimationState_ = CharacterAnimationState.empty
           CollidedBodyShapes_ = []
           SeparatedBodyShapes_ = []
           IntersectedBodyShapes_ = [] }
+
+    let initial =
+        let position = v2 2752.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
+        let bounds = v4Bounds position Constants.Gameplay.CharacterSize
+        let animationState = CharacterAnimationState.initial
+        { empty with
+            BoundsOriginal_ = bounds
+            Bounds_ = bounds
+            AnimationState_ = animationState }
 
 type Avatar = Avatar.Avatar

@@ -16,20 +16,20 @@
    [[Depth -4]
     [Parallax 0.1]
     [Position [-480 -304]]
-    [TileMapAsset
+    [TileMap
      [Gameplay BackgroundB]]]]
   [TileMapDispatcher
    [[Depth -8]
     [Parallax 0.1]
     [Position [-480 -304]]
-    [TileMapAsset
+    [TileMap
      [Gameplay BackgroundA]]]]
   [EnemyDispatcher
    [[Depth 1]
     [Position [-160 -15.68001]]]]
   [TileMapDispatcher
    [[Position [-480 -304]]
-    [TileMapAsset
+    [TileMap
      [Gameplay Section2TileMap]]]]
   [EnemyDispatcher
    [[Depth 4]

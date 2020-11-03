@@ -58,7 +58,6 @@ module BattleDispatcher =
         | PlaySound of int64 * single * AssetTag<Sound>
 
     type Screen with
-
         member this.GetBattle = this.GetModel<Battle>
         member this.SetBattle = this.SetModel<Battle>
         member this.Battle = this.Model<Battle> ()
@@ -129,7 +128,7 @@ module BattleDispatcher =
             | Some targetIndex ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some _ ->
-                    match Map.tryFind techType data.Value.TechAnimations with
+                    match Map.tryFind techType Data.Value.TechAnimations with
                     | Some techData ->
                         let (msgs, battle) =
                             if timeLocal = techData.TechStart then ([TechCharacter1 (sourceIndex, targetIndex, techType)], battle)
@@ -530,7 +529,7 @@ module BattleDispatcher =
 
             | TechCharacter3 (sourceIndex, targetIndex, techType) ->
                 let time = World.getTickTime world
-                match Map.tryFind techType data.Value.Techs with
+                match Map.tryFind techType Data.Value.Techs with
                 | Some techData ->
                     let source = Battle.getCharacter sourceIndex battle
                     let target = Battle.getCharacter targetIndex battle
@@ -550,7 +549,7 @@ module BattleDispatcher =
                 | None -> just battle
 
             | TechCharacter4 (sourceIndex, targetIndex, techType) ->
-                match Map.tryFind techType data.Value.Techs with
+                match Map.tryFind techType Data.Value.Techs with
                 | Some techData ->
                     let source = Battle.getCharacter sourceIndex battle
                     let target = Battle.getCharacter targetIndex battle
@@ -577,7 +576,7 @@ module BattleDispatcher =
                 | Some hop -> withCmd (DisplayHop hop) battle
 
             | TechCharacter6 (sourceIndex, targetIndex, techType) ->
-                match Map.tryFind techType data.Value.Techs with
+                match Map.tryFind techType Data.Value.Techs with
                 | Some techData ->
                     let source = Battle.getCharacter sourceIndex battle
                     let target = Battle.getCharacter targetIndex battle
@@ -808,7 +807,7 @@ module BattleDispatcher =
                                 List.map (fun tech ->
                                     let techTag = getTag tech
                                     let techUsable =
-                                        match Map.tryFind tech data.Value.Techs with
+                                        match Map.tryFind tech Data.Value.Techs with
                                         | Some techData -> techData.TechCost <= ally.TechPoints
                                         | None -> false
                                     let techName = scstring tech

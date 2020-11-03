@@ -202,6 +202,9 @@ module Content =
     /// Describe a tile map with the given initializers.
     let tileMap entityName initializers = entity<TileMapDispatcher> entityName initializers
 
+    /// Describe a tmx map with the given initializers.
+    let tmxMap entityName initializers = entity<TmxMapDispatcher> entityName initializers
+
 [<AutoOpen>]
 module ContentOperators =
 

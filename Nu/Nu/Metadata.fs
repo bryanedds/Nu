@@ -7,9 +7,11 @@ open System.Collections.Generic
 open System.Drawing
 open System.Drawing.Imaging
 open System.IO
+open System.Runtime.CompilerServices
 open TiledSharp
 open Prime
 open Nu
+open TiledSharp
 
 /// Thrown when a tile set property is not found.
 exception TileSetPropertyNotFoundException of string
@@ -18,11 +20,30 @@ exception TileSetPropertyNotFoundException of string
 /// full asset loaded into memory.
 type [<StructuralEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of Vector2i * PixelFormat
-    | TileMapMetadata of string * Image AssetTag list * TmxMap
+    | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
     | SoundMetadata
     | SongMetadata
     | OtherMetadata of obj
     | InvalidMetadata of string
+
+[<AutoOpen>]
+module TmxExtensions =
+
+    type TmxTileset with
+        member this.ImageAsset =
+            try scvalue<Image AssetTag> this.Properties.["Image"]
+            with :? KeyNotFoundException ->
+                let errorMessage =
+                    "Tileset '" + this.Name + "' missing Image property.\n" +
+                    "You must add a Custom Property to the tile set called 'Image' and give it an asset value like '[PackageName AssetName]'.\n" +
+                    "This will specify where the engine can find the tile set's associated image asset."
+                raise (TileSetPropertyNotFoundException errorMessage)
+
+    type TmxMap with
+        member this.ImageAssets =
+            this.Tilesets |>
+            Array.ofSeq |>
+            Array.map (fun (tileSet : TmxTileset) -> (tileSet, tileSet.ImageAsset))
 
 [<RequireQualifiedAccess>]
 module Metadata =
@@ -31,16 +52,6 @@ module Metadata =
     type [<NoEquality; NoComparison>] Metadata =
         private
             { MetadataMap : UMap<string, UMap<string, AssetMetadata>> }
-
-    let private getTileSetProperties (tileSet : TmxTileset) =
-        let properties = tileSet.Properties
-        try scvalue<Image AssetTag> properties.["Image"] 
-        with :? KeyNotFoundException ->
-            let errorMessage =
-                "TileSet '" + tileSet.Name + "' missing Image property.\n" +
-                "You must add a Custom Property to the tile set called 'Image' and give it an asset value like '[PackageName AssetName]'.\n" +
-                "This will specify where the engine can find the tile set's associated image asset."
-            raise (TileSetPropertyNotFoundException errorMessage)
 
     let private generateTextureMetadata asset =
         if not (File.Exists asset.FilePath) then
@@ -58,9 +69,8 @@ module Metadata =
 
     let private generateTileMapMetadata asset =
         try let tmxMap = TmxMap asset.FilePath
-            let tileSets = List.ofSeq tmxMap.Tilesets
-            let tileSetImages = List.map getTileSetProperties tileSets
-            TileMapMetadata (asset.FilePath, tileSetImages, tmxMap)
+            let imageAssets = tmxMap.ImageAssets
+            TileMapMetadata (asset.FilePath, imageAssets, tmxMap)
         with _ as exn ->
             let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to: " + scstring exn
             Log.trace errorMessage
@@ -135,7 +145,7 @@ module Metadata =
     /// Try to get the tile map metadata of the given asset.
     let tryGetTileMapMetadata (assetTag : TileMap AssetTag) metadata =
         match tryGetMetadata (AssetTag.generalize assetTag) metadata with
-        | Some (TileMapMetadata (filePath, images, tmxMap)) -> Some (filePath, images, tmxMap)
+        | Some (TileMapMetadata (filePath, imageAssets, tmxMap)) -> Some (filePath, imageAssets, tmxMap)
         | None -> None
         | _ -> None
 

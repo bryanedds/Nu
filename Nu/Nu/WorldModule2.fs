@@ -152,17 +152,27 @@ module WorldModule2 =
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         [<FunctionBinding>]
-        static member selectScreen screen world =
+        static member selectScreenOpt screenOpt world =
             let world =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     let eventTrace = EventTrace.record4 "World" "selectScreen" "Deselect" EventTrace.empty
-                    World.publish () (Events.Deselect --> selectedScreen) eventTrace selectedScreen false world
+                    World.publish () (Events.Deselect --> selectedScreen) eventTrace selectedScreen world
                 | None -> world
-            let world = World.setScreenTransitionStatePlus IncomingState screen world
-            let world = World.setSelectedScreen screen world
-            let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
-            World.publish () (Events.Select --> screen) eventTrace screen false world
+            let world =
+                match screenOpt with
+                | Some screen ->
+                    let world = World.setScreenTransitionStatePlus IncomingState screen world
+                    let world = World.setSelectedScreen screen world
+                    let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
+                    World.publish () (Events.Select --> screen) eventTrace screen world
+                | None -> World.setSelectedScreenOpt None world
+            world
+
+        /// Select the given screen without transitioning, even if another transition is taking place.
+        [<FunctionBinding>]
+        static member selectScreen screen world =
+            World.selectScreenOpt (Some screen) world
 
         /// Try to transition to the given screen if no other transition is in progress.
         [<FunctionBinding>]
@@ -186,7 +196,9 @@ module WorldModule2 =
                     let world = World.subscribeWith<unit, Screen> subscriptionId subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
                     (true, world)
                 else (false, world)
-            | None -> (false, world)
+            | None ->
+                let world = World.selectScreen destination world
+                (true, world)
 
         /// Transition to the given screen (failing with an exception if another transition is in
         /// progress).
@@ -195,21 +207,13 @@ module WorldModule2 =
             World.tryTransitionScreen destination world |> snd
             
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
-        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destination (_ : Event<'a, 's>) world =
-            let world = World.selectScreen destination world
-            (handling, world)
+        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destinationOpt (_ : Event<'a, 's>) world =
+            (handling, World.selectScreenOpt destinationOpt world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen.
-        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination evt world =
-            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination evt world
-
-        /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the given destination screen, as well as with additional
-        /// handling provided via the 'by' procedure.
-        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destination evt (world : World) =
-            let (handling, world) = by evt world
-            World.handleAsScreenTransitionFromSplash4<'a, 's> handling destination evt world
+        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destinationOpt evt world =
+            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destinationOpt evt world
 
         static member private handleAsScreenTransitionPlus<'a, 's when 's :> Simulant>
             handling destination (_ : Event<'a, 's>) world =
@@ -248,7 +252,7 @@ module WorldModule2 =
                                     else world
                                 | None -> world
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
-                            World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen false world
+                            World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
                         else world
                     match World.getLiveness world with
                     | Running ->
@@ -256,7 +260,7 @@ module WorldModule2 =
                         if finished then
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingFinish" EventTrace.empty
                             let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
-                            World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen false world
+                            World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
                         else world
                     | Exiting -> world
                 | Exiting -> world
@@ -271,10 +275,13 @@ module WorldModule2 =
                                     if (selectedScreen.GetIncoming world).SongOpt <> (destination.GetIncoming world).SongOpt
                                     then World.fadeOutSong playSong.FadeOutMs world
                                     else world
-                                | None -> world
+                                | None ->
+                                    match World.getCurrentSongOpt world with
+                                    | Some currentSong -> World.fadeOutSong currentSong.FadeOutMs world
+                                    | None -> world
                             | None -> world
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
-                        World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen false world
+                        World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
                     else world
                 match World.getLiveness world with
                 | Running ->
@@ -284,7 +291,7 @@ module WorldModule2 =
                         match World.getLiveness world with
                         | Running ->
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingFinish" EventTrace.empty
-                            World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen false world
+                            World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
                         | Exiting -> world
                     else world
                 | Exiting -> world
@@ -309,28 +316,38 @@ module WorldModule2 =
                     Log.trace "Program Error: Could not handle splash screen update due to no selected screen."
                     (Resolve, World.exit world)
 
-        static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) evt world =
+        static member private handleSplashScreenIdle idlingTime destinationOpt (splashScreen : Screen) evt world =
+            let world = World.setScreenTransitionDestinationOpt destinationOpt world
             let world = World.subscribeWith SplashScreenUpdateId (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
             (Cascade, world)
 
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
-        static member setScreenSplash splashDataOpt destination (screen : Screen) world =
+        static member setScreenSplash splashDataOpt destinationOpt (screen : Screen) world =
             let splashLayer = screen / "SplashLayer"
-            let splashLabel = splashLayer / "SplashLabel"
+            let splashSprite = splashLayer / "SplashSprite"
             let world = World.destroyLayerImmediate splashLayer world
             match splashDataOpt with
             | Some splashDescriptor ->
                 let cameraEyeSize = World.getEyeSize world
                 let world = World.createLayer<LayerDispatcher> (Some splashLayer.Name) screen world |> snd
                 let world = splashLayer.SetPersistent false world
-                let world = World.createEntity<LabelDispatcher> (Some splashLabel.Name) DefaultOverlay splashLayer world |> snd
-                let world = splashLabel.SetPersistent false world
-                let world = splashLabel.SetSize cameraEyeSize world
-                let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
-                let world = splashLabel.SetLabelImage splashDescriptor.SplashImage world
-                let (unsub, world) = World.monitorCompressed Gen.id None None None (Left (World.handleSplashScreenIdle splashDescriptor.IdlingTime screen)) (Events.IncomingFinish --> screen) screen world
-                let (unsub2, world) = World.monitorCompressed Gen.id None None None (Left (World.handleAsScreenTransitionFromSplash destination)) (Events.OutgoingFinish --> screen) screen world
+                let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashLayer world |> snd
+                let world = splashSprite.SetPersistent false world
+                let world = splashSprite.SetSize cameraEyeSize world
+                let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
+                let world =
+                    match splashDescriptor.SplashImageOpt with
+                    | Some splashImage ->
+                        let world = splashSprite.SetStaticImage splashImage world
+                        let world = splashSprite.SetVisible true world
+                        world
+                    | None ->
+                        let world = splashSprite.SetStaticImage Assets.DefaultImage10 world
+                        let world = splashSprite.SetVisible false world
+                        world
+                let (unsub, world) = World.monitorCompressed Gen.id None None None (Left (World.handleSplashScreenIdle splashDescriptor.IdlingTime destinationOpt screen)) (Events.IncomingFinish --> screen) screen world
+                let (unsub2, world) = World.monitorCompressed Gen.id None None None (Left (World.handleAsScreenTransitionFromSplash destinationOpt)) (Events.OutgoingFinish --> screen) screen world
                 let world = World.monitor (fun _ -> unsub >> unsub2 >> pair Cascade) (Events.Unregistering --> splashLayer) screen world
                 world
             | None -> world
@@ -404,7 +421,7 @@ module WorldModule2 =
             let entityDispatchers = Map.toValueListBy box entityDispatchers
             let sources = facets @ entityDispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
-            Reflection.makeIntrinsicOverlays requiresFacetNames sourceTypes
+            Overlay.makeIntrinsicOverlays requiresFacetNames sourceTypes
 
         /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlays inputDirectory outputDirectory world =
@@ -464,7 +481,7 @@ module WorldModule2 =
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
                     World.reloadSymbols world
-                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Simulants.Game false world
+                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Simulants.Game world
                     (Right assetGraph, world)
         
                 // propagate errors
@@ -608,7 +625,7 @@ module WorldModule2 =
                               Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                        World.publish collisionData collisionAddress eventTrace Simulants.Game false world
+                        World.publish collisionData collisionAddress eventTrace Simulants.Game world
                     else world
                 | BodySeparationMessage bodySeparationMessage ->
                     let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
@@ -618,7 +635,7 @@ module WorldModule2 =
                             { Separator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
                               Separatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
                         let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                        World.publish separationData separationAddress eventTrace Simulants.Game false world
+                        World.publish separationData separationAddress eventTrace Simulants.Game world
                     else world
                 | BodyTransformMessage bodyTransformMessage ->
                     let bodySource = bodyTransformMessage.BodySource
@@ -626,6 +643,8 @@ module WorldModule2 =
                     let transform = entity.GetTransform world
                     let position = bodyTransformMessage.Position - transform.Size * 0.5f
                     let rotation = bodyTransformMessage.Rotation
+                    let angularVelocity = bodyTransformMessage.AngularVelocity
+                    let linearVelocity = bodyTransformMessage.LinearVelocity
                     let world =
                         if bodyTransformMessage.BodySource.BodyId = Gen.idEmpty then
                             let transform2 = { transform with Position = position; Rotation = rotation }
@@ -633,10 +652,12 @@ module WorldModule2 =
                             then entity.SetTransformWithoutEvent transform2 world
                             else world
                         else world
+                    let world = entity.SetWithoutEvent Entity.Lens.AngularVelocity.Name angularVelocity world
+                    let world = entity.SetWithoutEvent Entity.Lens.LinearVelocity.Name linearVelocity world
                     let transformAddress = Events.Transform --> entity.EntityAddress
                     let transformData = { BodySource = BodySource.fromInternal bodySource; Position = position; Rotation = rotation }
                     let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                    World.publish transformData transformAddress eventTrace Simulants.Game false world
+                    World.publish transformData transformAddress eventTrace Simulants.Game world
             | Exiting -> world
 
         static member private getEntities3 getElementsFromTree world =
@@ -1093,9 +1114,8 @@ module GameDispatcherModule =
                 | PropertyDefinition def ->
                     let propertyName = def.PropertyName
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                    let nonPersistent = Reflection.isPropertyNonPersistentByName propertyName
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
-                    World.setProperty def.PropertyName alwaysPublish nonPersistent property game world
+                    World.setProperty def.PropertyName alwaysPublish property game world
                 | EventHandlerDefinition (handler, partialAddress) ->
                     let eventAddress = partialAddress --> game
                     World.monitor (fun (evt : Event) world ->

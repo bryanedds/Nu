@@ -18,7 +18,7 @@ module Gen =
 
         /// Get the next random number integer.
         static member random =
-            lock Lock (fun () -> Random.Next)
+            lock Lock (fun () -> Random.Next ())
             
         /// Get the next random number integer below maxValue.
         static member random1 maxValue =
@@ -27,6 +27,17 @@ module Gen =
         /// Get the next random number integer GTE minValue and LT maxValue.
         static member random2 minValue maxValue =
             lock Lock (fun () -> Random.Next (minValue, maxValue))
+
+        /// Get the next random number single.
+        static member randomf =
+            lock Lock (fun () -> single (Random.NextDouble ()))
+
+        /// Get a random element from a sequence if there are any elements..
+        static member randomItem seq =
+            let arr = Seq.toArray seq
+            if Array.notEmpty arr
+            then Some arr.[Gen.random1 arr.Length]
+            else None
 
         /// Generate a unique counter.
         static member counter =

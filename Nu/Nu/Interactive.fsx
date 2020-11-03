@@ -2,7 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 #I __SOURCE_DIRECTORY__
-#r "../../packages/Magick.NET-Q8-x64.7.16.1/lib/net40/Magick.NET-Q8-x64.dll"
+#r "../../packages/Magick.NET-Q8-x64.7.5.0.1/lib/net40/Magick.NET-Q8-x64.dll"
 #r "../../packages/TiledSharp.1.0.1/lib/netstandard2.0/TiledSharp.dll"
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsecCS.dll" // MUST be referenced BEFORE FParsec.dll!
 #r "../../packages/FParsec.1.0.3/lib/net40-client/FParsec.dll"
@@ -12,7 +12,7 @@
 #r "../../packages/Prime.Scripting.6.0.0/lib/net472/Prime.Scripting.exe"
 #r "../../packages/FSharpx.Core.1.8.32/lib/40/FSharpx.Core.dll"
 #r "../../packages/FSharpx.Collections.2.1.3/lib/net45/FSharpx.Collections.dll"
-#r "../../packages/FarseerPhysics.3.5.0/lib/NET40/FarseerPhysics.dll"
+#r "../../packages/Aether.Physics2D.1.5.0/lib/net40/Aether.Physics2D.dll"
 #r "../../packages/Nito.Collections.Deque.1.1.0/lib/netstandard2.0/Nito.Collections.Deque.dll"
 #r "../../packages/SDL2-CS.dll.2.0.0.0/lib/net20/SDL2-CS.dll"
 #r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"

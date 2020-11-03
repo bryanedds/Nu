@@ -41,7 +41,7 @@ module BlazeDispatcherModule =
 
         // here we describe the content of the game including all of its screens.
         override this.Content (_, _) =
-            [Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, Simulants.Title)) [] []
+            [Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Some Simulants.Title)) [] []
              Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some Assets.MachinerySong)) Assets.TitleLayerFilePath
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some Assets.MachinerySong)) Assets.CreditsLayerFilePath
              Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.DeadBlazeSong))) Assets.GameplayLayerFilePath]

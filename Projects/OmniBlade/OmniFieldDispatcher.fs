@@ -8,7 +8,6 @@ open FSharpx.Collections
 open Prime
 open Nu
 open Nu.Declarative
-open TiledSharp
 open OmniBlade
 
 [<AutoOpen>]
@@ -16,10 +15,10 @@ module FieldDispatcher =
 
     type [<NoComparison; NoEquality>] FieldMessage =
         | UpdateAvatar of Avatar
-        | UpdateFieldTransition
         | UpdateDialog
         | UpdatePortal
         | UpdateSensor
+        | UpdateFieldTransition
         | SubmenuLegionOpen
         | SubmenuLegionAlly of int
         | SubmenuItemOpen
@@ -35,21 +34,25 @@ module FieldDispatcher =
         | ShopConfirmAccept
         | ShopConfirmDecline
         | ShopLeave
+        | Traverse of Vector2
         | Interact
 
     type [<NoComparison>] FieldCommand =
-        | PlaySound of int64 * single * Sound AssetTag
-        | MoveAvatar of Vector2
         | UpdateEye
+        | PlayFieldSong
+        | MoveAvatar of Vector2
+        | PlaySound of int64 * single * Sound AssetTag
+        | PlaySong of int * single * Song AssetTag
+        | FadeOutSong of int
+        | Nop
 
     type Screen with
-
         member this.GetField = this.GetModel<Field>
         member this.SetField = this.SetModel<Field>
         member this.Field = this.Model<Field> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.initial)
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
 
         static let pageItems pageIndex pageSize items =
             items |>
@@ -99,11 +102,29 @@ module FieldDispatcher =
             | Some prop -> tryGetInteraction3 dialogOpt advents (prop.GetProp world).PropData
             | None -> None
 
-        static let tryGetTouchingPortal (avatar : Avatar) world =
+        static let tryGetTouchingPortal randSeedState (avatar : Avatar) world =
             avatar.IntersectedBodyShapes |>
             List.choose (fun shape ->
                 match (shape.Entity.GetProp world).PropData with
-                | Portal (_, fieldType, index, direction, _) -> Some (fieldType, index, direction)
+                | Portal (_, _, fieldType, portalType, _) ->
+                    match Map.tryFind fieldType Data.Value.Fields with
+                    | Some fieldData ->
+                        match FieldData.tryGetPortal portalType randSeedState fieldData world with
+                        | Some portal ->
+                            match portal.PropData with
+                            | Portal (_, direction, _, _, _) ->
+                                let destinationCenter =
+                                    match direction with
+                                    | Upward -> portal.PropBounds.Top
+                                    | Rightward -> portal.PropBounds.Right
+                                    | Downward -> portal.PropBounds.Bottom
+                                    | Leftward -> portal.PropBounds.Left
+                                let destinationOffset = Direction.toVector2 direction * v2Dup 72.0f // TODO: use constant.
+                                let destination = destinationCenter + destinationOffset
+                                Some (fieldType, destination, direction)
+                            | _ -> None
+                        | None -> None
+                    | None -> None
                 | _ -> None) |>
             List.tryHead
 
@@ -132,7 +153,7 @@ module FieldDispatcher =
             if field.Advents.IsSupersetOf requirements then
                 match battleTypeOpt with
                 | Some battleType ->
-                    match Map.tryFind battleType data.Value.Battles with
+                    match Map.tryFind battleType Data.Value.Battles with
                     | Some battleData ->
                         let prizePool = { Items = []; Gold = 0; Exp = 0 }
                         let battle = Battle.makeFromLegion (Field.getParty field) field.Inventory prizePool battleData time
@@ -222,7 +243,7 @@ module FieldDispatcher =
                             | Some shop ->
                                 match shop.ShopState with
                                 | ShopBuying ->
-                                    match Map.tryFind shop.ShopType data.Value.Shops with
+                                    match Map.tryFind shop.ShopType Data.Value.Shops with
                                     | Some shopData -> shopData.ShopItems |> Set.toSeq |> Seq.indexed |> pageItems shop.ShopPage 10
                                     | None -> []
                                 | ShopSelling ->
@@ -244,11 +265,12 @@ module FieldDispatcher =
                          Entity.ClickEvent ==> msg (fieldMsg selection)])
 
         override this.Channel (_, field) =
-            [Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+            [field.SelectEvent => cmd PlayFieldSong
+             Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
              field.UpdateEvent => msg UpdateDialog
-             field.UpdateEvent => msg UpdateFieldTransition
              field.UpdateEvent => msg UpdatePortal
              field.UpdateEvent => msg UpdateSensor
+             field.UpdateEvent => msg UpdateFieldTransition
              Simulants.FieldInteract.ClickEvent => msg Interact
              field.PostUpdateEvent => cmd UpdateEye]
 
@@ -275,7 +297,15 @@ module FieldDispatcher =
                 match field.FieldTransitionOpt with
                 | Some fieldTransition ->
                     let tickTime = World.getTickTime world
-                    if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                    let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
+                    if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
+                        match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
+                        | (true, fieldData) ->
+                            if currentSongOpt <> fieldData.FieldSongOpt
+                            then withCmd (FadeOutSong Constants.Audio.DefaultFadeOutMs) field
+                            else just field
+                        | (false, _) -> just field
+                    elif tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
                         let field = Field.updateFieldType (constant fieldTransition.FieldType) field
                         let field =
                             Field.updateAvatar (fun avatar ->
@@ -284,7 +314,15 @@ module FieldDispatcher =
                                 let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
                                 avatar)
                                 field
-                        withCmd (MoveAvatar fieldTransition.FieldIndex) field
+                        let moveCmd = MoveAvatar fieldTransition.FieldDestination
+                        let songCmd =
+                            match Field.getFieldSongOpt field with
+                            | Some fieldSong ->
+                                if currentSongOpt <> Some fieldSong
+                                then PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)
+                                else Nop
+                            | None -> Nop
+                        withCmds [moveCmd; songCmd] field
                     elif tickTime = fieldTransition.FieldTransitionTime then
                         let field = Field.updateFieldTransitionOpt (constant None) field
                         just field
@@ -294,11 +332,11 @@ module FieldDispatcher =
             | UpdatePortal ->
                 match field.FieldTransitionOpt with
                 | None ->
-                    match tryGetTouchingPortal field.Avatar world with
-                    | Some (fieldType, index, direction) ->
+                    match tryGetTouchingPortal field.RandSeedState field.Avatar world with
+                    | Some (fieldType, destination, direction) ->
                         let transition =
                             { FieldType = fieldType
-                              FieldIndex = index
+                              FieldDestination = destination
                               FieldDirection = direction
                               FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
                         let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
@@ -422,6 +460,16 @@ module FieldDispatcher =
                 let field = Field.updateShopOpt (constant None) field
                 just field
 
+            | Traverse velocity ->
+                let (battleDataOpt, field) = Field.advanceEncounterCreep velocity field
+                match battleDataOpt with
+                | Some battleData ->
+                    let prizePool = { Items = []; Gold = 0; Exp = 0 }
+                    let battle = Battle.makeFromLegion field.Legion field.Inventory prizePool battleData (World.getTickTime world)
+                    let field = Field.updateBattleOpt (constant (Some battle)) field
+                    just field
+                | None -> just field
+
             | Interact ->
                 match field.DialogOpt with
                 | None ->
@@ -439,22 +487,39 @@ module FieldDispatcher =
                     | None -> just field
                 | Some dialog -> interactDialog dialog field
 
-        override this.Command (_, command, _, world) =
+        override this.Command (field, command, _, world) =
 
             match command with
             | UpdateEye ->
-                let avatar = Simulants.FieldAvatar.GetAvatar world
-                let world = World.setEyeCenter avatar.Center world
+                let world = World.setEyeCenter field.Avatar.Center world
                 just world
 
+            | PlayFieldSong ->
+                match Data.Value.Fields.TryGetValue field.FieldType with
+                | (true, fieldData) ->
+                    match fieldData.FieldSongOpt with
+                    | Some fieldSong -> withCmd (PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)) world
+                    | None -> just world
+                | (false, _) -> just world
+
             | MoveAvatar position ->
-                let world = Simulants.FieldAvatar.SetCenter position world
-                let world = World.setBodyPosition position (Simulants.FieldAvatar.GetPhysicsId world) world
+                let positionOffset = position - Constants.Field.AvatarBottomInset
+                let world = Simulants.FieldAvatar.SetBottom positionOffset world
                 just world
 
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
+
+            | PlaySong (fade, volume, assetTag) ->
+                let world = World.playSong fade volume assetTag world
+                just world
+
+            | FadeOutSong fade ->
+                let world = World.fadeOutSong fade world
+                just world
+
+            | Nop -> just world
 
         override this.Content (field, _) =
 
@@ -463,18 +528,18 @@ module FieldDispatcher =
 
                 [// backdrop sprite
                  Content.staticSprite Simulants.FieldBackdrop.Name
-                    [Entity.Bounds <== field ->> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MinValue; Entity.Absolute == true
+                    [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MinValue; Entity.Absolute == true
                      Entity.StaticImage == Assets.DefaultImage9
                      Entity.Color <== field --> fun field ->
-                        match data.Value.Fields.TryGetValue field.FieldType with
+                        match Data.Value.Fields.TryGetValue field.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
                         | (false, _) -> Color.Black]
 
                  // portal fade sprite
                  Content.staticSprite Simulants.FieldPortalFade.Name
-                   [Entity.Bounds <== field ->> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
+                   [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
                     Entity.StaticImage == Assets.DefaultImage9
-                    Entity.Color <== field ->> fun field world ->
+                    Entity.Color <== field --|> fun field world ->
                         match field.FieldTransitionOpt with
                         | Some transition ->
                             let tickTime = World.getTickTime world
@@ -487,13 +552,16 @@ module FieldDispatcher =
                             Color.Black.WithA (byte (progress * 255.0f))
                         | None -> Color.Zero]
 
-                 // tile map
-                 Content.tileMap Simulants.FieldTileMap.Name
+                 // tmx map
+                 Content.tmxMap Simulants.FieldTileMap.Name
                     [Entity.Depth == Constants.Field.BackgroundDepth
-                     Entity.TileMapAsset <== field --> fun field ->
-                        match Map.tryFind field.FieldType data.Value.Fields with
-                        | Some fieldData -> fieldData.FieldTileMap
-                        | None -> Assets.DebugRoomTileMap
+                     Entity.TmxMap <== field --|> fun field world ->
+                        match Map.tryFind field.FieldType Data.Value.Fields with
+                        | Some fieldData ->
+                            match FieldData.tryGetTileMap field.RandSeedState fieldData world with
+                            | Some tileMap -> tileMap
+                            | None -> failwithumf ()
+                        | None -> failwithumf ()
                      Entity.TileLayerClearance == 10.0f]
 
                  // avatar
@@ -505,7 +573,8 @@ module FieldDispatcher =
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt
                      Entity.LinearDamping == Constants.Field.LinearDamping
-                     Entity.Avatar <== field --> fun field -> field.Avatar]
+                     Entity.Avatar <== field --> fun field -> field.Avatar
+                     Entity.TraverseEvent ==|> fun evt -> msg (Traverse evt.Data)]
 
                  // submenu button
                  Content.button Simulants.FieldSubmenu.Name
@@ -523,12 +592,12 @@ module FieldDispatcher =
                  Content.button Simulants.FieldInteract.Name
                     [Entity.Position == v2 248.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
-                     Entity.Visible <== field ->> fun field world ->
+                     Entity.Visible <== field --|> fun field world ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
                         Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar world)
-                     Entity.Text <== field ->> fun field world ->
+                     Entity.Text <== field --|> fun field world ->
                         match tryGetInteraction field.DialogOpt field.Advents field.Avatar world with
                         | Some interaction -> interaction
                         | None -> ""
@@ -568,22 +637,15 @@ module FieldDispatcher =
 
                  // props
                  Content.entities field
-                    (fun field -> (field.FieldType, field.Advents, field.PropStates))
-                    (fun (fieldType, advents, propStates) world ->
-                        match Map.tryFind fieldType data.Value.Fields with
+                    (fun field -> (field.FieldType, field.RandSeedState, field.Advents, field.PropStates))
+                    (fun (fieldType, randSeedState, advents, propStates) world ->
+                        match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
-                            match World.tryGetTileMapMetadata fieldData.FieldTileMap world with
-                            | Some (_, _, tileMap) ->
-                                if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
-                                    let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
-                                    let objects = enumerable<TmxObject> group.Objects
-                                    let results = Seq.map (fun object -> (object, group, tileMap, advents, propStates)) objects
-                                    Seq.toList results
-                                else []
-                            | None -> []
+                            let propObjects = FieldData.getPropObjects randSeedState fieldData world
+                            List.map (fun (tileMap, group, object) -> (tileMap, group, object, advents, propStates)) propObjects
                         | None -> [])
-                    (fun _ field _ ->
-                        let prop = flip Lens.map field (fun (object, group, tileMap, advents, propStates) ->
+                    (fun _ propMetadata _ ->
+                        let prop = flip Lens.map propMetadata (fun (tileMap, group, object, advents, propStates) ->
                             let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
                             let propSize = v2 (single object.Width) (single object.Height)
                             let propBounds = v4Bounds propPosition propSize

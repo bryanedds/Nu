@@ -107,7 +107,7 @@ module WorldModule =
     let mutable internal unregister : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
-    let mutable internal expandContent : (SplashDescriptor option -> Screen -> Screen -> World -> World) -> SimulantContent -> ContentOrigin -> Simulant -> Simulant -> World -> Simulant option * World =
+    let mutable internal expandContent : (SplashDescriptor option -> Screen option -> Screen -> World -> World) -> SimulantContent -> ContentOrigin -> Simulant -> Simulant -> World -> Simulant option * World =
         Unchecked.defaultof<_>
 
     let mutable internal destroy : Simulant -> World -> World =
@@ -590,8 +590,8 @@ module WorldModule =
 
         /// Publish an event with no subscription sorting.
         static member publish<'a, 'p when 'p :> Simulant>
-            eventData eventAddress eventTrace publisher sorted world =
-            World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher sorted world
+            eventData eventAddress eventTrace publisher world =
+            World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher false world
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionId world =
