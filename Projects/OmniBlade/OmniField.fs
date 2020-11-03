@@ -302,7 +302,7 @@ module Field =
             updateLegion (fun legion ->
                 match Map.tryFind i legion with
                 | Some legionnaire ->
-                    let legionnaire = { legionnaire with HitPoints = ally.HitPoints; ExpPoints = ally.ExpPoints }
+                    let legionnaire = { legionnaire with HitPoints = ally.HitPoints; TechPoints = ally.TechPoints; ExpPoints = ally.ExpPoints }
                     Map.add i legionnaire legion
                 | None -> legion)
                 field)
