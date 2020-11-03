@@ -53,6 +53,7 @@ module GameDispatcher =
 #if DEV
              Simulants.TitlePlay.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
 #else
+             Simulants.TitlePlay.ClickEvent => msg (Change (Gui Splashing))
              Simulants.TitlePlay.ClickEvent => cmd (Show Simulants.Intro1)
              Simulants.Intro5.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
 #endif
