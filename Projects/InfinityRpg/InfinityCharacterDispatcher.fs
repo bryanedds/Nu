@@ -10,15 +10,17 @@ open InfinityRpg
 module CharacterDispatcherModule =
     
     type Entity with
-        member this.GetCharacter = this.GetModel<Character>
-        member this.SetCharacter = this.SetModel<Character>
-        member this.Character = this.Model<Character> ()
+        member this.GetCharacterAnimationState = this.Get Property? CharacterAnimationState
+        member this.SetCharacterAnimationState = this.Set Property? CharacterAnimationState
+        member this.CharacterAnimationState = lens<CharacterAnimationState> Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
+        member this.GetCharacterAnimationSheet = this.Get Property? CharacterAnimationSheet
+        member this.SetCharacterAnimationSheet = this.Set Property? CharacterAnimationSheet
+        member this.CharacterAnimationSheet = lens<Image AssetTag> Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet this
     
     type CharacterDispatcher () =
-        inherit EntityDispatcher<Character, unit, unit> (Character.initial)
+        inherit EntityDispatcher ()
 
-        static let getSpriteInsetOpt character world =
-            let animationState = character.CharacterAnimationState
+        static let getSpriteInsetOpt animationState world =
             let animationFrames =
                 match animationState.AnimationType with
                 | CharacterAnimationFacing -> 2
@@ -62,21 +64,28 @@ module CharacterDispatcherModule =
         static member Properties =
             [define Entity.Depth Constants.Layout.CharacterDepth
              define Entity.PublishChanges true
-             define Entity.Omnipresent true]
-
-        override this.Initializers (character, _) =
-            [Entity.Position <== character --> fun character -> character.Position]
+             define Entity.Omnipresent true
+             define Entity.CharacterAnimationState CharacterAnimationState.initial
+             define Entity.CharacterAnimationSheet Assets.PlayerImage]
         
-        override this.View (character, entity, world) =
+        override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize character.CharacterAnimationSheet,
-                     SpriteDescriptor
-                       { Transform = transform
-                         Offset = v2Zero
-                         InsetOpt = getSpriteInsetOpt character world
-                         Image = character.CharacterAnimationSheet
-                         Color = Color.White
-                         Glow = Color.Zero
-                         Flip = FlipNone })]
-            else []
+                let animationState = entity.GetCharacterAnimationState world
+                let animationSheet = entity.GetCharacterAnimationSheet world
+                let renderMessage =
+                    LayeredDescriptorMessage
+                        { Depth = transform.Depth
+                          PositionY = transform.Position.Y
+                          AssetTag = AssetTag.generalize animationSheet
+                          RenderDescriptor =
+                            SpriteDescriptor
+                              { Transform = transform
+                                Offset = v2Zero
+                                InsetOpt = getSpriteInsetOpt animationState world
+                                Image = animationSheet
+                                Color = Color.White
+                                Glow = Color.Zero
+                                Flip = FlipNone }}
+                World.enqueueRenderMessage renderMessage world
+            else world
