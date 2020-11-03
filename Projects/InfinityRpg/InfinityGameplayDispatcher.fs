@@ -54,7 +54,8 @@ module GameplayDispatcher =
             let currentNode = Map.find currentPositionM nodes
             let navigationPathOpt =
                 AStar.FindPath
-                    (currentNode, goalNode,
+                    (currentNode,
+                     goalNode,
                      (fun n n2 -> if n2.PositionM.Y <> n.PositionM.Y then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
                      (fun _ -> 0.0f))
             match navigationPathOpt with
@@ -94,16 +95,17 @@ module GameplayDispatcher =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
                     | TurnTicking tickCount ->
-                        match characterTurn.TurnType with
-                        | AttackTurn ->
-                            if tickCount = Constants.InfinityRpg.ActionTicksMax
-                            then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
-                            else gameplay
-                        | WalkTurn _ ->
-                            if tickCount = (int64 Constants.InfinityRpg.CharacterWalkResolution) - 1L
-                            then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
-                            else gameplay
-                        |> Gameplay.updateCharacterTurn index Turn.incTickCount
+                        let gameplay =
+                            match characterTurn.TurnType with
+                            | AttackTurn ->
+                                if tickCount = Constants.InfinityRpg.ActionTicksMax
+                                then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
+                                else gameplay
+                            | WalkTurn _ ->
+                                if tickCount = (int64 Constants.InfinityRpg.CharacterWalkResolution) - 1L
+                                then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
+                                else gameplay
+                        Gameplay.updateCharacterTurn index Turn.incTickCount gameplay
                     | _ -> gameplay
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnFinishing) indices
@@ -133,8 +135,8 @@ module GameplayDispatcher =
                     Gameplay.getEnemyIndices gameplay |> List.filter (fun x -> Gameplay.turnInProgress x gameplay)
                 let gameplay =
                     if (List.exists (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnPending) indices) then
-                        if not (Gameplay.isPlayerAttacking gameplay) then
-                            Gameplay.forEachIndex (fun index gameplay -> Gameplay.setCharacterTurnStatus index TurnBeginning gameplay) indices gameplay
+                        if not (Gameplay.isPlayerAttacking gameplay)
+                        then Gameplay.forEachIndex (fun index gameplay -> Gameplay.setCharacterTurnStatus index TurnBeginning gameplay) indices gameplay
                         else gameplay
                     else gameplay
                 let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus <> TurnPending) indices
@@ -215,7 +217,9 @@ module GameplayDispatcher =
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ ->
-                    if not (Gameplay.anyTurnsInProgress gameplay) then withCmd ListenKeyboard gameplay else withMsg RunCharacterActivation gameplay
+                    if not (Gameplay.anyTurnsInProgress gameplay)
+                    then withCmd ListenKeyboard gameplay
+                    else withMsg RunCharacterActivation gameplay
             
             | TryMakePlayerMove playerInput ->
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
@@ -231,8 +235,7 @@ module GameplayDispatcher =
                             let openDirections = gameplay.Chessboard.OpenDirections currentCoordinates
                             let direction = Math.directionToTarget currentCoordinates coordinates
                             let opponents = Gameplay.getOpponentIndices PlayerIndex gameplay
-                            if List.exists (fun x -> x = direction) openDirections
-                            then Some (Step direction)
+                            if List.exists (fun x -> x = direction) openDirections then Some (Step direction)
                             elif List.exists (fun index -> (Gameplay.getCoordinates index gameplay) = coordinates) opponents then
                                 let targetIndex = Gameplay.getIndexByCoordinates coordinates gameplay
                                 Some (Attack targetIndex)
@@ -241,11 +244,10 @@ module GameplayDispatcher =
                             match tryGetNavigationPath PlayerIndex coordinates gameplay with
                             | Some navigationPath ->
                                 match navigationPath with
+                                | _ :: _ -> Some (Travel navigationPath)
                                 | [] -> None
-                                | _ -> Some (Travel navigationPath)
                             | None -> None
                     | None -> None
-                
                 match playerMoveOpt with
                 | Some move ->
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
@@ -329,7 +331,8 @@ module GameplayDispatcher =
                 else just world
             
             | Update ->
-                if (Gameplay.anyTurnsInProgress gameplay) then withMsg TryContinuePlayerNavigation world
+                if (Gameplay.anyTurnsInProgress gameplay)
+                then withMsg TryContinuePlayerNavigation world
                 else withCmd ListenKeyboard world
 
             | PostUpdate ->
