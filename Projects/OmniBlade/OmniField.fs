@@ -142,19 +142,19 @@ type [<ReferenceEquality; NoComparison>] ShopConfirm =
         let itemType = snd selection
         let header = if buying then "Buy " else "Sell "
         let price = if buying then ad.Cost else ad.Cost / 2
-        let effect = "Effect: " + ad.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
+        let effect = "Effect: " + ad.Description
         let stats = "HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirm.make selection price offer stats effect
+        ShopConfirm.make selection price offer effect stats
 
     static member makeFromAccessoryData buying inventory selection (ad : AccessoryData) =
         let itemType = snd selection
         let header = if buying then "Buy " else "Sell "
         let price = if buying then ad.Cost else ad.Cost / 2
-        let effect = "Effect: " + ad.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
+        let effect = "Effect: " + ad.Description
         let stats = "Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirm.make selection price offer stats effect
+        ShopConfirm.make selection price offer effect stats
 
     static member tryMakeFromSelection buying inventory selection =
         match snd selection with

@@ -3,7 +3,7 @@
  <tileset firstgid="1" source="CaveInner.tsx"/>
  <layer id="2" name="Floor" width="64" height="64" visible="0">
   <data encoding="base64" compression="zlib">
-   eJzt1EsOwyAMBFCu1PtfruqiUlWRxJ+xxwZGyqoingekY6yR18+zW16TZ4VIPTN/933QWO78nfbA4nha02UPLAapvZJf0/nO4FnLiMf9b/DuXXYQdo+fEZT5WI/92Ov52d5j39vOCNvMcg9Br93tnrWr2jXvWNkvfU81+5h0ueoX9S2wgz6zTvZPIu5tZTviv0piqOYeky6R/tk8drL92j7ROf4a9ux9tsysYkfMZZrR35ylzypmS8cMd6ZX23dlt6T76u4nB9LO9ln2AOXPvreeudL1LLsn2hlV/Mhk+pnmp3d5/ZK+We6Ijtb+1cySeUx/pFM6l+FnmK86aH+Lsme5Jecc1amS3Xo30H62VdKzuv8ulXtG3y3LHNR7sv2I7tpU898Z0HaLxbIG4Y+2S2dpe6H2gH3u1nNB+CPPPPpeRt1/VLr4o4Lo1dX+DaJbV/s3iG5d7bN4unW3I7Kbd5Zd3b/Z1V0hb8yHgSw=
+   eJzt1EsOwyAMBFCu1PtfruqiUlWRxJ+xxwZGyqoingekY6yR18+zW16TZ4VIPTN/933QWO78nfbA4nha02UPLAapvZJf0/nO4FnLiMf9b/DuXXYQdo+fEZT5WI/92Ov52d5j39vOCNvMcg9Br93tnrWr2jXvWNkvfU81+5h0ueoX9S2wgz6zTvZPIu5tZTviv0piqOYeky6R/tk8drL92j7ROf4a9ux9tsysYkfMZZrR35ylzypmS8cMd6ZX23dlt6T76u4nB9LO9ln2AOXPvreeudL1LLsn2hlV/Mhk+pnmp3d5/ZK+We6Ijtb+1cySeUx/pFM6l+FnmK86aH+Lsme5Jecc1amS3Xo30H62VdKzuv8ulXtG3y3LHNR7sv2I7tpU898Z0HaLxbIG4Y+2S2dpe6H2gH3u1nNB+CPPPPpeRt1/VLr4o4Lo1dX+DaJbV/s3iG5d7bN4unW3I7Kbd5Zd3b85fp7/DaCqgiE=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="64" height="64">
@@ -12,7 +12,7 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="54" x="2112" y="4160" width="128" height="64">
+  <object id="2" gid="54" x="2112" y="4096" width="128" height="64">
    <properties>
     <property name="I" value="[Portal South Upward TombOuter South]"/>
    </properties>
