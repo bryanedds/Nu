@@ -12,12 +12,12 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="54" x="2112" y="4096" width="128" height="64">
+  <object id="2" gid="54" x="2112" y="4128" width="128" height="64">
    <properties>
     <property name="I" value="[Portal South Upward TombOuter South]"/>
    </properties>
   </object>
-  <object id="3" gid="54" x="2560" y="1856" width="192" height="64">
+  <object id="3" gid="54" x="2560" y="1888" width="192" height="64">
    <properties>
     <property name="I" value="[Portal [IX 0] Downward Cave South]"/>
    </properties>
