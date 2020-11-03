@@ -62,8 +62,8 @@ module Algorithms =
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
                 | Some armorData -> single armorData.TechPointsBase
-                | None -> 2.0f
-            | None -> 2.0f
+                | None -> 4.0f
+            | None -> 4.0f
         intermediate * single level * focus |> int |> max 0
 
     let power weaponOpt powerBuff archetypeType level =
