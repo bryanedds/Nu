@@ -58,7 +58,7 @@ module Render =
         SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC
     let (*Literal*) ResolutionX = Core.getResolutionOrDefault true DefaultResolutionX
     let (*Literal*) ResolutionY = Core.getResolutionOrDefault false DefaultResolutionY
-    let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy)
+    let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy) // TODO: move this to ViewConfig or WorldConfig?
 
 [<RequireQualifiedAccess>]
 module Audio =
