@@ -373,13 +373,13 @@ module GameplayDispatcher =
                        [Entity.Field <== gameplay --> fun gameplay -> gameplay.Field]
 
                      // pickups
-                     Content.entitiesIndexedByFst gameplay
+                     Content.entities gameplay
                         (fun gameplay -> gameplay.Chessboard.PickupItems)
-                        (fun pickups _ -> Map.toListBy (fun coordinates _ -> Pickup.makeHealth coordinates) pickups |> List.indexed)
+                        (fun pickups _ -> Map.toListBy (fun positionM _ -> Pickup.makeHealth positionM) pickups)
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Pickup <== pickup])
 
                      // characters
-                     Content.entitiesIndexedByFst gameplay
+                     Content.entitiesTrackedByFst gameplay
                         (fun gameplay -> (gameplay.Chessboard, gameplay.CharacterTurns))
                         (fun (chessboard, characterTurns) _ ->
                             let characterDataOpts =

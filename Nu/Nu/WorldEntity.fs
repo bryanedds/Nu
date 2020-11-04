@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.IO
+open FSharpx.Collections
 open Prime
 open Nu
 
@@ -72,6 +73,8 @@ module WorldEntityModule =
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
+        member this.GetDestroying world = World.getEntityDestroying this world
+        member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
         member this.GetOptimized world = World.getEntityOptimized this world
         member this.Optimized = lensReadOnly Property? Optimized this.GetOptimized this
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
@@ -296,8 +299,10 @@ module WorldEntityModule =
 
         /// Destroy an entity in the world at the end of the current update.
         [<FunctionBinding>]
-        static member destroyEntity entity world =
-            World.schedule2 (World.destroyEntityImmediate entity) world
+        static member destroyEntity (entity : Entity) world =
+            let world = { world with DestructionQueue = Queue.conj (entity :> Simulant) world.DestructionQueue }
+            let world = { world with DestructionSet = Set.add (entity :> Simulant).SimulantAddress world.DestructionSet }
+            world
 
         /// Destroy multiple entities in the world immediately. Can be dangerous if existing in-flight publishing
         /// depends on any of the entities' existences. Consider using World.destroyEntities instead.

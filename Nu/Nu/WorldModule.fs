@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.Diagnostics
 open System.Reflection
+open FSharpx.Collections
 open Prime
 open Nu
 
@@ -110,6 +111,9 @@ module WorldModule =
     let mutable internal expandContent : (SplashDescriptor option -> Screen option -> Screen -> World -> World) -> SimulantContent -> ContentOrigin -> Simulant -> Simulant -> World -> Simulant option * World =
         Unchecked.defaultof<_>
 
+    let mutable internal destroyImmediate : Simulant -> World -> World =
+        Unchecked.defaultof<_>
+
     let mutable internal destroy : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
@@ -167,6 +171,8 @@ module WorldModule =
                       Dispatchers = dispatchers
                       ScriptingEnv = scriptingEnv
                       ScriptingContext = Game ()
+                      DestructionQueue = Queue.empty
+                      DestructionSet = Set.empty
                       Plugin = plugin }
             let world =
                 World.choose

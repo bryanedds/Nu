@@ -31,44 +31,50 @@ module Content =
 
     /// Describe layers to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
-    /// Allows for indexing for insertion and removal in arbitrary order.
+    /// Allows for tracking for insertion and removal in arbitrary order.
     let layersPlus
         (lens : Lens<'a, World>)
         (sieve : 'a -> 'b)
         (unfold : 'b -> World -> 'c list)
-        (indexOpt : ('c -> int) option)
+        (tracker : 'c ContentTracker)
         (mapper : int -> Lens<'c, World> -> World -> LayerContent) =
         let lens = lens.Map box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
         let unfold = fun (b : obj) w -> unfold (b :?> 'b) w |> Reflection.objToObjSeq
-        let indexOpt =
-            match indexOpt with
-            | Some indexOpt -> Some (fun (o : obj) -> indexOpt (o :?> 'c))
-            | None -> None
+        let tracker =
+            match tracker with
+            | Untracked -> Untracked
+            | AutoTracking -> AutoTracking
+            | ExplicitTracking fn -> ExplicitTracking (fun (o : obj) -> fn (o :?> 'c))
         let mapper = fun i (c : obj) world -> mapper i (c :?> Lens<obj, World> --> cast<'c>) world
-        LayersFromStream (lens, sieve, unfold, indexOpt, mapper)
+        LayersFromStream (lens, sieve, unfold, tracker, mapper)
 
     /// Describe layers to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
     let layers lens sieve unfold mapper =
-        layersPlus lens sieve unfold None mapper
+        layersPlus lens sieve unfold Untracked mapper
 
     /// Describe layers to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
-    /// Allows for indexing for insertion and removal in arbitrary order.
-    let layersIndexedBy lens sieve unfold index mapper =
-        layersPlus lens sieve unfold (Some index) mapper
+    let layersTracked lens sieve unfold mapper =
+        layersPlus lens sieve unfold AutoTracking mapper
 
-    /// Describe layers to be instantiated from a lens indexed by fst.
+    /// Describe layers to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
-    /// Allows for indexing by fst for insertion and removal in arbitrary order.
-    let layersIndexedByFst lens sieve unfold mapper =
+    /// Allows for tracking for insertion and removal in arbitrary order.
+    let layersTrackedBy lens sieve unfold tracker mapper =
+        layersPlus lens sieve unfold (ExplicitTracking tracker) mapper
+
+    /// Describe layers to be instantiated from a lens tracked by fst.
+    /// Allows the separation of sieve and unfold for efficiency.
+    /// Allows for tracking by fst for insertion and removal in arbitrary order.
+    let layersTrackedByFst lens sieve unfold mapper =
         let mapper = (fun i lens world -> mapper i (lens --> snd) world)
-        layersPlus lens sieve unfold (Some (fun c -> fst c)) mapper
+        layersPlus lens sieve unfold (ExplicitTracking (fun c -> fst c)) mapper
 
     /// Describe a layer to be optionally instantiated from a lens.
     let layerIf lens predicate mapper =
-        layersPlus lens (fun a _ -> if predicate a then [a] else []) id None (constant mapper)
+        layersPlus lens (fun a _ -> if predicate a then [a] else []) id (ExplicitTracking (constant 0)) (constant mapper)
 
     /// Describe a layer to be instantiated when a screen is selected.
     let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> LayerContent) =
@@ -78,7 +84,7 @@ module Content =
     /// Describe a layer to be optionally instantiated from a lens.
     let layerOpt lens sieve mapper =
         let mapper = (fun _ lens world -> mapper (lens --> Option.get) world)
-        layersPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) None mapper
+        layersPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) (ExplicitTracking (constant 0)) mapper
 
     /// Describe a layer to be loaded from a file.
     let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
@@ -90,44 +96,50 @@ module Content =
 
     /// Describe entities to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
-    /// Allows for indexing for insertion and removal in arbitrary order.
+    /// Allows for tracking for insertion and removal in arbitrary order.
     let entitiesPlus
         (lens : Lens<'a, World>)
         (sieve : 'a -> 'b)
         (unfold : 'b -> World -> 'c list)
-        (indexOpt : ('c -> int) option)
+        (tracker : 'c ContentTracker)
         (mapper : int -> Lens<'c, World> -> World -> EntityContent) =
         let lens = lens.Map box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
         let unfold = fun (b : obj) w -> unfold (b :?> 'b) w |> Reflection.objToObjSeq
-        let indexOpt =
-            match indexOpt with
-            | Some indexOpt -> Some (fun (o : obj) -> indexOpt (o :?> 'c))
-            | None -> None
+        let tracker =
+            match tracker with
+            | Untracked -> Untracked
+            | AutoTracking -> AutoTracking
+            | ExplicitTracking fn -> ExplicitTracking (fun (o : obj) -> fn (o :?> 'c))
         let mapper = fun i (c : obj) world -> mapper i (c :?> Lens<obj, World> --> cast<'c>) world
-        EntitiesFromStream (lens, sieve, unfold, indexOpt, mapper)
+        EntitiesFromStream (lens, sieve, unfold, tracker, mapper)
 
     /// Describe entities to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
     let entities lens sieve unfold mapper =
-        entitiesPlus lens sieve unfold None mapper
+        entitiesPlus lens sieve unfold Untracked mapper
 
     /// Describe entities to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
-    /// Allows for indexing for insertion and removal in arbitrary order.
-    let entitiesIndexedBy lens sieve unfold index mapper =
-        entitiesPlus lens sieve unfold (Some index) mapper
+    let entitiesTracked lens sieve unfold mapper =
+        entitiesPlus lens sieve unfold AutoTracking mapper
 
-    /// Describe entities to be instantiated from a lens indexed by fst.
+    /// Describe entities to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
-    /// Allows for indexing by fst for insertion and removal in arbitrary order.
-    let entitiesIndexedByFst lens sieve unfold mapper =
+    /// Allows for tracking for insertion and removal in arbitrary order.
+    let entitiesTrackedBy lens sieve unfold tracker mapper =
+        entitiesPlus lens sieve unfold (ExplicitTracking tracker) mapper
+
+    /// Describe entities to be instantiated from a lens tracked by fst.
+    /// Allows the separation of sieve and unfold for efficiency.
+    /// Allows for tracking by fst for insertion and removal in arbitrary order.
+    let entitiesTrackedByFst lens sieve unfold mapper =
         let mapper = (fun i lens world -> mapper i (lens --> snd) world)
-        entitiesPlus lens sieve unfold (Some (fun c -> fst c)) mapper
+        entitiesPlus lens sieve unfold (ExplicitTracking (fun c -> fst c)) mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
-        entitiesPlus lens (fun a _ -> if predicate a then [a] else []) id None (constant mapper)
+        entitiesPlus lens (fun a _ -> if predicate a then [a] else []) id (ExplicitTracking (constant 0)) (constant mapper)
 
     /// Describe an entity to be instantiated when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
@@ -137,7 +149,7 @@ module Content =
     /// Describe an entity to be optionally instantiated from a lens.
     let entityOpt lens sieve mapper =
         let mapper = (fun _ lens world -> mapper (lens --> Option.get) world)
-        entitiesPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) None mapper
+        entitiesPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) (ExplicitTracking (constant 0)) mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
