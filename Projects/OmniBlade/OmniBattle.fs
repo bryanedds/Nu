@@ -157,6 +157,10 @@ module Battle =
     let updateActionCommands updater battle =
         { battle with ActionCommands_ = updater battle.ActionCommands_ }
 
+    let characterAppendedActionCommand characterIndex battle =
+        seq battle.ActionCommands_ |>
+        Seq.exists (fun command -> command.Source = characterIndex)
+
     let appendActionCommand command battle =
         { battle with ActionCommands_ = Queue.conj command battle.ActionCommands }
 
@@ -190,8 +194,9 @@ module Battle =
                         let characterState = CharacterState.make characterData leg.HitPoints leg.TechPoints leg.ExpPoints leg.WeaponOpt leg.ArmorOpt leg.Accessories
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.fromVector2 -bounds.Bottom
-                        let character = Character.make bounds characterIndex characterState animationSheet direction
-                        Character.updateActionTime (constant (inc index * 333)) character
+                        let actionTime = Constants.Battle.AllyActionTimeInitial
+                        let character = Character.make bounds characterIndex characterState animationSheet direction actionTime
+                        character
                     | None -> failwith ("Could not find CharacterData for '" + scstring leg.CharacterType + "'."))
                 legionnaires
         let battle = makeFromAllies allies inventory prizePool battleData time

@@ -67,6 +67,7 @@ type EquipmentType =
 type ConsumableType =
     | GreenHerb
     | RedHerb
+    | GoldHerb
 
 type KeyItemType =
     | BrassKey
@@ -132,8 +133,8 @@ type ArmorSubtype =
     | Pelt
 
 type ShopType =
-    | PodunkChemist
-    | PodunkArmory
+    | Chemist
+    | Armory
 
 type ShopkeepAppearanceType =
     | Male
@@ -194,7 +195,6 @@ type BattleType =
     | DebugBattle
     | CaveBattle
     | CaveBattle2
-    | CaveBattle3
 
 type EncounterType =
     | DebugEncounter

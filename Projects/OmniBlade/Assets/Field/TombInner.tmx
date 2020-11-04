@@ -3,21 +3,21 @@
  <tileset firstgid="1" source="CaveInner.tsx"/>
  <layer id="2" name="Floor" width="64" height="64" visible="0">
   <data encoding="base64" compression="zlib">
-   eJzt1EsOwyAMBFCu1PtfruqiUlWRxJ+xxwZGyqoingekY6yR18+zW16TZ4VIPTN/933QWO78nfbA4nha02UPLAapvZJf0/nO4FnLiMf9b/DuXXYQdo+fEZT5WI/92Ov52d5j39vOCNvMcg9Br93tnrWr2jXvWNkvfU81+5h0ueoX9S2wgz6zTvZPIu5tZTviv0piqOYeky6R/tk8drL92j7ROf4a9ux9tsysYkfMZZrR35ylzypmS8cMd6ZX23dlt6T76u4nB9LO9ln2AOXPvreeudL1LLsn2hlV/Mhk+pnmp3d5/ZK+We6Ijtb+1cySeUx/pFM6l+FnmK86aH+Lsme5Jecc1amS3Xo30H62VdKzuv8ulXtG3y3LHNR7sv2I7tpU898Z0HaLxbIG4Y+2S2dpe6H2gH3u1nNB+CPPPPpeRt1/VLr4o4Lo1dX+DaJbV/s3iG5d7bN4unW3I7Kbd5Zd3b/Z1V0hb8yHgSw=
+   eJzt1EsOwyAMBFCu1PtfruqiUlWRxJ+xxwZGyqoingekY6yR18+zW16TZ4VIPTN/933QWO78nfbA4nha02UPLAapvZJf0/nO4FnLiMf9b/DuXXYQdo+fEZT5WI/92Ov52d5j39vOCNvMcg9Br93tnrWr2jXvWNkvfU81+5h0ueoX9S2wgz6zTvZPIu5tZTviv0piqOYeky6R/tk8drL92j7ROf4a9ux9tsysYkfMZZrR35ylzypmS8cMd6ZX23dlt6T76u4nB9LO9ln2AOXPvreeudL1LLsn2hlV/Mhk+pnmp3d5/ZK+We6Ijtb+1cySeUx/pFM6l+FnmK86aH+Lsme5Jecc1amS3Xo30H62VdKzuv8ulXtG3y3LHNR7sv2I7tpU898Z0HaLxbIG4Y+2S2dpe6H2gH3u1nNB+CPPPPpeRt1/VLr4o4Lo1dX+DaJbV/s3iG5d7bN4unW3I7Kbd5Zd3b85fp7/DaCqgiE=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="64" height="64">
   <data encoding="base64" compression="zlib">
-   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
+   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
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="54" x="2112" y="3968" width="64" height="64">
+  <object id="2" gid="54" x="2112" y="4128" width="128" height="64">
    <properties>
     <property name="I" value="[Portal South Upward TombOuter South]"/>
    </properties>
   </object>
-  <object id="3" gid="54" x="3008" y="2720" width="192" height="64">
+  <object id="3" gid="54" x="2560" y="1888" width="192" height="64">
    <properties>
     <property name="I" value="[Portal [IX 0] Downward Cave South]"/>
    </properties>
