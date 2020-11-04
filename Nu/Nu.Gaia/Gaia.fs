@@ -1491,7 +1491,7 @@ module Gaia =
     let selectTargetDirAndMakeNuPluginFromFilePath filePath =
         let dirName = Path.GetDirectoryName filePath
         Directory.SetCurrentDirectory dirName
-        let assembly = Assembly.LoadFrom filePath
+        let assembly = Assembly.Load (File.ReadAllBytes filePath)
         let assemblyTypes = assembly.GetTypes ()
         let dispatcherTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) assemblyTypes
         match dispatcherTypeOpt with
