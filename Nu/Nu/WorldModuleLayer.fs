@@ -115,6 +115,7 @@ module WorldModuleLayer =
         static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Visible then Some { layerState with Visible = value } else None) Property? Visible value layer world
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
         static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Persistent then Some { layerState with Persistent = value } else None) Property? Persistent value layer world
+        static member internal getLayerDestroying (layer : Layer) world = Set.contains (layer :> Simulant).SimulantAddress world.DestructionSet
         static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
         static member internal getLayerScriptFrame layer world = (World.getLayerState layer world).ScriptFrame
         static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> if value <> layerState.ScriptFrame then Some { layerState with ScriptFrame = value } else None) Property? ScriptFrame value layer world
@@ -284,6 +285,7 @@ module WorldModuleLayer =
         Getters.Add ("Model", fun layer world -> let designerProperty = World.getLayerModelProperty layer world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         Getters.Add ("Visible", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world })
         Getters.Add ("Persistent", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world })
+        Getters.Add ("Destroying", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerDestroying layer world })
         Getters.Add ("ScriptFrame", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScriptFrame layer world })
         Getters.Add ("CreationTimeStamp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStamp layer world })
         Getters.Add ("Name", fun layer world -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world })
