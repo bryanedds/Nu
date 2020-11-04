@@ -214,8 +214,7 @@ module FieldDispatcher =
             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)) field
 
         static let interactSavePoint (field : Field) =
-            let fileStr = scstring field
-            try File.WriteAllText (Assets.SaveFilePath, fileStr) with _ -> ()
+            Field.save field
             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.SaveSound)) field
 
         static let sidebar position depth (field : Lens<Field, World>) =

@@ -1,29 +1,30 @@
 [LayerDispatcher
  [[Model
-   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Gui]
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
    [[Name Credits]
-    [Optimized False]
-    [Position [-128 -120]]
+    [Position [-304 -176]]
     [Text Credits]]]
   [ButtonDispatcher
    [[Name Exit]
-    [Optimized False]
-    [Position [-128 -200]]
+    [Position [48 -176]]
     [Text Exit]]]
   [ButtonDispatcher
-   [[Name Play]
-    [Optimized False]
-    [Position [-128 -40]]
-    [Text Play]]]
+   [[Name New]
+    [Position [-304 -72]]
+    [Text "New Game"]]]
+  [ButtonDispatcher
+   [[Name Load]
+    [Position [48 -72]]
+    [Text "Load Game"]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Optimized False]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" OmniBlade]]
     [Position [-440 104]]
     [Size [896 112]]
     [Text OmniBlade]]]]]

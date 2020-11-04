@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.IO
 open System.Numerics
 open FSharpx.Collections
 open Prime
@@ -363,5 +364,18 @@ module Field =
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
+
+    let toSymbolizable field =
+        { field with Avatar_ = Avatar.toSymbolizable field.Avatar }
+
+    let save field =
+        let fieldSymbolizable = toSymbolizable field
+        let fileStr = scstring fieldSymbolizable
+        try File.WriteAllText (Assets.SaveFilePath, fileStr) with _ -> ()
+
+    let loadOrInitial randSeedState =
+        try let fieldStr = File.ReadAllText Assets.SaveFilePath
+            scvalue<Field> fieldStr
+        with _ -> initial randSeedState
 
 type Field = Field.Field
