@@ -392,18 +392,18 @@ module GameplayDispatcher =
                                         | None -> None)
                                     (Map.toList chessboard.PassableCoordinates)
                             List.definitize characterDataOpts)
-                        (fun index characterData _ ->
+                        (fun index characterLens _ ->
                             let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.Position <== characterData --> fun (characterIndex, characterPosition, _, characterTurns) ->
+                                [Entity.Position <== characterLens --> fun (characterIndex, characterPosition, _, characterTurns) ->
                                     match List.tryFind (fun x -> x.Actor = characterIndex) characterTurns with
                                     | Some turn -> Turn.calculatePosition turn
                                     | None -> vctovf characterPosition
-                                 Entity.CharacterAnimationSheet <== characterData --> fun (characterIndex, _, _, _) ->
+                                 Entity.CharacterAnimationSheet <== characterLens --> fun (characterIndex, _, _, _) ->
                                     match characterIndex with
                                     | PlayerIndex -> Assets.PlayerImage
                                     | EnemyIndex _ -> Assets.GoopyImage // TODO: pull this from data
-                                 Entity.CharacterAnimationState <== characterData --> fun (characterIndex, _, characterState, characterTurns) ->
+                                 Entity.CharacterAnimationState <== characterLens --> fun (characterIndex, _, characterState, characterTurns) ->
                                     Turn.turnsToCharacterAnimationState characterIndex characterState characterTurns])])
 
              // hud layer

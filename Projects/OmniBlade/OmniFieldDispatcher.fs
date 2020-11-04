@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.IO
 open System.Numerics
 open FSharpx.Collections
 open Prime
@@ -39,8 +40,8 @@ module FieldDispatcher =
 
     type [<NoComparison>] FieldCommand =
         | UpdateEye
-        | PlayFieldSong
         | MoveAvatar of Vector2
+        | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
         | PlaySong of int * single * Song AssetTag
         | FadeOutSong of int
@@ -79,7 +80,14 @@ module FieldDispatcher =
             | head :: _ -> Some head.Entity
             | [] -> None
 
-        static let tryGetInteraction3 dialogOpt advents prop =
+        static let isTouchingSavePoint (avatar : Avatar) world =
+            List.exists (fun shape ->
+                match (shape.Entity.GetProp world).PropData with
+                | SavePoint -> true
+                | _ -> false)
+                avatar.IntersectedBodyShapes
+
+        static let tryGetFacingInteraction dialogOpt advents prop =
             match dialogOpt with
             | None ->
                 match prop with
@@ -92,6 +100,7 @@ module FieldDispatcher =
                 | Sensor (_, _, _, _) -> None
                 | Npc _ -> Some "Talk"
                 | Shopkeep _ -> Some "Shop"
+                | SavePoint -> None
             | Some dialog ->
                 if dialog.DialogProgress > dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
                 then Some "Next"
@@ -99,8 +108,11 @@ module FieldDispatcher =
 
         static let tryGetInteraction dialogOpt advents (avatar : Avatar) world =
             match tryGetFacingProp avatar world with
-            | Some prop -> tryGetInteraction3 dialogOpt advents (prop.GetProp world).PropData
-            | None -> None
+            | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData
+            | None ->
+                if isTouchingSavePoint avatar world
+                then Some "Save"
+                else None
 
         static let tryGetTouchingPortal randSeedState (avatar : Avatar) world =
             avatar.IntersectedBodyShapes |>
@@ -201,6 +213,11 @@ module FieldDispatcher =
             let field = Field.updateShopOpt (constant (Some shop)) field
             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)) field
 
+        static let interactSavePoint (field : Field) =
+            let fileStr = scstring field
+            try File.WriteAllText (Assets.SaveFilePath, fileStr) with _ -> ()
+            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.SaveSound)) field
+
         static let sidebar position depth (field : Lens<Field, World>) =
             Content.group Gen.name []
                 [Content.button Gen.name
@@ -254,15 +271,15 @@ module FieldDispatcher =
                             | None -> []
                     let itemsSorted = List.sortBy snd items
                     itemsSorted)
-                (fun i selection _ ->
+                (fun i selectionLens _ ->
                     let x = if i < 5 then position.X else position.X + 368.0f
                     let y = position.Y - single (i % 5) * 72.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 336.0f 64.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
-                         Entity.Text <== selection --> fun (_, itemType) -> ItemType.getName itemType
-                         Entity.EnabledLocal <== selection --> fun (_, itemType) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
-                         Entity.ClickEvent ==> msg (fieldMsg selection)])
+                         Entity.Text <== selectionLens --> fun (_, itemType) -> ItemType.getName itemType
+                         Entity.EnabledLocal <== selectionLens --> fun (_, itemType) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
+                         Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
 
         override this.Channel (_, field) =
             [field.SelectEvent => cmd PlayFieldSong
@@ -484,14 +501,24 @@ module FieldDispatcher =
                         | Sensor (_, _, _, _) -> just field
                         | Npc (_, _, dialogs, _) -> interactNpc dialogs field
                         | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
-                    | None -> just field
-                | Some dialog -> interactDialog dialog field
+                        | SavePoint -> just field
+                    | None ->
+                        if isTouchingSavePoint field.Avatar world
+                        then interactSavePoint field
+                        else just field
+                | Some dialog ->
+                    interactDialog dialog field
 
         override this.Command (field, command, _, world) =
 
             match command with
             | UpdateEye ->
                 let world = World.setEyeCenter field.Avatar.Center world
+                just world
+
+            | MoveAvatar position ->
+                let positionOffset = position - Constants.Field.AvatarBottomInset
+                let world = Simulants.FieldAvatar.SetBottom positionOffset world
                 just world
 
             | PlayFieldSong ->
@@ -501,11 +528,6 @@ module FieldDispatcher =
                     | Some fieldSong -> withCmd (PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)) world
                     | None -> just world
                 | (false, _) -> just world
-
-            | MoveAvatar position ->
-                let positionOffset = position - Constants.Field.AvatarBottomInset
-                let world = Simulants.FieldAvatar.SetBottom positionOffset world
-                just world
 
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
@@ -644,8 +666,8 @@ module FieldDispatcher =
                             let propObjects = FieldData.getPropObjects randSeedState fieldData world
                             List.map (fun (tileMap, group, object) -> (tileMap, group, object, advents, propStates)) propObjects
                         | None -> [])
-                    (fun _ propMetadata _ ->
-                        let prop = flip Lens.map propMetadata (fun (tileMap, group, object, advents, propStates) ->
+                    (fun _ propLens _ ->
+                        let prop = flip Lens.map propLens (fun (tileMap, group, object, advents, propStates) ->
                             let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
                             let propSize = v2 (single object.Width) (single object.Height)
                             let propBounds = v4Bounds propPosition propSize
