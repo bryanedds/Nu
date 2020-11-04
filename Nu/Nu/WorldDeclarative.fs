@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Collections
-open System.Collections.Generic
 open Prime
 open Nu
 
@@ -171,7 +170,7 @@ module WorldDeclarative =
 
     type World with
 
-        static member synchronizeSimulants tracking mapper mapper' origin owner parent current previous world =
+        static member internal synchronizeSimulants tracking mapper mapper' origin owner parent current previous world =
             let added = USet.differenceFast current previous
             let removed = USet.differenceFast previous current
             let changed = if tracking then added.Count <> 0 || removed.Count <> 0 else true
