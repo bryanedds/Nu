@@ -294,6 +294,7 @@ module WorldModuleEntity =
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
+        static member internal getEntityDestroying (entity : Entity) world = Set.contains (entity :> Simulant).SimulantAddress world.DestructionSet
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
@@ -1011,14 +1012,16 @@ module WorldModuleEntity =
                 | Some name -> { entityState with Name = name }
                 | None -> entityState
 
-            // add entity state to the world
+            // try to add entity state to the world
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world =
                 if World.getEntityExists entity world then
-                    Log.debug "Scheduling entity creation assuming existing entity at the same address is being destroyed."
-                    World.schedule2 (World.addEntity true entityState entity) world
-                else World.addEntity true entityState entity world
-                
+                    if World.getEntityDestroying entity world
+                    then World.destroyEntityImmediate entity world
+                    else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
+                else world
+            let world = World.addEntity true entityState entity world
+
             // HACK: make sure xtension is consistent with imperativeness of entity state
             let world = World.setEntityImperative entityState.Imperative entity world
             (entity, world)
@@ -1252,6 +1255,7 @@ module WorldModuleEntity =
         Getters.Add ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
         Getters.Add ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
         Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
+        Getters.Add ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
         Getters.Add ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
         Getters.Add ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
         Getters.Add ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })

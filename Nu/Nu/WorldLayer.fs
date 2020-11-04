@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.IO
+open FSharpx.Collections
 open Prime
 open Nu
 
@@ -23,6 +24,8 @@ module WorldLayerModule =
         member this.GetPersistent world = World.getLayerPersistent this world
         member this.SetPersistent value world = World.setLayerPersistent value this world
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
+        member this.GetDestroying world = World.getLayerDestroying this world
+        member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
         member this.GetScriptFrame world = World.getLayerScriptFrame this world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
         member this.GetCreationTimeStamp world = World.getLayerCreationTimeStamp this world
@@ -139,9 +142,11 @@ module WorldLayerModule =
             let layer = Layer (screen.ScreenAddress <-- ntoa<Layer> layerState.Name)
             let world =
                 if World.getLayerExists layer world then
-                    Log.debug "Scheduling layer creation assuming existing layer at the same address is being destroyed."
-                    World.schedule2 (World.addLayer false layerState layer) world
-                else World.addLayer false layerState layer world
+                    if layer.GetDestroying world
+                    then World.destroyLayerImmediate layer world
+                    else failwith ("Layer '" + scstring layer + " already exists and cannot be created."); world
+                else world
+            let world = World.addLayer false layerState layer world
             (layer, world)
 
         /// Create a layer from a simulnat descriptor.
@@ -172,9 +177,11 @@ module WorldLayerModule =
 
         /// Destroy a layer in the world at the end of the current update.
         [<FunctionBinding>]
-        static member destroyLayer layer world =
-            World.schedule2 (World.destroyLayerImmediate layer) world
-            
+        static member destroyLayer (layer : Layer) world =
+            let world = { world with DestructionQueue = Queue.conj (layer :> Simulant) world.DestructionQueue }
+            let world = { world with DestructionSet = Set.add (layer :> Simulant).SimulantAddress world.DestructionSet }
+            world
+
         /// Destroy multiple layers in the world immediately. Can be dangerous if existing in-flight publishing depends
         /// on any of the layers' existences. Consider using World.destroyLayers instead.
         static member destroyLayersImmediate (layers : Layer seq) world =

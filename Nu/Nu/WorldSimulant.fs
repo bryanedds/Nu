@@ -120,6 +120,15 @@ module WorldSimulantModule =
 
         /// Destroy the given simulant.
         [<FunctionBinding>]
+        static member destroyImmediate (simulant : Simulant) (world : World) =
+            match simulant with
+            | :? Entity as entity -> World.destroyEntityImmediate entity world
+            | :? Layer as layer -> World.destroyLayerImmediate layer world
+            | :? Screen as screen -> World.destroyScreenImmediate screen world
+            | _ -> failwithumf ()
+
+        /// Destroy the given simulant.
+        [<FunctionBinding>]
         static member destroy (simulant : Simulant) (world : World) =
             match simulant with
             | :? Entity as entity -> World.destroyEntity entity world
