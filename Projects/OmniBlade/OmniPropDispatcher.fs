@@ -43,7 +43,8 @@ module PropDispatcher =
              entity.IsSensor <== prop --> fun prop ->
                 match prop.PropData with
                 | Sensor _
-                | Portal _ -> true
+                | Portal _
+                | SavePoint -> true
                 | _ -> false
              entity.BodyShape <== prop --> fun prop ->
                 match prop.PropData with
@@ -137,6 +138,13 @@ module PropDispatcher =
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
                             (false, Some inset, image)
                         | _ -> (false, None, Assets.EmptyImage)
+                    | SavePoint ->
+                        let time = World.getTickTime world
+                        let image = Assets.SavePointImage
+                        let column = (int time / 15) % 4
+                        let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileSize
+                        let inset = v4Bounds insetPosition Constants.Gameplay.TileSize
+                        (false, Some inset, image)
                 let depth = if background then Constants.Field.BackgroundDepth else Constants.Field.ForgroundDepth
                 let positionY = transform.Position.Y
                 let assetTag = AssetTag.generalize image
