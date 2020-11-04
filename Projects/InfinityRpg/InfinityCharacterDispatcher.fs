@@ -28,7 +28,7 @@ module CharacterDispatcherModule =
                 | CharacterAnimationDefending -> 1
                 | CharacterAnimationSpecial -> 1
                 | CharacterAnimationSlain -> 1
-            let animationOffsetM =
+            let animationOffsetC =
                 match animationState.AnimationType with
                 | CharacterAnimationFacing -> v2i 0 0
                 | CharacterAnimationActing -> v2i 0 2
@@ -42,22 +42,22 @@ module CharacterDispatcherModule =
                 | CharacterAnimationDefending -> 1L // doesn't matter - no animation frames
                 | CharacterAnimationSpecial -> 1L // doesn't matter - no animation frames
                 | CharacterAnimationSlain -> 1L // doesn't matter - no animation frames
-            let directionCoordsOffset =
+            let directionOffsetC =
                 match animationState.Direction with
                 | Upward -> v2i 0 0
                 | Rightward -> v2i animationFrames 0
                 | Downward -> v2i 0 1
                 | Leftward -> v2i animationFrames 1
-            let animatedXOffsetM =
+            let animatedXOffsetC =
                 abs (World.getTickTime world - animationState.StartTime) /
                 animationDelay % int64 animationFrames |>
                 int
-            let animatedOffsetM = v2i animatedXOffsetM 0
-            let spriteCoordsinates = animationOffsetM + directionCoordsOffset + animatedOffsetM
+            let animatedOffsetC = v2i animatedXOffsetC 0
+            let spriteCoordinates = animationOffsetC + directionOffsetC + animatedOffsetC
             let spriteOffset =
                 v2
-                    (Constants.Layout.TileSize.X * single spriteCoordsinates.X)
-                    (Constants.Layout.TileSize.Y * single spriteCoordsinates.Y)
+                    (Constants.Layout.TileSize.X * single spriteCoordinates.X)
+                    (Constants.Layout.TileSize.Y * single spriteCoordinates.Y)
             let spriteInset = v4Bounds spriteOffset Constants.Layout.TileSize
             Some spriteInset
 

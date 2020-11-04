@@ -44,19 +44,19 @@ module GameplayDispatcher =
     type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.initial)
 
-        static let tryGetNavigationPath (_ : CharacterIndex) positionM gameplay =
+        static let tryGetNavigationPath (_ : CharacterIndex) coordinates gameplay =
             let fieldTiles = gameplay.Field.FieldMapNp.FieldTiles
-            let characterPositions = gameplay.Chessboard.OccupiedCoordinates |> List.map (fun positionM -> vmtovf positionM)
-            let currentPositionM = Gameplay.getCoordinates PlayerIndex gameplay
-            let occupationMap = OccupationMap.makeFromFieldTilesAndAdjacentCharacters currentPositionM fieldTiles characterPositions
+            let characterPositions = gameplay.Chessboard.OccupiedCoordinates |> List.map (fun coordinates -> vctovf coordinates)
+            let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
+            let occupationMap = OccupationMap.makeFromFieldTilesAndAdjacentCharacters currentCoordinates fieldTiles characterPositions
             let nodes = OccupationMap.makeNavigationNodes occupationMap
-            let goalNode = Map.find positionM nodes
-            let currentNode = Map.find currentPositionM nodes
+            let goalNode = Map.find coordinates nodes
+            let currentNode = Map.find currentCoordinates nodes
             let navigationPathOpt =
                 AStar.FindPath
                     (currentNode,
                      goalNode,
-                     (fun n n2 -> if n2.PositionM.Y <> n.PositionM.Y then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
+                     (fun n n2 -> if n2.Coordinates.Y <> n.Coordinates.Y then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
                      (fun _ -> 0.0f))
             match navigationPathOpt with
             | null -> None
@@ -150,7 +150,7 @@ module GameplayDispatcher =
                 let indices = Gameplay.getEnemyIndices gameplay
                 let attackerOpt =
                     List.tryFind (fun x ->
-                        Math.arePositionMsAdjacent
+                        Math.areCoordinatesAdjacent
                             (Gameplay.getCoordinates x gameplay)
                             (Gameplay.getCoordinates PlayerIndex gameplay))
                         indices
@@ -195,8 +195,8 @@ module GameplayDispatcher =
                                 match path with
                                 | _ :: [] -> None
                                 | _ :: navigationPath ->
-                                    let targetPositionM = (List.head navigationPath).PositionM
-                                    if List.exists (fun x -> x = targetPositionM) gameplay.Chessboard.AvailableCoordinates
+                                    let targetCoordinates = (List.head navigationPath).Coordinates
+                                    if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.AvailableCoordinates
                                     then Some (Travel navigationPath)
                                     else None
                                 | [] -> failwithumf ()
@@ -225,13 +225,13 @@ module GameplayDispatcher =
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
                 let targetCoordinatesOpt =
                     match playerInput with
-                    | TouchInput touchPosition -> Some (World.mouseToWorld false touchPosition world |> vftovm)
-                    | DetailInput direction -> Some (currentCoordinates + dtovm direction)
+                    | TouchInput touchPosition -> Some (World.mouseToWorld false touchPosition world |> vftovc)
+                    | DetailInput direction -> Some (currentCoordinates + dtovc direction)
                     | NoInput -> None
                 let playerMoveOpt =
                     match targetCoordinatesOpt with
                     | Some coordinates ->
-                        if Math.arePositionMsAdjacent coordinates currentCoordinates then
+                        if Math.areCoordinatesAdjacent coordinates currentCoordinates then
                             let openDirections = gameplay.Chessboard.OpenDirections currentCoordinates
                             let direction = Math.directionToTarget currentCoordinates coordinates
                             let opponents = Gameplay.getOpponentIndices PlayerIndex gameplay
@@ -269,8 +269,8 @@ module GameplayDispatcher =
                     match direction with
                     | Upward -> currentCoordinates.WithY 0
                     | Rightward -> currentCoordinates.WithX 0
-                    | Downward -> currentCoordinates.WithY (Constants.Layout.FieldUnitSizeM.Y - 1)
-                    | Leftward -> currentCoordinates.WithX (Constants.Layout.FieldUnitSizeM.X - 1)
+                    | Downward -> currentCoordinates.WithY (Constants.Layout.FieldUnitSizeC.Y - 1)
+                    | Leftward -> currentCoordinates.WithX (Constants.Layout.FieldUnitSizeC.X - 1)
                 let gameplay = Gameplay.clearEnemies gameplay
                 let gameplay = Gameplay.clearPickups gameplay
                 let gameplay = Gameplay.relocateCharacter PlayerIndex newCoordinates gameplay
@@ -286,8 +286,8 @@ module GameplayDispatcher =
                         let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
                         let targetOutside =
                             match direction with
-                            | Upward -> currentCoordinates.Y = Constants.Layout.FieldUnitSizeM.Y - 1
-                            | Rightward -> currentCoordinates.X = Constants.Layout.FieldUnitSizeM.X - 1
+                            | Upward -> currentCoordinates.Y = Constants.Layout.FieldUnitSizeC.Y - 1
+                            | Rightward -> currentCoordinates.X = Constants.Layout.FieldUnitSizeC.X - 1
                             | Downward -> currentCoordinates.Y = 0
                             | Leftward -> currentCoordinates.X = 0
                         if targetOutside && gameplay.MapModeler.PossibleInDirection direction
@@ -375,7 +375,7 @@ module GameplayDispatcher =
                      // pickups
                      Content.entitiesIndexedByFst gameplay
                         (fun gameplay -> gameplay.Chessboard.PickupItems)
-                        (fun pickups _ -> Map.toListBy (fun positionM _ -> Pickup.makeHealth positionM) pickups |> List.indexed)
+                        (fun pickups _ -> Map.toListBy (fun coordinates _ -> Pickup.makeHealth coordinates) pickups |> List.indexed)
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Pickup <== pickup])
 
                      // characters
@@ -398,7 +398,7 @@ module GameplayDispatcher =
                                 [Entity.Position <== characterData --> fun (characterIndex, characterPosition, _, characterTurns) ->
                                     match List.tryFind (fun x -> x.Actor = characterIndex) characterTurns with
                                     | Some turn -> Turn.calculatePosition turn
-                                    | None -> vmtovf characterPosition
+                                    | None -> vctovf characterPosition
                                  Entity.CharacterAnimationSheet <== characterData --> fun (characterIndex, _, _, _) ->
                                     match characterIndex with
                                     | PlayerIndex -> Assets.PlayerImage

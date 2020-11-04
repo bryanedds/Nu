@@ -12,14 +12,14 @@ type PickupType =
 type [<ReferenceEquality; NoComparison>] Pickup =
     { PickupType : PickupType
       PickupSheet : Image AssetTag
-      PickupSheetPositionM : Vector2i
+      PickupSheetCoordinates : Vector2i
       Position : Vector2 }
 
     static member initial =
         { PickupType = Health
           PickupSheet = Assets.PickupSheetImage
-          PickupSheetPositionM = v2iZero
+          PickupSheetCoordinates = v2iZero
           Position = v2Zero }
 
-    static member makeHealth positionM =
-        { Pickup.initial with Position = vmtovf positionM }
+    static member makeHealth coordinates =
+        { Pickup.initial with Position = vctovf coordinates }

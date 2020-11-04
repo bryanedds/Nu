@@ -20,8 +20,8 @@ module PickupDispatcher =
         static let getSpriteInsetOpt pickup =
             let spriteOffset =
                 v2
-                    (Constants.Layout.TileSize.X * single pickup.PickupSheetPositionM.X)
-                    (Constants.Layout.TileSize.Y * single pickup.PickupSheetPositionM.Y)
+                    (Constants.Layout.TileSize.X * single pickup.PickupSheetCoordinates.X)
+                    (Constants.Layout.TileSize.Y * single pickup.PickupSheetCoordinates.Y)
             let spriteInset = v4Bounds spriteOffset Constants.Layout.TileSize
             Some spriteInset
         
