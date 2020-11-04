@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.IO
+open FSharpx.Collections
 open Prime
 open Nu
 
@@ -33,7 +34,9 @@ module WorldScreenModule =
         member this.Outgoing = lens Property? Outgoing this.GetOutgoing this.SetOutgoing this
         member this.GetPersistent world = World.getScreenPersistent this world
         member this.SetPersistent value world = World.setScreenPersistent value this world
-        member this.Persistent = lensReadOnly Property? Persistent this.GetPersistent this
+        member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
+        member this.GetDestroying world = World.getScreenDestroying this world
+        member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
         member this.GetScriptFrame world = World.getScreenScriptFrame this world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
         member this.GetCreationTimeStamp world = World.getScreenCreationTimeStamp this world
@@ -172,8 +175,10 @@ module WorldScreenModule =
 
         /// Destroy a screen in the world at the end of the current update.
         [<FunctionBinding>]
-        static member destroyScreen screen world =
-            World.schedule2 (World.destroyScreenImmediate screen) world
+        static member destroyScreen (screen : Screen) world =
+            let world = { world with DestructionQueue = Queue.conj (screen :> Simulant) world.DestructionQueue }
+            let world = { world with DestructionSet = Set.add (screen :> Simulant).SimulantAddress world.DestructionSet }
+            world
 
         /// Create a screen and add it to the world.
         [<FunctionBinding "createScreen">]
@@ -189,9 +194,11 @@ module WorldScreenModule =
             let screen = ntos screenState.Name
             let world =
                 if World.getScreenExists screen world then
-                    Log.debug "Scheduling screen creation assuming existing screen at the same address is being destroyed."
-                    World.schedule2 (World.addScreen false screenState screen) world
-                else World.addScreen false screenState screen world
+                    if screen.GetDestroying world
+                    then World.destroyScreenImmediate screen world
+                    else failwith ("Screen '" + scstring screen + " already exists and cannot be created."); world
+                else world
+            let world = World.addScreen false screenState screen world
             (screen, world)
 
         /// Create a screen from a simulant descriptor.

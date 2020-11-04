@@ -483,6 +483,7 @@ module BattleDispatcher =
                     match consumable with
                     | GreenHerb -> 50 // TODO: pull from data
                     | RedHerb -> 250 // TODO: pull from data
+                    | GoldHerb -> 999 // TODO: pull from data
                 let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, false))) targetIndex battle
                 let battle = Battle.updateCharacter (Character.animate time SpinCycle) targetIndex battle
                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
@@ -746,13 +747,13 @@ module BattleDispatcher =
                      background.LabelImage == asset "Battle" "Background"]
 
                  // allies
-                 Content.entitiesIndexedBy battle
+                 Content.entitiesTrackedBy battle
                     (fun battle -> Battle.getAllies battle) constant
                     (fun battle -> battle.PartyIndex)
                     (fun index battle _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.Character <== battle])
 
                  // enemies
-                 Content.entitiesIndexedBy battle
+                 Content.entitiesTrackedBy battle
                     (fun battle -> Battle.getEnemies battle) constant
                     (fun battle -> battle.PartyIndex)
                     (fun index battle _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.Character <== battle])]

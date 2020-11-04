@@ -108,6 +108,7 @@ module WorldModuleScreen =
         static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Outgoing then Some { screenState with Outgoing = value } else None) Property? Outgoing value screen world
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Persistent then Some { screenState with Persistent = value } else None) Property? Persistent value screen world
+        static member internal getScreenDestroying (screen : Screen) world = Set.contains (screen :> Simulant).SimulantAddress world.DestructionSet
         static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenScriptFrame screen world = (World.getScreenState screen world).ScriptFrame
         static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> if value <> screenState.ScriptFrame then Some { screenState with ScriptFrame = value } else None) Property? ScriptFrame value screen world

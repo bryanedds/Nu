@@ -53,7 +53,7 @@ module RingMenuDispatcher =
                 just world
 
         override this.Content (ringMenu, menu) =
-            [Content.entitiesIndexedByFst ringMenu (fun ringMenu -> ringMenu.Items) constant $ fun index item world ->
+            [Content.entitiesTrackedByFst ringMenu (fun ringMenu -> ringMenu.Items) constant $ fun index item world ->
                 let itemValue = item.Get world |> snd
                 let buttonName = menu.Name + "+" + itemValue
                 let button = menu.Parent / buttonName

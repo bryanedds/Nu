@@ -358,6 +358,7 @@ module Nu =
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
             WorldModule.expandContent <- fun setScreenSplash content origin owner parent world -> World.expandContent setScreenSplash content origin owner parent world
+            WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
             WorldModule.trySignalFacet <- fun signalObj facetName simulant world -> World.trySignalFacet signalObj facetName simulant world
             WorldModule.trySignal <- fun signalObj simulant world -> World.trySignal signalObj simulant world

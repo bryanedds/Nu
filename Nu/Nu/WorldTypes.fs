@@ -21,6 +21,7 @@ open System.Collections.Generic
 open System.Diagnostics
 #endif
 open System.Numerics
+open FSharpx.Collections
 open TiledSharp
 open Prime
 open Nu
@@ -1029,6 +1030,8 @@ module WorldTypes =
               Dispatchers : Dispatchers
               ScriptingEnv : Scripting.Env
               ScriptingContext : Simulant
+              DestructionQueue : Simulant Queue
+              DestructionSet : Simulant Address Set
               Plugin : NuPlugin }
 
         interface World EventSystem with
