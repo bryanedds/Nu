@@ -107,12 +107,12 @@ module FieldDispatcher =
                 else None
 
         static let tryGetInteraction dialogOpt advents (avatar : Avatar) world =
-            match tryGetFacingProp avatar world with
-            | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData
-            | None ->
-                if isTouchingSavePoint avatar world
-                then Some "Save"
-                else None
+            if isTouchingSavePoint avatar world then
+                Some "Save"
+            else
+                match tryGetFacingProp avatar world with
+                | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData
+                | None -> None
 
         static let tryGetTouchingPortal randSeedState (avatar : Avatar) world =
             avatar.IntersectedBodyShapes |>
@@ -490,22 +490,22 @@ module FieldDispatcher =
             | Interact ->
                 match field.DialogOpt with
                 | None ->
-                    match tryGetFacingProp field.Avatar world with
-                    | Some prop ->
-                        let prop = prop.GetProp world
-                        match prop.PropData with
-                        | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest (World.getTickTime world) itemType chestId battleTypeOpt requirements consequents field
-                        | Door (_, requirements, consequents) -> interactDoor requirements consequents prop field
-                        | Portal (_, _, _, _, _) -> just field
-                        | Switch (_, requirements, consequents) -> interactSwitch requirements consequents prop field
-                        | Sensor (_, _, _, _) -> just field
-                        | Npc (_, _, dialogs, _) -> interactNpc dialogs field
-                        | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
-                        | SavePoint -> just field
-                    | None ->
-                        if isTouchingSavePoint field.Avatar world
-                        then interactSavePoint field
-                        else just field
+                    if isTouchingSavePoint field.Avatar world then
+                        interactSavePoint field
+                    else
+                        match tryGetFacingProp field.Avatar world with
+                        | Some prop ->
+                            let prop = prop.GetProp world
+                            match prop.PropData with
+                            | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest (World.getTickTime world) itemType chestId battleTypeOpt requirements consequents field
+                            | Door (_, requirements, consequents) -> interactDoor requirements consequents prop field
+                            | Portal (_, _, _, _, _) -> just field
+                            | Switch (_, requirements, consequents) -> interactSwitch requirements consequents prop field
+                            | Sensor (_, _, _, _) -> just field
+                            | Npc (_, _, dialogs, _) -> interactNpc dialogs field
+                            | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
+                            | SavePoint -> just field
+                        | None -> just field
                 | Some dialog ->
                     interactDialog dialog field
 
