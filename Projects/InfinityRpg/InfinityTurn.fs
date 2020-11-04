@@ -64,7 +64,7 @@ type Turn =
             | TurnPending
             | TurnBeginning -> vmtovf turn.OriginM
             | TurnTicking tickCount ->
-                let offset = (int Constants.InfinityRpg.CharacterWalkResolution) * (int tickCount |> inc)
+                let offset = (int Constants.InfinityRpg.CharacterWalkResolution) * (int tickCount)
                 let offsetVector = dtovfBy turn.Direction offset
                 vmtovf turn.OriginM + offsetVector
             | TurnFinishing -> turn.OriginM + dtovm turn.Direction |> vmtovf
