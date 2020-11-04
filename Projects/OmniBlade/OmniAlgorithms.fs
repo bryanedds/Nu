@@ -11,12 +11,12 @@ open Nu
 module Algorithms =
 
     let expReqs =
-        [0; 8
-         15; 22; 35; 50; 75; 100
-         150; 220; 350; 500; 750; 1000
-         1500; 2200; 3500; 5000; 7500; 10000
-         15000; 22000; 35000; 50000; 75000; 100000
-         150000; 220000; 350000; 500000; 750000; 1000000]
+        [0; 7
+         15; 23; 35; 50; 75; 100
+         150; 230; 350; 500; 750; 1000
+         1500; 2300; 3500; 5000; 7500; 10000
+         15000; 23000; 35000; 50000; 75000; 100000
+         150000; 230000; 350000; 500000; 750000; 1000000]
 
     let expReqRanges =
         List.pairwise expReqs
@@ -48,8 +48,8 @@ module Algorithms =
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
                 | Some armorData -> single armorData.HitPointsBase
-                | None -> 8.0f
-            | None -> 8.0f
+                | None -> 4.0f
+            | None -> 4.0f
         intermediate * single level * stamina |> int |> max 1
 
     let techPointsMax armorOpt archetypeType level =

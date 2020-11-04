@@ -10,6 +10,19 @@ open OmniBlade
 module Constants =
 
     [<RequireQualifiedAccess>]
+    module Gui =
+
+        let Dissolve =
+            { IncomingTime = 40L
+              OutgoingTime = 60L
+              DissolveImage = Assets.DefaultImage8 }
+
+        let Splash =
+            { DissolveDescriptor = Constants.Dissolve.Default
+              IdlingTime = 60L
+              SplashImageOpt = Some Assets.DefaultImage5 }
+
+    [<RequireQualifiedAccess>]
     module Intro =
 
         let Dissolve =
@@ -48,10 +61,13 @@ module Constants =
     module Battle =
 
         let AllyMax = 3
-        let ActionTime = 999
-        let AutoBattleReadyTime = 48
+        let ActionTime = 1000
+        let AutoBattleReadyTime = 50
         let AutoBattleTechFrequency = 3
-        let ActionTimeInc = 3
+        let AllyActionTimeInitial = 700
+        let AllyActionTimeDelta = 4
+        let EnemyActionTimeInitial = 0
+        let EnemyActionTimeDelta = 3
         let DefendingCounterBuff = 0.5f
         let CancelPosition = v2 -448.0f -240.0f
         let CharacterCenterOffset = v2 0.0f -16.0f

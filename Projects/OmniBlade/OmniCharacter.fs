@@ -91,7 +91,7 @@ module Character =
 
     let isReadyForAutoBattle character =
         Option.isNone character.AutoBattleOpt_ &&
-        character.ActionTime > Constants.Battle.AutoBattleReadyTime &&
+        character.ActionTime >= Constants.Battle.AutoBattleReadyTime &&
         character.IsEnemy
 
     let isAutoBattling character =
@@ -258,7 +258,7 @@ module Character =
     let animate time cycle character =
         { character with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState_ }
 
-    let make bounds characterIndex (characterState : CharacterState) animationSheet direction =
+    let make bounds characterIndex (characterState : CharacterState) animationSheet direction actionTime =
         let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = ReadyCycle; Direction = direction }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
@@ -266,11 +266,12 @@ module Character =
           CharacterState_ = characterState
           AnimationState_ = animationState
           AutoBattleOpt_ = None
-          ActionTime_ = 0
+          ActionTime_ = actionTime
           InputState_ = NoInput }
 
     let makeEnemy index enemyData =
         // TODO: better error checking
+        let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
         let characterData =
             match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
             | Some characterData -> characterData
@@ -280,8 +281,8 @@ module Character =
         let techPoints = Algorithms.techPointsMax None archetypeType characterData.LevelBase
         let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
         let characterState = CharacterState.make characterData hitPoints techPoints expPoints None None [] // TODO: figure out if / how we should populate equipment
-        let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
-        let enemy = make bounds (EnemyIndex index) characterState characterData.AnimationSheet Leftward
+        let actionTime = Constants.Battle.EnemyActionTimeInitial
+        let enemy = make bounds (EnemyIndex index) characterState characterData.AnimationSheet Leftward actionTime
         enemy
 
     let empty =

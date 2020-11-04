@@ -1,3 +1,4 @@
 Type,Scalar,Curative,AimType,Cost,Description
-GreenHerb,1,True,[AllyAim True],5,Heals minor injuries.
-RedHerb,2,True,[AllyAim True],20,Heals medium injuries.
+GreenHerb,30,True,[AllyAim True],2,Heals minor injuries.
+RedHerb,120,True,[AllyAim True],10,Heals medium injuries.
+GoldHerb,999,True,[AllyAim True],50,Heals all injuries.

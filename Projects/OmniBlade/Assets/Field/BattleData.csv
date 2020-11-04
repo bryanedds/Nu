@@ -1,5 +1,4 @@
 Type,BattleAllyPositions,BattleEnemies,BattleSongOpt
 DebugBattle,[[-240 -180] [80 -140] [80 160]],[[Goblin [-240 0]] [Goblin [-80 40]] [Goblin [120 80]]],[Some [Battle Battle]]
 CaveBattle,[[-240 -180] [80 -140] [80 160]],[[Goblin [-140 0]]],[Some [Battle Battle]]
-CaveBattle2,[[-240 -180] [80 -140] [80 160]],[[Goblin [-80 40]]],[Some [Battle Battle]]
-CaveBattle3,[[-240 -180] [80 -140] [80 160]],[[Goblin [-80 40]] [Goblin [120 80]]],[Some [Battle Battle]]
+CaveBattle2,[[-240 -180] [80 -140] [80 160]],[[Goblin [-80 40]] [Goblin [120 80]]],[Some [Battle Battle]]

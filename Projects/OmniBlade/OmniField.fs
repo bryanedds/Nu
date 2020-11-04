@@ -127,34 +127,34 @@ type [<ReferenceEquality; NoComparison>] ShopConfirm =
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
         let effect = "Effect: " + cd.Description
         let stats = "Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirm.make selection price offer stats effect
+        ShopConfirm.make selection price offer effect stats
 
     static member makeFromWeaponData buying inventory selection (wd : WeaponData) =
         let itemType = snd selection
         let header = if buying then "Buy " else "Sell "
         let price = if buying then wd.Cost else wd.Cost / 2
-        let effect = "Effect: " + wd.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
+        let effect = "Effect: " + wd.Description
         let stats = "Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirm.make selection price offer stats effect
+        ShopConfirm.make selection price offer effect stats
 
     static member makeFromArmorData buying inventory selection (ad : ArmorData) =
         let itemType = snd selection
         let header = if buying then "Buy " else "Sell "
         let price = if buying then ad.Cost else ad.Cost / 2
-        let effect = "Effect: " + ad.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
+        let effect = "Effect: " + ad.Description
         let stats = "HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirm.make selection price offer stats effect
+        ShopConfirm.make selection price offer effect stats
 
     static member makeFromAccessoryData buying inventory selection (ad : AccessoryData) =
         let itemType = snd selection
         let header = if buying then "Buy " else "Sell "
         let price = if buying then ad.Cost else ad.Cost / 2
-        let effect = "Effect: " + ad.Description
         let offer = header + ItemType.getName itemType + " for " + string price + "G?"
+        let effect = "Effect: " + ad.Description
         let stats = "Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirm.make selection price offer stats effect
+        ShopConfirm.make selection price offer effect stats
 
     static member tryMakeFromSelection buying inventory selection =
         match snd selection with
@@ -302,7 +302,11 @@ module Field =
             updateLegion (fun legion ->
                 match Map.tryFind i legion with
                 | Some legionnaire ->
-                    let legionnaire = { legionnaire with HitPoints = ally.HitPoints; ExpPoints = ally.ExpPoints }
+                    let legionnaire =
+                        { legionnaire with
+                            HitPoints = ally.HitPoints
+                            TechPoints = ally.TechPoints
+                            ExpPoints = ally.ExpPoints }
                     Map.add i legionnaire legion
                 | None -> legion)
                 field)
@@ -353,7 +357,7 @@ module Field =
           EncounterCreep_ = 0.0f
           Advents_ = Set.empty
           PropStates_ = Map.empty
-          Inventory_ = { Items = Map.empty; Gold = 50 }
+          Inventory_ = Inventory.initial
           Submenu_ = { SubmenuState = SubmenuClosed; SubmenuUseOpt = None }
           ShopOpt_ = None
           FieldTransitionOpt_ = None
