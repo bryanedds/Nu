@@ -181,13 +181,13 @@ module Direction =
 [<AutoOpen>]
 module MathOperators =
     
-    let itom i =
+    let itoc i =
         i / Constants.Layout.TileSizeI.X
     
-    let vmtovi vm =
+    let vctovi vm =
         Vector2i.Multiply (vm, Constants.Layout.TileSizeI)
 
-    let vitovm vi =
+    let vitovc vi =
         Vector2i.Divide (vi, Constants.Layout.TileSizeI)
 
     let vitovf (vi : Vector2i) =
@@ -196,42 +196,49 @@ module MathOperators =
     let vftovi (vf : Vector2) =
         Vector2i vf
 
-    let vmtovf vm =
-        vm |> vmtovi |> vitovf
+    let vctovf vm =
+        vm |> vctovi |> vitovf
 
-    let vftovm vf =
-        vf |> vftovi |> vitovm
+    let vftovc vf =
+        vf |> vftovi |> vitovc
 
-    let v2UpBy i = v2 0.0f (float32 i)
-    let v2RightBy i = v2 (float32 i) 0.0f
-    let v2DownBy i = v2 0.0f -(float32 i)
-    let v2LeftBy i = v2 -(float32 i) 0.0f
+    let v2UpScaled i =
+        v2 0.0f (float32 i)
+
+    let v2RightScaled i =
+        v2 (float32 i) 0.0f
+
+    let v2DownScaled i =
+        v2 0.0f -(float32 i)
+
+    let v2LeftScaled i =
+        v2 -(float32 i) 0.0f
     
-    let dtovm d =
+    let dtovc d =
         match d with
         | Upward -> v2iUp
         | Rightward -> v2iRight
         | Downward -> v2iDown
         | Leftward -> v2iLeft
 
-    let dtovi d =
-        dtovm d |> vmtovi
+    let dtovcScaled d i =
+        dtovc d * v2iDup i
 
     let dtovf d =
-        dtovi d |> vitovf
-
-    let dtovfBy d i =
         match d with
-        | Upward -> v2UpBy i
-        | Rightward -> v2RightBy i
-        | Downward -> v2DownBy i
-        | Leftward -> v2LeftBy i
+        | Upward -> v2Up
+        | Rightward -> v2Right
+        | Downward -> v2Down
+        | Leftward -> v2Left
 
-    let dtoviBy d i =
-        dtovfBy d i |> vftovi
+    let dtovfScaled d i =
+        dtovf d * v2Dup i
 
-    let dtovmBy d i =
-        dtovfBy d i |> vftovm
+    let dtovi d =
+        dtovc d |> vctovi
+
+    let dtoviScaled d i =
+        dtovfScaled d i |> vftovi
 
     let vftod v =
         if v <> v2Zero then
@@ -246,8 +253,8 @@ module MathOperators =
     let vitod v =
         vitovf v |> vftod
 
-    let vmtod v =
-        vmtovf v |> vftod
+    let vctod v =
+        vctovf v |> vftod
 
 [<RequireQualifiedAccess>]
 module Math =
@@ -256,16 +263,16 @@ module Math =
         i % Constants.Layout.TileSizeI.X = 0
 
     let directionToTarget current target =
-        target - current |> vmtod
+        target - current |> vctod
 
-    let arePositionMsAdjacent positionM positionM2 =
-        positionM = positionM2 + v2iUp ||
-        positionM = positionM2 + v2iRight ||
-        positionM = positionM2 + v2iDown ||
-        positionM = positionM2 + v2iLeft
+    let areCoordinatesAdjacent coordinates coordinates2 =
+        coordinates = coordinates2 + v2iUp ||
+        coordinates = coordinates2 + v2iRight ||
+        coordinates = coordinates2 + v2iDown ||
+        coordinates = coordinates2 + v2iLeft
 
     let arePositionIsAdjacent positionI positionI2 =
-        arePositionMsAdjacent (vitovm positionI) (vitovm positionI2)
+        areCoordinatesAdjacent (vitovc positionI) (vitovc positionI2)
 
     let arePositionsAdjacent position position2 =
         arePositionIsAdjacent (vftovi position) (vftovi position2)

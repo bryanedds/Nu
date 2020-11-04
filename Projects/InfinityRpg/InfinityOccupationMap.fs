@@ -9,42 +9,42 @@ type OccupationMap =
 [<RequireQualifiedAccess>]
 module OccupationMap =
 
-    let isOpenAtPositionM positionM (occupationMap : OccupationMap) =
-        match Map.tryFind positionM occupationMap with
+    let isOpenAtCoordinates coordinates (occupationMap : OccupationMap) =
+        match Map.tryFind coordinates occupationMap with
         | Some occupied -> not occupied
         | None -> false
 
-    let getOpenDirectionsAtPositionM positionM (occupationMap : OccupationMap) =
+    let getOpenDirectionsAtCoordinates coordinates (occupationMap : OccupationMap) =
         Set.ofSeq $
             seq {
-                if isOpenAtPositionM (positionM + v2iUp) occupationMap then yield Upward
-                if isOpenAtPositionM (positionM + v2iRight) occupationMap then yield Rightward
-                if isOpenAtPositionM (positionM + v2iDown) occupationMap then yield Downward
-                if isOpenAtPositionM (positionM + v2iLeft) occupationMap then yield Leftward }
+                if isOpenAtCoordinates (coordinates + v2iUp) occupationMap then yield Upward
+                if isOpenAtCoordinates (coordinates + v2iRight) occupationMap then yield Rightward
+                if isOpenAtCoordinates (coordinates + v2iDown) occupationMap then yield Downward
+                if isOpenAtCoordinates (coordinates + v2iLeft) occupationMap then yield Leftward }
 
-    let getOpenNeighborPositionMsAtPositionM positionM occupationMap =
-        let openDirections = getOpenDirectionsAtPositionM positionM occupationMap
-        Set.map (fun direction -> positionM + dtovm direction) openDirections
+    let getOpenNeighborCoordinates coordinates occupationMap =
+        let openDirections = getOpenDirectionsAtCoordinates coordinates occupationMap
+        Set.map (fun direction -> coordinates + dtovc direction) openDirections
 
     let occupyByCharacter characterPosition (occupationMap : OccupationMap) =
-        let characterPositionM = vftovm characterPosition
-        Map.add characterPositionM true occupationMap
+        let characterCoordinates = vftovc characterPosition
+        Map.add characterCoordinates true occupationMap
 
     let occupyByCharacters characterPositions occupationMap =
         Seq.fold (flip occupyByCharacter) occupationMap characterPositions
 
-    let occupyByAdjacentCharacter positionM characterPosition (occupationMap : OccupationMap) =
-        let characterPositionM = vftovm characterPosition
-        if Math.arePositionMsAdjacent characterPositionM positionM
-        then Map.add characterPositionM true occupationMap
+    let occupyByAdjacentCharacter coordinates characterPosition (occupationMap : OccupationMap) =
+        let characterCoordinates = vftovc characterPosition
+        if Math.areCoordinatesAdjacent characterCoordinates coordinates
+        then Map.add characterCoordinates true occupationMap
         else occupationMap
 
-    let occupyByAdjacentCharacters positionM characterPositions occupationMap =
-        Seq.fold (flip (occupyByAdjacentCharacter positionM)) occupationMap characterPositions
+    let occupyByAdjacentCharacters coordinates characterPositions occupationMap =
+        Seq.fold (flip (occupyByAdjacentCharacter coordinates)) occupationMap characterPositions
 
     let unoccupyByCharacter characterPosition (occupationMap : OccupationMap) =
-        let characterPositionM = vftovm characterPosition
-        Map.add characterPositionM false occupationMap
+        let characterCoordinates = vftovc characterPosition
+        Map.add characterCoordinates false occupationMap
 
     let unoccupyByCharacters characterPositions occupationMap =
         Seq.fold (flip unoccupyByCharacter) occupationMap characterPositions
@@ -53,10 +53,10 @@ module OccupationMap =
     // bottleneck for larger maps. solution is to simply leave the entry empty when the tile is passable, only adding entries for tiles that are not passable.
     let makeFromFieldTiles fieldTiles =
         Map.fold
-            (fun occupationMap fieldTilePositionM fieldTile ->
+            (fun occupationMap fieldTileCoordinates fieldTile ->
                 match fieldTile.TileType with
-                | Impassable -> Map.add fieldTilePositionM true occupationMap
-                | Passable -> Map.add fieldTilePositionM false occupationMap)
+                | Impassable -> Map.add fieldTileCoordinates true occupationMap
+                | Passable -> Map.add fieldTileCoordinates false occupationMap)
             Map.empty
             fieldTiles
 
@@ -64,27 +64,27 @@ module OccupationMap =
         let occupationMap = makeFromFieldTiles fieldTiles
         occupyByCharacters characterPositions occupationMap
 
-    let makeFromFieldTilesAndAdjacentCharacters positionM fieldTiles characterPositions =
+    let makeFromFieldTilesAndAdjacentCharacters coordinates fieldTiles characterPositions =
         let occupationMap = makeFromFieldTiles fieldTiles
-        occupyByAdjacentCharacters positionM characterPositions occupationMap
+        occupyByAdjacentCharacters coordinates characterPositions occupationMap
 
     let makeNavigationNodes occupationMap =
         
         // make the nodes without neighbors
-        let nodes = Map.map (fun positionM _ -> { PositionM = positionM; Neighbors = [] }) occupationMap
+        let nodes = Map.map (fun coordinates _ -> { Coordinates = coordinates; Neighbors = [] }) occupationMap
 
         // OPTIMIZATION: populate node neighbors imperatively for speed
         Map.iter
-            (fun positionM node -> 
-                let neighborPositionMs = List.ofSeq (getOpenNeighborPositionMsAtPositionM positionM occupationMap)
+            (fun coordinates node -> 
+                let neighborCoordinates = List.ofSeq (getOpenNeighborCoordinates coordinates occupationMap)
                 let neighbors =
                     List.fold
-                        (fun neighbors neighborPositionM ->
-                            match Map.tryFind neighborPositionM nodes with
+                        (fun neighbors neighborCoordinates ->
+                            match Map.tryFind neighborCoordinates nodes with
                             | Some node -> node :: neighbors
                             | None -> neighbors)
                         []
-                        neighborPositionMs
+                        neighborCoordinates
                 node.Neighbors <- neighbors)
             nodes
 

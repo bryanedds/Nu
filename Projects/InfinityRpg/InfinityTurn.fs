@@ -15,7 +15,7 @@ type CharacterIndex =
         not this.IsEnemy
 
 type [<CustomEquality; NoComparison>] NavigationNode =
-    { PositionM : Vector2i
+    { Coordinates : Vector2i
       mutable Neighbors : NavigationNode list } // OPTIMIZATION: has to be mutable to be efficiently populated.
 
     interface NavigationNode IHasNeighbors with
@@ -23,15 +23,15 @@ type [<CustomEquality; NoComparison>] NavigationNode =
 
     interface NavigationNode IEquatable with
         member this.Equals that =
-            this.PositionM = that.PositionM
+            this.Coordinates = that.Coordinates
 
     override this.Equals that =
         match that with
-        | :? NavigationNode as that -> this.PositionM = that.PositionM
+        | :? NavigationNode as that -> this.Coordinates = that.Coordinates
         | _ -> false
 
     override this.GetHashCode () =
-        this.PositionM.GetHashCode ()
+        this.Coordinates.GetHashCode ()
 
 type TurnType =
     | WalkTurn of bool
@@ -53,7 +53,7 @@ type Turn =
       TurnStatus : TurnStatus
       Actor : CharacterIndex
       ReactorOpt : CharacterIndex option
-      OriginM : Vector2i
+      OriginCoordinates : Vector2i
       Direction : Direction
       StartTick : int64 }
     
@@ -62,13 +62,13 @@ type Turn =
         | WalkTurn _ ->
             match turn.TurnStatus with
             | TurnPending
-            | TurnBeginning -> vmtovf turn.OriginM
+            | TurnBeginning -> vctovf turn.OriginCoordinates
             | TurnTicking tickCount ->
                 let offset = (int Constants.InfinityRpg.CharacterWalkResolution) * (int tickCount)
-                let offsetVector = dtovfBy turn.Direction offset
-                vmtovf turn.OriginM + offsetVector
-            | TurnFinishing -> turn.OriginM + dtovm turn.Direction |> vmtovf
-        | _ -> vmtovf turn.OriginM
+                let offsetVector = dtovfScaled turn.Direction (single offset)
+                vctovf turn.OriginCoordinates + offsetVector
+            | TurnFinishing -> turn.OriginCoordinates + dtovc turn.Direction |> vctovf
+        | _ -> vctovf turn.OriginCoordinates
     
     static member toCharacterAnimationState turn =
         let animationType =
@@ -110,20 +110,20 @@ type Turn =
     static member incTickCount turn =
         Turn.updateTurnStatus TurnStatus.incTickCount turn
     
-    static member makeWalk index multiRoundContext originM direction =
+    static member makeWalk index multiRoundContext originC direction =
         { TurnType = WalkTurn multiRoundContext
           TurnStatus = TurnPending
           Actor = index
           ReactorOpt = None
-          OriginM = originM
+          OriginCoordinates = originC
           Direction = direction
           StartTick = 0L }
 
-    static member makeAttack index targetIndex originM direction =
+    static member makeAttack index targetIndex originC direction =
         { TurnType = AttackTurn
           TurnStatus = TurnPending
           Actor = index
           ReactorOpt = Some targetIndex
-          OriginM = originM
+          OriginCoordinates = originC
           Direction = direction
           StartTick = 0L }

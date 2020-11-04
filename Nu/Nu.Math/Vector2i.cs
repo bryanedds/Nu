@@ -69,6 +69,13 @@ namespace Nu
                 n * v.Y);
         }
 
+        public static Vector2i operator *(Vector2i v, Vector2i v2)
+        {
+            return new Vector2i(
+                v.X * v2.X,
+                v.Y * v2.Y);
+        }
+
         public static Vector2i operator /(Vector2i v, int n)
         {
             return new Vector2i(
@@ -81,6 +88,13 @@ namespace Nu
             return new Vector2i(
                 n / v.X,
                 n / v.Y);
+        }
+
+        public static Vector2i operator /(Vector2i v, Vector2i v2)
+        {
+            return new Vector2i(
+                v.X / v2.X,
+                v.Y / v2.Y);
         }
 
         public static Vector2i Multiply(Vector2i v, Vector2i v2)

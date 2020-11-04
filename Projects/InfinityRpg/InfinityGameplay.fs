@@ -22,7 +22,7 @@ type [<ReferenceEquality; NoComparison>] MapModeler =
         this.FieldMapUnits.[this.CurrentFieldOffset]
 
     member this.OffsetInDirection direction =
-        this.CurrentFieldOffset + dtovm direction
+        this.CurrentFieldOffset + dtovc direction
     
     member this.ExistsInDirection direction =
         Map.containsKey (this.OffsetInDirection direction) this.FieldMapUnits
@@ -154,7 +154,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Map.filter (fun _ (v : FieldSpace) -> not v.ContainsCharacter) this.PassableCoordinates |> Map.toKeyList
 
     member this.OpenDirections coordinates =
-        List.filter (fun d -> List.exists (fun x -> x = (coordinates + (dtovm d))) this.AvailableCoordinates) [Upward; Rightward; Downward; Leftward]
+        List.filter (fun d -> List.exists (fun x -> x = (coordinates + (dtovc d))) this.AvailableCoordinates) [Upward; Rightward; Downward; Leftward]
     
     static member updatePassableCoordinates updater chessboard =
         { chessboard with PassableCoordinates = updater chessboard.PassableCoordinates }
@@ -364,7 +364,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         | _ -> gameplay
     
     static member applyStep index direction gameplay =
-        let coordinates = (Gameplay.getCoordinates index gameplay) + dtovm direction
+        let coordinates = (Gameplay.getCoordinates index gameplay) + dtovc direction
         let gameplay = Gameplay.updateCharacterState index (CharacterState.updateFacingDirection (constant direction)) gameplay
         let gameplay =
             if Chessboard.pickupAtCoordinates coordinates gameplay.Chessboard then
@@ -394,7 +394,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             match path with
             | head :: _ ->
                 let currentCoordinates = Gameplay.getCoordinates index gameplay
-                let direction = Math.directionToTarget currentCoordinates head.PositionM
+                let direction = Math.directionToTarget currentCoordinates head.Coordinates
                 Gameplay.applyStep index direction gameplay
             | [] -> failwithumf ()
     
@@ -409,7 +409,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 let direction = Gameplay.getCoordinates reactorIndex gameplay |> Math.directionToTarget coordinates
                 Turn.makeAttack index reactorIndex coordinates direction
             | Travel path ->
-                let direction = Math.directionToTarget coordinates path.Head.PositionM
+                let direction = Math.directionToTarget coordinates path.Head.Coordinates
                 Turn.makeWalk index true coordinates direction
 
         Gameplay.updateCharacterTurns (fun x -> turn :: x) gameplay
@@ -431,7 +431,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member determineCharacterPosition index gameplay =
         match Gameplay.tryGetCharacterTurn index gameplay with
         | Some turn -> Turn.calculatePosition turn
-        | None -> Gameplay.getCoordinates index gameplay |> vmtovf
+        | None -> Gameplay.getCoordinates index gameplay |> vctovf
 
     static member makePlayer gameplay =
         Gameplay.updateChessboardBy Chessboard.addCharacter (PlayerIndex, CharacterState.makePlayer) v2iZero gameplay
