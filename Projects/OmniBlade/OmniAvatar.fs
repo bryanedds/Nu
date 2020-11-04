@@ -79,6 +79,12 @@ module Avatar =
     let animate time cycle avatar =
         { avatar with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle avatar.AnimationState_ }
 
+    let toSymbolizable avatar =
+        { avatar with
+            CollidedBodyShapes_ = []
+            SeparatedBodyShapes_ = []
+            IntersectedBodyShapes_ = [] }
+
     let make bounds animationSheet direction =
         let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = IdleCycle; Direction = direction }
         { BoundsOriginal_ = bounds
