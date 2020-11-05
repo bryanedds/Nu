@@ -230,7 +230,6 @@ module WorldDeclarative =
                 | None -> sieve a
             let mapper' = fun a (_ : obj option) (_ : World) -> sieve' a.Value
             let filter = fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true
-            //let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
             let mutable sieveResult = Unchecked.defaultof<_>
             let mutable foldResultOpt = None
             let lensSeq =
