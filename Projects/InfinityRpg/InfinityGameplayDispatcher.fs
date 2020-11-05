@@ -190,7 +190,7 @@ module GameplayDispatcher =
                     | Some playerTurn ->
                         match playerTurn.TurnStatus with
                         | TurnFinishing ->
-                            match Gameplay.getCurrentMove PlayerIndex gameplay with
+                            match Gameplay.getCharacterMove PlayerIndex gameplay with
                             | Travel path ->
                                 match path with
                                 | _ :: [] -> None
@@ -257,7 +257,7 @@ module GameplayDispatcher =
                 | _ -> just gameplay
 
             | TryHaltPlayer ->
-                match Map.tryFind PlayerIndex gameplay.Chessboard.CurrentMoves with
+                match Map.tryFind PlayerIndex gameplay.CharacterMoves with
                 | Some _ ->
                     let gameplay = Gameplay.truncatePlayerPath gameplay
                     just gameplay
