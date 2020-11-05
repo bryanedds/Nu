@@ -122,12 +122,10 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
           PickupItemOpt = None }
 
 type [<ReferenceEquality; NoComparison>] Chessboard =
-    { PassableCoordinates : Map<Vector2i, FieldSpace>
-      CurrentMoves : Map<CharacterIndex, Move> }
+    { PassableCoordinates : Map<Vector2i, FieldSpace> }
 
     static member empty =
-        { PassableCoordinates = Map.empty
-          CurrentMoves = Map.empty }
+        { PassableCoordinates = Map.empty }
 
     member this.CharacterCoordinates =
         Map.filter (fun _ (v : FieldSpace) -> v.ContainsCharacter) this.PassableCoordinates
@@ -159,9 +157,6 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member updatePassableCoordinates updater chessboard =
         { chessboard with PassableCoordinates = updater chessboard.PassableCoordinates }
     
-    static member updateCurrentMoves updater chessboard =
-        { chessboard with CurrentMoves = updater chessboard.CurrentMoves }
-
     static member characterExists index chessboard =
         Map.exists (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.PassableCoordinates
     
@@ -219,18 +214,6 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member clearEnemies _ _ (chessboard : Chessboard) =
         Chessboard.updateByPredicate FieldSpace.containsEnemy FieldSpace.removeCharacter chessboard
     
-    static member addMove index move chessboard =
-        let currentMoves = Map.add index move chessboard.CurrentMoves
-        Chessboard.updateCurrentMoves (constant currentMoves) chessboard
-    
-    static member removeMove index _ chessboard =
-        let currentMoves = Map.remove index chessboard.CurrentMoves
-        Chessboard.updateCurrentMoves (constant currentMoves) chessboard
-    
-    static member truncatePlayerPath _ _ chessboard =
-        let move = chessboard.CurrentMoves.[PlayerIndex].TruncatePath
-        Chessboard.addMove PlayerIndex move chessboard
-    
     static member setPassableCoordinates _ fieldMap chessboard =
         let passableCoordinates = fieldMap.FieldTiles |> Map.filter (fun _ fieldTile -> fieldTile.TileType = Passable) |> Map.map (fun _ _ -> FieldSpace.empty)
         Chessboard.updatePassableCoordinates (constant passableCoordinates) chessboard
@@ -242,17 +225,19 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Chessboard.addCharacter player playerCoordinates chessboard
 
 type [<ReferenceEquality; NoComparison>] Gameplay =
-    { MapModeler : MapModeler
-      Chessboard : Chessboard
-      ShallLoadGame : bool
+    { ShallLoadGame : bool
+      MapModeler : MapModeler
       Field : Field
+      Chessboard : Chessboard
+      CharacterMoves : Map<CharacterIndex, Move>
       CharacterTurns : Turn list }
 
     static member initial =
-        { MapModeler = MapModeler.make
-          Chessboard = Chessboard.empty
-          ShallLoadGame = false
+        { ShallLoadGame = false
+          MapModeler = MapModeler.make
           Field = Field.initial
+          Chessboard = Chessboard.empty
+          CharacterMoves = Map.empty
           CharacterTurns = [] }
 
     static member updateMapModeler updater gameplay =
@@ -260,7 +245,15 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member updateField updater gameplay =
         { gameplay with Field = updater gameplay.Field }
-
+    
+    // if updater takes index, index is arg1; if updater takes coordinates, coordinates is arg2
+    static member updateChessboardBy updater arg1 arg2 gameplay =
+        let chessboard = updater arg1 arg2 gameplay.Chessboard
+        { gameplay with Chessboard = chessboard }
+    
+    static member updateCharacterMoves updater gameplay =
+        { gameplay with CharacterMoves = updater gameplay.CharacterMoves }
+    
     static member updateCharacterTurns updater gameplay =
         { gameplay with CharacterTurns = updater gameplay.CharacterTurns }
     
@@ -284,8 +277,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getCharacterState index gameplay =
         Chessboard.getCharacterState index gameplay.Chessboard
     
-    static member getCurrentMove index gameplay =
-        gameplay.Chessboard.CurrentMoves.[index]
+    static member getCharacterMove index gameplay =
+        gameplay.CharacterMoves.[index]
     
     static member tryGetCharacterTurn index gameplay =
         List.tryFind (fun x -> x.Actor = index) gameplay.CharacterTurns
@@ -309,31 +302,29 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | _ -> false
         | None -> false
     
+    static member addMove index (move : Move) gameplay =
+        let characterMoves = Map.add index move gameplay.CharacterMoves
+        Gameplay.updateCharacterMoves (constant characterMoves) gameplay
+
+    static member removeMove index gameplay =
+        let characterMoves = Map.remove index gameplay.CharacterMoves
+        Gameplay.updateCharacterMoves (constant characterMoves) gameplay
+    
+    static member truncatePlayerPath gameplay =
+        let move = gameplay.CharacterMoves.[PlayerIndex].TruncatePath
+        Gameplay.addMove PlayerIndex move gameplay
+    
     static member updateCharacterTurn index updater gameplay =
         Gameplay.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) gameplay
     
     static member setCharacterTurnStatus index status gameplay =
         Gameplay.updateCharacterTurn index (Turn.updateTurnStatus (constant status)) gameplay
     
-    // if updater takes index, index is arg1; if updater takes coordinates, coordinates is arg2
-    static member updateChessboardBy updater arg1 arg2 gameplay =
-        let chessboard = updater arg1 arg2 gameplay.Chessboard
-        { gameplay with Chessboard = chessboard }
-    
     static member updateCharacterState index updater gameplay =
         Gameplay.updateChessboardBy Chessboard.updateCharacterState index updater gameplay
 
     static member relocateCharacter index coordinates gameplay =
         Gameplay.updateChessboardBy Chessboard.relocateCharacter index coordinates gameplay
-    
-    static member addMove index (move : Move) gameplay =
-        Gameplay.updateChessboardBy Chessboard.addMove index move gameplay
-
-    static member removeMove index gameplay =
-        Gameplay.updateChessboardBy Chessboard.removeMove index () gameplay
-    
-    static member truncatePlayerPath gameplay =
-        Gameplay.updateChessboardBy Chessboard.truncatePlayerPath () () gameplay
     
     static member addHealth coordinates gameplay =
         Gameplay.updateChessboardBy Chessboard.addHealth () coordinates gameplay
@@ -384,7 +375,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         if reactorIndex = PlayerIndex then Gameplay.truncatePlayerPath gameplay else gameplay
     
     static member applyMove index gameplay =
-        let move = Gameplay.getCurrentMove index gameplay
+        let move = Gameplay.getCharacterMove index gameplay
         match move with
         | Step direction -> Gameplay.applyStep index direction gameplay
         | Attack reactorIndex ->
@@ -399,7 +390,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | [] -> failwithumf ()
     
     static member activateCharacter index gameplay =
-        let move = Gameplay.getCurrentMove index gameplay
+        let move = Gameplay.getCharacterMove index gameplay
         let coordinates = Gameplay.getCoordinates index gameplay
         
         let turn =
