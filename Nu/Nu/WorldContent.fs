@@ -52,7 +52,7 @@ module Content =
     /// Describe layers to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
     let layers lens sieve unfold mapper =
-        layersPlus lens sieve unfold Untracked mapper
+        layersPlus lens sieve unfold AutoTracking mapper // HACK: attempt to hide existing bug until I can find a proper fix.
 
     /// Describe layers to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
@@ -117,7 +117,7 @@ module Content =
     /// Describe entities to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
     let entities lens sieve unfold mapper =
-        entitiesPlus lens sieve unfold Untracked mapper
+        entitiesPlus lens sieve unfold AutoTracking mapper // HACK: attempt to hide existing bug until I can find a proper fix.
 
     /// Describe entities to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
