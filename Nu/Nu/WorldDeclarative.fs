@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections
+open System.Collections.Generic
 open Prime
 open Nu
 
@@ -171,8 +172,8 @@ module WorldDeclarative =
     type World with
 
         static member internal synchronizeSimulants tracking mapper mapper' origin owner parent current previous world =
-            let added = USet.differenceFast current previous
-            let removed = USet.differenceFast previous current
+            let added = if tracking then USet.differenceFast current previous else HashSet (USet.toSeq current, HashIdentity.Structural)
+            let removed = if tracking then USet.differenceFast previous current else added // just reuse added
             let changed = if tracking then added.Count <> 0 || removed.Count <> 0 else true
             if changed then
                 let world =
@@ -229,7 +230,20 @@ module WorldDeclarative =
                 | None -> sieve a
             let mapper' = fun a (_ : obj option) (_ : World) -> sieve' a.Value
             let filter = fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true
-            let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
+            //let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
+            let mutable sieveResult = Unchecked.defaultof<_>
+            let mutable foldResultOpt = None
+            let lensSeq =
+                Lens.mapWorld (fun a world ->
+                    let b = sieve a
+                    let c =
+                        match foldResultOpt with
+                        | Some _ -> if b <> sieveResult then Some (unfold b world) else foldResultOpt
+                        | None -> Some (unfold b world)
+                    sieveResult <- b
+                    foldResultOpt <- c
+                    Option.get foldResultOpt)
+                    lens
             let (tracking, lenses) =
                 match tracker with
                 | Untracked -> (false, Lens.explodeIndexedOpt None lensSeq)
