@@ -4,16 +4,6 @@ open Prime
 open Nu
 open InfinityRpg
 
-type CharacterIndex =
-    | EnemyIndex of int
-    | PlayerIndex
-
-    member this.IsEnemy =
-        match this with EnemyIndex _ -> true | PlayerIndex -> false
-
-    member this.IsAlly =
-        not this.IsEnemy
-
 type [<CustomEquality; NoComparison>] NavigationNode =
     { Coordinates : Vector2i
       mutable Neighbors : NavigationNode list } // OPTIMIZATION: has to be mutable to be efficiently populated.
@@ -81,11 +71,11 @@ type Turn =
             | WalkTurn _ -> CharacterAnimationFacing
         CharacterAnimationState.make turn.StartTick animationType turn.Direction
 
-    static member turnsToCharacterAnimationState characterIndex (characterState : CharacterState) characterTurns =
+    static member turnsToCharacterAnimationState characterIndex (character : Character) characterTurns =
         match List.tryFind (fun turn -> turn.Actor = characterIndex) characterTurns with
         | None ->
             let animationType =
-                if not characterState.IsAlive then
+                if not character.IsAlive then
                     match List.tryFind (fun (turn : Turn) -> turn.ReactorOpt = Some characterIndex) characterTurns with
                     | Some attackerTurn ->
                         match attackerTurn.TurnStatus with
@@ -98,7 +88,7 @@ type Turn =
                         | TurnFinishing -> CharacterAnimationSlain
                     | None -> CharacterAnimationSlain
                 else CharacterAnimationFacing
-            CharacterAnimationState.make 0L animationType characterState.FacingDirection
+            CharacterAnimationState.make 0L animationType character.FacingDirection
         | Some turn -> Turn.toCharacterAnimationState turn
     
     static member updateTurnStatus updater turn =

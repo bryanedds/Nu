@@ -79,10 +79,10 @@ module GameplayDispatcher =
                         | AttackTurn ->
                             let gameplay = Gameplay.finishMove index gameplay
                             let reactorIndex = Option.get characterTurn.ReactorOpt
-                            let reactorState = Gameplay.getCharacterState reactorIndex gameplay
+                            let reactorState = Gameplay.getCharacter reactorIndex gameplay
                             if reactorState.HitPoints <= 0 then
                                 match reactorIndex with
-                                | PlayerIndex -> Gameplay.updateCharacterState reactorIndex (CharacterState.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
+                                | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
                                 | EnemyIndex _ -> Gameplay.removeEnemy reactorIndex gameplay
                             else gameplay
                         | WalkTurn _ -> if index.IsEnemy then Gameplay.finishMove index gameplay else gameplay
@@ -156,11 +156,11 @@ module GameplayDispatcher =
                         indices
                 let updater =
                     (fun index gameplay ->
-                        let characterState = Gameplay.getCharacterState index gameplay
+                        let character = Gameplay.getCharacter index gameplay
                         let enemyMoveOpt =
-                            match characterState.ControlType with
+                            match character.ControlType with
                             | Chaos ->
-                                if characterState.HitPoints > 0 then
+                                if character.HitPoints > 0 then
                                     match attackerOpt with
                                     | Some attackerIndex ->
                                         if index = attackerIndex
@@ -313,7 +313,7 @@ module GameplayDispatcher =
             match command with
             | HandlePlayerInput playerInput ->
                 if not (Gameplay.anyTurnsInProgress gameplay) then
-                    match (Gameplay.getCharacterState PlayerIndex gameplay).ControlType with
+                    match (Gameplay.getCharacter PlayerIndex gameplay).ControlType with
                     | PlayerControlled -> withMsg (HandleMapChange playerInput) world
                     | _ -> just world
                 else just world
@@ -386,9 +386,9 @@ module GameplayDispatcher =
                                 List.map
                                     (fun (characterPosition, fieldSpace) ->
                                         match fieldSpace.CharacterOpt with
-                                        | Some (characterIndex, characterState) ->
+                                        | Some (characterIndex, character) ->
                                             let index = match characterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
-                                            Some (index, (characterIndex, characterPosition, characterState, characterTurns))
+                                            Some (index, (characterIndex, characterPosition, character, characterTurns))
                                         | None -> None)
                                     (Map.toList chessboard.PassableCoordinates)
                             List.definitize characterDataOpts)
@@ -403,8 +403,8 @@ module GameplayDispatcher =
                                     match characterIndex with
                                     | PlayerIndex -> Assets.PlayerImage
                                     | EnemyIndex _ -> Assets.GoopyImage // TODO: pull this from data
-                                 Entity.CharacterAnimationState <== characterData --> fun (characterIndex, _, characterState, characterTurns) ->
-                                    Turn.turnsToCharacterAnimationState characterIndex characterState characterTurns])])
+                                 Entity.CharacterAnimationState <== characterData --> fun (characterIndex, _, character, characterTurns) ->
+                                    Turn.turnsToCharacterAnimationState characterIndex character characterTurns])])
 
              // hud layer
              Content.layer Simulants.Hud.Name []

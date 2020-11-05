@@ -63,7 +63,7 @@ type [<NoComparison>] Move =
         | _ -> this
 
 type [<ReferenceEquality; NoComparison>] FieldSpace =
-    { CharacterOpt : (CharacterIndex * CharacterState) Option
+    { CharacterOpt : (CharacterIndex * Character) Option
       PickupItemOpt : PickupType Option }
 
     member this.GetCharacter =
@@ -100,13 +100,13 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
     static member addCharacter character fieldSpace =
         FieldSpace.updateCharacterOpt (constant (Some character)) fieldSpace
 
-    static member updateCharacterStateInternal updater characterOpt =
+    static member updateCharacterInternal updater characterOpt =
         match characterOpt with
         | Some character -> Some (fst character, updater (snd character))
         | None -> failwithumf ()
     
-    static member updateCharacterState updater fieldSpace =
-        FieldSpace.updateCharacterOpt (FieldSpace.updateCharacterStateInternal updater) fieldSpace
+    static member updateCharacter updater fieldSpace =
+        FieldSpace.updateCharacterOpt (FieldSpace.updateCharacterInternal updater) fieldSpace
     
     static member removeCharacter fieldSpace =
         FieldSpace.updateCharacterOpt (constant None) fieldSpace
@@ -190,16 +190,16 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member getCharacterAtCoordinates coordinates chessboard =
         chessboard.PassableCoordinates.[coordinates].GetCharacter
     
-    static member getCharacterState index chessboard =
+    static member getCharacter index chessboard =
         let coordinates = Chessboard.getCharacterCoordinates index chessboard
         Chessboard.getCharacterAtCoordinates coordinates chessboard |> snd
     
     static member addCharacter character coordinates (chessboard : Chessboard) =
         Chessboard.updateByCoordinates coordinates (FieldSpace.addCharacter character) chessboard
 
-    static member updateCharacterState index updater chessboard =
+    static member updateCharacter index updater chessboard =
         let coordinates = Chessboard.getCharacterCoordinates index chessboard
-        Chessboard.updateByCoordinates coordinates (FieldSpace.updateCharacterState updater) chessboard
+        Chessboard.updateByCoordinates coordinates (FieldSpace.updateCharacter updater) chessboard
     
     static member removeCharacter index _ chessboard =
         let coordinates = Chessboard.getCharacterCoordinates index chessboard
@@ -274,8 +274,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getIndexByCoordinates coordinates gameplay =
         Chessboard.getCharacterAtCoordinates coordinates gameplay.Chessboard |> fst
 
-    static member getCharacterState index gameplay =
-        Chessboard.getCharacterState index gameplay.Chessboard
+    static member getCharacter index gameplay =
+        Chessboard.getCharacter index gameplay.Chessboard
     
     static member getCharacterMove index gameplay =
         gameplay.CharacterMoves.[index]
@@ -320,8 +320,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member setCharacterTurnStatus index status gameplay =
         Gameplay.updateCharacterTurn index (Turn.updateTurnStatus (constant status)) gameplay
     
-    static member updateCharacterState index updater gameplay =
-        Gameplay.updateChessboardBy Chessboard.updateCharacterState index updater gameplay
+    static member updateCharacter index updater gameplay =
+        Gameplay.updateChessboardBy Chessboard.updateCharacter index updater gameplay
 
     static member relocateCharacter index coordinates gameplay =
         Gameplay.updateChessboardBy Chessboard.relocateCharacter index coordinates gameplay
@@ -350,13 +350,13 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member tryPickupHealth index coordinates gameplay =
         match index with
         | PlayerIndex ->
-            let gameplay = Gameplay.updateCharacterState index (CharacterState.updateHitPoints (constant 30)) gameplay
+            let gameplay = Gameplay.updateCharacter index (Character.updateHitPoints (constant 30)) gameplay
             Gameplay.removeHealth coordinates gameplay
         | _ -> gameplay
     
     static member applyStep index direction gameplay =
         let coordinates = (Gameplay.getCoordinates index gameplay) + dtovc direction
-        let gameplay = Gameplay.updateCharacterState index (CharacterState.updateFacingDirection (constant direction)) gameplay
+        let gameplay = Gameplay.updateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
         let gameplay =
             if Chessboard.pickupAtCoordinates coordinates gameplay.Chessboard then
                 Gameplay.tryPickupHealth index coordinates gameplay
@@ -368,8 +368,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let coordinates = Gameplay.getCoordinates index gameplay
         let reactorCoordinates = Gameplay.getCoordinates reactorIndex gameplay
         let direction = Math.directionToTarget coordinates reactorCoordinates
-        let gameplay = Gameplay.updateCharacterState index (CharacterState.updateFacingDirection (constant direction)) gameplay
-        Gameplay.updateCharacterState reactorIndex (CharacterState.updateHitPoints (fun x -> x - reactorDamage)) gameplay
+        let gameplay = Gameplay.updateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
+        Gameplay.updateCharacter reactorIndex (Character.updateHitPoints (fun x -> x - reactorDamage)) gameplay
     
     static member stopTravelingPlayer reactorIndex gameplay =
         if reactorIndex = PlayerIndex then Gameplay.truncatePlayerPath gameplay else gameplay
@@ -425,12 +425,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         | None -> Gameplay.getCoordinates index gameplay |> vctovf
 
     static member makePlayer gameplay =
-        Gameplay.updateChessboardBy Chessboard.addCharacter (PlayerIndex, CharacterState.makePlayer) v2iZero gameplay
+        Gameplay.updateChessboardBy Chessboard.addCharacter (PlayerIndex, Character.makePlayer) v2iZero gameplay
 
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.AvailableCoordinates
         let coordinates = availableCoordinates.Item(Gen.random1 availableCoordinates.Length)
-        Gameplay.updateChessboardBy Chessboard.addCharacter (index, CharacterState.makeEnemy) coordinates gameplay
+        Gameplay.updateChessboardBy Chessboard.addCharacter (index, Character.makeEnemy index) coordinates gameplay
 
     static member makeEnemies quantity gameplay =
         let rec recursion count gameplay =
