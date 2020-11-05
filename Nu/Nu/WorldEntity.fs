@@ -300,9 +300,7 @@ module WorldEntityModule =
         /// Destroy an entity in the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyEntity (entity : Entity) world =
-            let world = { world with DestructionQueue = Queue.conj (entity :> Simulant) world.DestructionQueue }
-            let world = { world with DestructionSet = Set.add (entity :> Simulant).SimulantAddress world.DestructionSet }
-            world
+            World.addSimulantToDestruction entity world
 
         /// Destroy multiple entities in the world immediately. Can be dangerous if existing in-flight publishing
         /// depends on any of the entities' existences. Consider using World.destroyEntities instead.

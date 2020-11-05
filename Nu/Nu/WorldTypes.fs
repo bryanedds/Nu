@@ -1030,8 +1030,7 @@ module WorldTypes =
               Dispatchers : Dispatchers
               ScriptingEnv : Scripting.Env
               ScriptingContext : Simulant
-              DestructionQueue : Simulant Queue
-              DestructionSet : Simulant Address Set
+              DestructionListRev : Simulant list
               Plugin : NuPlugin }
 
         interface World EventSystem with

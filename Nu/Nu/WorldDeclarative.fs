@@ -170,9 +170,9 @@ module WorldDeclarative =
     type World with
 
         static member internal synchronizeSimulants tracking mapper mapper' origin owner parent current previous world =
-            let added = if tracking then USet.differenceFast current previous else USet.unionFast current previous
-            let removed = if tracking then USet.differenceFast previous current else added
-            let changed = if tracking then added.Count <> 0 || removed.Count <> 0 else true
+            let added = if tracking then USet.differenceFast current previous else HashSet (USet.toSeq current, HashIdentity.Structural)
+            let removed = if tracking then USet.differenceFast previous current else HashSet (USet.toSeq previous, HashIdentity.Structural)
+            let changed = added.Count <> 0 || removed.Count <> 0
             if changed then
                 let world =
                     Seq.fold (fun world guidAndContent ->
@@ -180,6 +180,7 @@ module WorldDeclarative =
                         match World.tryGetKeyedValue guid world with
                         | Some simulant ->
                             let world = World.removeKeyedValue guid world
+                            // REMOVE_ME: Console.WriteLine ("Scheduling destroy of " + scstring simulant)
                             WorldModule.destroy simulant world
                         | None -> world)
                         world removed
