@@ -212,7 +212,8 @@ module Field =
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
-        member this.RandSeedState = FieldType.rotateRandSeedState this.RandSeedState_ this.FieldType_
+        member this.RandSeedState = this.RandSeedState_
+        member this.RotatedSeedState = FieldType.rotateRandSeedState this.RandSeedState_ this.FieldType
         member this.Avatar = this.Avatar_
         member this.Legion = this.Legion_
         member this.EncounterCreep = this.EncounterCreep_
@@ -320,6 +321,9 @@ module Field =
         let field = updateBattleOpt (constant None) field
         field
 
+    let toSymbolizable field =
+        { field with Avatar_ = Avatar.toSymbolizable field.Avatar }
+
     let make fieldType randSeedState avatar legion advents inventory =
         { FieldType_ = fieldType
           RandSeedState_ = randSeedState
@@ -364,9 +368,6 @@ module Field =
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
-
-    let toSymbolizable field =
-        { field with Avatar_ = Avatar.toSymbolizable field.Avatar }
 
     let save field =
         let fieldSymbolizable = toSymbolizable field

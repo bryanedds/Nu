@@ -38,20 +38,15 @@ module PropDispatcher =
             [entity.BodyType == Static
              entity.LinearDamping == 0.0f
              entity.GravityScale == 0.0f
-             entity.Bounds <== prop --> fun prop ->
-                prop.Bounds
+             entity.Bounds <== prop --> fun prop -> prop.Bounds
              entity.IsSensor <== prop --> fun prop ->
                 match prop.PropData with
-                | Sensor _
-                | Portal _
-                | SavePoint -> true
+                | Sensor _ | Portal _ | SavePoint -> true
                 | _ -> false
              entity.BodyShape <== prop --> fun prop ->
                 match prop.PropData with
-                | Npc _ ->
-                    match prop.PropState with
-                    | NpcState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
-                    | _ -> BodyEmpty
+                | Chest _ ->
+                    BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                 | Door _ ->
                     match prop.PropState with
                     | DoorState true -> BodyEmpty
@@ -60,12 +55,18 @@ module PropDispatcher =
                     match shapeOpt with
                     | Some shape -> shape
                     | None -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                | Npc _ ->
+                    match prop.PropState with
+                    | NpcState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                    | _ -> BodyEmpty
                 | Shopkeep _ ->
                     match prop.PropState with
                     | ShopkeepState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
                     | _ -> BodyEmpty
-                | _ ->
-                    BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }]
+                | Portal _ | Switch _ | SavePoint _ ->
+                    BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                | ChestSpawn | EmptyProp ->
+                    BodyEmpty]
 
         override this.Message (prop, message, entity, world) =
             match message with
@@ -145,6 +146,8 @@ module PropDispatcher =
                         let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileSize
                         let inset = v4Bounds insetPosition Constants.Gameplay.TileSize
                         (false, Some inset, image)
+                    | ChestSpawn | EmptyProp ->
+                        (false, None, Assets.EmptyImage)
                 let depth = if background then Constants.Field.BackgroundDepth else Constants.Field.ForgroundDepth
                 let positionY = transform.Position.Y
                 let assetTag = AssetTag.generalize image

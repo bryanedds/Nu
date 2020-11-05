@@ -22,7 +22,7 @@
     <property name="I" value="[Portal [IX 0] Downward Cave South]"/>
    </properties>
   </object>
-  <object id="4" gid="54" x="3456" y="3328" width="64" height="64">
+  <object id="4" gid="54" x="3456" y="3392" width="64" height="64">
    <properties>
     <property name="I" value="[SavePoint]"/>
    </properties>
