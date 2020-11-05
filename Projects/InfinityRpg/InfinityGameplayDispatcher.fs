@@ -386,25 +386,25 @@ module GameplayDispatcher =
                                 List.map
                                     (fun (characterPosition, fieldSpace) ->
                                         match fieldSpace.CharacterOpt with
-                                        | Some (characterIndex, character) ->
-                                            let index = match characterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
-                                            Some (index, (characterIndex, characterPosition, character, characterTurns))
+                                        | Some (_, character) ->
+                                            let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
+                                            Some (index, (characterPosition, character, characterTurns))
                                         | None -> None)
                                     (Map.toList chessboard.PassableCoordinates)
                             List.definitize characterDataOpts)
                         (fun index characterData _ ->
                             let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.Position <== characterData --> fun (characterIndex, characterPosition, _, characterTurns) ->
-                                    match List.tryFind (fun x -> x.Actor = characterIndex) characterTurns with
+                                [Entity.Position <== characterData --> fun (characterPosition, character, characterTurns) ->
+                                    match List.tryFind (fun x -> x.Actor = character.CharacterIndex) characterTurns with
                                     | Some turn -> Turn.calculatePosition turn
                                     | None -> vctovf characterPosition
-                                 Entity.CharacterAnimationSheet <== characterData --> fun (characterIndex, _, _, _) ->
-                                    match characterIndex with
+                                 Entity.CharacterAnimationSheet <== characterData --> fun (_, character, _) ->
+                                    match character.CharacterIndex with
                                     | PlayerIndex -> Assets.PlayerImage
                                     | EnemyIndex _ -> Assets.GoopyImage // TODO: pull this from data
-                                 Entity.CharacterAnimationState <== characterData --> fun (characterIndex, _, character, characterTurns) ->
-                                    Turn.turnsToCharacterAnimationState characterIndex character characterTurns])])
+                                 Entity.CharacterAnimationState <== characterData --> fun (_, character, characterTurns) ->
+                                    Turn.turnsToCharacterAnimationState character.CharacterIndex character characterTurns])])
 
              // hud layer
              Content.layer Simulants.Hud.Name []
