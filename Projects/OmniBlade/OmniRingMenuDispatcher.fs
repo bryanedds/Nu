@@ -11,7 +11,7 @@ open OmniBlade
 [<AutoOpen>]
 module RingMenuDispatcher =
 
-    type [<ReferenceEquality; NoComparison>] RingMenu =
+    type [<StructuralEquality; NoComparison>] RingMenu =
         { Items : (int * (bool * string)) list
           ItemCancelOpt : string option }
 

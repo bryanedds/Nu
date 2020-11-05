@@ -189,7 +189,7 @@ type [<ReferenceEquality>] Model =
     { SubModels : SubModel list }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Model, int, unit> ({ SubModels = List.init 35 (fun _ -> { Ints = List.init 35 id }) }) // 1225 Elmish entities
+    inherit GameDispatcher<SubModel list, int, unit> (List.init 35 (fun _ -> { Ints = List.init 35 id })) // 1225 Elmish entities
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -197,15 +197,15 @@ type ElmishGameDispatcher () =
     override this.Message (model, message, _, _) =
         match message with
         | 0 ->
-            let model = { model with SubModels = List.map (fun subModel -> { subModel with Ints = List.map inc subModel.Ints }) model.SubModels }
+            let model = List.map (fun subModel -> { subModel with Ints = List.map inc subModel.Ints }) model
             just model
         | _ -> just model
 
     override this.Content (model, _) =
         [Content.screen "Screen" Vanilla []
-            [Content.layersTracked model (fun model -> model.SubModels) constant (fun i subModels _ ->
+            [Content.layers model id constant (fun i subModels _ ->
                 Content.layer (string i) []
-                    [Content.entitiesTracked subModels (fun subModel -> subModel.Ints) constant (fun j int _ ->
+                    [Content.entities subModels (fun subModel -> subModel.Ints) constant (fun j int _ ->
                         Content.staticSprite (string j)
                             [Entity.Imperative == true
                              Entity.Omnipresent == true
