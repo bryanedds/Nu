@@ -203,9 +203,9 @@ type ElmishGameDispatcher () =
 
     override this.Content (model, _) =
         [Content.screen "Screen" Vanilla []
-            [Content.layersTracked model id (fun model _ -> model.SubModels) (fun i subModels _ ->
+            [Content.layersTracked model (fun model -> model.SubModels) constant (fun i subModels _ ->
                 Content.layer (string i) []
-                    [Content.entitiesTracked subModels id (fun subModel _ -> subModel.Ints) (fun j int _ ->
+                    [Content.entitiesTracked subModels (fun subModel -> subModel.Ints) constant (fun j int _ ->
                         Content.staticSprite (string j)
                             [Entity.Imperative == true
                              Entity.Omnipresent == true

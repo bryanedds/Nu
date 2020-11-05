@@ -534,9 +534,10 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         static member private destroySimulants world =
-            let world = Queue.fold (fun world simulant -> World.destroyImmediate simulant world) world world.DestructionQueue
-            let world = { world with DestructionQueue = Queue.empty; DestructionSet = Set.empty }
-            world
+            List.foldBack (fun simulant world ->
+                World.destroyImmediate simulant world)
+                world.DestructionListRev
+                world
 
         /// Process an input event from SDL and ultimately publish any related game events.
         static member private processInput2 (evt : SDL.SDL_Event) world =

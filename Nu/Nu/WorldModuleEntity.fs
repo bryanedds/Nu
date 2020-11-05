@@ -294,7 +294,7 @@ module WorldModuleEntity =
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
-        static member internal getEntityDestroying (entity : Entity) world = Set.contains (entity :> Simulant).SimulantAddress world.DestructionSet
+        static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) world.DestructionListRev
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
@@ -828,6 +828,9 @@ module WorldModuleEntity =
             // ensure entity exists in the world
             if World.getEntityExists entity world then
 
+                // remove from destruction
+                let world = World.tryRemoveSimulantFromDestruction entity world
+
                 // unregister entity
                 let world = World.unregisterEntity entity world
 
@@ -857,6 +860,7 @@ module WorldModuleEntity =
                 entityState.Invalidated <- true
 
                 // remove the entity from the world
+                // REMOVE_ME: Console.WriteLine ("Removing entity " + scstring entity)
                 let world = World.removeEntityState entity world
                 world
 
@@ -925,6 +929,7 @@ module WorldModuleEntity =
                     then World.destroyEntityImmediate entity world
                     else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
                 else world
+            // REMOVE_ME: Console.WriteLine ("Adding entity " + scstring entity)
             let world = World.addEntity false entityState entity world
 
             // HACK: make sure xtension is consistent with imperativeness of entity state
