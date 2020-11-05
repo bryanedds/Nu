@@ -60,7 +60,7 @@ module Prop =
         { Bounds_ = v4Bounds v2Zero Constants.Gameplay.TileSize
           Depth_ = 0.0f
           Advents_ = Set.empty
-          PropData_ = PropData.empty
+          PropData_ = EmptyProp
           PropState_ = NilState
           PropId_ = 0 }
 

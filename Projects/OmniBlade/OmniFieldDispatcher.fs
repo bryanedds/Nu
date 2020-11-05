@@ -101,6 +101,8 @@ module FieldDispatcher =
                 | Npc _ -> Some "Talk"
                 | Shopkeep _ -> Some "Shop"
                 | SavePoint -> None
+                | ChestSpawn -> None
+                | EmptyProp -> None
             | Some dialog ->
                 if dialog.DialogProgress > dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
                 then Some "Next"
@@ -114,14 +116,14 @@ module FieldDispatcher =
                 | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData
                 | None -> None
 
-        static let tryGetTouchingPortal randSeedState (avatar : Avatar) world =
+        static let tryGetTouchingPortal rotatedSeedState (avatar : Avatar) world =
             avatar.IntersectedBodyShapes |>
             List.choose (fun shape ->
                 match (shape.Entity.GetProp world).PropData with
                 | Portal (_, _, fieldType, portalType, _) ->
                     match Map.tryFind fieldType Data.Value.Fields with
                     | Some fieldData ->
-                        match FieldData.tryGetPortal portalType randSeedState fieldData world with
+                        match FieldData.tryGetPortal portalType rotatedSeedState fieldData world with
                         | Some portal ->
                             match portal.PropData with
                             | Portal (_, direction, _, _, _) ->
@@ -348,7 +350,7 @@ module FieldDispatcher =
             | UpdatePortal ->
                 match field.FieldTransitionOpt with
                 | None ->
-                    match tryGetTouchingPortal field.RandSeedState field.Avatar world with
+                    match tryGetTouchingPortal field.RotatedSeedState field.Avatar world with
                     | Some (fieldType, destination, direction) ->
                         let transition =
                             { FieldType = fieldType
@@ -504,6 +506,8 @@ module FieldDispatcher =
                             | Npc (_, _, dialogs, _) -> interactNpc dialogs field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
                             | SavePoint -> just field
+                            | ChestSpawn -> just field
+                            | EmptyProp -> just field
                         | None -> just field
                 | Some dialog ->
                     interactDialog dialog field
@@ -579,7 +583,7 @@ module FieldDispatcher =
                      Entity.TmxMap <== field --|> fun field world ->
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
-                            match FieldData.tryGetTileMap field.RandSeedState fieldData world with
+                            match FieldData.tryGetTileMap field.RotatedSeedState fieldData world with
                             | Some tileMap -> tileMap
                             | None -> failwithumf ()
                         | None -> failwithumf ()
@@ -658,37 +662,26 @@ module FieldDispatcher =
 
                  // props
                  Content.entities field
-                    (fun field -> (field.FieldType, field.RandSeedState, field.Advents, field.PropStates))
-                    (fun (fieldType, randSeedState, advents, propStates) world ->
+                    (fun field -> (field.FieldType, field.RotatedSeedState, field.Advents, field.PropStates))
+                    (fun (fieldType, rotatedSeedState, advents, propStates) world ->
                         match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
-                            let propObjects = FieldData.getPropObjects randSeedState fieldData world
-                            List.map (fun (tileMap, group, object) -> (tileMap, group, object, advents, propStates)) propObjects
+                            let props = FieldData.getProps rotatedSeedState fieldData world
+                            List.map (fun prop -> (prop, advents, propStates)) props
                         | None -> [])
                     (fun _ propLens _ ->
-                        let prop = flip Lens.map propLens (fun (tileMap, group, object, advents, propStates) ->
-                            let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
-                            let propSize = v2 (single object.Width) (single object.Height)
-                            let propBounds = v4Bounds propPosition propSize
-                            let propDepth =
-                                match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-                                | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
-                                | (false, _) -> Constants.Field.ForgroundDepth
-                            let propData =
-                                match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
-                                | (true, propDataStr) -> scvalue propDataStr
-                                | (false, _) -> PropData.empty
+                        let prop = flip Lens.map propLens (fun (prop, advents, propStates) ->
                             let propState =
-                                match Map.tryFind object.Id propStates with
+                                match Map.tryFind prop.PropId propStates with
                                 | None ->
-                                    match propData with
+                                    match prop.PropData with
                                     | Door (_, _, _) -> DoorState false
                                     | Switch (_, _, _) -> SwitchState false
                                     | Npc (_, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements)
                                     | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
                                     | _ -> NilState
                                 | Some propState -> propState
-                            Prop.make propBounds propDepth advents propData propState object.Id)
+                            Prop.make prop.PropBounds prop.PropDepth advents prop.PropData propState prop.PropId)
                         Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
                  // legion

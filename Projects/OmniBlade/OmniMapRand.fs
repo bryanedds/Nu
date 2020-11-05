@@ -224,8 +224,8 @@ type MapRand =
         let object = objects.[0]
         let objectType = typeof<TmxObject>
         (objectType.GetProperties "Id").[0].SetValue (object, 0)
-        (objectType.GetProperties "X").[0].SetValue (object, openingXX)
-        (objectType.GetProperties "Y").[0].SetValue (object, openingYY)
+        (objectType.GetProperties "X").[0].SetValue (object, double openingXX)
+        (objectType.GetProperties "Y").[0].SetValue (object, double openingYY)
         (objectType.GetProperties "Width").[0].SetValue (object, openingWidth)
         (objectType.GetProperties "Height").[0].SetValue (object, openingHeight)
         object.Properties.Add ("I", openingInfo)
@@ -237,7 +237,10 @@ type MapRand =
                 | Some segment ->
                     if segment.ObjectGroups.Count <> 0 then
                         for object in segment.ObjectGroups.[0].Objects do
-                            ((getType object).GetProperties "Id").[0].SetValue (object, i + j * 7)
+                            let objectType = typeof<TmxObject>
+                            (objectType.GetProperties "Id").[0].SetValue (object, i + j * 7)
+                            (objectType.GetProperties "X").[0].SetValue (object, object.X + double i * 32.0 * double mapTmx.TileWidth)
+                            (objectType.GetProperties "Y").[0].SetValue (object, object.Y + double j * 32.0 * double mapTmx.TileHeight)
                             objects.Add object
                 | None -> ()
 
