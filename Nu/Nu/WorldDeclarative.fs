@@ -167,13 +167,11 @@ module DeclarativeOperators =
 [<AutoOpen>]
 module WorldDeclarative =
 
-    let mutable internal LensError = false
-
     type World with
 
         static member internal synchronizeSimulants tracking mapper mapper' origin owner parent current previous world =
-            let added = if tracking then USet.differenceFast current previous else HashSet (USet.toSeq current, HashIdentity.Structural)
-            let removed = if tracking then USet.differenceFast previous current else added // just reuse added
+            let added = if tracking then USet.differenceFast current previous else USet.unionFast current previous
+            let removed = if tracking then USet.differenceFast previous current else added
             let changed = if tracking then added.Count <> 0 || removed.Count <> 0 else true
             if changed then
                 let world =
