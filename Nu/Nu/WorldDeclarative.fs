@@ -9,7 +9,7 @@ open Prime
 open Nu
 
 type [<NoEquality; NoComparison>] 'c ContentTracker =
-    | Untracked
+    | NoTracking
     | AutoTracking
     | ExplicitTracking of ('c -> int)
 
@@ -244,7 +244,7 @@ module WorldDeclarative =
                     lens
             let (tracking, lenses) =
                 match tracker with
-                | Untracked -> (false, Lens.explodeIndexedOpt None lensSeq)
+                | NoTracking -> (false, Lens.explodeIndexedOpt None lensSeq)
                 | AutoTracking -> (true, Lens.explodeIndexedOpt None lensSeq)
                 | ExplicitTracking fn -> (true, Lens.explodeIndexedOpt (Some fn) lensSeq)
             let subscription = fun _ world ->

@@ -43,7 +43,7 @@ module Content =
         let unfold = fun (b : obj) w -> unfold (b :?> 'b) w |> Reflection.objToObjSeq
         let tracker =
             match tracker with
-            | Untracked -> Untracked
+            | NoTracking -> NoTracking
             | AutoTracking -> AutoTracking
             | ExplicitTracking fn -> ExplicitTracking (fun (o : obj) -> fn (o :?> 'c))
         let mapper = fun i (c : obj) world -> mapper i (c :?> Lens<obj, World> --> cast<'c>) world
@@ -52,12 +52,12 @@ module Content =
     /// Describe layers to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
     let layers lens sieve unfold mapper =
-        layersPlus lens sieve unfold AutoTracking mapper // HACK: attempt to hide existing bug until I can find a proper fix.
+        layersPlus lens sieve unfold AutoTracking mapper
 
     /// Describe layers to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
-    let layersTracked lens sieve unfold mapper =
-        layersPlus lens sieve unfold AutoTracking mapper
+    let layersUntracked lens sieve unfold mapper =
+        layersPlus lens sieve unfold NoTracking mapper
 
     /// Describe layers to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
@@ -108,7 +108,7 @@ module Content =
         let unfold = fun (b : obj) w -> unfold (b :?> 'b) w |> Reflection.objToObjSeq
         let tracker =
             match tracker with
-            | Untracked -> Untracked
+            | NoTracking -> NoTracking
             | AutoTracking -> AutoTracking
             | ExplicitTracking fn -> ExplicitTracking (fun (o : obj) -> fn (o :?> 'c))
         let mapper = fun i (c : obj) world -> mapper i (c :?> Lens<obj, World> --> cast<'c>) world
@@ -117,12 +117,12 @@ module Content =
     /// Describe entities to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
     let entities lens sieve unfold mapper =
-        entitiesPlus lens sieve unfold AutoTracking mapper // HACK: attempt to hide existing bug until I can find a proper fix.
+        entitiesPlus lens sieve unfold AutoTracking mapper
 
     /// Describe entities to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
-    let entitiesTracked lens sieve unfold mapper =
-        entitiesPlus lens sieve unfold AutoTracking mapper
+    let entitiesUntracked lens sieve unfold mapper =
+        entitiesPlus lens sieve unfold NoTracking mapper
 
     /// Describe entities to be instantiated from a lens.
     /// Allows the separation of sieve and unfold for efficiency.
