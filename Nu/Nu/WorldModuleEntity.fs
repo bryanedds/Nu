@@ -919,6 +919,12 @@ module WorldModuleEntity =
 
             // add entity's state to world
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
+            let world =
+                if World.getEntityExists entity world then
+                    if World.getEntityDestroying entity world
+                    then World.destroyEntityImmediate entity world
+                    else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
+                else world
             let world = World.addEntity false entityState entity world
 
             // HACK: make sure xtension is consistent with imperativeness of entity state
