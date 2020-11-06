@@ -386,7 +386,7 @@ module GameplayDispatcher =
                                 List.map
                                     (fun (characterPosition, fieldSpace) ->
                                         match fieldSpace.CharacterOpt with
-                                        | Some (_, character) ->
+                                        | Some character ->
                                             let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
                                             Some (index, (characterPosition, character, characterTurns))
                                         | None -> None)
