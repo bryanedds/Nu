@@ -373,7 +373,7 @@ module GameplayDispatcher =
                        [Entity.Field <== gameplay --> fun gameplay -> gameplay.Field]
 
                      // pickups
-                     Content.entities gameplay
+                     Content.entitiesUntracked gameplay
                         (fun gameplay -> gameplay.Chessboard.PickupItems)
                         (fun pickups _ -> Map.toListBy (fun positionM _ -> Pickup.makeHealth positionM) pickups)
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Pickup <== pickup])
