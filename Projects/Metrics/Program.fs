@@ -182,14 +182,11 @@ type MyGameDispatcher () =
         world
 
 #if ELMISH
-type [<ReferenceEquality>] SubModel =
+type [<ReferenceEquality>] Ints =
     { Ints : int list }
 
-type [<ReferenceEquality>] Model =
-    { SubModels : SubModel list }
-
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<SubModel list, int, unit> (List.init 35 (fun _ -> { Ints = List.init 35 id })) // 1225 Elmish entities
+    inherit GameDispatcher<Ints list, int, unit> (List.init 35 (fun _ -> { Ints = List.init 35 id })) // 1225 Elmish entities
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
