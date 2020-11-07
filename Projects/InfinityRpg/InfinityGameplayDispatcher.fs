@@ -419,6 +419,12 @@ module GameplayDispatcher =
                     [Entity.Position == v2 88.0f -256.0f; Entity.Size == v2 384.0f 64.0f; Entity.Depth == 10.0f
                      Entity.UpImage == asset "Gui" "BackUp"; Entity.DownImage == asset "Gui" "BackDown"]
 
+                 Content.text Gen.name
+                    [Entity.Position == v2 -440.0f 200.0f; Entity.Depth == 9.0f
+                     Entity.Text <== gameplay --> fun gameplay ->
+                        let player = Gameplay.getCharacter PlayerIndex gameplay
+                        "HP: " + scstring player.HitPoints]
+
                  Content.label Gen.name
                     [Entity.Position == v2 -448.0f -240.0f; Entity.Size == v2 224.0f 224.0f; Entity.Depth == 9.0f
                      Entity.LabelImage == asset "Gui" "DetailBacking"]
