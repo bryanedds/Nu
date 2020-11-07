@@ -46,7 +46,7 @@ module GameplayDispatcher =
 
         static let tryGetNavigationPath (_ : CharacterIndex) coordinates gameplay =
             let fieldTiles = gameplay.Field.FieldMapNp.FieldTiles
-            let characterPositions = gameplay.Chessboard.OccupiedCoordinates |> List.map (fun coordinates -> vctovf coordinates)
+            let characterPositions = gameplay.Chessboard.OccupiedSpaces |> List.map (fun coordinates -> vctovf coordinates)
             let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
             let occupationMap = OccupationMap.makeFromFieldTilesAndAdjacentCharacters currentCoordinates fieldTiles characterPositions
             let nodes = OccupationMap.makeNavigationNodes occupationMap
@@ -79,10 +79,10 @@ module GameplayDispatcher =
                         | AttackTurn ->
                             let gameplay = Gameplay.finishMove index gameplay
                             let reactorIndex = Option.get characterTurn.ReactorOpt
-                            let reactorState = Gameplay.getCharacterState reactorIndex gameplay
+                            let reactorState = Gameplay.getCharacter reactorIndex gameplay
                             if reactorState.HitPoints <= 0 then
                                 match reactorIndex with
-                                | PlayerIndex -> Gameplay.updateCharacterState reactorIndex (CharacterState.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
+                                | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
                                 | EnemyIndex _ -> Gameplay.removeEnemy reactorIndex gameplay
                             else gameplay
                         | WalkTurn _ -> if index.IsEnemy then Gameplay.finishMove index gameplay else gameplay
@@ -156,11 +156,11 @@ module GameplayDispatcher =
                         indices
                 let updater =
                     (fun index gameplay ->
-                        let characterState = Gameplay.getCharacterState index gameplay
+                        let character = Gameplay.getCharacter index gameplay
                         let enemyMoveOpt =
-                            match characterState.ControlType with
+                            match character.ControlType with
                             | Chaos ->
-                                if characterState.HitPoints > 0 then
+                                if character.HitPoints > 0 then
                                     match attackerOpt with
                                     | Some attackerIndex ->
                                         if index = attackerIndex
@@ -190,13 +190,13 @@ module GameplayDispatcher =
                     | Some playerTurn ->
                         match playerTurn.TurnStatus with
                         | TurnFinishing ->
-                            match Gameplay.getCurrentMove PlayerIndex gameplay with
+                            match Gameplay.getCharacterMove PlayerIndex gameplay with
                             | Travel path ->
                                 match path with
                                 | _ :: [] -> None
                                 | _ :: navigationPath ->
                                     let targetCoordinates = (List.head navigationPath).Coordinates
-                                    if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.AvailableCoordinates
+                                    if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
                                     then Some (Travel navigationPath)
                                     else None
                                 | [] -> failwithumf ()
@@ -257,7 +257,7 @@ module GameplayDispatcher =
                 | _ -> just gameplay
 
             | TryHaltPlayer ->
-                match Map.tryFind PlayerIndex gameplay.Chessboard.CurrentMoves with
+                match Map.tryFind PlayerIndex gameplay.CharacterMoves with
                 | Some _ ->
                     let gameplay = Gameplay.truncatePlayerPath gameplay
                     just gameplay
@@ -303,8 +303,7 @@ module GameplayDispatcher =
                     just gameplay
                 else
                     let gameplay = Gameplay.initial
-                    let gameplay = Gameplay.setFieldMap (FieldMap.makeFromFieldMapUnit gameplay.MapModeler.Current) gameplay
-                    let gameplay = Gameplay.makePlayer gameplay
+                    let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromFieldMapUnit gameplay.MapModeler.Current) gameplay
                     let gameplay = Gameplay.makeEnemies 4 gameplay
                     just gameplay
 
@@ -313,7 +312,7 @@ module GameplayDispatcher =
             match command with
             | HandlePlayerInput playerInput ->
                 if not (Gameplay.anyTurnsInProgress gameplay) then
-                    match (Gameplay.getCharacterState PlayerIndex gameplay).ControlType with
+                    match (Gameplay.getCharacter PlayerIndex gameplay).ControlType with
                     | PlayerControlled -> withMsg (HandleMapChange playerInput) world
                     | _ -> just world
                 else just world
@@ -380,31 +379,26 @@ module GameplayDispatcher =
 
                      // characters
                      Content.entitiesTrackedByFst gameplay
-                        (fun gameplay -> (gameplay.Chessboard, gameplay.CharacterTurns))
-                        (fun (chessboard, characterTurns) _ ->
-                            let characterDataOpts =
-                                List.map
-                                    (fun (characterPosition, fieldSpace) ->
-                                        match fieldSpace.CharacterOpt with
-                                        | Some (characterIndex, characterState) ->
-                                            let index = match characterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
-                                            Some (index, (characterIndex, characterPosition, characterState, characterTurns))
-                                        | None -> None)
-                                    (Map.toList chessboard.PassableCoordinates)
-                            List.definitize characterDataOpts)
-                        (fun index characterLens _ ->
+                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.CharacterTurns))
+                        (fun (characters, characterTurns) _ ->
+                            Map.toList characters |>
+                            List.map
+                                (fun (coordinates, character) ->
+                                    let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
+                                    (index, (coordinates, character, characterTurns))))
+                        (fun index characterData _ ->
                             let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.Position <== characterLens --> fun (characterIndex, characterPosition, _, characterTurns) ->
-                                    match List.tryFind (fun x -> x.Actor = characterIndex) characterTurns with
+                                [Entity.Position <== characterData --> fun (characterPosition, character, characterTurns) ->
+                                    match List.tryFind (fun x -> x.Actor = character.CharacterIndex) characterTurns with
                                     | Some turn -> Turn.calculatePosition turn
                                     | None -> vctovf characterPosition
-                                 Entity.CharacterAnimationSheet <== characterLens --> fun (characterIndex, _, _, _) ->
-                                    match characterIndex with
+                                 Entity.CharacterAnimationSheet <== characterData --> fun (_, character, _) ->
+                                    match character.CharacterIndex with
                                     | PlayerIndex -> Assets.PlayerImage
                                     | EnemyIndex _ -> Assets.GoopyImage // TODO: pull this from data
-                                 Entity.CharacterAnimationState <== characterLens --> fun (characterIndex, _, characterState, characterTurns) ->
-                                    Turn.turnsToCharacterAnimationState characterIndex characterState characterTurns])])
+                                 Entity.CharacterAnimationState <== characterData --> fun (_, character, characterTurns) ->
+                                    Turn.turnsToCharacterAnimationState character.CharacterIndex character characterTurns])])
 
              // hud layer
              Content.layer Simulants.Hud.Name []
@@ -424,6 +418,12 @@ module GameplayDispatcher =
                  Content.button Simulants.HudBack.Name
                     [Entity.Position == v2 88.0f -256.0f; Entity.Size == v2 384.0f 64.0f; Entity.Depth == 10.0f
                      Entity.UpImage == asset "Gui" "BackUp"; Entity.DownImage == asset "Gui" "BackDown"]
+
+                 Content.text Gen.name
+                    [Entity.Position == v2 -440.0f 200.0f; Entity.Depth == 9.0f
+                     Entity.Text <== gameplay --> fun gameplay ->
+                        let player = Gameplay.getCharacter PlayerIndex gameplay
+                        "HP: " + scstring player.HitPoints]
 
                  Content.label Gen.name
                     [Entity.Position == v2 -448.0f -240.0f; Entity.Size == v2 224.0f 224.0f; Entity.Depth == 9.0f
