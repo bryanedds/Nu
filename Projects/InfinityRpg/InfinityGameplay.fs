@@ -75,10 +75,13 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
     member this.ContainsCharacter =
         match this.CharacterOpt with Some _ -> true | None -> false
 
-    static member containsEnemy fieldSpace =
-        match fieldSpace.CharacterOpt with
+    member this.ContainsEnemy =
+        match this.CharacterOpt with
         | None -> false // more efficient order
         | Some character -> character.IsEnemy
+
+    static member containsEnemy (fieldSpace : FieldSpace) =
+        fieldSpace.ContainsEnemy
     
     static member containsSpecifiedCharacter index fieldSpace =
         match fieldSpace.CharacterOpt with
@@ -91,19 +94,23 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
     static member containsPickup (fieldSpace : FieldSpace) =
         fieldSpace.ContainsPickup
 
+    // internal
+    
     static member updateCharacterOpt updater fieldSpace =
         { fieldSpace with CharacterOpt = updater fieldSpace.CharacterOpt }
     
     static member updatePickupItemOpt updater fieldSpace =
         { fieldSpace with PickupItemOpt = updater fieldSpace.PickupItemOpt }
     
-    static member addCharacter character fieldSpace =
-        FieldSpace.updateCharacterOpt (constant (Some character)) fieldSpace
-
     static member updateCharacterInternal updater characterOpt =
         match characterOpt with
         | Some character -> Some (updater character)
         | None -> failwithumf ()
+    
+    // interface
+    
+    static member addCharacter character fieldSpace =
+        FieldSpace.updateCharacterOpt (constant (Some character)) fieldSpace
     
     static member updateCharacter updater fieldSpace =
         FieldSpace.updateCharacterOpt (FieldSpace.updateCharacterInternal updater) fieldSpace
@@ -111,8 +118,8 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
     static member removeCharacter fieldSpace =
         FieldSpace.updateCharacterOpt (constant None) fieldSpace
     
-    static member addHealth fieldSpace =
-        FieldSpace.updatePickupItemOpt (constant (Some Health)) fieldSpace
+    static member addPickup pickup fieldSpace =
+        FieldSpace.updatePickupItemOpt (constant (Some pickup)) fieldSpace
     
     static member removePickup fieldSpace =
         FieldSpace.updatePickupItemOpt (constant None) fieldSpace
@@ -122,61 +129,65 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
           PickupItemOpt = None }
 
 type [<ReferenceEquality; NoComparison>] Chessboard =
-    { PassableCoordinates : Map<Vector2i, FieldSpace> }
+    { FieldSpaces : Map<Vector2i, FieldSpace> }
 
-    static member empty =
-        { PassableCoordinates = Map.empty }
-
-    member this.CharacterCoordinates =
-        Map.filter (fun _ (v : FieldSpace) -> v.ContainsCharacter) this.PassableCoordinates
+    // NOTE: the following subset data can be optimized on demand by converting them from filters to storage caches, without interfering with the interface.
     
-    member this.EnemyCoordinates =
-        Map.filter (fun _ v -> FieldSpace.containsEnemy v) this.PassableCoordinates
-
-    member this.PickupItems =
-        Map.filter (fun _ (v : FieldSpace) -> v.ContainsPickup) this.PassableCoordinates
-
-    member this.EnemyIndices =
-        Map.toListBy (fun _ (v : FieldSpace) -> v.GetCharacterIndex) this.EnemyCoordinates
+    member this.CharacterSpaces =
+        Map.filter (fun _ (v : FieldSpace) -> v.ContainsCharacter) this.FieldSpaces
     
-    member this.EnemyCount =
-        this.EnemyCoordinates.Count
+    member this.EnemySpaces =
+        Map.filter (fun _ (v : FieldSpace) -> v.ContainsEnemy) this.FieldSpaces
 
-    member this.PickupCount =
-        this.PickupItems.Count
+    member this.PickupSpaces =
+        Map.filter (fun _ (v : FieldSpace) -> v.ContainsPickup) this.FieldSpaces
+
+    member this.OccupiedSpaces =
+        this.CharacterSpaces |> Map.toKeyList
     
-    member this.OccupiedCoordinates =
-        Map.filter (fun _ (v : FieldSpace) -> v.ContainsCharacter) this.PassableCoordinates |> Map.toKeyList
-    
-    member this.AvailableCoordinates =
-        Map.filter (fun _ (v : FieldSpace) -> not v.ContainsCharacter) this.PassableCoordinates |> Map.toKeyList
+    member this.UnoccupiedSpaces =
+        Map.filter (fun _ (v : FieldSpace) -> not v.ContainsCharacter) this.FieldSpaces |> Map.toKeyList
 
     member this.OpenDirections coordinates =
-        List.filter (fun d -> List.exists (fun x -> x = (coordinates + (dtovc d))) this.AvailableCoordinates) [Upward; Rightward; Downward; Leftward]
+        List.filter (fun d -> List.exists (fun x -> x = (coordinates + (dtovc d))) this.UnoccupiedSpaces) [Upward; Rightward; Downward; Leftward]
+
+    member this.Characters =
+        Map.map (fun _ (v : FieldSpace) -> v.GetCharacter) this.CharacterSpaces
+
+    member this.EnemyIndices =
+        Map.toListBy (fun _ (v : FieldSpace) -> v.GetCharacterIndex) this.EnemySpaces
     
-    static member updatePassableCoordinates updater chessboard =
-        { chessboard with PassableCoordinates = updater chessboard.PassableCoordinates }
+    member this.EnemyCount =
+        this.EnemySpaces.Count
+
+    member this.PickupCount =
+        this.PickupSpaces.Count
+    
+    
+    
+    static member updateFieldSpaces updater chessboard =
+        { chessboard with FieldSpaces = updater chessboard.FieldSpaces }
     
     static member characterExists index chessboard =
-        Map.exists (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.PassableCoordinates
+        Map.exists (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.FieldSpaces
     
     static member pickupAtCoordinates coordinates chessboard =
-        chessboard.PassableCoordinates.[coordinates].ContainsPickup
+        chessboard.FieldSpaces.[coordinates].ContainsPickup
     
-    static member updateByCoordinatesInternal coordinates updater (passableCoordinates : Map<Vector2i, FieldSpace>) =
-        Map.add coordinates (updater passableCoordinates.[coordinates]) passableCoordinates
+    static member updateByCoordinatesInternal coordinates updater (fieldSpaces : Map<Vector2i, FieldSpace>) =
+        Map.add coordinates (updater fieldSpaces.[coordinates]) fieldSpaces
 
-    static member updateByPredicateInternal predicate updater (passableCoordinates : Map<Vector2i, FieldSpace>) =
-        Map.map (fun _ v -> if predicate v then updater v else v) passableCoordinates
+    static member updateByPredicateInternal predicate updater (fieldSpaces : Map<Vector2i, FieldSpace>) =
+        Map.map (fun _ v -> if predicate v then updater v else v) fieldSpaces
     
     static member updateByCoordinates coordinates updater chessboard =
-        Chessboard.updatePassableCoordinates (Chessboard.updateByCoordinatesInternal coordinates updater) chessboard
+        Chessboard.updateFieldSpaces (Chessboard.updateByCoordinatesInternal coordinates updater) chessboard
     
     static member updateByPredicate predicate updater chessboard =
-        Chessboard.updatePassableCoordinates (Chessboard.updateByPredicateInternal predicate updater) chessboard
+        Chessboard.updateFieldSpaces (Chessboard.updateByPredicateInternal predicate updater) chessboard
     
     static member addHealth _ coordinates chessboard =
-        Chessboard.updateByCoordinates coordinates FieldSpace.addHealth chessboard
+        Chessboard.updateByCoordinates coordinates (FieldSpace.addPickup Health) chessboard
 
     static member removePickup _ coordinates chessboard =
         Chessboard.updateByCoordinates coordinates FieldSpace.removePickup chessboard
@@ -185,10 +196,10 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Chessboard.updateByPredicate FieldSpace.containsPickup FieldSpace.removePickup chessboard
     
     static member getCharacterCoordinates index chessboard =
-        Map.findKey (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.PassableCoordinates
+        Map.findKey (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.FieldSpaces
 
     static member getCharacterAtCoordinates coordinates chessboard =
-        chessboard.PassableCoordinates.[coordinates].GetCharacter
+        chessboard.FieldSpaces.[coordinates].GetCharacter
     
     static member getCharacter index chessboard =
         let coordinates = Chessboard.getCharacterCoordinates index chessboard
@@ -214,15 +225,18 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member clearEnemies _ _ (chessboard : Chessboard) =
         Chessboard.updateByPredicate FieldSpace.containsEnemy FieldSpace.removeCharacter chessboard
     
-    static member setPassableCoordinates _ fieldMap chessboard =
-        let passableCoordinates = fieldMap.FieldTiles |> Map.filter (fun _ fieldTile -> fieldTile.TileType = Passable) |> Map.map (fun _ _ -> FieldSpace.empty)
-        Chessboard.updatePassableCoordinates (constant passableCoordinates) chessboard
+    static member setFieldSpaces _ fieldMap chessboard =
+        let fieldSpaces = fieldMap.FieldTiles |> Map.filter (fun _ fieldTile -> fieldTile.TileType = Passable) |> Map.map (fun _ _ -> FieldSpace.empty)
+        Chessboard.updateFieldSpaces (constant fieldSpaces) chessboard
 
     static member transitionMap _ fieldMap chessboard =
         let playerCoordinates = Chessboard.getCharacterCoordinates PlayerIndex chessboard
         let player = Chessboard.getCharacterAtCoordinates playerCoordinates chessboard
-        let chessboard = Chessboard.setPassableCoordinates () fieldMap chessboard
+        let chessboard = Chessboard.setFieldSpaces () fieldMap chessboard
         Chessboard.addCharacter player playerCoordinates chessboard
+
+    static member empty =
+        { FieldSpaces = Map.empty }
 
 type [<ReferenceEquality; NoComparison>] Gameplay =
     { ShallLoadGame : bool
@@ -407,7 +421,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateCharacterTurns (fun x -> turn :: x) gameplay
 
     static member setFieldMap fieldMap gameplay =
-        let gameplay = Gameplay.updateChessboardBy Chessboard.setPassableCoordinates () fieldMap gameplay
+        let gameplay = Gameplay.updateChessboardBy Chessboard.setFieldSpaces () fieldMap gameplay
         let field = { FieldMapNp = fieldMap }
         Gameplay.updateField (constant field) gameplay
 
@@ -429,7 +443,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboardBy Chessboard.addCharacter Character.makePlayer v2iZero gameplay
 
     static member makeEnemy index gameplay =
-        let availableCoordinates = gameplay.Chessboard.AvailableCoordinates
+        let availableCoordinates = gameplay.Chessboard.UnoccupiedSpaces
         let coordinates = availableCoordinates.Item(Gen.random1 availableCoordinates.Length)
         Gameplay.updateChessboardBy Chessboard.addCharacter (Character.makeEnemy index) coordinates gameplay
 
