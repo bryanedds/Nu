@@ -94,7 +94,7 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
     static member containsPickup (fieldSpace : FieldSpace) =
         fieldSpace.ContainsPickup
 
-    // internal
+    // internal updaters
     
     static member updateCharacterOpt updater fieldSpace =
         { fieldSpace with CharacterOpt = updater fieldSpace.CharacterOpt }
@@ -163,16 +163,26 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     member this.PickupCount =
         this.PickupSpaces.Count
     
+    static member getCharacterCoordinates index chessboard =
+        Map.findKey (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.FieldSpaces
+
+    static member getCharacterAtCoordinates coordinates chessboard =
+        chessboard.FieldSpaces.[coordinates].GetCharacter
     
-    
-    static member updateFieldSpaces updater chessboard =
-        { chessboard with FieldSpaces = updater chessboard.FieldSpaces }
+    static member getCharacter index chessboard =
+        let coordinates = Chessboard.getCharacterCoordinates index chessboard
+        Chessboard.getCharacterAtCoordinates coordinates chessboard
     
     static member characterExists index chessboard =
         Map.exists (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.FieldSpaces
     
     static member pickupAtCoordinates coordinates chessboard =
         chessboard.FieldSpaces.[coordinates].ContainsPickup
+    
+    // internal updaters
+    
+    static member updateFieldSpaces updater chessboard =
+        { chessboard with FieldSpaces = updater chessboard.FieldSpaces }
     
     static member updateByCoordinatesInternal coordinates updater (fieldSpaces : Map<Vector2i, FieldSpace>) =
         Map.add coordinates (updater fieldSpaces.[coordinates]) fieldSpaces
@@ -186,24 +196,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member updateByPredicate predicate updater chessboard =
         Chessboard.updateFieldSpaces (Chessboard.updateByPredicateInternal predicate updater) chessboard
     
-    static member addHealth _ coordinates chessboard =
-        Chessboard.updateByCoordinates coordinates (FieldSpace.addPickup Health) chessboard
-
-    static member removePickup _ coordinates chessboard =
-        Chessboard.updateByCoordinates coordinates FieldSpace.removePickup chessboard
-    
-    static member clearPickups _ _ chessboard =
-        Chessboard.updateByPredicate FieldSpace.containsPickup FieldSpace.removePickup chessboard
-    
-    static member getCharacterCoordinates index chessboard =
-        Map.findKey (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.FieldSpaces
-
-    static member getCharacterAtCoordinates coordinates chessboard =
-        chessboard.FieldSpaces.[coordinates].GetCharacter
-    
-    static member getCharacter index chessboard =
-        let coordinates = Chessboard.getCharacterCoordinates index chessboard
-        Chessboard.getCharacterAtCoordinates coordinates chessboard
+    // interface
     
     static member addCharacter character coordinates (chessboard : Chessboard) =
         Chessboard.updateByCoordinates coordinates (FieldSpace.addCharacter character) chessboard
@@ -212,7 +205,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         let coordinates = Chessboard.getCharacterCoordinates index chessboard
         Chessboard.updateByCoordinates coordinates (FieldSpace.updateCharacter updater) chessboard
     
-    static member removeCharacter index _ chessboard =
+    static member removeCharacter index chessboard =
         let coordinates = Chessboard.getCharacterCoordinates index chessboard
         Chessboard.updateByCoordinates coordinates FieldSpace.removeCharacter chessboard
     
@@ -222,17 +215,26 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         let chessboard = Chessboard.updateByCoordinates oldCoordinates FieldSpace.removeCharacter chessboard
         Chessboard.addCharacter character coordinates chessboard
     
-    static member clearEnemies _ _ (chessboard : Chessboard) =
+    static member clearEnemies (chessboard : Chessboard) =
         Chessboard.updateByPredicate FieldSpace.containsEnemy FieldSpace.removeCharacter chessboard
     
-    static member setFieldSpaces _ fieldMap chessboard =
+    static member addPickup pickup coordinates chessboard =
+        Chessboard.updateByCoordinates coordinates (FieldSpace.addPickup pickup) chessboard
+
+    static member removePickup coordinates chessboard =
+        Chessboard.updateByCoordinates coordinates FieldSpace.removePickup chessboard
+    
+    static member clearPickups chessboard =
+        Chessboard.updateByPredicate FieldSpace.containsPickup FieldSpace.removePickup chessboard
+    
+    static member setFieldSpaces fieldMap chessboard =
         let fieldSpaces = fieldMap.FieldTiles |> Map.filter (fun _ fieldTile -> fieldTile.TileType = Passable) |> Map.map (fun _ _ -> FieldSpace.empty)
         Chessboard.updateFieldSpaces (constant fieldSpaces) chessboard
 
-    static member transitionMap _ fieldMap chessboard =
+    static member transitionMap fieldMap chessboard =
         let playerCoordinates = Chessboard.getCharacterCoordinates PlayerIndex chessboard
         let player = Chessboard.getCharacterAtCoordinates playerCoordinates chessboard
-        let chessboard = Chessboard.setFieldSpaces () fieldMap chessboard
+        let chessboard = Chessboard.setFieldSpaces fieldMap chessboard
         Chessboard.addCharacter player playerCoordinates chessboard
 
     static member empty =
@@ -260,10 +262,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updateField updater gameplay =
         { gameplay with Field = updater gameplay.Field }
     
-    // if updater takes index, index is arg1; if updater takes coordinates, coordinates is arg2
-    static member updateChessboardBy updater arg1 arg2 gameplay =
-        let chessboard = updater arg1 arg2 gameplay.Chessboard
-        { gameplay with Chessboard = chessboard }
+    static member updateChessboard updater gameplay =
+        { gameplay with Chessboard = updater gameplay.Chessboard }
     
     static member updateCharacterMoves updater gameplay =
         { gameplay with CharacterMoves = updater gameplay.CharacterMoves }
@@ -336,27 +336,27 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateCharacterTurn index (Turn.updateTurnStatus (constant status)) gameplay
     
     static member updateCharacter index updater gameplay =
-        Gameplay.updateChessboardBy Chessboard.updateCharacter index updater gameplay
+        Gameplay.updateChessboard (Chessboard.updateCharacter index updater) gameplay
 
     static member relocateCharacter index coordinates gameplay =
-        Gameplay.updateChessboardBy Chessboard.relocateCharacter index coordinates gameplay
+        Gameplay.updateChessboard (Chessboard.relocateCharacter index coordinates) gameplay
     
     static member addHealth coordinates gameplay =
-        Gameplay.updateChessboardBy Chessboard.addHealth () coordinates gameplay
+        Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
 
     static member removeHealth coordinates gameplay =
-        Gameplay.updateChessboardBy Chessboard.removePickup () coordinates gameplay
+        Gameplay.updateChessboard (Chessboard.removePickup coordinates) gameplay
     
     static member clearPickups gameplay =
-        Gameplay.updateChessboardBy Chessboard.clearPickups () () gameplay
+        Gameplay.updateChessboard Chessboard.clearPickups gameplay
     
     static member removeEnemy index gameplay =
         let coordinates = Gameplay.getCoordinates index gameplay
         let gameplay = Gameplay.addHealth coordinates gameplay
-        Gameplay.updateChessboardBy Chessboard.removeCharacter index () gameplay
+        Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
 
     static member clearEnemies gameplay =
-        Gameplay.updateChessboardBy Chessboard.clearEnemies () () gameplay
+        Gameplay.updateChessboard Chessboard.clearEnemies gameplay
 
     static member finishMove index gameplay =
         let gameplay = Gameplay.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) gameplay
@@ -421,12 +421,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateCharacterTurns (fun x -> turn :: x) gameplay
 
     static member setFieldMap fieldMap gameplay =
-        let gameplay = Gameplay.updateChessboardBy Chessboard.setFieldSpaces () fieldMap gameplay
+        let gameplay = Gameplay.updateChessboard (Chessboard.setFieldSpaces fieldMap) gameplay
         let field = { FieldMapNp = fieldMap }
         Gameplay.updateField (constant field) gameplay
 
     static member resetFieldMap fieldMap gameplay = // TODO: get rid of this redundency
-        let gameplay = Gameplay.updateChessboardBy Chessboard.transitionMap () fieldMap gameplay
+        let gameplay = Gameplay.updateChessboard (Chessboard.transitionMap fieldMap) gameplay
         let field = { FieldMapNp = fieldMap }
         Gameplay.updateField (constant field) gameplay
     
@@ -440,12 +440,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         | None -> Gameplay.getCoordinates index gameplay |> vctovf
 
     static member makePlayer gameplay =
-        Gameplay.updateChessboardBy Chessboard.addCharacter Character.makePlayer v2iZero gameplay
+        Gameplay.updateChessboard (Chessboard.addCharacter Character.makePlayer v2iZero) gameplay
 
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.UnoccupiedSpaces
         let coordinates = availableCoordinates.Item(Gen.random1 availableCoordinates.Length)
-        Gameplay.updateChessboardBy Chessboard.addCharacter (Character.makeEnemy index) coordinates gameplay
+        Gameplay.updateChessboard (Chessboard.addCharacter (Character.makeEnemy index) coordinates) gameplay
 
     static member makeEnemies quantity gameplay =
         let rec recursion count gameplay =
