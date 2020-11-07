@@ -303,8 +303,7 @@ module GameplayDispatcher =
                     just gameplay
                 else
                     let gameplay = Gameplay.initial
-                    let gameplay = Gameplay.setFieldMap (FieldMap.makeFromFieldMapUnit gameplay.MapModeler.Current) gameplay
-                    let gameplay = Gameplay.makePlayer gameplay
+                    let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromFieldMapUnit gameplay.MapModeler.Current) gameplay
                     let gameplay = Gameplay.makeEnemies 4 gameplay
                     just gameplay
 
