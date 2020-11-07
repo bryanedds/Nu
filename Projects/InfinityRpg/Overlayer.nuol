@@ -1,2 +1,8 @@
-﻿[[InfinityButtonDispatcher [ButtonDispatcher]
-  [[ClickSoundOpt [Some [Gui Affirm]]]]]]
+﻿[[ButtonDispatcherRoute
+  [ButtonDispatcher]
+  [[ClickSoundOpt
+    [Some [Gui Affirm]]]
+   [Font [Gui Font]]]]
+ [TextDispatcherRoute
+  [TextDispatcher]
+  [[Font [Gui Font]]]]]

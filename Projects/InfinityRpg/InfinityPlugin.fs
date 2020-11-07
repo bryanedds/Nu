@@ -12,4 +12,5 @@ type InfinityPlugin () =
 
     // route overlays to specific dispatchers
     override this.MakeOverlayRoutes () =
-        [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]
+        [(typeof<ButtonDispatcher>.Name, Some "ButtonDispatcherRoute")
+         (typeof<TextDispatcher>.Name, Some "TextDispatcherRoute")]
