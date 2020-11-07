@@ -237,9 +237,10 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         let chessboard = Chessboard.setFieldSpaces fieldMap chessboard
         Chessboard.addCharacter player playerCoordinates chessboard
 
-    static member empty =
-        { FieldSpaces = Map.empty }
-
+    static member init fieldMap =
+        let chessboard = Chessboard.setFieldSpaces fieldMap { FieldSpaces = Map.empty }
+        Chessboard.addCharacter Character.makePlayer v2iZero chessboard
+    
 type [<ReferenceEquality; NoComparison>] Gameplay =
     { ShallLoadGame : bool
       MapModeler : MapModeler
@@ -249,10 +250,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       CharacterTurns : Turn list }
 
     static member initial =
+        let field = Field.initial
         { ShallLoadGame = false
           MapModeler = MapModeler.make
-          Field = Field.initial
-          Chessboard = Chessboard.empty
+          Field = field
+          Chessboard = Chessboard.init field.FieldMapNp
           CharacterMoves = Map.empty
           CharacterTurns = [] }
 
@@ -341,19 +343,16 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member relocateCharacter index coordinates gameplay =
         Gameplay.updateChessboard (Chessboard.relocateCharacter index coordinates) gameplay
     
-    static member addHealth coordinates gameplay =
-        Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
-
-    static member removeHealth coordinates gameplay =
-        Gameplay.updateChessboard (Chessboard.removePickup coordinates) gameplay
-    
     static member clearPickups gameplay =
         Gameplay.updateChessboard Chessboard.clearPickups gameplay
     
     static member removeEnemy index gameplay =
-        let coordinates = Gameplay.getCoordinates index gameplay
-        let gameplay = Gameplay.addHealth coordinates gameplay
-        Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
+        match index with
+        | EnemyIndex _ ->
+            let coordinates = Gameplay.getCoordinates index gameplay
+            let gameplay = Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
+            Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
+        | PlayerIndex -> failwithumf ()
 
     static member clearEnemies gameplay =
         Gameplay.updateChessboard Chessboard.clearEnemies gameplay
@@ -366,7 +365,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         match index with
         | PlayerIndex ->
             let gameplay = Gameplay.updateCharacter index (Character.updateHitPoints (constant 30)) gameplay
-            Gameplay.removeHealth coordinates gameplay
+            Gameplay.updateChessboard (Chessboard.removePickup coordinates) gameplay
         | _ -> gameplay
     
     static member applyStep index direction gameplay =
@@ -407,7 +406,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member activateCharacter index gameplay =
         let move = Gameplay.getCharacterMove index gameplay
         let coordinates = Gameplay.getCoordinates index gameplay
-        
         let turn =
             match move with
             | Step direction -> Turn.makeWalk index false coordinates direction
@@ -417,15 +415,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | Travel path ->
                 let direction = Math.directionToTarget coordinates path.Head.Coordinates
                 Turn.makeWalk index true coordinates direction
-
         Gameplay.updateCharacterTurns (fun x -> turn :: x) gameplay
 
-    static member setFieldMap fieldMap gameplay =
-        let gameplay = Gameplay.updateChessboard (Chessboard.setFieldSpaces fieldMap) gameplay
-        let field = { FieldMapNp = fieldMap }
-        Gameplay.updateField (constant field) gameplay
-
-    static member resetFieldMap fieldMap gameplay = // TODO: get rid of this redundency
+    static member resetFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboard (Chessboard.transitionMap fieldMap) gameplay
         let field = { FieldMapNp = fieldMap }
         Gameplay.updateField (constant field) gameplay
@@ -433,14 +425,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member transitionMap direction gameplay =
         let mapModeler = gameplay.MapModeler.Transition direction
         Gameplay.updateMapModeler (constant mapModeler) gameplay
-
-    static member determineCharacterPosition index gameplay =
-        match Gameplay.tryGetCharacterTurn index gameplay with
-        | Some turn -> Turn.calculatePosition turn
-        | None -> Gameplay.getCoordinates index gameplay |> vctovf
-
-    static member makePlayer gameplay =
-        Gameplay.updateChessboard (Chessboard.addCharacter Character.makePlayer v2iZero) gameplay
 
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.UnoccupiedSpaces
