@@ -46,7 +46,7 @@ module GameplayDispatcher =
 
         static let tryGetNavigationPath (_ : CharacterIndex) coordinates gameplay =
             let fieldTiles = gameplay.Field.FieldMapNp.FieldTiles
-            let characterPositions = gameplay.Chessboard.OccupiedCoordinates |> List.map (fun coordinates -> vctovf coordinates)
+            let characterPositions = gameplay.Chessboard.OccupiedSpaces |> List.map (fun coordinates -> vctovf coordinates)
             let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
             let occupationMap = OccupationMap.makeFromFieldTilesAndAdjacentCharacters currentCoordinates fieldTiles characterPositions
             let nodes = OccupationMap.makeNavigationNodes occupationMap
@@ -196,7 +196,7 @@ module GameplayDispatcher =
                                 | _ :: [] -> None
                                 | _ :: navigationPath ->
                                     let targetCoordinates = (List.head navigationPath).Coordinates
-                                    if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.AvailableCoordinates
+                                    if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
                                     then Some (Travel navigationPath)
                                     else None
                                 | [] -> failwithumf ()
@@ -374,24 +374,19 @@ module GameplayDispatcher =
 
                      // pickups
                      Content.entities gameplay
-                        (fun gameplay -> gameplay.Chessboard.PickupItems)
+                        (fun gameplay -> gameplay.Chessboard.PickupSpaces)
                         (fun pickups _ -> Map.toListBy (fun positionM _ -> Pickup.makeHealth positionM) pickups)
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Pickup <== pickup])
 
                      // characters
                      Content.entitiesTrackedByFst gameplay
-                        (fun gameplay -> (gameplay.Chessboard, gameplay.CharacterTurns))
-                        (fun (chessboard, characterTurns) _ ->
-                            let characterDataOpts =
-                                List.map
-                                    (fun (characterPosition, fieldSpace) ->
-                                        match fieldSpace.CharacterOpt with
-                                        | Some character ->
-                                            let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
-                                            Some (index, (characterPosition, character, characterTurns))
-                                        | None -> None)
-                                    (Map.toList chessboard.PassableCoordinates)
-                            List.definitize characterDataOpts)
+                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.CharacterTurns))
+                        (fun (characters, characterTurns) _ ->
+                            Map.toList characters |>
+                            List.map
+                                (fun (coordinates, character) ->
+                                    let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
+                                    (index, (coordinates, character, characterTurns))))
                         (fun index characterData _ ->
                             let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
