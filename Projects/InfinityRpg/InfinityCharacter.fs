@@ -1,6 +1,34 @@
 ﻿namespace InfinityRpg
 open Prime
 
+type CharacterIndex =
+    | EnemyIndex of int
+    | PlayerIndex
+
+    member this.IsEnemy =
+        match this with EnemyIndex _ -> true | PlayerIndex -> false
+
+    member this.IsAlly =
+        not this.IsEnemy
+
+type AllyType =
+    | Player
+
+type EnemyType =
+    | Goopy
+    | Goblin
+    | Snake
+    | Zommie
+
+type CharacterType =
+    | Ally of AllyType
+    | Enemy of EnemyType
+
+type ControlType =
+    | PlayerControlled
+    | Chaos
+    | Uncontrolled
+
 type ElementType =
     | Fire // beats nothing; strongest
     | Water // beats fire, lightning; weakest
@@ -114,18 +142,6 @@ type AccessoryData =
       ShieldBase : int
       CounterBase : int }
 
-type AllyType =
-    | Avatar
-
-type EnemyType =
-    | Goblin
-    | Snake
-    | Zommie
-
-type CharacterType =
-    | Ally of AllyType
-    | Enemy of EnemyType
-
 type DrainData =
     { EffectType : EffectType
       Percentage : single }
@@ -160,13 +176,9 @@ type CharacterData =
       BaseActions : ActionData list // base actions for all instances of character
       Reward : RewardData }
 
-type ControlType =
-    | PlayerControlled
-    | Chaos
-    | Uncontrolled
-
-type [<ReferenceEquality; NoComparison>] CharacterState =
-    { CharacterType : CharacterType
+type [<ReferenceEquality; NoComparison>] Character =
+    { CharacterIndex : CharacterIndex
+      CharacterType : CharacterType
       ControlType : ControlType
       FacingDirection : Direction
       ExpPoints : int
@@ -187,43 +199,22 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     member this.IsEnemy =
         not this.IsAlly
 
-    member this.Level =
-        if this.ExpPoints < 8 then 1
-        elif this.ExpPoints < 16 then 2
-        elif this.ExpPoints < 24 then 3
-        elif this.ExpPoints < 36 then 4
-        elif this.ExpPoints < 50 then 5
-        elif this.ExpPoints < 75 then 6
-        elif this.ExpPoints < 100 then 6
-        elif this.ExpPoints < 150 then 8
-        elif this.ExpPoints < 225 then 9
-        elif this.ExpPoints < 350 then 10
-        elif this.ExpPoints < 500 then 11
-        elif this.ExpPoints < 750 then 12
-        elif this.ExpPoints < 1000 then 13
-        elif this.ExpPoints < 1500 then 14
-        elif this.ExpPoints < 2250 then 15
-        elif this.ExpPoints < 3500 then 16
-        elif this.ExpPoints < 5000 then 17
-        elif this.ExpPoints < 7500 then 18
-        elif this.ExpPoints < 10000 then 19
-        else 20
-
     member this.IsAlive =
         this.HitPoints > 0
     
-    static member updateControlType updater characterState =
-        { characterState with ControlType = updater characterState.ControlType }
+    static member updateControlType updater character =
+        { character with ControlType = updater character.ControlType }
     
-    static member updateFacingDirection updater characterState =
-        { characterState with FacingDirection = updater characterState.FacingDirection }
+    static member updateFacingDirection updater character =
+        { character with FacingDirection = updater character.FacingDirection }
     
-    static member updateHitPoints updater characterState =
-        { characterState with HitPoints = updater characterState.HitPoints }
+    static member updateHitPoints updater character =
+        { character with HitPoints = updater character.HitPoints }
 
     static member empty =
-        { CharacterType = Ally Avatar
-          ControlType = PlayerControlled
+        { CharacterIndex = PlayerIndex
+          CharacterType = Ally Player
+          ControlType = Uncontrolled
           FacingDirection = Upward
           ExpPoints = 0
           HitPoints = 10 // note this is an arbitrary number as hp max is calculated
@@ -237,6 +228,6 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
           ArmorOpt = Option<ArmorType>.None
           Accessories = [] } // level is calculated from base experience + added experience
 
-    static member makePlayer = { CharacterState.empty with HitPoints = 30; ControlType = PlayerControlled }
+    static member makePlayer = { Character.empty with HitPoints = 30; ControlType = PlayerControlled }
 
-    static member makeEnemy = { CharacterState.empty with HitPoints = 10; ControlType = Chaos }
+    static member makeEnemy index = { Character.empty with CharacterIndex = index; CharacterType = Enemy Goopy; HitPoints = 10; ControlType = Chaos }
