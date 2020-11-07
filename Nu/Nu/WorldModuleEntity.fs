@@ -860,7 +860,6 @@ module WorldModuleEntity =
                 entityState.Invalidated <- true
 
                 // remove the entity from the world
-                // REMOVE_ME: Console.WriteLine ("Removing entity " + scstring entity)
                 let world = World.removeEntityState entity world
                 world
 
@@ -929,7 +928,6 @@ module WorldModuleEntity =
                     then World.destroyEntityImmediate entity world
                     else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
                 else world
-            // REMOVE_ME: Console.WriteLine ("Adding entity " + scstring entity)
             let world = World.addEntity false entityState entity world
 
             // HACK: make sure xtension is consistent with imperativeness of entity state

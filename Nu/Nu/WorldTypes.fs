@@ -148,7 +148,7 @@ module WorldTypes =
     type Unsubscription =
         World -> World
     
-    /// The payload that is passed with the lens as a hack to performance from the Elmish implementation.
+    /// The payload that is passed with the lens as a hack to improve performance for the Elmish implementation.
     and internal Payload =
         int array * Guid * (ChangeData -> obj option -> World -> obj)
 
