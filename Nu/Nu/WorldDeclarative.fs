@@ -180,7 +180,6 @@ module WorldDeclarative =
                         match World.tryGetKeyedValue guid world with
                         | Some simulant ->
                             let world = World.removeKeyedValue guid world
-                            // REMOVE_ME: Console.WriteLine ("Scheduling destroy of " + scstring simulant)
                             WorldModule.destroy simulant world
                         | None -> world)
                         world removed
