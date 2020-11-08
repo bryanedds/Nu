@@ -237,7 +237,7 @@ module WorldDeclarative =
             let expansionId = Gen.id
             let previousSetKey = Gen.id
             let monitorMapper =
-                fun _ (_ : obj option) (world : World) ->
+                fun _ _ world ->
                     let a = lens.Get world
                     let b =
                         if a = aResult then
