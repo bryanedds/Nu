@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Collections.Generic
 open System.Numerics
+open System.Xml.Linq
 open Prime
 open TiledSharp
 
@@ -230,3 +231,22 @@ module TmxMap =
         v2
             (single (tileMap.Width * tileMap.TileWidth))
             (single (tileMap.Height * tileMap.TileHeight))
+
+    let makeLayerTile gid x y hflip vflip dflip =
+        let tid =
+            gid |||
+            (if hflip then 0x80000000 else 0x0) |||
+            (if vflip then 0x40000000 else 0x0) |||
+            (if dflip then 0x20000000 else 0x0) |>
+            uint
+        TmxLayerTile (tid, x, y)
+
+    let makeObject (id : int) (gid : int) (x : float) (y : float) (width : float) (height : float) =
+        let xml = XElement (XName.op_Implicit "object")
+        xml.Add (XAttribute (XName.op_Implicit "id", id))
+        xml.Add (XAttribute (XName.op_Implicit "gid", gid))
+        xml.Add (XAttribute (XName.op_Implicit "x", x))
+        xml.Add (XAttribute (XName.op_Implicit "y", y))
+        xml.Add (XAttribute (XName.op_Implicit "width", width))
+        xml.Add (XAttribute (XName.op_Implicit "height", height))
+        TmxObject xml
