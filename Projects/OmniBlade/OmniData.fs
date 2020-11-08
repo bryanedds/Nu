@@ -383,7 +383,7 @@ module FieldData =
         match prop.PropData with
         | ChestSpawn ->
             let (probability, rand) = Rand.nextSingleUnder 1.0f rand
-            if probability < 0.75f then
+            if probability < Constants.Field.TreasureProbability then
                 let (treasure, rand) =
                     match fieldData.TreasureList with
                     | _ :: _ ->

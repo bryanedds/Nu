@@ -76,7 +76,7 @@ type MapRand =
       MapOriginOpt : Vector2i option
       MapSize : Vector2i }
 
-    static member printfn map =
+    static member printn map =
         match map.MapOriginOpt with
         | Some start ->
             printfn "Start: %s" (scstring start)
@@ -221,14 +221,12 @@ type MapRand =
             | OriginSW ->   (14 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Upward TombInner [IX 0]]")
         let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
         let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * 32
-        let object = objects.[0]
-        let objectType = typeof<TmxObject>
-        (objectType.GetProperties "Id").[0].SetValue (object, 0)
-        (objectType.GetProperties "X").[0].SetValue (object, double openingXX)
-        (objectType.GetProperties "Y").[0].SetValue (object, double openingYY)
-        (objectType.GetProperties "Width").[0].SetValue (object, openingWidth)
-        (objectType.GetProperties "Height").[0].SetValue (object, openingHeight)
+        let objectRef = objects.[0]
+        let object = TmxMap.makeObject objectRef.Id 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)
         object.Properties.Add ("I", openingInfo)
+        objects.[0] <- object
+
+        MapRand.printn map
 
         // add objects from segments
         for i in 0 .. 7 - 1 do
@@ -236,12 +234,14 @@ type MapRand =
                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
                 | Some segment ->
                     if segment.ObjectGroups.Count <> 0 then
-                        for object in segment.ObjectGroups.[0].Objects do
-                            let objectType = typeof<TmxObject>
-                            (objectType.GetProperties "Id").[0].SetValue (object, i + j * 7)
-                            (objectType.GetProperties "X").[0].SetValue (object, object.X + double i * 32.0 * double mapTmx.TileWidth)
-                            (objectType.GetProperties "Y").[0].SetValue (object, object.Y + double j * 32.0 * double mapTmx.TileHeight)
+                        for objectRef in Seq.toArray segment.ObjectGroups.[0].Objects do
+                            let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
+                            let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
+                            let object = TmxMap.makeObject objectRef.Id 0 x y objectRef.Width objectRef.Height
+                            for propertyKvp in objectRef.Properties do object.Properties.Add (propertyKvp.Key, propertyKvp.Value)
+                            printf "((%i, %i)[%f %f])" i j x y
                             objects.Add object
+                        printfn ""
                 | None -> ()
 
         // add tiles from segments
@@ -258,11 +258,7 @@ type MapRand =
                                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
                                 | Some segment -> segment.Layers.[l].Tiles.[ii + jj * 32]
                                 | None -> TmxLayerTile (0u, x, y)
-                            let tileGidPlus =
-                                uint32 tileRef.Gid |||
-                                (if tileRef.HorizontalFlip then 0x40000000u else 0x0u) |||
-                                (if tileRef.VerticalFlip then 0x20000000u else 0x0u)
-                            let tile = TmxLayerTile (tileGidPlus, x, y)
+                            let tile = TmxMap.makeLayerTile tileRef.Gid x y tileRef.HorizontalFlip tileRef.VerticalFlip tileRef.DiagonalFlip
                             layer.Tiles.Add tile
 
         // le map tmx
