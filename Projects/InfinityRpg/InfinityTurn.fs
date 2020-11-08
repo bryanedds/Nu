@@ -117,3 +117,33 @@ type Turn =
           OriginCoordinates = originC
           Direction = direction
           StartTick = 0L }
+
+type [<ReferenceEquality; NoComparison>] PuppetMaster =
+    { CharacterTurns : Turn list }
+
+    static member initial =
+        { CharacterTurns = [] }
+
+    static member tryGetCharacterTurn index puppetMaster =
+        List.tryFind (fun x -> x.Actor = index) puppetMaster.CharacterTurns
+    
+    static member getCharacterTurn index puppetMaster =
+        List.find (fun x -> x.Actor = index) puppetMaster.CharacterTurns
+    
+    static member turnInProgress index puppetMaster =
+        List.exists (fun x -> x.Actor = index) puppetMaster.CharacterTurns
+
+    member this.AnyTurnsInProgress = 
+        List.notEmpty this.CharacterTurns
+    
+    static member updateCharacterTurns updater puppetMaster =
+        { puppetMaster with CharacterTurns = updater puppetMaster.CharacterTurns }
+
+    static member addCharacterTurn turn puppetMaster =
+        PuppetMaster.updateCharacterTurns (fun x -> turn :: x) puppetMaster
+
+    static member updateCharacterTurn index updater puppetMaster =
+        PuppetMaster.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) puppetMaster
+
+    static member removeCharacterTurn index puppetMaster =
+        PuppetMaster.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) puppetMaster

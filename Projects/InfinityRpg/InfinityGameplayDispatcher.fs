@@ -379,7 +379,7 @@ module GameplayDispatcher =
 
                      // characters
                      Content.entitiesTrackedByFst gameplay
-                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.CharacterTurns))
+                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.PuppetMaster.CharacterTurns))
                         (fun (characters, characterTurns) _ ->
                             Map.toList characters |>
                             List.map
