@@ -126,6 +126,9 @@ type [<ReferenceEquality; NoComparison>] PuppetMaster =
 
     static member tryGetCharacterTurn index puppetMaster =
         List.tryFind (fun x -> x.Actor = index) puppetMaster.CharacterTurns
+
+    static member tryGetOpponentTurn index puppetMaster =
+        List.tryFind (fun x -> x.ReactorOpt = Some index) puppetMaster.CharacterTurns
     
     static member getCharacterTurn index puppetMaster =
         List.find (fun x -> x.Actor = index) puppetMaster.CharacterTurns
@@ -147,3 +150,31 @@ type [<ReferenceEquality; NoComparison>] PuppetMaster =
 
     static member removeCharacterTurn index puppetMaster =
         PuppetMaster.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) puppetMaster
+
+    static member generatePositionsAndAnimationStates characters puppetMaster =
+        let generator coordinates character =
+            let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
+            let turnOpt = PuppetMaster.tryGetCharacterTurn character.CharacterIndex puppetMaster
+            let position = match turnOpt with Some turn -> Turn.calculatePosition turn | None -> vctovf coordinates
+            let characterAnimationState =
+                match turnOpt with
+                | None ->
+                    let animationType =
+                        if not character.IsAlive then
+                            match PuppetMaster.tryGetOpponentTurn character.CharacterIndex puppetMaster with
+                            | Some attackerTurn ->
+                                match attackerTurn.TurnStatus with
+                                | TurnPending
+                                | TurnBeginning -> CharacterAnimationFacing
+                                | TurnTicking tickCount ->
+                                    if tickCount < Constants.InfinityRpg.ReactionTick
+                                    then CharacterAnimationFacing
+                                    else CharacterAnimationSlain
+                                | TurnFinishing -> CharacterAnimationSlain
+                            | None -> CharacterAnimationSlain
+                        else CharacterAnimationFacing
+                    CharacterAnimationState.make 0L animationType character.FacingDirection
+                | Some turn -> Turn.toCharacterAnimationState turn
+            (index, (position, characterAnimationState))
+        Map.toListBy generator characters
+                
