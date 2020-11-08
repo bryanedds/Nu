@@ -212,19 +212,21 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
-            let mutable aResult = Unchecked.defaultof<_>
+            let mutable monitorResult = Unchecked.defaultof<_>
+            let mutable lensResult = Unchecked.defaultof<_>
             let mutable sieveResultOpt = None
             let mutable foldResultOpt = None
             let lensSeq =
                 Lens.mapWorld (fun a world ->
                     let (b, c) =
-                        if a = aResult then
+                        if a = lensResult then
                             match (sieveResultOpt, foldResultOpt) with
                             | (Some b, Some c) -> (b, c)
                             | (Some b, None) -> let c = unfold b world in (b, c)
                             | (None, Some _) -> failwithumf ()
                             | (None, None) -> let b = sieve a in let c = unfold b world in (b, c)
                         else let b = sieve a in let c = unfold b world in (b, c)
+                    lensResult <- a
                     sieveResultOpt <- Some b
                     foldResultOpt <- Some c
                     c)
@@ -237,14 +239,14 @@ module WorldDeclarative =
             let expansionId = Gen.id
             let previousSetKey = Gen.id
             let monitorMapper =
-                fun _ _ world ->
-                    let a = lens.Get world
+                fun a _ world ->
                     let b =
-                        if a = aResult then
+                        if a = monitorResult then
                             match sieveResultOpt with
-                            | Some b -> b
-                            | None -> sieve a
-                        else sieve a
+                            | Some c -> c
+                            | None -> sieve (lens.Get world)
+                        else sieve (lens.Get world)
+                    monitorResult <- a
                     sieveResultOpt <- Some b
                     b
             let monitorFilter =

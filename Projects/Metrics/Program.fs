@@ -189,7 +189,7 @@ type [<ReferenceEquality>] Model =
     { IntLists : Ints list }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Model, int, unit> ({ IntLists = List.init 34 (fun _ -> { Ints = List.init 34 id })}) // 1156 Elmish entities
+    inherit GameDispatcher<Model, int, unit> ({ IntLists = List.init 35 (fun _ -> { Ints = List.init 35 id })}) // 1225 Elmish entities
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
