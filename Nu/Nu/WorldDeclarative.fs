@@ -212,8 +212,8 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
-            let mutable monitorResult = Unchecked.defaultof<_>
-            let mutable lensResult = Unchecked.defaultof<_>
+            let mutable monitorResult = Unchecked.defaultof<obj>
+            let mutable lensResult = Unchecked.defaultof<obj>
             let mutable sieveResultOpt = None
             let mutable foldResultOpt = None
             let lensSeq =
@@ -241,12 +241,12 @@ module WorldDeclarative =
             let monitorMapper =
                 fun a _ world ->
                     let b =
-                        if a = monitorResult then
+                        if a.Value = monitorResult then
                             match sieveResultOpt with
                             | Some c -> c
                             | None -> sieve (lens.Get world)
                         else sieve (lens.Get world)
-                    monitorResult <- a
+                    monitorResult <- a.Value
                     sieveResultOpt <- Some b
                     b
             let monitorFilter =
