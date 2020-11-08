@@ -185,8 +185,11 @@ type MyGameDispatcher () =
 type [<ReferenceEquality>] Ints =
     { Ints : int list }
 
+type [<ReferenceEquality>] Model =
+    { IntLists : Ints list }
+
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Ints list, int, unit> (List.init 35 (fun _ -> { Ints = List.init 35 id })) // 1225 Elmish entities
+    inherit GameDispatcher<Model, int, unit> ({ IntLists = List.init 35 (fun _ -> { Ints = List.init 35 id })}) // 1225 Elmish entities
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -194,15 +197,15 @@ type ElmishGameDispatcher () =
     override this.Message (model, message, _, _) =
         match message with
         | 0 ->
-            let model = List.map (fun subModel -> { subModel with Ints = List.map inc subModel.Ints }) model
+            let model = { model with IntLists = List.map (fun subModel -> { subModel with Ints = List.map inc subModel.Ints }) model.IntLists }
             just model
         | _ -> just model
 
     override this.Content (model, _) =
         [Content.screen "Screen" Vanilla []
-            [Content.layers model id constant (fun i subModels _ ->
+            [Content.layers model (fun model -> model.IntLists) constant (fun i intLists _ ->
                 Content.layer (string i) []
-                    [Content.entities subModels (fun subModel -> subModel.Ints) constant (fun j int _ ->
+                    [Content.entities intLists (fun ints -> ints.Ints) constant (fun j int _ ->
                         Content.staticSprite (string j)
                             [Entity.Imperative == true
                              Entity.Omnipresent == true
