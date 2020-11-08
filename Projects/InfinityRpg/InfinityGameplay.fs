@@ -247,7 +247,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       Field : Field
       Chessboard : Chessboard
       CharacterMoves : Map<CharacterIndex, Move>
-      CharacterTurns : Turn list }
+      PuppetMaster : PuppetMaster }
 
     static member initial =
         let field = Field.initial
@@ -256,7 +256,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
           Field = field
           Chessboard = Chessboard.init field.FieldMapNp
           CharacterMoves = Map.empty
-          CharacterTurns = [] }
+          PuppetMaster = PuppetMaster.initial }
 
     static member updateMapModeler updater gameplay =
         { gameplay with MapModeler = updater gameplay.MapModeler }
@@ -270,8 +270,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updateCharacterMoves updater gameplay =
         { gameplay with CharacterMoves = updater gameplay.CharacterMoves }
     
-    static member updateCharacterTurns updater gameplay =
-        { gameplay with CharacterTurns = updater gameplay.CharacterTurns }
+    static member updatePuppetMaster updater gameplay =
+        { gameplay with PuppetMaster = updater gameplay.PuppetMaster }
     
     static member getEnemyIndices gameplay =
         gameplay.Chessboard.EnemyIndices
@@ -282,7 +282,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         | _ -> [PlayerIndex]
     
     static member anyTurnsInProgress gameplay = 
-        List.notEmpty gameplay.CharacterTurns
+        gameplay.PuppetMaster.AnyTurnsInProgress
     
     static member getCoordinates index gameplay =
         Chessboard.getCharacterCoordinates index gameplay.Chessboard
@@ -298,13 +298,13 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         gameplay.CharacterMoves.[index]
     
     static member tryGetCharacterTurn index gameplay =
-        List.tryFind (fun x -> x.Actor = index) gameplay.CharacterTurns
+        PuppetMaster.tryGetCharacterTurn index gameplay.PuppetMaster
     
     static member getCharacterTurn index gameplay =
-        List.find (fun x -> x.Actor = index) gameplay.CharacterTurns
+        PuppetMaster.getCharacterTurn index gameplay.PuppetMaster
     
     static member turnInProgress index gameplay =
-        List.exists (fun x -> x.Actor = index) gameplay.CharacterTurns
+        PuppetMaster.turnInProgress index gameplay.PuppetMaster
     
     static member isPlayerAttacking gameplay =
         match Gameplay.tryGetCharacterTurn PlayerIndex gameplay with
@@ -332,7 +332,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.addMove PlayerIndex move gameplay
     
     static member updateCharacterTurn index updater gameplay =
-        Gameplay.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) gameplay
+        Gameplay.updatePuppetMaster (PuppetMaster.updateCharacterTurn index updater) gameplay
     
     static member setCharacterTurnStatus index status gameplay =
         Gameplay.updateCharacterTurn index (Turn.updateTurnStatus (constant status)) gameplay
@@ -358,7 +358,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboard Chessboard.clearEnemies gameplay
 
     static member finishMove index gameplay =
-        let gameplay = Gameplay.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) gameplay
+        let gameplay = Gameplay.updatePuppetMaster (PuppetMaster.removeCharacterTurn index) gameplay
         Gameplay.removeMove index gameplay
     
     static member tryPickupHealth index coordinates gameplay =
@@ -415,7 +415,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | Travel path ->
                 let direction = Math.directionToTarget coordinates path.Head.Coordinates
                 Turn.makeWalk index true coordinates direction
-        Gameplay.updateCharacterTurns (fun x -> turn :: x) gameplay
+        Gameplay.updatePuppetMaster (PuppetMaster.addCharacterTurn turn) gameplay
 
     static member resetFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboard (Chessboard.transitionMap fieldMap) gameplay
