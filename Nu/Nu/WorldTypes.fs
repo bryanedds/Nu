@@ -147,10 +147,10 @@ module WorldTypes =
     /// Represents an unsubscription operation for an event.
     type Unsubscription =
         World -> World
-    
+
     /// The payload that is passed with the lens as a hack to improve performance for the Elmish implementation.
     and internal Payload =
-        int array * Guid * (ChangeData -> obj option -> World -> obj)
+        Guid * (ChangeData -> obj option -> World -> obj)
 
     /// The data for a change in the world's ambient state.
     and [<StructuralEquality; NoComparison>] AmbientChangeData = 

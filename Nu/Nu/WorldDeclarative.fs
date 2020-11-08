@@ -169,7 +169,7 @@ module WorldDeclarative =
 
     type World with
 
-        static member internal synchronizeSimulants tracking mapper mapper' origin owner parent current previous world =
+        static member internal synchronizeSimulants tracking mapper monitorMapper origin owner parent current previous world =
             let added = if tracking then USet.differenceFast current previous else HashSet (USet.toSeq current, HashIdentity.Structural)
             let removed = if tracking then USet.differenceFast previous current else HashSet (USet.toSeq previous, HashIdentity.Structural)
             let changed = added.Count <> 0 || removed.Count <> 0
@@ -186,12 +186,7 @@ module WorldDeclarative =
                 let world =
                     Seq.fold (fun world guidAndContent ->
                         let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
-                        let payloadOpt =
-                            match lens.PayloadOpt with
-                            | Some payload ->
-                                let (indices, _, _) = payload :?> Payload
-                                (Array.add index indices, Gen.id, mapper') :> obj |> Some
-                            | None -> ([|index|], Gen.id, mapper') :> obj |> Some
+                        let payloadOpt = ((Gen.id, monitorMapper) : Payload) :> obj |> Some
                         let lens = { lens with PayloadOpt = payloadOpt }
                         let content = mapper index lens world
                         match World.tryGetKeyedValue guid world with
@@ -219,16 +214,9 @@ module WorldDeclarative =
             world =
             let expansionId = Gen.id
             let previousSetKey = Gen.id
-            let sieve' = fun a ->
-                match lens.PayloadOpt with
-                | Some payload ->
-                    let (indices, _, _) = payload :?> Payload
-                    let item = Array.fold (fun current index -> IEnumerable.item index (current :?> IEnumerable)) a indices
-                    sieve item
-                | None -> sieve a
-            let mapper' = fun a (_ : obj option) (_ : World) -> sieve' a.Value
-            let filter = fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true
-            let lensSeq = // old method: lens |> Lens.map sieve |> Lens.mapWorld unfold
+            let monitorMapper = fun a (_ : obj option) (_ : World) -> sieve a.Value
+            let monitorFilter = fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true
+            let lensSeq =
                 let mutable sieveResult = Unchecked.defaultof<_>
                 let mutable foldResultOpt = None
                 Lens.mapWorld (fun a world ->
@@ -265,9 +253,9 @@ module WorldDeclarative =
                     match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> USet> previousSetKey world with
                     | Some previous -> previous
                     | None -> USet.makeEmpty Functional
-                let world = World.synchronizeSimulants tracking mapper mapper' origin owner parent current previous world
+                let world = World.synchronizeSimulants tracking mapper monitorMapper origin owner parent current previous world
                 let world = World.addKeyedValue previousSetKey current world
                 (Cascade, world)
             let (_, world) = subscription (Unchecked.defaultof<_>) world // expand simulants immediately rather than waiting for parent registration
-            let (_, world) = World.monitorCompressed Gen.id (Some mapper') (Some filter) None (Left subscription) lens.ChangeEvent parent world
+            let (_, world) = World.monitorCompressed Gen.id (Some monitorMapper) (Some monitorFilter) None (Left subscription) lens.ChangeEvent parent world
             world
