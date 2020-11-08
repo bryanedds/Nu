@@ -212,28 +212,46 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
-            let expansionId = Gen.id
-            let previousSetKey = Gen.id
-            let monitorMapper = fun _ (_ : obj option) (world : World) -> sieve (lens.Get world)
-            let monitorFilter = fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true
+            let mutable aResult = Unchecked.defaultof<_>
+            let mutable sieveResultOpt = None
+            let mutable foldResultOpt = None
             let lensSeq =
-                let mutable sieveResult = Unchecked.defaultof<_>
-                let mutable foldResultOpt = None
                 Lens.mapWorld (fun a world ->
-                    let b = sieve a
-                    let c =
-                        match foldResultOpt with
-                        | Some _ -> if b <> sieveResult then Some (unfold b world) else foldResultOpt
-                        | None -> Some (unfold b world)
-                    sieveResult <- b
-                    foldResultOpt <- c
-                    Option.get foldResultOpt)
+                    let (b, c) =
+                        if a = aResult then
+                            match (sieveResultOpt, foldResultOpt) with
+                            | (Some b, Some c) -> (b, c)
+                            | (Some b, None) -> let c = unfold b world in (b, c)
+                            | (None, Some _) -> failwithumf ()
+                            | (None, None) -> let b = sieve a in let c = unfold b world in (b, c)
+                        else let b = sieve a in let c = unfold b world in (b, c)
+                    sieveResultOpt <- Some b
+                    foldResultOpt <- Some c
+                    c)
                     lens
             let (tracking, lenses) =
                 match tracker with
                 | NoTracking -> (false, Lens.explodeIndexedOpt None lensSeq)
                 | AutoTracking -> (true, Lens.explodeIndexedOpt None lensSeq)
                 | ExplicitTracking fn -> (true, Lens.explodeIndexedOpt (Some fn) lensSeq)
+            let expansionId = Gen.id
+            let previousSetKey = Gen.id
+            let monitorMapper =
+                fun _ (_ : obj option) (world : World) ->
+                    let a = lens.Get world
+                    let b =
+                        if a = aResult then
+                            match sieveResultOpt with
+                            | Some b -> b
+                            | None -> sieve a
+                        else sieve a
+                    sieveResultOpt <- Some b
+                    b
+            let monitorFilter =
+                fun a a2Opt _ ->
+                    match a2Opt with
+                    | Some a2 -> a <> a2
+                    | None -> true
             let subscription = fun _ world ->
                 let items = Lens.get lensSeq world
                 let mutable current = USet.makeEmpty Functional
