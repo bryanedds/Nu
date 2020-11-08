@@ -379,26 +379,14 @@ module GameplayDispatcher =
 
                      // characters
                      Content.entitiesTrackedByFst gameplay
-                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.PuppetMaster.CharacterTurns))
-                        (fun (characters, characterTurns) _ ->
-                            Map.toList characters |>
-                            List.map
-                                (fun (coordinates, character) ->
-                                    let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
-                                    (index, (coordinates, character, characterTurns))))
+                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.PuppetMaster))
+                        (fun (characters, puppetMaster) _ -> PuppetMaster.generatePositionsAndAnimationStates characters puppetMaster)
                         (fun index characterData _ ->
                             let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.Position <== characterData --> fun (characterPosition, character, characterTurns) ->
-                                    match List.tryFind (fun x -> x.Actor = character.CharacterIndex) characterTurns with
-                                    | Some turn -> Turn.calculatePosition turn
-                                    | None -> vctovf characterPosition
-                                 Entity.CharacterAnimationSheet <== characterData --> fun (_, character, _) ->
-                                    match character.CharacterIndex with
-                                    | PlayerIndex -> Assets.PlayerImage
-                                    | EnemyIndex _ -> Assets.GoopyImage // TODO: pull this from data
-                                 Entity.CharacterAnimationState <== characterData --> fun (_, character, characterTurns) ->
-                                    Turn.turnsToCharacterAnimationState character.CharacterIndex character characterTurns])])
+                                [Entity.Position <== characterData --> fun (position, _) -> position
+                                 Entity.CharacterAnimationSheet <== characterData --> fun _ -> match index with 0 -> Assets.PlayerImage | _ -> Assets.GoopyImage // TODO: pull this from data
+                                 Entity.CharacterAnimationState <== characterData --> fun (_, characterAnimationState) -> characterAnimationState])])
 
              // hud layer
              Content.layer Simulants.Hud.Name []
