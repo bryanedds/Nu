@@ -170,8 +170,8 @@ module WorldDeclarative =
     type World with
 
         static member internal synchronizeSimulants tracking mapper monitorMapper origin owner parent current previous world =
-            let added = if tracking then USet.differenceFast current previous else HashSet (USet.toSeq current, HashIdentity.Structural)
-            let removed = if tracking then USet.differenceFast previous current else HashSet (USet.toSeq previous, HashIdentity.Structural)
+            let added = if tracking then USet.differenceFast current previous else HashSet (USet.toSeq current, HashIdentity.Structural) // TODO: use USet.toHashSet once PRime is upgraded.
+            let removed = if tracking then USet.differenceFast previous current else HashSet (USet.toSeq previous, HashIdentity.Structural) // TODO: use USet.toHashSet once PRime is upgraded.
             let changed = added.Count <> 0 || removed.Count <> 0
             if changed then
                 let world =
