@@ -48,8 +48,8 @@ module GameplayDispatcher =
             let fieldTiles = gameplay.Field.FieldMapNp.FieldTiles
             let characterPositions = gameplay.Chessboard.OccupiedSpaces |> List.map (fun coordinates -> vctovf coordinates)
             let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
-            let occupationMap = OccupationMap.makeFromFieldTilesAndAdjacentCharacters currentCoordinates fieldTiles characterPositions
-            let nodes = OccupationMap.makeNavigationNodes occupationMap
+            let navigationMap = NavigationMap.makeFromFieldTilesAndAdjacentCharacters currentCoordinates fieldTiles characterPositions
+            let nodes = NavigationMap.makeNavigationNodes navigationMap
             let goalNode = Map.find coordinates nodes
             let currentNode = Map.find currentCoordinates nodes
             let navigationPathOpt =
@@ -379,8 +379,8 @@ module GameplayDispatcher =
 
                      // characters
                      Content.entitiesTrackedByFst gameplay
-                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.PuppetMaster))
-                        (fun (characters, puppetMaster) _ -> PuppetMaster.generatePositionsAndAnimationStates characters puppetMaster)
+                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer))
+                        (fun (characters, puppeteer) _ -> Puppeteer.generatePositionsAndAnimationStates characters puppeteer)
                         (fun index characterData _ ->
                             let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
