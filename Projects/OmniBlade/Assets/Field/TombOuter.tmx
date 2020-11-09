@@ -19,9 +19,9 @@
     <property name="I" value="[Portal South Downward TombInner South]"/>
    </properties>
   </object>
-  <object id="6" gid="566" x="4162.67" y="4564" width="160" height="160">
+  <object id="6" gid="566" x="4144" y="4532" width="160" height="160">
    <properties>
-    <property name="I" value="[Shopkeep ShopkeepMan Downward Chemist]"/>
+    <property name="I" value="[Shopkeep ShopkeepMan Leftward Chemist]"/>
    </properties>
   </object>
   <object id="7" gid="566" x="684" y="4088" width="160" height="160">
