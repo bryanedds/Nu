@@ -1,5 +1,5 @@
 ﻿// Gaia - The Nu Game Engine editor.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu.Gaia
 open System
@@ -19,10 +19,3 @@ module Constants =
         let [<Literal>] CameraSpeed = 4.0f // NOTE: might be nice to be able to configure this just like entity creation depth in the editor
         let [<Literal>] SavedStateFilePath = "GaiaState.txt"
         let [<Literal>] NonePick = "\"None\""
-
-    [<RequireQualifiedAccess>]
-    module SubscriptionKeys =
-
-        let RegisterEntity = Gen.id
-        let UnregisteringEntity = Gen.id
-        let ChangeParentNodeOpt = Gen.id

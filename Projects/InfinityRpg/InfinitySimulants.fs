@@ -5,9 +5,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // the game handle
-    let Game = Default.Game
-
     // same as above, but for the splash screen
     let Splash = Screen "Splash"
 
@@ -33,16 +30,16 @@ module Simulants =
     let CreditsBack = CreditsGui / "Back"
 
     // these are more gameplay simulants
-    let Gameplay = Default.Screen
+    let Gameplay = Screen "Gameplay"
     let Hud = Gameplay / "Hud"
     let HudBack = Hud / "Back"
     let HudSaveGame = Hud / "SaveGame"
     let HudHalt = Hud / "Halt"
     let HudFeeler = Hud / "Feeler"
-    let HudDetailUp = Hud / "DetailUp"
-    let HudDetailRight = Hud / "DetailRight"
-    let HudDetailDown = Hud / "DetailDown"
-    let HudDetailLeft = Hud / "DetailLeft"
+    let HudDetailUpward = Hud / "DetailUpward"
+    let HudDetailRightward = Hud / "DetailRightward"
+    let HudDetailDownward = Hud / "DetailDownward"
+    let HudDetailLeftward = Hud / "DetailLeftward"
     let Scene = Gameplay / "Scene"
     let Field = Scene / "Field"
     let Player = Scene / "Player"

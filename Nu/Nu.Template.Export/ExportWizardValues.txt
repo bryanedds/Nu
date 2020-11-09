@@ -1,3 +1,0 @@
-Nu.Game
-Create an empty game with the Nu Game Engine.
-C:\Development\Nu\Nu\Nu.Promotional\Icon.png

@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu.Tests
 open System
@@ -8,7 +8,7 @@ open Prime
 open Nu
 module ReflectionTests =
 
-    type [<CLIMutable; NoEquality; NoComparison>] TestXtended =
+    type [<ReferenceEquality; NoComparison; CLIMutable>] TestXtended =
         { Xtension : Xtension }
 
         static member (?) (this : TestXtended, propertyName) =
@@ -27,4 +27,4 @@ module ReflectionTests =
         let properties = Reflection.writePropertiesFromTarget tautology3 Map.empty xtd
         let xtdRead = { xtd with Xtension = xtd.Xtension } // hacky copy
         let xtd = Reflection.readPropertiesToTarget TestXtended.copy properties xtdRead
-        Assert.Equal((xtd?TestProperty : int), (xtdRead?TestProperty : int))
+        Assert.Equal ((xtd?TestProperty : int), (xtdRead?TestProperty : int))

@@ -20,9 +20,6 @@
   </data>
  </layer>
  <layer name="Platforms" width="32" height="9">
-  <properties>
-   <property name="C" value=""/>
-  </properties>
   <data encoding="base64" compression="zlib">
    eJxjYBgF5AJRIBaDYnE0OUks6tDVEGs+TJ8kHrXY7CUVEOtOTgrsgAFK3DkKhg8AAGz4AYw=
   </data>

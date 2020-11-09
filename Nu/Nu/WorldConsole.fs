@@ -1,11 +1,10 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
 open System.Runtime.InteropServices
 open System.Text
-open SDL2
 open Prime
 open Nu
 
@@ -34,28 +33,32 @@ module WorldConsole =
 
     let private showWindowByTitle title =
         let handle = FindWindowByCaption (IntPtr.Zero, title)
-        if handle = IntPtr.Zero then Console.WriteLine("Can't find window with title '" + title + "'.")
-        else SetForegroundWindow handle |> ignore
+        if handle = IntPtr.Zero then
+            Console.WriteLine("Can't find window with title '" + title + "'.")
+            false
+        else
+            SetForegroundWindow handle |> ignore
+            true
 
     let rec run gameTitle world =
-        while Console.KeyAvailable do ignore (Console.ReadKey true)
-        showWindowByTitle Console.Title
-        Console.Write "> "
-        match Console.ReadLine () with
-        | input when String.IsNullOrWhiteSpace input ->
-            showWindowByTitle gameTitle
-            world
-        | input ->
-            let context = Default.Game
-            let frame = context.GetScriptFrame world
-            try let expr = scvalue<Scripting.Expr> input
-                let struct (result, world) = World.eval expr frame context world
-                Console.Write ": "
-                Console.WriteLine (scstring result)
-                run gameTitle world
-            with exn ->
-                Console.WriteLine ("Unexpected exception:\n" + scstring exn)
-                run gameTitle (World.choose world)
+        if showWindowByTitle Console.Title then
+            Console.Write "> "
+            match Console.ReadLine () with
+            | input when String.IsNullOrWhiteSpace input ->
+                showWindowByTitle gameTitle |> ignore
+                world
+            | input ->
+                let context = Simulants.Game
+                let frame = context.GetScriptFrame world
+                try let expr = scvalue<Scripting.Expr> input
+                    let struct (result, world) = World.eval expr frame context world
+                    Console.Write ": "
+                    Console.WriteLine (scstring result)
+                    run gameTitle world
+                with exn ->
+                    Console.WriteLine ("Unexpected exception:\n" + scstring exn)
+                    run gameTitle (World.choose world)
+        else world
 
     let tryHookUp world =
         match Environment.OSVersion.Platform with
@@ -63,11 +66,13 @@ module WorldConsole =
         | PlatformID.Win32Windows ->
             let world =
                 World.subscribe (fun keyEvent world ->
-                    if keyEvent.Data.ScanCode = int SDL.SDL_Scancode.SDL_SCANCODE_GRAVE
-                    then run (getActiveWindowTitle ()) world
-                    else world)
+                    let world =
+                        if keyEvent.Data.KeyboardKey = KeyboardKey.Grave
+                        then run (getActiveWindowTitle ()) world
+                        else world
+                    (Cascade, world))
                     Events.KeyboardKeyDown
-                    Default.Game
+                    Simulants.Game
                     world
             Log.info "Console hooked up (press ` (backtick) in game to open console)."
             (true, world)

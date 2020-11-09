@@ -1,80 +1,301 @@
-﻿namespace OmniBlade
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2020.
+
+namespace OmniBlade
 open System
-open FSharpx.Collections
+open System.Numerics
 open Prime
 open Nu
-open Nu.Declarative
-open OmniBlade
 
-[<AutoOpen>]
-module OmniCharacter =
+type [<ReferenceEquality; NoComparison>] AutoBattle =
+    { AutoTarget : CharacterIndex
+      AutoTechOpt : TechType option }
 
-    type [<NoComparison>] CharacterModel =
-        { CharacterState : CharacterState
-          AnimationState : CharacterAnimationState
-          Position : Vector2
-          Size : Vector2 }
+[<RequireQualifiedAccess>]
+module Character =
 
-    type Entity with
-    
-        member this.GetCharacterState = this.Get Property? CharacterState
-        member this.SetCharacterState = this.Set Property? CharacterState
-        member this.CharacterState = lens<CharacterState> Property? CharacterState this.GetCharacterState this.SetCharacterState this
-        member this.GetCharacterAnimationState = this.Get Property? CharacterAnimationState
-        member this.SetCharacterAnimationState = this.Set Property? CharacterAnimationState
-        member this.CharacterAnimationState = lens<CharacterAnimationState> Property? CharacterAnimationState this.GetCharacterAnimationState this.SetCharacterAnimationState this
+    type [<ReferenceEquality; NoComparison>] Character =
+        private
+            { BoundsOriginal_ : Vector4
+              Bounds_ : Vector4
+              CharacterIndex_ : CharacterIndex
+              CharacterState_ : CharacterState
+              AnimationState_ : CharacterAnimationState
+              AutoBattleOpt_ : AutoBattle option
+              ActionTime_ : int
+              InputState_ : CharacterInputState }
 
-    type CharacterDispatcher () =
-        inherit EntityDispatcher ()
+        (* Bounds Original Properties *)
+        member this.BoundsOriginal = this.BoundsOriginal_
+        member this.PositionOriginal = this.BoundsOriginal_.Position
+        member this.CenterOriginal = this.BoundsOriginal_.Center
+        member this.BottomOriginal = this.BoundsOriginal_.Bottom
+        member this.SizeOriginal = this.BoundsOriginal_.Size
 
-        static let [<Literal>] CelSize =
-            160.0f
+        (* Bounds Properties *)
+        member this.Bounds = this.Bounds_
+        member this.Position = this.Bounds_.Position
+        member this.Center = this.Bounds_.Center
+        member this.Bottom = this.Bounds_.Bottom
+        member this.Size = this.Bounds_.Size
 
-        static let getSpriteInset (entity : Entity) world =
-            let characterAnimationState = entity.GetCharacterAnimationState world
-            let index = CharacterAnimationState.index (World.getTickTime world) characterAnimationState
-            let offset = v2 (single index.X * CelSize) (single index.Y * CelSize)
-            let inset = Vector4 (offset.X, offset.Y, offset.X + CelSize, offset.Y + CelSize)
-            inset
+        (* Helper Properties *)
+        member this.CenterOffset = this.Center + Constants.Battle.CharacterCenterOffset
+        member this.CenterOffset2 = this.Center + Constants.Battle.CharacterCenterOffset2
+        member this.CenterOffset3 = this.Center + Constants.Battle.CharacterCenterOffset3
+        member this.BottomOffset = this.Bottom + Constants.Battle.CharacterBottomOffset
+        member this.BottomOffset2 = this.Bottom + Constants.Battle.CharacterBottomOffset2
+        member this.BottomOffset3 = this.Bottom + Constants.Battle.CharacterBottomOffset3
 
-        static let getSpriteColor (entity : Entity) world =
-            let statuses = (entity.GetCharacterState world).Statuses
-            let color =
-                let state = entity.GetCharacterAnimationState world
-                if state.AnimationCycle = CharacterAnimationCycle.WoundCycle && (entity.GetCharacterState world).IsEnemy then
-                    match CharacterAnimationState.progressOpt (World.getTickTime world) state with
-                    | Some progress -> Vector4 (1.0f,0.5f,1.0f,1.0f-progress) // purple
-                    | None -> failwithumf ()
-                elif Set.contains PoisonStatus statuses then Vector4 (0.5f,1.0f,0.5f,1.0f) // green
-                elif Set.contains MuteStatus statuses then Vector4 (0.1f,1.0f,0.5f,1.0f) // orange
-                elif Set.contains SleepStatus statuses then Vector4 (0.5f,0.5f,1.0f,1.0f) // blue
-                else Vector4.One
-            color
+        (* CharacterState Properties *)
+        member this.CharacterIndex = this.CharacterIndex_
+        member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
+        member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
+        member this.IsEnemy = not this.IsAlly
+        member this.ActionTime = this.ActionTime_
+        member this.ExpPoints = this.CharacterState_.ExpPoints
+        member this.HitPoints = this.CharacterState_.HitPoints
+        member this.TechPoints = this.CharacterState_.TechPoints
+        member this.WeaponOpt = this.CharacterState_.WeaponOpt
+        member this.ArmorOpt = this.CharacterState_.ArmorOpt
+        member this.Accessories = this.CharacterState_.Accessories
+        member this.Techs = this.CharacterState_.Techs
+        member this.Statuses = this.CharacterState_.Statuses
+        member this.Defending = this.CharacterState_.Defending
+        member this.Charging = this.CharacterState_.Charging
+        member this.PowerBuff = this.CharacterState_.PowerBuff
+        member this.ShieldBuff = this.CharacterState_.ShieldBuff
+        member this.MagicBuff = this.CharacterState_.MagicBuff
+        member this.CounterBuff = this.CharacterState_.CounterBuff
+        member this.IsHealthy = this.CharacterState_.IsHealthy
+        member this.IsWounded = this.CharacterState_.IsWounded
+        member this.Level = this.CharacterState_.Level
+        member this.HitPointsMax = this.CharacterState_.HitPointsMax
+        member this.Power = this.CharacterState_.Power
+        member this.Magic = this.CharacterState_.Magic
+        member this.Shield = this.CharacterState_.Shield
+        member this.GoldPrize = this.CharacterState_.GoldPrize
+        member this.ExpPrize = this.CharacterState_.ExpPrize
 
-        static member Properties =
-            [define Entity.CharacterState CharacterState.empty
-             define Entity.CharacterAnimationState { TimeStart = 0L; AnimationSheet = Assets.JinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Downward; Stutter = 10 }
-             define Entity.Omnipresent true
-             define Entity.PublishChanges true]
+        (* AnimationState Properties *)
+        member this.TimeStart = this.AnimationState_.TimeStart
+        member this.AnimationSheet = this.AnimationState_.AnimationSheet
+        member this.AnimationCycle = this.AnimationState_.AnimationCycle
+        member this.Direction = this.AnimationState_.Direction
 
-        override this.Actualize (entity, world) =
-            if entity.GetInView world then
-                World.enqueueRenderMessage
-                    (RenderDescriptorMessage
-                        (LayerableDescriptor
-                            { Depth = entity.GetDepth world
-                              PositionY = (entity.GetPosition world).Y
-                              AssetTag = (entity.GetCharacterAnimationState world).AnimationSheet
-                              LayeredDescriptor =
-                              SpriteDescriptor
-                                { Position = entity.GetPosition world
-                                  Size = entity.GetSize world
-                                  Rotation = entity.GetRotation world
-                                  Offset = Vector2.Zero
-                                  ViewType = entity.GetViewType world
-                                  InsetOpt = Some (getSpriteInset entity world)
-                                  Image = (entity.GetCharacterAnimationState world).AnimationSheet
-                                  Color = getSpriteColor entity world
-                                  Flip = FlipNone }}))
-                    world
-            else world
+        (* Local Properties *)
+        member this.AutoBattleOpt = this.AutoBattleOpt_
+        member this.InputState = this.InputState_
+
+    let isTeammate (character : Character) (character2 : Character) =
+        CharacterIndex.isTeammate character.CharacterIndex character2.CharacterIndex
+
+    let isReadyForAutoBattle character =
+        Option.isNone character.AutoBattleOpt_ &&
+        character.ActionTime >= Constants.Battle.AutoBattleReadyTime &&
+        character.IsEnemy
+
+    let isAutoBattling character =
+        match character.AutoBattleOpt_ with
+        | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
+        | None -> false
+
+    let evaluateAutoBattle source (target : Character) =
+        let techOpt =
+            match Gen.random1 Constants.Battle.AutoBattleTechFrequency with
+            | 0 -> CharacterState.tryGetTechRandom source.CharacterState_
+            | _ -> None
+        { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
+
+    let evaluateAimType aimType (target : Character) (characters : Character list) =
+        match aimType with
+        | AnyAim healthy ->
+            characters |>
+            List.filter (fun target -> target.IsHealthy = healthy)
+        | EnemyAim healthy | AllyAim healthy ->
+            characters |>
+            List.filter (isTeammate target) |>
+            List.filter (fun target -> target.IsHealthy = healthy)
+        | NoAim ->
+            []
+
+    let evaluateTargetType targetType (source : Character) target characters =
+        match targetType with
+        | SingleTarget _ ->
+            [target]
+        | ProximityTarget (aimType, radius) ->
+            characters |>
+            evaluateAimType aimType target |>
+            List.filter (fun character ->
+                let v = character.Bottom - source.Bottom
+                v.Length () <= radius)
+        | RadialTarget (aimType, radius) ->
+            characters |>
+            evaluateAimType aimType target |>
+            List.filter (fun character ->
+                let v = character.Bottom - target.Bottom
+                v.Length () <= radius)
+        | LineTarget (aimType, width) ->
+            characters |>
+            evaluateAimType aimType target |>
+            List.filter (fun character ->
+                let a = source.Bottom
+                let b = target.Bottom
+                let c = character.Bottom
+                let (ab, ac, bc) = (b - a, c - a, c - b)
+                let e = Vector2.Dot (ac, ab)
+                let d =
+                    if e > 0.0f then
+                        let f = Vector2.Dot(ab, ab);
+                        if e < f
+                        then Vector2.Dot (ac, ac) - e * e / f
+                        else Vector2.Dot (bc, bc)
+                    else Vector2.Dot (ac, ac)
+                d <= width)
+        | AllTarget aimType ->
+            characters |>
+            evaluateAimType aimType target
+
+    let evaluateTech techData source (target : Character) =
+        let power = source.CharacterState_.Power
+        if techData.Curative then
+            let healing = single power * techData.Scalar |> int |> max 1
+            (false, healing, target.CharacterIndex)
+        else
+            let cancelled = techData.Cancels && isAutoBattling target
+            let shield = target.CharacterState_.Shield techData.EffectType
+            let damageUnscaled = power - shield
+            let damage = single damageUnscaled * techData.Scalar |> int |> max 1
+            (cancelled, -damage, target.CharacterIndex)
+
+    let evaluateTechMove techData source target characters =
+        let targets =
+            evaluateTargetType techData.TargetType source target characters
+        let resultsRev =
+            List.fold (fun results target ->
+                let result = evaluateTech techData source target
+                result :: results)
+                [] targets
+        List.rev resultsRev
+
+    let getPoiseType character =
+        CharacterState.getPoiseType character.CharacterState_
+
+    let getAttackResult effectType source target =
+        CharacterState.getAttackResult effectType source.CharacterState_ target.CharacterState_
+
+    let getAnimationIndex time character =
+        CharacterAnimationState.index time character.AnimationState_
+
+    let getAnimationProgressOpt time character =
+        CharacterAnimationState.progressOpt time character.AnimationState_
+
+    let getAnimationFinished time character =
+        CharacterAnimationState.getFinished time character.AnimationState_
+
+    let updateActionTime updater character =
+        { character with ActionTime_ = updater character.ActionTime_ }
+
+    let updateHitPoints updater character =
+        let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
+        let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
+        let autoBattleOpt =
+            match character.AutoBattleOpt_ with
+            | Some autoBattle when cancel -> Some { autoBattle with AutoTechOpt = None }
+            | autoBattleOpt -> autoBattleOpt // use existing state if not cancelled
+        { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
+
+    let updateTechPoints updater character =
+        { character with CharacterState_ = CharacterState.updateTechPoints updater character.CharacterState_ }
+
+    let updateExpPoints updater character =
+        { character with CharacterState_ = CharacterState.updateExpPoints updater character.CharacterState_ }
+
+    let updateInputState updater character =
+        { character with InputState_ = updater character.InputState_ }
+
+    let updateAutoBattleOpt updater character =
+        { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
+
+    let updateBounds updater (character : Character) =
+        { character with Bounds_ = updater character.Bounds_ }
+
+    let updatePosition updater (character : Character) =
+        { character with Bounds_ = character.Position |> updater |> character.Bounds.WithPosition }
+
+    let updateCenter updater (character : Character) =
+        { character with Bounds_ = character.Center |> updater |> character.Bounds.WithCenter }
+
+    let updateBottom updater (character : Character) =
+        { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
+
+    let autoBattle (source : Character) (target : Character) =
+        let sourceToTarget = target.Position - source.Position
+        let direction = Direction.fromVector2 sourceToTarget
+        let animationState = { source.AnimationState_ with Direction = direction }
+        let autoBattle = evaluateAutoBattle source target
+        { source with AnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
+
+    let defend character =
+        let characterState = character.CharacterState_
+        let characterState =
+            // TODO: shield buff
+            if not characterState.Defending
+            then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff + Constants.Battle.DefendingCounterBuff) }
+            else characterState
+        let characterState = { characterState with Defending = true }
+        { character with CharacterState_ = characterState }
+
+    let undefend character =
+        let characterState = character.CharacterState_
+        let characterState =
+            // TODO: shield buff
+            if characterState.Defending
+            then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff - Constants.Battle.DefendingCounterBuff) }
+            else characterState
+        let characterState = { characterState with Defending = false }
+        { character with CharacterState_ = characterState }
+
+    let animate time cycle character =
+        { character with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState_ }
+
+    let make bounds characterIndex (characterState : CharacterState) animationSheet direction actionTime =
+        let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = ReadyCycle; Direction = direction }
+        { BoundsOriginal_ = bounds
+          Bounds_ = bounds
+          CharacterIndex_ = characterIndex
+          CharacterState_ = characterState
+          AnimationState_ = animationState
+          AutoBattleOpt_ = None
+          ActionTime_ = actionTime
+          InputState_ = NoInput }
+
+    let makeEnemy index enemyData =
+        // TODO: better error checking
+        let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
+        let characterData =
+            match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
+            | Some characterData -> characterData
+            | None -> failwith ("Could not find CharacterData for '" + scstring enemyData.EnemyType + "'")
+        let archetypeType = characterData.ArchetypeType
+        let hitPoints = Algorithms.hitPointsMax None archetypeType characterData.LevelBase
+        let techPoints = Algorithms.techPointsMax None archetypeType characterData.LevelBase
+        let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
+        let characterState = CharacterState.make characterData hitPoints techPoints expPoints None None [] // TODO: figure out if / how we should populate equipment
+        let actionTime = Constants.Battle.EnemyActionTimeInitial
+        let enemy = make bounds (EnemyIndex index) characterState characterData.AnimationSheet Leftward actionTime
+        enemy
+
+    let empty =
+        let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
+        let animationState = { TimeStart = 0L; AnimationSheet = Assets.FinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Downward }
+        { BoundsOriginal_ = bounds
+          Bounds_ = bounds
+          CharacterIndex_ = AllyIndex 0
+          CharacterState_ = CharacterState.empty
+          AnimationState_ = animationState
+          AutoBattleOpt_ = None
+          ActionTime_ = 0
+          InputState_ = NoInput }
+
+type Character = Character.Character

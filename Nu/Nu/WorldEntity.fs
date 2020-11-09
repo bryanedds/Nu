@@ -1,12 +1,10 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
-open System.ComponentModel
 open System.IO
-open System.Reflection
-open System.Runtime.CompilerServices
+open FSharpx.Collections
 open Prime
 open Nu
 
@@ -16,12 +14,27 @@ module WorldEntityModule =
     type Entity with
 
         member this.GetDispatcher world = World.getEntityDispatcher this world
-        member this.Dispatcher = lensOut Property? Dispatcher this.GetDispatcher this
+        member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
+        member this.GetModel<'a> world = World.getEntityModel<'a> this world
+        member this.SetModel<'a> value world = World.setEntityModel<'a> value this world
+        member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
         member this.GetFacets world = World.getEntityFacets this world
-        member this.Facets = lensOut Property? Facets this.GetFacets this
+        member this.Facets = lensReadOnly Property? Facets this.GetFacets this
+        member this.GetTransform world = (World.getEntityState this world).Transform
+        member this.SetTransform value world = World.setEntityTransform value this world
+        member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
+        member this.GetBounds world = World.getEntityBounds this world
+        member this.SetBounds value world = World.setEntityBounds value this world
+        member this.Bounds = lens Property? Bounds this.GetBounds this.SetBounds this
         member this.GetPosition world = World.getEntityPosition this world
         member this.SetPosition value world = World.setEntityPosition value this world
         member this.Position = lens Property? Position this.GetPosition this.SetPosition this
+        member this.GetCenter world = World.getEntityCenter this world
+        member this.SetCenter value world = World.setEntityCenter value this world
+        member this.Center = lens Property? Center this.GetCenter this.SetCenter this
+        member this.GetBottom world = World.getEntityBottom this world
+        member this.SetBottom value world = World.setEntityBottom value this world
+        member this.Bottom = lens Property? Bottom this.GetBottom this.SetBottom this
         member this.GetSize world = World.getEntitySize this world
         member this.SetSize value world = World.setEntitySize value this world
         member this.Size = lens Property? Size this.GetSize this.SetSize this
@@ -31,18 +44,14 @@ module WorldEntityModule =
         member this.GetDepth world = World.getEntityDepth this world
         member this.SetDepth value world = World.setEntityDepth value this world
         member this.Depth = lens Property? Depth this.GetDepth this.SetDepth this
-        member this.GetDepthLayered world = World.getEntityDepth this world + if not (World.getEntityIgnoreLayer this world) then World.getLayerDepth (etol this) world else 0.0f
-        member this.DepthLayered = lensOut Property? DepthLayered this.GetDepthLayered this
-        member this.GetViewType world = World.getEntityViewType this world
-        member this.SetViewType value world = World.setEntityViewType value this world
-        member this.ViewType = lens Property? ViewType this.GetViewType this.SetViewType this
+        member this.GetFlags world = World.getEntityFlags this world
+        member this.Flags = lensReadOnly Property? Flags this.GetFlags this
         member this.GetOmnipresent world = World.getEntityOmnipresent this world
         member this.SetOmnipresent value world = World.setEntityOmnipresent value this world
         member this.Omnipresent = lens Property? Omnipresent this.GetOmnipresent this.SetOmnipresent this
-        member this.GetStaticData<'a> world = World.getEntityStaticData<'a> this world
-        member this.SetStaticData<'a> value world = World.setEntityStaticData<'a> value this world
-        member this.UpdateStaticData<'a> updater world = this.SetStaticData<'a> (updater this.GetStaticData<'a> world) world
-        member this.StaticData<'a> () = lens Property? StaticData this.GetStaticData<'a> this.SetStaticData<'a> this
+        member this.GetAbsolute world = World.getEntityAbsolute this world
+        member this.SetAbsolute value world = World.setEntityAbsolute value this world
+        member this.Absolute = lens Property? Absolute this.GetAbsolute this.SetAbsolute this
         member this.GetOverflow world = World.getEntityOverflow this world
         member this.SetOverflow value world = World.setEntityOverflow value this world
         member this.Overflow = lens Property? Overflow this.GetOverflow this.SetOverflow this
@@ -52,78 +61,115 @@ module WorldEntityModule =
         member this.GetPublishChanges world = World.getEntityPublishChanges this world
         member this.SetPublishChanges value world = World.setEntityPublishChanges value this world
         member this.PublishChanges = lens Property? PublishChanges this.GetPublishChanges this.SetPublishChanges this
-        member this.GetIgnoreLayer world = World.getEntityIgnoreLayer this world
-        member this.SetIgnoreLayer value world = World.setEntityIgnoreLayer value this world
-        member this.IgnoreLayer = lens Property? IgnoreLayer this.GetIgnoreLayer this.SetIgnoreLayer this
         member this.GetEnabled world = World.getEntityEnabled this world
         member this.SetEnabled value world = World.setEntityEnabled value this world
         member this.Enabled = lens Property? Enabled this.GetEnabled this.SetEnabled this
         member this.GetVisible world = World.getEntityVisible this world
         member this.SetVisible value world = World.setEntityVisible value this world
         member this.Visible = lens Property? Visible this.GetVisible this.SetVisible this
-        member this.GetVisibleLayered world = World.getEntityVisible this world && if not (World.getEntityIgnoreLayer this world) then World.getLayerVisible (etol this) world else true
-        member this.VisibleLayered = lensOut Property? VisibleLayered this.GetVisibleLayered this
         member this.GetAlwaysUpdate world = World.getEntityAlwaysUpdate this world
         member this.SetAlwaysUpdate value world = World.setEntityAlwaysUpdate value this world
         member this.AlwaysUpdate = lens Property? AlwaysUpdate this.GetAlwaysUpdate this.SetAlwaysUpdate this
         member this.GetPersistent world = World.getEntityPersistent this world
         member this.SetPersistent value world = World.setEntityPersistent value this world
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
+        member this.GetDestroying world = World.getEntityDestroying this world
+        member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
+        member this.GetOptimized world = World.getEntityOptimized this world
+        member this.Optimized = lensReadOnly Property? Optimized this.GetOptimized this
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
-        member this.OverlayNameOpt = lensOut Property? OverlayNameOpt this.GetOverlayNameOpt this
+        member this.OverlayNameOpt = lensReadOnly Property? OverlayNameOpt this.GetOverlayNameOpt this
         member this.GetFacetNames world = World.getEntityFacetNames this world
-        member this.FacetNames = lensOut Property? FacetNames this.GetFacetNames this
+        member this.FacetNames = lensReadOnly Property? FacetNames this.GetFacetNames this
+        member this.GetScriptFrame world = World.getEntityScriptFrame this world
+        member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
         member this.GetCreationTimeStamp world = World.getEntityCreationTimeStamp this world
-        member this.CreationTimeStamp = lensOut Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getEntityId this world
-        member this.Id = lensOut Property? Id this.GetId this
+        member this.Id = lensReadOnly Property? Id this.GetId this
 
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
-        member this.UpdateEvent = this.UpdateEvent
-        member this.PostUpdateEvent = this.PostUpdateEvent
+        member this.UpdateEvent = Events.Update --> this
+#if !DISABLE_ENTITY_POST_UPDATE
+        member this.PostUpdateEvent = Events.PostUpdate --> this
+#endif
+
+        /// The state of an entity.
+        /// The only place this accessor should be used is in performance-sensitive code.
+        /// Otherwise, you should get and set the required entity properties via the Entity interface.
+        member this.State world =
+            let entityState = World.getEntityState this world
+#if DEBUG
+            if not entityState.Optimized then failwith "Can get the entity state of an entity only if it is Optimized (Imperative, Omnipresent, and not PublishChanges)."
+#endif
+            entityState
+
+        /// The copied state of an entity.
+        /// The only place this accessor should be used is in performance-sensitive code.
+        /// Otherwise, you should get and set the required entity properties via the Entity interface.
+        member this.StateReadOnly world =
+            world |> World.getEntityState this |> EntityState.copy
+
+        member this.Optimize world =
+            let world = this.SetImperative true world
+            let world = this.SetOmnipresent true world
+            let world = this.SetPublishChanges false world
+            world
+
+        /// Set the transform of an entity without generating any change events.
+        member this.SetTransformWithoutEvent transform world =
+            World.setEntityTransformWithoutEvent transform this world
+
+        /// Set the transform of an entity snapped to the give position and rotation snaps.
+        member this.SetTransformSnapped positionSnap rotationSnap transform world =
+            let transform = Math.snapTransform positionSnap rotationSnap transform
+            this.SetTransform transform world
 
         /// Try to get a property value and type.
-        member this.TryGetProperty propertyName world = World.tryGetEntityProperty propertyName this world
+        member this.TryGetProperty propertyName world =
+            World.tryGetEntityProperty propertyName this world
 
         /// Get a property value and type.
-        member this.GetProperty propertyName world = World.getEntityProperty propertyName this world
+        member this.GetProperty propertyName world =
+            World.getEntityProperty propertyName this world
 
         /// Get a property value.
-        member this.Get<'a> propertyName world : 'a = (World.getEntityProperty propertyName this world).PropertyValue :?> 'a
+        member this.Get<'a> propertyName world : 'a =
+            (World.getEntityProperty propertyName this world).PropertyValue :?> 'a
 
         /// Try to set a property value with explicit type.
-        member this.TrySetProperty propertyName alwaysPublish nonPersistent property world =
-            World.trySetEntityProperty propertyName alwaysPublish nonPersistent property this world
+        member this.TrySetProperty propertyName alwaysPublish property world =
+            World.trySetEntityProperty propertyName alwaysPublish property this world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName alwaysPublish nonPersistent property world =
-            World.setEntityProperty propertyName alwaysPublish nonPersistent property this world
+        member this.SetProperty propertyName alwaysPublish property world =
+            World.setEntityProperty propertyName alwaysPublish property this world
 
         /// Attach a property.
-        member this.AttachProperty propertyName alwaysPublish nonPersistent property world =
-            World.attachEntityProperty propertyName alwaysPublish nonPersistent property this world
+        member this.AttachProperty propertyName alwaysPublish property world =
+            World.attachEntityProperty propertyName alwaysPublish property this world
 
         /// Detach a property.
         member this.DetachProperty propertyName world =
             World.detachEntityProperty propertyName this world
 
         /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world =
-            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-            let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
-            this.SetFast propertyName alwaysPublish nonPersistent value world
+        member this.SetFast<'a> propertyName alwaysPublish (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.setEntityProperty propertyName alwaysPublish property this world
 
         /// Set a property value.
-        member this.SetFast<'a> propertyName alwaysPublish nonPersistent (value : 'a) world =
-            World.setEntityProperty propertyName alwaysPublish nonPersistent { PropertyType = typeof<'a>; PropertyValue = value } this world
+        member this.Set<'a> propertyName (value : 'a) world =
+            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+            this.SetFast propertyName alwaysPublish value world
 
-        /// Get an entity's transform.
-        member this.GetTransform world = World.getEntityTransform this world
-        
-        /// Set an entity's transform.
-        member this.SetTransform value world = World.setEntityTransform value this world
+        /// Set a property value with publishing an event.
+        member this.SetWithoutEvent<'a> propertyName (value : 'a) world =
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            let (_, _, world) = World.setEntityPropertyWithoutEvent propertyName property this world
+            world
 
         /// Get an entity's sorting priority.
         member this.GetSortingPriority world = World.getEntitySortingPriority this world
@@ -131,14 +177,8 @@ module WorldEntityModule =
         /// Get an entity's quick size.
         member this.GetQuickSize world = World.getEntityQuickSize this world
 
-        /// Set an entity's size by its quick size.
-        member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
-
-        /// Get an entity's bounds, not taking into account its overflow.
-        member this.GetBounds world = Math.makeBounds (this.GetPosition world) (this.GetSize world)
-
         /// Get an entity's bounds, taking into account its overflow.
-        member this.GetBoundsOverflow world = Math.makeBoundsOverflow (this.GetPosition world) (this.GetSize world) (this.GetOverflow world)
+        member this.GetBoundsOverflow world = v4BoundsOverflow (this.GetPosition world) (this.GetSize world) (this.GetOverflow world)
 
         /// Get an entity's bounds maximum.
         member this.GetBoundsMax world = World.getEntityBoundsMax this world
@@ -156,55 +196,43 @@ module WorldEntityModule =
         member this.GetInView world =
             if not (this.GetOmnipresent world) then
                 World.isBoundsInView
-                    (this.GetViewType world)
+                    (this.GetAbsolute world)
                     (this.GetBoundsOverflow world)
                     world
              else true
 
-        /// Get the center position of an entity.
-        member this.GetCenter world =
-            let transform = this.GetTransform world
-            transform.Position + transform.Size * 0.5f
-
-        /// Set the center position of an entity.
-        member this.SetCenter center world =
-            let size = this.GetSize world
-            this.SetPosition (center - size * 0.5f) world
-
-        /// Set the transform of an entity snapped to the give position and rotation snaps.
-        member this.SetTransformSnapped positionSnap rotationSnap transform world =
-            let transform = Math.snapTransform positionSnap rotationSnap transform
-            this.SetTransform transform world
-
         /// Check that an entity exists in the world.
-        member this.GetExists world = World.getEntityExists this world
+        member this.Exists world = World.getEntityExists this world
+
+        /// Check that an entity is selected.
+        member this.Selected world = WorldModule.isSelected this world
+
+        /// Set an entity's size by its quick size.
+        member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
-            World.withEventContext (fun world ->
-                if WorldModule.isSimulantSelected this world then
-                    let facets = this.GetFacets world
-                    Array.fold (fun world (facet : Facet) ->
-                        let world = facet.UnregisterPhysics (this, world)
-                        facet.RegisterPhysics (this, world))
-                        world facets
-                else world)
-                this world
+            if WorldModule.isSelected this world
+            then World.propagateEntityPhysics this world
+            else world
 
         /// Check that an entity uses a facet of the given type.
-        member this.FacetedAs (facetType, world) = Array.exists (fun facet -> getType facet = facetType) (this.GetFacets world)
+        member this.Has (facetType, world) = Array.exists (fun facet -> getType facet = facetType) (this.GetFacets world)
 
         /// Check that an entity uses a facet of the given type.
-        member this.FacetedAs<'a> world = this.FacetedAs (typeof<'a>, world)
+        member this.Has<'a> world = this.Has (typeof<'a>, world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
+        member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
+        member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Resolve a relation in the context of an entity.
-        member this.Resolve relation = Entity (Relation.resolve this.EntityAddress relation)
+        member this.Resolve relation = resolve<Entity> this relation
+
+        /// Relate an entity to a simulant.
+        member this.Relate simulant = relate<Entity> this simulant
 
         /// Get an entity's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.EntityAddress
@@ -218,49 +246,42 @@ module WorldEntityModule =
     type World with
 
         static member internal updateEntity (entity : Entity) world =
-            World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcher world
-                let facets = entity.GetFacets world
-                let world = dispatcher.Update (entity, world)
-                let world =
-                    // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                    if Array.isEmpty facets then world
-                    else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
-                if World.getEntityPublishUpdates entity world then
-                    let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.UpdateEvent eventTrace Default.Game false world
-                else world)
-                entity
-                world
+            let dispatcher = entity.GetDispatcher world
+            let facets = entity.GetFacets world
+            let world = dispatcher.Update (entity, world)
+            let world =
+                // OPTIMIZATION: elide Array.fold overhead for empty arrays
+                if Array.isEmpty facets then world
+                else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
+            if World.getEntityPublishUpdates entity world then
+                let eventTrace = EventTrace.record "World" "updateEntity" EventTrace.empty
+                World.publishPlus () entity.UpdateEventCached eventTrace Simulants.Game false world
+            else world
 
+#if !DISABLE_ENTITY_POST_UPDATE
         static member internal postUpdateEntity (entity : Entity) world =
-            World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcher world
-                let facets = entity.GetFacets world
-                let world = dispatcher.PostUpdate (entity, world)
-                let world =
-                    // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                    if Array.isEmpty facets then world
-                    else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
-                if World.getEntityPublishPostUpdates entity world then
-                    let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy () entity.PostUpdateEvent eventTrace Default.Game false world
-                else world)
-                entity
-                world
+            let dispatcher = entity.GetDispatcher world
+            let facets = entity.GetFacets world
+            let world = dispatcher.PostUpdate (entity, world)
+            let world =
+                // OPTIMIZATION: elide Array.fold overhead for empty arrays
+                if Array.isEmpty facets then world
+                else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
+            if World.getEntityPublishPostUpdates entity world then
+                let eventTrace = EventTrace.record "World" "postUpdateEntity" EventTrace.empty
+                World.publishPlus () entity.PostUpdateEventCached eventTrace Simulants.Game false world
+            else world
+#endif
 
         static member internal actualizeEntity (entity : Entity) world =
-            World.withEventContext (fun world ->
-                let dispatcher = entity.GetDispatcher world
-                let facets = entity.GetFacets world
-                let world = dispatcher.Actualize (entity, world)
-                let world =
-                    // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                    if Array.isEmpty facets then world
-                    else Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
-                world)
-                entity
-                world
+            let dispatcher = entity.GetDispatcher world
+            let facets = entity.GetFacets world
+            let world = dispatcher.Actualize (entity, world)
+            let world =
+                // OPTIMIZATION: elide Array.fold overhead for empty arrays
+                if Array.isEmpty facets then world
+                else Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
+            world
 
         /// Get all the entities contained by a layer.
         [<FunctionBinding>]
@@ -278,8 +299,8 @@ module WorldEntityModule =
 
         /// Destroy an entity in the world at the end of the current update.
         [<FunctionBinding>]
-        static member destroyEntity entity world =
-            World.schedule2 (World.destroyEntityImmediate entity) world
+        static member destroyEntity (entity : Entity) world =
+            World.addSimulantToDestruction entity world
 
         /// Destroy multiple entities in the world immediately. Can be dangerous if existing in-flight publishing
         /// depends on any of the entities' existences. Consider using World.destroyEntities instead.
@@ -311,7 +332,7 @@ module WorldEntityModule =
             let entitiesSorted = World.sortEntities entities world
             Array.tryFind
                 (fun (entity : Entity) ->
-                    let positionWorld = World.mouseToWorld (entity.GetViewType world) position world
+                    let positionWorld = World.mouseToWorld (entity.GetAbsolute world) position world
                     let picked = Math.isPointInBounds positionWorld (entity.GetBounds world)
                     picked)
                 entitiesSorted
@@ -346,118 +367,69 @@ module WorldEntityModule =
                     layerDescriptor.EntitieDescriptors
                     ([], world)
 
-        /// Turn an entity stream into a series of live entities.
-        static member expandEntityStream (lens : Lens<obj, World>) indexerOpt mapper origin layer world =
-            let mapperGeneralized = fun i lens (parent : Simulant) world -> mapper i lens (parent :?> Layer) world :> SimulantContent
-            World.expandSimulantStream lens indexerOpt mapperGeneralized origin layer world
+        /// Turn an entity lens into a series of live entities.
+        static member expandEntities (lens : Lens<obj, World>) sieve spread indexOpt mapper origin owner layer world =
+            let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
+            World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin owner layer world
 
         /// Turn entity content into a live entity.
-        static member expandEntityContent guidOpt content origin layer world =
-            match EntityContent.expand content layer world with
-            | Choice1Of3 (lens, indexerOpt, mapper) ->
-                World.expandEntityStream lens indexerOpt mapper origin layer world
-            | Choice2Of3 (name, descriptor, handlers, equations, content) ->
-                let (entity, world) = World.readEntity descriptor (Some name) layer world
-                let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
-                let world =
-                    match origin with
-                    | SimulantOrigin simulant
-                    | FacetOrigin (simulant, _) ->
+        static member expandEntityContent content origin (owner : Simulant) layer world =
+            if World.getLayerExists layer world then
+                match EntityContent.expand content layer world with
+                | Choice1Of3 (lens, sieve, spread, indexOpt, mapper) ->
+                    let world = World.expandEntities lens sieve spread indexOpt mapper origin owner layer world
+                    (None, world)
+                | Choice2Of3 (_, descriptor, handlers, binds, content) ->
+                    let (entity, world) =
+                        World.createEntity4 DefaultOverlay descriptor layer world
+                    let world =
+                        match owner with
+                        | :? Entity as parent ->
+                            // only set parent node if one was not specified by the descriptor properties
+                            if not (List.exists (fun (name, _) -> name = Property? ParentNodeOpt) descriptor.SimulantProperties) then
+                                let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
+                                entity.TrySetProperty Property? ParentNodeOpt true property world |> snd
+                            else world
+                        | _ -> world
+                    let world =
                         World.monitor
-                            (constant $ World.destroyEntity entity)
-                            (Events.Unregistering --> simulant.SimulantAddress)
+                            (fun _ world -> (Cascade, World.destroyEntity entity world))
+                            (Events.Unregistering --> owner.SimulantAddress)
                             entity
                             world
-                let world =
-                    List.fold (fun world (name, simulant, property, breaking) ->
-                        WorldModule.equate5 name simulant property breaking world)
-                        world equations
-                let world =
-                    List.fold (fun world (handler, address, simulant) ->
-                        World.monitor (fun (evt : Event) world ->
-                            let signal = handler evt
-                            match origin with
-                            | SimulantOrigin owner -> WorldModule.trySignal signal owner world
-                            | FacetOrigin (owner, facetName) -> WorldModule.trySignalFacet signal facetName owner world)
-                            address simulant world)
-                        world handlers
-                let world =
-                    List.fold (fun world content ->
-                        World.expandEntityContent (Some Gen.id) content origin layer world)
-                        world (snd content)
-                world
-            | Choice3Of3 (entityName, filePath) ->
-                let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world
-                let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) entity world | None -> world
-                let world =
-                    match origin with
-                    | SimulantOrigin simulant
-                    | FacetOrigin (simulant, _) ->
-                        World.monitor
-                            (constant $ World.destroyEntity entity)
-                            (Events.Unregistering --> simulant.SimulantAddress)
-                            entity
-                            world
-                world
-
-    /// Represents the property value of an entity as accessible via reflection.
-    type [<ReferenceEquality>] EntityPropertyValue =
-        | EntityPropertyDescriptor of PropertyDescriptor
-        | EntityPropertyInfo of PropertyInfo
-
-        /// Check that an entity contains the given property.
-        static member containsProperty (property : PropertyInfo) =
-            let properties = typeof<EntityState>.GetProperties property.Name
-            Seq.exists (fun item -> item = property) properties
-
-        /// Attempt to get the entity's property value.
-        static member tryGetValue property (entity : Entity) world =
-            let propertyName =
-                match property with
-                | EntityPropertyDescriptor propertyDescriptor -> propertyDescriptor.PropertyName
-                | EntityPropertyInfo propertyInfo -> propertyInfo.Name
-            match World.tryGetEntityProperty propertyName entity world with
-            | Some property -> Some property.PropertyValue
-            | None -> None
-
-        /// Attempt to set the entity's property value.
-        static member trySetValue alwaysPublish nonPersistent property propertyValue (entity : Entity) world =
-            let (propertyName, propertyType) =
-                match property with
-                | EntityPropertyDescriptor propertyDescriptor -> (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
-                | EntityPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
-            let property = { PropertyType = propertyType; PropertyValue = propertyValue }
-            World.trySetEntityProperty propertyName alwaysPublish nonPersistent property entity world
-
-        /// Get the property descriptors of as constructed from the given function in the given context.
-        static member getPropertyDescriptors makePropertyDescriptor contextOpt =
-            // OPTIMIZATION: seqs used for speed.
-            let properties = typeof<EntityState>.GetProperties ()
-            let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Xtension) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Transform) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Flags) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
-            let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (EntityPropertyInfo property, [|typeConverterAttribute|])) properties
-            let propertyDescriptors =
-                match contextOpt with
-                | Some (entity, world) ->
-                    let properties' = World.getEntityXtensionProperties entity world
-                    let propertyDescriptors' =
-                        Seq.fold
-                            (fun propertyDescriptors' (propertyName, property : Property) ->
-                                let propertyType = property.PropertyType
-                                if Reflection.isPropertyPersistentByName propertyName then
-                                    let propertyDescriptor = EntityPropertyDescriptor { PropertyName = propertyName; PropertyType = propertyType }
-                                    let propertyDescriptor : System.ComponentModel.PropertyDescriptor = makePropertyDescriptor (propertyDescriptor, [|typeConverterAttribute|])
-                                    propertyDescriptor :: propertyDescriptors'
-                                else propertyDescriptors')
-                            []
-                            properties'
-                    Seq.append propertyDescriptors' propertyDescriptors
-                | None -> propertyDescriptors
-            List.ofSeq propertyDescriptors
+                    let world =
+                        List.fold (fun world (simulant, left : World Lens, right) ->
+                            WorldModule.bind5 simulant left right world)
+                            world binds
+                    let world =
+                        List.fold (fun world (handler, address, simulant) ->
+                            World.monitor (fun (evt : Event) world ->
+                                let signal = handler evt
+                                let world =
+                                    match origin with
+                                    | SimulantOrigin simulant -> WorldModule.trySignal signal simulant world
+                                    | FacetOrigin (simulant, facetName) -> WorldModule.trySignalFacet signal facetName simulant world
+                                (Cascade, world))
+                                address simulant world)
+                            world handlers
+                    let world =
+                        List.fold (fun world content ->
+                            World.expandEntityContent content origin owner layer world |> snd)
+                            world (snd content)
+                    (Some entity, world)
+                | Choice3Of3 (entityName, filePath) ->
+                    let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world
+                    let world =
+                        match origin with
+                        | SimulantOrigin simulant
+                        | FacetOrigin (simulant, _) ->
+                            World.monitor
+                                (fun _ world -> (Cascade, World.destroyEntity entity world))
+                                (Events.Unregistering --> simulant.SimulantAddress)
+                                entity
+                                world
+                    (Some entity, world)
+            else (None, world)
 
 namespace Debug
 open Nu
@@ -465,4 +437,5 @@ type Entity =
 
     /// Provides a full view of all the properties of an entity. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view entity world = World.viewEntityProperties entity world
+    static member view entity world = World.viewEntityProperties entity world   
+        

@@ -1,5 +1,6 @@
 ﻿namespace InfinityRpg
 open System
+open System.Numerics
 open Prime
 open Nu
 open InfinityRpg
@@ -13,21 +14,18 @@ type MapBounds =
     { CornerNegative : Vector2i
       CornerPositive : Vector2i }
 
-type Direction =
-    | Upward
-    | Rightward
-    | Downward
-    | Leftward
-
-[<RequireQualifiedAccess>]
-module MapBounds =
-
-    let isPointInBounds (point : Vector2i) bounds =
+    static member isPointInBounds (point : Vector2i) bounds =
         not
             (point.X < bounds.CornerNegative.X ||
              point.X > bounds.CornerPositive.X ||
              point.Y < bounds.CornerNegative.Y ||
              point.Y > bounds.CornerPositive.Y)
+
+type Direction =
+    | Upward
+    | Rightward
+    | Downward
+    | Leftward
 
 [<RequireQualifiedAccess>]
 module Direction =
@@ -67,16 +65,16 @@ module Direction =
         match biasOpt with
         | Some (goal : Vector2i, bias) ->
             let (biasing, rand) = Rand.nextIntUnder bias rand
-            if biasing = 0 then
+            if biasing = 5 then
                 let goalDelta = goal - source
                 if Math.Abs goalDelta.X > Math.Abs goalDelta.Y
                 then (Vector2i (source.X + (if goalDelta.X > 0 then 1 else -1), source.Y), rand)
                 else (Vector2i (source.X, source.Y + (if goalDelta.Y > 0 then 1 else -1)), rand)
-            else stumbleUnbiased source rand
+            else
+            stumbleUnbiased source rand
         | None -> stumbleUnbiased source rand
 
-    let tryStumbleUntil predicate tryLimit biasOpt source rand =
-        GlobalTryStumbleCounter <- GlobalTryStumbleCounter + 1
+    let stumbleCandidates tryLimit biasOpt source rand =
         let destinations =
             Seq.unfold
                 (fun rand ->
@@ -84,6 +82,11 @@ module Direction =
                     Some ((destination, rand), rand))
                 rand
         let destinations = if tryLimit <= 0 then destinations else Seq.take tryLimit destinations
+        destinations
+    
+    let tryStumbleUntil predicate tryLimit biasOpt source rand =
+        GlobalTryStumbleCounter <- GlobalTryStumbleCounter + 1
+        let destinations = stumbleCandidates tryLimit biasOpt source rand
         let destinations = Seq.tryFind predicate destinations
         destinations
 
@@ -97,10 +100,10 @@ module Direction =
                  | NoBackTracking -> not (Set.contains destination trail)
                  | NoAdjacentTracking ->
                     let contains =
-                        [Set.contains (destination + Vector2i.Up) trail
-                         Set.contains (destination + Vector2i.Right) trail
-                         Set.contains (destination + Vector2i.Down) trail
-                         Set.contains (destination + Vector2i.Left) trail]
+                        [Set.contains (destination + v2iUp) trail
+                         Set.contains (destination + v2iRight) trail
+                         Set.contains (destination + v2iDown) trail
+                         Set.contains (destination + v2iLeft) trail]
                     let containCount = List.filter ((=) true) contains |> List.length
                     containCount <= 1)
         let pathHead = (source, rand)
@@ -116,7 +119,7 @@ module Direction =
         let path = seq { yield pathHead; yield! pathTail }
         path
 
-    let tryWanderUntil predicate stumbleLimit stumbleBounds tracking biasOpt tryLimit source rand =
+    let wanderCandidates stumbleLimit stumbleBounds tracking biasOpt tryLimit source rand =
         let paths =
             Seq.unfold
                 (fun (source, rand) ->
@@ -125,6 +128,10 @@ module Direction =
                     Some (path, state))
                 (source, rand)
         let paths = if tryLimit <= 0 then paths else Seq.take tryLimit paths
+        paths
+    
+    let tryWanderUntil predicate stumbleLimit stumbleBounds tracking biasOpt tryLimit source rand =
+        let paths = wanderCandidates stumbleLimit stumbleBounds tracking biasOpt tryLimit source rand
         let paths = Seq.tryFind predicate paths
         paths
 
@@ -161,23 +168,26 @@ module Direction =
     let wanderToDestination stumbleBounds source destination rand =
         let biasOpt = Some (destination, 6)
         let maxPathLength = stumbleBounds.CornerPositive.X * stumbleBounds.CornerPositive.Y / 2 + 1
-        let stumbleLimit = 16
+        let stumbleLimit = 16        
         let predicate = fun path ->
             let path = Seq.tryTake maxPathLength path
-            Seq.exists (fun point -> fst point = destination) path
+            Seq.exists (fun (point, _) -> point = destination) path
         let path = wanderUntil predicate stumbleLimit stumbleBounds NoAdjacentTracking biasOpt source rand
-        let pathDesiredEnd = Seq.findIndex (fun (point, _) -> point = destination) path + 1
+        let pathDesiredEnd = (Seq.findIndex (fun (point, _) -> point = destination) path) + 1
         let pathTrimmed = Seq.take pathDesiredEnd path
         let path = concretizePath maxPathLength pathTrimmed
         path
 
 [<AutoOpen>]
-module MathModule =
-
-    let vmtovi vm =
+module MathOperators =
+    
+    let itoc i =
+        i / Constants.Layout.TileSizeI.X
+    
+    let vctovi vm =
         Vector2i.Multiply (vm, Constants.Layout.TileSizeI)
 
-    let vitovm vi =
+    let vitovc vi =
         Vector2i.Divide (vi, Constants.Layout.TileSizeI)
 
     let vitovf (vi : Vector2i) =
@@ -186,51 +196,83 @@ module MathModule =
     let vftovi (vf : Vector2) =
         Vector2i vf
 
-    let vmtovf vm =
-        vm |> vmtovi |> vitovf
+    let vctovf vm =
+        vm |> vctovi |> vitovf
 
-    let vftovm vf =
-        vf |> vftovi |> vitovm
+    let vftovc vf =
+        vf |> vftovi |> vitovc
 
-    let dtovm d =
+    let v2UpScaled i =
+        v2 0.0f (float32 i)
+
+    let v2RightScaled i =
+        v2 (float32 i) 0.0f
+
+    let v2DownScaled i =
+        v2 0.0f -(float32 i)
+
+    let v2LeftScaled i =
+        v2 -(float32 i) 0.0f
+    
+    let dtovc d =
         match d with
-        | Upward -> Vector2i.Up
-        | Rightward -> Vector2i.Right
-        | Downward -> Vector2i.Down
-        | Leftward -> Vector2i.Left
+        | Upward -> v2iUp
+        | Rightward -> v2iRight
+        | Downward -> v2iDown
+        | Leftward -> v2iLeft
 
-    let dtovi d =
-        dtovm d |> vmtovi
+    let dtovcScaled d i =
+        dtovc d * v2iDup i
 
     let dtovf d =
-        d |> dtovi |> vitovf
+        match d with
+        | Upward -> v2Up
+        | Rightward -> v2Right
+        | Downward -> v2Down
+        | Leftward -> v2Left
+
+    let dtovfScaled d i =
+        dtovf d * v2Dup i
+
+    let dtovi d =
+        dtovc d |> vctovi
+
+    let dtoviScaled d i =
+        dtovfScaled d i |> vftovi
 
     let vftod v =
-        if v <> Vector2.Zero then
+        if v <> v2Zero then
             let atan2 = Math.Atan2 (float v.Y, float v.X)
             let angle = if atan2 < 0.0 then atan2 + Math.PI * 2.0 else atan2
             if angle < Math.PI * 0.75 && angle >= Math.PI * 0.25 then Upward
             elif angle < Math.PI * 0.25 || angle >= Math.PI * 1.75 then Rightward
             elif angle < Math.PI * 1.75 && angle >= Math.PI * 1.25 then Downward
             else Leftward
-        else failwith "Direction cannot be derived from Vector2.Zero."
+        else failwith "Direction cannot be derived from [0.0f 0.0f]."
 
     let vitod v =
-        v |> vitovf |> vftod
+        vitovf v |> vftod
 
-    let vmtod v =
-        v |> vmtovf |> vftod
+    let vctod v =
+        vctovf v |> vftod
 
+[<RequireQualifiedAccess>]
 module Math =
 
-    let arePositionMsAdjacent positionM positionM2 =
-        positionM = positionM2 + Vector2i.Up ||
-        positionM = positionM2 + Vector2i.Right ||
-        positionM = positionM2 + Vector2i.Down ||
-        positionM = positionM2 + Vector2i.Left
+    let isSnapped i =
+        i % Constants.Layout.TileSizeI.X = 0
+
+    let directionToTarget current target =
+        target - current |> vctod
+
+    let areCoordinatesAdjacent coordinates coordinates2 =
+        coordinates = coordinates2 + v2iUp ||
+        coordinates = coordinates2 + v2iRight ||
+        coordinates = coordinates2 + v2iDown ||
+        coordinates = coordinates2 + v2iLeft
 
     let arePositionIsAdjacent positionI positionI2 =
-        arePositionMsAdjacent (vitovm positionI) (vitovm positionI2)
+        areCoordinatesAdjacent (vitovc positionI) (vitovc positionI2)
 
     let arePositionsAdjacent position position2 =
         arePositionIsAdjacent (vftovi position) (vftovi position2)

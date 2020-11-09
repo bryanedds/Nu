@@ -1,17 +1,21 @@
 Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)
 =
 
+**New Discord channel here -**
+https://discord.gg/6HgMeRM
+
+**Streaming game development here -**
+https://dlive.tv/NuGameEngine
+
 What is the **Nu Game Engine**?
 
-*"The Nu Game Engine is a game development platform that aims to drastically reduce the cost of game development by providing a superior programming model for games via Iterative Functional Reactive Programming (IFRP). After finally reaching v1.3.0.4, the implementation has matured enough to prove both the efficacy and viability of functional programming in games in terms of performance, programmability, and reliability."*
-
-![Screenshot](Projects/InfinityRpg/Promotional/InfinityRpg.png?raw=true)
+*"The Nu Game Engine is the world's first practical functional game engine (functional in the functional programming sense). It offers a declarative Elm-style reactive programming API, as well as an imperative and ECS programming APIs for scalability. After finally reaching v1.3.0.4, the implementation has matured enough to prove both the efficacy and viability of functional programming in games in terms of performance, programmability, and reliability."*
 
 This repository hosts several projects, including -
 
 - the **Nu Game Engine**, a cross-platform F# 2D game engine built in the functional style. Uses SDL2 and Farseer Physics.
 - the sample game **BlazeVector**.
-- the work-in-progress game **InfinityRpg**.
+- the Chrono Trigger-like game being developed in my spare time.
 
 Here is some media on the Nu Game Engine -
 

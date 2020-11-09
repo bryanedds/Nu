@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
@@ -8,16 +8,46 @@ open Prime
 [<AutoOpen>]
 module Gen =
 
+    let private Lock = obj ()
+    let private Random = Random ()
     let mutable private Counter = -1L
-    let private CounterLock = obj ()
 
     /// Generates engine-specific values on-demand.
     type Gen =
         private | Gen of unit
 
+        /// Get the next random number integer.
+        static member random =
+            lock Lock (fun () -> Random.Next ())
+            
+        /// Get the next random number integer below maxValue.
+        static member random1 maxValue =
+            lock Lock (fun () -> Random.Next maxValue)
+
+        /// Get the next random number integer GTE minValue and LT maxValue.
+        static member random2 minValue maxValue =
+            lock Lock (fun () -> Random.Next (minValue, maxValue))
+
+        /// Get the next random single >= 0.0f and < 1.0f.
+        static member randomf =
+            lock Lock (fun () -> single (Random.NextDouble ()))
+
+        /// Get a random element from a sequence if there are any elements..
+        static member randomItem seq =
+            let arr = Seq.toArray seq
+            if Array.notEmpty arr
+            then Some arr.[Gen.random1 arr.Length]
+            else None
+
+        /// Get a random element from a sequence or a default if sequence is empty.
+        static member randomItemOrDefault default_ seq =
+            match Gen.randomItem seq with
+            | Some item -> item
+            | None -> default_
+
         /// Generate a unique counter.
         static member counter =
-            lock CounterLock (fun () -> Counter <- inc Counter; Counter)
+            lock Lock (fun () -> Counter <- inc Counter; Counter)
 
         /// The prefix of a generated name
         static member namePrefix =
@@ -36,6 +66,10 @@ module Gen =
         /// Check that a name is generated.
         static member isName (name : string) =
             name.StartsWith Gen.namePrefix
+
+        /// Generate an empty id.
+        static member idEmpty =
+            Guid.Empty
 
         /// Generate a unique id.
         static member id =

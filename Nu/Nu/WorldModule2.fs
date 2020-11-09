@@ -1,27 +1,57 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open System.IO
-#if MULTITHREAD
 open System.Threading.Tasks
-#endif
+open FSharpx.Collections
 open SDL2
 open Prime
-open global.Nu
+open Nu
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule2 =
 
-    let private ScreenTransitionMouseLeftKey = Gen.id
-    let private ScreenTransitionMouseCenterKey = Gen.id
-    let private ScreenTransitionMouseRightKey = Gen.id
-    let private ScreenTransitionMouseX1Key = Gen.id
-    let private ScreenTransitionMouseX2Key = Gen.id
-    let private ScreenTransitionKeyboardKeyKey = Gen.id
-    let private SplashScreenUpdateKey = Gen.id
+    (* Performance Timers *)
+    let private TotalTimer = Diagnostics.Stopwatch ()
+    let private InputTimer = Diagnostics.Stopwatch ()
+    let private PhysicsTimer = Diagnostics.Stopwatch ()
+    let private UpdateTimer = Diagnostics.Stopwatch ()
+    let private UpdateGatherTimer = Diagnostics.Stopwatch ()
+    let private UpdateGameTimer = Diagnostics.Stopwatch ()
+    let private UpdateScreensTimer = Diagnostics.Stopwatch ()
+    let private UpdateLayersTimer = Diagnostics.Stopwatch ()
+    let private UpdateEntitiesTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateGatherTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateGameTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateScreensTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateLayersTimer = Diagnostics.Stopwatch ()
+#if !DISABLE_ENTITY_POST_UPDATE
+    let private PostUpdateEntitiesTimer = Diagnostics.Stopwatch ()
+#endif
+    let private TaskletsTimer = Diagnostics.Stopwatch ()
+    let private DestructionTimer = Diagnostics.Stopwatch ()
+    let private PerFrameTimer = Diagnostics.Stopwatch ()
+    let private PreFrameTimer = Diagnostics.Stopwatch ()
+    let private PostFrameTimer = Diagnostics.Stopwatch ()
+    let private ActualizeTimer = Diagnostics.Stopwatch ()
+    let private ActualizeGatherTimer = Diagnostics.Stopwatch ()
+    let private ActualizeEntitiesTimer = Diagnostics.Stopwatch ()
+    let private RenderTimer = Diagnostics.Stopwatch ()
+    let private AudioTimer = Diagnostics.Stopwatch ()
+
+    (* Transition Values *)
+    let private ScreenTransitionMouseLeftId = Gen.id
+    let private ScreenTransitionMouseCenterId = Gen.id
+    let private ScreenTransitionMouseRightId = Gen.id
+    let private ScreenTransitionMouseX1Id = Gen.id
+    let private ScreenTransitionMouseX2Id = Gen.id
+    let private ScreenTransitionKeyboardKeyId = Gen.id
+    let private SplashScreenUpdateId = Gen.id
 
     type World with
 
@@ -41,35 +71,30 @@ module WorldModule2 =
             let tree = World.makeEntityTree ()
             for entity in entities do
                 let boundsMax = entity.GetBoundsMax world
-                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetViewType world = Absolute) boundsMax entity tree
+                SpatialTree.addElement (entity.GetOmnipresent world || entity.GetAbsolute world) boundsMax entity tree
             tree
 
-        /// Sort subscriptions by their depth priority.
-        static member sortSubscriptionsByDepth subscriptions world =
-            World.sortSubscriptionsBy
-                (fun (simulant : Simulant) _ ->
-                    let priority =
-                        match simulant with
-                        | :? GlobalSimulantGeneralized
-                        | :? Game -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Default.Game }
-                        | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen }
-                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority + layer.GetDepth world; SortPositionY = 0.0f; SortTarget = layer }
-                        | :? Entity as entity -> { SortDepth = entity.GetDepthLayered world; SortPositionY = 0.0f; SortTarget = entity }
-                        | _ -> failwithumf ()
-                    priority :> IComparable)
-                subscriptions
-                world
-    
         /// Resolve a relation to an address in the current script context.
         static member resolve relation world =
             let scriptContext = World.getScriptContext world
             let address = Relation.resolve scriptContext.SimulantAddress relation
             address
 
-        /// Resolve a Simulant relation to an address in the current script context.
+        /// Resolve a relation to an address in the current script context.
         [<FunctionBinding "resolve">]
-        static member resolveGeneric (relation : obj Relation) world =
+        static member resolveGeneralized (relation : obj Relation) world =
             World.resolve relation world
+    
+        /// Relate an address to the current script context.
+        static member relate address world =
+            let scriptContext = World.getScriptContext world
+            let address = Relation.relate scriptContext.SimulantAddress address
+            address
+
+        /// Relate an address to the current script context.
+        [<FunctionBinding "relate">]
+        static member relateGeneralized (address : obj Address) world =
+            World.relate address world
 
         /// Send a message to the renderer to reload its rendering assets.
         [<FunctionBinding>]
@@ -110,58 +135,72 @@ module WorldModule2 =
             let world = screen.SetTransitionState state world
             match state with
             | IdlingState ->
-                let world = World.unsubscribe ScreenTransitionMouseLeftKey world
-                let world = World.unsubscribe ScreenTransitionMouseCenterKey world
-                let world = World.unsubscribe ScreenTransitionMouseRightKey world
-                let world = World.unsubscribe ScreenTransitionMouseX1Key world
-                let world = World.unsubscribe ScreenTransitionMouseX2Key world
-                let world = World.unsubscribe ScreenTransitionKeyboardKeyKey world
+                let world = World.unsubscribe ScreenTransitionMouseLeftId world
+                let world = World.unsubscribe ScreenTransitionMouseCenterId world
+                let world = World.unsubscribe ScreenTransitionMouseRightId world
+                let world = World.unsubscribe ScreenTransitionMouseX1Id world
+                let world = World.unsubscribe ScreenTransitionMouseX2Id world
+                let world = World.unsubscribe ScreenTransitionKeyboardKeyId world
                 world
             | IncomingState
             | OutgoingState ->
-                let world = World.subscribePlus ScreenTransitionMouseLeftKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Default.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseCenterKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Default.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseRightKey World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Default.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX1Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Default.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX2Key World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Default.Game world |> snd
-                let world = World.subscribePlus ScreenTransitionKeyboardKeyKey World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Default.Game world |> snd
+                let world = World.subscribeWith ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game world |> snd
+                let world = World.subscribeWith ScreenTransitionMouseCenterId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game world |> snd
+                let world = World.subscribeWith ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game world |> snd
+                let world = World.subscribeWith ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game world |> snd
+                let world = World.subscribeWith ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game world |> snd
+                let world = World.subscribeWith ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game world |> snd
                 world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         [<FunctionBinding>]
-        static member selectScreen screen world =
+        static member selectScreenOpt screenOpt world =
             let world =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
                     let eventTrace = EventTrace.record4 "World" "selectScreen" "Deselect" EventTrace.empty
                     World.publish () (Events.Deselect --> selectedScreen) eventTrace selectedScreen world
                 | None -> world
-            let world = World.setScreenTransitionStatePlus IncomingState screen world
-            let world = World.setSelectedScreen screen world
-            let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
-            World.publish () (Events.Select --> screen) eventTrace screen world
+            let world =
+                match screenOpt with
+                | Some screen ->
+                    let world = World.setScreenTransitionStatePlus IncomingState screen world
+                    let world = World.setSelectedScreen screen world
+                    let eventTrace = EventTrace.record4 "World" "selectScreen" "Select" EventTrace.empty
+                    World.publish () (Events.Select --> screen) eventTrace screen world
+                | None -> World.setSelectedScreenOpt None world
+            world
+
+        /// Select the given screen without transitioning, even if another transition is taking place.
+        [<FunctionBinding>]
+        static member selectScreen screen world =
+            World.selectScreenOpt (Some screen) world
 
         /// Try to transition to the given screen if no other transition is in progress.
         [<FunctionBinding>]
         static member tryTransitionScreen destination world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                if World.getScreenExists selectedScreen world then
-                    let subscriptionKey = Gen.id
+                if  selectedScreen <> destination &&
+                    not (World.isSelectedScreenTransitioning world) &&
+                    World.getScreenExists selectedScreen world then
+                    let subscriptionId = Gen.id
                     let subscription = fun (_ : Event<unit, Screen>) world ->
                         match World.getScreenTransitionDestinationOpt world with
                         | Some destination ->
-                            let world = World.unsubscribe subscriptionKey world
+                            let world = World.unsubscribe subscriptionId world
                             let world = World.setScreenTransitionDestinationOpt None world
                             let world = World.selectScreen destination world
                             (Cascade, world)
                         | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world
                     let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                    let world = World.subscribePlus<unit, Screen> subscriptionKey subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
+                    let world = World.subscribeWith<unit, Screen> subscriptionId subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
                     (true, world)
                 else (false, world)
-            | None -> (false, world)
+            | None ->
+                let world = World.selectScreen destination world
+                (true, world)
 
         /// Transition to the given screen (failing with an exception if another transition is in
         /// progress).
@@ -170,21 +209,13 @@ module WorldModule2 =
             World.tryTransitionScreen destination world |> snd
             
         // TODO: replace this with more sophisticated use of handleAsScreenTransition4, and so on for its brethren.
-        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destination (_ : Event<'a, 's>) world =
-            let world = World.selectScreen destination world
-            (handling, world)
+        static member private handleAsScreenTransitionFromSplash4<'a, 's when 's :> Simulant> handling destinationOpt (_ : Event<'a, 's>) world =
+            (handling, World.selectScreenOpt destinationOpt world)
 
         /// A procedure that can be passed to an event handler to specify that an event is to
         /// result in a transition to the given destination screen.
-        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destination evt world =
-            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destination evt world
-
-        /// A procedure that can be passed to an event handler to specify that an event is to
-        /// result in a transition to the given destination screen, as well as with additional
-        /// handling provided via the 'by' procedure.
-        static member handleAsScreenTransitionFromSplashBy<'a, 's when 's :> Simulant> by destination evt (world : World) =
-            let (handling, world) = by evt world
-            World.handleAsScreenTransitionFromSplash4<'a, 's> handling destination evt world
+        static member handleAsScreenTransitionFromSplash<'a, 's when 's :> Simulant> destinationOpt evt world =
+            World.handleAsScreenTransitionFromSplash4<'a, 's> Cascade destinationOpt evt world
 
         static member private handleAsScreenTransitionPlus<'a, 's when 's :> Simulant>
             handling destination (_ : Event<'a, 's>) world =
@@ -215,6 +246,13 @@ module WorldModule2 =
                 | Running ->
                     let world =
                         if selectedScreen.GetTransitionTicks world = 0L then
+                            let world =
+                                match (selectedScreen.GetIncoming world).SongOpt with
+                                | Some playSong ->
+                                    if World.getCurrentSongOpt world <> Some playSong
+                                    then World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world
+                                    else world
+                                | None -> world
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
                             World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
                         else world
@@ -231,6 +269,19 @@ module WorldModule2 =
             | OutgoingState ->
                 let world =
                     if selectedScreen.GetTransitionTicks world = 0L then
+                        let world =
+                            match (selectedScreen.GetOutgoing world).SongOpt with
+                            | Some playSong ->
+                                match World.getScreenTransitionDestinationOpt world with
+                                | Some destination ->
+                                    if (selectedScreen.GetIncoming world).SongOpt <> (destination.GetIncoming world).SongOpt
+                                    then World.fadeOutSong playSong.FadeOutMs world
+                                    else world
+                                | None ->
+                                    match World.getCurrentSongOpt world with
+                                    | Some currentSong -> World.fadeOutSong currentSong.FadeOutMs world
+                                    | None -> world
+                            | None -> world
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                         World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
                     else world
@@ -249,10 +300,10 @@ module WorldModule2 =
             | IdlingState -> world
 
         static member private handleSplashScreenIdleUpdate idlingTime ticks evt world =
-            let world = World.unsubscribe SplashScreenUpdateKey world
+            let world = World.unsubscribe SplashScreenUpdateId world
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc ticks)
-                let world = World.subscribePlus SplashScreenUpdateKey subscription evt.Address evt.Subscriber world |> snd
+                let world = World.subscribeWith SplashScreenUpdateId subscription evt.Address evt.Subscriber world |> snd
                 (Cascade, world)
             else
                 match World.getSelectedScreenOpt world with
@@ -267,55 +318,65 @@ module WorldModule2 =
                     Log.trace "Program Error: Could not handle splash screen update due to no selected screen."
                     (Resolve, World.exit world)
 
-        static member private handleSplashScreenIdle idlingTime (splashScreen : Screen) evt world =
-            let world = World.subscribePlus SplashScreenUpdateKey (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
+        static member private handleSplashScreenIdle idlingTime destinationOpt (splashScreen : Screen) evt world =
+            let world = World.setScreenTransitionDestinationOpt destinationOpt world
+            let world = World.subscribeWith SplashScreenUpdateId (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
             (Cascade, world)
 
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
-        static member setScreenSplash splashDataOpt destination (screen : Screen) world =
+        static member setScreenSplash splashDataOpt destinationOpt (screen : Screen) world =
             let splashLayer = screen / "SplashLayer"
-            let splashLabel = splashLayer / "SplashLabel"
+            let splashSprite = splashLayer / "SplashSprite"
             let world = World.destroyLayerImmediate splashLayer world
             match splashDataOpt with
-            | Some splashData ->
+            | Some splashDescriptor ->
                 let cameraEyeSize = World.getEyeSize world
                 let world = World.createLayer<LayerDispatcher> (Some splashLayer.Name) screen world |> snd
                 let world = splashLayer.SetPersistent false world
-                let world = World.createEntity<LabelDispatcher> (Some splashLabel.Name) DefaultOverlay splashLayer world |> snd
-                let world = splashLabel.SetPersistent false world
-                let world = splashLabel.SetSize cameraEyeSize world
-                let world = splashLabel.SetPosition (-cameraEyeSize * 0.5f) world
-                let world = splashLabel.SetLabelImage splashData.SplashImage world
-                let (unsub, world) = World.monitorPlus (World.handleSplashScreenIdle splashData.IdlingTime screen) (Events.IncomingFinish --> screen) screen world
-                let (unsub2, world) = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish --> screen) screen world
-                let world = World.monitor (fun _ -> unsub >> unsub2) (Events.Unregistering --> splashLayer) screen world
+                let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashLayer world |> snd
+                let world = splashSprite.SetPersistent false world
+                let world = splashSprite.SetSize cameraEyeSize world
+                let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
+                let world =
+                    match splashDescriptor.SplashImageOpt with
+                    | Some splashImage ->
+                        let world = splashSprite.SetStaticImage splashImage world
+                        let world = splashSprite.SetVisible true world
+                        world
+                    | None ->
+                        let world = splashSprite.SetStaticImage Assets.DefaultImage10 world
+                        let world = splashSprite.SetVisible false world
+                        world
+                let (unsub, world) = World.monitorCompressed Gen.id None None None (Left (World.handleSplashScreenIdle splashDescriptor.IdlingTime destinationOpt screen)) (Events.IncomingFinish --> screen) screen world
+                let (unsub2, world) = World.monitorCompressed Gen.id None None None (Left (World.handleAsScreenTransitionFromSplash destinationOpt)) (Events.OutgoingFinish --> screen) screen world
+                let world = World.monitor (fun _ -> unsub >> unsub2 >> pair Cascade) (Events.Unregistering --> splashLayer) screen world
                 world
             | None -> world
 
         /// Create a dissolve screen whose content is loaded from the given layer file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveData layerFilePath world =
-            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveData world
+        static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveDescriptor songOpt layerFilePath world =
+            let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveDescriptor songOpt world
             let world = World.readLayerFromFile layerFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
         /// Create a dissolve screen whose content is loaded from the given layer file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveData layerFilePath world =
-            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveData layerFilePath world
+        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor songOpt layerFilePath world =
+            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveDescriptor layerFilePath songOpt world
 
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
-        static member createSplashScreen6 dispatcherName nameOpt splashData destination world =
-            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashData.DissolveData world
-            let world = World.setScreenSplash (Some splashData) destination splashScreen world
+        static member createSplashScreen6 dispatcherName nameOpt splashDescriptor destination world =
+            let (splashScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt splashDescriptor.DissolveDescriptor None world
+            let world = World.setScreenSplash (Some splashDescriptor) destination splashScreen world
             (splashScreen, world)
 
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
-        static member createSplashScreen<'d when 'd :> ScreenDispatcher> nameOpt splashData destination world =
-            World.createSplashScreen6 typeof<'d>.Name nameOpt splashData destination world
+        static member createSplashScreen<'d when 'd :> ScreenDispatcher> nameOpt splashDescriptor destination world =
+            World.createSplashScreen6 typeof<'d>.Name nameOpt splashDescriptor destination world
 
         static member internal handleSubscribeAndUnsubscribe event world =
             // here we need to update the event publish flags for entities based on whether there are subscriptions to
@@ -333,14 +394,18 @@ module WorldModule2 =
                         Log.debug
                             ("Subscribing to entity update events with a wildcard is not supported. " +
                              "This will cause a bug where some entity update events are not published.")
-                    World.updateEntityPublishUpdateFlag entity world
+                    let world = World.updateEntityPublishUpdateFlag entity world
+                    (Cascade, world)
+#if !DISABLE_ENTITY_POST_UPDATE
                 | "PostUpdate" ->
                     if Array.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug
                             ("Subscribing to entity post-update events with a wildcard is not supported. " +
                              "This will cause a bug where some entity post-update events are not published.")
-                    World.updateEntityPublishPostUpdateFlag entity world
-                | _ -> world
+                    let world = World.updateEntityPublishPostUpdateFlag entity world
+                    (Cascade, world)
+#endif
+                | _ -> (Cascade, world)
             | eventNames when eventNames.Length >= 3 ->
                 let eventFirstName = eventNames.[0]
                 let eventSecondName = eventNames.[1]
@@ -348,9 +413,9 @@ module WorldModule2 =
                 | "Change" when eventSecondName <> "ParentNodeOpt" ->
                     if Array.contains (Address.head Events.Wildcard) eventNames then
                         Log.debug "Subscribing to change events with a wildcard is not supported."
-                    world
-                | _ -> world
-            | _ -> world
+                    (Cascade, world)
+                | _ -> (Cascade, world)
+            | _ -> (Cascade, world)
 
         static member internal makeIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
@@ -358,14 +423,14 @@ module WorldModule2 =
             let entityDispatchers = Map.toValueListBy box entityDispatchers
             let sources = facets @ entityDispatchers
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
-            Reflection.makeIntrinsicOverlays requiresFacetNames sourceTypes
+            Overlay.makeIntrinsicOverlays requiresFacetNames sourceTypes
 
         /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // attempt to reload overlay file
-            let inputOverlayerFilePath = Path.Combine (inputDirectory, Assets.OverlayerFilePath)
-            let outputOverlayerFilePath = Path.Combine (outputDirectory, Assets.OverlayerFilePath)
+            let inputOverlayerFilePath = inputDirectory + "/" + Assets.OverlayerFilePath
+            let outputOverlayerFilePath = outputDirectory + "/" + Assets.OverlayerFilePath
             try File.Copy (inputOverlayerFilePath, outputOverlayerFilePath, true)
 
                 // cache old overlayer and make new one
@@ -388,8 +453,8 @@ module WorldModule2 =
 
         /// Try to reload the prelude currently in use by the world.
         static member tryReloadPrelude inputDirectory outputDirectory world =
-            let inputPreludeFilePath = Path.Combine (inputDirectory, Assets.PreludeFilePath)
-            let outputPreludeFilePath = Path.Combine (outputDirectory, Assets.PreludeFilePath)
+            let inputPreludeFilePath = inputDirectory + "/" + Assets.PreludeFilePath
+            let outputPreludeFilePath = outputDirectory + "/" + Assets.PreludeFilePath
             try File.Copy (inputPreludeFilePath, outputPreludeFilePath, true)
                 match World.tryEvalPrelude world with
                 | Right struct (preludeStr, world) -> (Right preludeStr, world)
@@ -403,8 +468,9 @@ module WorldModule2 =
             
             // attempt to reload asset graph file
             try File.Copy
-                    (Path.Combine (inputDirectory, Assets.AssetGraphFilePath),
-                     Path.Combine (outputDirectory, Assets.AssetGraphFilePath), true)
+                    (inputDirectory + "/" + Assets.AssetGraphFilePath,
+                     outputDirectory + "/" + Assets.AssetGraphFilePath,
+                     true)
 
                 // attempt to load asset graph
                 match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
@@ -417,7 +483,7 @@ module WorldModule2 =
                     let world = World.reloadRenderAssets world
                     let world = World.reloadAudioAssets world
                     World.reloadSymbols world
-                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Default.Game world
+                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Simulants.Game world
                     (Right assetGraph, world)
         
                 // propagate errors
@@ -426,28 +492,22 @@ module WorldModule2 =
 
         /// Clear all messages in all subsystems.
         static member clearMessages world =
-             let world = World.updatePhysicsEngine Subsystem.clearMessages world
-             let world = World.updateRenderer Subsystem.clearMessages world
-             let world = World.updateAudioPlayer Subsystem.clearMessages world
+             let world = World.updatePhysicsEngine PhysicsEngine.clearMessages world
+             let world = World.updateRenderer (fun renderer -> Renderer.clearMessages renderer; renderer) world
+             let world = World.updateAudioPlayer (fun audioPlayer -> AudioPlayer.clearMessages audioPlayer; audioPlayer) world
              world
-        
-        /// Freeze the state of a world.
-        static member freeze world =
-            // not sure if we really want to also clear physics messages here - we didn't
-            // used to
+
+        /// Shelve the a world for background storage.
+        static member shelve world =
+
+            // not sure if we really want to also clear physics messages here - we didn't used to
             World.clearMessages world
 
         /// Thaw the state of a world.
-        static member thaw world =
-
-            // because there is an optimization that makes event context mutable, operations
-            // on the exist current world may affect past and future ones if the containing event
-            // world incidentally isn't copied. Therefore, we restore the initial event context
-            // here.
-            World.continueEventSystemHack world
+        static member unshelve world =
 
             // clear existing physics messages
-            let world = World.updatePhysicsEngine Subsystem.clearMessages world
+            let world = World.updatePhysicsEngine PhysicsEngine.clearMessages world
 
             // rebuild physics state
             let world = World.enqueuePhysicsMessage RebuildPhysicsHackMessage world
@@ -473,6 +533,12 @@ module WorldModule2 =
             let (taskletsNotRun, world) = UList.fold World.processTasklet (UList.makeEmpty (UList.getConfig tasklets), world) tasklets
             World.restoreTasklets taskletsNotRun world
 
+        static member private destroySimulants world =
+            List.foldBack (fun simulant world ->
+                World.destroyImmediate simulant world)
+                world.DestructionListRev
+                world
+
         /// Process an input event from SDL and ultimately publish any related game events.
         static member private processInput2 (evt : SDL.SDL_Event) world =
             let world =
@@ -480,14 +546,14 @@ module WorldModule2 =
                 | SDL.SDL_EventType.SDL_QUIT ->
                     World.exit world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
-                    let mousePosition = Vector2 (single evt.button.x, single evt.button.y)
+                    let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
                             let eventTrace = EventTrace.record4 "World" "processInput" "MouseDrag" EventTrace.empty
-                            World.publishPlus World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Default.Game true world
+                            World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseDrag eventTrace Simulants.Game true world
                         else world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseMove" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByDepth { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Default.Game true world
+                    World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
@@ -495,9 +561,9 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonDown" EventTrace.empty
-                    let world = World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonDownEvent eventTrace Default.Game true world
+                    let world = World.publishPlus eventData mouseButtonDownEvent eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Default.Game true world
+                    World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let mousePosition = World.getMousePositionF world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
@@ -505,40 +571,40 @@ module WorldModule2 =
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
                     let eventData = { Position = mousePosition; Button = mouseButton; Down = false }
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonUp" EventTrace.empty
-                    let world = World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonUpEvent eventTrace Default.Game true world
+                    let world = World.publishPlus eventData mouseButtonUpEvent eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "MouseButtonChange" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByDepth eventData mouseButtonChangeEvent eventTrace Default.Game true world
+                    World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
-                    let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = true }
+                    let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyDown" EventTrace.empty
-                    let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyDown eventTrace Default.Game true world
+                    let world = World.publishPlus eventData Events.KeyboardKeyDown eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Default.Game true world
+                    World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let keyboard = evt.key
                     let key = keyboard.keysym
-                    let eventData = { ScanCode = int key.scancode; Repeated = keyboard.repeat <> byte 0; Down = false }
+                    let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyUp" EventTrace.empty
-                    let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyUp eventTrace Default.Game true world
+                    let world = World.publishPlus eventData Events.KeyboardKeyUp eventTrace Simulants.Game true world
                     let eventTrace = EventTrace.record4 "World" "processInput" "KeyboardKeyChange" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy eventData Events.KeyboardKeyChange eventTrace Default.Game true world
+                    World.publishPlus eventData Events.KeyboardKeyChange eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_JOYHATMOTION ->
                     let index = evt.jhat.which
                     let direction = evt.jhat.hatValue
                     let eventData = { GamepadDirection = GamepadState.toNuDirection direction }
                     let eventTrace = EventTrace.record4 "World" "processInput" "GamepadDirectionChange" EventTrace.empty
-                    World.publishPlus World.sortSubscriptionsByHierarchy eventData (Events.GamepadDirectionChange index) eventTrace Default.Game true world
+                    World.publishPlus eventData (Events.GamepadDirectionChange index) eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_JOYBUTTONDOWN ->
                     let index = evt.jbutton.which
                     let button = int evt.jbutton.button
                     if GamepadState.isSdlButtonSupported button then
                         let eventData = { GamepadButton = GamepadState.toNuButton button; Down = true }
                         let eventTrace = EventTrace.record4 "World" "processInput" "GamepadButtonDown" EventTrace.empty
-                        let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData (Events.GamepadButtonDown index) eventTrace Default.Game true world
+                        let world = World.publishPlus eventData (Events.GamepadButtonDown index) eventTrace Simulants.Game true world
                         let eventTrace = EventTrace.record4 "World" "processInput" "GamepadButtonChange" EventTrace.empty
-                        World.publishPlus World.sortSubscriptionsByHierarchy eventData (Events.GamepadButtonChange index) eventTrace Default.Game true world
+                        World.publishPlus eventData (Events.GamepadButtonChange index) eventTrace Simulants.Game true world
                     else world
                 | SDL.SDL_EventType.SDL_JOYBUTTONUP ->
                     let index = evt.jbutton.which
@@ -546,18 +612,67 @@ module WorldModule2 =
                     if GamepadState.isSdlButtonSupported button then
                         let eventData = { GamepadButton = GamepadState.toNuButton button; Down = true }
                         let eventTrace = EventTrace.record4 "World" "processInput" "GamepadButtonUp" EventTrace.empty
-                        let world = World.publishPlus World.sortSubscriptionsByHierarchy eventData (Events.GamepadButtonUp index) eventTrace Default.Game true world
+                        let world = World.publishPlus eventData (Events.GamepadButtonUp index) eventTrace Simulants.Game true world
                         let eventTrace = EventTrace.record4 "World" "processInput" "GamepadButtonChange" EventTrace.empty
-                        World.publishPlus World.sortSubscriptionsByHierarchy eventData (Events.GamepadButtonChange index) eventTrace Default.Game true world
+                        World.publishPlus eventData (Events.GamepadButtonChange index) eventTrace Simulants.Game true world
                     else world
                 | _ -> world
             (World.getLiveness world, world)
+
+        static member private processIntegrationMessage integrationMessage world =
+            match World.getLiveness world with
+            | Running ->
+                match integrationMessage with
+                | BodyCollisionMessage bodyCollisionMessage ->
+                    let entity = bodyCollisionMessage.BodyShapeSource.Simulant :?> Entity
+                    if entity.Exists world then
+                        let collisionAddress = Events.Collision --> entity.EntityAddress
+                        let collisionData =
+                            { Collider = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource
+                              Collidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
+                              Normal = bodyCollisionMessage.Normal
+                              Speed = bodyCollisionMessage.Speed }
+                        let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
+                        World.publish collisionData collisionAddress eventTrace Simulants.Game world
+                    else world
+                | BodySeparationMessage bodySeparationMessage ->
+                    let entity = bodySeparationMessage.BodyShapeSource.Simulant :?> Entity
+                    if entity.Exists world then
+                        let separationAddress = Events.Separation --> entity.EntityAddress
+                        let separationData =
+                            { Separator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
+                              Separatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
+                        let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
+                        World.publish separationData separationAddress eventTrace Simulants.Game world
+                    else world
+                | BodyTransformMessage bodyTransformMessage ->
+                    let bodySource = bodyTransformMessage.BodySource
+                    let entity = bodySource.Simulant :?> Entity
+                    let transform = entity.GetTransform world
+                    let position = bodyTransformMessage.Position - transform.Size * 0.5f
+                    let rotation = bodyTransformMessage.Rotation
+                    let angularVelocity = bodyTransformMessage.AngularVelocity
+                    let linearVelocity = bodyTransformMessage.LinearVelocity
+                    let world =
+                        if bodyTransformMessage.BodySource.BodyId = Gen.idEmpty then
+                            let transform2 = { transform with Position = position; Rotation = rotation }
+                            if transform <> transform2
+                            then entity.SetTransformWithoutEvent transform2 world
+                            else world
+                        else world
+                    let world = entity.SetWithoutEvent Entity.Lens.AngularVelocity.Name angularVelocity world
+                    let world = entity.SetWithoutEvent Entity.Lens.LinearVelocity.Name linearVelocity world
+                    let transformAddress = Events.Transform --> entity.EntityAddress
+                    let transformData = { BodySource = BodySource.fromInternal bodySource; Position = position; Rotation = rotation }
+                    let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
+                    World.publish transformData transformAddress eventTrace Simulants.Game world
+            | Exiting -> world
 
         static member private getEntities3 getElementsFromTree world =
             let entityTree = World.getEntityTree world
             let (spatialTree, entityTree) = MutantCache.getMutant (fun () -> World.rebuildEntityTree world) entityTree
             let world = World.setEntityTree entityTree world
-            let entities : Entity HashSet = getElementsFromTree spatialTree
+            let entities : Entity seq = getElementsFromTree spatialTree
             (entities, world)
 
         [<FunctionBinding>]
@@ -608,16 +723,31 @@ module WorldModule2 =
         static member private updateSimulants world =
 
             // gather simulants
+            UpdateGatherTimer.Start ()
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let layers = Seq.concat (List.map (flip World.getLayers world) screens)
             let (entities, world) = World.getEntitiesInView2 world
+            UpdateGatherTimer.Stop ()
 
-            // update simulants breadth-first
+            // update game
+            UpdateGameTimer.Start ()
             let world = World.updateGame world
+            UpdateGameTimer.Stop ()
+            
+            // update screens
+            UpdateScreensTimer.Start ()
             let world = List.fold (fun world screen -> World.updateScreen screen world) world screens
+            UpdateScreensTimer.Stop ()
+
+            // update layers
+            UpdateLayersTimer.Start ()
             let world = Seq.fold (fun world layer -> World.updateLayer layer world) world layers
+            UpdateLayersTimer.Stop ()
+
+            // update entities
+            UpdateEntitiesTimer.Start ()
             let world =
                 Seq.fold (fun world (entity : Entity) ->
                     if World.isTicking world || entity.GetAlwaysUpdate world
@@ -625,11 +755,42 @@ module WorldModule2 =
                     else world)
                     world
                     entities
+            UpdateEntitiesTimer.Stop ()
 
-            // post-update simulants breadth-first
+            // fin
+            world
+
+        static member private postUpdateSimulants world =
+
+            // gather simulants
+            PostUpdateGatherTimer.Start ()
+            let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
+            let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
+            let screens = List.rev screens
+            let layers = Seq.concat (List.map (flip World.getLayers world) screens)
+#if !DISABLE_ENTITY_POST_UPDATE
+            let (entities, world) = World.getEntitiesInView2 world
+#endif
+            PostUpdateGatherTimer.Stop ()
+
+            // post-update game
+            PostUpdateGameTimer.Start ()
             let world = World.postUpdateGame world
+            PostUpdateGameTimer.Stop ()
+
+            // post-update screens
+            PostUpdateScreensTimer.Start ()
             let world = List.fold (fun world screen -> World.postUpdateScreen screen world) world screens
+            PostUpdateScreensTimer.Stop ()
+
+            // post-update layers
+            PostUpdateLayersTimer.Start ()
             let world = Seq.fold (fun world layer -> World.postUpdateLayer layer world) world layers
+            PostUpdateLayersTimer.Stop ()
+
+#if !DISABLE_ENTITY_POST_UPDATE
+            // post-update entities
+            PostUpdateEntitiesTimer.Start ()
             let world =
                 Seq.fold (fun world (entity : Entity) ->
                     if World.isTicking world || entity.GetAlwaysUpdate world
@@ -637,6 +798,8 @@ module WorldModule2 =
                     else world)
                     world
                     entities
+            PostUpdateEntitiesTimer.Stop ()
+#endif
 
             // fin
             world
@@ -646,26 +809,24 @@ module WorldModule2 =
             | Some dissolveImage ->
                 let progress = single (screen.GetTransitionTicks world) / single transition.TransitionLifetime
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
-                let color = Vector4 (Vector3.One, alpha)
+                let color = Color.White.WithA (byte (alpha * 255.0f))
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
+                let transform = { Position = position; Size = size; Rotation = 0.0f; Depth = Single.MaxValue; Flags = -1 }
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = Single.MaxValue
-                              AssetTag = dissolveImage
-                              PositionY = position.Y
-                              LayeredDescriptor =
-                                SpriteDescriptor
-                                    { Position = position
-                                      Size = size
-                                      Rotation = 0.0f
-                                      Offset = Vector2.Zero
-                                      ViewType = Absolute
-                                      InsetOpt = None
-                                      Image = dissolveImage
-                                      Color = color
-                                      Flip = FlipNone }}|])
+                    (LayeredDescriptorMessage
+                        { Depth = transform.Depth
+                          PositionY = transform.Position.Y
+                          AssetTag = AssetTag.generalize dissolveImage
+                          RenderDescriptor =
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Offset = Vector2.Zero
+                                  InsetOpt = None
+                                  Image = dissolveImage
+                                  Color = color
+                                  Glow = Color.Zero
+                                  Flip = FlipNone }})
                     world
             | None -> world
 
@@ -678,20 +839,33 @@ module WorldModule2 =
         static member private actualizeSimulants world =
 
             // gather simulants
+            ActualizeGatherTimer.Start ()
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let layers = Seq.concat (List.map (flip World.getLayers world) screens)
             let (entities, world) = World.getEntitiesInView2 world
+            ActualizeGatherTimer.Stop ()
 
             // actualize simulants breadth-first
             let world = World.actualizeGame world
             let world = List.fold (fun world screen -> World.actualizeScreen screen world) world screens
             let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.actualizeScreenTransition selectedScreen world | None -> world
             let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
+#if DEBUG
+            // layer visibility only has an effect on entities in debug mode
+            let world =
+                Seq.fold (fun world (entity : Entity) ->
+                    let layer = entity.Parent
+                    if layer.GetVisible world
+                    then World.actualizeEntity entity world
+                    else world)
+                    world entities
+#else
+            ActualizeEntitiesTimer.Start ()
             let world = Seq.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
-
-            // fin
+            ActualizeEntitiesTimer.Stop ()
+#endif
             world
 
         static member private processInput world =
@@ -707,126 +881,163 @@ module WorldModule2 =
 
         static member private processPhysics world =
             let physicsEngine = World.getPhysicsEngine world
-            let (physicsMessages, physicsEngine) = Subsystem.popMessages physicsEngine
+            let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
             let world = World.setPhysicsEngine physicsEngine world
-            let physicsResult = Subsystem.processMessages physicsMessages physicsEngine world
-            Subsystem.applyResult physicsResult (World.getPhysicsEngine world) world
+            let integrationMessages = PhysicsEngine.integrate (World.getTickRate world) physicsMessages physicsEngine
+            let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
+            world
 
-        static member private render renderMessages renderContext renderer world =
+        static member private render renderMessages renderContext renderer eyeCenter eyeSize =
             match Constants.Render.ScreenClearing with
             | NoClear -> ()
             | ColorClear (r, g, b) ->
                 SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
                 SDL.SDL_RenderClear renderContext |> ignore
-            let result = Subsystem.processMessages renderMessages renderer world
+            Renderer.render eyeCenter eyeSize renderMessages renderer
             SDL.SDL_RenderPresent renderContext
-            result
 
-        static member private play audioMessages audioPlayer world =
-            Subsystem.processMessages audioMessages audioPlayer world
+        static member private play audioMessages audioPlayer =
+            AudioPlayer.play audioMessages audioPlayer
 
         static member private cleanUp world =
             let world = World.unregisterGame world
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world =
+        static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness (rendererThreadOpt : Task option) (audioPlayerThreadOpt : Task option) world =
+            TotalTimer.Start ()
             if runWhile world then
+                PreFrameTimer.Start ()
                 let world = preProcess world
                 let world = World.preFrame world
+                PreFrameTimer.Stop ()
                 match liveness with
                 | Running ->
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Running ->
+                        InputTimer.Start ()
                         let (liveness, world) = World.processInput world
+                        InputTimer.Stop ()
                         match liveness with
                         | Running ->
+                            PhysicsTimer.Start ()
                             let world = World.processPhysics world
+                            PhysicsTimer.Stop ()
                             match World.getLiveness world with
                             | Running ->
+                                UpdateTimer.Start ()
                                 let world = World.updateSimulants world
+                                UpdateTimer.Stop ()
                                 match World.getLiveness world with
                                 | Running ->
-                                    let world = World.processTasklets world
+                                    PostUpdateTimer.Start ()
+                                    let world = World.postUpdateSimulants world
+                                    PostUpdateTimer.Stop ()
                                     match World.getLiveness world with
                                     | Running ->
-                                        let world = World.actualizeSimulants world
+                                        TaskletsTimer.Start ()
+                                        let world = World.processTasklets world
+                                        TaskletsTimer.Stop ()
                                         match World.getLiveness world with
                                         | Running ->
-                                            let world = World.perFrame world
+                                            DestructionTimer.Start ()
+                                            let world = World.destroySimulants world
+                                            DestructionTimer.Stop ()
                                             match World.getLiveness world with
                                             | Running ->
-#if MULTITHREAD
-                                                // attempt to finish renderer thread
-                                                let world =
-                                                    match rendererThreadOpt with
-                                                    | Some rendererThread ->
-                                                        let rendererResult = Async.AwaitTask rendererThread |> Async.RunSynchronously
-                                                        Subsystem.applyResult rendererResult (World.getRenderer world) world
-                                                    | None -> world
-
-                                                // attempt to finish audio player thread
-                                                let world =
-                                                    match audioPlayerThreadOpt with
-                                                    | Some audioPlayerThread->
-                                                        let audioPlayerResult = Async.AwaitTask audioPlayerThread |> Async.RunSynchronously
-                                                        Subsystem.applyResult audioPlayerResult (World.getAudioPlayer world) world
-                                                    | None -> world
-
-                                                // attempt to start renderer thread
-                                                let (rendererThreadOpt, world) =
-                                                    match SdlDeps.getRenderContextOpt sdlDeps with
-                                                    | Some renderContext ->
-                                                        let renderer = World.getRenderer world
-                                                        let (renderMessages, renderer) = Subsystem.popMessages renderer
-                                                        let world = World.setRenderer renderer world
-                                                        let rendererThread = Task.Factory.StartNew (fun () -> World.render renderMessages renderContext renderer world)
-                                                        (Some rendererThread, world)
-                                                    | None -> (None, world)
-
-                                                // attempt to start audio player thread
-                                                let (audioPlayerThreadOpt, world) =
-                                                    if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
-                                                        let audioPlayer = World.getAudioPlayer world
-                                                        let (audioMessages, audioPlayer) = Subsystem.popMessages audioPlayer
-                                                        let world = World.setAudioPlayer audioPlayer world
-                                                        let audioPlayerThread = Task.Factory.StartNew (fun () -> World.play audioMessages audioPlayer world)
-                                                        (Some audioPlayerThread, world)
-                                                    else (None, world)
-#else
-                                                // process rendering on main thread
-                                                let world =
-                                                    match SdlDeps.getRenderContextOpt sdlDeps with
-                                                    | Some renderContext ->
-                                                        let renderer = World.getRenderer world
-                                                        let (renderMessages, renderer) = Subsystem.popMessages renderer
-                                                        let world = World.setRenderer renderer world
-                                                        let rendererResult = World.render renderMessages renderContext renderer world
-                                                        Subsystem.applyResult rendererResult (World.getRenderer world) world
-                                                    | None -> world
-
-                                                // process audio on main thread
-                                                let world =
-                                                    if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
-                                                        let audioPlayer = World.getAudioPlayer world
-                                                        let (audioMessages, audioPlayer) = Subsystem.popMessages audioPlayer
-                                                        let world = World.setAudioPlayer audioPlayer world
-                                                        let audioPlayerResult = World.play audioMessages audioPlayer world
-                                                        Subsystem.applyResult audioPlayerResult (World.getAudioPlayer world) world
-                                                    else world
-#endif
-                                                // post-process the world
-                                                let world = World.postFrame world
-                                                let world = postProcess world
+                                                ActualizeTimer.Start ()
+                                                let world = World.actualizeSimulants world
+                                                ActualizeTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Running ->
-
-                                                    // update counters and recur
-                                                    let world = World.updateTickTime world
-                                                    let world = World.incrementUpdateCount world
-                                                    World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
-
+                                                    PerFrameTimer.Start ()
+                                                    let world = World.perFrame world
+                                                    PerFrameTimer.Stop ()
+                                                    match World.getLiveness world with
+                                                    | Running ->
+#if MULTITHREAD
+                                                        // attempt to finish renderer thread
+                                                        let world =
+                                                            match rendererThreadOpt with
+                                                            | Some rendererThread ->
+                                                                Async.AwaitTask rendererThread |> Async.RunSynchronously
+                                                                world
+                                                            | None -> world
+    
+                                                        // attempt to finish audio player thread
+                                                        let world =
+                                                            match audioPlayerThreadOpt with
+                                                            | Some audioPlayerThread ->
+                                                                Async.AwaitTask audioPlayerThread |> Async.RunSynchronously
+                                                                world
+                                                            | None -> world
+    
+                                                        // attempt to start renderer thread
+                                                        let (rendererThreadOpt, world) =
+                                                            match SdlDeps.getRenderContextOpt sdlDeps with
+                                                            | Some renderContext ->
+                                                                let renderer = World.getRenderer world
+                                                                let renderMessages = renderer.PopMessages ()
+                                                                let world = World.setRenderer renderer world
+                                                                let eyeCenter = World.getEyeCenter world
+                                                                let eyeSize = World.getEyeSize world
+                                                                let rendererThread : Task = Task.Factory.StartNew (fun () -> World.render renderMessages renderContext renderer eyeCenter eyeSize)
+                                                                (Some rendererThread, world)
+                                                            | None -> (None, world)
+    
+                                                        // attempt to start audio player thread
+                                                        let (audioPlayerThreadOpt, world) =
+                                                            if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
+                                                                let audioPlayer = World.getAudioPlayer world
+                                                                let audioMessages = audioPlayer.PopMessages ()
+                                                                let world = World.setAudioPlayer audioPlayer world
+                                                                let audioPlayerThread : Task = Task.Factory.StartNew (fun () -> World.play audioMessages audioPlayer)
+                                                                (Some audioPlayerThread, world)
+                                                            else (None, world)
+#else
+                                                        // process rendering on main thread
+                                                        RenderTimer.Start ()
+                                                        let world =
+                                                            match SdlDeps.getRenderContextOpt sdlDeps with
+                                                            | Some renderContext ->
+                                                                let renderer = World.getRenderer world
+                                                                let renderMessages = renderer.PopMessages ()
+                                                                let world = World.setRenderer renderer world
+                                                                let eyeCenter = World.getEyeCenter world
+                                                                let eyeSize = World.getEyeSize world
+                                                                World.render renderMessages renderContext renderer eyeCenter eyeSize
+                                                                world
+                                                            | None -> world
+                                                        RenderTimer.Stop ()
+    
+                                                        // process audio on main thread
+                                                        AudioTimer.Start ()
+                                                        let world =
+                                                            if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
+                                                                let audioPlayer = World.getAudioPlayer world
+                                                                let audioMessages = audioPlayer.PopMessages ()
+                                                                let world = World.setAudioPlayer audioPlayer world
+                                                                World.play audioMessages audioPlayer
+                                                                world
+                                                            else world
+                                                        AudioTimer.Stop ()
+#endif
+                                                        // post-process the world
+                                                        PostFrameTimer.Start ()
+                                                        let world = World.postFrame world
+                                                        let world = postProcess world
+                                                        PostFrameTimer.Stop ()
+                                                        match World.getLiveness world with
+                                                        | Running ->
+    
+                                                            // update counters and recur
+                                                            TotalTimer.Stop ()
+                                                            let world = World.updateTime world
+                                                            World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
+    
+                                                        | Exiting -> world
+                                                    | Exiting -> world
                                                 | Exiting -> world
                                             | Exiting -> world
                                         | Exiting -> world
@@ -855,16 +1066,6 @@ module WorldModule2 =
 #endif
             result
 
-        /// Run the game engine with the given handlers.
-        static member run handleAttemptMakeWorld worldConfig =
-            match SdlDeps.attemptMake worldConfig.SdlConfig with
-            | Right sdlDeps ->
-                use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-                match handleAttemptMakeWorld sdlDeps worldConfig with
-                | Right world -> World.run4 tautology sdlDeps Running world
-                | Left error -> Log.trace error; Constants.Engine.FailureExitCode
-            | Left error -> Log.trace error; Constants.Engine.FailureExitCode
-
 [<AutoOpen>]
 module GameDispatcherModule =
 
@@ -881,27 +1082,16 @@ module GameDispatcherModule =
         /// Send a signal to a simulant.
         static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
             match simulant with
-            | :? Game as game -> World.signalGame<'model, 'message, 'command> signal game world
-            | :? Screen as screen -> World.signalScreen<'model, 'message, 'command> signal screen world
-            | :? Layer as layer -> World.signalLayer<'model, 'message, 'command> signal layer world
             | :? Entity as entity -> World.signalEntity<'model, 'message, 'command> signal entity world
+            | :? Layer as layer -> World.signalLayer<'model, 'message, 'command> signal layer world
+            | :? Screen as screen -> World.signalScreen<'model, 'message, 'command> signal screen world
+            | :? Game as game -> World.signalGame<'model, 'message, 'command> signal game world
             | _ -> failwithumf ()
 
     and Game with
-    
-        member this.GetModel<'model> world =
-            let property = this.Get<DesignerProperty> Property? Model world
-            property.DesignerValue :?> 'model
-
-        member this.SetModel<'model> (value : 'model) world =
-            let model = this.Get<DesignerProperty> Property? Model world
-            this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
 
         member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater this.GetModel<'model> world) world
-
-        member this.Model<'model> () =
-            lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
+            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalGame<'model, 'message, 'command> signal this world
@@ -919,14 +1109,36 @@ module GameDispatcherModule =
             lens Property? Model (this.GetModel game) (flip this.SetModel game) game
 
         override this.Register (game, world) =
-            let (model, world) = World.attachModel initial Property? Model game world
-            let bindings = this.Bindings (model, game, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model game) bindings game world
-            let content = this.Content (this.Model game, game, world)
-            List.foldi (fun contentIndex world content ->
-                let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
-                if contentIndex = 0 then World.selectScreen screen world else world)
-                world content
+            let world =
+                let property = World.getGameModelProperty world
+                if property.DesignerType = typeof<unit>
+                then game.SetModel<'model> initial world
+                else world
+            let channels = this.Channel (this.Model game, game)
+            let world = Signal.processChannels this.Message this.Command (this.Model game) channels game world
+            let content = this.Content (this.Model game, game)
+            let world =
+                List.foldi (fun contentIndex world content ->
+                    let (screen, world) = World.expandScreenContent World.setScreenSplash content (SimulantOrigin game) game world
+                    if contentIndex = 0 then World.selectScreen screen world else world)
+                    world content
+            let initializers = this.Initializers (this.Model game, game)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let propertyName = def.PropertyName
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName alwaysPublish property game world
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> game
+                    World.monitor (fun (evt : Event) world ->
+                        let world = WorldModule.trySignal (handler evt) game world
+                        (Cascade, world))
+                        eventAddress (game :> Simulant) world
+                | BindDefinition (left, right) ->
+                    WorldModule.bind5 game left right world)
+                world initializers
 
         override this.Actualize (game, world) =
             let views = this.View (this.GetModel game world, game, world)
@@ -938,17 +1150,20 @@ module GameDispatcherModule =
             | :? Signal<obj, 'command> as signal -> game.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Bindings : 'model * Game * World -> Binding<'message, 'command, Game, World> list
-        default this.Bindings (_, _, _) = []
+        abstract member Initializers : Lens<'model, World> * Game -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
-        abstract member Message : 'model * 'message * Game * World -> 'model * Signal<'message, 'command>
+        abstract member Channel : Lens<'model, World> * Game -> Channel<'message, 'command, Game, World> list
+        default this.Channel (_, _) = []
+
+        abstract member Message : 'model * 'message * Game * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Game * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Game * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Game * World -> ScreenContent list
-        default this.Content (_, _, _) = []
+        abstract member Content : Lens<'model, World> * Game -> ScreenContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Game * World -> View list
         default this.View (_, _, _) = []

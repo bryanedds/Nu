@@ -21,7 +21,7 @@ namespace Nu.Gaia.Design
             get { return isClosing; }
         }
 
-        public IntPtr HookID
+        public IntPtr HookId
         {
             get { return hookId; }
         }

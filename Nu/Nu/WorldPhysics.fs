@@ -1,102 +1,34 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open Prime
 open Nu
 
 [<AutoOpen; ModuleBinding>]
-module WorldPhysicsModule =
-
-    /// The subsystem for the world's physics system.
-    type [<ReferenceEquality>] PhysicsEngineSubsystem =
-        private
-            { PhysicsEngine : PhysicsEngine }
-
-        static member private handleBodyTransformMessage (message : BodyTransformMessage) (entity : Entity) world =
-            let transform = entity.GetTransform world
-            let transform2 =
-                { transform with
-                    // TODO: see if the following center-offsetting can be encapsulated within the Physics module!
-                    Position = message.Position - transform.Size * 0.5f
-                    Rotation = message.Rotation }
-            if transform <> transform2
-            then entity.SetTransform transform2 world
-            else world
-
-        static member private handleIntegrationMessage world integrationMessage =
-            match World.getLiveness world with
-            | Running ->
-                match integrationMessage with
-                | BodyTransformMessage bodyTransformMessage ->
-                    let entity = bodyTransformMessage.SourceSimulant :?> Entity
-                    if entity.GetExists world
-                    then PhysicsEngineSubsystem.handleBodyTransformMessage bodyTransformMessage entity world
-                    else world
-                | BodyCollisionMessage bodyCollisionMessage ->
-                    let entity = bodyCollisionMessage.SourceSimulant :?> Entity
-                    if entity.GetExists world then
-                        let collisionAddress = Events.Collision --> entity.EntityAddress
-                        let collisionData =
-                            { Normal = bodyCollisionMessage.Normal
-                              Speed = bodyCollisionMessage.Speed
-                              Collidee = bodyCollisionMessage.SourceSimulant2 :?> Entity }
-                        let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
-                        World.publish collisionData collisionAddress eventTrace Default.Game world
-                    else world
-            | Exiting -> world
-
-        member this.BodyExists physicsId = this.PhysicsEngine.BodyExists physicsId
-        member this.GetBodyContactNormals physicsId = this.PhysicsEngine.GetBodyContactNormals physicsId
-        member this.GetBodyLinearVelocity physicsId = this.PhysicsEngine.GetBodyLinearVelocity physicsId
-        member this.GetBodyToGroundContactNormals physicsId = this.PhysicsEngine.GetBodyToGroundContactNormals physicsId
-        member this.GetBodyToGroundContactNormalOpt physicsId = this.PhysicsEngine.GetBodyToGroundContactNormalOpt physicsId
-        member this.GetBodyToGroundContactTangentOpt physicsId = this.PhysicsEngine.GetBodyToGroundContactTangentOpt physicsId
-        member this.IsBodyOnGround physicsId = this.PhysicsEngine.IsBodyOnGround physicsId
-
-        interface World Subsystem with
-
-            member this.PopMessages () =
-                let (messages, physicsEngine) = this.PhysicsEngine.PopMessages ()
-                (messages :> obj, { this with PhysicsEngine = physicsEngine } :> World Subsystem)
-
-            member this.ClearMessages () =
-                { this with PhysicsEngine = this.PhysicsEngine.ClearMessages () } :> World Subsystem
-
-            member this.EnqueueMessage message =
-                { this with PhysicsEngine = this.PhysicsEngine.EnqueueMessage (message :?> PhysicsMessage) } :> World Subsystem
-
-            member this.ProcessMessages messages world =
-                let messages = messages :?> PhysicsMessage UList
-                let tickRate = World.getTickRate world
-                PhysicsEngine.integrate tickRate messages this.PhysicsEngine :> obj
-
-            member this.ApplyResult (integrationMessages, world) =
-                let integrationMessages = integrationMessages :?> IntegrationMessage List
-                Seq.fold PhysicsEngineSubsystem.handleIntegrationMessage world integrationMessages
-
-            member this.CleanUp world =
-                (this :> World Subsystem, world)
-
-        static member make physicsEngine =
-            { PhysicsEngine = physicsEngine }
+module WorldPhysics =
 
     type World with
 
         static member internal getPhysicsEngine world =
-            world.Subsystems.PhysicsEngine :?> PhysicsEngineSubsystem
+            world.Subsystems.PhysicsEngine
 
         static member internal setPhysicsEngine physicsEngine world =
             World.updateSubsystems (fun subsystems -> { subsystems with PhysicsEngine = physicsEngine }) world
 
         static member internal updatePhysicsEngine updater world =
-            World.setPhysicsEngine (updater (World.getPhysicsEngine world :> World Subsystem)) world
+            World.setPhysicsEngine (updater (World.getPhysicsEngine world)) world
 
         /// Enqueue a physics message in the world.
         static member enqueuePhysicsMessage (message : PhysicsMessage) world =
-            World.updatePhysicsEngine (fun physicsEngine -> Subsystem.enqueueMessage message physicsEngine) world
+            World.updatePhysicsEngine (fun physicsEngine -> PhysicsEngine.enqueueMessage message physicsEngine) world
+
+        /// Enqueue multiple physics messages to the world.
+        static member enqueuePhysicsMessages (messages : PhysicsMessage seq) world =
+            Seq.fold (fun world message -> World.enqueuePhysicsMessage message world) world messages
 
         /// Check that the world contains a body with the given physics id.
         [<FunctionBinding>]
@@ -157,6 +89,36 @@ module WorldPhysicsModule =
             let destroyBodiesMessage = DestroyBodiesMessage { PhysicsIds = physicsIds }
             World.enqueuePhysicsMessage destroyBodiesMessage world
 
+        /// Send a message to the physics system to create a physics joint.
+        [<FunctionBinding>]
+        static member createJoint (entity : Entity) entityId jointProperties world =
+            let createJointMessage = CreateJointMessage { SourceSimulant = entity; SourceId = entityId; JointProperties = jointProperties }
+            World.enqueuePhysicsMessage createJointMessage world
+
+        /// Send a message to the physics system to create physics joints.
+        [<FunctionBinding>]
+        static member createJoints (entity : Entity) entityId jointsProperties world =
+            let createJointsMessage = CreateJointsMessage { SourceSimulant = entity; SourceId = entityId; JointsProperties = jointsProperties }
+            World.enqueuePhysicsMessage createJointsMessage world
+
+        /// Send a message to the physics system to destroy a physics joint.
+        [<FunctionBinding>]
+        static member destroyJoint physicsId world =
+            let destroyJointMessage = DestroyJointMessage { PhysicsId = physicsId }
+            World.enqueuePhysicsMessage destroyJointMessage world
+
+        /// Send a message to the physics system to destroy physics joints.
+        [<FunctionBinding>]
+        static member destroyJoints physicsIds world =
+            let destroyJointsMessage = DestroyJointsMessage { PhysicsIds = physicsIds }
+            World.enqueuePhysicsMessage destroyJointsMessage world
+
+        /// Send a message to the physics system to set the enabled-ness of a body with the given physics id.
+        [<FunctionBinding>]
+        static member setBodyEnabled enabled physicsId world =
+            let setBodyEnabledMessage = SetBodyEnabledMessage { PhysicsId = physicsId; Enabled = enabled }
+            World.enqueuePhysicsMessage setBodyEnabledMessage world
+
         /// Send a message to the physics system to set the position of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyPosition position physicsId world =
@@ -199,5 +161,8 @@ module WorldPhysicsModule =
             let applyBodyForceMessage = ApplyBodyForceMessage { PhysicsId = physicsId; Force = force }
             World.enqueuePhysicsMessage applyBodyForceMessage world
 
-/// The subsystem for the world's physics system.
-type PhysicsEngineSubsystem = WorldPhysicsModule.PhysicsEngineSubsystem
+        /// Localize a body shape to a specific physics object.
+        [<FunctionBinding>]
+        static member localizeBodyShape (extent : Vector2) (bodyShape : BodyShape) (world : World) =
+            ignore world // for world parameter for scripting
+            PhysicsEngine.localizeBodyShape extent bodyShape

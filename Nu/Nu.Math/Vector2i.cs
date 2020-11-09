@@ -1,12 +1,12 @@
 ﻿using System;
+using System.Numerics;
 
 namespace Nu
 {
     /// <summary>
     /// A 2d int vector.
-    /// NOTE: implements a very arbitrary comparison method.
     /// </summary>
-    public struct Vector2i : IComparable<Vector2i>, IComparable
+    public struct Vector2i : IEquatable<Vector2i>, IComparable<Vector2i>, IComparable
     {
         public Vector2i(int x, int y)
         {
@@ -24,20 +24,6 @@ namespace Nu
         {
             X = (int) v.X;
             Y = (int) v.Y;
-        }
-
-        public int CompareTo(Vector2i that)
-        {
-            if (X < that.X) return -1;
-            if (X > that.X) return 1;
-            if (Y < that.Y) return -1;
-            if (Y > that.Y) return 1;
-            return 0;
-        }
-
-        public int CompareTo(object that)
-        {
-            return CompareTo((Vector2i)that);
         }
 
         public Vector2 Vector2
@@ -83,6 +69,13 @@ namespace Nu
                 n * v.Y);
         }
 
+        public static Vector2i operator *(Vector2i v, Vector2i v2)
+        {
+            return new Vector2i(
+                v.X * v2.X,
+                v.Y * v2.Y);
+        }
+
         public static Vector2i operator /(Vector2i v, int n)
         {
             return new Vector2i(
@@ -95,6 +88,13 @@ namespace Nu
             return new Vector2i(
                 n / v.X,
                 n / v.Y);
+        }
+
+        public static Vector2i operator /(Vector2i v, Vector2i v2)
+        {
+            return new Vector2i(
+                v.X / v2.X,
+                v.Y / v2.Y);
         }
 
         public static Vector2i Multiply(Vector2i v, Vector2i v2)
@@ -128,6 +128,30 @@ namespace Nu
         public override int GetHashCode()
         {
             return X ^ Y;
+        }
+
+        /// <summary>Indicates whether the current vector is equal to another vector.</summary>
+        /// <param name="other">A vector to compare with this vector.</param>
+        /// <returns>true if the current vector is equal to the vector parameter; otherwise, false.</returns>
+        public bool Equals(Vector2i other)
+        {
+            return
+                X == other.X &&
+                Y == other.Y;
+        }
+
+        public int CompareTo(Vector2i other)
+        {
+            var result = X.CompareTo(other.X);
+            if (result != 0) return result;
+            result = Y.CompareTo(other.Y);
+            return result;
+        }
+
+        public int CompareTo(object obj)
+        {
+            if (obj is Vector2i) return CompareTo((Vector2i)obj);
+            return -1;
         }
 
         public int X;

@@ -4,9 +4,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // the game handle
-    let Game = Default.Game
-
     // same as above, but for the splash screen
     let Splash = Screen "Splash"
 
@@ -31,7 +28,7 @@ module Simulants =
     let CreditsBack = CreditsGui / "Back"
 
     // gameplay simulants
-    let Gameplay = Default.Screen
+    let Gameplay = Screen "Gameplay"
     let GameplayGui = Gameplay / "Gui"
     let GameplayBack = GameplayGui / "Back"
     let Scene = Gameplay / "Scene"

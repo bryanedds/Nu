@@ -1,9 +1,10 @@
 ﻿// Gaia - The Nu Game Engine editor.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu.Gaia
 open System
 open System.Collections.Generic
+open System.Numerics
 open Prime
 open Nu
 open Nu.Gaia.Design
@@ -36,7 +37,7 @@ type SavedState =
 [<RequireQualifiedAccess>]
 module Globals =
 
-    let EditorGuid = scstring Gen.id
+    let EditorGuid = Gen.id
     let mutable Form = Unchecked.defaultof<GaiaForm>
     let mutable World = Unchecked.defaultof<World>
     let mutable PastWorlds : World list = []
@@ -45,6 +46,6 @@ module Globals =
     let mutable SelectEntity : Entity -> GaiaForm -> World -> unit = Unchecked.defaultof<_>
 
     let pushPastWorld pastWorld =
-        let pastWorld = Nu.World.freeze pastWorld
+        let pastWorld = Nu.World.shelve pastWorld
         PastWorlds <- pastWorld :: PastWorlds
         FutureWorlds <- []

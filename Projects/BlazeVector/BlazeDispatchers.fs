@@ -1,6 +1,6 @@
 ﻿namespace BlazeVector
 open System
-open SDL2
+open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
@@ -10,7 +10,6 @@ open BlazeVector
 module BulletModule =
 
     type Entity with
-    
         member this.GetAge = this.Get Property? Age
         member this.SetAge = this.Set Property? Age
         member this.Age = lens<int64> Property? Age this.GetAge this.SetAge this
@@ -24,15 +23,19 @@ module BulletModule =
         static let handleUpdate evt world =
             let bullet = evt.Subscriber : Entity
             let world = bullet.SetAge (inc (bullet.GetAge world)) world
-            if bullet.GetAge world > BulletLifetime
-            then World.destroyEntity bullet world
-            else world
+            let world =
+                if bullet.GetAge world > BulletLifetime
+                then World.destroyEntity bullet world
+                else world
+            (Cascade, world)
 
         static let handleCollision evt world =
             let bullet = evt.Subscriber : Entity
-            if World.isTicking world
-            then World.destroyEntity bullet world
-            else world
+            let world =
+                if World.isTicking world
+                then World.destroyEntity bullet world
+                else world
+            (Cascade, world)
 
         static member Facets =
             [typeof<RigidBodyFacet>
@@ -41,12 +44,13 @@ module BulletModule =
         static member Properties =
             [define Entity.Size (Vector2 (20.0f, 20.0f))
              define Entity.Omnipresent true
-             define Entity.Density 0.25f
+             define Entity.PublishChanges true
+             define Entity.Density 0.1f
              define Entity.Restitution 0.5f
              define Entity.LinearDamping 0.0f
              define Entity.GravityScale 0.0f
              define Entity.IsBullet true
-             define Entity.CollisionBody (BodyCircle { Radius = 0.5f; Center = Vector2.Zero })
+             define Entity.BodyShape (BodyCircle { Radius = 0.5f; Center = Vector2.Zero; PropertiesOpt = None })
              define Entity.StaticImage Assets.PlayerBulletImage
              define Entity.Age 0L]
 
@@ -59,11 +63,9 @@ module BulletModule =
 module EnemyModule =
 
     type Entity with
-    
         member this.GetHealth = this.Get Property? Health
         member this.SetHealth = this.Set Property? Health
         member this.Health = lens<int> Property? Health this.GetHealth this.SetHealth this
-        
         member this.IsOnScreen world =
             let viewBounds = World.getViewBoundsRelative world
             Math.isPointInBounds (this.GetCenter world) viewBounds
@@ -72,41 +74,45 @@ module EnemyModule =
         inherit EntityDispatcher ()
         
         static let move (enemy : Entity) world =
-            let force = Vector2 (-2000.0f, -20000.0f)
+            let force = Vector2 (-500.0f, -2500.0f)
             World.applyBodyForce force (enemy.GetPhysicsId world) world
 
         static let die (enemy : Entity) world =
             let world = World.destroyEntity enemy world
-            World.playSound 1.0f Assets.ExplosionSound world
+            World.playSound Constants.Audio.DefaultSoundVolume Assets.ExplosionSound world
 
         static let handleUpdate evt world =
             let enemy = evt.Subscriber : Entity
             let world = if enemy.IsOnScreen world then move enemy world else world
-            if enemy.GetHealth world <= 0 then die enemy world else world
+            let world = if enemy.GetHealth world <= 0 then die enemy world else world
+            (Cascade, world)
 
         static let handleCollision evt world =
             let enemy = evt.Subscriber : Entity
-            if World.isTicking world then
-                let collidee = evt.Data.Collidee
-                let isBullet = collidee.DispatchesAs<BulletDispatcher> world
-                if isBullet then
-                    let world = enemy.SetHealth (enemy.GetHealth world - 1) world
-                    let world = World.playSound 1.0f Assets.HitSound world
-                    world
+            let world =
+                if World.isTicking world then
+                    let collidee = evt.Data.Collidee.Entity
+                    let isBullet = collidee.Is<BulletDispatcher> world
+                    if isBullet then
+                        let world = enemy.SetHealth (enemy.GetHealth world - 1) world
+                        let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.HitSound world
+                        world
+                    else world
                 else world
-            else world
+            (Cascade, world)
 
         static member Facets =
             [typeof<RigidBodyFacet>
              typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (48.0f, 96.0f))
+            [define Entity.PublishChanges true
+             define Entity.Size (Vector2 (48.0f, 96.0f))
              define Entity.Friction 0.0f
              define Entity.FixedRotation true
              define Entity.LinearDamping 3.0f
              define Entity.GravityScale 0.0f
-             define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
+             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero; PropertiesOpt = None })
              define Entity.CelCount 6
              define Entity.CelRun 4
              define Entity.CelSize (Vector2 (48.0f, 96.0f))
@@ -123,7 +129,6 @@ module EnemyModule =
 module PlayerModule =
 
     type Entity with
-
         member this.GetLastTimeOnGroundNp = this.Get Property? LastTimeOnGroundNp
         member this.SetLastTimeOnGroundNp = this.Set Property? LastTimeOnGroundNp
         member this.LastTimeOnGroundNp = lens<int64> Property? LastTimeOnGroundNp this.GetLastTimeOnGroundNp this.SetLastTimeOnGroundNp this
@@ -135,21 +140,20 @@ module PlayerModule =
     type PlayerDispatcher () =
         inherit EntityDispatcher ()
 
-        static let [<Literal>] WalkForce = 8000.0f
-        static let [<Literal>] FallForce = -30000.0f
-        static let [<Literal>] ClimbForce = 12000.0f
+        static let [<Literal>] WalkForce = 1100.0f
+        static let [<Literal>] FallForce = -4000.0f
+        static let [<Literal>] ClimbForce = 1500.0f
 
         static let createBullet (player : Entity) (playerTransform : Transform) world =
-            let (bullet, world) = World.createEntity<BulletDispatcher> None DefaultOverlay (etol player) world
+            let (bullet, world) = World.createEntity<BulletDispatcher> None DefaultOverlay player.Parent world
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
             let world = bullet.SetPosition bulletPosition world
             let world = bullet.SetDepth playerTransform.Depth world
-            let world = bullet.PropagatePhysics world
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
-            let world = World.applyBodyLinearImpulse (Vector2 (35.0f, 0.0f)) (bullet.GetPhysicsId world) world
-            World.playSound 1.0f Assets.ShotSound world
+            let world = World.applyBodyLinearImpulse (Vector2 (15.0f, 0.0f)) (bullet.GetPhysicsId world) world
+            World.playSound Constants.Audio.DefaultSoundVolume Assets.ShotSound world
 
         static let shootBullet (player : Entity) world =
             let playerTransform = player.GetTransform world
@@ -158,13 +162,15 @@ module PlayerModule =
 
         static let handleSpawnBullet evt world =
             let player = evt.Subscriber : Entity
-            if World.isTicking world then
-                if not (player.HasFallen world) then
-                    if World.getTickTime world % 5L = 0L
-                    then shootBullet player world
+            let world =
+                if World.isTicking world then
+                    if not (player.HasFallen world) then
+                        if World.getTickTime world % 5L = 0L
+                        then shootBullet player world
+                        else world
                     else world
                 else world
-            else world
+            (Cascade, world)
 
         static let getLastTimeOnGround (player : Entity) world =
             if not (World.isBodyOnGround (player.GetPhysicsId world) world)
@@ -183,7 +189,8 @@ module PlayerModule =
                     let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
                     Vector2.Multiply (groundTangent, Vector2 (WalkForce, downForce))
                 | None -> Vector2 (WalkForce, FallForce)
-            World.applyBodyForce force physicsId world
+            let world = World.applyBodyForce force physicsId world
+            (Cascade, world)
 
         static let handleJump evt world =
             let player = evt.Subscriber : Entity
@@ -191,29 +198,30 @@ module PlayerModule =
             if  tickTime >= player.GetLastTimeJumpNp world + 12L &&
                 tickTime <= player.GetLastTimeOnGroundNp world + 10L then
                 let world = player.SetLastTimeJumpNp tickTime world
-                let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 18000.0f)) (player.GetPhysicsId world) world
-                let world = World.playSound 1.0f Assets.JumpSound world
-                world
-            else world
+                let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 2000.0f)) (player.GetPhysicsId world) world
+                let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.JumpSound world
+                (Cascade, world)
+            else (Cascade, world)
 
         static let handleJumpByKeyboardKey evt world =
             if World.isSelectedScreenIdling world then
-                match (enum<SDL.SDL_Scancode> evt.Data.ScanCode, evt.Data.Repeated) with
-                | (SDL.SDL_Scancode.SDL_SCANCODE_SPACE, false) -> handleJump evt world
-                | _ -> world
-            else world
+                match (evt.Data.KeyboardKey, evt.Data.Repeated) with
+                | (KeyboardKey.Space, false) -> handleJump evt world
+                | _ -> (Cascade, world)
+            else (Cascade, world)
 
         static member Facets =
             [typeof<RigidBodyFacet>
              typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (48.0f, 96.0f))
+            [define Entity.PublishChanges true
+             define Entity.Size (Vector2 (48.0f, 96.0f))
              define Entity.FixedRotation true
              define Entity.Friction 0.0f
              define Entity.LinearDamping 3.0f
              define Entity.GravityScale 0.0f
-             define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero })
+             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = Vector2.Zero; PropertiesOpt = None })
              define Entity.CelCount 16
              define Entity.CelRun 4
              define Entity.CelSize (Vector2 (48.0f, 96.0f))
@@ -239,7 +247,7 @@ module SceneModule =
     type SceneDispatcher () =
         inherit LayerDispatcher<unit, unit, SceneCommand> ()
 
-        override this.Bindings (_, scene, _) =
+        override this.Channel (_, scene) =
             [scene.UpdateEvent => cmd AdjustCamera
              scene.UpdateEvent => cmd PlayerFall]
 
@@ -257,8 +265,8 @@ module SceneModule =
                     else world
                 | PlayerFall ->
                     if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
-                        let world = World.playSound 1.0f Assets.DeathSound world
-                        if Simulants.Title.GetExists world
+                        let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.DeathSound world
+                        if Simulants.Title.Exists world
                         then World.transitionScreen Simulants.Title world
                         else world
                     else world
@@ -269,7 +277,6 @@ module GameplayModule =
 
     type GameplayCommand =
         | StartPlay
-        | StoppingPlay
         | StopPlay
 
     type GameplayDispatcher () =
@@ -280,9 +287,7 @@ module GameplayModule =
 
         static let shiftEntities xShift entities world =
             Seq.fold
-                (fun world (entity : Entity) ->
-                    let world = entity.SetPosition (entity.GetPosition world + Vector2 (xShift, 0.0f)) world
-                    entity.PropagatePhysics world)
+                (fun world (entity : Entity) -> entity.SetPosition (entity.GetPosition world + Vector2 (xShift, 0.0f)) world)
                 world
                 entities
 
@@ -307,9 +312,8 @@ module GameplayModule =
         static let createScene gameplay world =
             World.readLayerFromFile Assets.SceneLayerFilePath (Some Simulants.Scene.Name) gameplay world |> snd
 
-        override this.Bindings (_, gameplay, _) =
+        override this.Channel (_, gameplay) =
             [gameplay.SelectEvent => cmd StartPlay
-             gameplay.OutgoingStartEvent => cmd StoppingPlay
              gameplay.DeselectEvent => cmd StopPlay]
 
         override this.Command (_, command, gameplay, world) =
@@ -317,10 +321,7 @@ module GameplayModule =
                 match command with
                 | StartPlay ->
                     let world = createScene gameplay world
-                    let world = createSectionLayers gameplay world
-                    World.playSong 0 1.0f Assets.DeadBlazeSong world
-                | StoppingPlay ->
-                    World.fadeOutSong Constants.Audio.DefaultTimeToFadeOutSongMs world
+                    createSectionLayers gameplay world
                 | StopPlay ->
                     let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
                     let layerNames = Simulants.Scene.Name :: sectionNames

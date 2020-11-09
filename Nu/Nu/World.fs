@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
@@ -9,11 +9,48 @@ open SDL2
 open Prime
 open Nu
 
-[<RequireQualifiedAccess>]
+// HACK: I had to remove the [<RequireQualifiedAccess>] attribute from here because it was being interpreted in an
+// ambiguous way by F# Interactive.
 module Nu =
 
     let mutable private Initialized = false
+
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
+
+    let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
+        if right.Validate world then
+            let value = right.GetWithoutValidation world
+            if World.getExists left.This world
+            then (Cascade, (Option.get left.SetOpt) value world)
+            else (Cascade, world)
+        else (Cascade, world)
+
+    let private tryPropagateByName simulant leftName (right : World Lens) world =
+        if right.Validate world then
+            let value = right.GetWithoutValidation world
+            match World.tryGetProperty leftName simulant world with
+            | Some property ->
+                if property.PropertyValue <> value then // OPTIMIZATION: avoid reflection when value doesn't change
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
+                    let property = { property with PropertyValue = value }
+                    let world = World.trySetProperty leftName alwaysPublish property simulant world |> snd
+                    (Cascade, world)
+                else (Cascade, world)
+            | None -> (Cascade, world)
+        else (Cascade, world)
+
+    let private tryPropagate simulant (left : World Lens) (right : World Lens) world =
+        if notNull (left.This :> obj)
+        then tryPropagateByLens left right world
+        else tryPropagateByName simulant left.Name right world
+
+    /// TODO: P1: remove this after updating Prime.
+    let private sortSubscriptionsBy by (subscriptions : (Guid * SubscriptionEntry) seq) (world : 'w) =
+        EventSystem.getSortableSubscriptions by subscriptions world |>
+        Array.ofSeq |>
+        Array.sortWith (fun (struct ((p : IComparable), _)) (struct ((p2 : IComparable), _)) -> p.CompareTo p2) |>
+        Array.map (fun (struct (_, subscription)) -> (subscription.CompressionId, subscription)) |>
+        Array.toSeq
 
     /// Initialize the Nu game engine.
     let init nuConfig =
@@ -57,18 +94,47 @@ module Nu =
                 match propertied with
                 | :? Simulant as simulant ->
                     match simulant with
-                    | :? Game ->
-                        match (valueOpt, WorldModuleGame.Setters.TryGetValue propertyName) with
+                    | :? Entity as entity ->
+                        match (valueOpt, WorldModuleEntity.Setters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
+                            let layer = entity.Parent
+                            let screen = layer.Parent
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
+                            let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
-                            setter property world |> snd |> box
+                            setter property entity world |> snd |> box
                         | (Some value, (false, _)) ->
+                            let layer = entity.Parent
+                            let screen = layer.Parent
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
+                            let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
+                            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                             let property = { PropertyValue = value; PropertyType = ty }
-                            World.attachGameProperty propertyName property world |> box
+                            World.attachEntityProperty propertyName alwaysPublish property entity world |> box
                         | (None, (true, _)) ->
-                            World.exit world |> box
+                            World.destroyEntity entity world |> box
                         | (None, (false, _)) ->
-                            World.detachGameProperty propertyName world |> box
+                            World.detachEntityProperty propertyName entity world |> box
+                    | :? Layer as layer ->
+                        match (valueOpt, WorldModuleLayer.Setters.TryGetValue propertyName) with
+                        | (Some value, (true, setter)) ->
+                            let screen = layer.Parent
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            setter property layer world |> snd |> box
+                        | (Some value, (false, _)) ->
+                            let screen = layer.Parent
+                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
+                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
+                            let property = { PropertyValue = value; PropertyType = ty }
+                            World.attachLayerProperty propertyName property layer world |> box
+                        | (None, (true, _)) ->
+                            World.destroyLayer layer world |> box
+                        | (None, (false, _)) ->
+                            World.detachLayerProperty propertyName layer world |> box
                     | :? Screen as screen ->
                         match (valueOpt, WorldModuleScreen.Setters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
@@ -83,48 +149,18 @@ module Nu =
                             World.destroyScreen screen world |> box
                         | (None, (false, _)) ->
                             World.detachScreenProperty propertyName screen world |> box
-                    | :? Layer as layer ->
-                        match (valueOpt, WorldModuleLayer.Setters.TryGetValue propertyName) with
+                    | :? Game ->
+                        match (valueOpt, WorldModuleGame.Setters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
-                            let screen = ltos layer
-                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
-                            setter property layer world |> snd |> box
+                            setter property world |> snd |> box
                         | (Some value, (false, _)) ->
-                            let screen = ltos layer
-                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
-                            World.attachLayerProperty propertyName property layer world |> box
+                            World.attachGameProperty propertyName property world |> box
                         | (None, (true, _)) ->
-                            World.destroyLayer layer world |> box
+                            World.exit world |> box
                         | (None, (false, _)) ->
-                            World.detachLayerProperty propertyName layer world |> box
-                    | :? Entity as entity ->
-                        match (valueOpt, WorldModuleEntity.Setters.TryGetValue propertyName) with
-                        | (Some value, (true, setter)) ->
-                            let layer = etol entity
-                            let screen = ltos layer
-                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
-                            let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
-                            let property = { PropertyValue = value; PropertyType = ty }
-                            setter property entity world |> snd |> box
-                        | (Some value, (false, _)) ->
-                            let layer = etol entity
-                            let screen = ltos layer
-                            let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
-                            let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
-                            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                            let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
-                            let property = { PropertyValue = value; PropertyType = ty }
-                            World.attachEntityProperty propertyName alwaysPublish nonPersistent property entity world |> box
-                        | (None, (true, _)) ->
-                            World.destroyEntity entity world |> box
-                        | (None, (false, _)) ->
-                            World.detachEntityProperty propertyName entity world |> box
+                            World.detachGameProperty propertyName world |> box
                     | _ -> failwithumf ()
                 | _ -> box world
 
@@ -133,16 +169,25 @@ module Nu =
                 let simulant = propertied :?> Simulant
                 let handler = handler :?> World PropertyChangeHandler
                 let (unsubscribe, world) =
-                    World.subscribePlus
-                        Gen.id
+                    World.subscribeWith Gen.id
                         (fun (event : Event<obj, _>) world ->
                             let data = event.Data :?> ChangeData
                             let world = handler data.Value world
                             (Cascade, world))
                         (rtoa (Array.append [|"Change"; propertyName; "Event"|] (Address.getNames simulant.SimulantAddress)))
-                        (Default.Game :> Simulant)
+                        (Simulants.Game :> Simulant)
                         (world :?> World)
                 (box unsubscribe, box world)
+
+            // init handleUserDefinedCallback F# reach-around
+            WorldTypes.handleUserDefinedCallback <- fun userDefined _ worldObj ->
+                let world = worldObj :?> World
+                let (simulant, left, right) = userDefined :?> Simulant * World Lens * World Lens
+                let (handling, world) =
+                    if notNull (left.This :> obj)
+                    then tryPropagateByLens left right world
+                    else tryPropagateByName simulant left.Name right world
+                (handling, world :> obj)
 
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
@@ -207,10 +252,24 @@ module Nu =
                 World.setLocalFrame oldLocalFrame world
                 struct (evaleds, world)
 
-            // init isSimulantSelected F# reach-around
-            WorldModule.isSimulantSelected <- fun simulant world ->
-                World.isSimulantSelected simulant world
-                
+            // init isSelected F# reach-around
+            WorldModule.isSelected <- 
+                World.isSelected
+
+            // init sortSubscriptionByDepth F# reach-around
+            WorldModule.sortSubscriptionsByDepth <- fun subscriptions worldObj ->
+                let world = worldObj :?> World
+                sortSubscriptionsBy
+                    (fun (simulant : Simulant) _ ->
+                        match simulant with
+                        | :? Entity as entity -> { SortDepth = entity.GetDepth world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
+                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
+                        | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
+                        | :? Game | :? GlobalSimulantGeneralized -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
+                        | _ -> failwithumf ())
+                    subscriptions
+                    world
+
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
                 let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
@@ -222,7 +281,7 @@ module Nu =
                             for entity in entities do
                                 let entityState = World.getEntityState entity world
                                 let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                                let entityOmnipresent = entityState.Transform.Omnipresent || entityState.Transform.ViewType = Absolute
+                                let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
                                 SpatialTree.addElement entityOmnipresent entityMaxBounds entity entityTree
                             entityTree)
                         (World.getEntityTree world)
@@ -239,7 +298,7 @@ module Nu =
                             for entity in entities do
                                 let entityState = World.getEntityState entity world
                                 let entityMaxBounds = World.getEntityStateBoundsMax entityState
-                                let entityOmnipresent = entityState.Transform.Omnipresent || entityState.Transform.ViewType = Absolute
+                                let entityOmnipresent = entityState.Omnipresent || entityState.Absolute
                                 SpatialTree.removeElement entityOmnipresent entityMaxBounds entity entityTree
                             entityTree)
                         (World.getEntityTree world)
@@ -247,89 +306,80 @@ module Nu =
 
             // init registerScreenPhysics F# reach-around
             WorldModule.registerScreenPhysics <- fun screen world ->
-                let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                let entities =
+                    World.getLayers screen world |>
+                    Seq.map (flip World.getEntities world) |>
+                    Seq.concat |>
+                    Seq.toArray
                 Array.fold (fun world (entity : Entity) ->
                     World.registerEntityPhysics entity world)
                     world entities
 
             // init unregisterScreenPhysics F# reach-around
             WorldModule.unregisterScreenPhysics <- fun screen world ->
-                let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                let entities =
+                    World.getLayers screen world |>
+                    Seq.map (flip World.getEntities world) |>
+                    Seq.concat |>
+                    Seq.toArray
                 Array.fold (fun world (entity : Entity) ->
                     World.unregisterEntityPhysics entity world)
                     world entities
 
-            // init addSimulantScriptUnsubscription F# reach-around
-            WorldModule.addSimulantScriptUnsubscription <- fun unsubscription (simulant : Simulant) world ->
-                match simulant with
-                | :? Game as game -> game.ScriptUnsubscriptions.Update (List.cons unsubscription) world
-                | :? Screen as screen -> screen.ScriptUnsubscriptions.Update (List.cons unsubscription) world
-                | :? Layer as layer -> layer.ScriptUnsubscriptions.Update (List.cons unsubscription) world
-                | :? Entity as entity -> entity.ScriptUnsubscriptions.Update (List.cons unsubscription) world
-                | _ -> world
+            // init bind5 F# reach-around
+            WorldModule.bind5 <- fun simulant left right world ->
+                let (_, world) =
+                    // propagate immediately to start things out synchronized
+                    tryPropagate simulant left right world
+                let (compressionId, monitorMapperOpt) =
+                    match right.PayloadOpt with
+                    | Some payload ->
+                        let (compressionId, monitorMapper) = payload :?> Payload
+                        (compressionId, Some monitorMapper)
+                    | None -> (Gen.id, None)
+                let (_, world) =
+                    World.monitorCompressed
+                        Gen.id None None None
+                        (Right (box (simulant, left, right)))
+                        (Events.Register --> right.This.SimulantAddress)
+                        simulant
+                        world
+                let (_, world) =
+                    World.monitorCompressed
+                        compressionId
+                        monitorMapperOpt
+                        (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true))
+                        None
+                        (Right (box (simulant, left, right)))
+                        (Events.Change right.Name --> right.This.SimulantAddress)
+                        simulant
+                        world
+                world
 
-            // init unsubscribeSimulantScripts F# reach-around
-            WorldModule.unsubscribeSimulantScripts <- fun (simulant : Simulant) world ->
-                let propertyOpt =
-                    match simulant with
-                    | :? Game as game -> Some game.ScriptUnsubscriptions
-                    | :? Screen as screen -> Some screen.ScriptUnsubscriptions
-                    | :? Layer as layer -> Some layer.ScriptUnsubscriptions
-                    | :? Entity as entity -> Some entity.ScriptUnsubscriptions
-                    | _ -> None
-                match propertyOpt with
-                | Some property ->
-                    let unsubscriptions = property.Get world
-                    let world = List.foldBack apply unsubscriptions world
-                    property.Set [] world
-                | None -> world
+            // init miscellaneous reach-arounds
+            WorldModule.register <- fun simulant world -> World.register simulant world
+            WorldModule.unregister <- fun simulant world -> World.unregister simulant world
+            WorldModule.expandContent <- fun setScreenSplash content origin owner parent world -> World.expandContent setScreenSplash content origin owner parent world
+            WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
+            WorldModule.destroy <- fun simulant world -> World.destroy simulant world
+            WorldModule.trySignalFacet <- fun signalObj facetName simulant world -> World.trySignalFacet signalObj facetName simulant world
+            WorldModule.trySignal <- fun signalObj simulant world -> World.trySignal signalObj simulant world
 
-            // init equate5 F# reach-around
-            WorldModule.equate5 <- fun name (simulant : Simulant) (lens : World Lens) breaking world ->
-                let nonPersistent = not (Reflection.isPropertyPersistentByName name)
-                let alwaysPublish = Reflection.isPropertyAlwaysPublishByName name
-                let propagate (_ : Event) world =
-                    let property = { PropertyType = lens.Type; PropertyValue = lens.Get world }
-                    World.setProperty name nonPersistent alwaysPublish property simulant world
-                let breaker = if breaking then Stream.noMoreThanOncePerUpdate else Stream.id
-                let world = Stream.make (atooa Events.Register --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
-                Stream.make (atooa (Events.Change lens.Name) --> lens.This.SimulantAddress) |> breaker |> Stream.optimize |> Stream.monitor propagate simulant $ world
-
-            WorldModule.register <- fun simulant world ->
-                World.register simulant world
-
-            WorldModule.unregister <- fun simulant world ->
-                World.unregister simulant world
-
-            WorldModule.expandContent <- fun setScreenSplash guidOpt content origin parent world ->
-                World.expandContent setScreenSplash guidOpt content origin parent world
-
-            WorldModule.destroy <- fun simulant world ->
-                World.destroy simulant world
-
-            WorldModule.trySignalFacet <- fun signalObj facetName simulant world ->
-                World.trySignalFacet signalObj facetName simulant world
-
-            WorldModule.trySignal <- fun signalObj simulant world ->
-                World.trySignal signalObj simulant world
+            // init debug view F# reach-arounds
+            Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
+            Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)
+            Debug.World.viewLayer <- fun layer world -> Debug.Layer.view (layer :?> Layer) (world :?> World)
+            Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
 
             // init scripting
             World.initScripting ()
             WorldBindings.initBindings ()
 
-            // init debug view F# reach-arounds
-#if DEBUG
-            Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
-            Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)
-            Debug.World.viewLayer <- fun layer world -> Debug.Layer.view (layer :?> Layer) (world :?> World)
-            Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
-#endif
-
-            // init Vsync
+            // init vsync
             Vsync.Init nuConfig.RunSynchronously
 
             // init event world caching
-            EventSystem.setEventAddressCaching true
+            EventSystemDelegate.setEventAddressCaching true
 
             // mark init flag
             Initialized <- true
@@ -355,6 +405,8 @@ module WorldModule3 =
             // TODO: consider if we shoud reflectively generate these
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher ()
+                 StaticSpriteDispatcher () :> EntityDispatcher
+                 AnimatedSpriteDispatcher () :> EntityDispatcher
                  NodeDispatcher () :> EntityDispatcher
                  EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
@@ -368,7 +420,8 @@ module WorldModule3 =
                  BlockDispatcher () :> EntityDispatcher
                  BoxDispatcher () :> EntityDispatcher
                  CharacterDispatcher () :> EntityDispatcher
-                 TileMapDispatcher () :> EntityDispatcher]
+                 TileMapDispatcher () :> EntityDispatcher
+                 TmxMapDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
             // TODO: consider if we shoud reflectively generate these
@@ -378,7 +431,9 @@ module WorldModule3 =
                  (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
                  (typeof<TextFacet>.Name, TextFacet () :> Facet)
                  (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
+                 (typeof<JointFacet>.Name, JointFacet () :> Facet)
                  (typeof<TileMapFacet>.Name, TileMapFacet () :> Facet)
+                 (typeof<TmxMapFacet>.Name, TmxMapFacet () :> Facet)
                  (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
                  (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
 
@@ -393,14 +448,14 @@ module WorldModule3 =
 
             // make the world's event delegate
             let eventDelegate =
-                let eventTracer = Log.remark "Event"
                 let eventTracing = Core.getEventTracing ()
+                let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None // NOTE: lambda expression is duplicated in multiple places...
                 let eventFilter = Core.getEventFilter ()
-                let globalSimulant = Default.Game
+                let globalSimulant = Simulants.Game
                 let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
-                EventSystemDelegate.make eventTracer eventTracing eventFilter globalSimulant globalSimulantGeneralized
+                EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized
 
-            // make the game dispatcher
+            // make the default game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
 
             // make the world's dispatchers
@@ -416,13 +471,12 @@ module WorldModule3 =
 
             // make the world's subsystems
             let subsystems =
-                Subsystems.make
-                    (PhysicsEngineSubsystem.make (MockPhysicsEngine.make ()))
-                    (RendererSubsystem.make (MockRenderer.make ()))
-                    (AudioPlayerSubsystem.make (MockAudioPlayer.make ()))
+                { PhysicsEngine = MockPhysicsEngine.make ()
+                  Renderer = MockRenderer.make ()
+                  AudioPlayer = MockAudioPlayer.make () }
 
             // make the world's scripting environment
-            let scriptingEnv = Scripting.Env.Env.make ()
+            let scriptingEnv = Scripting.Env.make ()
 
             // make the world's ambient state
             let ambientState =
@@ -438,8 +492,8 @@ module WorldModule3 =
             let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree (snd defaultGameDispatcher)
             
             // subscribe to subscribe and unsubscribe events
-            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Default.Game world
-            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Default.Game world
+            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
+            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
 
             // finally, register the game
             World.registerGame world
@@ -448,14 +502,14 @@ module WorldModule3 =
         static member makeDefault () =
             let worldConfig = WorldConfig.defaultConfig
             let world = World.makeEmpty worldConfig
-            let world = World.createScreen (Some Default.Screen.Name) world |> snd
-            let world = World.createLayer (Some Default.Layer.Name) Default.Screen world |> snd
-            let world = World.createEntity (Some Default.Entity.Name) DefaultOverlay Default.Layer world |> snd
+            let world = World.createScreen (Some Simulants.DefaultScreen.Name) world |> snd
+            let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd
+            let world = World.createEntity (Some Simulants.DefaultEntity.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
             world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake (plugin : NuPlugin) sdlDeps config =
+        static member tryMake sdlDeps config (plugin : NuPlugin) =
 
             // ensure game engine is initialized
             Nu.init config.NuConfig
@@ -466,12 +520,12 @@ module WorldModule3 =
 
                 // make the world's event system
                 let eventSystem =
-                    let eventTracer = Log.remark "Event"
                     let eventTracing = Core.getEventTracing ()
+                    let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None
                     let eventFilter = Core.getEventFilter ()
-                    let globalSimulant = Default.Game
+                    let globalSimulant = Simulants.Game
                     let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
-                    EventSystemDelegate.make eventTracer eventTracing eventFilter globalSimulant globalSimulantGeneralized
+                    EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized
                     
                 // make plug-in facets and dispatchers
                 let pluginFacets = plugin.Birth<Facet> ()
@@ -495,26 +549,25 @@ module WorldModule3 =
                       RebuildEntityTree = World.rebuildEntityTree }
 
                 // look up the active game dispather
-                let activeGameDispatcherType = if config.StandAlone then plugin.GetStandAloneGameDispatcher () else plugin.GetEditorGameDispatcher ()
+                let activeGameDispatcherType = if config.StandAlone then plugin.GetGameDispatcher () else typeof<GameDispatcher>
                 let activeGameDispatcher = Map.find activeGameDispatcherType.Name dispatchers.GameDispatchers
 
                 // make the world's subsystems
                 let subsystems =
-                    let physicsEngine = FarseerPhysicsEngine.make Constants.Physics.Gravity
-                    let physicsEngineSubsystem = PhysicsEngineSubsystem.make physicsEngine :> World Subsystem
+                    let physicsEngine = AetherPhysicsEngine.make Constants.Physics.Gravity
                     let renderer =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
                         | None -> MockRenderer.make () :> Renderer
-                    renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackage) // enqueue default package hint
-                    let rendererSubsystem = RendererSubsystem.make renderer :> World Subsystem
+                    renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackageName) // enqueue default package hint
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
-                    audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.DefaultPackage) // enqueue default package hint
-                    let audioPlayerSubsystem = AudioPlayerSubsystem.make audioPlayer :> World Subsystem
-                    Subsystems.make physicsEngineSubsystem rendererSubsystem audioPlayerSubsystem
+                    audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.DefaultPackageName) // enqueue default package hint
+                    { PhysicsEngine = physicsEngine
+                      Renderer = renderer
+                      AudioPlayer = audioPlayer }
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
@@ -522,7 +575,7 @@ module WorldModule3 =
                 | Right overlayer ->
 
                     // make the world's scripting environment
-                    let scriptingEnv = Scripting.Env.Env.make ()
+                    let scriptingEnv = Scripting.Env.make ()
 
                     // make the world's ambient state
                     let ambientState =
@@ -545,8 +598,8 @@ module WorldModule3 =
                     let world = List.fold (fun world (key, value) -> World.addKeyedValue key value world) world kvps
 
                     // subscribe to subscribe and unsubscribe events
-                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Default.Game world
-                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Default.Game world
+                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
+                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
 
                     // try to load the prelude for the scripting language
                     match World.tryEvalPrelude world with
@@ -567,3 +620,13 @@ module WorldModule3 =
                     | Left struct (error, _) -> Left error
                 | Left error -> Left error
             | Left error -> Left error
+
+        /// Run the game engine as a stand-alone application.
+        static member run worldConfig plugin =
+            match SdlDeps.attemptMake worldConfig.SdlConfig with
+            | Right sdlDeps ->
+                use sdlDeps = sdlDeps // bind explicitly to dispose automatically
+                match World.tryMake sdlDeps worldConfig plugin with
+                | Right world -> World.run4 tautology sdlDeps Running world
+                | Left error -> Log.trace error; Constants.Engine.FailureExitCode
+            | Left error -> Log.trace error; Constants.Engine.FailureExitCode

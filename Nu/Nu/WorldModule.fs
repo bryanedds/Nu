@@ -1,40 +1,29 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
 open System.Collections.Generic
 open System.Diagnostics
 open System.Reflection
+open FSharpx.Collections
 open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
-module Default =
+module Simulants =
 
     /// The default game. Always exists.
     let Game = Game ()
 
     /// The default screen - may or may not exist.
-    let Screen = Screen Constants.Engine.DefaultScreenName
+    let DefaultScreen = Screen Constants.Engine.DefaultScreenName
     
     /// The default layer - may or may not exist.
-    let Layer = Screen / Constants.Engine.DefaultLayerName
+    let DefaultLayer = DefaultScreen / Constants.Engine.DefaultLayerName
     
     /// The default entity - may or may not exist.
-    let Entity = Layer / Constants.Engine.DefaultEntityName
-
-    /// The default 'dissolving' transition behavior of game's screens.
-    let DissolveData =
-        { IncomingTime = 20L
-          OutgoingTime = 30L
-          DissolveImage = AssetTag.make Assets.DefaultPackage "Image8" }
-
-    /// The default 'splashing' behavior of game's splash screen.
-    let SplashData =
-        { DissolveData = DissolveData
-          IdlingTime = 60L
-          SplashImage = AssetTag.make Assets.DefaultPackage "Image5" }
+    let DefaultEntity = DefaultLayer / Constants.Engine.DefaultEntityName
 
 [<AutoOpen>]
 module WorldModuleOperators =
@@ -43,39 +32,19 @@ module WorldModuleOperators =
     let ntos (screenName : string) =
         Screen screenName
 
-    /// Derive an entity from its layer.
-    let ltoe (layer : Layer) entityName =
-        // OPTIMIZATION: we hard-code the address transformation to save time.
-        let names = layer.LayerAddress.Names
-        Entity [names.[0]; names.[1]; entityName]
+    /// Resolve a relationship from a simulant.
+    let resolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't =
+        let simulant2 = Relation.resolve<Simulant, 't> simulant.SimulantAddress relation
+        if  typeof<'t> = typeof<Entity> ||
+            typeof<'t> = typeof<Layer> ||
+            typeof<'t> = typeof<Screen> ||
+            typeof<'t> = typeof<Game> then
+            Activator.CreateInstance (typeof<'t>, simulant2) :?> 't
+        else failwithumf ()
 
-    /// Derive layer from its screen.
-    let stol (screen : Screen) layerName =
-        // OPTIMIZATION: we hard-code the address transformation to save time.
-        Layer [screen.Name; layerName]
-
-    /// Derive entity from its screen.
-    let stoe (screen : Screen) layerName entityName =
-        // OPTIMIZATION: we hard-code the address transformation to save time.
-        Entity [screen.Name; layerName; entityName]
-
-    /// Derive a layer from its entity.
-    let etol (entity : Entity) =
-        // OPTIMIZATION: we hard-code the address transformation to save time.
-        let names = entity.EntityAddress.Names
-        Layer [names.[0]; names.[1]]
-
-    /// Derive a screen from one of its layers.
-    let ltos (layer : Layer) =
-        // OPTIMIZATION: we hard-code the address transformation to save time.
-        let names = layer.LayerAddress.Names
-        Screen names.[0]
-
-    /// Derive a screen from one of its entities.
-    let etos (entity : Entity) =
-        // OPTIMIZATION: we hard-code the address transformation to save time.
-        let names = entity.EntityAddress.Names
-        Screen names.[0]
+    /// Relate the second simulant to the first.
+    let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Relation =
+        Relation.relate<Simulant, 't> simulant.SimulantAddress (atoa simulant2.SimulantAddress)
 
 [<AutoOpen; ModuleBinding>]
 module WorldModule =
@@ -97,7 +66,10 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     /// F# reach-around for checking that a simulant is selected.
-    let mutable internal isSimulantSelected : Simulant -> World -> bool =
+    let mutable internal isSelected : Simulant -> World -> bool =
+        Unchecked.defaultof<_>
+
+    let mutable internal sortSubscriptionsByDepth : (Guid * SubscriptionEntry) seq -> obj -> (Guid * SubscriptionEntry) seq =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
@@ -123,9 +95,11 @@ module WorldModule =
     /// F# reach-around for unsubscribing script subscriptions of simulants.
     let mutable internal unsubscribeSimulantScripts : Simulant -> World -> World =
         Unchecked.defaultof<_>
-
-    /// F# reach-around for instantiating equality relationships.
-    let mutable internal equate5 : string -> Simulant -> World Lens -> bool -> World -> World =
+        
+    /// F# reach-around for binding properties.
+    /// HACK: bind5 allows the use of fake lenses in declarative usage.
+    /// NOTE: the downside to using fake lenses is that composed fake lenses do not function.
+    let mutable internal bind5 : Simulant -> World Lens -> World Lens -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal register : Simulant -> World -> World =
@@ -134,7 +108,10 @@ module WorldModule =
     let mutable internal unregister : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
-    let mutable internal expandContent : (SplashData option -> Screen -> Screen -> World -> World) -> Guid option -> SimulantContent -> ContentOrigin -> Simulant -> World -> World =
+    let mutable internal expandContent : (SplashDescriptor option -> Screen option -> Screen -> World -> World) -> SimulantContent -> ContentOrigin -> Simulant -> Simulant -> World -> Simulant option * World =
+        Unchecked.defaultof<_>
+
+    let mutable internal destroyImmediate : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal destroy : Simulant -> World -> World =
@@ -148,10 +125,20 @@ module WorldModule =
 
     type World with // Construction
 
+        static member frozen (world : World) =
+            (world :> Freezable).Frozen
+
+        static member freeze (world : World) =
+            (world :> Freezable).Freeze ()
+
+        static member thaw (world : World) =
+            (world :> Freezable).Thaw ()
+
         /// Choose a world to be used for debugging. Call this whenever the most recently constructed
         /// world value is to be discarded in favor of the given world value.
         static member choose (world : World) =
 #if DEBUG
+            if Debug.World.Frozen > 0 then failwith "Invalid operation on a frozen world (cannot invoke any operation that results in choosing a world)."
             Debug.World.Chosen <- world :> obj
 #endif
             world
@@ -184,120 +171,12 @@ module WorldModule =
                       Dispatchers = dispatchers
                       ScriptingEnv = scriptingEnv
                       ScriptingContext = Game ()
+                      DestructionListRev = []
                       Plugin = plugin }
             let world =
                 World.choose
                     { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             world
-
-    type World with // EventSystem
-
-        /// Get event subscriptions.
-        static member internal getSubscriptions world =
-            EventSystem.getSubscriptions<World> world
-
-        /// Get event unsubscriptions.
-        static member internal getUnsubscriptions world =
-            EventSystem.getUnsubscriptions<World> world
-
-        /// Get whether events are being traced.
-        static member getEventTracing (world : World) =
-            EventSystem.getEventTracing world
-
-        /// Set whether events are being traced.
-        static member setEventTracing tracing (world : World) =
-            World.choose (EventSystem.setEventTracing tracing world)
-
-        /// Get the state of the event filter.
-        static member getEventFilter (world : World) =
-            EventSystem.getEventFilter world
-
-        /// Set the state of the event filter.
-        static member setEventFilter filter (world : World) =
-            World.choose (EventSystem.setEventFilter filter world)
-
-        /// Get the context of the event system.
-        static member getEventContext (world : World) =
-            EventSystem.getEventContext world
-
-        /// A hack to allow a sidelined event system to be continued by resetting its mutable state.
-        static member internal continueEventSystemHack (world : World) =
-            EventSystem.setEventContext (Game ()) world
-
-        /// Set the context of the event system.
-#if DEBUG
-        static member internal withEventContext operation (context : Simulant) (world : World) =
-            let oldContext = World.getEventContext world
-            EventSystem.setEventContext context world
-            let world = operation world
-            EventSystem.setEventContext oldContext world
-            world
-#else
-        static member inline internal withEventContext operation _ (world : World) =
-            // NOTE: inlined to hopefully get rid of the lambda
-            operation world
-#endif
-
-        /// Qualify the context of the event system.
-        static member internal qualifyEventContext address (world : World) =
-            EventSystem.qualifyEventContext address world
-
-        /// Sort subscriptions using categorization via the 'by' procedure.
-        static member sortSubscriptionsBy by subscriptions (world : World) =
-            EventSystem.sortSubscriptionsBy by subscriptions world
-
-        /// Sort subscriptions by their place in the world's simulant hierarchy.
-        static member sortSubscriptionsByHierarchy subscriptions (world : World) =
-            // OPTIMIZATION: entity priority boxed up front to decrease GC pressure.
-            let entityPriorityBoxed = Constants.Engine.EntitySortPriority :> IComparable
-            World.sortSubscriptionsBy
-                (fun (simulant : Simulant) _ ->
-                    match simulant with
-                    | :? GlobalSimulantGeneralized
-                    | :? Game -> Constants.Engine.GameSortPriority :> IComparable
-                    | :? Screen -> Constants.Engine.ScreenSortPriority :> IComparable
-                    | :? Layer -> Constants.Engine.LayerSortPriority :> IComparable
-                    | :? Entity -> entityPriorityBoxed
-                    | _ -> failwithumf ())
-                subscriptions
-                world
-
-        /// A 'no-op' for subscription sorting - that is, performs no sorting at all.
-        static member sortSubscriptionsNone subscriptions (world : World) =
-            EventSystem.sortSubscriptionsNone subscriptions world
-
-        /// Publish an event, using the given getSubscriptions and publishSorter procedures to arrange the order to which subscriptions are published.
-        static member publishPlus<'a, 'p when 'p :> Simulant> publishSorter (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) allowWildcard world =
-            World.choose (EventSystem.publishPlus<'a, 'p, World> publishSorter eventData eventAddress eventTrace publisher allowWildcard world)
-
-        /// Publish an event.
-        static member publish<'a, 'p when 'p :> Simulant>
-            (eventData : 'a) (eventAddress : 'a Address) eventTrace (publisher : 'p) world =
-            World.choose (EventSystem.publishPlus<'a, 'p, World> World.sortSubscriptionsByHierarchy eventData eventAddress eventTrace publisher true world)
-
-        /// Unsubscribe from an event.
-        static member unsubscribe subscriptionKey world =
-            World.choose (EventSystem.unsubscribe<World> subscriptionKey world)
-
-        /// Subscribe to an event using the given subscriptionKey, and be provided with an unsubscription callback.
-        static member subscribePlus<'a, 's when 's :> Simulant>
-            subscriptionKey (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            mapSnd World.choose (EventSystem.subscribePlus<'a, 's, World> subscriptionKey subscription eventAddress subscriber world)
-
-        /// Subscribe to an event.
-        static member subscribe<'a, 's when 's :> Simulant>
-            (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
-            World.choose (EventSystem.subscribe<'a, 's, World> subscription eventAddress subscriber world)
-
-        /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
-        static member monitorPlus<'a, 's when 's :> Simulant>
-            (subscription : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            mapSnd World.choose (EventSystem.monitorPlus<'a, 's, World> subscription eventAddress subscriber world)
-
-        /// Keep active a subscription for the lifetime of a simulant.
-        static member monitor<'a, 's when 's :> Simulant>
-            (subscription : Event<'a, 's> -> World -> World) (eventAddress : 'a Address) (subscriber : 's) world =
-            World.choose (EventSystem.monitor<'a, 's, World> subscription eventAddress subscriber world)
 
     type World with // Caching
 
@@ -353,11 +232,13 @@ module WorldModule =
         static member internal updateAmbientState updater world =
             World.choose { world with AmbientState = updater world.AmbientState }
 
-        static member internal updateTickTime world =
-            World.updateAmbientState AmbientState.updateTickTime world
+        /// Get the the liveness state of the engine.
+        [<FunctionBinding>]
+        static member getLiveness world =
+            World.getAmbientStateBy AmbientState.getLiveness world
 
-        static member internal incrementUpdateCount world =
-            World.updateAmbientState AmbientState.incrementUpdateCount world
+        static member internal updateTime world =
+            World.updateAmbientState AmbientState.updateTime world
     
         /// Get the tick rate.
         [<FunctionBinding>]
@@ -404,10 +285,15 @@ module WorldModule =
         static member getUpdateCount world =
             World.getAmbientStateBy AmbientState.getUpdateCount world
 
-        /// Get the the liveness state of the engine.
+        /// Get the world's clock time.
+        /// No script function binding due to lack of a DateTimeOffset script conversion.
+        static member getClockTime world =
+            World.getAmbientStateBy AmbientState.getClockTime world
+
+        /// Get the world's clock delta time in normalized floating point units.
         [<FunctionBinding>]
-        static member getLiveness world =
-            World.getAmbientStateBy AmbientState.getLiveness world
+        static member getClockDelta world =
+            World.getAmbientStateBy AmbientState.getClockDelta world
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         [<FunctionBinding>]
@@ -608,9 +494,143 @@ module WorldModule =
             World.setSubsystems (updater world.Subsystems) world
 
         static member internal cleanUpSubsystems world =
-            let subsystems = World.getSubsystems world
-            let (subsystems, world) = Subsystems.cleanUp subsystems world
-            World.setSubsystems subsystems world
+            World.updateSubsystems (fun subsystems -> { subsystems with Renderer = subsystems.Renderer.CleanUp () }) world
+
+    type World with // EventSystem
+
+        /// Get event subscriptions.
+        static member internal getSubscriptions world =
+            EventSystem.getSubscriptions<World> world
+
+        /// Get event unsubscriptions.
+        static member internal getUnsubscriptions world =
+            EventSystem.getUnsubscriptions<World> world
+
+        /// Get how events are being traced.
+        static member getEventTracerOpt (world : World) =
+            EventSystem.getEventTracerOpt world
+
+        /// Set how events are being traced.
+        static member setEventTracerOpt tracerOpt (world : World) =
+            World.choose (EventSystem.setEventTracerOpt tracerOpt world)
+
+        /// Get the state of the event filter.
+        static member getEventFilter (world : World) =
+            EventSystem.getEventFilter world
+
+        /// Set the state of the event filter.
+        static member setEventFilter filter (world : World) =
+            World.choose (EventSystem.setEventFilter filter world)
+
+        /// Publish an event with no subscription sorting.
+        /// OPTIMIZATION: unrolled publishPlus here for speed.
+        static member publishPlus<'a, 'p when 'p :> Simulant>
+            (eventData : 'a)
+            (eventAddress : 'a Address)
+            eventTrace
+            (publisher : 'p)
+            sorted
+            (world : World) =
+
+            // OPTIMIZATION: potentially box and generalize these only once
+            let eventDataObj = eventData :> obj
+            let eventAddressObj = Address.generalize eventAddress
+
+#if DEBUG
+            // log event based on event filter
+            EventSystemDelegate.logEvent<World> eventAddressObj eventTrace world.EventSystemDelegate
+#endif
+
+            // get subscriptions the fastest way possible
+            let subscriptions =
+                if sorted then
+                    EventSystemDelegate.getSubscriptionsSorted
+                        sortSubscriptionsByDepth eventAddressObj world.EventSystemDelegate world
+                else
+                    let subscriptions = EventSystemDelegate.getSubscriptions world.EventSystemDelegate
+                    match UMap.tryFind eventAddressObj subscriptions with Some subscriptions -> OMap.toSeq subscriptions | None -> Seq.empty
+
+            // publish to each subscription
+            // OPTIMIZATION: inlined foldWhile here in order to compact the call stack.
+            let (_, world) =
+                let mutable result = (Cascade, world)
+                let mutable going = true
+                let mutable enr = (subscriptions :> IEnumerable<_>).GetEnumerator ()
+                while going && enr.MoveNext () do
+                    let (_, subscription) = enr.Current
+                    if fst result = Cascade && World.getLiveness (snd result) = Running then
+                        let mapped =
+                            match subscription.MapperOpt with
+                            | Some mapper -> mapper eventDataObj subscription.PreviousDataOpt (snd result)
+                            | None -> eventDataObj
+                        let filtered =
+                            match subscription.FilterOpt with
+                            | Some filter -> filter mapped subscription.PreviousDataOpt (snd result)
+                            | None -> true
+                        subscription.PreviousDataOpt <- Some mapped
+                        if filtered then
+                            // OPTIMIZATION: inlined fold for speed.
+                            let mutable enr2 = (subscription.Callbacks :> IEnumerable<Guid * Simulant * Callback>).GetEnumerator ()
+                            while fst result = Cascade && enr2.MoveNext () do
+                                let (_, subscriber, callback) = enr2.Current
+                                match callback with
+                                | UserDefinedCallback callback ->
+                                    // OPTIMIZATION: avoids the dynamic dispatch and goes straight to the user-defined callback
+                                    result <- WorldTypes.handleUserDefinedCallback callback mapped (snd result) |> mapSnd cast<World>
+                                | FunctionCallback callback ->
+                                    result <-
+                                        // OPTIMIZATION: unrolled PublishEventHook here for speed.
+                                        // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
+                                        match subscriber with
+                                        | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | _ -> failwithumf ()
+                                    result |> snd |> World.choose |> ignore
+                    else going <- false
+                result
+            world
+
+        /// Publish an event with no subscription sorting.
+        static member publish<'a, 'p when 'p :> Simulant>
+            eventData eventAddress eventTrace publisher world =
+            World.publishPlus<'a, 'p> eventData eventAddress eventTrace publisher false world
+
+        /// Unsubscribe from an event.
+        static member unsubscribe subscriptionId world =
+            World.choose (EventSystem.unsubscribe<World> subscriptionId world)
+
+        /// Subscribe to an event using the given subscriptionId, and be provided with an unsubscription callback.
+        static member subscribeCompressed<'a, 'b, 's when 's :> Simulant>
+            compressionId subscriptionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
+            mapSnd World.choose (EventSystem.subscribeCompressed<'a, 'b, 's, World> compressionId subscriptionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
+
+        /// Subscribe to an event using the given subscriptionId, and be provided with an unsubscription callback.
+        static member subscribeWith<'a, 's when 's :> Simulant>
+            subscriptionId callback eventAddress subscriber world =
+            mapSnd World.choose (EventSystem.subscribePlus<'a, 's, World> subscriptionId callback eventAddress subscriber world)
+
+        /// Subscribe to an event.
+        static member subscribe<'a, 's when 's :> Simulant>
+            callback eventAddress subscriber world =
+            World.choose (EventSystem.subscribe<'a, 's, World> callback eventAddress subscriber world)
+
+        /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
+        static member monitorCompressed<'a, 'b, 's when 's :> Simulant>
+            compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
+            mapSnd World.choose (EventSystem.monitorCompressed<'a, 'b, 's, World> compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
+
+        /// Keep active a subscription for the lifetime of a simulant.
+        static member monitorPlus<'a, 's when 's :> Simulant>
+            callback eventAddress subscriber world =
+            mapSnd World.choose (EventSystem.monitorPlus<'a, 's, World> callback eventAddress subscriber world)
+
+        /// Keep active a subscription for the lifetime of a simulant.
+        static member monitor<'a, 's when 's :> Simulant>
+            callback eventAddress subscriber world =
+            World.choose (EventSystem.monitor<'a, 's, World> callback eventAddress subscriber world)
 
     type World with // Scripting
 
@@ -650,6 +670,14 @@ module WorldModule =
         /// Attempt to evaluate a script.
         static member tryEvalScript scriptFilePath world =
             ScriptingSystem.tryEvalScript World.choose scriptFilePath world
+
+    type World with // Destruction
+
+        static member addSimulantToDestruction simulant world =
+            { world with DestructionListRev = simulant :: world.DestructionListRev }
+
+        static member tryRemoveSimulantFromDestruction simulant world =
+            { world with DestructionListRev = List.remove ((=) simulant) world.DestructionListRev }
 
     type World with // Plugin
 

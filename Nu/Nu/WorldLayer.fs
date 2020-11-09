@@ -1,12 +1,10 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
 open System.IO
-open System.ComponentModel
-open System.Reflection
-open System.Runtime.CompilerServices
+open FSharpx.Collections
 open Prime
 open Nu
 
@@ -16,44 +14,25 @@ module WorldLayerModule =
     type Layer with
     
         member this.GetDispatcher world = World.getLayerDispatcher this world
-        member this.Dispatcher = lensOut Property? Dispatcher this.GetDispatcher this
-        member this.GetDepth world = World.getLayerDepth this world
-        member this.SetDepth value world = World.setLayerDepth value this world
-        member this.Depth = lens Property? Depth this.GetDepth this.SetDepth this
+        member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
+        member this.GetModel<'a> world = World.getLayerModel<'a> this world
+        member this.SetModel<'a> value world = World.setLayerModel<'a> value this world
+        member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
         member this.GetVisible world = World.getLayerVisible this world
         member this.SetVisible value world = World.setLayerVisible value this world
         member this.Visible = lens Property? Visible this.GetVisible this.SetVisible this
         member this.GetPersistent world = World.getLayerPersistent this world
         member this.SetPersistent value world = World.setLayerPersistent value this world
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
-        member this.GetScriptOpt world = World.getLayerScriptOpt this world
-        member this.SetScriptOpt value world = World.setLayerScriptOpt value this world
-        member this.ScriptOpt = lens Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
-        member this.GetScript world = World.getLayerScript this world
-        member this.SetScript value world = World.setLayerScript value this world
-        member this.Script = lens Property? Script this.GetScript this.SetScript this
+        member this.GetDestroying world = World.getLayerDestroying this world
+        member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
         member this.GetScriptFrame world = World.getLayerScriptFrame this world
-        member this.ScriptFrame = lensOut Property? Script this.GetScriptFrame this
-        member internal this.GetScriptUnsubscriptions world = World.getLayerScriptUnsubscriptions this world
-        member internal this.SetScriptUnsubscriptions value world = World.setLayerScriptUnsubscriptions value this world
-        member internal this.ScriptUnsubscriptions = lens Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
-        member this.GetOnRegister world = World.getLayerOnRegister this world
-        member this.SetOnRegister value world = World.setLayerOnRegister value this world
-        member this.OnRegister = lens Property? OnRegister this.GetOnRegister this.SetOnRegister this
-        member this.GetOnUnregister world = World.getLayerOnUnregister this world
-        member this.SetOnUnregister value world = World.setLayerOnUnregister value this world
-        member this.OnUnregister = lens Property? OnUnregister this.GetOnUnregister this.SetOnUnregister this
-        member this.GetOnUpdate world = World.getLayerOnUpdate this world
-        member this.SetOnUpdate value world = World.setLayerOnUpdate value this world
-        member this.OnUpdate = lens Property? OnUpdate this.GetOnUpdate this.SetOnUpdate this
-        member this.GetOnPostUpdate world = World.getLayerOnPostUpdate this world
-        member this.SetOnPostUpdate value world = World.setLayerOnPostUpdate value this world
-        member this.OnPostUpdate = lens Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
+        member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
         member this.GetCreationTimeStamp world = World.getLayerCreationTimeStamp this world
-        member this.CreationTimeStamp = lensOut Property? CreationTimeStamp this.GetCreationTimeStamp this
+        member this.CreationTimeStamp = lensReadOnly Property? CreationTimeStamp this.GetCreationTimeStamp this
         member this.GetId world = World.getLayerId this world
-        member this.Id = lensOut Property? Id this.GetId this
-        
+        member this.Id = lensReadOnly Property? Id this.GetId this
+
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
@@ -88,16 +67,22 @@ module WorldLayerModule =
                 | _ -> false
 
         /// Check that a layer exists in the world.
-        member this.GetExists world = World.getLayerExists this world
+        member this.Exists world = World.getLayerExists this world
+
+        /// Check that a layer is selected.
+        member this.Selected world = WorldModule.isSelected this world
 
         /// Check that a layer dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
+        member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
 
         /// Check that a layer dispatches in the same manner as the dispatcher with the given type.
-        member this.DispatchesAs<'a> world = this.DispatchesAs (typeof<'a>, world)
+        member this.Is<'a> world = this.Is (typeof<'a>, world)
 
         /// Resolve a relation in the context of a layer.
-        member this.Resolve relation = Layer (Relation.resolve this.LayerAddress relation)
+        member this.Resolve relation = resolve<Layer> this relation
+
+        /// Relate a layer to a simulant.
+        member this.Relate simulant = relate<Layer> this simulant
 
         /// Get a layer's change event address.
         member this.GetChangeEvent propertyName = Events.Change propertyName --> this.LayerAddress
@@ -108,43 +93,28 @@ module WorldLayerModule =
     type World with
 
         static member internal updateLayer (layer : Layer) world =
-            World.withEventContext (fun world ->
-                
-                // update via dispatcher
-                let dispatcher = layer.GetDispatcher world
-                let world = dispatcher.Update (layer, world)
 
-                // run script update
-                let world = World.evalWithLogging (layer.GetOnUpdate world) (layer.GetScriptFrame world) layer world |> snd'
+            // update via dispatcher
+            let dispatcher = layer.GetDispatcher world
+            let world = dispatcher.Update (layer, world)
 
-                // publish update event
-                let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.Update --> layer) eventTrace Default.Game true world)
-                layer
-                world
+            // publish update event
+            let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
+            World.publishPlus () (Events.Update --> layer) eventTrace Simulants.Game false world
 
         static member internal postUpdateLayer (layer : Layer) world =
-            World.withEventContext (fun world ->
 
-                // post-update via dispatcher
-                let dispatcher = layer.GetDispatcher world
-                let world = dispatcher.PostUpdate (layer, world)
+            // post-update via dispatcher
+            let dispatcher = layer.GetDispatcher world
+            let world = dispatcher.PostUpdate (layer, world)
 
-                // run script post-update
-                let world = World.evalWithLogging (layer.GetOnPostUpdate world) (layer.GetScriptFrame world) layer world |> snd'
-
-                // run script post-update
-                let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy () (Events.PostUpdate --> layer) eventTrace Default.Game true world)
-                layer
-                world
+            // publish post-update event
+            let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
+            World.publishPlus () (Events.PostUpdate --> layer) eventTrace Simulants.Game false world
 
         static member internal actualizeLayer (layer : Layer) world =
-            World.withEventContext (fun world ->
-                let dispatcher = layer.GetDispatcher world
-                dispatcher.Actualize (layer, world))
-                layer
-                world
+            let dispatcher = layer.GetDispatcher world
+            dispatcher.Actualize (layer, world)
 
         /// Get all the layers in a screen.
         [<FunctionBinding>]
@@ -159,9 +129,48 @@ module WorldLayerModule =
                 | None -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
             | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
 
+        /// Create a layer and add it to the world.
+        [<FunctionBinding "createLayer">]
+        static member createLayer4 dispatcherName nameOpt (screen : Screen) world =
+            let dispatchers = World.getLayerDispatchers world
+            let dispatcher =
+                match Map.tryFind dispatcherName dispatchers with
+                | Some dispatcher -> dispatcher
+                | None -> failwith ("Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
+            let layerState = LayerState.make nameOpt dispatcher
+            let layerState = Reflection.attachProperties LayerState.copy layerState.Dispatcher layerState world
+            let layer = Layer (screen.ScreenAddress <-- ntoa<Layer> layerState.Name)
+            let world =
+                if World.getLayerExists layer world then
+                    if layer.GetDestroying world
+                    then World.destroyLayerImmediate layer world
+                    else failwith ("Layer '" + scstring layer + " already exists and cannot be created."); world
+                else world
+            let world = World.addLayer false layerState layer world
+            (layer, world)
+
+        /// Create a layer from a simulnat descriptor.
+        static member createLayer3 descriptor screen world =
+            let (layer, world) =
+                World.createLayer4 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt screen world
+            let world =
+                List.fold (fun world (propertyName, property) ->
+                    World.setLayerProperty propertyName property layer world)
+                    world descriptor.SimulantProperties
+            let world =
+                List.fold (fun world childDescriptor ->
+                    World.createEntity4 DefaultOverlay childDescriptor layer world |> snd)
+                    world descriptor.SimulantChildren
+            (layer, world)
+
+        /// Create a layer and add it to the world.
+        static member createLayer<'d when 'd :> LayerDispatcher> nameOpt screen world =
+            World.createLayer4 typeof<'d>.Name nameOpt screen world
+
         /// Destroy a layer in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// layer's existence. Consider using World.destroyLayer instead.
         static member destroyLayerImmediate layer world =
+            let world = World.tryRemoveSimulantFromDestruction layer world
             let destroyEntitiesImmediate layer world =
                 let entities = World.getEntities layer world
                 World.destroyEntitiesImmediate entities world
@@ -169,9 +178,9 @@ module WorldLayerModule =
 
         /// Destroy a layer in the world at the end of the current update.
         [<FunctionBinding>]
-        static member destroyLayer layer world =
-            World.schedule2 (World.destroyLayerImmediate layer) world
-            
+        static member destroyLayer (layer : Layer) world =
+            World.addSimulantToDestruction layer world
+
         /// Destroy multiple layers in the world immediately. Can be dangerous if existing in-flight publishing depends
         /// on any of the layers' existences. Consider using World.destroyLayers instead.
         static member destroyLayersImmediate (layers : Layer seq) world =
@@ -233,112 +242,53 @@ module WorldLayerModule =
             let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
             World.readLayer layerDescriptor nameOpt screen world
 
-        /// Turn a layers stream into a series of live layers.
-        static member expandLayerStream (lens : Lens<obj, World>) indexerOpt mapper origin screen world =
-            let mapperGeneralized = fun i lens (parent : Simulant) world -> mapper i lens (parent :?> Screen) world :> SimulantContent
-            World.expandSimulantStream lens indexerOpt mapperGeneralized origin screen world
+        /// Turn a layers lens into a series of live layers.
+        static member expandLayers (lens : Lens<obj, World>) sieve spread indexOpt mapper origin screen world =
+            let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
+            World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin screen screen world
 
         /// Turn layer content into a live layer.
-        static member expandLayerContent guidOpt content origin screen world =
-            match LayerContent.expand content screen world with
-            | Choice1Of3 (lens, indexerOpt, mapper) ->
-                World.expandLayerStream lens indexerOpt mapper origin screen world
-            | Choice2Of3 (name, descriptor, handlers, equations, streams, entityFilePaths, entityContents) ->
-                let (layer, world) = World.readLayer descriptor (Some name) screen world
-                let world = match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
-                let world =
-                    List.fold (fun world (_, entityName, filePath) ->
-                        World.readEntityFromFile filePath (Some entityName) layer world |> snd)
-                        world entityFilePaths
-                let world =
-                    List.fold (fun world (name, simulant, property, breaking) ->
-                        WorldModule.equate5 name simulant property breaking world)
-                        world equations
-                let world =
-                    List.fold (fun world (handler, address, simulant) ->
-                        World.monitor (fun (evt : Event) world ->
-                            let signal = handler evt
-                            let owner = match origin with SimulantOrigin simulant -> simulant | FacetOrigin (simulant, _) -> simulant
-                            WorldModule.trySignal signal owner world)
-                            address simulant world)
-                        world handlers
-                let world =
-                    List.fold (fun world (layer, lens, indexerOpt, mapper) ->
-                        World.expandEntityStream lens indexerOpt mapper origin layer world)
-                        world streams
-                let world =
-                    List.fold (fun world (owner, entityContents) ->
-                        List.fold (fun world entityContent ->
-                            World.expandEntityContent (Some Gen.id) entityContent (SimulantOrigin owner) layer world)
-                            world entityContents)
-                        world entityContents
-                world
-            | Choice3Of3 (layerName, filePath) ->
-                let (layer, world) = World.readLayerFromFile filePath (Some layerName) screen world
-                match guidOpt with Some guid -> World.addKeyedValue (scstring guid) layer world | None -> world
-
-    /// Represents the property value of an layer as accessible via reflection.
-    type [<ReferenceEquality>] LayerPropertyValue =
-        | LayerPropertyDescriptor of PropertyDescriptor
-        | LayerPropertyInfo of PropertyInfo
-
-        /// Check that an layer contains the given property.
-        static member containsProperty (property : PropertyInfo) =
-            let properties = typeof<LayerState>.GetProperties property.Name
-            Seq.exists (fun item -> item = property) properties
-
-        /// Get the layer's property value.
-        static member getValue property (layer : Layer) world =
-            let propertyName =
-                match property with
-                | LayerPropertyDescriptor propertyDescriptor -> propertyDescriptor.PropertyName
-                | LayerPropertyInfo propertyInfo -> propertyInfo.Name
-            let property = World.getLayerProperty propertyName layer world
-            match property.PropertyValue with
-            | :? DesignerProperty as dp -> dp.DesignerValue
-            | value -> value
-
-        /// Set the layer's property value.
-        static member setValue property propertyValue (layer : Layer) world =
-            let (propertyName, propertyType) =
-                match property with
-                | LayerPropertyDescriptor propertyDescriptor -> (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
-                | LayerPropertyInfo propertyInfo -> (propertyInfo.Name, propertyInfo.PropertyType)
-            let propertyOld = World.getLayerProperty propertyName layer world
-            match propertyOld.PropertyValue with
-            | :? DesignerProperty as dp ->
-                let propertyValue = { dp with DesignerValue = propertyValue }
-                let propertyValue = { PropertyType = typeof<DesignerProperty>; PropertyValue = propertyValue }
-                World.setLayerProperty propertyName propertyValue layer world
-            | _ -> World.setLayerProperty propertyName { PropertyType = propertyType; PropertyValue = propertyValue } layer world
-
-        /// Get the property descriptors of as constructed from the given function in the given context.
-        static member getPropertyDescriptors makePropertyDescriptor contextOpt =
-            // OPTIMIZATION: seqs used for speed.
-            let properties = typeof<LayerState>.GetProperties ()
-            let typeConverterAttribute = TypeConverterAttribute typeof<SymbolicConverter>
-            let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Property? Xtension) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Seq.isEmpty (property.GetCustomAttributes<ExtensionAttribute> ())) properties
-            let properties = Seq.filter (fun (property : PropertyInfo) -> Reflection.isPropertyPersistentByName property.Name) properties
-            let propertyDescriptors = Seq.map (fun property -> makePropertyDescriptor (LayerPropertyInfo property, [|typeConverterAttribute|])) properties
-            let propertyDescriptors =
-                match contextOpt with
-                | Some (layer, world) ->
-                    let properties' = World.getLayerXtensionProperties layer world
-                    let propertyDescriptors' =
-                        Seq.fold
-                            (fun propertyDescriptors' (propertyName, property : Property) ->
-                                let propertyType = property.PropertyType
-                                if Reflection.isPropertyPersistentByName propertyName then
-                                    let propertyDescriptor = LayerPropertyDescriptor { PropertyName = propertyName; PropertyType = propertyType }
-                                    let propertyDescriptor : System.ComponentModel.PropertyDescriptor = makePropertyDescriptor (propertyDescriptor, [|typeConverterAttribute|])
-                                    propertyDescriptor :: propertyDescriptors'
-                                else propertyDescriptors')
-                            []
-                            properties'
-                    Seq.append propertyDescriptors' propertyDescriptors
-                | None -> propertyDescriptors
-            List.ofSeq propertyDescriptors
+        static member expandLayerContent content origin screen world =
+            if World.getScreenExists screen world then
+                match LayerContent.expand content screen world with
+                | Choice1Of3 (lens, sieve, spread, indexOpt, mapper) ->
+                    let world = World.expandLayers lens sieve spread indexOpt mapper origin screen world
+                    (None, world)
+                | Choice2Of3 (_, descriptor, handlers, binds, streams, entityFilePaths, entityContents) ->
+                    let (layer, world) =
+                        World.createLayer3 descriptor screen world
+                    let world =
+                        List.fold (fun world (_, entityName, filePath) ->
+                            World.readEntityFromFile filePath (Some entityName) layer world |> snd)
+                            world entityFilePaths
+                    let world =
+                        List.fold (fun world (simulant, left : World Lens, right) ->
+                            WorldModule.bind5 simulant left right world)
+                            world binds
+                    let world =
+                        List.fold (fun world (handler, address, simulant) ->
+                            World.monitor (fun (evt : Event) world ->
+                                let signal = handler evt
+                                let owner = match origin with SimulantOrigin simulant -> simulant | FacetOrigin (simulant, _) -> simulant
+                                let world = WorldModule.trySignal signal owner world
+                                (Cascade, world))
+                                address simulant world)
+                            world handlers
+                    let world =
+                        List.fold (fun world (layer, lens, sieve, spread, indexOpt, mapper) ->
+                            World.expandEntities lens sieve spread indexOpt mapper origin layer layer world)
+                            world streams
+                    let world =
+                        List.fold (fun world (owner, entityContents) ->
+                            List.fold (fun world entityContent ->
+                                World.expandEntityContent entityContent origin owner layer world |> snd)
+                                world entityContents)
+                            world entityContents
+                    (Some layer, world)
+                | Choice3Of3 (layerName, filePath) ->
+                    let (layer, world) = World.readLayerFromFile filePath (Some layerName) screen world
+                    (Some layer, world)
+            else (None, world)
 
 namespace Debug
 open Nu

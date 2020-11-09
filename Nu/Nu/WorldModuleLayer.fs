@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
@@ -58,8 +58,6 @@ module WorldModuleLayer =
 #if DEBUG
             if not (UMap.containsKey layer.LayerAddress world.LayerStates) then
                 failwith ("Cannot set the state of a non-existent layer '" + scstring layer.LayerAddress + "'")
-            if not (World.qualifyEventContext (atooa layer.LayerAddress) world) then
-                failwith "Cannot set the state of a layer in an unqualifed event context."
 #endif
             let layerStates = UMap.add layer.LayerAddress layerState world.LayerStates
             World.choose { world with LayerStates = layerStates }
@@ -70,12 +68,13 @@ module WorldModuleLayer =
         static member private removeLayerState layer world =
             World.layerStateRemover layer world
 
-        static member private publishLayerChange propertyName propertyValue (layer : Layer) world =
+        static member private publishLayerChange propertyName (propertyValue : obj) (layer : Layer) world =
             let world =
+                let changeData = { Name = propertyName; Value = propertyValue }
                 let layerNames = Address.getNames layer.LayerAddress
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; layerNames.[0]; layerNames.[1]|]
                 let eventTrace = EventTrace.record "World" "publishLayerChange" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy { Name = propertyName; Value = propertyValue } changeEventAddress eventTrace layer false world
+                World.publishPlus changeData changeEventAddress eventTrace layer false world
             world
 
         static member private getLayerStateOpt layer world =
@@ -95,59 +94,55 @@ module WorldModuleLayer =
 
         static member private updateLayerStateWithoutEvent updater layer world =
             let layerState = World.getLayerState layer world
-            let layerState = updater layerState
-            World.setLayerState layerState layer world
+            match updater layerState with
+            | Some layerState -> (true, World.setLayerState layerState layer world)
+            | None -> (false, world)
 
         static member private updateLayerState updater propertyName propertyValue layer world =
-            let world = World.updateLayerStateWithoutEvent updater layer world
-            World.publishLayerChange propertyName propertyValue layer world
+            let (changed, world) = World.updateLayerStateWithoutEvent updater layer world
+            if changed
+            then World.publishLayerChange propertyName propertyValue layer world
+            else world
 
         /// Check that a layer exists in the world.
         static member internal getLayerExists layer world =
             Option.isSome (World.getLayerStateOpt layer world)
 
+        static member internal getLayerModelProperty layer world = (World.getLayerState layer world).Model
+        static member internal getLayerModel<'a> layer world = (World.getLayerState layer world).Model.DesignerValue :?> 'a
         static member internal getLayerDispatcher layer world = (World.getLayerState layer world).Dispatcher
-        static member internal getLayerDepth layer world = (World.getLayerState layer world).Depth
-        static member internal setLayerDepth value layer world = World.updateLayerState (fun layerState -> { layerState with Depth = value }) Property? Depth value layer world
         static member internal getLayerVisible layer world = (World.getLayerState layer world).Visible
-        static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> { layerState with Visible = value }) Property? Visible value layer world
+        static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Visible then Some { layerState with Visible = value } else None) Property? Visible value layer world
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
-        static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> { layerState with Persistent = value }) Property? Persistent value layer world
-        static member internal getLayerScriptOpt layer world = (World.getLayerState layer world).ScriptOpt
-        static member internal setLayerScriptOpt value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptOpt = value }) Property? ScriptOpt value layer world
-        static member internal getLayerScript layer world = (World.getLayerState layer world).Script
-        static member internal setLayerScript value layer world =
-            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
-            let world = World.updateLayerState (fun layerState -> { layerState with Script = value }) Property? Script value layer world
-            let world = World.setLayerScriptFrame scriptFrame layer world
-            evalManyWithLogging value scriptFrame layer world |> snd'
-        static member internal getLayerScriptFrame layer world = (World.getLayerState layer world).ScriptFrame
-        static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptFrame = value }) Property? ScriptFrame value layer world
-        static member internal getLayerScriptUnsubscriptions layer world = (World.getLayerState layer world).ScriptUnsubscriptions
-        static member internal setLayerScriptUnsubscriptions value layer world = World.updateLayerState (fun layerState -> { layerState with ScriptUnsubscriptions = value }) Property? ScriptUnsubscriptions value layer world
-        static member internal getLayerOnRegister layer world = (World.getLayerState layer world).OnRegister
-        static member internal setLayerOnRegister value layer world = World.updateLayerState (fun layerState -> { layerState with OnRegister = value }) Property? OnRegister value layer world
-        static member internal getLayerOnUnregister layer world = (World.getLayerState layer world).OnUnregister
-        static member internal setLayerOnUnregister value layer world = World.updateLayerState (fun layerState -> { layerState with OnUnregister = value }) Property? OnUnregister value layer world
-        static member internal getLayerOnUpdate layer world = (World.getLayerState layer world).OnUpdate
-        static member internal setLayerOnUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnUpdate = value }) Property? OnUpdate value layer world
-        static member internal getLayerOnPostUpdate layer world = (World.getLayerState layer world).OnPostUpdate
-        static member internal setLayerOnPostUpdate value layer world = World.updateLayerState (fun layerState -> { layerState with OnPostUpdate = value }) Property? OnPostUpdate value layer world
+        static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Persistent then Some { layerState with Persistent = value } else None) Property? Persistent value layer world
+        static member internal getLayerDestroying (layer : Layer) world = List.exists ((=) (layer :> Simulant)) world.DestructionListRev
         static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
+        static member internal getLayerScriptFrame layer world = (World.getLayerState layer world).ScriptFrame
+        static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> if value <> layerState.ScriptFrame then Some { layerState with ScriptFrame = value } else None) Property? ScriptFrame value layer world
         static member internal getLayerName layer world = (World.getLayerState layer world).Name
         static member internal getLayerId layer world = (World.getLayerState layer world).Id
         
-        static member internal tryGetLayerCalculatedProperty propertyName layer world =
-            let dispatcher = World.getLayerDispatcher layer world
-            dispatcher.TryGetCalculatedProperty (propertyName, layer, world)
+        static member internal setLayerModelProperty (value : DesignerProperty) layer world =
+            World.updateLayerState
+                (fun layerState ->
+                    if value.DesignerValue <> layerState.Model.DesignerValue
+                    then Some { layerState with Model = { layerState.Model with DesignerValue = value.DesignerValue }}
+                    else None)
+                Property? Model value.DesignerValue layer world
+
+        static member internal setLayerModel<'a> (value : 'a) layer world =
+            World.updateLayerState
+                (fun layerState ->
+                    let valueObj = value :> obj
+                    if valueObj <> layerState.Model.DesignerValue
+                    then Some { layerState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
+                    else None)
+                Property? Model value layer world
 
         static member internal tryGetLayerProperty propertyName layer world =
             if World.getLayerExists layer world then
                 match Getters.TryGetValue propertyName with
-                | (false, _) ->
-                    match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
-                    | None -> World.tryGetLayerCalculatedProperty propertyName layer world
-                    | Some _ as propertyOpt -> propertyOpt
+                | (false, _) -> LayerState.tryGetProperty propertyName (World.getLayerState layer world)
                 | (true, getter) -> Some (getter layer world)
             else None
 
@@ -155,89 +150,76 @@ module WorldModuleLayer =
             match Getters.TryGetValue propertyName with
             | (false, _) ->
                 match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
-                | None ->
-                    match World.tryGetLayerCalculatedProperty propertyName layer world with
-                    | None -> failwithf "Could not find property '%s'." propertyName
-                    | Some property -> property
+                | None -> failwithf "Could not find property '%s'." propertyName
                 | Some property -> property
             | (true, getter) -> getter layer world
 
         static member internal trySetLayerProperty propertyName property layer world =
             if World.getLayerExists layer world then
                 match Setters.TryGetValue propertyName with
+                | (true, setter) -> setter property layer world
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
                     let world =
-                        World.updateLayerState (fun layerState ->
-                            let (successInner, layerState) = LayerState.trySetProperty propertyName property layerState
-                            success <- successInner
-                            layerState)
+                        World.updateLayerState
+                            (fun layerState ->
+                                match LayerState.tryGetProperty propertyName layerState with
+                                | Some propertyOld ->
+                                    if property.PropertyValue <> propertyOld.PropertyValue then
+                                        let (successInner, gameState) = LayerState.trySetProperty propertyName property layerState
+                                        success <- successInner
+                                        Some gameState
+                                    else None
+                                | None -> None)
                             propertyName property.PropertyValue layer world
                     (success, world)
-                | (true, setter) -> setter property layer world
             else (false, world)
 
         static member internal setLayerProperty propertyName property layer world =
             if World.getLayerExists layer world then
                 match Setters.TryGetValue propertyName with
-                | (false, _) ->
-                    World.updateLayerState
-                        (LayerState.setProperty propertyName property)
-                        propertyName property.PropertyValue layer world
                 | (true, setter) ->
                     match setter property layer world with
                     | (true, world) -> world
                     | (false, _) -> failwith ("Cannot change layer property " + propertyName + ".")
+                | (false, _) ->
+                    World.updateLayerState
+                        (fun layerState ->
+                            let propertyOld = LayerState.getProperty propertyName layerState
+                            if property.PropertyValue <> propertyOld.PropertyValue
+                            then Some (LayerState.setProperty propertyName property layerState)
+                            else None)
+                        propertyName property.PropertyValue layer world
             else world
 
         static member internal attachLayerProperty propertyName property layer world =
-            if World.getLayerExists layer world
-            then World.updateLayerState (LayerState.attachProperty propertyName property) propertyName property.PropertyValue layer world
+            if World.getLayerExists layer world then
+                World.updateLayerState
+                    (fun layerState -> Some (LayerState.attachProperty propertyName property layerState))
+                    propertyName property.PropertyValue layer world
             else failwith ("Cannot attach layer property '" + propertyName + "'; layer '" + layer.Name + "' is not found.")
 
         static member internal detachLayerProperty propertyName layer world =
-            if World.getLayerExists layer world
-            then World.updateLayerStateWithoutEvent (LayerState.detachProperty propertyName) layer world
+            if World.getLayerExists layer world then
+                World.updateLayerStateWithoutEvent
+                    (fun layerState -> Some (LayerState.detachProperty propertyName layerState))
+                    layer world |>
+                snd
             else failwith ("Cannot detach layer property '" + propertyName + "'; layer '" + layer.Name + "' is not found.")
 
-        static member private layerOnRegisterChanged evt world =
-            let layer = evt.Subscriber : Layer
-            let world = World.unregisterLayer layer world
-            World.registerLayer layer world
-
-        static member private layerScriptOptChanged evt world =
-            let layer = evt.Subscriber : Layer
-            match World.getLayerScriptOpt layer world with
-            | Some script ->
-                let symbolLoadMetadata = { ImplicitDelimiters = true; StripCsvHeader = false }
-                match World.assetTagToValueOpt<Scripting.Expr array> script symbolLoadMetadata world with
-                | Some script -> World.setLayerScript script layer world
-                | None -> world
-            | None -> world
-
         static member internal registerLayer layer world =
-            let world = World.monitor World.layerOnRegisterChanged (rtoa<ChangeData> [|"Change"; (Property? OnRegister); "Event"|] --> layer) layer world
-            let world = World.monitor World.layerScriptOptChanged (rtoa<ChangeData> [|"Change"; (Property? ScriptOpt); "Event"|] --> layer) layer world
-            World.withEventContext (fun world ->
-                let dispatcher = World.getLayerDispatcher layer world
-                let world = dispatcher.Register (layer, world)
-                let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
-                let world = World.publish () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer world
-                eval (World.getLayerOnRegister layer world) (World.getLayerScriptFrame layer world) layer world |> snd')
-                layer
-                world
+            let dispatcher = World.getLayerDispatcher layer world
+            let world = dispatcher.Register (layer, world)
+            let eventTrace = EventTrace.record "World" "registerLayer" EventTrace.empty
+            World.publishPlus () (rtoa<unit> [|"Register"; "Event"|] --> layer) eventTrace layer true world
 
         static member internal unregisterLayer layer world =
-            World.withEventContext (fun world ->
-                let world = eval (World.getLayerOnUnregister layer world) (World.getLayerScriptFrame layer world) layer world |> snd'
-                let dispatcher = World.getLayerDispatcher layer world
-                let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
-                let world = World.publish () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer world
-                dispatcher.Unregister (layer, world))
-                layer
-                world
+            let dispatcher = World.getLayerDispatcher layer world
+            let eventTrace = EventTrace.record "World" "unregisteringLayer" EventTrace.empty
+            let world = World.publishPlus () (rtoa<unit> [|"Unregistering"; "Event"|] --> layer) eventTrace layer true world
+            dispatcher.Unregister (layer, world)
 
-        static member private addLayer mayReplace layerState layer world =
+        static member internal addLayer mayReplace layerState layer world =
             let isNew = not (World.getLayerExists layer world)
             if isNew || mayReplace then
                 let world = World.addLayerState layerState layer world
@@ -251,28 +233,6 @@ module WorldModuleLayer =
                 World.removeLayerState layer world
             else world
 
-        /// Create a layer and add it to the world.
-        [<FunctionBinding "createLayer">]
-        static member createLayer4 dispatcherName nameOpt (screen : Screen) world =
-            let dispatchers = World.getLayerDispatchers world
-            let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
-                | Some dispatcher -> dispatcher
-                | None -> failwith ("Could not find a LayerDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
-            let layerState = LayerState.make nameOpt dispatcher
-            let layerState = Reflection.attachProperties LayerState.copy layerState.Dispatcher layerState world
-            let layer = Layer (screen.ScreenAddress <-- ntoa<Layer> layerState.Name)
-            let world =
-                if World.getLayerExists layer world then
-                    Log.debug "Scheduling layer creation assuming existing layer at the same address is being destroyed."
-                    World.schedule2 (World.addLayer false layerState layer) world
-                else World.addLayer false layerState layer world
-            (layer, world)
-
-        /// Create a layer and add it to the world.
-        static member createLayer<'d when 'd :> LayerDispatcher> nameOpt screen world =
-            World.createLayer4 typeof<'d>.Name nameOpt screen world
-
         static member internal writeLayer4 writeEntities layer layerDescriptor world =
             let layerState = World.getLayerState layer world
             let layerDispatcherName = getTypeName layerState.Dispatcher
@@ -283,7 +243,7 @@ module WorldModuleLayer =
 
         static member internal readLayer5 readEntities layerDescriptor nameOpt (screen : Screen) world =
 
-            // create the dispatcher
+            // make the dispatcher
             let dispatcherName = layerDescriptor.LayerDispatcherName
             let dispatchers = World.getLayerDispatchers world
             let dispatcher =
@@ -322,17 +282,11 @@ module WorldModuleLayer =
     /// Initialize property getters.
     let private initGetters () =
         Getters.Add ("Dispatcher", fun layer world -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcher layer world })
-        Getters.Add ("Depth", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerDepth layer world })
+        Getters.Add ("Model", fun layer world -> let designerProperty = World.getLayerModelProperty layer world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         Getters.Add ("Visible", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world })
         Getters.Add ("Persistent", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world })
-        Getters.Add ("ScriptOpt", fun layer world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getLayerScriptOpt layer world })
-        Getters.Add ("Script", fun layer world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getLayerScript layer world })
-        Getters.Add ("ScriptFrame", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScript layer world })
-        Getters.Add ("ScriptUnsubscriptions", fun layer world -> { PropertyType = typeof<Unsubscription list>; PropertyValue = World.getLayerScriptUnsubscriptions layer world })
-        Getters.Add ("OnRegister", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnRegister layer world })
-        Getters.Add ("OnUnregister", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUnregister layer world })
-        Getters.Add ("OnUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnUpdate layer world })
-        Getters.Add ("OnPostUpdate", fun layer world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getLayerOnPostUpdate layer world })
+        Getters.Add ("Destroying", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerDestroying layer world })
+        Getters.Add ("ScriptFrame", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScriptFrame layer world })
         Getters.Add ("CreationTimeStamp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStamp layer world })
         Getters.Add ("Name", fun layer world -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world })
         Getters.Add ("Id", fun layer world -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world })
@@ -340,17 +294,9 @@ module WorldModuleLayer =
     /// Initialize property setters.
     let private initSetters () =
         Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
-        Setters.Add ("Depth", fun property layer world -> (true, World.setLayerDepth (property.PropertyValue :?> single) layer world))
+        Setters.Add ("Model", fun property layer world -> (true, World.setLayerModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } layer world))
         Setters.Add ("Visible", fun property layer world -> (true, World.setLayerVisible (property.PropertyValue :?> bool) layer world))
         Setters.Add ("Persistent", fun property layer world -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world))
-        Setters.Add ("ScriptOpt", fun property layer world -> (true, World.setLayerScriptOpt (property.PropertyValue :?> Symbol AssetTag option) layer world))
-        Setters.Add ("Script", fun property layer world -> (true, World.setLayerScript (property.PropertyValue :?> Scripting.Expr array) layer world))
-        Setters.Add ("ScriptFrame", fun _ _ world -> (false, world))
-        Setters.Add ("ScriptUnsubscriptions", fun property layer world -> (true, World.setLayerScriptUnsubscriptions (property.PropertyValue :?> Unsubscription list) layer world))
-        Setters.Add ("OnRegister", fun property layer world -> (true, World.setLayerOnRegister (property.PropertyValue :?> Scripting.Expr) layer world))
-        Setters.Add ("OnUnregister", fun property layer world -> (true, World.setLayerOnUnregister (property.PropertyValue :?> Scripting.Expr) layer world))
-        Setters.Add ("OnUpdate", fun property layer world -> (true, World.setLayerOnUpdate (property.PropertyValue :?> Scripting.Expr) layer world))
-        Setters.Add ("OnPostUpdate", fun property layer world -> (true, World.setLayerOnPostUpdate (property.PropertyValue :?> Scripting.Expr) layer world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
         Setters.Add ("Name", fun _ _ world -> (false, world))
         Setters.Add ("Id", fun _ _ world -> (false, world))

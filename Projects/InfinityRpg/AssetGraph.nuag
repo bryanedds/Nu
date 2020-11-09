@@ -17,7 +17,8 @@
    [Assets Assets/Gameplay ogg [Audio] []]
    [Assets Assets/Gameplay nulyr [] []]]]
  [Gui
-  [[Assets Assets/Gui psd [Render] [PsdToPng Retro]]
+  [[Asset Font "Assets/Gui/Manaspc.032.ttf" [Render] []]
+   [Assets Assets/Gui psd [Render] [PsdToPng Retro]]
    [Assets Assets/Gui png [Render] [Retro]]
    [Assets Assets/Gui wav [Audio] []]
    [Assets Assets/Gui ogg [Audio] []]

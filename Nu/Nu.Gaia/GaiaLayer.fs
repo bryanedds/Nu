@@ -1,5 +1,5 @@
 ﻿// Gaia - The Nu Game Engine editor.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu.Gaia
 open System
@@ -16,23 +16,24 @@ type [<TypeDescriptionProvider (typeof<LayerTypeDescriptorProvider>)>] LayerType
     { DescribedLayer : Layer
       Form : GaiaForm }
 
-and LayerPropertyDescriptor (property, attributes) =
-    inherit System.ComponentModel.PropertyDescriptor (
-        (match property with LayerPropertyDescriptor xfd -> xfd.PropertyName | LayerPropertyInfo pi -> pi.Name),
-        attributes)
+and LayerPropertyDescriptor (propertyDescriptor, attributes) =
+    inherit System.ComponentModel.PropertyDescriptor (propertyDescriptor.PropertyName, attributes)
 
-    let propertyName = match property with LayerPropertyDescriptor pd -> pd.PropertyName | LayerPropertyInfo pi -> pi.Name
-    let propertyType = match property with LayerPropertyDescriptor pd -> pd.PropertyType | LayerPropertyInfo pi -> pi.PropertyType
-    let propertyCanWrite = match property with LayerPropertyDescriptor _ -> true | LayerPropertyInfo xfd -> xfd.CanWrite
+    let propertyName =
+        propertyDescriptor.PropertyName
+
+    let propertyType =
+        propertyDescriptor.PropertyType
+
+    let propertyCanWrite =
+        true
 
     override this.Category =
-        // HACK: all of this stuff is a hack until we can get user-defined attributes on simulant properties!
-        // HACK: in order to put the Events as the last category, I start all the other categories with an unprinted
+        // HACK: in order to put Scripts as the last category, I start all the other categories with an unprinted
         // \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
-        if propertyName.Length > 2 && propertyName.StartsWith "On" && Char.IsUpper propertyName.[2] then "Events"
+        if propertyName.EndsWith "Script" then "Scripts"
         elif propertyName = "Name" then "\rAmbient Properties"
         elif propertyName = "Persistent" || propertyName = "Script" || propertyName = "ScriptOpt" || propertyName = "Depth" || propertyName = "Visible" then "\rScene Properties"
-        elif propertyType = typeof<DesignerProperty> then "\rDesigner Properties"
         else "\rXtension Properties"
 
     override this.Description =
@@ -47,14 +48,7 @@ and LayerPropertyDescriptor (property, attributes) =
 
     override this.IsReadOnly =
         not propertyCanWrite ||
-        not (Reflection.isPropertyPersistentByName propertyName)
-
-    override this.GetValue source =
-        match source with
-        | null -> null // WHY THE FUCK IS THIS EVER null???
-        | source ->
-            let layerTds = source :?> LayerTypeDescriptorSource
-            LayerPropertyValue.getValue property layerTds.DescribedLayer Globals.World
+        Reflection.isPropertyNonPersistentByName propertyName
 
     override this.SetValue (source, value) =
         Globals.WorldChangers.Add $ fun world ->
@@ -93,10 +87,19 @@ and LayerPropertyDescriptor (property, attributes) =
                              MessageBoxButtons.OK) |>
                             ignore
                         world
-                    | _ -> LayerPropertyValue.setValue property value layer world
+                    | _ ->
+                        let (_, world) = PropertyDescriptor.trySetValue true propertyDescriptor value layer world
+                        world
                 Globals.World <- world // must be set for property grid
                 layerTds.Form.layerPropertyGrid.Refresh ()
                 world
+
+    override this.GetValue source =
+        match source with
+        | null -> null // WHY THE FUCK IS THIS EVER null???
+        | source ->
+            let layerTds = source :?> LayerTypeDescriptorSource
+            PropertyDescriptor.tryGetValue propertyDescriptor layerTds.DescribedLayer Globals.World |> Option.get
 
 and LayerTypeDescriptor (sourceOpt : obj) =
     inherit CustomTypeDescriptor ()
@@ -104,10 +107,10 @@ and LayerTypeDescriptor (sourceOpt : obj) =
     override this.GetProperties () =
         let contextOpt =
             match sourceOpt with
-            | :? LayerTypeDescriptorSource as source -> Some (source.DescribedLayer, Globals.World)
+            | :? LayerTypeDescriptorSource as source -> Some (source.DescribedLayer :> Simulant, Globals.World)
             | _ -> None
         let makePropertyDescriptor = fun (epv, tcas) -> (LayerPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
-        let propertyDescriptors = LayerPropertyValue.getPropertyDescriptors makePropertyDescriptor contextOpt
+        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<LayerState> makePropertyDescriptor contextOpt
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
     override this.GetProperties _ =

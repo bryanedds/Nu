@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
@@ -8,7 +8,7 @@ open Prime
 open Nu
 
 /// Describes a mouse button.
-type MouseButton =
+type [<StructuralEquality; StructuralComparison>] MouseButton =
     | MouseLeft
     | MouseCenter
     | MouseRight
@@ -54,35 +54,35 @@ module MouseState =
     /// Get the position of the mouse in floating-point coordinates.
     let getPositionF world =
         let mousePosition = getPosition world
-        Vector2 (single mousePosition.X, single mousePosition.Y)
+        v2 (single mousePosition.X) (single mousePosition.Y)
 
 [<RequireQualifiedAccess>]
 module KeyboardState =
 
     /// Check that the given keyboard key is down.
-    let isKeyDown scanCode =
+    let isKeyDown (key : KeyboardKey) =
         let keyboardStatePtr = fst (SDL.SDL_GetKeyboardState ())
         let keyboardStatePtr = NativeInterop.NativePtr.ofNativeInt keyboardStatePtr
-        let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr scanCode
+        let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr (int key)
         state = byte 1
 
     /// Check that either ctrl key is down.
     let isCtrlDown () =
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LCTRL) ||
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RCTRL)
+        isKeyDown KeyboardKey.Lctrl ||
+        isKeyDown KeyboardKey.Rctrl
 
     /// Check that either alt key is down.
     let isAltDown () =
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LALT) ||
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RALT)
+        isKeyDown KeyboardKey.Lalt ||
+        isKeyDown KeyboardKey.Ralt
 
     /// Check that either shift key is down.
     let isShiftDown () =
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_LSHIFT) ||
-        isKeyDown (int SDL.SDL_Scancode.SDL_SCANCODE_RSHIFT)
+        isKeyDown KeyboardKey.Lshift ||
+        isKeyDown KeyboardKey.Rshift
 
 /// Describes a gamepad direction.
-type GamepadDirection =
+type [<StructuralEquality; StructuralComparison>] GamepadDirection =
     | DirectionUp
     | DirectionUpLeft
     | DirectionLeft
@@ -94,7 +94,7 @@ type GamepadDirection =
     | DirectionCentered
 
 /// Describes a gamepad button.
-type GamepadButton =
+type [<StructuralEquality; StructuralComparison>] GamepadButton =
     | ButtonA
     | ButtonB
     | ButtonX

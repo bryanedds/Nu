@@ -1,71 +1,91 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
-open System.Collections.Generic
 open Prime
 open Nu
 
 [<AutoOpen; ModuleBinding>]
-module WorldAudioModule =
-
-    /// The subsystem for the world's audio player.
-    type [<ReferenceEquality>] AudioPlayerSubsystem =
-        private
-            { AudioPlayer : AudioPlayer }
-    
-        interface World Subsystem with
-            
-            member this.PopMessages () =
-                (this.AudioPlayer.PopMessages () :> obj, this :> World Subsystem)
-            
-            member this.ClearMessages () =
-                AudioPlayer.clearMessages this.AudioPlayer
-                this :> World Subsystem
-            
-            member this.EnqueueMessage message =
-                AudioPlayer.enqueueMessage (message :?> AudioMessage) this.AudioPlayer
-                this :> World Subsystem
-            
-            member this.ProcessMessages messages _ =
-                let messages = messages :?> AudioMessage List
-                AudioPlayer.play messages this.AudioPlayer :> obj
-            
-            member this.ApplyResult (_, world) =
-                world
-            
-            member this.CleanUp world =
-                (this :> World Subsystem, world)
-
-        static member make audioPlayer =
-            { AudioPlayer = audioPlayer }
+module WorldAudio =
 
     type World with
 
         static member internal getAudioPlayer world =
-            world.Subsystems.AudioPlayer :?> AudioPlayerSubsystem
+            world.Subsystems.AudioPlayer
 
         static member internal setAudioPlayer audioPlayer world =
             World.updateSubsystems (fun subsystems -> { subsystems with AudioPlayer = audioPlayer }) world
 
         static member internal updateAudioPlayer updater world =
-            World.setAudioPlayer (updater (World.getAudioPlayer world :> World Subsystem)) world
+            World.setAudioPlayer (updater (World.getAudioPlayer world)) world
 
         /// Enqueue an audio message to the world.
         static member enqueueAudioMessage (message : AudioMessage) world =
-            World.updateAudioPlayer (fun renderer -> Subsystem.enqueueMessage message renderer) world
+            AudioPlayer.enqueueMessage message world.Subsystems.AudioPlayer
+            world
+
+        /// Enqueue multiple audio messages to the world.
+        static member enqueueAudioMessages (messages : AudioMessage seq) world =
+            let audioPlayer = World.getAudioPlayer world
+            for message in messages do AudioPlayer.enqueueMessage message audioPlayer
+            world
+
+        /// Send a message to the audio system to play a song.
+        [<FunctionBinding>]
+        static member getCurrentSongOpt world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.CurrentSongOpt
+
+        /// Get the master volume.
+        [<FunctionBinding>]
+        static member getMasterAudioVolume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterAudioVolume
+
+        /// Get the master sound volume.
+        [<FunctionBinding>]
+        static member getMasterSoundVolume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterSoundVolume
+
+        /// Get the master song volume.
+        [<FunctionBinding>]
+        static member getMasterSongVolume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterSongVolume
+
+        /// Set the master volume.
+        [<FunctionBinding>]
+        static member setMasterAudioVolume volume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterAudioVolume <- volume
+            world
+
+        /// Set the master sound volume.
+        [<FunctionBinding>]
+        static member setMasterSoundVolume volume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterSoundVolume <- volume
+            world
+
+        /// Set the master song volume.
+        [<FunctionBinding>]
+        static member setMasterSongVolume volume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.MasterSongVolume <- volume
+            world
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]
         static member playSong timeToFadeOutSongMs volume song world =
-            let playSongMessage = PlaySongMessage { TimeToFadeOutSongMs = timeToFadeOutSongMs; Volume = volume; Song = song }
+            let playSongMessage = PlaySongMessage { FadeOutMs = timeToFadeOutSongMs; Volume = volume; Song = song }
             World.enqueueAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding "playSong4">]
         static member playSong5 timeToFadeOutSongMs volume songPackageName songAssetName world =
-            let song = AssetTag.make<Audio> songPackageName songAssetName
+            let song = AssetTag.make<Song> songPackageName songAssetName
             World.playSong timeToFadeOutSongMs volume song world
 
         /// Send a message to the audio system to play a sound.
@@ -77,7 +97,7 @@ module WorldAudioModule =
         /// Send a message to the audio system to play a sound.
         [<FunctionBinding "playSound3">]
         static member playSound4 volume soundPackageName soundAssetName world =
-            let sound = AssetTag.make<Audio> soundPackageName soundAssetName
+            let sound = AssetTag.make<Sound> soundPackageName soundAssetName
             World.playSound volume sound world
 
         /// Send a message to the audio system to fade out any current song.
@@ -110,6 +130,3 @@ module WorldAudioModule =
         static member reloadAudioAssets world =
             let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
             World.enqueueAudioMessage reloadAudioAssetsMessage world
-
-/// The subsystem for the world's audio player.
-type AudioPlayerSubsystem = WorldAudioModule.AudioPlayerSubsystem

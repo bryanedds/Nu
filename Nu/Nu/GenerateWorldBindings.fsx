@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 #I __SOURCE_DIRECTORY__
 #load "Interactive.fsx"
@@ -7,7 +7,7 @@ open System
 open System.IO
 open System.Reflection
 open Prime
-open global.Nu
+open Nu
 
 type ParameterConversionDetails =
     | NormalParameter of Type
@@ -39,7 +39,7 @@ type FunctionBinding =
       FunctionReturn : ReturnConversion }
 
 let getExtrinsicKeywords () =
-    "v2 v4 v2i get getAsStream set setAsStream update streamEvent stream equate " +
+    "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind " +
     "self parent grandparent game toData monitor"
 
 let getParameterConversion (ty : Type) =
@@ -108,7 +108,7 @@ let tryGenerateBinding (method : MethodInfo) =
               FunctionReturn = returnConversion }
     | None -> None
 
-let generateParameterList (functionParameters : (string * ParameterConversion) array)=
+let generateParameterList (functionParameters : (string * ParameterConversion) array) =
     let parNames = Array.map fst functionParameters
     String.Join (" ", parNames)
 
@@ -283,6 +283,9 @@ let generateBindingFunction' binding =
         binding.FunctionParameters |>
         Array.filter (function (_, WorldParameter) -> false | _ -> true) |>
         Array.map fst
+
+    let argsStr =
+        if args.Length <> 0 then String.Join (" ", args) + " " else ""
     
     let argArray = "[|" + String.Join ("; ", args) + "|]"
     
@@ -291,7 +294,7 @@ let generateBindingFunction' binding =
     "        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with\n" +
     "        | None ->\n" +
     "            match evaleds with\n" +
-    "            | " + argArray + " -> " + binding.FunctionBindingName + " " + String.Join (" ", args) + " world\n" +
+    "            | " + argArray + " -> " + binding.FunctionBindingName + " " + argsStr + "world\n" +
     "            | _ ->\n" +
     "                let violation = Scripting.Violation ([\"InvalidBindingInvocation\"], \"Incorrect number of arguments for binding '\" + fnName + \"' at:\\n\" + SymbolOrigin.tryPrint originOpt, None)\n" +
     "                struct (violation, world)\n" +
@@ -300,8 +303,8 @@ let generateBindingFunction' binding =
 let generateTryGetBinding () =
     "    let tryGetBinding fnName =\n" +
     "        match WorldScripting.Bindings.TryGetValue fnName with\n" +
-    "        | (true, binding) -> FOption.some binding\n" +
-    "        | (false, _) -> FOption.none ()\n"
+    "        | (true, binding) -> Some binding\n" +
+    "        | (false, _) -> None\n"
 
 let generateInitBindings bindings =
 
@@ -343,7 +346,7 @@ let generateBindingsCode bindings =
 
     let header =
         "// Nu Game Engine.\n" +
-        "// Copyright (C) Bryan Edds, 2013-2018.\n" +
+        "// Copyright (C) Bryan Edds, 2013-2020.\n" +
         "\n" +
         "//*********************************************************************************************//\n" +
         "//                                                                                             //\n" +
@@ -353,8 +356,9 @@ let generateBindingsCode bindings =
         "\n" +
         "namespace Nu\n" +
         "open System\n" +
+        "open System.Numerics\n" +
         "open Prime\n" +
-        "open global.Nu\n" +
+        "open Nu\n" +
         "\n" +
         "[<RequireQualifiedAccess>]\n" +
         "module WorldBindings =\n" +
@@ -390,16 +394,16 @@ let types =
     AppDomain.CurrentDomain.GetAssemblies () |>
     Array.filter (fun asm -> (asm.GetName ()).Name = "Nu") |>
     Array.head |>
-    fun asm -> asm.GetTypes () |> Array.filter (fun ty -> isNotNull (ty.GetCustomAttribute<ModuleBindingAttribute> ()))
+    fun asm -> asm.GetTypes () |> Array.filter (fun ty -> notNull (ty.GetCustomAttribute<ModuleBindingAttribute> ()))
 
 let bindings =
     types |>
     Array.map (fun (ty : Type) -> ty.GetMethods ()) |>
     Array.concat |>
-    Array.filter (fun mi -> isNotNull (mi.GetCustomAttribute<FunctionBindingAttribute> ())) |>
+    Array.filter (fun mi -> notNull (mi.GetCustomAttribute<FunctionBindingAttribute> ())) |>
     Array.map tryGenerateBinding |>
     Array.definitize // TODO: error output
 
-let code =
+do
     generateBindingsCode bindings |>
     fun code -> File.WriteAllText ("../../WorldBindings.fs", code)

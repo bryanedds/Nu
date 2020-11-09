@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
@@ -8,54 +8,28 @@ open Prime
 open Nu
 
 [<AutoOpen; ModuleBinding>]
-module WorldRenderModule =
-
-    /// The subsystem for the world's renderer.
-    type [<ReferenceEquality>] RendererSubsystem =
-        private
-            { Renderer : Renderer }
-    
-        interface World Subsystem with
-            
-            member this.PopMessages () =
-                (this.Renderer.PopMessages () :> obj, this :> World Subsystem)
-            
-            member this.ClearMessages () =
-                Renderer.clearMessages this.Renderer
-                this :> World Subsystem
-            
-            member this.EnqueueMessage message =
-                Renderer.enqueueMessage (message :?> RenderMessage) this.Renderer
-                this :> World Subsystem
-            
-            member this.ProcessMessages messages world =
-                let messages = messages :?> RenderMessage List
-                Renderer.render (World.getEyeCenter world) (World.getEyeSize world) messages this.Renderer :> obj
-
-            member this.ApplyResult (_, world) =
-                world
-            
-            member this.CleanUp world =
-                let this = { this with Renderer = Renderer.cleanUp this.Renderer }
-                (this :> World Subsystem, world)
-
-        static member make renderer =
-            { Renderer = renderer }
+module WorldRender =
 
     type World with
 
         static member internal getRenderer world =
-            world.Subsystems.Renderer :?> RendererSubsystem
+            world.Subsystems.Renderer
 
         static member internal setRenderer renderer world =
             World.updateSubsystems (fun subsystems -> { subsystems with Renderer = renderer }) world
 
         static member internal updateRenderer updater world =
-            World.setRenderer (updater (World.getRenderer world :> World Subsystem)) world
+            World.setRenderer (updater (World.getRenderer world)) world
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage (message : RenderMessage) world =
-            (World.getRenderer world).Renderer.EnqueueMessage message
+            Renderer.enqueueMessage message world.Subsystems.Renderer
+            world
+
+        /// Enqueue multiple rendering messages to the world.
+        static member enqueueRenderMessages (messages : RenderMessage seq) world =
+            let renderer = World.getRenderer world
+            for message in messages do Renderer.enqueueMessage message renderer
             world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be
@@ -77,6 +51,3 @@ module WorldRenderModule =
         static member reloadRenderAssets world =
             let reloadRenderAssetsMessage = ReloadRenderAssetsMessage
             World.enqueueRenderMessage reloadRenderAssetsMessage world
-
-/// The subsystem for the world's renderer.
-type RendererSubsystem = WorldRenderModule.RendererSubsystem
