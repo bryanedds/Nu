@@ -192,6 +192,8 @@ type BattleType =
     | DebugBattle
     | CaveBattle
     | CaveBattle2
+    | CaveBattle3
+    | CaveBattle4
 
 type EncounterType =
     | DebugEncounter
@@ -231,7 +233,8 @@ type AllyType =
     | Glenn
 
 type EnemyType =
-    | Goblin
+    | BlueGoblin
+    | PoisonGoblin
 
 type CharacterType =
     | Ally of AllyType
