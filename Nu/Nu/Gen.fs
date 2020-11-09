@@ -28,7 +28,7 @@ module Gen =
         static member random2 minValue maxValue =
             lock Lock (fun () -> Random.Next (minValue, maxValue))
 
-        /// Get the next random number single.
+        /// Get the next random single >= 0.0f and < 1.0f.
         static member randomf =
             lock Lock (fun () -> single (Random.NextDouble ()))
 

@@ -1554,7 +1554,15 @@ namespace Nu
 
         public Vector2i Bottom { get { return new Vector2i(X + Size.X / 2, Y); } }
 
+        public Vector2i BottomLeft { get { return new Vector2i(X, Y); } }
+
+        public Vector2i BottomRight { get { return new Vector2i(X + Z, Y); } }
+
         public Vector2i Top { get { return new Vector2i(X + Size.X / 2, Y + Size.Y); } }
+
+        public Vector2i TopLeft { get { return new Vector2i(X, Y + W); } }
+
+        public Vector2i TopRight { get { return new Vector2i(X + Z, Y + W); } }
 
         public Vector2i Left { get { return new Vector2i(X, Y + Size.Y / 2); } }
 

@@ -475,9 +475,37 @@ module FieldData =
         let props = getProps omniSeedState fieldData world
         List.filter (fun prop -> match prop.PropData with Portal _ -> true | _ -> false) props
 
-    let tryGetPortal portalType omniSeedState fieldData world =
+    let tryGetPortal omniSeedState portalType fieldData world =
         let portals = getPortals omniSeedState fieldData world
         List.tryFind (fun prop -> match prop.PropData with Portal (portalType2, _, _, _, _) -> portalType2 = portalType | _ -> failwithumf ()) portals
+
+    let tryGetBattleType omniSeedState avatarPosition (battleTypes : BattleType list) fieldData world =
+        match tryGetTileMap omniSeedState fieldData world with
+        | Some tmxTileMap ->
+            match fieldData.FieldTileMap with
+            | FieldRandom (_, _, origin, _) ->
+                let tileMapBounds = v4Bounds v2Zero (v2 (single tmxTileMap.Width * single tmxTileMap.TileWidth) (single tmxTileMap.Height * single tmxTileMap.TileHeight))
+                let distanceFromOriginMax = let delta = tileMapBounds.TopRight - tileMapBounds.Center in delta.Length ()
+                let distanceFromOrigin =
+                    match origin with
+                    | OriginC -> let delta = avatarPosition - tileMapBounds.Center in delta.Length ()
+                    | OriginN -> let delta = avatarPosition - tileMapBounds.Top in delta.Length ()
+                    | OriginE -> let delta = avatarPosition - tileMapBounds.Right in delta.Length ()
+                    | OriginS -> let delta = avatarPosition - tileMapBounds.Bottom in delta.Length ()
+                    | OriginW -> let delta = avatarPosition - tileMapBounds.Left in delta.Length ()
+                    | OriginNE -> let delta = avatarPosition - tileMapBounds.TopRight in delta.Length ()
+                    | OriginNW -> let delta = avatarPosition - tileMapBounds.TopLeft in delta.Length ()
+                    | OriginSE -> let delta = avatarPosition - tileMapBounds.BottomRight in delta.Length ()
+                    | OriginSW -> let delta = avatarPosition - tileMapBounds.BottomLeft in delta.Length ()
+                let battleTypes = battleTypes
+                let battleTypesLength = List.length battleTypes
+                let battleIndex = int (single battleTypesLength / distanceFromOriginMax * distanceFromOrigin)
+                let battleIndex = if Gen.randomf > 0.5f then inc battleIndex else battleIndex
+                if battleIndex >= 0 && battleIndex < battleTypesLength
+                then Some battleTypes.[battleIndex]
+                else List.tryItem (dec battleTypesLength) battleTypes
+            | FieldStatic _ -> Gen.randomItem battleTypes
+        | None -> None
 
 type [<NoComparison>] EnemyData =
     { EnemyType : EnemyType // key
