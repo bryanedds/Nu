@@ -485,7 +485,7 @@ module FieldData =
             match fieldData.FieldTileMap with
             | FieldRandom (_, _, origin, _) ->
                 let tileMapBounds = v4Bounds v2Zero (v2 (single tmxTileMap.Width * single tmxTileMap.TileWidth) (single tmxTileMap.Height * single tmxTileMap.TileHeight))
-                let distanceFromOriginMax = let delta = tileMapBounds.TopRight - tileMapBounds.Center in delta.Length ()
+                let distanceFromOriginMax = let delta = tileMapBounds.Bottom - tileMapBounds.Top in delta.Length ()
                 let distanceFromOrigin =
                     match origin with
                     | OriginC -> let delta = avatarPosition - tileMapBounds.Center in delta.Length ()
