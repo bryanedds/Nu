@@ -166,10 +166,10 @@ type MapRand =
             | OriginE ->        (bounds.Right - v2iRight,           [3; 3; 0; 2])
             | OriginS ->        (bounds.Top - v2iUp,                [0; 0; 1; 3])
             | OriginW ->        (bounds.Left,                       [1; 1; 0; 2])
-            | OriginNE ->       (v2i (dec bounds.Z) bounds.Y,       [0; 1; 2; 3])
-            | OriginNW ->       (v2i bounds.X bounds.Y,             [0; 1; 2; 3])
-            | OriginSE ->       (v2i (dec bounds.Z) (dec bounds.W), [0; 1; 2; 3])
-            | OriginSW ->       (v2i bounds.X (dec bounds.W),       [0; 1; 2; 3])
+            | OriginNE ->       (v2i (dec bounds.Z) bounds.Y,       [2; 2; 3; 3])
+            | OriginNW ->       (v2i bounds.X bounds.Y,             [2; 2; 1; 1])
+            | OriginSE ->       (v2i (dec bounds.Z) (dec bounds.W), [0; 0; 3; 3])
+            | OriginSW ->       (v2i bounds.X (dec bounds.W),       [0; 0; 1; 1])
         let (maps, rand) =
             List.fold (fun (maps, rand) bias ->
                 let map = { MapRand.make size with MapOriginOpt = Some cursor }
@@ -226,9 +226,9 @@ type MapRand =
         object.Properties.Add ("I", openingInfo)
         objects.[0] <- object
 
-        MapRand.printn map
 
         // add objects from segments
+        //MapRand.printn map
         for i in 0 .. 7 - 1 do
             for j in 0 .. 7 - 1 do
                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
@@ -239,9 +239,9 @@ type MapRand =
                             let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
                             let object = TmxMap.makeObject objectRef.Id 0 x y objectRef.Width objectRef.Height
                             for propertyKvp in objectRef.Properties do object.Properties.Add (propertyKvp.Key, propertyKvp.Value)
-                            printf "((%i, %i)[%f %f])" i j x y
+                            //printf "((%i, %i)[%f %f])" i j x y
                             objects.Add object
-                        printfn ""
+                        //printfn ""
                 | None -> ()
 
         // add tiles from segments
