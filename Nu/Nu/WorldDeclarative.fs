@@ -169,34 +169,38 @@ module WorldDeclarative =
 
     type World with
 
-        static member internal synchronizeSimulants tracking mapper monitorMapper origin owner parent current previous world =
+        static member internal removeSynchronizedSimulants removed world =
+            Seq.fold (fun world guidAndContent ->
+                let (guid, _) = PartialComparable.unmake guidAndContent
+                match World.tryGetKeyedValue guid world with
+                | Some simulant ->
+                    let world = World.removeKeyedValue guid world
+                    WorldModule.destroy simulant world
+                | None -> world)
+                world removed
+                
+        static member internal addSynchronizedSimulants mapper monitorMapper added origin owner parent world =
+            Seq.fold (fun world guidAndContent ->
+                let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
+                let payloadOpt = ((Gen.id, monitorMapper) : Payload) :> obj |> Some
+                let lens = { lens with PayloadOpt = payloadOpt }
+                let content = mapper index lens world
+                match World.tryGetKeyedValue guid world with
+                | None ->
+                    let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin owner parent world
+                    match simulantOpt with
+                    | Some simulant -> World.addKeyedValue guid simulant world
+                    | None -> world
+                | Some _ -> world)
+                world added
+
+        static member internal synchronizeSimulants mapper monitorMapper tracking previous current origin owner parent world =
             let added = if tracking then USet.differenceFast current previous else HashSet (USet.toSeq current, HashIdentity.Structural) // TODO: use USet.toHashSet once PRime is upgraded.
             let removed = if tracking then USet.differenceFast previous current else HashSet (USet.toSeq previous, HashIdentity.Structural) // TODO: use USet.toHashSet once PRime is upgraded.
             let changed = added.Count <> 0 || removed.Count <> 0
             if changed then
-                let world =
-                    Seq.fold (fun world guidAndContent ->
-                        let (guid, _) = PartialComparable.unmake guidAndContent
-                        match World.tryGetKeyedValue guid world with
-                        | Some simulant ->
-                            let world = World.removeKeyedValue guid world
-                            WorldModule.destroy simulant world
-                        | None -> world)
-                        world removed
-                let world =
-                    Seq.fold (fun world guidAndContent ->
-                        let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
-                        let payloadOpt = ((Gen.id, monitorMapper) : Payload) :> obj |> Some
-                        let lens = { lens with PayloadOpt = payloadOpt }
-                        let content = mapper index lens world
-                        match World.tryGetKeyedValue guid world with
-                        | None ->
-                            let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin owner parent world
-                            match simulantOpt with
-                            | Some simulant -> World.addKeyedValue guid simulant world
-                            | None -> world
-                        | Some _ -> world)
-                        world added
+                let world = World.removeSynchronizedSimulants removed world
+                let world = World.addSynchronizedSimulants mapper monitorMapper added origin owner parent world
                 world
             else world
 
@@ -273,7 +277,7 @@ module WorldDeclarative =
                     match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> USet> previousSetKey world with
                     | Some previous -> previous
                     | None -> USet.makeEmpty Functional
-                let world = World.synchronizeSimulants tracking mapper monitorMapper origin owner parent current previous world
+                let world = World.synchronizeSimulants mapper monitorMapper tracking previous current origin owner parent world
                 let world = World.addKeyedValue previousSetKey current world
                 (Cascade, world)
             let (_, world) = subscription (Unchecked.defaultof<_>) world // expand simulants immediately rather than waiting for parent registration
