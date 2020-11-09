@@ -216,6 +216,7 @@ module FieldDispatcher =
             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)) field
 
         static let interactSavePoint (field : Field) =
+            let field = Field.restoreLegion field
             Field.save field
             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.SaveSound)) field
 

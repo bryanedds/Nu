@@ -275,6 +275,9 @@ module Field =
             BattleOpt_ = battleOpt
             EncounterCreep_ = if Option.isSome battleOpt then 0.0f else field.EncounterCreep_ }
 
+    let restoreLegion field =
+        { field with Legion_ = Map.map (fun _ -> Legionnaire.restore) field.Legion_ }
+
     let advanceEncounterCreep (velocity : Vector2) (field : Field) world =
         match Data.Value.Fields.TryGetValue field.FieldType with
         | (true, fieldData) ->
