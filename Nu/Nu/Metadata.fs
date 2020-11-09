@@ -29,15 +29,24 @@ type [<StructuralEquality; NoComparison>] AssetMetadata =
 [<AutoOpen>]
 module TmxExtensions =
 
+    // OPTIMIZATION: cache tileset image assets.
+    let imageAssetsMemoized = dictPlus<TmxTileset, Image AssetTag> []
+
     type TmxTileset with
         member this.ImageAsset =
-            try scvalue<Image AssetTag> this.Properties.["Image"]
-            with :? KeyNotFoundException ->
-                let errorMessage =
-                    "Tileset '" + this.Name + "' missing Image property.\n" +
-                    "You must add a Custom Property to the tile set called 'Image' and give it an asset value like '[PackageName AssetName]'.\n" +
-                    "This will specify where the engine can find the tile set's associated image asset."
-                raise (TileSetPropertyNotFoundException errorMessage)
+            match imageAssetsMemoized.TryGetValue this with
+            | (false, _) ->
+                let imageAsset =
+                    try scvalue<Image AssetTag> this.Properties.["Image"]
+                    with :? KeyNotFoundException ->
+                        let errorMessage =
+                            "Tileset '" + this.Name + "' missing Image property.\n" +
+                            "You must add a Custom Property to the tile set called 'Image' and give it an asset value like '[PackageName AssetName]'.\n" +
+                            "This will specify where the engine can find the tile set's associated image asset."
+                        raise (TileSetPropertyNotFoundException errorMessage)
+                imageAssetsMemoized.Add (this, imageAsset)
+                imageAsset
+            | (true, imageAssets) -> imageAssets
 
     type TmxMap with
         member this.ImageAssets =

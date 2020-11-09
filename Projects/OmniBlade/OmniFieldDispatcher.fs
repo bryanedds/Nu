@@ -300,16 +300,13 @@ module FieldDispatcher =
                 just field
 
             | UpdateDialog ->
-                let field =
-                    Field.updateDialogOpt
-                        (function
-                         | Some dialog ->
-                            let increment = if World.getTickTime world % 2L = 0L then 1 else 0
-                            let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
-                            Some dialog
-                         | None -> None)
-                        field
-                just field
+                match field.DialogOpt with
+                | Some dialog ->
+                    let increment = if World.getTickTime world % 2L = 0L then 1 else 0
+                    let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
+                    let field = Field.updateDialogOpt (constant (Some dialog)) field
+                    just field
+                | None -> just field
 
             | UpdateFieldTransition ->
                 match field.FieldTransitionOpt with
