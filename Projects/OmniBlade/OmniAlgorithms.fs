@@ -106,7 +106,7 @@ module Algorithms =
                 | Some accessoryData -> single accessoryData.ShieldBase
                 | None -> 0.0f
             | _ -> 0.0f
-        let scalar = match effectType with Magical -> intelligence | Physical -> toughness
+        let scalar = match effectType with Magical -> intelligence * 0.5f | Physical -> toughness * 0.5f
         (intermediate + single level) * shieldBuff * scalar |> int |> max 0
 
     let techs archetypeType level =

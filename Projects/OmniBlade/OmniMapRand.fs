@@ -20,22 +20,24 @@ type OriginRand =
     | OriginSW
 
 type SegmentRand =
-    | Segment0 = 0b0000
-    | Segment1N = 0b0001
-    | Segment1E = 0b0010
-    | Segment1S = 0b0100
-    | Segment1W = 0b1000
-    | Segment2NE = 0b0011
-    | Segment2NW = 0b1001
-    | Segment2SE = 0b0110
-    | Segment2SW = 0b1100
-    | Segment2EW = 0b1010
-    | Segment2NS = 0b0101
-    | Segment3N = 0b1011
-    | Segment3E = 0b0111
-    | Segment3S = 0b1110
-    | Segment3W = 0b1101
-    | Segment4 = 0b1111
+    | Segment0 = 0b000000
+    | Segment1N = 0b000001
+    | Segment1E = 0b000010
+    | Segment1S = 0b000100
+    | Segment1W = 0b001000
+    | Segment2NE = 0b000011
+    | Segment2NW = 0b001001
+    | Segment2SE = 0b000110
+    | Segment2SW = 0b001100
+    | Segment2EW = 0b001010
+    | Segment2NS = 0b000101
+    | Segment3N = 0b001011
+    | Segment3E = 0b000111
+    | Segment3S = 0b001110
+    | Segment3W = 0b001101
+    | Segment4 = 0b001111
+    | SegmentBN = 0b010001
+    | SegmentBS = 0b010100
 
 type [<NoComparison>] SegmentsRand =
     { Segment1N : TmxMap
@@ -52,7 +54,9 @@ type [<NoComparison>] SegmentsRand =
       Segment3E : TmxMap
       Segment3S : TmxMap
       Segment3W : TmxMap
-      Segment4 : TmxMap }
+      Segment4 : TmxMap
+      SegmentBN : TmxMap
+      SegmentBS : TmxMap }
 
     static member load (filePath : string) =
       { Segment1N = TmxMap (filePath + "+1N.tmx")
@@ -69,7 +73,9 @@ type [<NoComparison>] SegmentsRand =
         Segment3E = TmxMap (filePath + "+3E.tmx")
         Segment3S = TmxMap (filePath + "+3S.tmx")
         Segment3W = TmxMap (filePath + "+3W.tmx")
-        Segment4 = TmxMap (filePath + "+4A.tmx") }
+        Segment4 = TmxMap (filePath + "+4A.tmx")
+        SegmentBN = TmxMap (filePath + "+BN.tmx")
+        SegmentBS = TmxMap (filePath + "+BS.tmx") }
 
 type MapRand =
     { MapSegments : SegmentRand array array
@@ -120,6 +126,8 @@ type MapRand =
         | SegmentRand.Segment3S -> Some segments.Segment3S
         | SegmentRand.Segment3W -> Some segments.Segment3W
         | SegmentRand.Segment4 -> Some segments.Segment4
+        | SegmentRand.SegmentBN -> Some segments.SegmentBN
+        | SegmentRand.SegmentBS -> Some segments.SegmentBS
         | _ -> failwithumf ()
 
     static member private walk biasChance bias (cursor : Vector2i) map rand =
@@ -155,6 +163,54 @@ type MapRand =
                 map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| SegmentRand.Segment1E
         | _ -> failwithumf ()
         (cursor, rand)
+
+    static member tryAddBossRoomFromNorthWest map =
+        let mutable bossRoomAdded = false
+        for i in 0 .. 7 - 1 do
+            if not bossRoomAdded then
+                for j in 0 .. 7 - 1 do
+                    if not bossRoomAdded then
+                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i > 0 then
+                            map.MapSegments.[i].[j] <- map.MapSegments.[j].[i] + SegmentRand.Segment1N
+                            map.MapSegments.[dec i].[j] <- SegmentRand.SegmentBS
+                            bossRoomAdded <- true
+        bossRoomAdded
+
+    static member tryAddBossRoomFromNorthEast map =
+        let mutable bossRoomAdded = false
+        for i in 0 .. 7 - 1 do
+            if not bossRoomAdded then
+                for j in 7 - 1 .. - 1 .. 0 do
+                    if not bossRoomAdded then
+                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i < dec 7 then
+                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] + SegmentRand.Segment1N
+                            map.MapSegments.[i].[dec j] <- SegmentRand.SegmentBS
+                            bossRoomAdded <- true
+        bossRoomAdded
+
+    static member tryAddBossRoomFromSouthWest map =
+        let mutable bossRoomAdded = false
+        for i in 7 - 1 .. - 1 .. 0 do
+            if not bossRoomAdded then
+                for j in 0 .. 7 - 1 do
+                    if not bossRoomAdded then
+                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i > 0 then
+                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] + SegmentRand.Segment1S
+                            map.MapSegments.[i].[dec j] <- SegmentRand.SegmentBN
+                            bossRoomAdded <- true
+        bossRoomAdded
+
+    static member tryAddBossRoomFromSouthEast map =
+        let mutable bossRoomAdded = false
+        for i in 0 .. 7 - 1 do
+            if not bossRoomAdded then
+                for j in 0 .. 7 - 1 do
+                    if not bossRoomAdded then
+                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i < dec 7 then
+                            map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] + SegmentRand.Segment1S
+                            map.MapSegments.[i].[dec j] <- SegmentRand.SegmentBN
+                            bossRoomAdded <- true
+        bossRoomAdded
 
     static member makeFromRand walkLength biasChance (size : Vector2i) origin rand =
         if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."
@@ -192,6 +248,7 @@ type MapRand =
         match openingOpt with
         | Some opening -> map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
         | None -> ()
+        // TODO: add boss room
         (cursor, map, rand)
 
     static member make (size : Vector2i) =
@@ -226,9 +283,7 @@ type MapRand =
         object.Properties.Add ("I", openingInfo)
         objects.[0] <- object
 
-
         // add objects from segments
-        //MapRand.printn map
         for i in 0 .. 7 - 1 do
             for j in 0 .. 7 - 1 do
                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
@@ -239,9 +294,7 @@ type MapRand =
                             let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
                             let object = TmxMap.makeObject objectRef.Id 0 x y objectRef.Width objectRef.Height
                             for propertyKvp in objectRef.Properties do object.Properties.Add (propertyKvp.Key, propertyKvp.Value)
-                            //printf "((%i, %i)[%f %f])" i j x y
                             objects.Add object
-                        //printfn ""
                 | None -> ()
 
         // add tiles from segments
