@@ -180,11 +180,6 @@ type FieldType =
     | TombOuter
     | Cave
 
-    static member rotateRandSeedState randSeedState fieldType =
-        match fieldType with
-        | DebugRoom | DebugRoom2 | TombInner | TombOuter -> randSeedState
-        | Cave -> rotl64 1 randSeedState
-
 type SwitchType =
     | ThrowSwitch
     
@@ -246,6 +241,26 @@ type CharacterType =
         match characterType with
         | Ally ty -> string ty
         | Enemy ty -> string ty
+
+[<RequireQualifiedAccess>]
+module OmniSeedState =
+
+    type OmniSeedState =
+        private
+            { RandSeedState : uint64 }
+    
+    let rotate fieldType state =
+        match fieldType with
+        | DebugRoom | DebugRoom2 | TombInner | TombOuter -> state.RandSeedState
+        | Cave -> rotl64 1 state.RandSeedState
+
+    let makeFromSeedState randSeedState =
+        { RandSeedState = randSeedState }
+
+    let make () =
+        { RandSeedState = Rand.DefaultSeedState }
+
+type OmniSeedState = OmniSeedState.OmniSeedState
 
 type WeaponData =
     { WeaponType : string // key
@@ -396,7 +411,8 @@ module FieldData =
             else ({ prop with PropData = EmptyProp }, rand)
         | _ -> (prop, rand)
 
-    let tryGetTileMap rotatedSeedState fieldData world =
+    let tryGetTileMap omniSeedState fieldData world =
+        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey tileMapsMemoized with
         | None ->
@@ -415,12 +431,13 @@ module FieldData =
             tileMapOpt
         | Some tileMapOpt -> tileMapOpt
 
-    let getPropObjects rotatedSeedState fieldData world =
+    let getPropObjects omniSeedState fieldData world =
+        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propObjectsMemoized with
         | None ->
             let propObjects =
-                match tryGetTileMap rotatedSeedState fieldData world with
+                match tryGetTileMap omniSeedState fieldData world with
                 | Some tileMap ->
                     if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
                         let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
@@ -431,11 +448,12 @@ module FieldData =
             propObjects
         | Some propObjects -> propObjects
 
-    let getProps rotatedSeedState fieldData world =
+    let getProps omniSeedState fieldData world =
+        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propsMemoized with
         | None ->
-            let propObjects = getPropObjects rotatedSeedState fieldData world
+            let propObjects = getPropObjects omniSeedState fieldData world
             let propsUninflated =
                 propObjects |>
                 List.map (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) |>
@@ -450,12 +468,12 @@ module FieldData =
             props
         | Some props -> props
 
-    let getPortals rotatedSeedState fieldData world =
-        let props = getProps rotatedSeedState fieldData world
+    let getPortals omniSeedState fieldData world =
+        let props = getProps omniSeedState fieldData world
         List.filter (fun prop -> match prop.PropData with Portal _ -> true | _ -> false) props
 
-    let tryGetPortal portalType rotatedSeedState fieldData world =
-        let portals = getPortals rotatedSeedState fieldData world
+    let tryGetPortal portalType omniSeedState fieldData world =
+        let portals = getPortals omniSeedState fieldData world
         List.tryFind (fun prop -> match prop.PropData with Portal (portalType2, _, _, _, _) -> portalType2 = portalType | _ -> failwithumf ()) portals
 
 type [<NoComparison>] EnemyData =

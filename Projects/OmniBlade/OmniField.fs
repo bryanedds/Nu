@@ -197,7 +197,7 @@ module Field =
     type [<ReferenceEquality; NoComparison>] Field =
         private
             { FieldType_ : FieldType
-              RandSeedState_ : uint64
+              OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
               Legion_ : Legion
               EncounterCreep_ : single
@@ -212,8 +212,7 @@ module Field =
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
-        member this.RandSeedState = this.RandSeedState_
-        member this.RotatedSeedState = FieldType.rotateRandSeedState this.RandSeedState_ this.FieldType
+        member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
         member this.Legion = this.Legion_
         member this.EncounterCreep = this.EncounterCreep_
@@ -326,7 +325,7 @@ module Field =
 
     let make fieldType randSeedState avatar legion advents inventory =
         { FieldType_ = fieldType
-          RandSeedState_ = randSeedState
+          OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = avatar
           EncounterCreep_ = 0.0f
           Legion_ = legion
@@ -341,7 +340,7 @@ module Field =
 
     let empty =
         { FieldType_ = DebugRoom
-          RandSeedState_ = Rand.DefaultSeedState
+          OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty
           Legion_ = Map.empty
           EncounterCreep_ = 0.0f
@@ -356,7 +355,7 @@ module Field =
 
     let initial randSeedState =
         { FieldType_ = TombOuter
-          RandSeedState_ = randSeedState
+          OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = Avatar.initial
           Legion_ = Map.ofList [(0, Legionnaire.finn)]
           EncounterCreep_ = 0.0f
