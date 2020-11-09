@@ -11,34 +11,6 @@ type [<ReferenceEquality; NoComparison>] FieldTile =
     { TileSheetCoordinates : Vector2i
       TileType : FieldTileType }
 
-type [<ReferenceEquality; NoComparison>] FieldMapUnit =
-    { RandSeed : uint64
-      OffsetCount : Vector2i
-      IsHorizontal : bool
-      PathStart : Vector2i
-      PathEnd : Vector2i }
-
-    static member make fieldMapUnitOpt =
-        let sysrandom = System.Random ()
-        let randSeed = uint64 (sysrandom.Next ())
-        let randResult = Gen.random1 (Constants.Layout.FieldUnitSizeC.X - 4) // assumes X and Y are equal
-        let pathEnd =
-            if randResult % 2 = 0
-            then v2i (randResult + 2) (Constants.Layout.FieldUnitSizeC.Y - 2)
-            else v2i (Constants.Layout.FieldUnitSizeC.X - 2) (randResult + 2)
-        let (offsetCount, pathStart) =
-            match fieldMapUnitOpt with
-            | Some fieldMapUnit ->
-                match fieldMapUnit.IsHorizontal with
-                | true -> (fieldMapUnit.OffsetCount + v2iRight, v2i 1 fieldMapUnit.PathEnd.Y)
-                | false -> (fieldMapUnit.OffsetCount + v2iUp, v2i fieldMapUnit.PathEnd.X 1)
-            | None -> (v2iZero, v2iOne)
-        { RandSeed = randSeed
-          OffsetCount = offsetCount
-          IsHorizontal = pathEnd.X > pathEnd.Y
-          PathStart = pathStart
-          PathEnd = pathEnd }
-
 type [<ReferenceEquality; NoComparison>] FieldMap =
     { FieldSizeC : Vector2i
       FieldTiles : Map<Vector2i, FieldTile>
@@ -239,6 +211,6 @@ module FieldMap =
         let fieldMap = { FieldSizeC = sizeC; FieldTiles = generatedMap; FieldTileSheet = tileSheet }
         (fieldMap, rand)
 
-    let makeFromFieldMapUnit fieldMapUnit =
-        let rand = Rand.makeFromSeedState fieldMapUnit.RandSeed
-        make Assets.FieldTileSheetImage v2iZero Constants.Layout.FieldUnitSizeC [(fieldMapUnit.PathStart, fieldMapUnit.PathEnd)] rand |> fst
+    let makeFromMetaTile metaTile =
+        let rand = Rand.makeFromSeedState metaTile.RandSeed
+        make Assets.FieldTileSheetImage v2iZero Constants.Layout.FieldMapSizeC [(metaTile.PathStart, metaTile.PathEnd)] rand |> fst

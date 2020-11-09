@@ -12,7 +12,7 @@ module Constants =
         let TileSheetSizeC = v2iDup 4
         let TileSheetSizeI = Vector2i.Multiply (TileSheetSizeC, TileSizeI)
         let TileSheetSize = let t = TileSheetSizeI in t.Vector2
-        let FieldUnitSizeC = v2iDup 22
+        let FieldMapSizeC = v2iDup 22
         let CharacterDepth = 1.0f
         let PickupDepth = 0.5f
 
