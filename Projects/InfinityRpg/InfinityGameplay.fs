@@ -6,52 +6,6 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
-type [<ReferenceEquality; NoComparison>] MapModeler =
-    { FieldMapUnits : Map<Vector2i, FieldMapUnit>
-      CurrentFieldOffset : Vector2i }
-
-    static member empty =
-        { FieldMapUnits = Map.empty
-          CurrentFieldOffset = v2iZero }
-
-    member this.AddFieldMapUnit fieldMapUnit =
-        let fieldMapUnits = Map.add fieldMapUnit.OffsetCount fieldMapUnit this.FieldMapUnits
-        { this with FieldMapUnits = fieldMapUnits; CurrentFieldOffset = fieldMapUnit.OffsetCount }
-
-    member this.Current =
-        this.FieldMapUnits.[this.CurrentFieldOffset]
-
-    member this.OffsetInDirection direction =
-        this.CurrentFieldOffset + dtovc direction
-    
-    member this.ExistsInDirection direction =
-        Map.containsKey (this.OffsetInDirection direction) this.FieldMapUnits
-    
-    member this.NextOffset =
-        if this.Current.IsHorizontal
-        then this.OffsetInDirection Rightward
-        else this.OffsetInDirection Upward
-    
-    member this.NextOffsetInDirection direction =
-        this.NextOffset = this.OffsetInDirection direction
-
-    member this.PossibleInDirection direction =
-        this.ExistsInDirection direction || this.NextOffsetInDirection direction
-    
-    member this.MoveCurrent direction =
-        { this with CurrentFieldOffset = this.OffsetInDirection direction }
-    
-    member this.MakeFieldMapUnit =
-        this.AddFieldMapUnit (FieldMapUnit.make (Some this.Current))
-    
-    member this.Transition direction =
-        if this.ExistsInDirection direction
-        then this.MoveCurrent direction
-        else this.MakeFieldMapUnit
-    
-    static member make =
-        MapModeler.empty.AddFieldMapUnit (FieldMapUnit.make None)
-
 type [<NoComparison>] Move =
     | Step of Direction
     | Attack of CharacterIndex
@@ -243,7 +197,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     
 type [<ReferenceEquality; NoComparison>] Gameplay =
     { ShallLoadGame : bool
-      MapModeler : MapModeler
+      MetaMap : MetaMap
       Field : Field
       Chessboard : Chessboard
       CharacterMoves : Map<CharacterIndex, Move>
@@ -252,14 +206,14 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member initial =
         let field = Field.initial
         { ShallLoadGame = false
-          MapModeler = MapModeler.make
+          MetaMap = MetaMap.make
           Field = field
           Chessboard = Chessboard.init field.FieldMapNp
           CharacterMoves = Map.empty
           PuppetMaster = PuppetMaster.initial }
 
-    static member updateMapModeler updater gameplay =
-        { gameplay with MapModeler = updater gameplay.MapModeler }
+    static member updateMetaMap updater gameplay =
+        { gameplay with MetaMap = updater gameplay.MetaMap }
     
     static member updateField updater gameplay =
         { gameplay with Field = updater gameplay.Field }
@@ -423,8 +377,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateField (constant field) gameplay
     
     static member transitionMap direction gameplay =
-        let mapModeler = gameplay.MapModeler.Transition direction
-        Gameplay.updateMapModeler (constant mapModeler) gameplay
+        let metaMap = gameplay.MetaMap.Transition direction
+        Gameplay.updateMetaMap (constant metaMap) gameplay
 
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.UnoccupiedSpaces

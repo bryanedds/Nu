@@ -269,13 +269,13 @@ module GameplayDispatcher =
                     match direction with
                     | Upward -> currentCoordinates.WithY 0
                     | Rightward -> currentCoordinates.WithX 0
-                    | Downward -> currentCoordinates.WithY (Constants.Layout.FieldUnitSizeC.Y - 1)
-                    | Leftward -> currentCoordinates.WithX (Constants.Layout.FieldUnitSizeC.X - 1)
+                    | Downward -> currentCoordinates.WithY (Constants.Layout.FieldMapSizeC.Y - 1)
+                    | Leftward -> currentCoordinates.WithX (Constants.Layout.FieldMapSizeC.X - 1)
                 let gameplay = Gameplay.clearEnemies gameplay
                 let gameplay = Gameplay.clearPickups gameplay
                 let gameplay = Gameplay.relocateCharacter PlayerIndex newCoordinates gameplay
                 let gameplay = Gameplay.transitionMap direction gameplay
-                let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromFieldMapUnit gameplay.MapModeler.Current) gameplay
+                let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
                 let gameplay = Gameplay.makeEnemies 4 gameplay
                 just gameplay
 
@@ -286,11 +286,11 @@ module GameplayDispatcher =
                         let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
                         let targetOutside =
                             match direction with
-                            | Upward -> currentCoordinates.Y = Constants.Layout.FieldUnitSizeC.Y - 1
-                            | Rightward -> currentCoordinates.X = Constants.Layout.FieldUnitSizeC.X - 1
+                            | Upward -> currentCoordinates.Y = Constants.Layout.FieldMapSizeC.Y - 1
+                            | Rightward -> currentCoordinates.X = Constants.Layout.FieldMapSizeC.X - 1
                             | Downward -> currentCoordinates.Y = 0
                             | Leftward -> currentCoordinates.X = 0
-                        if targetOutside && gameplay.MapModeler.PossibleInDirection direction
+                        if targetOutside && gameplay.MetaMap.PossibleInDirection direction
                         then TransitionMap direction
                         else TryMakePlayerMove playerInput
                     | _ -> TryMakePlayerMove playerInput
@@ -303,7 +303,7 @@ module GameplayDispatcher =
                     just gameplay
                 else
                     let gameplay = Gameplay.initial
-                    let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromFieldMapUnit gameplay.MapModeler.Current) gameplay
+                    let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
                     let gameplay = Gameplay.makeEnemies 4 gameplay
                     just gameplay
 
