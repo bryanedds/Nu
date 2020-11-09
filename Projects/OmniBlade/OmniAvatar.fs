@@ -53,31 +53,49 @@ module Avatar =
         CharacterAnimationState.getFinished time avatar.AnimationState_
 
     let updateCollidedBodyShapes updater (avatar : Avatar) =
-        { avatar with CollidedBodyShapes_ = updater avatar.CollidedBodyShapes_ }
+        let bodyShapes = updater avatar.CollidedBodyShapes_
+        if bodyShapes <> avatar.CollidedBodyShapes_
+        then { avatar with CollidedBodyShapes_ = bodyShapes }
+        else avatar
 
     let updateSeparatedBodyShapes updater (avatar : Avatar) =
-        { avatar with SeparatedBodyShapes_ = updater avatar.SeparatedBodyShapes_ }
+        let bodyShapes = updater avatar.SeparatedBodyShapes_
+        if bodyShapes <> avatar.SeparatedBodyShapes_
+        then { avatar with SeparatedBodyShapes_ = bodyShapes }
+        else avatar
 
     let updateIntersectedBodyShapes updater (avatar : Avatar) =
-        { avatar with IntersectedBodyShapes_ = updater avatar.IntersectedBodyShapes_ }
+        let bodyShapes = updater avatar.IntersectedBodyShapes_
+        if bodyShapes <> avatar.IntersectedBodyShapes_
+        then { avatar with IntersectedBodyShapes_ = bodyShapes }
+        else avatar
 
     let updateBounds updater (avatar : Avatar) =
-        { avatar with Bounds_ = updater avatar.Bounds_ }
+        let bounds = updater avatar.Bounds_
+        if bounds <> avatar.Bounds
+        then { avatar with Bounds_ = bounds }
+        else avatar
 
     let updatePosition updater (avatar : Avatar) =
-        { avatar with Bounds_ = avatar.Position |> updater |> avatar.Bounds.WithPosition }
+        updateBounds (fun bounds -> bounds.Position |> updater |> bounds.WithPosition) avatar
 
     let updateCenter updater (avatar : Avatar) =
-        { avatar with Bounds_ = avatar.Center |> updater |> avatar.Bounds.WithCenter }
+        updateBounds (fun bounds -> bounds.Center |> updater |> bounds.WithCenter) avatar
 
     let updateBottom updater (avatar : Avatar) =
-        { avatar with Bounds_ = avatar.Bottom |> updater |> avatar.Bounds.WithBottom }
+        updateBounds (fun bounds -> bounds.Bottom |> updater |> bounds.WithBottom) avatar
+
+    let updateAnimationState updater (avatar : Avatar) =
+        let animationState = updater avatar.AnimationState_
+        if animationState <> avatar.AnimationState_
+        then { avatar with AnimationState_ = animationState }
+        else avatar
 
     let updateDirection updater (avatar : Avatar) =
-        { avatar with AnimationState_ = { avatar.AnimationState_ with Direction = updater avatar.AnimationState_.Direction }}
+        updateAnimationState (fun state -> { state with Direction = updater state.Direction }) avatar
 
     let animate time cycle avatar =
-        { avatar with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle avatar.AnimationState_ }
+        updateAnimationState (fun state -> CharacterAnimationState.setCycle (Some time) cycle state) avatar
 
     let toSymbolizable avatar =
         { avatar with
