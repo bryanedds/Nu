@@ -4,25 +4,6 @@ open Prime
 open Nu
 open InfinityRpg
 
-type [<CustomEquality; NoComparison>] NavigationNode =
-    { Coordinates : Vector2i
-      mutable Neighbors : NavigationNode list } // OPTIMIZATION: has to be mutable to be efficiently populated.
-
-    interface NavigationNode IHasNeighbors with
-        member this.Neighbors = this.Neighbors :> _ seq
-
-    interface NavigationNode IEquatable with
-        member this.Equals that =
-            this.Coordinates = that.Coordinates
-
-    override this.Equals that =
-        match that with
-        | :? NavigationNode as that -> this.Coordinates = that.Coordinates
-        | _ -> false
-
-    override this.GetHashCode () =
-        this.Coordinates.GetHashCode ()
-
 type TurnType =
     | WalkTurn of bool
     | AttackTurn
@@ -71,26 +52,6 @@ type Turn =
             | WalkTurn _ -> CharacterAnimationFacing
         CharacterAnimationState.make turn.StartTick animationType turn.Direction
 
-    static member turnsToCharacterAnimationState characterIndex (character : Character) characterTurns =
-        match List.tryFind (fun turn -> turn.Actor = characterIndex) characterTurns with
-        | None ->
-            let animationType =
-                if not character.IsAlive then
-                    match List.tryFind (fun (turn : Turn) -> turn.ReactorOpt = Some characterIndex) characterTurns with
-                    | Some attackerTurn ->
-                        match attackerTurn.TurnStatus with
-                        | TurnPending
-                        | TurnBeginning -> CharacterAnimationFacing
-                        | TurnTicking tickCount ->
-                            if tickCount < Constants.InfinityRpg.ReactionTick
-                            then CharacterAnimationFacing
-                            else CharacterAnimationSlain
-                        | TurnFinishing -> CharacterAnimationSlain
-                    | None -> CharacterAnimationSlain
-                else CharacterAnimationFacing
-            CharacterAnimationState.make 0L animationType character.FacingDirection
-        | Some turn -> Turn.toCharacterAnimationState turn
-    
     static member updateTurnStatus updater turn =
         { turn with TurnStatus = updater turn.TurnStatus }
 
@@ -118,50 +79,50 @@ type Turn =
           Direction = direction
           StartTick = 0L }
 
-type [<ReferenceEquality; NoComparison>] PuppetMaster =
+type [<ReferenceEquality; NoComparison>] Puppeteer =
     { CharacterTurns : Turn list }
 
     static member initial =
         { CharacterTurns = [] }
 
-    static member tryGetCharacterTurn index puppetMaster =
-        List.tryFind (fun x -> x.Actor = index) puppetMaster.CharacterTurns
+    static member tryGetCharacterTurn index puppeteer =
+        List.tryFind (fun x -> x.Actor = index) puppeteer.CharacterTurns
 
-    static member tryGetOpponentTurn index puppetMaster =
-        List.tryFind (fun x -> x.ReactorOpt = Some index) puppetMaster.CharacterTurns
+    static member tryGetOpponentTurn index puppeteer =
+        List.tryFind (fun x -> x.ReactorOpt = Some index) puppeteer.CharacterTurns
     
-    static member getCharacterTurn index puppetMaster =
-        List.find (fun x -> x.Actor = index) puppetMaster.CharacterTurns
+    static member getCharacterTurn index puppeteer =
+        List.find (fun x -> x.Actor = index) puppeteer.CharacterTurns
     
-    static member turnInProgress index puppetMaster =
-        List.exists (fun x -> x.Actor = index) puppetMaster.CharacterTurns
+    static member turnInProgress index puppeteer =
+        List.exists (fun x -> x.Actor = index) puppeteer.CharacterTurns
 
     member this.AnyTurnsInProgress = 
         List.notEmpty this.CharacterTurns
     
-    static member updateCharacterTurns updater puppetMaster =
-        { puppetMaster with CharacterTurns = updater puppetMaster.CharacterTurns }
+    static member updateCharacterTurns updater puppeteer =
+        { puppeteer with CharacterTurns = updater puppeteer.CharacterTurns }
 
-    static member addCharacterTurn turn puppetMaster =
-        PuppetMaster.updateCharacterTurns (fun x -> turn :: x) puppetMaster
+    static member addCharacterTurn turn puppeteer =
+        Puppeteer.updateCharacterTurns (fun x -> turn :: x) puppeteer
 
-    static member updateCharacterTurn index updater puppetMaster =
-        PuppetMaster.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) puppetMaster
+    static member updateCharacterTurn index updater puppeteer =
+        Puppeteer.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) puppeteer
 
-    static member removeCharacterTurn index puppetMaster =
-        PuppetMaster.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) puppetMaster
+    static member removeCharacterTurn index puppeteer =
+        Puppeteer.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) puppeteer
 
-    static member generatePositionsAndAnimationStates characters puppetMaster =
+    static member generatePositionsAndAnimationStates characters puppeteer =
         let generator coordinates character =
             let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
-            let turnOpt = PuppetMaster.tryGetCharacterTurn character.CharacterIndex puppetMaster
+            let turnOpt = Puppeteer.tryGetCharacterTurn character.CharacterIndex puppeteer
             let position = match turnOpt with Some turn -> Turn.calculatePosition turn | None -> vctovf coordinates
             let characterAnimationState =
                 match turnOpt with
                 | None ->
                     let animationType =
                         if not character.IsAlive then
-                            match PuppetMaster.tryGetOpponentTurn character.CharacterIndex puppetMaster with
+                            match Puppeteer.tryGetOpponentTurn character.CharacterIndex puppeteer with
                             | Some attackerTurn ->
                                 match attackerTurn.TurnStatus with
                                 | TurnPending
