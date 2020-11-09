@@ -243,7 +243,7 @@ module WorldDeclarative =
                     let b =
                         if a.Value = monitorResult then
                             match sieveResultOpt with
-                            | Some c -> c
+                            | Some b -> b
                             | None -> sieve (lens.Get world)
                         else sieve (lens.Get world)
                     monitorResult <- a.Value
