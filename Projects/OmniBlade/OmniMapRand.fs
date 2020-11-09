@@ -226,9 +226,9 @@ type MapRand =
         object.Properties.Add ("I", openingInfo)
         objects.[0] <- object
 
-        MapRand.printn map
 
         // add objects from segments
+        //MapRand.printn map
         for i in 0 .. 7 - 1 do
             for j in 0 .. 7 - 1 do
                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
@@ -239,9 +239,9 @@ type MapRand =
                             let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
                             let object = TmxMap.makeObject objectRef.Id 0 x y objectRef.Width objectRef.Height
                             for propertyKvp in objectRef.Properties do object.Properties.Add (propertyKvp.Key, propertyKvp.Value)
-                            printf "((%i, %i)[%f %f])" i j x y
+                            //printf "((%i, %i)[%f %f])" i j x y
                             objects.Add object
-                        printfn ""
+                        //printfn ""
                 | None -> ()
 
         // add tiles from segments
