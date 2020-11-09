@@ -11,7 +11,7 @@
    eJzt1GEKgDAIBlAvUx1gRCeo3bc6QV0shAZB1krFRSh8f31uoAEAwst0cK6W0Yeb0n4k/N7w7TPhj0Z/gP5K+Iuhf1Xuuy/tP2RC7b6Wj72nTKjd1/Dj3nt9EG3/aEuK46d7KrUlvobN9TFNYV9rBun+SWfQuD91Jncz/uH+uu+++9/1MdQNqoxsagZrOyXd5BK2Vjaocq7u
   </data>
  </layer>
- <objectgroup id="3" name="Prop">
+ <objectgroup id="3" name="Props">
   <object id="1" gid="20" x="192" y="1088" width="64" height="64">
    <properties>
     <property name="I" value="[ChestSpawn]"/>

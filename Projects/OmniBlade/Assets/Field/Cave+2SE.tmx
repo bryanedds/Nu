@@ -6,6 +6,11 @@
    eJztwwEJAAAMBKGr9P3LrcdQcNVUVVXV1w/z78QB
   </data>
  </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztlMENgCAMALsMOgAxTqDsq06gi4kPE0IsFKjVR5vcE+9MKBYArKIoivILZkFit/OsgsTuzXMIcrvHwC05oV/aHfu/mFK/8XQIfcU3wvtHOT8AvreUfzCJ85SGCfBddo1uSsMC+C5vDO5cww7pfeZwl9yH3NS6ORpa3S0NXO6aBm53ScNbbkrD2+5Ug5T74umdTb3L6sc5ARF7xYk=
+  </data>
+ </layer>
  <objectgroup id="3" name="Props">
   <object id="1" gid="20" x="320" y="1088" width="64" height="64">
    <properties>
@@ -13,9 +18,4 @@
    </properties>
   </object>
  </objectgroup>
- <layer id="1" name="Furnishing" width="32" height="32">
-  <data encoding="base64" compression="zlib">
-   eJztlMENgCAMALsMOgAxTqDsq06gi4kPE0IsFKjVR5vcE+9MKBYArKIoivILZkFit/OsgsTuzXMIcrvHwC05oV/aHfu/mFK/8XQIfcU3wvtHOT8AvreUfzCJ85SGCfBddo1uSsMC+C5vDO5cww7pfeZwl9yH3NS6ORpa3S0NXO6aBm53ScNbbkrD2+5Ug5T74umdTb3L6sc5ARF7xYk=
-  </data>
- </layer>
 </map>
