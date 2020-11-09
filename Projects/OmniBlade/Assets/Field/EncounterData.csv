@@ -1,0 +1,3 @@
+EncounterType,BattleTypes,Threshold
+DebugEncounter,[DebugBattle],3000
+CaveEncounter,[CaveBattle CaveBattle2 CaveBattle3 CaveBattle4],3000

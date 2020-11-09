@@ -1,0 +1,84 @@
+overall, I want to have a looting style of gameplay
+the fights will be lightly randomly encountered and chests will have many monster-in-a-boxes.
+if the player dies, they go back to the main menu
+and you can only save outside of a dungeon
+bryaneddsToday at 11:07 AM
+i think i'll make all dungeons accessible from the start, but in order to enter all but the first one, you have to use a key to get in which can be bought from a shop.
+and whenever the player leaves the dungeon, the door is relocked.
+higher level dungeons require more expensive keys
+additionally, you can pay to recruit additional characters other than your main character.
+these are strange design mechanics, but that's because the first game won't be story-based for scoping reasons.
+I do need to decide on the theme for the game, too.
+bryaneddsToday at 11:23 AM
+okay, there were once 13 elementally-differentiated demons that came together to destroy the world.
+the heroes of yore came together to destroy them, however, they found that they could not be killed.
+so instead they pushed them back into the ancient tomb from whence they came and locked them within.
+it is rumored that the demons had hoarded vast treasures in the tomb.
+as a treasure hunter, you received word that an alchemist who was researching the mysteries of the ancient seals was traveling to the gates. Additionally, one of the seals has already been broken.
+you hear that other treasure hunters had picked up this word as well.
+not believing in anything such as 'ancient demons', you decide to make the trip to investigate what treasures can be liberated by yours truly before anyone else.
+mechanically, this will provide the player with 12 different doors to unlock and 13 elementally-differentiated labyrinths to explore.
+bryaneddsToday at 11:44 AM
+in practice, that means i need to go ahead and design the tomb entrance area.
+it will be an outside area with some tents propped up here and there containing traders as well as rival treasure hunters
+each level will be themed around its associated demon theme - fire, ice, water, earth, castle, jungle, and so on.
+
+Level Topologies
+
+ /\
+/\ \
+
+ -|
+  |
+  |-
+
+ _
+/ \
+| |
+\_/
+ 
+ ---
+|   |
+-----
+|   |
+ ---
+
+ ---
+| | |
+-----
+| | |
+ ---
+
+----
+\/\/
+ --
+
+____
+\/\/
+ \/
+
+ --
+ \/
+ /\
+ --
+
+ /\
+ --
+ \/
+ /\
+ --
+ \/
+
+  _
+ / \
+|\ /|
+ \|/
+
+______
+\/\/\/
+ \/\/
+  \/
+
+Twisted Ring Topology
+
+Degenerate Connected 5 Pentagon

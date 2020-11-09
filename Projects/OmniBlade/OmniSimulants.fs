@@ -1,22 +1,21 @@
-﻿namespace OmniBlade
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2020.
+
+namespace OmniBlade
 open Prime
 open Nu
-
-type CharacterIndex =
-    | AllyIndex of int
-    | EnemyIndex of int
 
 [<RequireQualifiedAccess>]
 module Simulants =
 
     // global
-    let Game = Default.Game
     let Splash = Screen "Splash"
 
     // title
     let Title = Screen "Title"
     let TitleGui = Title / "Gui"
-    let TitlePlay = TitleGui / "Play"
+    let TitleNew = TitleGui / "New"
+    let TitleLoad = TitleGui / "Load"
     let TitleCredits = TitleGui / "Credits"
     let TitleExit = TitleGui / "Exit"
 
@@ -25,17 +24,45 @@ module Simulants =
     let CreditsGui = Credits / "Gui"
     let CreditsBack = CreditsGui / "Back"
 
+    // intro
+    let Intro1 = Screen "Intro1"
+    let Intro2 = Screen "Intro2"
+    let Intro3 = Screen "Intro3"
+    let Intro4 = Screen "Intro4"
+    let Intro5 = Screen "Intro5"
+
+    // field
+    let Field = Simulants.DefaultScreen
+    let FieldHud = Field / "Hud"
+    let FieldBack = FieldHud / "Back"
+    let FieldScene = Field / "Scene"
+    let FieldBackdrop = FieldScene / "Backdrop"
+    let FieldPortalFade = FieldScene / "PortalFade"
+    let FieldTileMap = FieldScene / "TileMap"
+    let FieldAvatar = FieldScene / "Avatar"
+    let FieldSubmenu = Field / "Submenu"
+    let FieldInteract = FieldScene / "Interact"
+    let FieldDialog = FieldScene / "Dialog"
+    let FieldShop = Field / "Shop"
+    let FieldShopBuy = Field / "ShopBuy"
+    let FieldShopSell = Field / "ShopSell"
+    let FieldShopLeave = Field / "ShopLeave"
+    let FieldShopGold = Field / "ShopGold"
+    let FieldShopPageUp = Field / "ShopPageUp"
+    let FieldShopPageDown = Field / "ShopPageDown"
+    let FieldShopConfirm = Field / "ShopConfirm"
+    let FieldShopConfirmAccept = Field / "ShopConfirmAccept"
+    let FieldShopConfirmDecline = Field / "ShopConfirmDecline"
+    let FieldShopConfirmOffer = Field / "ShopConfirmOffer"
+    let FieldShopConfirmLine1 = Field / "ShopConfirmLine1"
+    let FieldShopConfirmLine2 = Field / "ShopConfirmLine2"
+    let SubmenuLegion = Field / "Legion"
+    let SubmenuItem = Field / "Item"
+    let SubmenuClose = Field / "Close"
+    let SubmenuUse = Field / "Use"
+
     // battle
-    let Battle = Default.Screen
+    let Battle = Screen "Battle"
     let BattleHud = Battle / "Hud"
-    let BattleBack = BattleHud / "Back"
-    let Scene = Battle / "Scene"
-    let Character characterIndex = match characterIndex with AllyIndex index -> Scene / ("Ally" + "+" + scstring index) | EnemyIndex index -> Scene / ("Enemy" + "+" + scstring index)
-    let Ally index = Character (AllyIndex index)
-    let Enemy index = Character (EnemyIndex index)
-    let Input (index : int) = Battle / ("Input" + "+" + scstring index)
-    let RegularMenu index = Input index / "RegularMenu"
-    let SpecialMenu index = Input index / "SpecialMenu"
-    let ItemMenu index = Input index / "ItemMenu"
-    let Reticles index = Input index / "Reticles"
-    let AllInputEntities index = [RegularMenu index; SpecialMenu index; ItemMenu index; Reticles index]
+    let BattleScene = Battle / "Scene"
+    let BattleRide = BattleScene / "Ride"

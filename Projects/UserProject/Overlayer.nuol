@@ -1,0 +1,5 @@
+﻿[[SampleOverlay
+  [BlockDispatcher]
+  [[BodyType Dynamic]
+   [Friction 0.5]
+   [IsSensor True]]]]

@@ -1,9 +1,10 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open Prime
 open Nu
 
@@ -18,57 +19,57 @@ module WorldModuleGame =
 
     type World with
 
-        static member private publishGameChange propertyName propertyValue world =
+        static member private publishGameChange propertyName (propertyValue : obj) world =
             let game = Game ()
             let world =
+                let changeData = { Name = propertyName; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
                 let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
-                World.publishPlus World.sortSubscriptionsByHierarchy { Name = propertyName; Value = propertyValue } changeEventAddress eventTrace game false world
+                World.publishPlus changeData changeEventAddress eventTrace game false world
             world
 
         static member internal getGameState world =
             world.GameState
 
         static member private setGameState gameState world =
-#if DEBUG
-            // NOTE: this check will always succeed!
-            if not (World.qualifyEventContext Address.empty world) then
-                failwith "Cannot set the state of a game in an unqualifed event context."
-#endif
             World.choose { world with GameState = gameState }
 
         static member private updateGameStateWithoutEvent updater world =
             let gameState = World.getGameState world
-            let gameState = updater gameState
-            World.setGameState gameState world
+            match updater gameState with
+            | Some gameState -> (true, World.setGameState gameState world)
+            | None -> (false, world)
 
         static member private updateGameState updater propertyName propertyValue world =
-            let world = World.updateGameStateWithoutEvent updater world
-            World.publishGameChange propertyName propertyValue world
+            let (changed, world) = World.updateGameStateWithoutEvent updater world
+            if changed
+            then World.publishGameChange propertyName propertyValue world
+            else world
 
         static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
         static member internal getGameDispatcher world = (World.getGameState world).Dispatcher
-        static member internal getGameScriptOpt world = (World.getGameState world).ScriptOpt
-        static member internal setGameScriptOpt value world = World.updateGameState (fun gameState -> { gameState with ScriptOpt = value }) Property? ScriptOpt value world
-        static member internal getGameScript world = (World.getGameState world).Script
-        static member internal setGameScript value world =
-            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
-            let world = World.updateGameState (fun gameState -> { gameState with Script = value }) Property? Script value world
-            let world = World.setGameScriptFrame scriptFrame world
-            evalManyWithLogging value scriptFrame (Game ()) world |> snd'
+        static member internal getGameModelProperty world = (World.getGameState world).Model
+        static member internal getGameModel<'a> world = (World.getGameState world).Model.DesignerValue :?> 'a
         static member internal getGameScriptFrame world = (World.getGameState world).ScriptFrame
-        static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> { gameState with ScriptFrame = value }) Property? ScriptFrame value world
-        static member internal getGameScriptUnsubscriptions world = (World.getGameState world).ScriptUnsubscriptions
-        static member internal setGameScriptUnsubscriptions value world = World.updateGameState (fun gameState -> { gameState with ScriptUnsubscriptions = value }) Property? ScriptUnsubscriptions value world
-        static member internal getGameOnRegister world = (World.getGameState world).OnRegister
-        static member internal setGameOnRegister value world = World.updateGameState (fun gameState -> { gameState with OnRegister = value }) Property? OnRegister value world
-        static member internal getGameOnUnregister world = (World.getGameState world).OnUnregister
-        static member internal setGameOnUnregister value world = World.updateGameState (fun gameState -> { gameState with OnUnregister = value }) Property? OnUnregister value world
-        static member internal getGameOnUpdate world = (World.getGameState world).OnUpdate
-        static member internal setGameOnUpdate value world = World.updateGameState (fun gameState -> { gameState with OnUpdate = value }) Property? OnUpdate value world
-        static member internal getGameOnPostUpdate world = (World.getGameState world).OnPostUpdate
-        static member internal setGameOnPostUpdate value world = World.updateGameState (fun gameState -> { gameState with OnPostUpdate = value }) Property? OnPostUpdate value world
+        static member internal setGameScriptFrame value world = World.updateGameState (fun gameState -> if value <> gameState.ScriptFrame then Some { gameState with ScriptFrame = value } else None) Property? ScriptFrame value world
+
+        static member internal setGameModelProperty (value : DesignerProperty) world =
+            World.updateGameState
+                (fun gameState ->
+                    if value.DesignerValue <> gameState.Model.DesignerValue
+                    then Some { gameState with Model = { gameState.Model with DesignerValue = value.DesignerValue }}
+                    else None)
+                Property? Model value.DesignerValue world
+
+        static member internal setGameModel<'a> (value : 'a) world =
+            World.updateGameState
+                (fun gameState ->
+                    let valueObj = value :> obj
+                    if valueObj <> gameState.Model.DesignerValue
+                    then Some { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
+                    else None)
+                Property? Model value world
 
         /// Get the current eye center.
         [<FunctionBinding>]
@@ -78,7 +79,7 @@ module WorldModuleGame =
         /// Set the current eye center.
         [<FunctionBinding>]
         static member setEyeCenter value world =
-            World.updateGameState (fun gameState -> { gameState with EyeCenter = value }) Property? EyeCenter value world
+            World.updateGameState (fun gameState -> if value <> gameState.EyeCenter then Some { gameState with EyeCenter = value } else None) Property? EyeCenter value world
 
         /// Get the current eye size.
         [<FunctionBinding>]
@@ -88,7 +89,7 @@ module WorldModuleGame =
         /// Set the current eye size.
         [<FunctionBinding>]
         static member setEyeSize value world =
-            World.updateGameState (fun gameState -> { gameState with EyeSize = value }) Property? EyeSize value world
+            World.updateGameState (fun gameState -> if value <> gameState.EyeSize then Some { gameState with EyeSize = value } else None) Property? EyeSize value world
 
         /// Get the omni-screen, if any.
         [<FunctionBinding>]
@@ -99,7 +100,7 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member setOmniScreenOpt value world =
             if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set OmniScreen to SelectedScreen."
-            World.updateGameState (fun gameState -> { gameState with OmniScreenOpt = value }) Property? OmniScreenOpt value world
+            World.updateGameState (fun gameState -> if value <> gameState.OmniScreenOpt then Some { gameState with OmniScreenOpt = value } else None) Property? OmniScreenOpt value world
 
         /// Get the omniScreen (failing with an exception if there isn't one).
         [<FunctionBinding>]
@@ -127,7 +128,7 @@ module WorldModuleGame =
                 failwith "Cannot set SelectedScreen to OmniScreen."
 
             // raise change event for none selection
-            let world = World.updateGameState id Property? SelectedScreenOpt None world
+            let world = World.updateGameState Some Property? SelectedScreenOpt None world
 
             // clear out singleton states
             let world =
@@ -139,7 +140,13 @@ module WorldModuleGame =
                 | None -> world
                 
             // actually set selected screen (no events)
-            let world = World.updateGameStateWithoutEvent (fun gameState -> { gameState with SelectedScreenOpt = value }) world
+            let (_, world) =
+                World.updateGameStateWithoutEvent
+                    (fun gameState ->
+                        if value <> gameState.SelectedScreenOpt
+                        then Some { gameState with SelectedScreenOpt = value }
+                        else None)
+                    world
 
             // handle some case
             match value with
@@ -150,7 +157,7 @@ module WorldModuleGame =
                 let world = WorldModule.registerScreenPhysics screen world
 
                 // raise change event for some selection
-                World.updateGameState id Property? SelectedScreenOpt (Some screen) world
+                World.updateGameState Some Property? SelectedScreenOpt (Some screen) world
 
             // fin
             | None -> world
@@ -176,7 +183,14 @@ module WorldModuleGame =
         /// TODO: consider asserting such predication here.
         [<FunctionBinding>]
         static member internal setScreenTransitionDestinationOpt destination world =
-            World.updateGameState (fun gameState -> { gameState with ScreenTransitionDestinationOpt = destination }) Property? ScreenTransitionDestinationOpt destination world
+            World.updateGameState
+                (fun gameState ->
+                    if destination <> gameState.ScreenTransitionDestinationOpt
+                    then Some { gameState with ScreenTransitionDestinationOpt = destination }
+                    else None)
+                Property? ScreenTransitionDestinationOpt
+                destination
+                world
 
         /// Get the view of the eye in absolute terms (world space).
         static member getViewAbsolute world =
@@ -204,8 +218,8 @@ module WorldModuleGame =
             Vector4
                 (gameState.EyeCenter.X - gameState.EyeSize.X * 0.5f,
                  gameState.EyeCenter.Y - gameState.EyeSize.Y * 0.5f,
-                 gameState.EyeCenter.X + gameState.EyeSize.X * 0.5f,
-                 gameState.EyeCenter.Y + gameState.EyeSize.Y * 0.5f)
+                 gameState.EyeSize.X,
+                 gameState.EyeSize.Y)
 
         /// Get the bounds of the eye's sight not relative to its position.
         [<FunctionBinding>]
@@ -214,20 +228,20 @@ module WorldModuleGame =
             Vector4
                 (gameState.EyeSize.X * -0.5f,
                  gameState.EyeSize.Y * -0.5f,
-                 gameState.EyeSize.X * 0.5f,
-                 gameState.EyeSize.Y * 0.5f)
+                 gameState.EyeSize.X,
+                 gameState.EyeSize.Y)
 
         /// Get the bounds of the eye's sight.
         [<FunctionBinding>]
-        static member getViewBounds viewType world =
-            match viewType with
-            | Relative -> World.getViewBoundsRelative world
-            | Absolute -> World.getViewBoundsAbsolute world
+        static member getViewBounds absolute world =
+            if absolute
+            then World.getViewBoundsAbsolute world
+            else World.getViewBoundsRelative world
 
         /// Check that the given bounds is within the eye's sight.
         [<FunctionBinding>]
-        static member isBoundsInView viewType (bounds : Vector4) world =
-            let viewBounds = World.getViewBounds viewType world
+        static member isBoundsInView absolute (bounds : Vector4) world =
+            let viewBounds = World.getViewBounds absolute world
             Math.isBoundsIntersectingBounds bounds viewBounds
 
         /// Transform the given mouse position to screen space.
@@ -242,19 +256,19 @@ module WorldModuleGame =
 
         /// Transform the given mouse position to world space.
         [<FunctionBinding>]
-        static member mouseToWorld viewType mousePosition world =
+        static member mouseToWorld absolute mousePosition world =
             let positionScreen = World.mouseToScreen mousePosition world
             let view =
-                match viewType with
-                | Relative -> World.getViewRelative world
-                | Absolute -> World.getViewAbsolute world
+                if absolute
+                then World.getViewAbsolute world
+                else World.getViewRelative world
             let positionWorld = positionScreen * view
             positionWorld
 
         /// Transform the given mouse position to entity space.
         [<FunctionBinding>]
-        static member mouseToEntity viewType entityPosition mousePosition world =
-            let mousePositionWorld = World.mouseToWorld viewType mousePosition world
+        static member mouseToEntity absolute entityPosition mousePosition world =
+            let mousePositionWorld = World.mouseToWorld absolute mousePosition world
             entityPosition - mousePositionWorld
 
         /// Fetch an asset with the given tag and convert it to a value of type 'a.
@@ -269,71 +283,75 @@ module WorldModuleGame =
         static member assetTagsToValueOpts<'a> assetTags metadata world =
             List.map (fun assetTag -> World.assetTagToValueOpt<'a> assetTag metadata world) assetTags
 
-        static member internal tryGetGameCalculatedProperty propertyName world =
-            let game = Game ()
-            let dispatcher = World.getGameDispatcher world
-            dispatcher.TryGetCalculatedProperty (propertyName, game, world)
-
         static member internal tryGetGameProperty propertyName world =
             match Getters.TryGetValue propertyName with
-            | (false, _) ->
-                match GameState.tryGetProperty propertyName (World.getGameState world) with
-                | None -> World.tryGetGameCalculatedProperty propertyName world
-                | Some _ as propertyOpt -> propertyOpt
+            | (false, _) -> GameState.tryGetProperty propertyName (World.getGameState world)
             | (true, getter) -> Some (getter world)
 
         static member internal getGameProperty propertyName world =
             match Getters.TryGetValue propertyName with
             | (false, _) ->
                 match GameState.tryGetProperty propertyName (World.getGameState world) with
-                | None ->
-                    match World.tryGetGameCalculatedProperty propertyName world with
-                    | None -> failwithf "Could not find property '%s'." propertyName
-                    | Some property -> property
+                | None -> failwithf "Could not find property '%s'." propertyName
                 | Some property -> property
             | (true, getter) -> getter world
 
         static member internal trySetGameProperty propertyName property world =
             match Setters.TryGetValue propertyName with
+            | (true, setter) -> setter property world
             | (false, _) ->
                 let mutable success = false // bit of a hack to get additional state out of the lambda
                 let world =
-                    World.updateGameState (fun entityState ->
-                        let (successInner, entityState) = GameState.trySetProperty propertyName property entityState
-                        success <- successInner
-                        entityState)
+                    World.updateGameState
+                        (fun gameState ->
+                            match GameState.tryGetProperty propertyName gameState with
+                            | Some propertyOld ->
+                                if property.PropertyValue <> propertyOld.PropertyValue then
+                                    let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
+                                    success <- successInner
+                                    Some gameState
+                                else None
+                            | None -> None)
                         propertyName property.PropertyValue world
                 (success, world)
-            | (true, setter) -> setter property world
 
         static member internal setGameProperty propertyName property world =
             match Setters.TryGetValue propertyName with
-            | (false, _) ->
-                World.updateGameState
-                    (GameState.setProperty propertyName property)
-                    propertyName property.PropertyValue world
             | (true, setter) ->
                 match setter property world with
                 | (true, world) -> world
                 | (false, _) -> failwith ("Cannot change game property " + propertyName + ".")
+            | (false, _) ->
+                World.updateGameState
+                    (fun gameState ->
+                        let propertyOld = GameState.getProperty propertyName gameState
+                        if property.PropertyValue <> propertyOld.PropertyValue
+                        then Some (GameState.setProperty propertyName property gameState)
+                        else None)
+                    propertyName property.PropertyValue world
 
         static member internal attachGameProperty propertyName property world =
-            World.updateGameState (GameState.attachProperty propertyName property) propertyName property.PropertyValue world
+            World.updateGameState
+                (fun gameState -> Some (GameState.attachProperty propertyName property gameState))
+                propertyName property.PropertyValue world
 
         static member internal detachGameProperty propertyName world =
-            World.updateGameStateWithoutEvent (GameState.detachProperty propertyName) world
+            World.updateGameStateWithoutEvent
+                (fun gameState -> Some (GameState.detachProperty propertyName gameState))
+                world |>
+            snd
 
         static member internal writeGame3 writeScreens gameDescriptor world =
             let gameState = World.getGameState world
             let gameDispatcherName = getTypeName gameState.Dispatcher
             let gameDescriptor = { gameDescriptor with GameDispatcherName = gameDispatcherName }
-            let viewGameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
-            let gameDescriptor = { gameDescriptor with GameProperties = viewGameProperties }
+            let gameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let gameDescriptor = { gameDescriptor with GameProperties = gameProperties }
             writeScreens gameDescriptor world
 
         static member internal readGame3 readScreens gameDescriptor world =
 
-            // create the dispatcher
+            // make the dispatcher
             let dispatcherName = gameDescriptor.GameDispatcherName
             let dispatchers = World.getGameDispatchers world
             let dispatcher =
@@ -367,38 +385,26 @@ module WorldModuleGame =
     /// Initialize property getters.
     let private initGetters () =
         Getters.Add ("Dispatcher", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher world })
+        Getters.Add ("Model", fun world -> let designerProperty = World.getGameModelProperty world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         Getters.Add ("OmniScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
         Getters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
         Getters.Add ("ScreenTransitionDestinationOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
         Getters.Add ("EyeCenter", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world })
         Getters.Add ("EyeSize", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world })
-        Getters.Add ("ScriptOpt", fun world -> { PropertyType = typeof<Symbol AssetTag option>; PropertyValue = World.getGameScriptOpt world })
-        Getters.Add ("Script", fun world -> { PropertyType = typeof<Scripting.Expr array>; PropertyValue = World.getGameScript world })
-        Getters.Add ("ScriptUnsubscriptions", fun world -> { PropertyType = typeof<Unsubscription list>; PropertyValue = World.getGameScriptUnsubscriptions world })
-        Getters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScript world })
-        Getters.Add ("OnRegister", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnRegister world })
-        Getters.Add ("OnUnregister", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUnregister world })
-        Getters.Add ("OnUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnUpdate world })
-        Getters.Add ("OnPostUpdate", fun world -> { PropertyType = typeof<Scripting.Expr>; PropertyValue = World.getGameOnPostUpdate world })
+        Getters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame world })
         Getters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
         Getters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
 
     /// Initialize property setters.
     let private initSetters () =
         Setters.Add ("Dispatcher", fun _ world -> (false, world))
+        Setters.Add ("Model", fun property world -> (true, World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world))
         Setters.Add ("OmniScreenOpt", fun property world -> (true, World.setOmniScreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("SelectedScreenOpt", fun property world -> (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("ScreenTransitionDestinationOpt", fun property world -> (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("EyeCenter", fun property world -> (true, World.setEyeCenter (property.PropertyValue :?> Vector2) world))
         Setters.Add ("EyeSize", fun property world -> (true, World.setEyeSize (property.PropertyValue :?> Vector2) world))
-        Setters.Add ("ScriptOpt", fun property world -> (true, World.setGameScriptOpt (property.PropertyValue :?> Symbol AssetTag option) world))
-        Setters.Add ("Script", fun property world -> (true, World.setGameScript (property.PropertyValue :?> Scripting.Expr array) world))
         Setters.Add ("ScriptFrame", fun _ world -> (false, world))
-        Setters.Add ("ScriptUnsubscriptions", fun property world -> (true, World.setGameScriptUnsubscriptions (property.PropertyValue :?> Unsubscription list) world))
-        Setters.Add ("OnRegister", fun property world -> (true, World.setGameOnRegister (property.PropertyValue :?> Scripting.Expr) world))
-        Setters.Add ("OnUnregister", fun property world -> (true, World.setGameOnUnregister (property.PropertyValue :?> Scripting.Expr) world))
-        Setters.Add ("OnUpdate", fun property world -> (true, World.setGameOnUpdate (property.PropertyValue :?> Scripting.Expr) world))
-        Setters.Add ("OnPostUpdate", fun property world -> (true, World.setGameOnPostUpdate (property.PropertyValue :?> Scripting.Expr) world))
         Setters.Add ("CreationTimeStamp", fun _ world -> (false, world))
         Setters.Add ("Id", fun _ world -> (false, world))
 

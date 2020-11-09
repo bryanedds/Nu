@@ -1,15 +1,7 @@
 [LayerDispatcher
  [[Depth 0]
   [Name Layer]
-  [OnActualize []]
-  [OnPostUpdate []]
-  [OnRegister []]
-  [OnUnregister []]
-  [OnUpdate []]
   [Persistent True]
-  [Script []]
-  [ScriptOpt None]
-  [Specialization ""]
   [Visible True]]
  [[EnemyDispatcher
    [[Depth 1]
@@ -27,13 +19,13 @@
    [[Depth -8]
     [Parallax 0.1]
     [Position [-480 -304]]
-    [TileMapAsset
+    [TileMap
      [Gameplay BackgroundA]]]]
   [TileMapDispatcher
    [[Depth -4]
     [Parallax 0.1]
     [Position [-480 -304]]
-    [TileMapAsset
+    [TileMap
      [Gameplay BackgroundB]]]]
   [EnemyDispatcher
    [[Depth 1]
@@ -43,5 +35,5 @@
     [Position [1114.274 -207.68]]]]
   [TileMapDispatcher
    [[Position [-480 -304]]
-    [TileMapAsset
+    [TileMap
      [Gameplay Section1TileMap]]]]]]

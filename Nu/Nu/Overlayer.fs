@@ -1,35 +1,86 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open System.Reflection
 open Prime
 open Nu
 
 /// Describes the overlay state of a property.
-type internal OverlayState =
+type [<StructuralEquality; StructuralComparison>] internal OverlayState =
     | Bare
     | Altered
     | Overlaid
+    | NonPersistent
 
 /// An overlay.
 [<Syntax
-    ("EntityDispatcher EffectDispatcher NodeDispatcher GuiDispatcher " +
+    ("EntityDispatcher EffectDispatcher StaticSpriteDispatcher AnimatedSpriteDispatcher NodeDispatcher GuiDispatcher " +
      "ButtonDispatcher LabelDispatcher TextDispatcher ToggleDispatcher FeelerDispatcher FillBarDispatcher " +
      "BlockDispatcher BoxDispatcher CharacterDispatcher TileMapDispatcher",
-     "EffectFacet ScriptFacet TextFacet RigidBodyFacet TileMapFacet NodeFacet StaticSpriteFacet AnimatedSpriteFacet",
+     "EffectFacet ScriptFacet TextFacet RigidBodyFacet RigidBodiesFacet JointFacet TileMapFacet NodeFacet StaticSpriteFacet AnimatedSpriteFacet",
      "", "", "",
      Constants.PrettyPrinter.StructuredThresholdMin,
-     Constants.PrettyPrinter.DefaultThresholdMax)>]
+     Constants.PrettyPrinter.DefaultThresholdMax);
+     StructuralEquality; StructuralComparison>]
 type Overlay =
     { OverlayName : string
       OverlayIncludeNames : string list
       OverlayProperties : Map<string, Symbol> }
 
-[<AutoOpen>]
-module OverlayerModule =
+    /// Make intrinsic overlays.
+    static member makeIntrinsicOverlays requiresFacetNames sourceTypes =
+
+        // get the unique, decomposed source types
+        let sourceTypeHashSet = HashSet HashIdentity.Structural
+        for sourceType in sourceTypes do
+            for sourceTypeDecomposed in sourceType :: Reflection.getBaseTypesExceptObject sourceType do
+                sourceTypeHashSet.Add sourceTypeDecomposed |> ignore
+        let sourceTypes = List.ofSeq sourceTypeHashSet
+
+        // get the descriptors needed to construct the overlays
+        let overlayDescriptors =
+            List.map
+                (fun (sourceType : Type) ->
+                    let includeNames = if sourceType.BaseType <> typeof<obj> then [sourceType.BaseType.Name] else []
+                    let definitions = Reflection.getPropertyDefinitionsNoInherit sourceType
+                    let requiresFacetNames = requiresFacetNames sourceType
+                    (sourceType.Name, includeNames, definitions, requiresFacetNames))
+                sourceTypes
+
+        // create the intrinsic overlays with the above descriptors
+        let overlays =
+            List.map
+                (fun (overlayName, includeNames, definitions, requiresFacetNames) ->
+                    let overlayProperties =
+                        List.foldBack
+                            (fun definition overlayProperties ->
+                                match definition.PropertyExpr with
+                                | DefineExpr value ->
+                                    let converter = SymbolicConverter (false, None, definition.PropertyType)
+                                    let overlayProperty = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
+                                    Map.add definition.PropertyName overlayProperty overlayProperties
+                                | VariableExpr _ -> overlayProperties
+                                | ComputedExpr _ -> overlayProperties)
+                            definitions
+                            Map.empty
+                    let overlayProperties =
+                        if requiresFacetNames
+                        then Map.add Property? FacetNames (Symbols ([], None)) overlayProperties
+                        else overlayProperties
+                    { OverlayName = overlayName
+                      OverlayIncludeNames = includeNames
+                      OverlayProperties = overlayProperties })
+                overlayDescriptors
+
+        // fin
+        overlays
+
+[<RequireQualifiedAccess>]
+module Overlayer =
 
     /// Defines the manner in which overlays are applied to targets.
     type [<ReferenceEquality>] Overlayer =
@@ -38,28 +89,26 @@ module OverlayerModule =
               ExtrinsicOverlays : Overlay list
               Overlays : Map<string, Overlay> }
 
-    [<RequireQualifiedAccess>]
-    module Overlayer =
-
-        let rec private getOverlaySymbols2 overlayName overlayer =
-            match Map.tryFind overlayName overlayer.Overlays with
-            | Some overlay ->
-                List.fold (fun overlaySymbols overlayName ->
-                    let overlaySymbols' = getOverlaySymbols2 overlayName overlayer
-                    Map.concat overlaySymbols' overlaySymbols)
-                    overlay.OverlayProperties
-                    overlay.OverlayIncludeNames
-            | None -> Map.empty
-
-        let internal getOverlaySymbols overlayName facetNames overlayer =
-            let overlaySymbols = getOverlaySymbols2 overlayName overlayer
-            Seq.fold (fun overlaySymbols facetName ->
-                let overlaySymbols' = getOverlaySymbols2 facetName overlayer
+    let rec private getOverlaySymbols2 overlayName overlayer =
+        match Map.tryFind overlayName overlayer.Overlays with
+        | Some overlay ->
+            List.fold (fun overlaySymbols overlayName ->
+                let overlaySymbols' = getOverlaySymbols2 overlayName overlayer
                 Map.concat overlaySymbols' overlaySymbols)
-                overlaySymbols
-                facetNames
+                overlay.OverlayProperties
+                overlay.OverlayIncludeNames
+        | None -> Map.empty
 
-        let internal getPropertyState propertyName propertyType target overlaySymbols =
+    let internal getOverlaySymbols overlayName facetNames overlayer =
+        let overlaySymbols = getOverlaySymbols2 overlayName overlayer
+        Seq.fold (fun overlaySymbols facetName ->
+            let overlaySymbols' = getOverlaySymbols2 facetName overlayer
+            Map.concat overlaySymbols' overlaySymbols)
+            overlaySymbols
+            facetNames
+
+    let internal getPropertyState propertyName propertyType target overlaySymbols =
+        if not (Reflection.isPropertyNonPersistentByName propertyName) then
             match Map.tryFind propertyName overlaySymbols with
             | Some propertySymbol -> 
                 let targetType = target.GetType ()
@@ -91,140 +140,140 @@ module OverlayerModule =
                         else Bare
                 | None -> Bare
             | None -> Bare
-            
-        let internal shouldPropertySerialize propertyName propertyType target overlaySymbols =
-            match getPropertyState propertyName propertyType target overlaySymbols with
-            | Altered | Bare -> true
-            | Overlaid -> false
+        else NonPersistent
+        
+    let internal shouldPropertySerialize propertyName propertyType target overlaySymbols =
+        match getPropertyState propertyName propertyType target overlaySymbols with
+        | Altered | Bare -> true
+        | Overlaid | NonPersistent -> false
 
-        let internal shouldApplyOverlay (property : PropertyInfo) target oldOverlaySymbols =
-            if property.PropertyType <> typeof<Xtension> then
-                match getPropertyState property.Name property.PropertyType target oldOverlaySymbols with
-                | Bare -> true
-                | Altered -> false
-                | Overlaid -> true
-            else false
+    let internal shouldApplyOverlay (property : PropertyInfo) target oldOverlaySymbols =
+        if property.PropertyType <> typeof<Xtension> then
+            match getPropertyState property.Name property.PropertyType target oldOverlaySymbols with
+            | Bare | Overlaid -> true
+            | Altered | NonPersistent -> false
+        else false
 
-        let internal tryApplyOverlayToRecordProperty property (propertySymbol : Symbol) target oldOverlaySymbols =
-            if shouldApplyOverlay property target oldOverlaySymbols then
-                let converter = SymbolicConverter (false, None, property.PropertyType)
-                if converter.CanConvertFrom typeof<Symbol> then
-                    let propertyValue = converter.ConvertFrom propertySymbol
-                    property.SetValue (target, propertyValue)
+    let internal tryApplyOverlayToRecordProperty property (propertySymbol : Symbol) target oldOverlaySymbols =
+        if shouldApplyOverlay property target oldOverlaySymbols then
+            let converter = SymbolicConverter (false, None, property.PropertyType)
+            if converter.CanConvertFrom typeof<Symbol> then
+                let propertyValue = converter.ConvertFrom propertySymbol
+                property.SetValue (target, propertyValue)
 
-        let internal applyOverlayToProperties target oldOverlaySymbols newOverlaySymbols =
-            let targetType = target.GetType ()
-            let recordProperties = targetType.GetProperties ()
-            for property in recordProperties do
-                if property.Name <> "FacetNames" && property.PropertyType <> typeof<string Set> then
-                    match Map.tryFind property.Name newOverlaySymbols with
-                    | Some propertySymbol -> tryApplyOverlayToRecordProperty property propertySymbol target oldOverlaySymbols
-                    | None -> ()
+    let internal applyOverlayToProperties target oldOverlaySymbols newOverlaySymbols =
+        let targetType = target.GetType ()
+        let recordProperties = targetType.GetProperties ()
+        for property in recordProperties do
+            if property.Name <> "FacetNames" && property.PropertyType <> typeof<string Set> then
+                match Map.tryFind property.Name newOverlaySymbols with
+                | Some propertySymbol -> tryApplyOverlayToRecordProperty property propertySymbol target oldOverlaySymbols
+                | None -> ()
 
-        let internal applyOverlayToXtension target oldOverlaySymbols newOverlaySymbols =
-            let targetType = target.GetType ()
-            match targetType.GetProperty "Xtension" with
-            | null -> ()
-            | xtensionProperty ->
-                match xtensionProperty.GetValue target with
-                | :? Xtension as xtension ->
-                    let xtension =
-                        Map.foldBack (fun propertyName propertySymbol xtension ->
-                            match Xtension.tryGetProperty propertyName xtension with
-                            | Some property ->
-                                let propertyType = property.PropertyType
-                                match getPropertyState propertyName propertyType target oldOverlaySymbols with
-                                | Bare | Overlaid ->
-                                    let converter = SymbolicConverter (true, None, propertyType)
-                                    let propertyValue = converter.ConvertFrom propertySymbol
-                                    let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
-                                    Xtension.attachProperty propertyName property xtension
-                                | Altered -> xtension
-                            | None ->
-                                let recordProperties = targetType.GetProperties ()
-                                if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) recordProperties then
-                                    match propertySymbol with
-                                    | Symbols ([Text (str, _); _], _) when isNotNull (Type.GetType str) ->
-                                        let propertyType = typeof<DesignerProperty>
-                                        match getPropertyState propertyName propertyType target oldOverlaySymbols with
-                                        | Bare | Overlaid ->
-                                            let converter = SymbolicConverter (true, None, propertyType)
-                                            let propertyValue = converter.ConvertFrom propertySymbol
-                                            let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
-                                            Xtension.attachProperty propertyName property xtension
-                                        | Altered -> xtension
-                                    | _ -> xtension
-                                else xtension)
-                            newOverlaySymbols
-                            xtension
-                    xtensionProperty.SetValue (target, xtension)
-                | _ -> ()
+    let internal applyOverlayToXtension target oldOverlaySymbols newOverlaySymbols =
+        let targetType = target.GetType ()
+        match targetType.GetProperty "Xtension" with
+        | null -> ()
+        | xtensionProperty ->
+            match xtensionProperty.GetValue target with
+            | :? Xtension as xtension ->
+                let xtension =
+                    Map.foldBack (fun propertyName propertySymbol xtension ->
+                        match Xtension.tryGetProperty propertyName xtension with
+                        | Some property ->
+                            let propertyType = property.PropertyType
+                            match getPropertyState propertyName propertyType target oldOverlaySymbols with
+                            | Bare | Overlaid ->
+                                let converter = SymbolicConverter (true, None, propertyType)
+                                let propertyValue = converter.ConvertFrom propertySymbol
+                                let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
+                                Xtension.attachProperty propertyName property xtension
+                            | Altered | NonPersistent -> xtension
+                        | None ->
+                            let recordProperties = targetType.GetProperties ()
+                            if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) recordProperties then
+                                match propertySymbol with
+                                | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
+                                    let propertyType = typeof<DesignerProperty>
+                                    match getPropertyState propertyName propertyType target oldOverlaySymbols with
+                                    | Bare | Overlaid ->
+                                        let converter = SymbolicConverter (true, None, propertyType)
+                                        let propertyValue = converter.ConvertFrom propertySymbol
+                                        let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
+                                        Xtension.attachProperty propertyName property xtension
+                                    | Altered | NonPersistent -> xtension
+                                | _ -> xtension
+                            else xtension)
+                        newOverlaySymbols
+                        xtension
+                xtensionProperty.SetValue (target, xtension)
+            | _ -> ()
 
-        let internal applyOverlayToFacetNames4 (copyTarget : 'a -> 'a) target oldOverlaySymbols newOverlaySymbols =
-            let target = copyTarget target
-            let targetType = target.GetType ()
-            match targetType.GetProperty "FacetNames" with
-            | null -> target
-            | facetNamesProperty ->
-                match Map.tryFind facetNamesProperty.Name newOverlaySymbols with
-                | Some propertySymbol ->
-                    tryApplyOverlayToRecordProperty facetNamesProperty propertySymbol target oldOverlaySymbols
-                    target
-                | None -> target
+    let internal applyOverlayToFacetNames4 (copyTarget : 'a -> 'a) target oldOverlaySymbols newOverlaySymbols =
+        let target = copyTarget target
+        let targetType = target.GetType ()
+        match targetType.GetProperty "FacetNames" with
+        | null -> target
+        | facetNamesProperty ->
+            match Map.tryFind facetNamesProperty.Name newOverlaySymbols with
+            | Some propertySymbol ->
+                tryApplyOverlayToRecordProperty facetNamesProperty propertySymbol target oldOverlaySymbols
+                target
+            | None -> target
 
-        /// Apply an overlay to the FacetNames property of the given target.
-        let applyOverlayToFacetNames (copyTarget : 'a -> 'a) oldOverlayName newOverlayName target oldOverlayer newOverlayer =
-            let oldOverlaySymbols = getOverlaySymbols oldOverlayName Seq.empty oldOverlayer
-            let newOverlaySymbols = getOverlaySymbols newOverlayName Seq.empty newOverlayer
-            applyOverlayToFacetNames4 copyTarget target oldOverlaySymbols newOverlaySymbols
+    /// Apply an overlay to the FacetNames property of the given target.
+    let applyOverlayToFacetNames (copyTarget : 'a -> 'a) oldOverlayName newOverlayName target oldOverlayer newOverlayer =
+        let oldOverlaySymbols = getOverlaySymbols oldOverlayName Seq.empty oldOverlayer
+        let newOverlaySymbols = getOverlaySymbols newOverlayName Seq.empty newOverlayer
+        applyOverlayToFacetNames4 copyTarget target oldOverlaySymbols newOverlaySymbols
 
-        /// Apply an overlay to the given target (except for any FacetNames property).
-        /// Only the properties that are overlaid by the old overlay as specified by the old
-        /// overlayer will be changed.
-        let applyOverlay6 (copyTarget : 'a -> 'a) oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
-            let target = copyTarget target
-            let oldOverlaySymbols = getOverlaySymbols oldOverlayName facetNames oldOverlayer
-            let newOverlaySymbols = getOverlaySymbols newOverlayName Seq.empty newOverlayer
-            applyOverlayToProperties target oldOverlaySymbols newOverlaySymbols
-            applyOverlayToXtension target oldOverlaySymbols newOverlaySymbols
-            target
+    /// Apply an overlay to the given target (except for any FacetNames property).
+    /// Only the properties that are overlaid by the old overlay as specified by the old
+    /// overlayer will be changed.
+    let applyOverlay6 (copyTarget : 'a -> 'a) oldOverlayName newOverlayName facetNames target oldOverlayer newOverlayer =
+        let target = copyTarget target
+        let oldOverlaySymbols = getOverlaySymbols oldOverlayName facetNames oldOverlayer
+        let newOverlaySymbols = getOverlaySymbols newOverlayName Seq.empty newOverlayer
+        applyOverlayToProperties target oldOverlaySymbols newOverlaySymbols
+        applyOverlayToXtension target oldOverlaySymbols newOverlaySymbols
+        target
 
-        /// Apply an overlay to the given target.
-        /// Only the properties that are overlaid by the old overlay will be changed.
-        let applyOverlay copyTarget oldOverlayName newOverlayName facetNames target overlayer =
-            applyOverlay6 copyTarget oldOverlayName newOverlayName facetNames target overlayer overlayer
+    /// Apply an overlay to the given target.
+    /// Only the properties that are overlaid by the old overlay will be changed.
+    let applyOverlay copyTarget oldOverlayName newOverlayName facetNames target overlayer =
+        applyOverlay6 copyTarget oldOverlayName newOverlayName facetNames target overlayer overlayer
 
-        /// Get intrinsic overlays.
-        let getIntrinsicOverlays overlayer =
-            overlayer.IntrinsicOverlays
+    /// Get intrinsic overlays.
+    let getIntrinsicOverlays overlayer =
+        overlayer.IntrinsicOverlays
 
-        /// Get extrinsic overlays.
-        let getExtrinsicOverlays overlayer =
-            overlayer.ExtrinsicOverlays
+    /// Get extrinsic overlays.
+    let getExtrinsicOverlays overlayer =
+        overlayer.ExtrinsicOverlays
 
-        /// The empty overlayer.
-        let empty =
-            { IntrinsicOverlays = List.empty
-              ExtrinsicOverlays = List.empty
-              Overlays = Map.empty }
+    /// The empty overlayer.
+    let empty =
+        { IntrinsicOverlays = List.empty
+          ExtrinsicOverlays = List.empty
+          Overlays = Map.empty }
 
-        /// Make an overlayer.
-        let make intrinsicOverlays extrinsicOverlays =
-            let intrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) intrinsicOverlays
-            let extrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
-            { IntrinsicOverlays = intrinsicOverlays
-              ExtrinsicOverlays = extrinsicOverlays
-              Overlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap }
+    /// Make an overlayer.
+    let make intrinsicOverlays extrinsicOverlays =
+        let intrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) intrinsicOverlays
+        let extrinsicOverlaysMap = Map.ofListBy (fun overlay -> (overlay.OverlayName, overlay)) extrinsicOverlays
+        { IntrinsicOverlays = intrinsicOverlays
+          ExtrinsicOverlays = extrinsicOverlays
+          Overlays = Map.concat intrinsicOverlaysMap extrinsicOverlaysMap }
 
-        /// Attempt to make an overlayer by loading overlays from a file and then combining it with
-        /// the given intrinsic overlays.
-        let tryMakeFromFile intrinsicOverlays (filePath : string) =
-            try let extrinsicOverlays =
-                    File.ReadAllText filePath |>
-                    String.unescape |>
-                    scvalue<Overlay list>
-                make intrinsicOverlays extrinsicOverlays |> Right
-            with exn -> Left ("Could not make overlayer from file '" + filePath + "' due to: " + scstring exn)
+    /// Attempt to make an overlayer by loading overlays from a file and then combining it with
+    /// the given intrinsic overlays.
+    let tryMakeFromFile intrinsicOverlays (filePath : string) =
+        try let extrinsicOverlays =
+                File.ReadAllText filePath |>
+                String.unescape |>
+                scvalue<Overlay list>
+            make intrinsicOverlays extrinsicOverlays |> Right
+        with exn -> Left ("Could not make overlayer from file '" + filePath + "' due to: " + scstring exn)
 
 /// Defines the manner in which overlays are applied to targets.
-type Overlayer = OverlayerModule.Overlayer
+type Overlayer = Overlayer.Overlayer

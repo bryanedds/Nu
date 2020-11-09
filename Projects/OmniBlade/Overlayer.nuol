@@ -1,9 +1,14 @@
-[[SampleOverlay
-  [BlockDispatcher]
-  [[BodyType Dynamic]
-   [Friction 0.5]
-   [IsSensor True]]]
- [ButtonDispatcherRouted
+[[ButtonDispatcherRoute
   [ButtonDispatcher]
   [[ClickSoundOpt
-    [Some [Gui Affirm]]]]]]
+    [Some [Gui Affirm]]]
+   [DownImage [Gui ButtonDown]]
+   [Font [Gui Font]]
+   [TextColor [255 255 255 255]]
+   [TextDisabledColor [192 192 192 192]]
+   [UpImage [Gui ButtonUp]]]]
+ [TextDispatcherRoute
+  [TextDispatcher]
+  [[Font [Gui Font]]
+   [TextColor [255 255 255 255]]
+   [TextDisabledColor [192 192 192 192]]]]]

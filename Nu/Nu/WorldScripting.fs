@@ -1,9 +1,10 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Numerics
 open Prime
 open Prime.Scripting
 open Nu
@@ -118,15 +119,9 @@ module WorldScripting =
             | Right struct (simulant, world) ->
                 match World.tryGetProperty propertyName simulant world with
                 | Some property ->
-                    match property.PropertyValue with
-                    | :? DesignerProperty as dp ->
-                        match ScriptingSystem.tryImport dp.DesignerType dp.DesignerValue world with
-                        | Some propertyValue -> struct (propertyValue, world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
-                    | _ ->
-                        match ScriptingSystem.tryImport property.PropertyType property.PropertyValue world with
-                        | Some propertyValue -> struct (propertyValue, world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
+                    match ScriptingSystem.tryImport property.PropertyType property.PropertyValue world with
+                    | Some propertyValue -> struct (propertyValue, world)
+                    | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
                 | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
@@ -138,11 +133,8 @@ module WorldScripting =
                     Stream.make (Events.Change propertyName --> simulant.SimulantAddress) |>
                     Stream.mapEvent (fun (evt : Event<ChangeData, _>) world ->
                         match World.tryGetProperty evt.Data.Name simulant world with
-                        | Some property ->
-                            match property.PropertyValue with
-                            | :? DesignerProperty as dp -> ScriptingSystem.tryImport dp.DesignerType dp.DesignerValue world |> box
-                            | _ -> ScriptingSystem.tryImport property.PropertyType property.PropertyValue world |> box
-                        | None -> None |> box)
+                        | Some property -> ScriptingSystem.tryImport property.PropertyType property.PropertyValue world |> box
+                        | None -> None :> obj)
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
 
@@ -154,25 +146,13 @@ module WorldScripting =
                 | Some property ->
                     let struct (propertyValue, world) = World.evalInternal propertyValueExpr world
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                    let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
-                    match property.PropertyValue with
-                    | :? DesignerProperty as dp ->
-                        match ScriptingSystem.tryExport dp.DesignerType propertyValue world with
-                        | Some propertyValue ->
-                            let propertyValue = { dp with DesignerValue = propertyValue }
-                            let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                            match World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world with
-                            | (true, world) -> struct (Unit, world)
-                            | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
-                    | _ ->
-                        match ScriptingSystem.tryExport property.PropertyType propertyValue world with
-                        | Some propertyValue ->
-                            let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                            match World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world with
-                            | (true, world) -> struct (Unit, world)
-                            | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
-                        | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
+                    match ScriptingSystem.tryExport property.PropertyType propertyValue world with
+                    | Some propertyValue ->
+                        let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
+                        match World.trySetProperty propertyName alwaysPublish property simulant world with
+                        | (true, world) -> struct (Unit, world)
+                        | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
+                    | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
                 | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
@@ -193,23 +173,12 @@ module WorldScripting =
                                         match World.tryGetProperty propertyName simulant world with
                                         | Some property ->
                                             let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                                            let nonPersistent = not (Reflection.isPropertyPersistentByName propertyName)
-                                            match property.PropertyValue with
-                                            | :? DesignerProperty as dp ->
-                                                match ScriptingSystem.tryExport dp.DesignerType expr world with
-                                                | Some propertyValue ->
-                                                    let propertyValue = { dp with DesignerValue = propertyValue }
-                                                    let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                                                    let (_, world) = World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
-                                                    (Cascade, world)
-                                                | None -> (Cascade, world)
-                                            | _ ->
-                                                match ScriptingSystem.tryExport property.PropertyType expr world with
-                                                | Some propertyValue ->
-                                                    let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                                                    let (_, world) = World.trySetProperty propertyName alwaysPublish nonPersistent property simulant world
-                                                    (Cascade, world)
-                                                | None -> (Cascade, world)
+                                            match ScriptingSystem.tryExport property.PropertyType expr world with
+                                            | Some propertyValue ->
+                                                let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
+                                                let (_, world) = World.trySetProperty propertyName alwaysPublish property simulant world
+                                                (Cascade, world)
+                                            | None -> (Cascade, world)
                                         | None -> (Cascade, world)
                                     | None -> (Cascade, world)
                                 | _ -> (Cascade, world))
@@ -370,9 +339,12 @@ module WorldScripting =
                     | Some evtImported ->
                         let breakpoint = { BreakEnabled = false; BreakCondition = Unit }
                         let application = Apply ([|subscription; evtImported|], breakpoint, None)
-                        World.evalWithLogging application scriptFrame subscriber world |> snd'
-                    | None -> Log.info "Event data could not be imported into scripting environment."; world
-                | None -> world)
+                        let world = World.evalWithLogging application scriptFrame subscriber world |> snd'
+                        (Cascade, world)
+                    | None ->
+                        Log.info "Event data could not be imported into scripting environment."
+                        (Cascade, world)
+                | None -> (Cascade, world))
                 eventAddress
                 (subscriber :> Simulant)
                 world
@@ -413,8 +385,12 @@ module WorldScripting =
             match World.evalManyInternal exprs world with
             | struct ([|Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; Violation _ as v|], world) -> struct (v, world)
-            | struct ([|Single x; Single y|], world) -> struct (Pluggable { Vector2 = Vector2 (x, y) }, world)
-            | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the both arguments.", originOpt), world)
+            | struct ([|x; y|], world) ->
+                let xOpt = match x with Double x -> Some (single x) | Single x -> Some x | Int x -> Some (single x) | _ -> None
+                let yOpt = match y with Double y -> Some (single y) | Single y -> Some y | Int y -> Some (single y) | _ -> None
+                match (xOpt, yOpt) with
+                | (Some x, Some y) -> struct (Pluggable { Vector2 = Vector2 (x, y) }, world)
+                | (_, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single or Int for its arguments.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalIndexV2Extrinsic fnName exprs originOpt world =
@@ -454,8 +430,14 @@ module WorldScripting =
             | struct ([|_; Violation _ as v; _; _|], world) -> struct (v, world)
             | struct ([|_; _; Violation _ as v; _|], world) -> struct (v, world)
             | struct ([|_; _; _; Violation _ as v|], world) -> struct (v, world)
-            | struct ([|Single x; Single y; Single z; Single w|], world) -> struct (Pluggable { Vector4 = Vector4 (x, y, z, w) }, world)
-            | struct ([|_; _; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single for the all arguments.", originOpt), world)
+            | struct ([|x; y; z; w|], world) ->
+                let xOpt = match x with Double x -> Some (single x) | Single x -> Some x | Int x -> Some (single x) | _ -> None
+                let yOpt = match y with Double y -> Some (single y) | Single y -> Some y | Int y -> Some (single y) | _ -> None
+                let zOpt = match z with Double z -> Some (single z) | Single z -> Some z | Int z -> Some (single z) | _ -> None
+                let wOpt = match w with Double w -> Some (single w) | Single w -> Some w | Int w -> Some (single w) | _ -> None
+                match (xOpt, yOpt, zOpt, wOpt) with
+                | (Some x, Some y, Some z, Some w) -> struct (Pluggable { Vector4 = Vector4 (x, y, z, w) }, world)
+                | (_, _, _, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Single or Int for its arguments.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 4 arguments required.", originOpt), world)
 
         static member internal evalIndexV4Extrinsic fnName exprs originOpt world =
@@ -530,6 +512,108 @@ module WorldScripting =
                     | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V2i.", originOpt), world)
                 | _ -> failwithumf ()
             | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V2i target, a keyword index of X or Y, and an Int value.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalV4iExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|x; y; z; w|], world) ->
+                let xOpt = match x with Int x -> Some x | _ -> None
+                let yOpt = match y with Int y -> Some y | _ -> None
+                let zOpt = match z with Int z -> Some z | _ -> None
+                let wOpt = match w with Int w -> Some w | _ -> None
+                match (xOpt, yOpt, zOpt, wOpt) with
+                | (Some x, Some y, Some z, Some w) -> struct (Pluggable { Vector4i = Vector4i (x, y, z, w) }, world)
+                | (_, _, _, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires Int for all arguments.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 4 arguments required.", originOpt), world)
+
+        static member internal evalIndexV4iExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? Vector4iPluggable as v4i ->
+                    match indexer with
+                    | "X" -> struct (Int v4i.Vector4i.X, world)
+                    | "Y" -> struct (Int v4i.Vector4i.Y, world)
+                    | "Z" -> struct (Int v4i.Vector4i.Z, world)
+                    | "W" -> struct (Int v4i.Vector4i.W, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V4i.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V4i index.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalUpdateV4iExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Int i; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? Vector4iPluggable as v4i ->
+                    match indexer with
+                    | "X" -> struct (Pluggable { Vector4i = Vector4i (i, v4i.Vector4i.Y, v4i.Vector4i.Z, v4i.Vector4i.W) }, world)
+                    | "Y" -> struct (Pluggable { Vector4i = Vector4i (v4i.Vector4i.X, i, v4i.Vector4i.Z, v4i.Vector4i.W) }, world)
+                    | "Z" -> struct (Pluggable { Vector4i = Vector4i (v4i.Vector4i.X, v4i.Vector4i.Y, i, v4i.Vector4i.W) }, world)
+                    | "W" -> struct (Pluggable { Vector4i = Vector4i (v4i.Vector4i.X, v4i.Vector4i.Y, v4i.Vector4i.Z, i) }, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for V4i.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a V4i target, a keyword index of X, Y, Z, or W, and an Int value.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalColorExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|r; g; b; a|], world) ->
+                let rOpt = match r with Int r -> Some r | _ -> None
+                let gOpt = match g with Int g -> Some g | _ -> None
+                let bOpt = match b with Int b -> Some b | _ -> None
+                let aOpt = match a with Int a -> Some a | _ -> None
+                match (rOpt, gOpt, bOpt, aOpt) with
+                | (Some r, Some g, Some b, Some a) -> struct (Pluggable { Color = Color (byte r, byte g, byte b, byte a) }, world)
+                | (_, _, _, _) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires Int for all arguments.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 4 arguments required.", originOpt), world)
+
+        static member internal evalIndexColorExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? ColorPluggable as color ->
+                    match indexer with
+                    | "R" -> struct (Int (int color.Color.R), world)
+                    | "G" -> struct (Int (int color.Color.G), world)
+                    | "B" -> struct (Int (int color.Color.B), world)
+                    | "A" -> struct (Int (int color.Color.A), world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for Color.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Color index.", originOpt), world)
+            | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
+
+        static member internal evalUpdateColorExtrinsic fnName exprs originOpt world =
+            match World.evalManyInternal exprs world with
+            | struct ([|Violation _ as v; _; _|], world) -> struct (v, world)
+            | struct ([|_; Violation _ as v; _|], world) -> struct (v, world)
+            | struct ([|_; _; Violation _ as v|], world) -> struct (v, world)
+            | struct ([|Keyword indexer; Int i; Pluggable pluggable|], world) ->
+                match pluggable with
+                | :? ColorPluggable as color ->
+                    match indexer with
+                    | "R" -> struct (Pluggable { Color = Color (byte i, color.Color.G, color.Color.B, color.Color.A) }, world)
+                    | "G" -> struct (Pluggable { Color = Color (color.Color.R, byte i, color.Color.B, color.Color.A) }, world)
+                    | "B" -> struct (Pluggable { Color = Color (color.Color.R, color.Color.G, byte i, color.Color.A) }, world)
+                    | "A" -> struct (Pluggable { Color = Color (color.Color.R, color.Color.G, color.Color.B, byte i) }, world)
+                    | _ -> struct (Violation (["InvalidIndexer"; String.capitalize fnName], "Invalid indexer '" + indexer + "' for Color.", originOpt), world)
+                | _ -> failwithumf ()
+            | struct ([|_; _; _|], world) -> struct (Violation (["InvalidArgumentType"; String.capitalize fnName], "Application of " + fnName + " requires a Color target, a keyword index of R, G, B, or A, and an Int value.", originOpt), world)
             | struct (_, world) -> struct (Violation (["InvalidArgumentCount"; String.capitalize fnName], "Incorrect number of arguments for '" + fnName + "'; 2 arguments required.", originOpt), world)
 
         static member internal evalGetExtrinsic fnName exprs originOpt world =
@@ -716,10 +800,16 @@ module WorldScripting =
                  ("v2i", { Fn = World.evalV2iExtrinsic; Pars = [|"x"; "y"|]; DocOpt = Some "Construct a Vector2i." })
                  ("index_Vector2i", { Fn = World.evalIndexV2iExtrinsic; Pars = [||]; DocOpt = None })
                  ("alter_Vector2i", { Fn = World.evalUpdateV2iExtrinsic; Pars = [||]; DocOpt = None })
+                 ("v4i", { Fn = World.evalV4iExtrinsic; Pars = [|"x"; "y"; "w"; "z"|]; DocOpt = Some "Construct a Vector4i." })
+                 ("index_Vector4i", { Fn = World.evalIndexV4iExtrinsic; Pars = [||]; DocOpt = None })
+                 ("alter_Vector4i", { Fn = World.evalUpdateV4iExtrinsic; Pars = [||]; DocOpt = None })
+                 ("color", { Fn = World.evalColorExtrinsic; Pars = [|"r"; "g"; "b"; "a"|]; DocOpt = Some "Construct a Color." })
+                 ("index_Color", { Fn = World.evalIndexColorExtrinsic; Pars = [||]; DocOpt = None })
+                 ("alter_Color", { Fn = World.evalUpdateColorExtrinsic; Pars = [||]; DocOpt = None })
                  ("get", { Fn = World.evalGetExtrinsic; Pars = [|"simulant?"; "property"|]; DocOpt = Some "Get a simulant's property." })
                  ("getAsStream", { Fn = World.evalGetAsStreamExtrinsic; Pars = [|"simulant?"; "property"|]; DocOpt = Some "Get a simulant's property as a Stream." })
                  ("set", { Fn = World.evalSetExtrinsic; Pars = [|"simulant?"; "property"; "value"|]; DocOpt = Some "Set a simulant's property." })
-                 ("setAsStream", { Fn = World.evalSetAsStreamExtrinsic; Pars = [|"simulant?"; "property"; "stream"|]; DocOpt = Some "Equate a simulant's property to a Stream." })
+                 ("setAsStream", { Fn = World.evalSetAsStreamExtrinsic; Pars = [|"simulant?"; "property"; "stream"|]; DocOpt = Some "Bind a simulant's property to a Stream." })
                  ("streamEvent", { Fn = World.evalStreamEventExtrinsic; Pars = [|"event"|]; DocOpt = Some "Construct a Stream for a given event." })
                  ("map_Stream", { Fn = World.evalMapStreamExtrinsic; Pars = [||]; DocOpt = None })
                  ("fold_Stream", { Fn = World.evalFoldStreamExtrinsic; Pars = [||]; DocOpt = None })

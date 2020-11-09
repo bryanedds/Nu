@@ -1,8 +1,9 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
+open System.Numerics
 open Nito.Collections
 open TiledSharp
 open Prime
@@ -14,26 +15,25 @@ module DeclarativeOperators2 =
 
     type World with
 
-        static member internal attachModel modelValue modelName (simulant : Simulant) world =
+        static member internal tryAttachModel (modelValue : 'model) modelName (simulant : Simulant) world =
             match World.tryGetProperty modelName simulant world with
-            | Some property ->
-                let model = (property.PropertyValue :?> DesignerProperty).DesignerValue :?> 'model
-                (model, world)
             | None ->
                 let property = { DesignerType = typeof<'model>; DesignerValue = modelValue }
                 let property = { PropertyType = typeof<DesignerProperty>; PropertyValue = property }
-                let world = World.attachProperty modelName true false property simulant world
-                (modelValue, world)
+                World.attachProperty modelName true property simulant world
+            | Some _ -> world
 
         static member internal actualizeViews views world =
             Seq.fold (fun world view ->
                 match view with
-                | Render descriptor -> World.enqueueRenderMessage (RenderDescriptorsMessage [|descriptor|]) world
+                | Render (depth, positionY, assetTag, descriptor) ->
+                    let layeredDescriptor = { Depth = depth; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
+                    World.enqueueRenderMessage (LayeredDescriptorMessage layeredDescriptor) world
                 | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
                 | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
                 | FadeOutSong fade -> World.fadeOutSong fade world
                 | StopSong -> World.stopSong world
-                | Effect effect -> effect world)
+                | Tag _ -> world)
                 world views
 
 [<AutoOpen>]
@@ -49,7 +49,7 @@ module FacetModule =
                 | :? Signal<'message, 'command> as signal ->
                     Signal.processSignal facet.Message facet.Command (entity.FacetModel<'model> facet.ModelName) signal entity world
                 | _ -> Log.info "Incorrect signal type returned from event binding."; world
-            | _ -> Log.info "Failed to send signal to entity."; world
+            | _ -> Log.info "Failed to send signal to entity facet."; world
 
         static member internal signalEntityFacet<'model, 'message, 'command> signal facetName (entity : Entity) world =
             let facets = entity.GetFacets world
@@ -61,14 +61,10 @@ module FacetModule =
     and Entity with
     
         member this.GetFacetModel<'model> modelName world =
-            let property = this.Get<DesignerProperty> modelName world
-            property.DesignerValue :?> 'model
+            this.Get<'model> modelName world
 
         member this.SetFacetModel<'model> modelName (value : 'model) world =
-            let model = this.Get<DesignerProperty> modelName world
-            match this.GetImperative world with
-            | true -> model.DesignerValue <- value; world
-            | false -> this.Set<DesignerProperty> modelName { model with DesignerValue = value } world
+            this.Set<'model> modelName value world
 
         member this.UpdateFacetModel<'model> modelName updater world =
             this.SetFacetModel<'model> modelName (updater this.GetFacetModel<'model> modelName world) world
@@ -91,7 +87,7 @@ module FacetModule =
         member this.ModelName =
             if isNull modelNameOpt then modelNameOpt <- getTypeName this + "Model"
             modelNameOpt
-
+            
         member this.GetModel (entity : Entity) world : 'model =
             entity.GetFacetModel<'model> this.ModelName world
 
@@ -102,11 +98,31 @@ module FacetModule =
             lens this.ModelName (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let (model, world) = World.attachModel initial this.ModelName entity world
-            let bindings = this.Bindings (model, entity, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
-            let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (FacetOrigin (entity, getTypeName this)) (etol entity) world) world content
+            let world = World.tryAttachModel initial this.ModelName entity world
+            let channels = this.Channel (this.Model entity, entity)
+            let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
+            let content = this.Content (this.Model entity, entity)
+            let world =
+                List.fold (fun world content ->
+                    World.expandEntityContent content (FacetOrigin (entity, getTypeName this)) entity entity.Parent world |> snd)
+                    world content
+            let initializers = this.Initializers (this.Model entity, entity)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let propertyName = def.PropertyName
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName alwaysPublish property entity world
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> entity
+                    World.monitor (fun (evt : Event) world ->
+                        let world = WorldModule.trySignalFacet (handler evt) (getTypeName this) entity world
+                        (Cascade, world))
+                        eventAddress (entity :> Simulant) world
+                | BindDefinition (left, right) ->
+                    WorldModule.bind5 entity left right world)
+                world initializers
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -118,17 +134,20 @@ module FacetModule =
             | :? Signal<obj, 'command> as signal -> entity.SignalEntityFacet<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) (getTypeName this) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
-        default this.Bindings (_, _, _) = []
+        abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
-        abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command>
+        abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
+        default this.Channel (_, _) = []
+
+        abstract member Message : 'model * 'message * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Entity * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
-        default this.Content (_, _, _) = []
+        abstract member Content : Lens<'model, World> * Entity -> EntityContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Entity * World -> View list
         default this.View (_, _, _) = []
@@ -137,40 +156,40 @@ module FacetModule =
 module EffectFacetModule =
 
     type EffectTags =
-        Map<string, Symbol * Effects.Slice list>
+        Map<string, Effects.Slice>
 
     type Entity with
 
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
-        member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false false value world
+        member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false value world
         member this.SelfDestruct = lens Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct this
         member this.GetEffects world : Symbol AssetTag list = this.Get Property? Effects world
-        member this.SetEffects (value : Symbol AssetTag list) world = this.SetFast Property? Effects true false value world
+        member this.SetEffects (value : Symbol AssetTag list) world = this.SetFast Property? Effects true value world
         member this.Effects = lens Property? Effects this.GetEffects this.SetEffects this
         member this.GetEffectStartTimeOpt world : int64 option = this.Get Property? EffectStartTimeOpt world
-        member this.SetEffectStartTimeOpt (value : int64 option) world = this.SetFast Property? EffectStartTimeOpt false false value world
+        member this.SetEffectStartTimeOpt (value : int64 option) world = this.SetFast Property? EffectStartTimeOpt false value world
         member this.EffectStartTimeOpt = lens Property? EffectStartTimeOpt this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt this
         member this.GetEffectDefinitions world : Effects.Definitions = this.Get Property? EffectDefinitions world
-        member this.SetEffectDefinitions (value : Effects.Definitions) world = this.SetFast Property? EffectDefinitions false false value world
+        member this.SetEffectDefinitions (value : Effects.Definitions) world = this.SetFast Property? EffectDefinitions false value world
         member this.EffectDefinitions = lens Property? EffectDefinitions this.GetEffectDefinitions this.SetEffectDefinitions this
         member this.GetEffect world : Effect = this.Get Property? Effect world
-        member this.SetEffect (value : Effect) world = this.SetFast Property? Effect false false value world
+        member this.SetEffect (value : Effect) world = this.SetFast Property? Effect false value world
         member this.Effect = lens Property? Effect this.GetEffect this.SetEffect this
         member this.GetEffectOffset world : Vector2 = this.Get Property? EffectOffset world
-        member this.SetEffectOffset (value : Vector2) world = this.SetFast Property? EffectOffset false false value world
+        member this.SetEffectOffset (value : Vector2) world = this.SetFast Property? EffectOffset false value world
         member this.EffectOffset = lens Property? EffectOffset this.GetEffectOffset this.SetEffectOffset this
         member this.GetEffectPhysicsShapes world : unit = this.Get Property? EffectPhysicsShapes world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
-        member private this.SetEffectPhysicsShapes (value : unit) world = this.SetFast Property? EffectPhysicsShapes false true value world
-        member this.EffectPhysicsShapes = lensOut Property? EffectPhysicsShapes this.GetEffectPhysicsShapes this
+        member private this.SetEffectPhysicsShapes (value : unit) world = this.SetFast Property? EffectPhysicsShapes false value world
+        member this.EffectPhysicsShapes = lensReadOnly Property? EffectPhysicsShapes this.GetEffectPhysicsShapes this
         member this.GetEffectTags world : EffectTags = this.Get Property? EffectTags world
-        member private this.SetEffectTags (value : EffectTags) world = this.SetFast Property? EffectTags false true value world
-        member this.EffectTags = lensOut Property? EffectTags this.GetEffectTags this
+        member private this.SetEffectTags (value : EffectTags) world = this.SetFast Property? EffectTags false value world
+        member this.EffectTags = lensReadOnly Property? EffectTags this.GetEffectTags this
         member this.GetEffectHistoryMax world : int = this.Get Property? EffectHistoryMax world
-        member this.SetEffectHistoryMax (value : int) world = this.SetFast Property? EffectHistoryMax false false value world
+        member this.SetEffectHistoryMax (value : int) world = this.SetFast Property? EffectHistoryMax false value world
         member this.EffectHistoryMax = lens Property? EffectHistoryMax this.GetEffectHistoryMax this.SetEffectHistoryMax this
         member this.GetEffectHistory world : Effects.Slice Deque = this.Get Property? EffectHistory world
-        member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.SetFast Property? EffectHistory false true value world
-        member this.EffectHistory = lensOut Property? EffectHistory this.GetEffectHistory this
+        member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.SetFast Property? EffectHistory false value world
+        member this.EffectHistory = lensReadOnly Property? EffectHistory this.GetEffectHistory this
         
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
@@ -200,12 +219,14 @@ module EffectFacetModule =
         static let handleEffectsChanged evt world =
             let entity = evt.Subscriber : Entity
             let effectsOpt = entity.GetEffects world
-            setEffect effectsOpt entity world
+            let world = setEffect effectsOpt entity world
+            (Cascade, world)
 
         static let handleAssetsReload evt world =
             let entity = evt.Subscriber : Entity
             let effectsOpt = entity.GetEffects world
-            setEffect effectsOpt entity world
+            let world = setEffect effectsOpt entity world
+            (Cascade, world)
 
         static member Properties =
             [define Entity.PublishChanges true
@@ -221,34 +242,43 @@ module EffectFacetModule =
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
 
         override this.Actualize (entity, world) =
-            
+
             // evaluate effect if visible
-            if entity.GetVisibleLayered world && entity.GetInView world then
+            if entity.GetVisible world && entity.GetInView world then
 
                 // set up effect system to evaluate effect
                 let world = entity.SetEffectTags Map.empty world
                 let effect = entity.GetEffect world
                 let effectTime = entity.GetEffectTime world
-                let effectViewType = entity.GetViewType world
+                let effectAbsolute = entity.GetAbsolute world
                 let effectSlice =
                     { Effects.Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
                       Effects.Size = entity.GetSize world
                       Effects.Rotation = entity.GetRotation world
                       Effects.Depth = entity.GetDepth world
                       Effects.Offset = Vector2 0.5f
-                      Effects.Color = Vector4.One
+                      Effects.InsetOpt = None
+                      Effects.Color = Color.White
+                      Effects.Glow = Color.Zero
                       Effects.Enabled = true
-                      Effects.Volume = 1.0f }
+                      Effects.Volume = Constants.Audio.DefaultSoundVolume }
                 let effectHistory = entity.GetEffectHistory world
                 let effectEnv = entity.GetEffectDefinitions world
-                let effectSystem = EffectSystem.make effectViewType effectHistory effectTime effectEnv
+                let effectSystem = EffectSystem.make effectAbsolute effectHistory effectTime effectEnv
 
-                // eval effect and process resulting artifacts
-                let world =
-                    
-                    // evaluate effect with effect system
-                    let (artifacts, _) = EffectSystem.eval effect effectSlice effectSystem
-                    World.actualizeViews artifacts world
+                // evaluate effect with effect system
+                let (artifacts, _) = EffectSystem.eval effect effectSlice effectSystem
+
+                // actualize effect views
+                let world = World.actualizeViews artifacts world
+
+                // store tags
+                let tags =
+                    artifacts |>
+                    Seq.toArray |>
+                    Array.map (function Tag (name, value) -> Some (name, value :?> Effects.Slice) | _ -> None) |>
+                    Array.definitize |> Map.ofArray
+                let world = entity.SetEffectTags tags world
 
                 // update effect history in-place
                 effectHistory.AddToFront effectSlice
@@ -261,7 +291,11 @@ module EffectFacetModule =
         override this.Update (entity, world) =
             let effect = entity.GetEffect world
             match (entity.GetSelfDestruct world, effect.LifetimeOpt) with
-            | (true, Some lifetime) -> if entity.GetEffectTime world > lifetime then World.destroyEntity entity world else world
+            | (true, Some lifetime) ->
+                let effectTime = entity.GetEffectTime world
+                if effectTime >= dec lifetime // NOTE: dec keeps effect from actualizing past the last frame when it is created mid-frame
+                then World.destroyEntity entity world
+                else world
             | (_, _) -> world
 
         override this.Register (entity, world) =
@@ -274,31 +308,27 @@ module EffectFacetModule =
 module ScriptFacetModule =
 
     type Entity with
-    
         member this.GetScriptOpt world : Symbol AssetTag option = this.Get Property? ScriptOpt world
-        member this.SetScriptOpt (value : Symbol AssetTag option) world = this.SetFast Property? ScriptOpt true false value world
+        member this.SetScriptOpt (value : Symbol AssetTag option) world = this.SetFast Property? ScriptOpt true value world
         member this.ScriptOpt = lens Property? ScriptOpt this.GetScriptOpt this.SetScriptOpt this
         member this.GetScript world : Scripting.Expr array = this.Get Property? Script world
-        member this.SetScript (value : Scripting.Expr array) world = this.SetFast Property? Script true false value world
+        member this.SetScript (value : Scripting.Expr array) world = this.SetFast Property? Script true value world
         member this.Script = lens Property? Script this.GetScript this.SetScript this
-        member this.GetScriptFrame world : Scripting.DeclarationFrame = this.Get Property? ScriptFrame world
-        member internal this.SetScriptFrame (value : Scripting.DeclarationFrame) world = this.SetFast Property? ScriptFrame false true value world
-        member this.ScriptFrame = lensOut Property? ScriptFrame this.GetScriptFrame this
         member internal this.GetScriptUnsubscriptions world : Unsubscription list = this.Get Property? ScriptUnsubscriptions world
-        member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.SetFast Property? ScriptUnsubscriptions false true value world
+        member internal this.SetScriptUnsubscriptions (value : Unsubscription list) world = this.SetFast Property? ScriptUnsubscriptions false value world
         member internal this.ScriptUnsubscriptions = lens Property? ScriptUnsubscriptions this.GetScriptUnsubscriptions this.SetScriptUnsubscriptions this
-        member this.GetOnRegister world : Scripting.Expr = this.Get Property? OnRegister world
-        member this.SetOnRegister (value : Scripting.Expr) world = this.SetFast Property? OnRegister true false value world
-        member this.OnRegister = lens Property? OnRegister this.GetOnRegister this.SetOnRegister this
-        member this.GetOnUnregister world : Scripting.Expr = this.Get Property? OnUnregister world
-        member this.SetOnUnregister (value : Scripting.Expr) world = this.SetFast Property? OnUnregister false false value world
-        member this.OnUnregister = lens Property? OnUnregister this.GetOnUnregister this.SetOnUnregister this
-        member this.GetOnUpdate world : Scripting.Expr = this.Get Property? OnUpdate world
-        member this.SetOnUpdate (value : Scripting.Expr) world = this.SetFast Property? OnUpdate false false value world
-        member this.OnUpdate = lens Property? OnUpdate this.GetOnUpdate this.SetOnUpdate this
-        member this.GetOnPostUpdate world : Scripting.Expr = this.Get Property? OnPostUpdate world
-        member this.SetOnPostUpdate (value : Scripting.Expr) world = this.SetFast Property? OnPostUpdate false false value world
-        member this.OnPostUpdate = lens Property? OnPostUpdate this.GetOnPostUpdate this.SetOnPostUpdate this
+        member this.GetRegisterScript world : Scripting.Expr = this.Get Property? RegisterScript world
+        member this.SetRegisterScript (value : Scripting.Expr) world = this.SetFast Property? RegisterScript true value world
+        member this.RegisterScript = lens Property? RegisterScript this.GetRegisterScript this.SetRegisterScript this
+        member this.GetUnregisterScript world : Scripting.Expr = this.Get Property? UnregisterScript world
+        member this.SetUnregisterScript (value : Scripting.Expr) world = this.SetFast Property? UnregisterScript false value world
+        member this.UnregisterScript = lens Property? UnregisterScript this.GetUnregisterScript this.SetUnregisterScript this
+        member this.GetUpdateScript world : Scripting.Expr = this.Get Property? UpdateScript world
+        member this.SetUpdateScript (value : Scripting.Expr) world = this.SetFast Property? UpdateScript false value world
+        member this.UpdateScript = lens Property? UpdateScript this.GetUpdateScript this.SetUpdateScript this
+        member this.GetPostUpdateScript world : Scripting.Expr = this.Get Property? PostUpdateScript world
+        member this.SetPostUpdateScript (value : Scripting.Expr) world = this.SetFast Property? PostUpdateScript false value world
+        member this.PostUpdateScript = lens Property? PostUpdateScript this.GetPostUpdateScript this.SetPostUpdateScript this
         member this.ChangeEvent propertyName = Events.Change propertyName --> this
         member this.RegisterEvent = Events.Register --> this
         member this.UnregisteringEvent = Events.Unregistering --> this
@@ -310,89 +340,98 @@ module ScriptFacetModule =
             let entity = evt.Subscriber : Entity
             let script = entity.GetScript world
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
-            let world = entity.SetScriptFrame scriptFrame world
-            evalManyWithLogging script scriptFrame entity world |> snd'
+            let world = World.setEntityScriptFrame scriptFrame entity world
+            let world = evalManyWithLogging script scriptFrame entity world |> snd'
+            (Cascade, world)
 
-        static let handleOnRegisterChanged evt world =
+        static let handleRegisterScriptChanged evt world =
             let entity = evt.Subscriber : Entity
             let world = World.unregisterEntity entity world
-            World.registerEntity entity world
+            let world = World.registerEntity entity world
+            (Cascade, world)
 
         static member Properties =
             [define Entity.PublishChanges true
              define Entity.ScriptOpt None
              define Entity.Script [||]
-             define Entity.ScriptFrame (Scripting.DeclarationFrame HashIdentity.Structural)
              define Entity.ScriptUnsubscriptions []
-             define Entity.OnRegister Scripting.Unit
-             define Entity.OnUnregister Scripting.Unit
-             define Entity.OnUpdate Scripting.Unit
-             define Entity.OnPostUpdate Scripting.Unit]
+             define Entity.RegisterScript Scripting.Unit
+             define Entity.UnregisterScript Scripting.Unit
+             define Entity.UpdateScript Scripting.Unit
+             define Entity.PostUpdateScript Scripting.Unit]
 
         override this.Register (entity, world) =
-            let world = World.evalWithLogging (entity.GetOnRegister world) (entity.GetScriptFrame world) entity world |> snd'
+            let world = World.evalWithLogging (entity.GetRegisterScript world) (entity.GetScriptFrame world) entity world |> snd'
             let world = World.monitor handleScriptChanged (entity.GetChangeEvent Property? Script) entity world
-            let world = World.monitor handleOnRegisterChanged (entity.GetChangeEvent Property? OnRegister) entity world
+            let world = World.monitor handleRegisterScriptChanged (entity.GetChangeEvent Property? RegisterScript) entity world
             world
 
         override this.Unregister (entity, world) =
-            World.evalWithLogging (entity.GetOnUnregister world) (entity.GetScriptFrame world) entity world |> snd'
+            World.evalWithLogging (entity.GetUnregisterScript world) (entity.GetScriptFrame world) entity world |> snd'
 
         override this.Update (entity, world) =
-            World.evalWithLogging (entity.GetOnUpdate world) (entity.GetScriptFrame world) entity world |> snd'
+            World.evalWithLogging (entity.GetUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
 
+#if !DISABLE_ENTITY_POST_UPDATE
         override this.PostUpdate (entity, world) =
-            World.evalWithLogging (entity.GetOnPostUpdate world) (entity.GetScriptFrame world) entity world |> snd'
+            World.evalWithLogging (entity.GetPostUpdateScript world) (entity.GetScriptFrame world) entity world |> snd'
+#endif
 
 [<AutoOpen>]
 module TextFacetModule =
 
     type Entity with
-    
         member this.GetText world : string = this.Get Property? Text world
-        member this.SetText (value : string) world = this.SetFast Property? Text false false value world
+        member this.SetText (value : string) world = this.SetFast Property? Text false value world
         member this.Text = lens Property? Text this.GetText this.SetText this
         member this.GetFont world : Font AssetTag = this.Get Property? Font world
-        member this.SetFont (value : Font AssetTag) world = this.SetFast Property? Font false false value world
+        member this.SetFont (value : Font AssetTag) world = this.SetFast Property? Font false value world
         member this.Font = lens Property? Font this.GetFont this.SetFont this
         member this.GetMargins world : Vector2 = this.Get Property? Margins world
-        member this.SetMargins (value : Vector2) world = this.SetFast Property? Margins false false value world
+        member this.SetMargins (value : Vector2) world = this.SetFast Property? Margins false value world
         member this.Margins = lens Property? Margins this.GetMargins this.SetMargins this
         member this.GetJustification world : Justification = this.Get Property? Justification world
-        member this.SetJustification (value : Justification) world = this.SetFast Property? Justification false false value world
+        member this.SetJustification (value : Justification) world = this.SetFast Property? Justification false value world
         member this.Justification = lens Property? Justification this.GetJustification this.SetJustification this
-        member this.GetColor world : Vector4 = this.Get Property? Color world
-        member this.SetColor (value : Vector4) world = this.SetFast Property? Color false false value world
-        member this.Color = lens Property? Color this.GetColor this.SetColor this
+        member this.GetTextColor world : Color = this.Get Property? TextColor world
+        member this.SetTextColor (value : Color) world = this.SetFast Property? TextColor false value world
+        member this.TextColor = lens Property? TextColor this.GetTextColor this.SetTextColor this
+        member this.GetTextDisabledColor world : Color = this.Get Property? TextDisabledColor world
+        member this.SetTextDisabledColor (value : Color) world = this.SetFast Property? TextDisabledColor false value world
+        member this.TextDisabledColor = lens Property? TextDisabledColor this.GetTextDisabledColor this.SetTextDisabledColor this
 
     type TextFacet () =
         inherit Facet ()
 
         static member Properties =
             [define Entity.Text ""
-             define Entity.Font (AssetTag.make<Font> Assets.DefaultPackage "Font")
+             define Entity.Font Assets.DefaultFont
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
-             define Entity.Color (Vector4 (0.0f, 0.0f, 0.0f, 1.0f))]
+             define Entity.TextColor Color.Black
+             define Entity.TextDisabledColor (Color (byte 64, byte 64, byte 64, byte 192))]
 
-        override this.Actualize (text, world) =
-            let textStr = text.GetText world
-            if text.GetVisibleLayered world && not (String.IsNullOrWhiteSpace textStr) then
+        override this.Actualize (entity, world) =
+            let text = entity.GetText world
+            if entity.GetVisible world && not (String.IsNullOrWhiteSpace text) then
+                let transform =
+                    { Position = entity.GetPosition world + entity.GetMargins world
+                      Size = entity.GetSize world - entity.GetMargins world * 2.0f
+                      Rotation = 0.0f
+                      Depth = entity.GetDepth world + 0.5f
+                      Flags = entity.GetFlags world }
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = text.GetDepth world + 0.5f
-                              AssetTag = text.GetFont world
-                              PositionY = (text.GetPosition world).Y
-                              LayeredDescriptor =
-                                TextDescriptor
-                                    { Text = textStr
-                                      Position = text.GetPosition world + text.GetMargins world
-                                      Size = text.GetSize world - text.GetMargins world * 2.0f
-                                      ViewType = Absolute
-                                      Font = text.GetFont world
-                                      Color = text.GetColor world
-                                      Justification = text.GetJustification world }}|])
+                    (LayeredDescriptorMessage
+                        { Depth = transform.Depth
+                          PositionY = transform.Position.Y
+                          AssetTag = entity.GetFont world |> AssetTag.generalize
+                          RenderDescriptor =
+                            TextDescriptor
+                                { Transform = transform
+                                  Text = text
+                                  Font = entity.GetFont world
+                                  Color = if entity.GetEnabled world then entity.GetTextColor world else entity.GetTextDisabledColor world
+                                  Justification = entity.GetJustification world }})
                     world
             else world
 
@@ -400,67 +439,78 @@ module TextFacetModule =
 module RigidBodyFacetModule =
 
     type Entity with
-    
+        member this.GetBodyEnabled world : bool = this.Get Property? BodyEnabled world
+        member this.SetBodyEnabled (value : bool) world = this.SetFast Property? BodyEnabled false value world
+        member this.BodyEnabled = lens Property? BodyEnabled this.GetBodyEnabled this.SetBodyEnabled this
         member this.GetBodyType world : BodyType = this.Get Property? BodyType world
-        member this.SetBodyType (value : BodyType) world = this.SetFast Property? BodyType false false value world
+        member this.SetBodyType (value : BodyType) world = this.SetFast Property? BodyType false value world
         member this.BodyType = lens Property? BodyType this.GetBodyType this.SetBodyType this
         member this.GetAwake world : bool = this.Get Property? Awake world
-        member this.SetAwake (value : bool) world = this.SetFast Property? Awake false false value world
+        member this.SetAwake (value : bool) world = this.SetFast Property? Awake false value world
         member this.Awake = lens Property? Awake this.GetAwake this.SetAwake this
         member this.GetDensity world : single = this.Get Property? Density world
-        member this.SetDensity (value : single) world = this.SetFast Property? Density false false value world
+        member this.SetDensity (value : single) world = this.SetFast Property? Density false value world
         member this.Density = lens Property? Density this.GetDensity this.SetDensity this
         member this.GetFriction world : single = this.Get Property? Friction world
-        member this.SetFriction (value : single) world = this.SetFast Property? Friction false false value world
+        member this.SetFriction (value : single) world = this.SetFast Property? Friction false value world
         member this.Friction = lens Property? Friction this.GetFriction this.SetFriction this
         member this.GetRestitution world : single = this.Get Property? Restitution world
-        member this.SetRestitution (value : single) world = this.SetFast Property? Restitution false false value world
+        member this.SetRestitution (value : single) world = this.SetFast Property? Restitution false value world
         member this.Restitution = lens Property? Restitution this.GetRestitution this.SetRestitution this
         member this.GetFixedRotation world : bool = this.Get Property? FixedRotation world
-        member this.SetFixedRotation (value : bool) world = this.SetFast Property? FixedRotation false false value world
+        member this.SetFixedRotation (value : bool) world = this.SetFast Property? FixedRotation false value world
         member this.FixedRotation = lens Property? FixedRotation this.GetFixedRotation this.SetFixedRotation this
         member this.GetAngularVelocity world : single = this.Get Property? AngularVelocity world
-        member this.SetAngularVelocity (value : single) world = this.SetFast Property? AngularVelocity false false value world
+        member this.SetAngularVelocity (value : single) world = this.SetFast Property? AngularVelocity false value world
         member this.AngularVelocity = lens Property? AngularVelocity this.GetAngularVelocity this.SetAngularVelocity this
         member this.GetAngularDamping world : single = this.Get Property? AngularDamping world
-        member this.SetAngularDamping (value : single) world = this.SetFast Property? AngularDamping false false value world
+        member this.SetAngularDamping (value : single) world = this.SetFast Property? AngularDamping false value world
         member this.AngularDamping = lens Property? AngularDamping this.GetAngularDamping this.SetAngularDamping this
         member this.GetLinearVelocity world : Vector2 = this.Get Property? LinearVelocity world
-        member this.SetLinearVelocity (value : Vector2) world = this.SetFast Property? LinearVelocity false false value world
+        member this.SetLinearVelocity (value : Vector2) world = this.SetFast Property? LinearVelocity false value world
         member this.LinearVelocity = lens Property? LinearVelocity this.GetLinearVelocity this.SetLinearVelocity this
         member this.GetLinearDamping world : single = this.Get Property? LinearDamping world
-        member this.SetLinearDamping (value : single) world = this.SetFast Property? LinearDamping false false value world
+        member this.SetLinearDamping (value : single) world = this.SetFast Property? LinearDamping false value world
         member this.LinearDamping = lens Property? LinearDamping this.GetLinearDamping this.SetLinearDamping this
+        member this.GetInertia world : single = this.Get Property? Inertia world
+        member this.SetInertia (value : single) world = this.SetFast Property? Inertia false value world
+        member this.Inertia = lens Property? Inertia this.GetInertia this.SetInertia this
         member this.GetGravityScale world : single = this.Get Property? GravityScale world
-        member this.SetGravityScale (value : single) world = this.SetFast Property? GravityScale false false value world
+        member this.SetGravityScale (value : single) world = this.SetFast Property? GravityScale false value world
         member this.GravityScale = lens Property? GravityScale this.GetGravityScale this.SetGravityScale this
         member this.GetCollisionCategories world : string = this.Get Property? CollisionCategories world
-        member this.SetCollisionCategories (value : string) world = this.SetFast Property? CollisionCategories false false value world
+        member this.SetCollisionCategories (value : string) world = this.SetFast Property? CollisionCategories false value world
         member this.CollisionCategories = lens Property? CollisionCategories this.GetCollisionCategories this.SetCollisionCategories this
         member this.GetCollisionMask world : string = this.Get Property? CollisionMask world
-        member this.SetCollisionMask (value : string) world = this.SetFast Property? CollisionMask false false value world
+        member this.SetCollisionMask (value : string) world = this.SetFast Property? CollisionMask false value world
         member this.CollisionMask = lens Property? CollisionMask this.GetCollisionMask this.SetCollisionMask this
-        member this.GetCollisionBody world : BodyShape = this.Get Property? CollisionBody world
-        member this.SetCollisionBody (value : BodyShape) world = this.SetFast Property? CollisionBody false false value world
-        member this.CollisionBody = lens Property? CollisionBody this.GetCollisionBody this.SetCollisionBody this
+        member this.GetBodyShape world : BodyShape = this.Get Property? BodyShape world
+        member this.SetBodyShape (value : BodyShape) world = this.SetFast Property? BodyShape false value world
+        member this.BodyShape = lens Property? BodyShape this.GetBodyShape this.SetBodyShape this
+        member this.GetIgnoreCCD world : bool = this.Get Property? IgnoreCCD world
+        member this.SetIgnoreCCD (value : bool) world = this.SetFast Property? IgnoreCCD false value world
+        member this.IgnoreCCD = lens Property? IgnoreCCD this.GetIgnoreCCD this.SetIgnoreCCD this
         member this.GetIsBullet world : bool = this.Get Property? IsBullet world
-        member this.SetIsBullet (value : bool) world = this.SetFast Property? IsBullet false false value world
+        member this.SetIsBullet (value : bool) world = this.SetFast Property? IsBullet false value world
         member this.IsBullet = lens Property? IsBullet this.GetIsBullet this.SetIsBullet this
         member this.GetIsSensor world : bool = this.Get Property? IsSensor world
-        member this.SetIsSensor (value : bool) world = this.SetFast Property? IsSensor false false value world
+        member this.SetIsSensor (value : bool) world = this.SetFast Property? IsSensor false value world
         member this.IsSensor = lens Property? IsSensor this.GetIsSensor this.SetIsSensor this
-        member this.GetPhysicsId world = { SourceId = this.GetId world; BodyId = Guid.Empty } // we hard-code the empty Guid here because we assume a singleton body
-        member this.PhysicsId = lensOut Property? PhysicsId this.GetPhysicsId this
+        member this.GetPhysicsId world : PhysicsId = this.Get Property? PhysicsId world
+        member this.PhysicsId = lensReadOnly Property? PhysicsId this.GetPhysicsId this
         member this.CollisionEvent = Events.Collision --> this
+        member this.SeparationEvent = Events.Separation --> this
 
     type RigidBodyFacet () =
         inherit Facet ()
 
         static let getBodyShape (entity : Entity) world =
-            PhysicsEngine.localizeCollisionBody (entity.GetSize world) (entity.GetCollisionBody world)
+            World.localizeBodyShape (entity.GetSize world) (entity.GetBodyShape world) world
 
         static member Properties =
-            [define Entity.BodyType Dynamic
+            [define Entity.PublishChanges true
+             define Entity.BodyEnabled true
+             define Entity.BodyType Dynamic
              define Entity.Awake true
              define Entity.Density Constants.Physics.NormalDensity
              define Entity.Friction 0.2f
@@ -470,22 +520,47 @@ module RigidBodyFacetModule =
              define Entity.AngularDamping 0.0f
              define Entity.LinearVelocity Vector2.Zero
              define Entity.LinearDamping 0.0f
+             define Entity.Inertia 0.0f
              define Entity.GravityScale 1.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.CollisionBody (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero })
+             define Entity.BodyShape (BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero; PropertiesOpt = None })
+             define Entity.IgnoreCCD false
              define Entity.IsBullet false
-             define Entity.IsSensor false]
+             define Entity.IsSensor false
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+
+        override this.Register (entity, world) =
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyEnabled) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyType) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Awake) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Density) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Friction) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Restitution) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularVelocity) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularDamping) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? LinearVelocity) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? LinearDamping) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Inertia) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? GravityScale) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyShape) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IgnoreCCD) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IsBullet) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? IsSensor) entity world
+            world
 
         override this.RegisterPhysics (entity, world) =
             let bodyProperties = 
-                { BodyId = (entity.GetPhysicsId world).BodyId
+                { BodyId = (entity.GetPhysicsId world).CorrelationId
                   Position = entity.GetPosition world + entity.GetSize world * 0.5f
                   Rotation = entity.GetRotation world
-                  Shape = getBodyShape entity world
+                  BodyShape = getBodyShape entity world
                   BodyType = entity.GetBodyType world
                   Awake = entity.GetAwake world
-                  Enabled = entity.GetEnabled world
+                  Enabled = entity.GetBodyEnabled world
                   Density = entity.GetDensity world
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
@@ -494,9 +569,11 @@ module RigidBodyFacetModule =
                   AngularDamping = entity.GetAngularDamping world
                   LinearVelocity = entity.GetLinearVelocity world
                   LinearDamping = entity.GetLinearDamping world
+                  Inertia = entity.GetInertia world
                   GravityScale = entity.GetGravityScale world
                   CollisionCategories = PhysicsEngine.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = PhysicsEngine.categorizeCollisionMask (entity.GetCollisionMask world)
+                  IgnoreCCD = entity.GetIgnoreCCD world
                   IsBullet = entity.GetIsBullet world
                   IsSensor = entity.GetIsSensor world }
             World.createBody entity (entity.GetId world) bodyProperties world
@@ -504,246 +581,232 @@ module RigidBodyFacetModule =
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetPhysicsId world) world
 
-        override this.TryGetCalculatedProperty (name, entity, world) =
-            match name with
-            | "PhysicsId" -> Some { PropertyType = typeof<PhysicsId>; PropertyValue = entity.GetPhysicsId world }
-            | _ -> None
+[<AutoOpen>]
+module JointFacetModule =
+
+    type Entity with
+        member this.GetJointDevice world : JointDevice = this.Get Property? JointDevice world
+        member this.SetJointDevice (value : JointDevice) world = this.SetFast Property? JointDevice false value world
+        member this.JointDevice = lens Property? JointDevice this.GetJointDevice this.SetJointDevice this
+
+    type JointFacet () =
+        inherit Facet ()
+
+        static member Properties =
+            [define Entity.PublishChanges true
+             define Entity.JointDevice JointEmpty
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+
+        override this.Register (entity, world) =
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? JointDevice) entity world
+            world
+
+        override this.RegisterPhysics (entity, world) =
+            let jointProperties =
+                { JointId = (entity.GetPhysicsId world).CorrelationId
+                  JointDevice = (entity.GetJointDevice world) }
+            World.createJoint entity (entity.GetId world) jointProperties world
+
+        override this.UnregisterPhysics (entity, world) =
+            World.destroyJoint (entity.GetPhysicsId world) world
 
 [<AutoOpen>]
 module TileMapFacetModule =
 
     type Entity with
-    
-        member this.GetTileMapAsset world : TileMap AssetTag = this.Get Property? TileMapAsset world
-        member this.SetTileMapAsset (value : TileMap AssetTag) world = this.SetFast Property? TileMapAsset false false value world
-        member this.TileMapAsset = lens Property? TileMapAsset this.GetTileMapAsset this.SetTileMapAsset this
+        member this.GetTileMap world : TileMap AssetTag = this.Get Property? TileMap world
+        member this.SetTileMap (value : TileMap AssetTag) world = this.SetFast Property? TileMap false value world
+        member this.TileMap = lens Property? TileMap this.GetTileMap this.SetTileMap this
+        member this.GetTileLayerClearance world : single = this.Get Property? TileLayerClearance world
+        member this.SetTileLayerClearance (value : single) world = this.SetFast Property? TileLayerClearance false value world
+        member this.TileLayerClearance = lens Property? TileLayerClearance this.GetTileLayerClearance this.SetTileLayerClearance this
         member this.GetParallax world : single = this.Get Property? Parallax world
-        member this.SetParallax (value : single) world = this.SetFast Property? Parallax false false value world
+        member this.SetParallax (value : single) world = this.SetFast Property? Parallax false value world
         member this.Parallax = lens Property? Parallax this.GetParallax this.SetParallax this
 
     type TileMapFacet () =
         inherit Facet ()
 
-        let tryMakeTileMapData (tileMapAsset : TileMap AssetTag) world =
-            let metadataMap = World.getMetadata world
-            match Metadata.tryGetTileMapMetadata tileMapAsset metadataMap with
-            | Some (_, _, map) ->
-                let mapSize = Vector2i (map.Width, map.Height)
-                let tileSize = Vector2i (map.TileWidth, map.TileHeight)
-                let tileSizeF = Vector2 (single tileSize.X, single tileSize.Y)
-                let tileMapSize = Vector2i (mapSize.X * tileSize.X, mapSize.Y * tileSize.Y)
-                let tileMapSizeF = Vector2 (single tileMapSize.X, single tileMapSize.Y)
-                let tileSet = map.Tilesets.[0] // MAGIC_VALUE: I'm not sure how to properly specify this
-                let tileSetSize =
-                    let tileSetWidthOpt = tileSet.Image.Width
-                    let tileSetHeightOpt = tileSet.Image.Height
-                    Vector2i (tileSetWidthOpt.Value / tileSize.X, tileSetHeightOpt.Value / tileSize.Y)
-                Some { Map = map; MapSize = mapSize; TileSize = tileSize; TileSizeF = tileSizeF; TileMapSize = tileMapSize; TileMapSizeF = tileMapSizeF; TileSet = tileSet; TileSetSize = tileSetSize }
-            | None -> None
-
-        let makeTileData (tm : Entity) tmd (tl : TmxLayer) tileIndex world =
-            let mapRun = tmd.MapSize.X
-            let tileSetRun = tmd.TileSetSize.X
-            let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
-            let tile = tl.Tiles.[tileIndex]
-            let gid = tile.Gid - tmd.TileSet.FirstGid
-            let gidPosition = gid * tmd.TileSize.X
-            let gid2 = Vector2i (gid % tileSetRun, gid / tileSetRun)
-            let tileMapPosition = tm.GetPosition world
-            let tilePosition =
-                Vector2i
-                    (int tileMapPosition.X + tmd.TileSize.X * i,
-                     int tileMapPosition.Y - tmd.TileSize.Y * (j + 1)) // subtraction for right-handedness
-            let tileSetTileOpt = Seq.tryFind (fun (item : TmxTilesetTile) -> tile.Gid - 1 = item.Id) tmd.TileSet.Tiles
-            { Tile = tile; I = i; J = j; Gid = gid; GidPosition = gidPosition; Gid2 = gid2; TilePosition = tilePosition; TileSetTileOpt = tileSetTileOpt }
-
-        let getTileBodyProperties6 (tm : Entity) tmd tli td ti cexpr world =
-            let tileShape = PhysicsEngine.localizeCollisionBody (Vector2 (single tmd.TileSize.X, single tmd.TileSize.Y)) cexpr
-            { BodyId = Gen.idFromInts tli ti
-              Position =
-                Vector2
-                    (single (td.TilePosition.X + tmd.TileSize.X / 2),
-                     single (td.TilePosition.Y + tmd.TileSize.Y / 2 + tmd.TileMapSize.Y))
-              Rotation = tm.GetRotation world
-              Shape = tileShape
-              BodyType = BodyType.Static
-              Awake = false
-              Enabled = true
-              Density = Constants.Physics.NormalDensity
-              Friction = tm.GetFriction world
-              Restitution = tm.GetRestitution world
-              FixedRotation = true
-              AngularVelocity = 0.0f
-              AngularDamping = 0.0f
-              LinearVelocity = Vector2.Zero
-              LinearDamping = 0.0f
-              GravityScale = 0.0f
-              CollisionCategories = PhysicsEngine.categorizeCollisionMask (tm.GetCollisionCategories world)
-              CollisionMask = PhysicsEngine.categorizeCollisionMask (tm.GetCollisionMask world)
-              IsBullet = false
-              IsSensor = false }
-
-        let getTileBodyProperties tm tmd (tl : TmxLayer) tli ti world =
-            let td = makeTileData tm tmd tl ti world
-            match td.TileSetTileOpt with
-            | Some tileSetTile ->
-                match tileSetTile.Properties.TryGetValue Constants.Physics.CollisionProperty with
-                | (true, cexpr) ->
-                    let tileBody =
-                        match cexpr with
-                        | "" -> BodyBox { Extent = Vector2 0.5f; Center = Vector2.Zero }
-                        | _ -> scvalue<BodyShape> cexpr
-                    let tileBodyProperties = getTileBodyProperties6 tm tmd tli td ti tileBody world
-                    Some tileBodyProperties
-                | (false, _) -> None
-            | None -> None
-
-        let getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex (tileLayer : TmxLayer) world =
-            if tileLayer.Properties.ContainsKey Constants.Physics.CollisionProperty then
-                Seq.foldi
-                    (fun i bodyPropertyList _ ->
-                        match getTileBodyProperties tileMap tileMapData tileLayer tileLayerIndex i world with
-                        | Some bodyProperties -> bodyProperties :: bodyPropertyList
-                        | None -> bodyPropertyList)
-                    [] tileLayer.Tiles |>
-                Seq.toList
-            else []
-
-        let registerTileLayerPhysics (tileMap : Entity) tileMapData tileLayerIndex world tileLayer =
-            let bodyPropertyList = getTileLayerBodyPropertyList tileMap tileMapData tileLayerIndex tileLayer world
-            World.createBodies tileMap (tileMap.GetId world) bodyPropertyList world
-
-        let getTileLayerPhysicsIds (tileMap : Entity) tileMapData tileLayer tileLayerIndex world =
-            Seq.foldi
-                (fun tileIndex physicsIds _ ->
-                    let tileData = makeTileData tileMap tileMapData tileLayer tileIndex world
-                    match tileData.TileSetTileOpt with
-                    | Some tileSetTile ->
-                        if tileSetTile.Properties.ContainsKey Constants.Physics.CollisionProperty then
-                            let physicsId = { SourceId = tileMap.GetId world; BodyId = Gen.idFromInts tileLayerIndex tileIndex }
-                            physicsId :: physicsIds
-                        else physicsIds
-                    | None -> physicsIds)
-                [] tileLayer.Tiles |>
-            Seq.toList
-
         static member Properties =
             [define Entity.Omnipresent true
+             define Entity.PublishChanges true
+             define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage "TileMap")
-             define Entity.Parallax 0.0f]
+             define Entity.TileMap Assets.DefaultTileMap
+             define Entity.TileLayerClearance 2.0f
+             define Entity.Parallax 0.0f
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
-        override this.RegisterPhysics (tileMap, world) =
-            let tileMapAsset = tileMap.GetTileMapAsset world
-            match tryMakeTileMapData tileMapAsset world with
-            | Some tileMapData ->
-                Seq.foldi
-                    (registerTileLayerPhysics tileMap tileMapData)
-                    world
-                    tileMapData.Map.Layers
-            | None ->
-                Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
-                world
+        override this.Register (entity, world) =
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyEnabled) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Friction) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Restitution) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TileMap) entity world
+            world
 
-        override this.UnregisterPhysics (tileMap, world) =
-            let tileMapAsset = tileMap.GetTileMapAsset world
-            match tryMakeTileMapData tileMapAsset world with
-            | Some tileMapData ->
-                Seq.foldi
-                    (fun tileLayerIndex world (tileLayer : TmxLayer) ->
-                        if tileLayer.Properties.ContainsKey Constants.Physics.CollisionProperty then
-                            let physicsIds = getTileLayerPhysicsIds tileMap tileMapData tileLayer tileLayerIndex world
-                            World.destroyBodies physicsIds world
-                        else world)
-                    world
-                    tileMapData.Map.Layers
-            | None ->
-                Log.debug ("Could not make tile map data for '" + scstring tileMapAsset + "'.")
-                world
+        override this.RegisterPhysics (entity, world) =
+            match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
+            | Some tileMap ->
+                let tileMapPosition = entity.GetPosition world
+                match TmxMap.tryGetDescriptor tileMapPosition tileMap with
+                | Some tileMapDescriptor ->
+                    let bodyProperties =
+                        TmxMap.getBodyProperties
+                            (entity.GetEnabled world)
+                            (entity.GetFriction world)
+                            (entity.GetRestitution world)
+                            (entity.GetCollisionCategories world)
+                            (entity.GetCollisionMask world)
+                            (entity.GetPhysicsId world).CorrelationId
+                            tileMapDescriptor
+                    World.createBody entity (entity.GetId world) bodyProperties world
+                | None -> world
+            | None -> world
 
-        override this.Actualize (tileMap, world) =
-            if tileMap.GetVisible world then
-                match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
-                | Some (_, images, map) ->
-                    let layers = List.ofSeq map.Layers
-                    let tileSourceSize = Vector2i (map.TileWidth, map.TileHeight)
-                    let tileSize = Vector2 (single map.TileWidth, single map.TileHeight)
-                    let viewType = tileMap.GetViewType world
-                    List.foldi
-                        (fun i world (layer : TmxLayer) ->
-                            let depth = tileMap.GetDepth world + single i * 2.0f // MAGIC_VALUE: assumption
-                            let parallaxTranslation =
-                                match viewType with
-                                | Absolute -> Vector2.Zero
-                                | Relative -> tileMap.GetParallax world * depth * -World.getEyeCenter world
-                            let parallaxPosition = tileMap.GetPosition world + parallaxTranslation
-                            let size = Vector2 (tileSize.X * single map.Width, tileSize.Y * single map.Height)
-                            let image = List.head images // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                            if World.isBoundsInView viewType (Math.makeBounds parallaxPosition size) world then
-                                World.enqueueRenderMessage
-                                    (RenderDescriptorsMessage
-                                        [|LayerableDescriptor 
-                                            { Depth = depth
-                                              AssetTag = image
-                                              PositionY = (tileMap.GetPosition world).Y
-                                              LayeredDescriptor =
-                                                TileLayerDescriptor
-                                                    { Position = parallaxPosition
-                                                      Size = size
-                                                      Rotation = tileMap.GetRotation world
-                                                      ViewType = viewType
-                                                      MapSize = Vector2i (map.Width, map.Height)
-                                                      Tiles = layer.Tiles
-                                                      TileSourceSize = tileSourceSize
-                                                      TileSize = tileSize
-                                                      TileSet = map.Tilesets.[0] // MAGIC_VALUE: I have no idea how to tell which tile set each tile is from...
-                                                      TileSetImage = image }}|])
-                                    world
-                            else world)
-                        world
-                        layers
+        override this.UnregisterPhysics (entity, world) =
+            World.destroyBody (entity.GetPhysicsId world) world
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
+                | Some tileMap ->
+                    let absolute = entity.GetAbsolute world
+                    let viewBounds = World.getViewBounds absolute world
+                    let tileMapRenderMessages =
+                        TmxMap.getRenderMessages
+                            absolute
+                            viewBounds
+                            (entity.GetTileLayerClearance world)
+                            (entity.GetPosition world)
+                            (entity.GetDepth world)
+                            (entity.GetParallax world)
+                            tileMap
+                    World.enqueueRenderMessages tileMapRenderMessages world
                 | None -> world
             else world
 
-        override this.GetQuickSize (tileMap, world) =
-            match Metadata.tryGetTileMapMetadata (tileMap.GetTileMapAsset world) (World.getMetadata world) with
-            | Some (_, _, map) -> Vector2 (single (map.Width * map.TileWidth), single (map.Height * map.TileHeight))
+        override this.GetQuickSize (entity, world) =
+            match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
+            | Some tileMap -> TmxMap.getQuickSize tileMap
             | None -> Constants.Engine.DefaultEntitySize
+
+[<AutoOpen>]
+module TmxMapFacetModule =
+
+    type Entity with
+        member this.GetTmxMap world : TmxMap = this.Get Property? TmxMap world
+        member this.SetTmxMap (value : TmxMap) world = this.SetFast Property? TmxMap false value world
+        member this.TmxMap = lens Property? TmxMap this.GetTmxMap this.SetTmxMap this
+
+    type TmxMapFacet () =
+        inherit Facet ()
+
+        static member Properties =
+            [define Entity.Omnipresent true
+             define Entity.PublishChanges true
+             define Entity.BodyEnabled true
+             define Entity.Friction 0.0f
+             define Entity.Restitution 0.0f
+             define Entity.CollisionCategories "1"
+             define Entity.CollisionMask "@"
+             define Entity.TmxMap (TmxMap Assets.DefaultTmxFilePath)
+             define Entity.TileLayerClearance 2.0f
+             define Entity.Parallax 0.0f
+             computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
+
+        override this.Register (entity, world) =
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyEnabled) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Friction) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Restitution) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TmxMap) entity world
+            world
+
+        override this.RegisterPhysics (entity, world) =
+            let tileMapPosition = entity.GetPosition world
+            let tileMap = entity.GetTmxMap world
+            match TmxMap.tryGetDescriptor tileMapPosition tileMap with
+            | Some tileMapDescriptor ->
+                let bodyProperties =
+                    TmxMap.getBodyProperties
+                        (entity.GetEnabled world)
+                        (entity.GetFriction world)
+                        (entity.GetRestitution world)
+                        (entity.GetCollisionCategories world)
+                        (entity.GetCollisionMask world)
+                        (entity.GetPhysicsId world).CorrelationId
+                        tileMapDescriptor
+                World.createBody entity (entity.GetId world) bodyProperties world
+            | None -> world
+
+        override this.UnregisterPhysics (entity, world) =
+            World.destroyBody (entity.GetPhysicsId world) world
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let absolute = entity.GetAbsolute world
+                let viewBounds = World.getViewBounds absolute world
+                let tileMapRenderMessages =
+                    TmxMap.getRenderMessages
+                        absolute
+                        viewBounds
+                        (entity.GetTileLayerClearance world)
+                        (entity.GetPosition world)
+                        (entity.GetDepth world)
+                        (entity.GetParallax world)
+                        (entity.GetTmxMap world)
+                World.enqueueRenderMessages tileMapRenderMessages world
+            else world
+
+        override this.GetQuickSize (entity, world) =
+            TmxMap.getQuickSize (entity.GetTmxMap world)
 
 [<AutoOpen>]
 module NodeFacetModule =
 
     type Entity with
-    
+
         member this.GetParentNodeOpt world : Entity Relation option = this.Get Property? ParentNodeOpt world
-        member this.SetParentNodeOpt (value : Entity Relation option) world = this.SetFast Property? ParentNodeOpt false false value world
+        member this.SetParentNodeOpt (value : Entity Relation option) world = this.SetFast Property? ParentNodeOpt true value world
         member this.ParentNodeOpt = lens Property? ParentNodeOpt this.GetParentNodeOpt this.SetParentNodeOpt this
         member this.GetPositionLocal world : Vector2 = this.Get Property? PositionLocal world
-        member this.SetPositionLocal (value : Vector2) world = this.SetFast Property? PositionLocal false false value world
+        member this.SetPositionLocal (value : Vector2) world = this.SetFast Property? PositionLocal false value world
         member this.PositionLocal = lens Property? PositionLocal this.GetPositionLocal this.SetPositionLocal this
+        member this.GetCenterLocal world : Vector2 = this.Get Property? CenterLocal world
+        member this.SetCenterLocal (value : Vector2) world = this.SetFast Property? CenterLocal false value world
+        member this.CenterLocal = lens Property? CenterLocal this.GetCenterLocal this.SetCenterLocal this
+        member this.GetBottomLocal world : Vector2 = this.Get Property? BottomLocal world
+        member this.SetBottomLocal (value : Vector2) world = this.SetFast Property? BottomLocal false value world
+        member this.BottomLocal = lens Property? BottomLocal this.GetBottomLocal this.SetBottomLocal this
         member this.GetDepthLocal world : single = this.Get Property? DepthLocal world
-        member this.SetDepthLocal (value : single) world = this.SetFast Property? DepthLocal false false value world
+        member this.SetDepthLocal (value : single) world = this.SetFast Property? DepthLocal false value world
         member this.DepthLocal = lens Property? DepthLocal this.GetDepthLocal this.SetDepthLocal this
         member this.GetVisibleLocal world : bool = this.Get Property? VisibleLocal world
-        member this.SetVisibleLocal (value : bool) world = this.SetFast Property? VisibleLocal false false value world
+        member this.SetVisibleLocal (value : bool) world = this.SetFast Property? VisibleLocal false value world
         member this.VisibleLocal = lens Property? VisibleLocal this.GetVisibleLocal this.SetVisibleLocal this
         member this.GetEnabledLocal world : bool = this.Get Property? EnabledLocal world
-        member this.SetEnabledLocal (value : bool) world = this.SetFast Property? EnabledLocal false false value world
+        member this.SetEnabledLocal (value : bool) world = this.SetFast Property? EnabledLocal false value world
         member this.EnabledLocal = lens Property? EnabledLocal this.GetEnabledLocal this.SetEnabledLocal this
         member private this.GetNodeUnsubscribe world : World -> World = this.Get Property? NodeUnsubscribe world
-        member private this.SetNodeUnsubscribe (value : World -> World) world = this.SetFast Property? NodeUnsubscribe false true value world
+        member private this.SetNodeUnsubscribe (value : World -> World) world = this.SetFast Property? NodeUnsubscribe false value world
         member private this.NodeUnsubscribe = lens Property? NodeUnsubscribe this.GetNodeUnsubscribe this.SetNodeUnsubscribe this
-        
+
         member this.SetParentNodeOptWithAdjustment (value : Entity Relation option) world =
             let world =
                 match (this.GetParentNodeOpt world, value) with
                 | (Some relationOld, Some relationNew) ->
                     let parentOld = this.Resolve relationOld
                     let parentNew = this.Resolve relationNew
-                    if parentOld.GetExists world && parentNew.GetExists world then
+                    if parentOld.Exists world && parentNew.Exists world then
                         let position = this.GetPositionLocal world + parentNew.GetPosition world
                         let depth = this.GetDepthLocal world + parentNew.GetDepth world
                         let world = this.SetPosition position world
@@ -754,7 +817,7 @@ module NodeFacetModule =
                     else world
                 | (Some relationOld, None) ->
                     let parentOld = this.Resolve relationOld
-                    if parentOld.GetExists world then
+                    if parentOld.Exists world then
                         let position = this.GetPositionLocal world + parentOld.GetPosition world
                         let depth = this.GetDepthLocal world + parentOld.GetDepth world
                         let world = this.SetPosition position world
@@ -765,7 +828,7 @@ module NodeFacetModule =
                     else world
                 | (None, Some relationNew) ->
                     let parentNew = this.Resolve relationNew
-                    if parentNew.GetExists world then
+                    if parentNew.Exists world then
                         let position = this.GetPosition world - parentNew.GetPosition world
                         let depth = this.GetDepth world - parentNew.GetDepth world
                         let world = this.SetPositionLocal position world
@@ -776,18 +839,18 @@ module NodeFacetModule =
                     else world
                 | (None, None) -> world
             this.SetParentNodeOpt value world
-        
+
         member this.GetChildNodes world =
             this.GetChildNodes2 [] world
 
         member this.ParentNodeExists world =
             match this.GetParentNodeOpt world with
-            | Some relation -> (this.Resolve relation).GetExists world
+            | Some relation -> (this.Resolve relation).Exists world
             | None -> false
 
         member private this.GetChildNodes2 nodes world =
             let nodeOpt =
-                if this.FacetedAs<NodeFacet> world
+                if this.Has<NodeFacet> world
                 then Option.map this.Resolve (this.GetParentNodeOpt world)
                 else None
             match nodeOpt with
@@ -806,20 +869,39 @@ module NodeFacetModule =
             | _ -> world
 
         static let updatePropertyFromLocal propertyName (node : Entity) (entity : Entity) world =
-            match propertyName with
-            | "PositionLocal" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-            | "DepthLocal" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
-            | "VisibleLocal" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
-            | "EnabledLocal" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
-            | _ -> world
+            if node.Exists world then
+                match propertyName with
+                | "PositionLocal" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
+                | "DepthLocal" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
+                | "VisibleLocal" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
+                | "EnabledLocal" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
+                | _ -> world
+            else world
 
         static let updatePropertyFromNode propertyName (node : Entity) (entity : Entity) world =
-            match propertyName with
-            | "Position" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-            | "Depth" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
-            | "Visible" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
-            | "Enabled" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
-            | _ -> world
+            if node.Exists world then
+                match propertyName with
+                | "Position" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
+                | "Depth" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
+                | "Visible" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
+                | "Enabled" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
+                | _ -> world
+            else world
+
+        static let updateFromNode (node : Entity) (entity : Entity) world =
+            let world = updatePropertyFromNode "Position" node entity world
+            let world = updatePropertyFromNode "Depth" node entity world
+            let world = updatePropertyFromNode "Visible" node entity world
+            let world = updatePropertyFromNode "Enabled" node entity world
+            world
+
+        static let tryUpdateFromNode (entity : Entity) world =
+            match entity.GetParentNodeOpt world with
+            | Some nodeRelation ->
+                let node = entity.Resolve nodeRelation
+                let world = updateFromNode node entity world
+                world
+            | None -> world
 
         static let handleLocalPropertyChange evt world =
             let entity = evt.Subscriber : Entity
@@ -838,7 +920,7 @@ module NodeFacetModule =
             let data = evt.Data : ChangeData
             (Cascade, updatePropertyFromNode data.Name node entity world)
 
-        static let subscribeToNodePropertyChanges (entity : Entity) world =
+        static let trySubscribeToNodePropertyChanges (entity : Entity) world =
             let oldWorld = world
             let world = (entity.GetNodeUnsubscribe world) world
             match entity.GetParentNodeOpt world with
@@ -847,7 +929,7 @@ module NodeFacetModule =
                 if node = entity then
                     Log.trace "Cannot mount entity to itself."
                     World.choose oldWorld
-                elif entity.FacetedAs<RigidBodyFacet> world then
+                elif entity.Has<RigidBodyFacet> world then
                     Log.trace "Cannot mount a rigid body entity onto another entity. Instead, consider using physics constraints."
                     World.choose oldWorld
                 else
@@ -859,7 +941,10 @@ module NodeFacetModule =
             | None -> world
 
         static let handleNodeChange evt world =
-            subscribeToNodePropertyChanges evt.Subscriber world
+            let entity = evt.Subscriber
+            let world = tryUpdateFromNode entity world
+            let world = trySubscribeToNodePropertyChanges entity world
+            (Cascade, world)
 
         static member Properties =
             [define Entity.ParentNodeOpt None
@@ -867,7 +952,13 @@ module NodeFacetModule =
              define Entity.DepthLocal 0.0f
              define Entity.VisibleLocal true
              define Entity.EnabledLocal true
-             define Entity.NodeUnsubscribe (id : World -> World)]
+             define Entity.NodeUnsubscribe (id : World -> World)
+             computed Entity.CenterLocal
+                (fun (entity : Entity) world -> entity.GetPositionLocal world + entity.GetSize world * 0.5f)
+                (Some (fun value (entity : Entity) world -> entity.SetPositionLocal (value - entity.GetSize world * 0.5f) world))
+             computed Entity.BottomLocal
+                (fun (entity : Entity) world -> entity.GetPositionLocal world + (entity.GetSize world).WithY 0.0f * 0.5f)
+                (Some (fun value (entity : Entity) world -> entity.SetPositionLocal (value - (entity.GetSize world).WithY 0.0f * 0.5f) world))]
 
         override this.Register (entity, world) =
             let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...
@@ -876,60 +967,65 @@ module NodeFacetModule =
             let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.ChangeEvent entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.ChangeEvent entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.ChangeEvent entity world |> snd
-            let world = subscribeToNodePropertyChanges entity world
+            let world = tryUpdateFromNode entity world
+            let world = trySubscribeToNodePropertyChanges entity world
             world
 
         override this.Unregister (entity, world) =
             (entity.GetNodeUnsubscribe world) world // NOTE: not sure if this is necessary.
 
-        override this.TryGetCalculatedProperty (propertyName, entity, world) =
-            match propertyName with
-            | "ParentNodeExists" -> Some { PropertyType = typeof<bool>; PropertyValue = entity.ParentNodeExists world }
-            | _ -> None
-
 [<AutoOpen>]
 module StaticSpriteFacetModule =
 
     type Entity with
-
         member this.GetStaticImage world : Image AssetTag = this.Get Property? StaticImage world
-        member this.SetStaticImage (value : Image AssetTag) world = this.SetFast Property? StaticImage false false value world
+        member this.SetStaticImage (value : Image AssetTag) world = this.SetFast Property? StaticImage false value world
         member this.StaticImage = lens Property? StaticImage this.GetStaticImage this.SetStaticImage this
+        member this.GetColor world : Color = this.Get Property? Color world
+        member this.SetColor (value : Color) world = this.SetFast Property? Color false value world
+        member this.Color = lens Property? Color this.GetColor this.SetColor this
+        member this.GetGlow world : Color = this.Get Property? Glow world
+        member this.SetGlow (value : Color) world = this.SetFast Property? Glow false value world
+        member this.Glow = lens Property? Glow this.GetGlow this.SetGlow this
+        member this.GetInsetOpt world : Vector4 option = this.Get Property? Inset world
+        member this.SetInsetOpt (value : Vector4 option) world = this.SetFast Property? Inset false value world
+        member this.InsetOpt = lens Property? Inset this.GetInsetOpt this.SetInsetOpt this
         member this.GetFlip world : Flip = this.Get Property? Flip world
-        member this.SetFlip (value : Flip) world = this.SetFast Property? Flip false false value world
+        member this.SetFlip (value : Flip) world = this.SetFast Property? Flip false value world
         member this.Flip = lens Property? Flip this.GetFlip this.SetFlip this
 
     type StaticSpriteFacet () =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")
+            [define Entity.StaticImage Assets.DefaultImage4
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
+             define Entity.InsetOpt None
              define Entity.Flip FlipNone]
 
         override this.Actualize (entity, world) =
-            if entity.GetVisibleLayered world && entity.GetInView world then
+            if entity.GetVisible world && entity.GetInView world then
+                let transform = entity.GetTransform world
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = entity.GetDepth world
-                              AssetTag = entity.GetStaticImage world
-                              PositionY = (entity.GetPosition world).Y
-                              LayeredDescriptor =
-                                SpriteDescriptor
-                                    { Position = entity.GetPosition world
-                                      Size = entity.GetSize world
-                                      Rotation = entity.GetRotation world
-                                      Offset = Vector2.Zero
-                                      ViewType = entity.GetViewType world
-                                      InsetOpt = None
-                                      Image = entity.GetStaticImage world
-                                      Color = Vector4.One
-                                      Flip = entity.GetFlip world }}|])
+                    (LayeredDescriptorMessage
+                        { Depth = transform.Depth
+                          PositionY = transform.Position.Y
+                          AssetTag = entity.GetStaticImage world |> AssetTag.generalize
+                          RenderDescriptor =
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Offset = Vector2.Zero
+                                  InsetOpt = entity.GetInsetOpt world
+                                  Image = entity.GetStaticImage world
+                                  Color = entity.GetColor world
+                                  Glow = entity.GetGlow world
+                                  Flip = entity.GetFlip world }})
                     world
             else world
 
         override this.GetQuickSize (entity, world) =
-            match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) (World.getMetadata world) with
+            match World.tryGetTextureSizeF (entity.GetStaticImage world) world with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -937,21 +1033,20 @@ module StaticSpriteFacetModule =
 module AnimatedSpriteFacetModule =
 
     type Entity with
-    
         member this.GetCelSize world : Vector2 = this.Get Property? CelSize world
-        member this.SetCelSize (value : Vector2) world = this.SetFast Property? CelSize false false value world
+        member this.SetCelSize (value : Vector2) world = this.SetFast Property? CelSize false value world
         member this.CelSize = lens Property? CelSize this.GetCelSize this.SetCelSize this
         member this.GetCelRun world : int = this.Get Property? CelRun world
-        member this.SetCelRun (value : int) world = this.SetFast Property? CelRun false false value world
+        member this.SetCelRun (value : int) world = this.SetFast Property? CelRun false value world
         member this.CelRun = lens Property? CelRun this.GetCelRun this.SetCelRun this
         member this.GetCelCount world : int = this.Get Property? CelCount world
-        member this.SetCelCount (value : int) world = this.SetFast Property? CelCount false false value world
+        member this.SetCelCount (value : int) world = this.SetFast Property? CelCount false value world
         member this.CelCount = lens Property? CelCount this.GetCelCount this.SetCelCount this
         member this.GetAnimationDelay world : int64 = this.Get Property? AnimationDelay world
-        member this.SetAnimationDelay (value : int64) world = this.SetFast Property? AnimationDelay false false value world
+        member this.SetAnimationDelay (value : int64) world = this.SetFast Property? AnimationDelay false value world
         member this.AnimationDelay = lens Property? AnimationDelay this.GetAnimationDelay this.SetAnimationDelay this
         member this.GetAnimationSheet world : Image AssetTag = this.Get Property? AnimationSheet world
-        member this.SetAnimationSheet (value : Image AssetTag) world = this.SetFast Property? AnimationSheet false false value world
+        member this.SetAnimationSheet (value : Image AssetTag) world = this.SetFast Property? AnimationSheet false value world
         member this.AnimationSheet = lens Property? AnimationSheet this.GetAnimationSheet this.SetAnimationSheet this
 
     type AnimatedSpriteFacet () =
@@ -967,37 +1062,37 @@ module AnimatedSpriteFacetModule =
                 let celJ = cel / celRun
                 let celX = single celI * celSize.X
                 let celY = single celJ * celSize.Y
-                let inset = Vector4 (celX, celY, celX + celSize.X, celY + celSize.Y)
+                let inset = v4Bounds (v2 celX celY) celSize
                 Some inset
             else None
 
         static member Properties =
-            [define Entity.CelCount 16 
-             define Entity.CelSize (Vector2 (16.0f, 16.0f))
+            [define Entity.CelSize (Vector2 (16.0f, 16.0f))
              define Entity.CelRun 4
+             define Entity.CelCount 16
              define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet (AssetTag.make<Image> Assets.DefaultPackage "Image7")
+             define Entity.AnimationSheet Assets.DefaultImage7
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
 
         override this.Actualize (entity, world) =
-            if entity.GetVisibleLayered world && entity.GetInView world then
+            if entity.GetVisible world && entity.GetInView world then
+                let transform = entity.GetTransform world
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = entity.GetDepth world
-                              AssetTag = entity.GetAnimationSheet world
-                              PositionY = (entity.GetPosition world).Y
-                              LayeredDescriptor =
-                                SpriteDescriptor
-                                    { Position = entity.GetPosition world
-                                      Size = entity.GetSize world
-                                      Rotation = entity.GetRotation world
-                                      Offset = Vector2.Zero
-                                      ViewType = entity.GetViewType world
-                                      InsetOpt = getSpriteInsetOpt entity world
-                                      Image = entity.GetAnimationSheet world
-                                      Color = Vector4.One
-                                      Flip = entity.GetFlip world }}|])
+                    (LayeredDescriptorMessage
+                        { Depth = transform.Depth
+                          PositionY = transform.Position.Y
+                          AssetTag = entity.GetAnimationSheet world |> AssetTag.generalize
+                          RenderDescriptor =
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Offset = Vector2.Zero
+                                  InsetOpt = getSpriteInsetOpt entity world
+                                  Image = entity.GetAnimationSheet world
+                                  Color = entity.GetColor world
+                                  Glow = entity.GetGlow world
+                                  Flip = entity.GetFlip world }})
                     world
             else world
 
@@ -1018,22 +1113,9 @@ module EntityDispatcherModule =
                 world
 
     and Entity with
-    
-        member this.GetModel<'model> world =
-            let property = this.Get<DesignerProperty> Property? Model world
-            property.DesignerValue :?> 'model
-
-        member this.SetModel<'model> (value : 'model) world =
-            let model = this.Get<DesignerProperty> Property? Model world
-            match this.GetImperative world with
-            | true -> model.DesignerValue <- value; world
-            | false -> this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
 
         member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater this.GetModel<'model> world) world
-
-        member this.Model<'model> () =
-            lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
+            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalEntity<'model, 'message, 'command> signal this world
@@ -1051,11 +1133,35 @@ module EntityDispatcherModule =
             lens Property? Model (this.GetModel entity) (flip this.SetModel entity) entity
 
         override this.Register (entity, world) =
-            let (model, world) = World.attachModel initial Property? Model entity world
-            let bindings = this.Bindings (model, entity, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model entity) bindings entity world
-            let content = this.Content (this.Model entity, entity, world)
-            List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin entity) (etol entity) world) world content
+            let world =
+                let property = World.getEntityModelProperty entity world
+                if property.DesignerType = typeof<unit>
+                then entity.SetModel<'model> initial world
+                else world
+            let channels = this.Channel (this.Model entity, entity)
+            let world = Signal.processChannels this.Message this.Command (this.Model entity) channels entity world
+            let content = this.Content (this.Model entity, entity)
+            let world =
+                List.fold (fun world content ->
+                    World.expandEntityContent content (SimulantOrigin entity) entity entity.Parent world |> snd)
+                    world content
+            let initializers = this.Initializers (this.Model entity, entity)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let propertyName = def.PropertyName
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName alwaysPublish property entity world
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> entity
+                    World.monitor (fun (evt : Event) world ->
+                        let world = WorldModule.trySignal (handler evt) entity world
+                        (Cascade, world))
+                        eventAddress (entity :> Simulant) world
+                | BindDefinition (left, right) ->
+                    WorldModule.bind5 entity left right world)
+                world initializers
 
         override this.Actualize (entity, world) =
             let views = this.View (this.GetModel entity world, entity, world)
@@ -1070,17 +1176,20 @@ module EntityDispatcherModule =
             | :? Signal<obj, 'command> as signal -> entity.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Bindings : 'model * Entity * World -> Binding<'message, 'command, Entity, World> list
-        default this.Bindings (_, _, _) = []
+        abstract member Initializers : Lens<'model, World> * Entity -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
-        abstract member Message : 'model * 'message * Entity * World -> 'model * Signal<'message, 'command>
+        abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
+        default this.Channel (_, _) = []
+
+        abstract member Message : 'model * 'message * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Entity * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Entity * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Entity * World -> EntityContent list
-        default this.Content (_, _, _) = []
+        abstract member Content : Lens<'model, World> * Entity -> EntityContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Entity * World -> View list
         default this.View (_, _, _) = []
@@ -1096,7 +1205,42 @@ module EffectDispatcherModule =
 
         static member Properties =
             [define Entity.PublishChanges true
-             define Entity.Effect (scvalue<Effect> "[Effect None [] [Composite [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+             define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+
+[<AutoOpen>]
+module StaticSpriteDispatcherModule =
+
+    type StaticSpriteDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<StaticSpriteFacet>]
+
+        static member Properties =
+            [define Entity.StaticImage Assets.DefaultImage4
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
+             define Entity.InsetOpt None
+             define Entity.Flip FlipNone]
+
+[<AutoOpen>]
+module AnimatedSpriteDispatcherModule =
+
+    type AnimatedSpriteDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<AnimatedSpriteFacet>]
+
+        static member Properties =
+            [define Entity.CelSize (Vector2 (16.0f, 16.0f))
+             define Entity.CelRun 4
+             define Entity.CelCount 16
+             define Entity.AnimationDelay 4L
+             define Entity.AnimationSheet Assets.DefaultImage7
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
+             define Entity.Flip FlipNone]
 
 [<AutoOpen>]
 module NodeDispatcherModule =
@@ -1107,111 +1251,114 @@ module NodeDispatcherModule =
         static member Facets =
             [typeof<NodeFacet>]
 
+        static member Properties =
+            [define Entity.PublishChanges true]
+
     type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
 
         static member Facets =
             [typeof<NodeFacet>]
 
+        static member Properties =
+            [define Entity.PublishChanges true]
+
 [<AutoOpen>]
 module GuiDispatcherModule =
 
     type Entity with
-    
-        member this.GetDisabledColor world : Vector4 = this.Get Property? DisabledColor world
-        member this.SetDisabledColor (value : Vector4) world = this.SetFast Property? DisabledColor false false value world
+        member this.GetDisabledColor world : Color = this.Get Property? DisabledColor world
+        member this.SetDisabledColor (value : Color) world = this.SetFast Property? DisabledColor false value world
         member this.DisabledColor = lens Property? DisabledColor this.GetDisabledColor this.SetDisabledColor this
         member this.GetSwallowMouseLeft world : bool = this.Get Property? SwallowMouseLeft world
-        member this.SetSwallowMouseLeft (value : bool) world = this.SetFast Property? SwallowMouseLeft false false value world
+        member this.SetSwallowMouseLeft (value : bool) world = this.SetFast Property? SwallowMouseLeft false value world
         member this.SwallowMouseLeft = lens Property? SwallowMouseLeft this.GetSwallowMouseLeft this.SetSwallowMouseLeft this
 
     type GuiDispatcher () =
         inherit EntityDispatcher ()
 
         static let handleMouseLeft evt world =
-            let gui = evt.Subscriber : Entity
+            let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let handling =
-                if gui.GetSelected world && gui.GetVisibleLayered world then
-                    let mousePositionWorld = World.mouseToWorld (gui.GetViewType world) data.Position world
+                if entity.GetSelected world && entity.GetVisible world then
+                    let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
                     if data.Down &&
-                       gui.GetSwallowMouseLeft world &&
-                       Math.isPointInBounds mousePositionWorld (gui.GetBounds world) then
+                       entity.GetSwallowMouseLeft world &&
+                       Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
                        Resolve
                     else Cascade
                 else Cascade
             (handling, world)
 
         static member Facets =
-            [typeof<NodeFacet>
-             typeof<ScriptFacet>]
+            [typeof<NodeFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.ViewType Absolute
+            [define Entity.Omnipresent true
+             define Entity.Absolute true
+             define Entity.PublishChanges true
              define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Vector4 0.75f)
+             define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))
              define Entity.SwallowMouseLeft true]
 
-        override this.Register (gui, world) =
-            let world = World.monitorPlus handleMouseLeft Events.MouseLeftDown gui world |> snd
-            let world = World.monitorPlus handleMouseLeft Events.MouseLeftUp gui world |> snd
+        override this.Register (entity, world) =
+            let world = World.monitor handleMouseLeft Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeft Events.MouseLeftUp entity world
             world
 
     type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
 
         static let handleMouseLeft evt world =
-            let gui = evt.Subscriber : Entity
+            let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let handling =
-                if gui.GetSelected world && gui.GetVisibleLayered world then
-                    let mousePositionWorld = World.mouseToWorld (gui.GetViewType world) data.Position world
+                if entity.GetSelected world && entity.GetVisible world then
+                    let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
                     if data.Down &&
-                       gui.GetSwallowMouseLeft world &&
-                       Math.isPointInBounds mousePositionWorld (gui.GetBounds world) then
+                       entity.GetSwallowMouseLeft world &&
+                       Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
                        Resolve
                     else Cascade
                 else Cascade
             (handling, world)
 
         static member Facets =
-            [typeof<NodeFacet>
-             typeof<ScriptFacet>]
+            [typeof<NodeFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.ViewType Absolute
+            [define Entity.Absolute true
+             define Entity.PublishChanges true
              define Entity.AlwaysUpdate true
-             define Entity.DisabledColor (Vector4 0.75f)
+             define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))
              define Entity.SwallowMouseLeft true]
 
-        override this.Register (gui, world) =
-            let world = base.Register (gui, world)
-            let world = World.monitorPlus handleMouseLeft Events.MouseLeftDown gui world |> snd
-            let world = World.monitorPlus handleMouseLeft Events.MouseLeftUp gui world |> snd
+        override this.Register (entity, world) =
+            let world = base.Register (entity, world)
+            let world = World.monitor handleMouseLeft Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeft Events.MouseLeftUp entity world
             world
 
 [<AutoOpen>]
 module ButtonDispatcherModule =
 
     type Entity with
-    
         member this.GetDown world : bool = this.Get Property? Down world
-        member this.SetDown (value : bool) world = this.SetFast Property? Down false false value world
+        member this.SetDown (value : bool) world = this.SetFast Property? Down false value world
         member this.Down = lens Property? Down this.GetDown this.SetDown this
         member this.GetUpImage world : Image AssetTag = this.Get Property? UpImage world
-        member this.SetUpImage (value : Image AssetTag) world = this.SetFast Property? UpImage false false value world
+        member this.SetUpImage (value : Image AssetTag) world = this.SetFast Property? UpImage false value world
         member this.UpImage = lens Property? UpImage this.GetUpImage this.SetUpImage this
         member this.GetDownImage world : Image AssetTag = this.Get Property? DownImage world
-        member this.SetDownImage (value : Image AssetTag) world = this.SetFast Property? DownImage false false value world
+        member this.SetDownImage (value : Image AssetTag) world = this.SetFast Property? DownImage false value world
         member this.DownImage = lens Property? DownImage this.GetDownImage this.SetDownImage this
-        member this.GetClickSoundOpt world : Audio AssetTag option = this.Get Property? ClickSoundOpt world
-        member this.SetClickSoundOpt (value : Audio AssetTag option) world = this.SetFast Property? ClickSoundOpt false false value world
+        member this.GetClickSoundOpt world : Sound AssetTag option = this.Get Property? ClickSoundOpt world
+        member this.SetClickSoundOpt (value : Sound AssetTag option) world = this.SetFast Property? ClickSoundOpt false value world
         member this.ClickSoundOpt = lens Property? ClickSoundOpt this.GetClickSoundOpt this.SetClickSoundOpt this
-        member this.GetOnClick world : Scripting.Expr = this.Get Property? OnClick world
-        member this.SetOnClick (value : Scripting.Expr) world = this.SetFast Property? OnClick false false value world
-        member this.OnClick = lens Property? OnClick this.GetOnClick this.SetOnClick this
+        member this.GetClickSoundVolume world : single = this.Get Property? ClickSoundVolume world
+        member this.SetClickSoundVolume (value : single) world = this.SetFast Property? ClickSoundVolume false value world
+        member this.ClickSoundVolume = lens Property? ClickSoundVolume this.GetClickSoundVolume this.SetClickSoundVolume this
         member this.UpEvent = Events.Up --> this
         member this.DownEvent = Events.Down --> this
         member this.ClickEvent = Events.Click --> this
@@ -1220,39 +1367,38 @@ module ButtonDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleMouseLeftDown evt world =
-            let button = evt.Subscriber : Entity
+            let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if button.GetSelected world then
-                let mousePositionWorld = World.mouseToWorld (button.GetViewType world) data.Position world
-                if  button.GetVisibleLayered world &&
-                    Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
-                    if button.GetEnabled world then
-                        let world = button.SetDown true world
+            if entity.GetSelected world then
+                let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+                if  entity.GetVisible world &&
+                    Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                    if entity.GetEnabled world then
+                        let world = entity.SetDown true world
                         let eventTrace = EventTrace.record "ButtonDispatcher" "handleMouseLeftDown" EventTrace.empty
-                        let world = World.publish () (Events.Down --> button) eventTrace button world
+                        let world = World.publishPlus () (Events.Down --> entity) eventTrace entity true world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
 
         let handleMouseLeftUp evt world =
-            let button = evt.Subscriber : Entity
+            let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if button.GetSelected world then
-                let wasDown = button.GetDown world
-                let world = button.SetDown false world
-                let mousePositionWorld = World.mouseToWorld (button.GetViewType world) data.Position world
-                if  button.GetVisibleLayered world &&
-                    Math.isPointInBounds mousePositionWorld (button.GetBounds world) then
-                    if button.GetEnabled world && wasDown then
+            if entity.GetSelected world then
+                let wasDown = entity.GetDown world
+                let world = entity.SetDown false world
+                let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+                if  entity.GetVisible world &&
+                    Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                    if entity.GetEnabled world && wasDown then
                         let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Up" EventTrace.empty
-                        let world = World.publish () (Events.Up --> button) eventTrace button world
+                        let world = World.publishPlus () (Events.Up --> entity) eventTrace entity true world
                         let eventTrace = EventTrace.record4 "ButtonDispatcher" "handleMouseLeftUp" "Click" EventTrace.empty
-                        let world = World.publish () (Events.Click --> button) eventTrace button world
-                        let world = World.evalWithLogging (button.GetOnClick world) (button.GetScriptFrame world) button world |> snd'
+                        let world = World.publishPlus () (Events.Click --> entity) eventTrace entity true world
                         let world =
-                            match button.GetClickSoundOpt world with
-                            | Some clickSound -> World.playSound 1.0f clickSound world
+                            match entity.GetClickSoundOpt world with
+                            | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
                             | None -> world
                         (Resolve, world)
                     else (Resolve, world)
@@ -1266,41 +1412,39 @@ module ButtonDispatcherModule =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Down false
-             define Entity.UpImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
-             define Entity.DownImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
-             define Entity.ClickSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))
-             define Entity.OnClick Scripting.Unit]
+             define Entity.UpImage Assets.DefaultImage
+             define Entity.DownImage Assets.DefaultImage2
+             define Entity.ClickSoundOpt (Some Assets.DefaultSound)
+             define Entity.ClickSoundVolume Constants.Audio.DefaultSoundVolume]
 
-        override this.Register (button, world) =
-            let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown button world |> snd
-            let world = World.monitorPlus handleMouseLeftUp Events.MouseLeftUp button world |> snd
+        override this.Register (entity, world) =
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
 
-        override this.Actualize (button, world) =
-            if button.GetVisibleLayered world then
-                let image = if button.GetDown world then button.GetDownImage world else button.GetUpImage world
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let transform = entity.GetTransform world
+                let image = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = button.GetDepth world
-                              AssetTag = image
-                              PositionY = (button.GetPosition world).Y
-                              LayeredDescriptor =
-                                SpriteDescriptor
-                                    { Position = button.GetPosition world
-                                      Size = button.GetSize world
-                                      Rotation = 0.0f
-                                      Offset = Vector2.Zero
-                                      ViewType = Absolute
-                                      InsetOpt = None
-                                      Image = image
-                                      Color = if button.GetEnabled world then Vector4.One else button.GetDisabledColor world
-                                      Flip = FlipNone }}|])
+                    (LayeredDescriptorMessage
+                        { Depth = transform.Depth
+                          PositionY = transform.Position.Y
+                          AssetTag = AssetTag.generalize image
+                          RenderDescriptor =
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Offset = Vector2.Zero
+                                  InsetOpt = None
+                                  Image = image
+                                  Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                                  Glow = Color.Zero
+                                  Flip = FlipNone }})
                     world
             else world
 
-        override this.GetQuickSize (button, world) =
-            match Metadata.tryGetTextureSizeF (button.GetUpImage world) (World.getMetadata world) with
+        override this.GetQuickSize (entity, world) =
+            match World.tryGetTextureSizeF (entity.GetUpImage world) world with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1308,9 +1452,8 @@ module ButtonDispatcherModule =
 module LabelDispatcherModule =
 
     type Entity with
-    
         member this.GetLabelImage world : Image AssetTag = this.Get Property? LabelImage world
-        member this.SetLabelImage (value : Image AssetTag) world = this.SetFast Property? LabelImage false false value world
+        member this.SetLabelImage (value : Image AssetTag) world = this.SetFast Property? LabelImage false value world
         member this.LabelImage = lens Property? LabelImage this.GetLabelImage this.SetLabelImage this
 
     type LabelDispatcher () =
@@ -1319,32 +1462,30 @@ module LabelDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.LabelImage (AssetTag.make<Image> Assets.DefaultPackage "Image3")]
+             define Entity.LabelImage Assets.DefaultImage3]
 
-        override this.Actualize (label, world) =
-            if label.GetVisibleLayered world then
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let transform = entity.GetTransform world
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = label.GetDepth world
-                              AssetTag = label.GetLabelImage world
-                              PositionY = (label.GetPosition world).Y
-                              LayeredDescriptor =
-                                SpriteDescriptor
-                                    { Position = label.GetPosition world
-                                      Size = label.GetSize world
-                                      Rotation = 0.0f
-                                      Offset = Vector2.Zero
-                                      ViewType = Absolute
-                                      InsetOpt = None
-                                      Image = label.GetLabelImage world
-                                      Color = if label.GetEnabled world then Vector4.One else label.GetDisabledColor world
-                                      Flip = FlipNone }}|])
+                    (LayeredDescriptorMessage
+                        { Depth = transform.Depth
+                          PositionY = transform.Position.Y
+                          AssetTag = entity.GetLabelImage world |> AssetTag.generalize
+                          RenderDescriptor =
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Offset = Vector2.Zero
+                                  InsetOpt = None
+                                  Image = entity.GetLabelImage world
+                                  Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                                  Glow = Color.Zero
+                                  Flip = FlipNone }})
                     world
             else world
 
-        override this.GetQuickSize (label, world) =
-            match Metadata.tryGetTextureSizeF (label.GetLabelImage world) (World.getMetadata world) with
+        override this.GetQuickSize (entity, world) =
+            match World.tryGetTextureSizeF (entity.GetLabelImage world) world with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1352,10 +1493,9 @@ module LabelDispatcherModule =
 module TextDispatcherModule =
 
     type Entity with
-    
-        member this.GetBackgroundImage world : Image AssetTag = this.Get Property? BackgroundImage world
-        member this.SetBackgroundImage (value : Image AssetTag) world = this.SetFast Property? BackgroundImage false false value world
-        member this.BackgroundImage = lens Property? BackgroundImage this.GetBackgroundImage this.SetBackgroundImage this
+        member this.GetBackgroundImageOpt world : Image AssetTag option = this.Get Property? BackgroundImageOpt world
+        member this.SetBackgroundImageOpt (value : Image AssetTag option) world = this.SetFast Property? BackgroundImageOpt false value world
+        member this.BackgroundImageOpt = lens Property? BackgroundImageOpt this.GetBackgroundImageOpt this.SetBackgroundImageOpt this
 
     type TextDispatcher () =
         inherit GuiDispatcher ()
@@ -1366,97 +1506,105 @@ module TextDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.BackgroundImage (AssetTag.make<Image> Assets.DefaultPackage "Image3")]
+             define Entity.BackgroundImageOpt None
+             define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
-        override this.Actualize (text, world) =
-            if text.GetVisibleLayered world then
-                World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = text.GetDepth world
-                              AssetTag = text.GetBackgroundImage world
-                              PositionY = (text.GetPosition world).Y
-                              LayeredDescriptor =
+        override this.Register (entity, world) =
+            let world = bind (entity.Model<string> ()) entity.Text world
+            let world = bind entity.Text (entity.Model<string> ()) world
+            world
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                match entity.GetBackgroundImageOpt world with
+                | Some image ->
+                    let transform = entity.GetTransform world
+                    World.enqueueRenderMessage
+                        (LayeredDescriptorMessage
+                            { Depth = transform.Depth
+                              PositionY = transform.Position.Y
+                              AssetTag = AssetTag.generalize image
+                              RenderDescriptor =
                                 SpriteDescriptor
-                                    { Position = text.GetPosition world
-                                      Size = text.GetSize world
-                                      Rotation = 0.0f
+                                    { Transform = transform
                                       Offset = Vector2.Zero
-                                      ViewType = Absolute
                                       InsetOpt = None
-                                      Image = text.GetBackgroundImage world
-                                      Color = if text.GetEnabled world then Vector4.One else text.GetDisabledColor world
-                                      Flip = FlipNone }}|])
-                    world
+                                      Image = image
+                                      Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                                      Glow = Color.Zero
+                                      Flip = FlipNone }})
+                        world
+                | None -> world
             else world
 
-        override this.GetQuickSize (text, world) =
-            match Metadata.tryGetTextureSizeF (text.GetBackgroundImage world) (World.getMetadata world) with
-            | Some size -> size
+        override this.GetQuickSize (entity, world) =
+            match entity.GetBackgroundImageOpt world with
+            | Some image ->
+                match World.tryGetTextureSizeF image world with
+                | Some size -> size
+                | None -> Constants.Engine.DefaultEntitySize
             | None -> Constants.Engine.DefaultEntitySize
 
 [<AutoOpen>]
 module ToggleDispatcherModule =
 
     type Entity with
-    
         member this.GetOpen world : bool = this.Get Property? Open world
-        member this.SetOpen (value : bool) world = this.SetFast Property? Open false false value world
+        member this.SetOpen (value : bool) world = this.SetFast Property? Open false value world
         member this.Open = lens Property? Open this.GetOpen this.SetOpen this
         member this.GetPressed world : bool = this.Get Property? Pressed world
-        member this.SetPressed (value : bool) world = this.SetFast Property? Pressed false false value world
+        member this.SetPressed (value : bool) world = this.SetFast Property? Pressed false value world
         member this.Pressed = lens Property? Pressed this.GetPressed this.SetPressed this
         member this.GetOpenImage world : Image AssetTag = this.Get Property? OpenImage world
-        member this.SetOpenImage (value : Image AssetTag) world = this.SetFast Property? OpenImage false false value world
+        member this.SetOpenImage (value : Image AssetTag) world = this.SetFast Property? OpenImage false value world
         member this.OpenImage = lens Property? OpenImage this.GetOpenImage this.SetOpenImage this
         member this.GetClosedImage world : Image AssetTag = this.Get Property? ClosedImage world
-        member this.SetClosedImage (value : Image AssetTag) world = this.SetFast Property? ClosedImage false false value world
+        member this.SetClosedImage (value : Image AssetTag) world = this.SetFast Property? ClosedImage false value world
         member this.ClosedImage = lens Property? ClosedImage this.GetClosedImage this.SetClosedImage this
-        member this.GetToggleSoundOpt world : Audio AssetTag option = this.Get Property? ToggleSoundOpt world
-        member this.SetToggleSoundOpt (value : Audio AssetTag option) world = this.SetFast Property? ToggleSoundOpt false false value world
+        member this.GetToggleSoundOpt world : Sound AssetTag option = this.Get Property? ToggleSoundOpt world
+        member this.SetToggleSoundOpt (value : Sound AssetTag option) world = this.SetFast Property? ToggleSoundOpt false value world
         member this.ToggleSoundOpt = lens Property? ToggleSoundOpt this.GetToggleSoundOpt this.SetToggleSoundOpt this
-        member this.GetOnToggle world : Scripting.Expr = this.Get Property? OnToggle world
-        member this.SetOnToggle (value : Scripting.Expr) world = this.SetFast Property? OnToggle false false value world
-        member this.OnToggle = lens Property? OnToggle this.GetOnToggle this.SetOnToggle this
+        member this.GetToggleSoundVolume world : single = this.Get Property? ToggleSoundVolume world
+        member this.SetToggleSoundVolume (value : single) world = this.SetFast Property? ToggleSoundVolume false value world
+        member this.ToggleSoundVolume = lens Property? ToggleSoundVolume this.GetToggleSoundVolume this.SetToggleSoundVolume this
         member this.ToggleEvent = Events.Toggle --> this
 
     type ToggleDispatcher () =
         inherit GuiDispatcher ()
         
         let handleMouseLeftDown evt world =
-            let toggle = evt.Subscriber : Entity
+            let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if toggle.GetSelected world then
-                let mousePositionWorld = World.mouseToWorld (toggle.GetViewType world) data.Position world
-                if  toggle.GetVisibleLayered world &&
-                    Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
-                    if toggle.GetEnabled world then
-                        let world = toggle.SetPressed true world
+            if entity.GetSelected world then
+                let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+                if  entity.GetVisible world &&
+                    Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                    if entity.GetEnabled world then
+                        let world = entity.SetPressed true world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
 
         let handleMouseLeftUp evt world =
-            let toggle = evt.Subscriber : Entity
+            let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if toggle.GetSelected world then
-                let wasPressed = toggle.GetPressed world
-                let world = toggle.SetPressed false world
-                let mousePositionWorld = World.mouseToWorld (toggle.GetViewType world) data.Position world
-                if  toggle.GetVisibleLayered world &&
-                    Math.isPointInBounds mousePositionWorld (toggle.GetBounds world) then
-                    if toggle.GetEnabled world && wasPressed then
-                        let world = toggle.SetOpen (not (toggle.GetOpen world)) world
-                        let eventAddress = if toggle.GetOpen world then Events.Open else Events.Close
+            if entity.GetSelected world then
+                let wasPressed = entity.GetPressed world
+                let world = entity.SetPressed false world
+                let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+                if  entity.GetVisible world &&
+                    Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                    if entity.GetEnabled world && wasPressed then
+                        let world = entity.SetOpen (not (entity.GetOpen world)) world
+                        let eventAddress = if entity.GetOpen world then Events.Open else Events.Close
                         let eventTrace = EventTrace.record "ToggleDispatcher" "handleMouseLeftUp" EventTrace.empty
-                        let world = World.publish () (eventAddress --> toggle) eventTrace toggle world
+                        let world = World.publishPlus () (eventAddress --> entity) eventTrace entity true world
                         let eventTrace = EventTrace.record4 "ToggleDispatcher" "handleMouseLeftUp" "Toggle" EventTrace.empty
-                        let world = World.publish () (Events.Toggle --> toggle) eventTrace toggle world
-                        let world = World.evalWithLogging (toggle.GetOnToggle world) (toggle.GetScriptFrame world) toggle world |> snd'
+                        let world = World.publishPlus () (Events.Toggle --> entity) eventTrace entity true world
                         let world =
-                            match toggle.GetToggleSoundOpt world with
-                            | Some toggleSound -> World.playSound 1.0f toggleSound world
+                            match entity.GetToggleSoundOpt world with
+                            | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
                             | None -> world
                         (Resolve, world)
                     else (Resolve, world)
@@ -1471,44 +1619,44 @@ module ToggleDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Open true
              define Entity.Pressed false
-             define Entity.OpenImage (AssetTag.make<Image> Assets.DefaultPackage "Image")
-             define Entity.ClosedImage (AssetTag.make<Image> Assets.DefaultPackage "Image2")
-             define Entity.ToggleSoundOpt (Some (AssetTag.make<Audio> Assets.DefaultPackage "Sound"))
-             define Entity.OnToggle Scripting.Unit]
+             define Entity.OpenImage Assets.DefaultImage
+             define Entity.ClosedImage Assets.DefaultImage2
+             define Entity.ToggleSoundOpt (Some Assets.DefaultSound)
+             define Entity.ToggleSoundVolume Constants.Audio.DefaultSoundVolume]
 
-        override this.Register (toggle, world) =
-            let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown toggle world |> snd
-            let world = World.monitorPlus handleMouseLeftUp Events.MouseLeftUp toggle world |> snd
+        override this.Register (entity, world) =
+            let world = bind (entity.Model<bool> ()) entity.Open world
+            let world = bind entity.Open (entity.Model<bool> ()) world
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
 
-        override this.Actualize (toggle, world) =
-            if toggle.GetVisibleLayered world then
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let transform = entity.GetTransform world
                 let image =
-                    if toggle.GetOpen world && not (toggle.GetPressed world)
-                    then toggle.GetOpenImage world
-                    else toggle.GetClosedImage world
+                    if entity.GetOpen world && not (entity.GetPressed world)
+                    then entity.GetOpenImage world
+                    else entity.GetClosedImage world
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = toggle.GetDepth world
-                              AssetTag = image
-                              PositionY = (toggle.GetPosition world).Y
-                              LayeredDescriptor =
-                                SpriteDescriptor
-                                    { Position = toggle.GetPosition world
-                                      Size = toggle.GetSize world
-                                      Rotation = 0.0f
-                                      Offset = Vector2.Zero
-                                      ViewType = Absolute
-                                      InsetOpt = None
-                                      Image = image
-                                      Color = if toggle.GetEnabled world then Vector4.One else toggle.GetDisabledColor world
-                                      Flip = FlipNone }}|])
+                    (LayeredDescriptorMessage
+                        { Depth = transform.Depth
+                          PositionY = transform.Position.Y
+                          AssetTag = AssetTag.generalize image
+                          RenderDescriptor =
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Offset = Vector2.Zero
+                                  InsetOpt = None
+                                  Image = image
+                                  Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                                  Glow = Color.Zero
+                                  Flip = FlipNone }})
                     world
             else world
 
-        override this.GetQuickSize (toggle, world) =
-            match Metadata.tryGetTextureSizeF (toggle.GetOpenImage world) (World.getMetadata world) with
+        override this.GetQuickSize (entity, world) =
+            match World.tryGetTextureSizeF (entity.GetOpenImage world) world with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
             
@@ -1516,12 +1664,11 @@ module ToggleDispatcherModule =
 module FpsDispatcherModule =
 
     type Entity with
-    
         member this.GetStartTickTime world : int64 = this.Get Property? StartTickTime world
-        member this.SetStartTickTime (value : int64) world = this.SetFast Property? StartTickTime false false value world
+        member this.SetStartTickTime (value : int64) world = this.SetFast Property? StartTickTime false value world
         member this.StartTickTime = lens Property? StartTickTime this.GetStartTickTime this.SetStartTickTime this
         member this.GetStartDateTime world : DateTime = this.Get Property? StartDateTime world
-        member this.SetStartDateTime (value : DateTime) world = this.SetFast Property? StartDateTime false false value world
+        member this.SetStartDateTime (value : DateTime) world = this.SetFast Property? StartDateTime false value world
         member this.StartDateTime = lens Property? StartDateTime this.GetStartDateTime this.SetStartDateTime this
 
     type FpsDispatcher () =
@@ -1556,16 +1703,9 @@ module FpsDispatcherModule =
 module FeelerDispatcherModule =
 
     type Entity with
-    
         member this.GetTouched world : bool = this.Get Property? Touched world
-        member this.SetTouched (value : bool) world = this.SetFast Property? Touched false false value world
+        member this.SetTouched (value : bool) world = this.SetFast Property? Touched false value world
         member this.Touched = lens Property? Touched this.GetTouched this.SetTouched this
-        member this.GetOnTouch world : Scripting.Expr = this.Get Property? OnTouch world
-        member this.SetOnTouch (value : Scripting.Expr) world = this.SetFast Property? OnTouch false false value world
-        member this.OnTouch = lens Property? OnTouch this.GetOnTouch this.SetOnTouch this
-        member this.GetOnUntouch world : Scripting.Expr = this.Get Property? OnUntouch world
-        member this.SetOnUntouch (value : Scripting.Expr) world = this.SetFast Property? OnUntouch false false value world
-        member this.OnUntouch = lens Property? OnUntouch this.GetOnUntouch this.SetOnUntouch this
         member this.TouchEvent = Events.Touch --> this
         member this.UntouchEvent = Events.Untouch --> this
 
@@ -1573,31 +1713,29 @@ module FeelerDispatcherModule =
         inherit GuiDispatcher ()
 
         let handleMouseLeftDown evt world =
-            let feeler = evt.Subscriber : Entity
+            let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if feeler.GetSelected world then
-                let mousePositionWorld = World.mouseToWorld (feeler.GetViewType world) data.Position world
-                if  feeler.GetVisibleLayered world &&
-                    Math.isPointInBounds mousePositionWorld (feeler.GetBounds world) then
-                    if feeler.GetEnabled world then
-                        let world = feeler.SetTouched true world
+            if entity.GetSelected world then
+                let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
+                if  entity.GetVisible world &&
+                    Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
+                    if entity.GetEnabled world then
+                        let world = entity.SetTouched true world
                         let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
-                        let world = World.publish data.Position (Events.Touch --> feeler) eventTrace feeler world
-                        let world = World.evalWithLogging (feeler.GetOnTouch world) (feeler.GetScriptFrame world) feeler world |> snd'
+                        let world = World.publishPlus data.Position (Events.Touch --> entity) eventTrace entity true world
                         (Resolve, world)
                     else (Resolve, world)
                 else (Cascade, world)
             else (Cascade, world)
 
         let handleMouseLeftUp evt world =
-            let feeler = evt.Subscriber : Entity
+            let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if feeler.GetSelected world && feeler.GetVisibleLayered world then
-                if feeler.GetEnabled world then
-                    let world = feeler.SetTouched false world
+            if entity.GetSelected world && entity.GetVisible world then
+                if entity.GetEnabled world then
+                    let world = entity.SetTouched false world
                     let eventTrace = EventTrace.record "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty
-                    let world = World.publish data.Position (Events.Untouch --> feeler) eventTrace feeler world
-                    let world = World.evalWithLogging (feeler.GetOnUntouch world) (feeler.GetScriptFrame world) feeler world |> snd'
+                    let world = World.publishPlus data.Position (Events.Untouch --> entity) eventTrace entity true world
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)
@@ -1605,13 +1743,11 @@ module FeelerDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (256.0f, 64.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.Touched false
-             define Entity.OnTouch Scripting.Unit
-             define Entity.OnUntouch Scripting.Unit]
+             define Entity.Touched false]
 
-        override this.Register (feeler, world) =
-            let world = World.monitorPlus handleMouseLeftDown Events.MouseLeftDown feeler world |> snd
-            let world = World.monitorPlus handleMouseLeftUp Events.MouseLeftUp feeler world |> snd
+        override this.Register (entity, world) =
+            let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
+            let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
 
         override this.GetQuickSize (_, _) =
@@ -1621,28 +1757,27 @@ module FeelerDispatcherModule =
 module FillBarDispatcherModule =
 
     type Entity with
-    
         member this.GetFill world : single = this.Get Property? Fill world
-        member this.SetFill (value : single) world = this.SetFast Property? Fill false false value world
+        member this.SetFill (value : single) world = this.SetFast Property? Fill false value world
         member this.Fill = lens Property? Fill this.GetFill this.SetFill this
         member this.GetFillInset world : single = this.Get Property? FillInset world
-        member this.SetFillInset (value : single) world = this.SetFast Property? FillInset false false value world
+        member this.SetFillInset (value : single) world = this.SetFast Property? FillInset false value world
         member this.FillInset = lens Property? FillInset this.GetFillInset this.SetFillInset this
         member this.GetFillImage world : Image AssetTag = this.Get Property? FillImage world
-        member this.SetFillImage (value : Image AssetTag) world = this.SetFast Property? FillImage false false value world
+        member this.SetFillImage (value : Image AssetTag) world = this.SetFast Property? FillImage false value world
         member this.FillImage = lens Property? FillImage this.GetFillImage this.SetFillImage this
         member this.GetBorderImage world : Image AssetTag = this.Get Property? BorderImage world
-        member this.SetBorderImage (value : Image AssetTag) world = this.SetFast Property? BorderImage false false value world
+        member this.SetBorderImage (value : Image AssetTag) world = this.SetFast Property? BorderImage false value world
         member this.BorderImage = lens Property? BorderImage this.GetBorderImage this.SetBorderImage this
 
     type FillBarDispatcher () =
         inherit GuiDispatcher ()
         
-        let getFillBarSpriteDims (fillBar : Entity) world =
-            let spriteSize = fillBar.GetSize world
-            let spriteInset = spriteSize * fillBar.GetFillInset world * 0.5f
-            let spritePosition = fillBar.GetPosition world + spriteInset
-            let spriteWidth = (spriteSize.X - spriteInset.X * 2.0f) * fillBar.GetFill world
+        let getFillBarSpriteDims (entity : Entity) world =
+            let spriteSize = entity.GetSize world
+            let spriteInset = spriteSize * entity.GetFillInset world * 0.5f
+            let spritePosition = entity.GetPosition world + spriteInset
+            let spriteWidth = (spriteSize.X - spriteInset.X * 2.0f) * entity.GetFill world
             let spriteHeight = spriteSize.Y - spriteInset.Y * 2.0f
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
@@ -1651,50 +1786,61 @@ module FillBarDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
-             define Entity.FillImage (AssetTag.make<Image> Assets.DefaultPackage "Image9")
-             define Entity.BorderImage (AssetTag.make<Image> Assets.DefaultPackage "Image10")]
+             define Entity.FillImage Assets.DefaultImage11
+             define Entity.BorderImage Assets.DefaultImage12]
 
-        override this.Actualize (fillBar, world) =
-            if fillBar.GetVisibleLayered world then
-                let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims fillBar world
-                let fillBarColor = if fillBar.GetEnabled world then Vector4.One else fillBar.GetDisabledColor world
+        override this.Register (entity, world) =
+            let world = bind (entity.Model<single> ()) entity.Fill world
+            let world = bind entity.Fill (entity.Model<single> ()) world
+            world
+
+        override this.Actualize (entity, world) =
+            if entity.GetVisible world then
+                let borderSpriteTransform =
+                    { Position = entity.GetPosition world
+                      Size = entity.GetSize world
+                      Rotation = 0.0f
+                      Depth = entity.GetDepth world + 0.5f
+                      Flags = entity.GetFlags world }
+                let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims entity world
+                let fillBarSpriteTransform =
+                    { Position = fillBarSpritePosition
+                      Size = fillBarSpriteSize
+                      Rotation = 0.0f
+                      Depth = entity.GetDepth world
+                      Flags = entity.GetFlags world }
+                let fillBarColor = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = fillBar.GetDepth world + 0.5f
-                              AssetTag = fillBar.GetBorderImage world
-                              PositionY = (fillBar.GetPosition world).Y
-                              LayeredDescriptor =
+                    (LayeredDescriptorsMessage
+                        [|{ Depth = borderSpriteTransform.Depth
+                            PositionY = borderSpriteTransform.Position.Y
+                            AssetTag = entity.GetBorderImage world |> AssetTag.generalize
+                            RenderDescriptor =
                                 SpriteDescriptor
-                                    { Position = fillBar.GetPosition world
-                                      Size = fillBar.GetSize world
-                                      Rotation = 0.0f
+                                    { Transform = borderSpriteTransform
                                       Offset = Vector2.Zero
-                                      ViewType = Absolute
                                       InsetOpt = None
-                                      Image = fillBar.GetBorderImage world
+                                      Image = entity.GetBorderImage world
                                       Color = fillBarColor
+                                      Glow = Color.Zero
                                       Flip = FlipNone }}
-                          LayerableDescriptor
-                            { Depth = fillBar.GetDepth world
-                              AssetTag = fillBar.GetFillImage world
-                              PositionY = (fillBar.GetPosition world).Y
-                              LayeredDescriptor =
+                          { Depth = fillBarSpriteTransform.Depth
+                            PositionY = fillBarSpriteTransform.Position.Y
+                            AssetTag = entity.GetFillImage world |> AssetTag.generalize
+                            RenderDescriptor =
                                 SpriteDescriptor
-                                    { Position = fillBarSpritePosition
-                                      Size = fillBarSpriteSize
-                                      Rotation = 0.0f
+                                    { Transform = fillBarSpriteTransform
                                       Offset = Vector2.Zero
-                                      ViewType = Absolute
                                       InsetOpt = None
-                                      Image = fillBar.GetFillImage world
+                                      Image = entity.GetFillImage world
                                       Color = fillBarColor
+                                      Glow = Color.Zero
                                       Flip = FlipNone }}|])
                     world
             else world
 
-        override this.GetQuickSize (fillBar, world) =
-            match Metadata.tryGetTextureSizeF (fillBar.GetBorderImage world) (World.getMetadata world) with
+        override this.GetQuickSize (entity, world) =
+            match World.tryGetTextureSizeF (entity.GetBorderImage world) world with
             | Some size -> size
             | None -> Constants.Engine.DefaultEntitySize
 
@@ -1709,8 +1855,9 @@ module BlockDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.BodyType Static
-             define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
+            [define Entity.PublishChanges true
+             define Entity.BodyType Static
+             define Entity.StaticImage Assets.DefaultImage4]
 
 [<AutoOpen>]
 module BoxDispatcherModule =
@@ -1723,26 +1870,26 @@ module BoxDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage (AssetTag.make<Image> Assets.DefaultPackage "Image4")]
+            [define Entity.PublishChanges true
+             define Entity.StaticImage Assets.DefaultImage4]
 
 [<AutoOpen>]
 module CharacterDispatcherModule =
 
     type Entity with
-        
         member this.GetCharacterIdleImage world = this.Get Property? CharacterIdleImage world
-        member this.SetCharacterIdleImage value world = this.SetFast Property? CharacterIdleImage false false value world
+        member this.SetCharacterIdleImage value world = this.SetFast Property? CharacterIdleImage false value world
         member this.CharacterIdleImage = lens<Image AssetTag> Property? CharacterIdleImage this.GetCharacterIdleImage this.SetCharacterIdleImage this
         member this.GetCharacterJumpImage world = this.Get Property? CharacterJumpImage world
-        member this.SetCharacterJumpImage value world = this.SetFast Property? CharacterJumpImage false false value world
+        member this.SetCharacterJumpImage value world = this.SetFast Property? CharacterJumpImage false value world
         member this.CharacterJumpImage = lens<Image AssetTag> Property? CharacterJumpImage this.GetCharacterJumpImage this.SetCharacterJumpImage this
         member this.GetCharacterWalkSheet world = this.Get Property? CharacterWalkSheet world
-        member this.SetCharacterWalkSheet value world = this.SetFast Property? CharacterWalkSheet false false value world
+        member this.SetCharacterWalkSheet value world = this.SetFast Property? CharacterWalkSheet false value world
         member this.CharacterWalkSheet = lens<Image AssetTag> Property? CharacterWalkSheet this.GetCharacterWalkSheet this.SetCharacterWalkSheet this
         member this.GetCharacterFacingLeft world = this.Get Property? CharacterFacingLeft world
-        member this.SetCharacterFacingLeft value world = this.SetFast Property? CharacterFacingLeft false false value world
+        member this.SetCharacterFacingLeft value world = this.SetFast Property? CharacterFacingLeft false value world
         member this.CharacterFacingLeft = lens<bool> Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
-        
+
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
 
@@ -1752,26 +1899,27 @@ module CharacterDispatcherModule =
             let i = single (frame % 3L)
             let j = single (frame / 3L)
             let offset = v2 (i * celSize.X) (j * celSize.Y) 
-            v4 offset.X offset.Y (offset.X + celSize.X) (offset.Y + celSize.Y)
+            v4Bounds offset celSize
 
         static member Facets =
             [typeof<RigidBodyFacet>]
 
         static member Properties =
-            [define Entity.AnimationDelay 6L
+            [define Entity.PublishChanges true
              define Entity.CelSize (v2 28.0f 28.0f)
              define Entity.CelRun 8
+             define Entity.AnimationDelay 4L
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
-             define Entity.CollisionBody (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero })
-             define Entity.CharacterIdleImage (AssetTag.make Assets.DefaultPackage "CharacterIdle")
-             define Entity.CharacterJumpImage (AssetTag.make Assets.DefaultPackage "CharacterJump")
-             define Entity.CharacterWalkSheet (AssetTag.make Assets.DefaultPackage "CharacterWalk")
+             define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero; PropertiesOpt = None })
+             define Entity.CharacterIdleImage Assets.DefaultCharacterIdleImage
+             define Entity.CharacterJumpImage Assets.DefaultCharacterJumpImage
+             define Entity.CharacterWalkSheet Assets.DefaultCharacterWalkImage
              define Entity.CharacterFacingLeft false]
 
         override this.Update (entity, world) =
-            // we have to a bit of hackery to remember whether the character is facing left or right
-            // when there is no velocity
+            // we have to use a bit of hackery to remember whether the character is facing left or
+            // right when there is no velocity
             let facingLeft = entity.GetCharacterFacingLeft world
             let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
             if facingLeft && velocity.X > 1.0f then entity.SetCharacterFacingLeft false world
@@ -1779,14 +1927,15 @@ module CharacterDispatcherModule =
             else world
 
         override this.Actualize (entity, world) =
-            if entity.GetVisibleLayered world && entity.GetInView world then
-                let time = World.getTickTime world
+            if entity.GetVisible world && entity.GetInView world then
+                let tickTime = World.getTickTime world
                 let physicsId = entity.GetPhysicsId world
                 let facingLeft = entity.GetCharacterFacingLeft world
                 let velocity = World.getBodyLinearVelocity physicsId world
                 let celSize = entity.GetCelSize world
                 let celRun = entity.GetCelRun world
                 let animationDelay = entity.GetAnimationDelay world
+                let transform = entity.GetTransform world
                 let (insetOpt, image) =
                     if not (World.isBodyOnGround physicsId world) then
                         let image = entity.GetCharacterJumpImage world
@@ -1796,24 +1945,21 @@ module CharacterDispatcherModule =
                         (None, image)
                     else
                         let image = entity.GetCharacterWalkSheet world
-                        (Some (computeWalkCelInset celSize celRun animationDelay time), image)
+                        (Some (computeWalkCelInset celSize celRun animationDelay tickTime), image)
                 World.enqueueRenderMessage
-                    (RenderDescriptorsMessage
-                        [|LayerableDescriptor
-                            { Depth = entity.GetDepth world
-                              AssetTag = image
-                              PositionY = (entity.GetPosition world).Y
-                              LayeredDescriptor =
-                                SpriteDescriptor
-                                    { Position = entity.GetPosition world
-                                      Size = entity.GetSize world
-                                      Rotation = entity.GetRotation world
-                                      Offset = v2Zero
-                                      ViewType = entity.GetViewType world
-                                      InsetOpt = insetOpt
-                                      Image = image
-                                      Color = v4One
-                                      Flip = if facingLeft then FlipH else FlipNone }}|])
+                    (LayeredDescriptorMessage
+                        { Depth = transform.Depth
+                          PositionY = transform.Position.Y
+                          AssetTag = AssetTag.generalize image
+                          RenderDescriptor =
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Offset = v2Zero
+                                  InsetOpt = insetOpt
+                                  Image = image
+                                  Color = Color.White
+                                  Glow = Color.Zero
+                                  Flip = if facingLeft then FlipH else FlipNone }})
                     world
             else world
 
@@ -1828,11 +1974,31 @@ module TileMapDispatcherModule =
 
         static member Properties =
             [define Entity.Omnipresent true
+             define Entity.PublishChanges true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMapAsset (AssetTag.make<TileMap> Assets.DefaultPackage "TileMap")
+             define Entity.TileMap Assets.DefaultTileMap
+             define Entity.Parallax 0.0f]
+
+[<AutoOpen>]
+module TmxMapDispatcherModule =
+
+    type TmxMapDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<TmxMapFacet>]
+
+        static member Properties =
+            [define Entity.Omnipresent true
+             define Entity.PublishChanges true
+             define Entity.Friction 0.0f
+             define Entity.Restitution 0.0f
+             define Entity.CollisionCategories "1"
+             define Entity.CollisionMask "@"
+             define Entity.TmxMap (TmxMap Assets.DefaultTmxFilePath)
              define Entity.Parallax 0.0f]
 
 [<AutoOpen>]
@@ -1849,20 +2015,9 @@ module LayerDispatcherModule =
                 world
 
     and Layer with
-    
-        member this.GetModel<'model> world =
-            let property = this.Get<DesignerProperty> Property? Model world
-            property.DesignerValue :?> 'model
-
-        member this.SetModel<'model> (value : 'model) world =
-            let model = this.Get<DesignerProperty> Property? Model world
-            this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
 
         member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater this.GetModel<'model> world) world
-
-        member this.Model<'model> () =
-            lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
+            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalLayer<'model, 'message, 'command> signal this world
@@ -1880,11 +2035,35 @@ module LayerDispatcherModule =
             lens Property? Model (this.GetModel layer) (flip this.SetModel layer) layer
 
         override this.Register (layer, world) =
-            let (model, world) = World.attachModel initial Property? Model layer world
-            let bindings = this.Bindings (model, layer, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model layer) bindings layer world
-            let content = this.Content (this.Model layer, layer, world)
-            List.fold (fun world content -> World.expandEntityContent None content (SimulantOrigin layer) layer world) world content
+            let world =
+                let property = World.getLayerModelProperty layer world
+                if property.DesignerType = typeof<unit>
+                then layer.SetModel<'model> initial world
+                else world
+            let channels = this.Channel (this.Model layer, layer)
+            let world = Signal.processChannels this.Message this.Command (this.Model layer) channels layer world
+            let content = this.Content (this.Model layer, layer)
+            let world =
+                List.fold (fun world content ->
+                    World.expandEntityContent content (SimulantOrigin layer) layer layer world |> snd)
+                    world content
+            let initializers = this.Initializers (this.Model layer, layer)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let propertyName = def.PropertyName
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName alwaysPublish property layer world
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> layer
+                    World.monitor (fun (evt : Event) world ->
+                        let world = WorldModule.trySignal (handler evt) layer world
+                        (Cascade, world))
+                        eventAddress (layer :> Simulant) world
+                | BindDefinition (left, right) ->
+                    WorldModule.bind5 layer left right world)
+                world initializers
 
         override this.Actualize (layer, world) =
             let views = this.View (this.GetModel layer world, layer, world)
@@ -1896,17 +2075,20 @@ module LayerDispatcherModule =
             | :? Signal<obj, 'command> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Bindings : 'model * Layer * World -> Binding<'message, 'command, Layer, World> list
-        default this.Bindings (_, _, _) = []
+        abstract member Initializers : Lens<'model, World> * Layer -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
-        abstract member Message : 'model * 'message * Layer * World -> 'model * Signal<'message, 'command>
+        abstract member Channel : Lens<'model, World> * Layer -> Channel<'message, 'command, Layer, World> list
+        default this.Channel (_, _) = []
+
+        abstract member Message : 'model * 'message * Layer * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Layer * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Layer * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Layer * World -> EntityContent list
-        default this.Content (_, _, _) = []
+        abstract member Content : Lens<'model, World> * Layer -> EntityContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Layer * World -> View list
         default this.View (_, _, _) = []
@@ -1925,20 +2107,9 @@ module ScreenDispatcherModule =
                 world
 
     and Screen with
-    
-        member this.GetModel<'model> world =
-            let property = this.Get<DesignerProperty> Property? Model world
-            property.DesignerValue :?> 'model
-
-        member this.SetModel<'model> (value : 'model) world =
-            let model = this.Get<DesignerProperty> Property? Model world
-            this.Set<DesignerProperty> Property? Model { model with DesignerValue = value } world
 
         member this.UpdateModel<'model> updater world =
-            this.SetModel<'model> (updater this.GetModel<'model> world) world
-
-        member this.Model<'model> () =
-            lens<'model> Property? Model this.GetModel<'model> this.SetModel<'model> this
+            this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
             World.signalScreen<'model, 'message, 'command> signal this world
@@ -1956,12 +2127,35 @@ module ScreenDispatcherModule =
             lens Property? Model (this.GetModel screen) (flip this.SetModel screen) screen
 
         override this.Register (screen, world) =
-            let (model, world) = World.attachModel initial Property? Model screen world
-            let bindings = this.Bindings (model, screen, world)
-            let world = Signal.processBindings this.Message this.Command (this.Model screen) bindings screen world
-            let content = this.Content (this.Model screen, screen, world)
-            let world = List.fold (fun world content -> World.expandLayerContent None content (SimulantOrigin screen) screen world) world content
-            world
+            let world =
+                let property = World.getScreenModelProperty screen world
+                if property.DesignerType = typeof<unit>
+                then screen.SetModel<'model> initial world
+                else world
+            let channels = this.Channel (this.Model screen, screen)
+            let world = Signal.processChannels this.Message this.Command (this.Model screen) channels screen world
+            let content = this.Content (this.Model screen, screen)
+            let world =
+                List.fold (fun world content ->
+                    World.expandLayerContent content (SimulantOrigin screen) screen world |> snd)
+                    world content
+            let initializers = this.Initializers (this.Model screen, screen)
+            List.fold (fun world initializer ->
+                match initializer with
+                | PropertyDefinition def ->
+                    let propertyName = def.PropertyName
+                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
+                    let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
+                    World.setProperty def.PropertyName alwaysPublish property screen world
+                | EventHandlerDefinition (handler, partialAddress) ->
+                    let eventAddress = partialAddress --> screen
+                    World.monitor (fun (evt : Event) world ->
+                        let world = WorldModule.trySignal (handler evt) screen world
+                        (Cascade, world))
+                        eventAddress (screen :> Simulant) world
+                | BindDefinition (left, right) ->
+                    WorldModule.bind5 screen left right world)
+                world initializers
 
         override this.Actualize (screen, world) =
             let views = this.View (this.GetModel screen world, screen, world)
@@ -1973,17 +2167,20 @@ module ScreenDispatcherModule =
             | :? Signal<obj, 'command> as signal -> screen.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Bindings : 'model * Screen * World -> Binding<'message, 'command, Screen, World> list
-        default this.Bindings (_, _, _) = []
+        abstract member Initializers : Lens<'model, World> * Screen -> PropertyInitializer list
+        default this.Initializers (_, _) = []
 
-        abstract member Message : 'model * 'message * Screen * World -> 'model * Signal<'message, 'command>
+        abstract member Channel : Lens<'model, World> * Screen -> Channel<'message, 'command, Screen, World> list
+        default this.Channel (_, _) = []
+
+        abstract member Message : 'model * 'message * Screen * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Screen * World -> World * Signal<'message, 'command>
+        abstract member Command : 'model * 'command * Screen * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Screen * World -> LayerContent list
-        default this.Content (_, _, _) = []
+        abstract member Content : Lens<'model, World> * Screen -> LayerContent list
+        default this.Content (_, _) = []
 
         abstract member View : 'model * Screen * World -> View list
         default this.View (_, _, _) = []

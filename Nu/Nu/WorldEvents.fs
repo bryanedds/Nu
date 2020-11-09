@@ -1,8 +1,9 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
+open System.Numerics
 open Prime
 open Nu
 
@@ -18,7 +19,7 @@ type [<StructuralEquality; NoComparison>] MouseButtonData =
 
 /// The data for a keyboard key event.
 type [<StructuralEquality; NoComparison>] KeyboardKeyData =
-    { ScanCode : int
+    { KeyboardKey : KeyboardKey
       Repeated : bool
       Down : bool }
 
@@ -31,12 +32,25 @@ type [<StructuralEquality; NoComparison>] GamepadButtonData =
     { GamepadButton : GamepadButton
       Down : bool }
 
+/// The data of a body transform event.
+type [<StructuralEquality; NoComparison>] TransformData =
+    { BodySource : BodySource
+      Position : Vector2
+      Rotation : single }
+
 /// The data for a collision event.
 type [<StructuralEquality; NoComparison>] CollisionData =
-    { Normal : Vector2
-      Speed : single
-      Collidee : Entity }
+    { Collider : BodyShapeSource
+      Collidee : BodyShapeSource
+      Normal : Vector2
+      Speed : single }
 
+/// The data for a separation event.
+type [<StructuralEquality; NoComparison>] SeparationData =
+    { Separator : BodyShapeSource
+      Separatee : BodyShapeSource }
+
+[<RequireQualifiedAccess>]
 module Events =
 
     let Wildcard = Prime.Events.Wildcard
@@ -46,7 +60,9 @@ module Events =
     let PostUpdate = stoa<unit> "PostUpdate/Event"
     let Select = stoa<unit> "Select/Event"
     let Deselect = stoa<unit> "Deselect/Event"
+    let Transform = stoa<TransformData> "Transform/Event"
     let Collision = stoa<CollisionData> "Collision/Event"
+    let Separation = stoa<SeparationData> "Separation/Event"
     let Click = stoa<unit> "Click/Event"
     let Down = stoa<unit> "Down/Event"
     let Up = stoa<unit> "Up/Event"

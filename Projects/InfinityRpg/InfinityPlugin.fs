@@ -1,14 +1,16 @@
 ﻿namespace InfinityRpg
-open System
-open Prime
 open Nu
 open InfinityRpg
 
-type InfinityRpgPlugin () =
+// this is a plugin for the Nu game engine that directs the execution of your application and editor
+type InfinityPlugin () =
     inherit NuPlugin ()
 
-    override this.GetStandAloneGameDispatcher () =
+    // specify the game dispatcher to use at run-time
+    override this.GetGameDispatcher () =
         typeof<InfinityDispatcher>
 
+    // route overlays to specific dispatchers
     override this.MakeOverlayRoutes () =
-        [typeof<ButtonDispatcher>.Name, Some "InfinityButtonDispatcher"]
+        [(typeof<ButtonDispatcher>.Name, Some "ButtonDispatcherRoute")
+         (typeof<TextDispatcher>.Name, Some "TextDispatcherRoute")]

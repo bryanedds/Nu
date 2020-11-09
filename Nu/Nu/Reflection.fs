@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2018.
+// Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
 open System
@@ -15,45 +15,67 @@ module Reflection =
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
+    let private AlwaysPublishPropertyNames =
+        dictPlus
+            [("Model", true)
+             ("ParentNodeOpt", true)
+             ("ScriptOpt", true)
+             ("Script", true)
+             ("TmxMap", true)
+             ("EffectsOpt", true)]
+
+    let private NonPersistentPropertyNames =
+        dictPlus
+            [("Dispatcher", true)
+             ("Facets", true)
+             ("Ecs", true)
+             ("TransitionState", true)
+             ("TransitionTicks", true)
+             ("EntityTree", true)
+             ("PublishUpdates", true)
+             ("PublishPostUpdates", true)
+             ("ScriptFrame", true)
+             ("ScriptUnsubscriptions", true)
+             ("CreationTimeStamp", true)
+             ("Optimized", true)
+             ("NodeUnsubscribe", true)
+             ("TmxMap", true)
+             ("EffectPhysicsShapes", true)
+             ("EffectTags", true)
+             ("EffectHistory", true)]
+
     /// Check if a property with the given name should always publish a change event.
-    let isPropertyAlwaysPublishByName propertyName =
-        match propertyName with
-        | "ScriptOpt" // always publish certain script properties 
-        | "Script"
-        | "OnRegister"
-        | "EffectsOpt" -> true
-        | _ -> propertyName.EndsWith "Ap"
+    let isPropertyAlwaysPublishByName (propertyName : string) =
+        match AlwaysPublishPropertyNames.TryGetValue propertyName with
+        | (true, result) -> result
+        | (false, _) ->
+            let result =
+                propertyName.EndsWith ("Model", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Ap", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Tp", StringComparison.Ordinal)
+            AlwaysPublishPropertyNames.Add (propertyName, result)
+            result
 
-    /// Is a property with the given name persistent?
-    let isPropertyPersistentByName (propertyName : string) =
-        /// NOTE: we hard-code these property names to avoid as many Np suffixes as we can.
-        match propertyName with
-        | "Dispatcher"
-        | "Facets"
-        | "TransitionState"
-        | "TransitionTicks"
-        | "EntityTree"
-        | "PublishUpdates"
-        | "PublishPostUpdates"
-        | "ScriptFrame"
-        | "ScriptUnsubscriptions"
-        | "CreationTimeStamp"
-        | "NodeUnsubscribe"
-        | "EffectPhysicsShapes"
-        | "EffectTags"
-        | "EffectHistory" -> false
-        | _ ->
-            not (propertyName.EndsWith ("Np", StringComparison.Ordinal)) && // don't write explicitly non-persistent properties
-            not (propertyName.EndsWith ("Id", StringComparison.Ordinal)) && // don't write an Id
-            not (propertyName.EndsWith ("Ids", StringComparison.Ordinal)) // don't write multiple Ids
+    /// Is a property with the given name not persistent?
+    let isPropertyNonPersistentByName (propertyName : string) =
+        match NonPersistentPropertyNames.TryGetValue propertyName with
+        | (true, result) -> result
+        | (false, _) ->
+            let result =
+                propertyName.EndsWith ("Np", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Tp", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Id", StringComparison.Ordinal) ||
+                propertyName.EndsWith ("Ids", StringComparison.Ordinal)
+            NonPersistentPropertyNames.Add (propertyName, result)
+            result
 
-    /// Is the property of the given target persistent?
-    let isPropertyPersistent (property : PropertyInfo) (target : 'a) =
-        isPropertyPersistentByName property.Name &&
-        not
-            (property.Name = Constants.Engine.NamePropertyName &&
-             property.PropertyType = typeof<string> &&
-             Gen.isName (property.GetValue target :?> string))
+    /// Is the property of the given target not persistent?
+    let isPropertyNonPersistent (property : PropertyInfo) (target : 'a) =
+        isPropertyNonPersistentByName property.Name ||
+        (property.Name = Constants.Engine.NamePropertyName &&
+         property.PropertyType = typeof<string> &&
+         Gen.isName (property.GetValue target :?> string))
+
     /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =
         let dispatcherType = dispatcher.GetType ()
@@ -173,7 +195,7 @@ module Reflection =
             match Map.tryFind property.Name propertyDescriptors with
             | Some propertySymbol ->
                 match propertySymbol with
-                | Symbols ([Text (str, _); _], _) when isNotNull (Type.GetType str) ->
+                | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
                     let converter = SymbolicConverter (false, None, property.PropertyType)
                     if converter.CanConvertFrom typeof<Symbol> then
                         let propertyValue = converter.ConvertFrom propertySymbol
@@ -183,8 +205,7 @@ module Reflection =
             | None -> ()
         elif property.Name = Property? Transform &&
              property.PropertyType = typeof<Transform> then
-            // nothing to do here since the custom .NET properties will take care of this...
-            ()
+             () // nothing to do here since the custom .NET properties will take care of this...
         else
             match Map.tryFind property.Name propertyDescriptors with
             | Some (propertySymbol : Symbol) ->
@@ -212,7 +233,7 @@ module Reflection =
                 else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'."); xtension
             | None ->
                 match propertySymbol with
-                | Symbols ([Text (str, _); _], _) when isNotNull (Type.GetType str) ->
+                | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
                     let propertyType = typeof<DesignerProperty>
                     let converter = SymbolicConverter (false, None, propertyType)
                     if converter.CanConvertFrom typeof<Symbol> then
@@ -296,7 +317,7 @@ module Reflection =
         for property in properties do
             if  property.Name <> Property? FacetNames &&
                 property.Name <> Property? OverlayNameOpt &&
-                isPropertyPersistentByName property.Name then
+                not (isPropertyNonPersistentByName property.Name) then
                 tryReadMemberProperty propertyDescriptors property target
         target
 
@@ -310,7 +331,8 @@ module Reflection =
         Seq.fold (fun propertyDescriptors (propertyName, (property : Property)) ->
             let propertyType = property.PropertyType
             let propertyValue = property.PropertyValue
-            if  isPropertyPersistentByName propertyName &&
+            if  propertyType <> typeof<ComputedProperty> &&
+                not (isPropertyNonPersistentByName propertyName) &&
                 shouldWriteProperty propertyName propertyType propertyValue then
                 let converter = SymbolicConverter (false, None, propertyType)
                 let propertySymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
@@ -321,7 +343,7 @@ module Reflection =
 
     /// Write a member property value to a property descriptors.
     let private writeMemberProperty (propertyValue : obj) (property : PropertyInfo) shouldWriteProperty propertyDescriptors (target : 'a) =
-        if  isPropertyPersistent property target &&
+        if  not (isPropertyNonPersistent property target) &&
             shouldWriteProperty property.Name property.PropertyType propertyValue then
             if  property.Name = Property? Transform &&
                 property.PropertyType = typeof<Transform> then
@@ -480,50 +502,3 @@ module Reflection =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
         attachIntrinsicFacetsViaNames copyTarget dispatcherMap facetMap instrinsicFacetNames target world
-
-    /// Make intrinsic overlays.
-    let makeIntrinsicOverlays requiresFacetNames sourceTypes =
-
-        // get the unique, decomposed source types
-        let sourceTypeHashSet = HashSet HashIdentity.Structural
-        for sourceType in sourceTypes do
-            for sourceTypeDecomposed in sourceType :: getBaseTypesExceptObject sourceType do
-                sourceTypeHashSet.Add sourceTypeDecomposed |> ignore
-        let sourceTypes = List.ofSeq sourceTypeHashSet
-
-        // get the descriptors needed to construct the overlays
-        let overlayDescriptors =
-            List.map
-                (fun (sourceType : Type) ->
-                    let includeNames = if sourceType.BaseType <> typeof<obj> then [sourceType.BaseType.Name] else []
-                    let definitions = getPropertyDefinitionsNoInherit sourceType
-                    let requiresFacetNames = requiresFacetNames sourceType
-                    (sourceType.Name, includeNames, definitions, requiresFacetNames))
-                sourceTypes
-
-        // create the intrinsic overlays with the above descriptors
-        let overlays =
-            List.map
-                (fun (overlayName, includeNames, definitions, requiresFacetNames) ->
-                    let overlayProperties =
-                        List.foldBack
-                            (fun definition overlayProperties ->
-                                match definition.PropertyExpr with
-                                | DefineExpr value ->
-                                    let converter = SymbolicConverter (false, None, definition.PropertyType)
-                                    let overlayProperty = converter.ConvertTo (value, typeof<Symbol>) :?> Symbol
-                                    Map.add definition.PropertyName overlayProperty overlayProperties
-                                | VariableExpr _ -> overlayProperties)
-                            definitions
-                            Map.empty
-                    let overlayProperties =
-                        if requiresFacetNames
-                        then Map.add Property? FacetNames (Symbols ([], None)) overlayProperties
-                        else overlayProperties
-                    { OverlayName = overlayName
-                      OverlayIncludeNames = includeNames
-                      OverlayProperties = overlayProperties })
-                overlayDescriptors
-
-        // fin
-        overlays

@@ -1,311 +1,343 @@
-﻿namespace OmniBlade
-open System.IO
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds, 2013-2020.
+
+namespace OmniBlade
+open System
+open FSharpx.Collections
 open Prime
 open Nu
 
-type Direction =
-    | Downward
-    | Leftward
-    | Upward
-    | Rightward
+type PropState =
+    | DoorState of bool
+    | SwitchState of bool
+    | NpcState of bool
+    | ShopkeepState of bool
+    | NilState
 
-type ElementType =
-    | Fire // beats nothing; strongest
-    | Lightning // beats water
-    | Water // beats fire, lightning; weakest
+type [<ReferenceEquality; NoComparison>] PrizePool =
+    { Items : ItemType list
+      Gold : int
+      Exp : int }
 
-type StatusType =
-    | DefendStatus // also implies countering
-    | PoisonStatus
-    | MuteStatus
-    | SleepStatus
+type [<ReferenceEquality; NoComparison>] Inventory =
+    { Items : Map<ItemType, int>
+      Gold : int }
 
-type EquipmentType =
-    | Weapon
-    | Armor
-    | Relic
+    static member getKeyItems inv =
+        inv.Items |>
+        Map.toArray |>
+        Array.map (function (KeyItem keyItemType, count) -> Some (keyItemType, count) | _ -> None) |>
+        Array.definitize |>
+        Map.ofArray
+        
+    static member getConsumables inv =
+        inv.Items |>
+        Map.toArray |>
+        Array.map (function (Consumable consumableType, count) -> Some (consumableType, count) | _ -> None) |>
+        Array.definitize |>
+        Map.ofArray
 
-type ConsumableType =
-    | Herb
+    static member containsItem item inventory =
+        match Map.tryFind item inventory.Items with
+        | Some itemCount when itemCount > 0 -> true
+        | _ -> false
 
-type KeyItemType =
-    | BrassKey
+    static member addItem item inventory =
+        match item with
+        | Equipment _ | Consumable _ | KeyItem _ ->
+            match Map.tryFind item inventory.Items with
+            | Some itemCount -> { inventory with Items = Map.add item (inc itemCount) inventory.Items }
+            | None -> { inventory with Items = Map.add item 1 inventory.Items }
+        | Stash gold -> { inventory with Gold = inventory.Gold + gold }
 
-type ItemType =
-    | Equipment of EquipmentType
-    | Consumable of ConsumableType
-    | KeyItem of KeyItemType
+    static member addItems items inventory =
+        List.fold (flip Inventory.addItem) inventory items
 
-type AimType =
-    | EnemyAim
-    | AllyAim of bool
-    | AnyAim
-    | NoAim
+    static member removeItem item inventory =
+        match Map.tryFind item inventory.Items with
+        | Some itemCount when itemCount > 1 ->
+            { inventory with Items = Map.add item (dec itemCount) inventory.Items }
+        | Some itemCount when itemCount = 1 ->
+            { inventory with Items = Map.remove item inventory.Items }
+        | _ -> inventory
 
-type TargetType =
-    | SingleTarget of AimType
-    | RadialTarget of AimType
-    | LineTarget of AimType
-    | AllTarget of AimType
+    static member indexItems (inventory : Inventory) =
+        inventory.Items |>
+        Map.toSeq |>
+        Seq.map (fun (ty, ct) -> List.init ct (fun _ -> ty)) |>
+        Seq.concat |>
+        Seq.index
 
-type EffectType =
-    | Physical
-    | Magical
+    static member tryIndexItem index inventory =
+        let items = Inventory.indexItems inventory
+        let tail = Seq.trySkip index items
+        Seq.tryHead tail
 
-type SpecialType = string
+    static member getItemCount itemType inventory =
+        match Map.tryFind itemType inventory.Items with
+        | Some count -> count
+        | None -> 0
 
-type ActionType =
-    | Attack
-    | Defend // auto counters at rate of counter stat
-    | Consume of ConsumableType
-    | Special of SpecialType
-    | Wound
+    static member updateGold updater (inventory : Inventory) =
+        { inventory with Gold = updater inventory.Gold }
 
-type WeaponType = string
+    static member initial =
+        { Items = Map.singleton (Consumable GreenHerb) 1; Gold = 0 }
 
-type WeaponSubtype =
-    | Melee
-    | Sword
-    | Axe
-    | Bow
-    | Staff
-    | Rod
-
-type WeaponData =
-    { WeaponType : WeaponType // key
-      WeaponSubtype : WeaponSubtype
-      PowerBase : int
-      MagicBase : int }
-
-type ArmorType = string
-
-type ArmorSubtype =
-    | Robe
-    | Vest
-    | Mail
-
-type ArmorData =
-    { ArmorType : ArmorType // key
-      ArmorSubtype : ArmorSubtype
-      HitPointsBase : int
-      SpecialPointsBase : int }
-
-type RelicType = string
-
-type RelicData =
-    { RelicType : RelicType // key
-      ShieldBase : int
-      CounterBase : int }
-
-type AllyType =
-    | Jinn
-
-type EnemyType =
-    | Goblin
-
-type CharacterType =
-    | Ally of AllyType
-    | Enemy of EnemyType
-
-type DrainData =
-    { EffectType : EffectType
-      Percentage : single }
-
-type ActionData =
-    { ActionType : ActionType // key
-      ActionName : string
-      EffectType : EffectType
-      MagicPointCost : int
-      SuccessRate : single
-      Curative : bool
-      DrainData : DrainData
-      ElementType : ElementType
-      StatusesAdded : StatusType Set
-      StatusesRemoved : StatusType Set
-      TargetType : TargetType }
-
-type ConsumableData =
-    { ConsumableData : unit }
-
-type KeyItemData =
-    { KeyItemData : unit }
-
-type ItemData =
-    { ItemType : ItemType // key
-      Description : string }
-
-type RewardData =
-    { Gold : int }
-
-type CharacterData =
-    { CharacterType : CharacterType // key
-      CharacterName : string
-      BaseActions : ActionData list // base actions for all instances of character
-      Reward : RewardData }
-
-type [<NoComparison>] Rom =
-    { Weapons : Map<WeaponType, WeaponData>
-      Armors : Map<ArmorType, ArmorData>
-      Relics : Map<RelicType, RelicData>
-      Actions : Map<ActionType, ActionData>
-      Items : Map<ItemType, ItemData>
-      Characters : Map<CharacterType, CharacterData> }
-
-    static member readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
-        File.ReadAllText filePath |>
-        flip (Symbol.fromStringCsv true) (Some filePath) |>
-        symbolToValue<'d list> |>
-        Map.ofListBy (fun data -> getKey data, data)
-
-    static member readFromFiles () =
-        { Weapons = Rom.readSheet Assets.WeaponDataFilePath (fun data -> data.WeaponType)
-          Armors = Rom.readSheet Assets.ArmorDataFilePath (fun data -> data.ArmorType)
-          Relics = Rom.readSheet Assets.RelicDataFilePath (fun data -> data.RelicType)
-          Actions = Map.empty
-          Items = Map.empty
-          Characters = Map.empty }
-
-type PartyMember =
-    { PartyIndex : int // key
-      ActivePartyIndexOpt : int option
-      CharacterType : CharacterType }
-
-type [<NoComparison>] Party =
-    { PartyMembers : Map<int, PartyMember> }
-
-type CharacterState =
-    { CharacterType : CharacterType
-      PartyIndex : int
-      ActionTime : int
-      ExpPoints : int
+type [<ReferenceEquality; NoComparison>] Legionnaire =
+    { LegionIndex : int // key
+      PartyIndexOpt : int option
+      ArchetypeType : ArchetypeType
+      CharacterType : CharacterType
       HitPoints : int
-      SpecialPoints : int
+      TechPoints : int
+      ExpPoints : int
+      WeaponOpt : string option
+      ArmorOpt : string option
+      Accessories : string list }
+
+    member this.Level = Algorithms.expPointsToLevel this.ExpPoints
+    member this.IsHealthy = this.HitPoints > 0
+    member this.IsWounded = this.HitPoints <= 0
+    member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
+    member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
+    member this.Power = Algorithms.power this.WeaponOpt 1.0f this.ArchetypeType this.Level
+    member this.Magic = Algorithms.magic this.WeaponOpt 1.0f this.ArchetypeType this.Level
+    member this.Shield effectType = Algorithms.shield effectType this.Accessories 1.0f this.ArchetypeType this.Level
+    member this.Techs = Algorithms.techs this.ArchetypeType this.Level
+
+    static member canUseItem itemType legionnaire =
+        match Map.tryFind legionnaire.CharacterType Data.Value.Characters with
+        | Some characterData ->
+            match Map.tryFind characterData.ArchetypeType Data.Value.Archetypes with
+            | Some archetypeData ->
+                match itemType with
+                | Consumable _ -> true
+                | Equipment equipmentType ->
+                    match equipmentType with
+                    | WeaponType weaponType ->
+                        match Map.tryFind weaponType Data.Value.Weapons with
+                        | Some weaponData -> weaponData.WeaponSubtype = archetypeData.WeaponSubtype
+                        | None -> false
+                    | ArmorType armorType ->
+                        match Map.tryFind armorType Data.Value.Armors with
+                        | Some armorData -> armorData.ArmorSubtype = archetypeData.ArmorSubtype
+                        | None -> false
+                    | AccessoryType _ -> true
+                | KeyItem _ -> false
+                | Stash _ -> false
+            | None -> false
+        | None -> false
+
+    static member tryUseItem itemType legionnaire =
+        if Legionnaire.canUseItem itemType legionnaire then
+            match Map.tryFind legionnaire.CharacterType Data.Value.Characters with
+            | Some characterData ->
+                match itemType with
+                | Consumable consumableType ->
+                    match Data.Value.Consumables.TryGetValue consumableType with
+                    | (true, consumableData) ->
+                        match consumableType with
+                        | GreenHerb | RedHerb | GoldHerb ->
+                            let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
+                            let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
+                            let legionnaire = { legionnaire with HitPoints = min hpm (legionnaire.HitPoints + int consumableData.Scalar) }
+                            (true, None, legionnaire)
+                    | (false, _) -> (false, None, legionnaire)
+                | Equipment equipmentType ->
+                    match equipmentType with
+                    | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) legionnaire.WeaponOpt, { legionnaire with WeaponOpt = Some weaponType })
+                    | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) legionnaire.ArmorOpt, { legionnaire with ArmorOpt = Some armorType })
+                    | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead legionnaire.Accessories), { legionnaire with Accessories = [accessoryType] })
+                | KeyItem _ -> (false, None, legionnaire)
+                | Stash _ -> (false, None, legionnaire)
+            | None -> (false, None, legionnaire)
+        else (false, None, legionnaire)
+
+    static member getExpPointsForNextLevel legionnaire =
+        let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
+        let (_, nextExp) = Algorithms.levelToExpPointsRange level
+        nextExp
+
+    static member getExpPointsRemainingForNextLevel legionnaire =
+        match Legionnaire.getExpPointsForNextLevel legionnaire with
+        | Int32.MaxValue -> 0
+        | nextExp -> nextExp - legionnaire.ExpPoints
+
+    static member restore legionnaire =
+        { legionnaire with
+            HitPoints = legionnaire.HitPointsMax
+            TechPoints = legionnaire.TechPointsMax }
+
+    static member finn =
+        let index = 0
+        let characterType = Ally Finn
+        let character = Map.find characterType Data.Value.Characters
+        let expPoints = Algorithms.levelToExpPoints character.LevelBase
+        let archetypeType = character.ArchetypeType
+        let weaponOpt = Some "OakSword"
+        let armorOpt = Some "LeatherMail"
+        { ArchetypeType = archetypeType
+          LegionIndex = index
+          PartyIndexOpt = Some index
+          CharacterType = characterType
+          HitPoints = Algorithms.hitPointsMax armorOpt archetypeType character.LevelBase
+          TechPoints = Algorithms.techPointsMax armorOpt archetypeType character.LevelBase
+          ExpPoints = expPoints
+          WeaponOpt = weaponOpt
+          ArmorOpt = armorOpt
+          Accessories = [] }
+
+    static member glenn =
+        let index = 1
+        let characterType = Ally Glenn
+        let character = Map.find characterType Data.Value.Characters
+        let expPoints = Algorithms.levelToExpPoints character.LevelBase
+        let archetypeType = character.ArchetypeType
+        let weaponOpt = Some "StoneSword"
+        let armorOpt = None
+        { ArchetypeType = archetypeType
+          LegionIndex = index
+          PartyIndexOpt = Some index
+          CharacterType = characterType
+          HitPoints = Algorithms.hitPointsMax armorOpt archetypeType character.LevelBase
+          TechPoints = Algorithms.techPointsMax armorOpt archetypeType character.LevelBase
+          ExpPoints = expPoints
+          WeaponOpt = weaponOpt
+          ArmorOpt = armorOpt
+          Accessories = [] }
+
+type Legion =
+    Map<int, Legionnaire>
+
+type CharacterIndex =
+    | AllyIndex of int
+    | EnemyIndex of int
+    static member isTeammate index index2 =
+        match (index, index2) with
+        | (AllyIndex _, AllyIndex _) -> true
+        | (EnemyIndex _, EnemyIndex _) -> true
+        | (_, _) -> false
+
+type [<ReferenceEquality; NoComparison>] CharacterState =
+    { ArchetypeType : ArchetypeType
+      ExpPoints : int
+      WeaponOpt : string option
+      ArmorOpt : string option
+      Accessories : string list
+      HitPoints : int
+      TechPoints : int
+      Statuses : StatusType Set
+      Defending : bool
+      Charging : bool
       PowerBuff : single
       ShieldBuff : single
       MagicBuff : single
       CounterBuff : single
-      Statuses : StatusType Set
-      WeaponOpt : WeaponType option
-      ArmorOpt : ArmorType option
-      Relics : RelicType list }
+      GoldPrize : int
+      ExpPrize : int }
 
-    static member empty =
-        { CharacterType = Ally Jinn
-          PartyIndex = 0
-          ActionTime = 0
-          ExpPoints = 0
-          HitPoints = 10 // note this is an arbitrary number as hp max is calculated
-          SpecialPoints = 1 // sp max is calculated
-          PowerBuff = 1.0f // rate at which power is buffed / debuffed
-          MagicBuff = 1.0f // rate at which magic is buffed / debuffed
-          ShieldBuff = 1.0f // rate at which shield is buffed / debuffed
-          CounterBuff = 1.0f // rate at which counter is buffed / debuffed
-          Statuses = Set.empty<StatusType>
-          WeaponOpt = Option<WeaponType>.None
-          ArmorOpt = Option<ArmorType>.None
-          Relics = [] } // level is calculated from base experience + added experience
-
-    member this.Name = match this.CharacterType with Ally ally -> scstring ally | Enemy enemy -> scstring enemy
-    member this.IsAlly = match this.CharacterType with Ally _ -> true | Enemy _ -> false
-    member this.IsEnemy = not this.IsAlly
+    member this.Level = Algorithms.expPointsToLevel this.ExpPoints
     member this.IsHealthy = this.HitPoints > 0
     member this.IsWounded = this.HitPoints <= 0
+    member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
+    member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
+    member this.Power = Algorithms.power this.WeaponOpt this.PowerBuff this.ArchetypeType this.Level
+    member this.Magic = Algorithms.magic this.WeaponOpt this.MagicBuff this.ArchetypeType this.Level
+    member this.Shield effectType = Algorithms.shield effectType this.Accessories this.ShieldBuff this.ArchetypeType this.Level
+    member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
-    member this.Level =
-        if this.ExpPoints < 8 then 1
-        elif this.ExpPoints < 16 then 2
-        elif this.ExpPoints < 24 then 3
-        elif this.ExpPoints < 36 then 4
-        elif this.ExpPoints < 50 then 5
-        elif this.ExpPoints < 75 then 6
-        elif this.ExpPoints < 100 then 6
-        elif this.ExpPoints < 150 then 8
-        elif this.ExpPoints < 225 then 9
-        elif this.ExpPoints < 350 then 10
-        elif this.ExpPoints < 500 then 11
-        elif this.ExpPoints < 750 then 12
-        elif this.ExpPoints < 1000 then 13
-        elif this.ExpPoints < 1500 then 14
-        elif this.ExpPoints < 2250 then 15
-        elif this.ExpPoints < 3500 then 16
-        elif this.ExpPoints < 5000 then 17
-        elif this.ExpPoints < 7500 then 18
-        elif this.ExpPoints < 10000 then 19
-        else 20
+    static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
+        let power = source.Power
+        let shield = target.Shield effectType
+        let damageUnscaled = power - shield
+        let damage = single damageUnscaled |> int |> max 1
+        damage
 
-    member this.ComputeHitPointsMax rom =
-        let intermediate =
-            match this.ArmorOpt with
-            | Some armor ->
-                match Map.tryFind armor rom.Armors with
-                | Some armorData -> single armorData.HitPointsBase |> max 5.0f
-                | None -> 5.0f
-            | None -> 5.0f
-        intermediate * single this.Level |> int |> max 1
+    static member updateHitPoints updater (state : CharacterState) =
+        let hitPoints = updater state.HitPoints
+        let hitPoints = max 0 hitPoints
+        let hitPoints = min state.HitPointsMax hitPoints
+        { state with HitPoints = hitPoints }
 
-    member this.ComputeSpecialPointsMax rom =
-        let intermediate =
-            match this.ArmorOpt with
-            | Some armor ->
-                match Map.tryFind armor rom.Armors with
-                | Some armorData -> single armorData.SpecialPointsBase |> max 2.0f
-                | None -> 2.0f
-            | None -> 2.0f
-        intermediate * single this.Level |> int |> max 1
+    static member updateTechPoints updater state =
+        let techPoints = updater state.TechPoints
+        let techPoints = max 0 techPoints
+        let techPoints = min state.TechPointsMax techPoints
+        { state with TechPoints = techPoints }
 
-    member this.ComputePower rom =
-        let intermediate =
-            match this.WeaponOpt with
-            | Some weapon ->
-                match Map.tryFind weapon rom.Weapons with
-                | Some weaponData -> single weaponData.PowerBase * this.PowerBuff |> max 5.0f
-                | None -> 5.0f
-            | None -> 5.0f
-        intermediate * single this.Level / 5.0f |> int |> max 1
+    static member updateExpPoints updater state =
+        let expPoints = updater state.ExpPoints
+        let expPoints = max 0 expPoints
+        { state with ExpPoints = expPoints }
 
-    member this.ComputeMagic rom =
-        let intermediate =
-            match this.WeaponOpt with
-            | Some weapon ->
-                match Map.tryFind weapon rom.Weapons with
-                | Some weaponData -> single weaponData.MagicBase * this.MagicBuff |> max 5.0f
-                | None -> 5.0f
-            | None -> 5.0f
-        intermediate * single this.Level / 5.0f |> int |> max 1
+    static member tryGetTechRandom (state : CharacterState) =
+        let techs = state.Techs
+        if Set.notEmpty techs then
+            let techIndex = Gen.random1 techs.Count
+            let tech = Seq.item techIndex techs
+            Some tech
+        else None
 
-    member this.ComputeShield (rom : Rom) =
-        let intermediate =
-            match this.Relics with
-            | relic :: _ -> // just the first relic for now
-                match Map.tryFind relic rom.Relics with
-                | Some weaponData -> single weaponData.ShieldBase * this.ShieldBuff |> max 0.0f
-                | None -> 0.0f
-            | _ -> 0.0f
-        intermediate * single this.Level / 5.0f |> int |> max 0
+    static member getPoiseType state =
+        if state.Defending then Defending
+        elif state.Charging then Charging
+        else Poising
 
-type CharacterAnimationCycle =
-    | WalkCycle
-    | CelebrateCycle
-    | ReadyCycle
-    | PoiseCycle
-    | AttackCycle
-    | CastCycle
-    | SpinCycle
-    | DamageCycle
-    | IdleCycle
-    | WoundCycle
+    static member make (characterData : CharacterData) hitPoints techPoints expPoints weaponOpt armorOpt accessories =
+        let archetypeType = characterData.ArchetypeType
+        let level = Algorithms.expPointsToLevel expPoints
+        let characterState =
+            { ArchetypeType = archetypeType
+              ExpPoints = expPoints
+              WeaponOpt = weaponOpt
+              ArmorOpt = armorOpt
+              Accessories = accessories
+              HitPoints = hitPoints
+              TechPoints = techPoints
+              Statuses = Set.empty
+              Defending = false
+              Charging = false
+              PowerBuff = 1.0f
+              MagicBuff = 1.0f
+              ShieldBuff = 1.0f
+              CounterBuff = 1.0f
+              GoldPrize = Algorithms.goldPrize characterData.GoldScalar level
+              ExpPrize = Algorithms.expPrize characterData.ExpScalar level }
+        characterState
 
-type CharacterAnimationState =
+    static member empty =
+        let characterState =
+            { ArchetypeType = Squire
+              ExpPoints = 0
+              WeaponOpt = None
+              ArmorOpt = None
+              Accessories = []
+              HitPoints = 1
+              TechPoints = 0
+              Statuses = Set.empty
+              Defending = false
+              Charging = false
+              PowerBuff = 1.0f
+              MagicBuff = 1.0f
+              ShieldBuff = 1.0f
+              CounterBuff = 1.0f
+              GoldPrize = 0
+              ExpPrize = 0 }
+        characterState
+
+type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     { TimeStart : int64
       AnimationSheet : Image AssetTag
       AnimationCycle : CharacterAnimationCycle
-      Direction : Direction
-      Stutter : int }
+      Direction : Direction }
 
     static member setCycle timeOpt cycle state =
-        match timeOpt with
-        | Some time -> { state with TimeStart = time; AnimationCycle = cycle }
-        | None -> { state with AnimationCycle = cycle }
+        if state.AnimationCycle <> cycle then
+            match timeOpt with
+            | Some time -> { state with TimeStart = time; AnimationCycle = cycle }
+            | None -> { state with AnimationCycle = cycle }
+        else state
 
     static member directionToInt direction =
         match direction with
@@ -317,58 +349,81 @@ type CharacterAnimationState =
     static member timeLocal time state =
         time - state.TimeStart
 
-    static member indexCel time state =
+    static member indexCel stutter time state =
         let timeLocal = CharacterAnimationState.timeLocal time state
-        int timeLocal / state.Stutter
+        int (timeLocal / stutter)
 
-    static member indexLooped run time state =
-        CharacterAnimationState.indexCel time state % run
+    static member indexLooped run stutter time state =
+        CharacterAnimationState.indexCel stutter time state % run
 
-    static member indexSaturated run time state =
-        let cel = CharacterAnimationState.indexCel time state
+    static member indexSaturated run stutter time state =
+        let cel = CharacterAnimationState.indexCel stutter time state
         if cel < dec run then cel else dec run
 
-    static member indexLoopedWithDirection row run time state =
-        let offset = CharacterAnimationState.directionToInt state.Direction * run
-        Vector2i (CharacterAnimationState.indexLooped run time state + offset, row)
+    static member indexLoopedWithDirection run stutter offset time state =
+        let position = CharacterAnimationState.directionToInt state.Direction * run
+        let position = Vector2i (CharacterAnimationState.indexLooped run stutter time state + position, 0)
+        let position = position + offset
+        position
 
-    static member indexSaturatedWithDirection row run time state =
-        let offset = CharacterAnimationState.directionToInt state.Direction * run
-        Vector2i (CharacterAnimationState.indexSaturated run time state + offset, row)
+    static member indexLoopedWithoutDirection run stutter offset time state =
+        let position = CharacterAnimationState.indexLooped run stutter time state
+        let position = v2i position 0 + offset
+        position
+
+    static member indexSaturatedWithDirection run stutter offset time state =
+        let position = CharacterAnimationState.directionToInt state.Direction * run
+        let position = Vector2i (CharacterAnimationState.indexSaturated run stutter time state + position, 0)
+        let position = position + offset
+        position
+
+    static member indexSaturatedWithoutDirection run stutter offset time state =
+        let position = CharacterAnimationState.indexSaturated run stutter time state
+        let position = Vector2i (position, 0)
+        let position = position + offset
+        position
 
     static member index time state =
-        match state.AnimationCycle with
-        | WalkCycle -> CharacterAnimationState.indexLoopedWithDirection 0 6 time state
-        | CelebrateCycle -> CharacterAnimationState.indexLoopedWithDirection 1 2 time state
-        | ReadyCycle -> CharacterAnimationState.indexSaturatedWithDirection 2 3 time state
-        | PoiseCycle -> CharacterAnimationState.indexLoopedWithDirection 3 3 time state
-        | AttackCycle -> CharacterAnimationState.indexSaturatedWithDirection 4 3 time state
-        | CastCycle -> CharacterAnimationState.indexLoopedWithDirection 5 2 time state
-        | SpinCycle -> CharacterAnimationState.indexLoopedWithDirection 7 4 time state
-        | DamageCycle -> CharacterAnimationState.indexSaturatedWithDirection 6 1 time state
-        | IdleCycle -> CharacterAnimationState.indexSaturatedWithDirection 7 1 time state
-        | WoundCycle -> Vector2i (0, 8)
-
-    static member cycleLengthOpt state =
-        match state.AnimationCycle with
-        | WalkCycle -> None
-        | CelebrateCycle -> None
-        | ReadyCycle -> Some (int64 (5 * state.Stutter))
-        | PoiseCycle -> None
-        | AttackCycle -> Some (int64 (4 * state.Stutter))
-        | CastCycle -> None
-        | SpinCycle -> Some (int64 (4 * state.Stutter))
-        | DamageCycle -> Some (int64 (3 * state.Stutter))
-        | IdleCycle -> None
-        | WoundCycle -> Some (int64 (5 * state.Stutter))
+        match Map.tryFind state.AnimationCycle Data.Value.CharacterAnimations with
+        | Some animationData ->
+            match animationData.AnimationType with
+            | LoopedWithDirection -> CharacterAnimationState.indexLoopedWithDirection animationData.Run animationData.Stutter animationData.Offset time state
+            | LoopedWithoutDirection -> CharacterAnimationState.indexLoopedWithoutDirection animationData.Run animationData.Stutter animationData.Offset time state
+            | SaturatedWithDirection -> CharacterAnimationState.indexSaturatedWithDirection animationData.Run animationData.Stutter animationData.Offset time state
+            | SaturatedWithoutDirection -> CharacterAnimationState.indexSaturatedWithoutDirection animationData.Run animationData.Stutter animationData.Offset time state
+        | None -> v2iZero
 
     static member progressOpt time state =
-        let timeLocal = CharacterAnimationState.timeLocal time state
-        match CharacterAnimationState.cycleLengthOpt state with
-        | Some length -> Some (min 1.0f (single timeLocal / single length))
+        match Map.tryFind state.AnimationCycle Data.Value.CharacterAnimations with
+        | Some animationData ->
+            let timeLocal = CharacterAnimationState.timeLocal time state
+            match animationData.LengthOpt with
+            | Some length -> Some (min 1.0f (single timeLocal / single length))
+            | None -> None
         | None -> None
 
-    static member finished time state =
+    static member getFinished time state =
         match CharacterAnimationState.progressOpt time state with
         | Some progress -> progress = 1.0f
         | None -> false
+
+    static member empty =
+        { TimeStart = 0L
+          AnimationSheet = Assets.FinnAnimationSheet
+          AnimationCycle = IdleCycle
+          Direction = Downward }
+
+    static member initial =
+        { CharacterAnimationState.empty with Direction = Upward }
+
+type CharacterInputState =
+    | NoInput
+    | RegularMenu
+    | TechMenu
+    | ItemMenu
+    | AimReticles of string * AimType
+
+    member this.AimType =
+        match this with
+        | NoInput | RegularMenu | TechMenu | ItemMenu -> NoAim
+        | AimReticles (_, aimType) -> aimType
