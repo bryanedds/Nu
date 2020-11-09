@@ -116,14 +116,14 @@ module FieldDispatcher =
                 | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData
                 | None -> None
 
-        static let tryGetTouchingPortal rotatedSeedState (avatar : Avatar) world =
+        static let tryGetTouchingPortal omniSeedState (avatar : Avatar) world =
             avatar.IntersectedBodyShapes |>
             List.choose (fun shape ->
                 match (shape.Entity.GetProp world).PropData with
                 | Portal (_, _, fieldType, portalType, _) ->
                     match Map.tryFind fieldType Data.Value.Fields with
                     | Some fieldData ->
-                        match FieldData.tryGetPortal portalType rotatedSeedState fieldData world with
+                        match FieldData.tryGetPortal portalType omniSeedState fieldData world with
                         | Some portal ->
                             match portal.PropData with
                             | Portal (_, direction, _, _, _) ->
@@ -350,7 +350,7 @@ module FieldDispatcher =
             | UpdatePortal ->
                 match field.FieldTransitionOpt with
                 | None ->
-                    match tryGetTouchingPortal field.RotatedSeedState field.Avatar world with
+                    match tryGetTouchingPortal field.OmniSeedState field.Avatar world with
                     | Some (fieldType, destination, direction) ->
                         let transition =
                             { FieldType = fieldType
@@ -583,7 +583,7 @@ module FieldDispatcher =
                      Entity.TmxMap <== field --|> fun field world ->
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
-                            match FieldData.tryGetTileMap field.RotatedSeedState fieldData world with
+                            match FieldData.tryGetTileMap field.OmniSeedState fieldData world with
                             | Some tileMap -> tileMap
                             | None -> failwithumf ()
                         | None -> failwithumf ()
@@ -662,7 +662,7 @@ module FieldDispatcher =
 
                  // props
                  Content.entities field
-                    (fun field -> (field.FieldType, field.RotatedSeedState, field.Advents, field.PropStates))
+                    (fun field -> (field.FieldType, field.OmniSeedState, field.Advents, field.PropStates))
                     (fun (fieldType, rotatedSeedState, advents, propStates) world ->
                         match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
