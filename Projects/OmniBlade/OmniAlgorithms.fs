@@ -11,7 +11,7 @@ open Nu
 module Algorithms =
 
     let expReqs =
-        [0; 4; 8
+        [0; 7; 14
          30; 60; 120; 250; 500; 1000 // 2x increase
          1500; 2250; 3375; 5000; 7500 // 1.5x increase
          9375; 11700; 14500; 18000; 22500 // 1.25x increase
@@ -50,7 +50,7 @@ module Algorithms =
                 | Some armorData -> single armorData.HitPointsBase
                 | None -> 4.0f
             | None -> 4.0f
-        intermediate * single level * stamina |> int |> max 1
+        (intermediate + single level) * stamina |> int |> max 1
 
     let techPointsMax armorOpt archetypeType level =
         let focus = 
@@ -64,7 +64,7 @@ module Algorithms =
                 | Some armorData -> single armorData.TechPointsBase
                 | None -> 4.0f
             | None -> 4.0f
-        intermediate * single level * focus |> int |> max 0
+        (intermediate + single level) * focus |> int |> max 0
 
     let power weaponOpt powerBuff archetypeType level =
         let strength = 
@@ -78,7 +78,7 @@ module Algorithms =
                 | Some weaponData -> single weaponData.PowerBase
                 | None -> 1.0f
             | None -> 1.0f
-        intermediate * single level * powerBuff * strength |> int |> max 1
+        (intermediate + single level) * powerBuff * strength |> int |> max 1
 
     let magic weaponOpt magicBuff archetypeType level =
         let intelligence = 
@@ -92,7 +92,7 @@ module Algorithms =
                 | Some weaponData -> single weaponData.MagicBase
                 | None -> 1.0f
             | None -> 1.0f
-        intermediate * single level * magicBuff * intelligence |> int |> max 1
+        (intermediate + single level) * magicBuff * intelligence |> int |> max 1
 
     let shield effectType accessories shieldBuff archetypeType level =
         let (toughness, intelligence) = 
@@ -107,7 +107,7 @@ module Algorithms =
                 | None -> 0.0f
             | _ -> 0.0f
         let scalar = match effectType with Magical -> intelligence | Physical -> toughness
-        intermediate * single level * shieldBuff * scalar |> int |> max 0
+        (intermediate + single level) * shieldBuff * scalar |> int |> max 0
 
     let techs archetypeType level =
         let techs =
@@ -120,9 +120,9 @@ module Algorithms =
         | None -> Set.empty
 
     let goldPrize scalar (level : int) =
-        let algo = level * level // sure, why not?
+        let algo = level * 2
         int (single algo * scalar)
 
     let expPrize scalar (level : int) =
-        let algo = level * level // sure, why not?
+        let algo = level
         int (single algo * scalar)
