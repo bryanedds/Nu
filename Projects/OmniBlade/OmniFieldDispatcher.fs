@@ -123,7 +123,7 @@ module FieldDispatcher =
                 | Portal (_, _, fieldType, portalType, _) ->
                     match Map.tryFind fieldType Data.Value.Fields with
                     | Some fieldData ->
-                        match FieldData.tryGetPortal portalType omniSeedState fieldData world with
+                        match FieldData.tryGetPortal omniSeedState portalType fieldData world with
                         | Some portal ->
                             match portal.PropData with
                             | Portal (_, direction, _, _, _) ->
@@ -476,14 +476,13 @@ module FieldDispatcher =
                 just field
 
             | Traverse velocity ->
-                let (battleDataOpt, field) = Field.advanceEncounterCreep velocity field
-                match battleDataOpt with
-                | Some battleData ->
+                match Field.advanceEncounterCreep velocity field world with
+                | (Some battleData, field) ->
                     let prizePool = { Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromLegion field.Legion field.Inventory prizePool battleData (World.getTickTime world)
                     let field = Field.updateBattleOpt (constant (Some battle)) field
                     withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
-                | None -> just field
+                | (None, field) -> just field
 
             | Interact ->
                 match field.DialogOpt with

@@ -275,25 +275,27 @@ module Field =
             BattleOpt_ = battleOpt
             EncounterCreep_ = if Option.isSome battleOpt then 0.0f else field.EncounterCreep_ }
 
-    let advanceEncounterCreep (velocity : Vector2) (field : Field) =
+    let advanceEncounterCreep (velocity : Vector2) (field : Field) world =
         match Data.Value.Fields.TryGetValue field.FieldType with
         | (true, fieldData) ->
             match fieldData.EncounterTypeOpt with
             | Some encounterType ->
                 match Data.Value.Encounters.TryGetValue encounterType with
                 | (true, encounterData) ->
-                    match Gen.randomItem encounterData.BattleTypes with
-                    | Some battleType ->
-                        match Data.Value.Battles.TryGetValue battleType with
-                        | (true, battleData) ->
-                            let speed = velocity.Length () / 60.0f
-                            let creep = speed * Gen.randomf
-                            let field = { field with EncounterCreep_ = field.EncounterCreep_ + creep }
-                            if field.EncounterCreep_ >= encounterData.Threshold
-                            then (Some battleData, field)
-                            else (None, field)
-                        | (false, _) -> (None, field)
-                    | None -> (None, field)
+                    let speed = velocity.Length () / 60.0f
+                    let creep = speed
+                    let field =
+                        if creep <> 0.0f
+                        then { field with EncounterCreep_ = field.EncounterCreep_ + creep }
+                        else field
+                    if field.EncounterCreep_ >= encounterData.Threshold then
+                        match FieldData.tryGetBattleType field.OmniSeedState field.Avatar.Position encounterData.BattleTypes fieldData world with
+                        | Some battleType ->
+                            match Data.Value.Battles.TryGetValue battleType with
+                            | (true, battleData) -> (Some battleData, field)
+                            | (false, _) -> (None, field)
+                        | None -> (None, field)
+                    else (None, field)
                 | (false, _) -> (None, field)
             | None -> (None, field)
         | (false, _) -> (None, field)
