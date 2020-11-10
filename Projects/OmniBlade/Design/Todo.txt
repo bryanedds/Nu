@@ -1,0 +1,56 @@
+[X] auto battle
+[X] multiple allies
+[X] sound effects
+[X] stamina bars
+[X] music upgrade
+[X] goblin special
+[X] grandia-style special cancel
+[X] check for special point usage
+[X] update for special point usage
+[X] bolt special
+[X] data-drive special moves
+[X] character movement animation
+[X] multi-target effects
+[X] populate battle data
+[X] initial pass of field screen
+[X] chest interaction
+[X] dialogue display item found
+[X] enter and exit battle from the field
+[X] face adjacent obstacle from other angles
+[X] npc visuals
+[X] npc physics
+[X] npc interaction
+[X] portal
+[X] colored background
+[X] portal fading
+[X] door
+[X] multipage dialog
+[X] npc dialog advent conditional
+[X] prop advent conditional / consequence
+[X] sensor
+[X] switch
+[X] shopkeep
+[X] shop menu
+[X] sub-menu first pass
+[X] field music
+[X] game intro
+[X] randomly generated map
+[X] random battles
+[X] initial stat balancing
+[X] treasures
+[X] save prop
+[X] hp / mp restore
+[X] fix field not fading in
+[X] figure out why creeping is happening before fading out from previous room
+[ ] make sure we're generating prop ids properly
+[ ] tech aim back button should go back to tech not main
+[ ] battle earnings display
+[ ] battle opening animations visible
+[ ] proper creep randomization
+[ ] constrain camera / movement to maps
+[ ] add boss room / boss
+[ ] enemy equipment from data
+[ ] reducing equipment does not reduce HP / TP
+[ ] cyclone effect sprite
+[ ] tremor camera shake effect
+[ ] damage glow
