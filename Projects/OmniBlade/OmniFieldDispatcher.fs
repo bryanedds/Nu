@@ -341,7 +341,10 @@ module FieldDispatcher =
                     elif tickTime = fieldTransition.FieldTransitionTime then
                         let field = Field.updateFieldTransitionOpt (constant None) field
                         just field
-                    else just field
+                    else
+                        // produce a new field instance to make sure transition binding is hitting
+                        let field = Field.updateFieldTransitionOpt id field
+                        just field
                 | None -> just field
 
             | UpdatePortal ->
