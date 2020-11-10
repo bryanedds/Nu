@@ -45,7 +45,11 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Field =
 
+#if DEV
+        let WalkForce = 26000.0f * 3.0f
+#else
         let WalkForce = 26000.0f
+#endif
         let LinearDamping = 19.0f
         let BackgroundDepth = -10.0f
         let ForgroundDepth = 0.0f
@@ -56,6 +60,7 @@ module Constants =
         let TransitionTime = 60L
         let MapRandSize = v2iDup 7
         let AvatarBottomInset = v2 0.0f 32.0f
+        let TreasureProbability = 0.75f
 
     [<RequireQualifiedAccess>]
     module Battle =
@@ -75,6 +80,7 @@ module Constants =
         let CharacterCenterOffset3 = v2 0.0f 32.0f
         let CharacterBottomOffset = v2 0.0f -8.0f
         let CharacterBottomOffset2 = v2 0.0f -32.0f
+        let CharacterBottomOffset3 = v2 0.0f -64.0f
         let CharacterPulseLength = 60L
         let LineWidth = 16.0f
         let BackgroundDepth = -10.0f

@@ -496,7 +496,8 @@ module BattleDispatcher =
                 let hopOpt =
                     // TODO: pull behavior from data
                     match techType with
-                    | Critical  | Cyclone -> Some { HopStart = source.Bottom; HopStop = target.BottomOffset2 }
+                    | Critical -> Some { HopStart = source.Bottom; HopStop = target.BottomOffset3 }
+                    | Cyclone -> Some { HopStart = source.Bottom; HopStop = target.BottomOffset2 }
                     | Bolt | Tremor -> None
                 match hopOpt with
                 | None ->

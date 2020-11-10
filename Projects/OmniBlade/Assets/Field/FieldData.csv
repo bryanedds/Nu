@@ -1,6 +1,6 @@
-Type,FieldTileMap,FieldBackgroundColor,FieldSongOpt,EncounterTypeOpt
-DebugRoom,[FieldStatic [Field DebugRoom]],[8 8 8 255],[Some [Field Field]],None
-DebugRoom2,[FieldStatic [Field DebugRoom2]],[8 8 8 255],[Some [Field Field]],[Some DebugEncounter]
-TombOuter,[FieldStatic [Field TombOuter]],[131 156 172 255],[Some [Field TombOuter]],None
-TombInner,[FieldStatic [Field TombInner]],[90 74 49 255],[Some [Field TombInner]],None
-Cave,"[FieldRandom 15 0.3 OriginSW ""Assets/Field/Cave""]",[90 74 49 255],[Some [Field Stirrings]],[Some CaveEncounter]
+Type,FieldTileMap,FieldBackgroundColor,FieldSongOpt,EncounterTypeOpt,TreasureList
+DebugRoom,[FieldStatic [Field DebugRoom]],[8 8 8 255],[Some [Field Field]],None,[]
+DebugRoom2,[FieldStatic [Field DebugRoom2]],[8 8 8 255],[Some [Field Field]],[Some DebugEncounter],[]
+TombOuter,[FieldStatic [Field TombOuter]],[131 156 172 255],[Some [Field TombOuter]],None,[]
+TombInner,[FieldStatic [Field TombInner]],[41 41 32 255],[Some [Field TombInner]],None,[]
+Cave,"[FieldRandom 15 0.15 OriginSW ""Assets/Field/Cave""]",[41 41 32 255],[Some [Field Stirrings]],[Some CaveEncounter],[[Equipment [WeaponType IronSword]] [Equipment [ArmorType IronMail]] [Equipment [WeaponType OakSword]] [Equipment [ArmorType LeatherMail]] [Consumable RedHerb] [Consumable GreenHerb] [Consumable GreenHerb] [Consumable GreenHerb] [Consumable GreenHerb] [Stash 5] [Stash 5] [Stash 5] [Stash 5] [Stash 5] [Stash 5] [Stash 5]]

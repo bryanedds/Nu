@@ -14,7 +14,8 @@ module Simulants =
     // title
     let Title = Screen "Title"
     let TitleGui = Title / "Gui"
-    let TitlePlay = TitleGui / "Play"
+    let TitleNew = TitleGui / "New"
+    let TitleLoad = TitleGui / "Load"
     let TitleCredits = TitleGui / "Credits"
     let TitleExit = TitleGui / "Exit"
 
@@ -36,7 +37,7 @@ module Simulants =
     let FieldBack = FieldHud / "Back"
     let FieldScene = Field / "Scene"
     let FieldBackdrop = FieldScene / "Backdrop"
-    let FieldPortalFade = FieldScene / "PortalFade"
+    let FieldTransitionFade = FieldScene / "FieldTransitionFade"
     let FieldTileMap = FieldScene / "TileMap"
     let FieldAvatar = FieldScene / "Avatar"
     let FieldSubmenu = Field / "Submenu"

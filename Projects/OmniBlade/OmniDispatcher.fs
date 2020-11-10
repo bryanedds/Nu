@@ -51,12 +51,13 @@ module GameDispatcher =
              Simulants.CreditsBack.ClickEvent => msg (Change (Gui Title))
              Simulants.FieldBack.ClickEvent => msg (Change (Gui Title))
 #if DEV
-             Simulants.TitlePlay.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
+             Simulants.TitleNew.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
 #else
-             Simulants.TitlePlay.ClickEvent => msg (Change (Gui Splashing))
-             Simulants.TitlePlay.ClickEvent => cmd (Show Simulants.Intro1)
+             Simulants.TitleNew.ClickEvent => msg (Change (Gui Splashing))
+             Simulants.TitleNew.ClickEvent => cmd (Show Simulants.Intro1)
              Simulants.Intro5.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
 #endif
+             Simulants.TitleLoad.ClickEvent =|> fun _ -> msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
              Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
              Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
              Simulants.TitleExit.ClickEvent => cmd Exit

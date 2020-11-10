@@ -28,7 +28,7 @@ module Gen =
         static member random2 minValue maxValue =
             lock Lock (fun () -> Random.Next (minValue, maxValue))
 
-        /// Get the next random number single.
+        /// Get the next random single >= 0.0f and < 1.0f.
         static member randomf =
             lock Lock (fun () -> single (Random.NextDouble ()))
 
@@ -38,6 +38,12 @@ module Gen =
             if Array.notEmpty arr
             then Some arr.[Gen.random1 arr.Length]
             else None
+
+        /// Get a random element from a sequence or a default if sequence is empty.
+        static member randomItemOrDefault default_ seq =
+            match Gen.randomItem seq with
+            | Some item -> item
+            | None -> default_
 
         /// Generate a unique counter.
         static member counter =

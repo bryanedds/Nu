@@ -168,6 +168,7 @@ module WorldScreenModule =
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// screen's existence. Consider using World.destroyScreen instead.
         static member destroyScreenImmediate screen world =
+            let world = World.tryRemoveSimulantFromDestruction screen world
             let destroyLayersImmediate screen world =
                 let layers = World.getLayers screen world
                 World.destroyLayersImmediate layers world
@@ -176,9 +177,7 @@ module WorldScreenModule =
         /// Destroy a screen in the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyScreen (screen : Screen) world =
-            let world = { world with DestructionQueue = Queue.conj (screen :> Simulant) world.DestructionQueue }
-            let world = { world with DestructionSet = Set.add (screen :> Simulant).SimulantAddress world.DestructionSet }
-            world
+            World.addSimulantToDestruction screen world
 
         /// Create a screen and add it to the world.
         [<FunctionBinding "createScreen">]

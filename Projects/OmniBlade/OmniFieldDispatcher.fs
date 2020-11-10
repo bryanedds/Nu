@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.IO
 open System.Numerics
 open FSharpx.Collections
 open Prime
@@ -39,8 +40,8 @@ module FieldDispatcher =
 
     type [<NoComparison>] FieldCommand =
         | UpdateEye
-        | PlayFieldSong
         | MoveAvatar of Vector2
+        | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
         | PlaySong of int * single * Song AssetTag
         | FadeOutSong of int
@@ -79,7 +80,14 @@ module FieldDispatcher =
             | head :: _ -> Some head.Entity
             | [] -> None
 
-        static let tryGetInteraction3 dialogOpt advents prop =
+        static let isTouchingSavePoint (avatar : Avatar) world =
+            List.exists (fun shape ->
+                match (shape.Entity.GetProp world).PropData with
+                | SavePoint -> true
+                | _ -> false)
+                avatar.IntersectedBodyShapes
+
+        static let tryGetFacingInteraction dialogOpt advents prop =
             match dialogOpt with
             | None ->
                 match prop with
@@ -92,24 +100,30 @@ module FieldDispatcher =
                 | Sensor (_, _, _, _) -> None
                 | Npc _ -> Some "Talk"
                 | Shopkeep _ -> Some "Shop"
+                | SavePoint -> None
+                | ChestSpawn -> None
+                | EmptyProp -> None
             | Some dialog ->
                 if dialog.DialogProgress > dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
                 then Some "Next"
                 else None
 
         static let tryGetInteraction dialogOpt advents (avatar : Avatar) world =
-            match tryGetFacingProp avatar world with
-            | Some prop -> tryGetInteraction3 dialogOpt advents (prop.GetProp world).PropData
-            | None -> None
+            if isTouchingSavePoint avatar world then
+                Some "Save"
+            else
+                match tryGetFacingProp avatar world with
+                | Some prop -> tryGetFacingInteraction dialogOpt advents (prop.GetProp world).PropData
+                | None -> None
 
-        static let tryGetTouchingPortal randSeedState (avatar : Avatar) world =
+        static let tryGetTouchingPortal omniSeedState (avatar : Avatar) world =
             avatar.IntersectedBodyShapes |>
             List.choose (fun shape ->
                 match (shape.Entity.GetProp world).PropData with
                 | Portal (_, _, fieldType, portalType, _) ->
                     match Map.tryFind fieldType Data.Value.Fields with
                     | Some fieldData ->
-                        match FieldData.tryGetPortal portalType randSeedState fieldData world with
+                        match FieldData.tryGetPortal omniSeedState portalType fieldData world with
                         | Some portal ->
                             match portal.PropData with
                             | Portal (_, direction, _, _, _) ->
@@ -201,6 +215,11 @@ module FieldDispatcher =
             let field = Field.updateShopOpt (constant (Some shop)) field
             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)) field
 
+        static let interactSavePoint (field : Field) =
+            let field = Field.restoreLegion field
+            Field.save field
+            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.SaveSound)) field
+
         static let sidebar position depth (field : Lens<Field, World>) =
             Content.group Gen.name []
                 [Content.button Gen.name
@@ -254,15 +273,15 @@ module FieldDispatcher =
                             | None -> []
                     let itemsSorted = List.sortBy snd items
                     itemsSorted)
-                (fun i selection _ ->
+                (fun i selectionLens _ ->
                     let x = if i < 5 then position.X else position.X + 368.0f
                     let y = position.Y - single (i % 5) * 72.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 336.0f 64.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
-                         Entity.Text <== selection --> fun (_, itemType) -> ItemType.getName itemType
-                         Entity.EnabledLocal <== selection --> fun (_, itemType) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
-                         Entity.ClickEvent ==> msg (fieldMsg selection)])
+                         Entity.Text <== selectionLens --> fun (_, itemType) -> ItemType.getName itemType
+                         Entity.EnabledLocal <== selectionLens --> fun (_, itemType) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
+                         Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
 
         override this.Channel (_, field) =
             [field.SelectEvent => cmd PlayFieldSong
@@ -270,8 +289,8 @@ module FieldDispatcher =
              field.UpdateEvent => msg UpdateDialog
              field.UpdateEvent => msg UpdatePortal
              field.UpdateEvent => msg UpdateSensor
-             field.UpdateEvent => msg UpdateFieldTransition
              Simulants.FieldInteract.ClickEvent => msg Interact
+             field.PostUpdateEvent => msg UpdateFieldTransition
              field.PostUpdateEvent => cmd UpdateEye]
 
         override this.Message (field, message, _, world) =
@@ -282,57 +301,72 @@ module FieldDispatcher =
                 just field
 
             | UpdateDialog ->
-                let field =
-                    Field.updateDialogOpt
-                        (function
-                         | Some dialog ->
-                            let increment = if World.getTickTime world % 2L = 0L then 1 else 0
-                            let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
-                            Some dialog
-                         | None -> None)
-                        field
-                just field
+                match field.DialogOpt with
+                | Some dialog ->
+                    let increment = if World.getTickTime world % 2L = 0L then 1 else 0
+                    let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
+                    let field = Field.updateDialogOpt (constant (Some dialog)) field
+                    just field
+                | None -> just field
 
             | UpdateFieldTransition ->
+
+                // check if transitioning
                 match field.FieldTransitionOpt with
                 | Some fieldTransition ->
+
+                    // handle field transition
                     let tickTime = World.getTickTime world
                     let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
-                    if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
-                        match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
-                        | (true, fieldData) ->
-                            if currentSongOpt <> fieldData.FieldSongOpt
-                            then withCmd (FadeOutSong Constants.Audio.DefaultFadeOutMs) field
-                            else just field
-                        | (false, _) -> just field
-                    elif tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
-                        let field = Field.updateFieldType (constant fieldTransition.FieldType) field
-                        let field =
-                            Field.updateAvatar (fun avatar ->
-                                let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
-                                let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
-                                let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
-                                avatar)
-                                field
-                        let moveCmd = MoveAvatar fieldTransition.FieldDestination
-                        let songCmd =
-                            match Field.getFieldSongOpt field with
-                            | Some fieldSong ->
-                                if currentSongOpt <> Some fieldSong
-                                then PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)
-                                else Nop
-                            | None -> Nop
-                        withCmds [moveCmd; songCmd] field
-                    elif tickTime = fieldTransition.FieldTransitionTime then
-                        let field = Field.updateFieldTransitionOpt (constant None) field
-                        just field
-                    else just field
+                    let (signals, field) =
+
+                        // start transition
+                        if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
+                            match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
+                            | (true, fieldData) ->
+                                if currentSongOpt <> fieldData.FieldSongOpt
+                                then withCmd (FadeOutSong Constants.Audio.DefaultFadeOutMs) field
+                                else just field
+                            | (false, _) -> just field
+                        
+                        // half-way point of transition
+                        elif tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                            let field = Field.updateFieldType (constant fieldTransition.FieldType) field
+                            let field =
+                                Field.updateAvatar (fun avatar ->
+                                    let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
+                                    let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
+                                    avatar)
+                                    field
+                            let moveCmd = MoveAvatar fieldTransition.FieldDestination
+                            let songCmd =
+                                match Field.getFieldSongOpt field with
+                                | Some fieldSong ->
+                                    if currentSongOpt <> Some fieldSong
+                                    then PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)
+                                    else Nop
+                                | None -> Nop
+                            withCmds [moveCmd; songCmd] field
+
+                        // finish transition
+                        elif tickTime = fieldTransition.FieldTransitionTime then
+                            let field = Field.updateFieldTransitionOpt (constant None) field
+                            just field
+
+                        // intermediate state
+                        else just field
+
+                    // update field reference to make sure transition binding actuates
+                    let field = Field.updateReference field
+                    (signals, field)
+
+                // no transition
                 | None -> just field
 
             | UpdatePortal ->
                 match field.FieldTransitionOpt with
                 | None ->
-                    match tryGetTouchingPortal field.RandSeedState field.Avatar world with
+                    match tryGetTouchingPortal field.OmniSeedState field.Avatar world with
                     | Some (fieldType, destination, direction) ->
                         let transition =
                             { FieldType = fieldType
@@ -461,37 +495,48 @@ module FieldDispatcher =
                 just field
 
             | Traverse velocity ->
-                let (battleDataOpt, field) = Field.advanceEncounterCreep velocity field
-                match battleDataOpt with
-                | Some battleData ->
+                match Field.advanceEncounterCreep velocity field world with
+                | (Some battleData, field) ->
                     let prizePool = { Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromLegion field.Legion field.Inventory prizePool battleData (World.getTickTime world)
                     let field = Field.updateBattleOpt (constant (Some battle)) field
                     withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
-                | None -> just field
+                | (None, field) -> just field
 
             | Interact ->
                 match field.DialogOpt with
                 | None ->
-                    match tryGetFacingProp field.Avatar world with
-                    | Some prop ->
-                        let prop = prop.GetProp world
-                        match prop.PropData with
-                        | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest (World.getTickTime world) itemType chestId battleTypeOpt requirements consequents field
-                        | Door (_, requirements, consequents) -> interactDoor requirements consequents prop field
-                        | Portal (_, _, _, _, _) -> just field
-                        | Switch (_, requirements, consequents) -> interactSwitch requirements consequents prop field
-                        | Sensor (_, _, _, _) -> just field
-                        | Npc (_, _, dialogs, _) -> interactNpc dialogs field
-                        | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
-                    | None -> just field
-                | Some dialog -> interactDialog dialog field
+                    if isTouchingSavePoint field.Avatar world then
+                        interactSavePoint field
+                    else
+                        match tryGetFacingProp field.Avatar world with
+                        | Some prop ->
+                            let prop = prop.GetProp world
+                            match prop.PropData with
+                            | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest (World.getTickTime world) itemType chestId battleTypeOpt requirements consequents field
+                            | Door (_, requirements, consequents) -> interactDoor requirements consequents prop field
+                            | Portal (_, _, _, _, _) -> just field
+                            | Switch (_, requirements, consequents) -> interactSwitch requirements consequents prop field
+                            | Sensor (_, _, _, _) -> just field
+                            | Npc (_, _, dialogs, _) -> interactNpc dialogs field
+                            | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
+                            | SavePoint -> just field
+                            | ChestSpawn -> just field
+                            | EmptyProp -> just field
+                        | None -> just field
+                | Some dialog ->
+                    interactDialog dialog field
 
         override this.Command (field, command, _, world) =
 
             match command with
             | UpdateEye ->
                 let world = World.setEyeCenter field.Avatar.Center world
+                just world
+
+            | MoveAvatar position ->
+                let positionOffset = position - Constants.Field.AvatarBottomInset
+                let world = Simulants.FieldAvatar.SetBottom positionOffset world
                 just world
 
             | PlayFieldSong ->
@@ -501,11 +546,6 @@ module FieldDispatcher =
                     | Some fieldSong -> withCmd (PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)) world
                     | None -> just world
                 | (false, _) -> just world
-
-            | MoveAvatar position ->
-                let positionOffset = position - Constants.Field.AvatarBottomInset
-                let world = Simulants.FieldAvatar.SetBottom positionOffset world
-                just world
 
             | PlaySound (delay, volume, sound) ->
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
@@ -535,8 +575,8 @@ module FieldDispatcher =
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
                         | (false, _) -> Color.Black]
 
-                 // portal fade sprite
-                 Content.staticSprite Simulants.FieldPortalFade.Name
+                 // transition fade sprite
+                 Content.staticSprite Simulants.FieldTransitionFade.Name
                    [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
                     Entity.StaticImage == Assets.DefaultImage9
                     Entity.Color <== field --|> fun field world ->
@@ -558,7 +598,7 @@ module FieldDispatcher =
                      Entity.TmxMap <== field --|> fun field world ->
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
-                            match FieldData.tryGetTileMap field.RandSeedState fieldData world with
+                            match FieldData.tryGetTileMap field.OmniSeedState fieldData world with
                             | Some tileMap -> tileMap
                             | None -> failwithumf ()
                         | None -> failwithumf ()
@@ -637,37 +677,26 @@ module FieldDispatcher =
 
                  // props
                  Content.entities field
-                    (fun field -> (field.FieldType, field.RandSeedState, field.Advents, field.PropStates))
-                    (fun (fieldType, randSeedState, advents, propStates) world ->
+                    (fun field -> (field.FieldType, field.OmniSeedState, field.Advents, field.PropStates))
+                    (fun (fieldType, rotatedSeedState, advents, propStates) world ->
                         match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
-                            let propObjects = FieldData.getPropObjects randSeedState fieldData world
-                            List.map (fun (tileMap, group, object) -> (tileMap, group, object, advents, propStates)) propObjects
+                            let props = FieldData.getProps rotatedSeedState fieldData world
+                            List.map (fun prop -> (prop, advents, propStates)) props
                         | None -> [])
-                    (fun _ propMetadata _ ->
-                        let prop = flip Lens.map propMetadata (fun (tileMap, group, object, advents, propStates) ->
-                            let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
-                            let propSize = v2 (single object.Width) (single object.Height)
-                            let propBounds = v4Bounds propPosition propSize
-                            let propDepth =
-                                match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-                                | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
-                                | (false, _) -> Constants.Field.ForgroundDepth
-                            let propData =
-                                match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
-                                | (true, propDataStr) -> scvalue propDataStr
-                                | (false, _) -> PropData.empty
+                    (fun _ propLens _ ->
+                        let prop = flip Lens.map propLens (fun (prop, advents, propStates) ->
                             let propState =
-                                match Map.tryFind object.Id propStates with
+                                match Map.tryFind prop.PropId propStates with
                                 | None ->
-                                    match propData with
+                                    match prop.PropData with
                                     | Door (_, _, _) -> DoorState false
                                     | Switch (_, _, _) -> SwitchState false
                                     | Npc (_, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements)
                                     | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
                                     | _ -> NilState
                                 | Some propState -> propState
-                            Prop.make propBounds propDepth advents propData propState object.Id)
+                            Prop.make prop.PropBounds prop.PropDepth advents prop.PropData propState prop.PropId)
                         Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
                  // legion

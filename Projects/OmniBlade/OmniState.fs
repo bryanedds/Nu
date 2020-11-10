@@ -82,11 +82,12 @@ type [<ReferenceEquality; NoComparison>] Inventory =
         { inventory with Gold = updater inventory.Gold }
 
     static member initial =
-        { Items = Map.empty; Gold = 0 }
+        { Items = Map.singleton (Consumable GreenHerb) 1; Gold = 0 }
 
 type [<ReferenceEquality; NoComparison>] Legionnaire =
     { LegionIndex : int // key
       PartyIndexOpt : int option
+      ArchetypeType : ArchetypeType
       CharacterType : CharacterType
       HitPoints : int
       TechPoints : int
@@ -94,6 +95,16 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
       WeaponOpt : string option
       ArmorOpt : string option
       Accessories : string list }
+
+    member this.Level = Algorithms.expPointsToLevel this.ExpPoints
+    member this.IsHealthy = this.HitPoints > 0
+    member this.IsWounded = this.HitPoints <= 0
+    member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
+    member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
+    member this.Power = Algorithms.power this.WeaponOpt 1.0f this.ArchetypeType this.Level
+    member this.Magic = Algorithms.magic this.WeaponOpt 1.0f this.ArchetypeType this.Level
+    member this.Shield effectType = Algorithms.shield effectType this.Accessories 1.0f this.ArchetypeType this.Level
+    member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
     static member canUseItem itemType legionnaire =
         match Map.tryFind legionnaire.CharacterType Data.Value.Characters with
@@ -153,6 +164,11 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
         | Int32.MaxValue -> 0
         | nextExp -> nextExp - legionnaire.ExpPoints
 
+    static member restore legionnaire =
+        { legionnaire with
+            HitPoints = legionnaire.HitPointsMax
+            TechPoints = legionnaire.TechPointsMax }
+
     static member finn =
         let index = 0
         let characterType = Ally Finn
@@ -161,7 +177,8 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
         let archetypeType = character.ArchetypeType
         let weaponOpt = Some "OakSword"
         let armorOpt = Some "LeatherMail"
-        { LegionIndex = index
+        { ArchetypeType = archetypeType
+          LegionIndex = index
           PartyIndexOpt = Some index
           CharacterType = characterType
           HitPoints = Algorithms.hitPointsMax armorOpt archetypeType character.LevelBase
@@ -179,7 +196,8 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
         let archetypeType = character.ArchetypeType
         let weaponOpt = Some "StoneSword"
         let armorOpt = None
-        { LegionIndex = index
+        { ArchetypeType = archetypeType
+          LegionIndex = index
           PartyIndexOpt = Some index
           CharacterType = characterType
           HitPoints = Algorithms.hitPointsMax armorOpt archetypeType character.LevelBase

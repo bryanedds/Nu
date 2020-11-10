@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.IO
 open System.Numerics
 open FSharpx.Collections
 open Prime
@@ -196,7 +197,7 @@ module Field =
     type [<ReferenceEquality; NoComparison>] Field =
         private
             { FieldType_ : FieldType
-              RandSeedState_ : uint64
+              OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
               Legion_ : Legion
               EncounterCreep_ : single
@@ -211,7 +212,7 @@ module Field =
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
-        member this.RandSeedState = FieldType.rotateRandSeedState this.RandSeedState_ this.FieldType_
+        member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
         member this.Legion = this.Legion_
         member this.EncounterCreep = this.EncounterCreep_
@@ -274,25 +275,33 @@ module Field =
             BattleOpt_ = battleOpt
             EncounterCreep_ = if Option.isSome battleOpt then 0.0f else field.EncounterCreep_ }
 
-    let advanceEncounterCreep (velocity : Vector2) (field : Field) =
+    let updateReference field =
+        { field with FieldType_ = field.FieldType_ }
+
+    let restoreLegion field =
+        { field with Legion_ = Map.map (fun _ -> Legionnaire.restore) field.Legion_ }
+
+    let advanceEncounterCreep (velocity : Vector2) (field : Field) world =
         match Data.Value.Fields.TryGetValue field.FieldType with
         | (true, fieldData) ->
             match fieldData.EncounterTypeOpt with
             | Some encounterType ->
                 match Data.Value.Encounters.TryGetValue encounterType with
                 | (true, encounterData) ->
-                    match Gen.randomItem encounterData.BattleTypes with
-                    | Some battleType ->
-                        match Data.Value.Battles.TryGetValue battleType with
-                        | (true, battleData) ->
-                            let speed = velocity.Length () / 60.0f
-                            let creep = speed * Gen.randomf
-                            let field = { field with EncounterCreep_ = field.EncounterCreep_ + creep }
-                            if field.EncounterCreep_ >= encounterData.Threshold
-                            then (Some battleData, field)
-                            else (None, field)
-                        | (false, _) -> (None, field)
-                    | None -> (None, field)
+                    let speed = velocity.Length () / 60.0f
+                    let creep = speed
+                    let field =
+                        if creep <> 0.0f
+                        then { field with EncounterCreep_ = field.EncounterCreep_ + creep }
+                        else field
+                    if field.EncounterCreep_ >= encounterData.Threshold then
+                        match FieldData.tryGetBattleType field.OmniSeedState field.Avatar.Position encounterData.BattleTypes fieldData world with
+                        | Some battleType ->
+                            match Data.Value.Battles.TryGetValue battleType with
+                            | (true, battleData) -> (Some battleData, field)
+                            | (false, _) -> (None, field)
+                        | None -> (None, field)
+                    else (None, field)
                 | (false, _) -> (None, field)
             | None -> (None, field)
         | (false, _) -> (None, field)
@@ -319,9 +328,12 @@ module Field =
         let field = updateBattleOpt (constant None) field
         field
 
+    let toSymbolizable field =
+        { field with Avatar_ = Avatar.toSymbolizable field.Avatar }
+
     let make fieldType randSeedState avatar legion advents inventory =
         { FieldType_ = fieldType
-          RandSeedState_ = randSeedState
+          OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = avatar
           EncounterCreep_ = 0.0f
           Legion_ = legion
@@ -336,7 +348,7 @@ module Field =
 
     let empty =
         { FieldType_ = DebugRoom
-          RandSeedState_ = Rand.DefaultSeedState
+          OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty
           Legion_ = Map.empty
           EncounterCreep_ = 0.0f
@@ -351,7 +363,7 @@ module Field =
 
     let initial randSeedState =
         { FieldType_ = TombOuter
-          RandSeedState_ = randSeedState
+          OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = Avatar.initial
           Legion_ = Map.ofList [(0, Legionnaire.finn)]
           EncounterCreep_ = 0.0f
@@ -363,5 +375,15 @@ module Field =
           FieldTransitionOpt_ = None
           DialogOpt_ = None
           BattleOpt_ = None }
+
+    let save field =
+        let fieldSymbolizable = toSymbolizable field
+        let fileStr = scstring fieldSymbolizable
+        try File.WriteAllText (Assets.SaveFilePath, fileStr) with _ -> ()
+
+    let loadOrInitial randSeedState =
+        try let fieldStr = File.ReadAllText Assets.SaveFilePath
+            scvalue<Field> fieldStr
+        with _ -> initial randSeedState
 
 type Field = Field.Field

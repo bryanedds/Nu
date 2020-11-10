@@ -170,6 +170,7 @@ module WorldLayerModule =
         /// Destroy a layer in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// layer's existence. Consider using World.destroyLayer instead.
         static member destroyLayerImmediate layer world =
+            let world = World.tryRemoveSimulantFromDestruction layer world
             let destroyEntitiesImmediate layer world =
                 let entities = World.getEntities layer world
                 World.destroyEntitiesImmediate entities world
@@ -178,9 +179,7 @@ module WorldLayerModule =
         /// Destroy a layer in the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyLayer (layer : Layer) world =
-            let world = { world with DestructionQueue = Queue.conj (layer :> Simulant) world.DestructionQueue }
-            let world = { world with DestructionSet = Set.add (layer :> Simulant).SimulantAddress world.DestructionSet }
-            world
+            World.addSimulantToDestruction layer world
 
         /// Destroy multiple layers in the world immediately. Can be dangerous if existing in-flight publishing depends
         /// on any of the layers' existences. Consider using World.destroyLayers instead.

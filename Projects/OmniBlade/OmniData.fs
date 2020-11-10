@@ -77,6 +77,7 @@ type ItemType =
     | Equipment of EquipmentType
     | KeyItem of KeyItemType
     | Stash of int
+
     static member getName item =
         match item with
         | Consumable ty -> string ty
@@ -178,10 +179,6 @@ type FieldType =
     | TombInner
     | TombOuter
     | Cave
-    static member rotateRandSeedState randSeedState fieldType =
-        match fieldType with
-        | DebugRoom | DebugRoom2 | TombInner | TombOuter -> randSeedState
-        | Cave -> rotl64 1 randSeedState
 
 type SwitchType =
     | ThrowSwitch
@@ -195,6 +192,8 @@ type BattleType =
     | DebugBattle
     | CaveBattle
     | CaveBattle2
+    | CaveBattle3
+    | CaveBattle4
 
 type EncounterType =
     | DebugEncounter
@@ -234,7 +233,8 @@ type AllyType =
     | Glenn
 
 type EnemyType =
-    | Goblin
+    | BlueGoblin
+    | PoisonGoblin
 
 type CharacterType =
     | Ally of AllyType
@@ -244,6 +244,26 @@ type CharacterType =
         match characterType with
         | Ally ty -> string ty
         | Enemy ty -> string ty
+
+[<RequireQualifiedAccess>]
+module OmniSeedState =
+
+    type OmniSeedState =
+        private
+            { RandSeedState : uint64 }
+    
+    let rotate fieldType state =
+        match fieldType with
+        | DebugRoom | DebugRoom2 | TombInner | TombOuter -> state.RandSeedState
+        | Cave -> rotl64 1 state.RandSeedState
+
+    let makeFromSeedState randSeedState =
+        { RandSeedState = randSeedState }
+
+    let make () =
+        { RandSeedState = Rand.DefaultSeedState }
+
+type OmniSeedState = OmniSeedState.OmniSeedState
 
 type WeaponData =
     { WeaponType : string // key
@@ -334,12 +354,15 @@ type [<NoComparison>] PropData =
     | Sensor of SensorType * BodyShape option * Advent Set * Advent Set // anything that can affect another thing on the field through traversal
     | Npc of NpcType * Direction * (string * Advent Set * Advent Set) list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
-    static member empty = Chest (WoodenChest, Consumable GreenHerb, Gen.idEmpty, None, Set.empty, Set.empty)
+    | SavePoint
+    | ChestSpawn
+    | EmptyProp
 
 type [<NoComparison>] PropDescriptor =
     { PropBounds : Vector4
       PropDepth : single
-      PropData : PropData }
+      PropData : PropData
+      PropId : int }
 
 type [<NoComparison>] FieldTileMap =
     | FieldStatic of TileMap AssetTag
@@ -350,16 +373,17 @@ type [<NoComparison>] FieldData =
       FieldTileMap : FieldTileMap
       FieldBackgroundColor : Color
       FieldSongOpt : Song AssetTag option
-      EncounterTypeOpt : EncounterType option }
+      EncounterTypeOpt : EncounterType option
+      TreasureList : ItemType list }
 
 [<RequireQualifiedAccess>]
 module FieldData =
 
-    let mutable tileMapsMemoized = Map.empty<FieldType, TmxMap option>
-    let mutable propObjectsMemoized = Map.empty<FieldType, (TmxMap * TmxObjectGroup * TmxObject) list>
-    let mutable propsMemoized = Map.empty<FieldType, PropDescriptor list>
+    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, TmxMap option>
+    let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, (TmxMap * TmxObjectGroup * TmxObject) list>
+    let mutable propsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
-    let objectToProp (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
+    let objectToPropOpt (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
         let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
         let propSize = v2 (single object.Width) (single object.Height)
         let propBounds = v4Bounds propPosition propSize
@@ -367,14 +391,33 @@ module FieldData =
             match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
             | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
             | (false, _) -> Constants.Field.ForgroundDepth
-        let propData =
-            match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
-            | (true, propDataStr) -> scvalue propDataStr
-            | (false, _) -> PropData.empty
-        { PropBounds = propBounds; PropDepth = propDepth; PropData = propData }
+        match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
+        | (true, propDataStr) ->
+            let propData = scvalue propDataStr
+            Some { PropBounds = propBounds; PropDepth = propDepth; PropData = propData; PropId = object.Id }
+        | (false, _) -> None
 
-    let tryGetTileMap randSeedState fieldData world =
-        match Map.tryFind fieldData.FieldType tileMapsMemoized with
+    let inflateProp fieldData prop rand =
+        match prop.PropData with
+        | ChestSpawn ->
+            let (probability, rand) = Rand.nextSingleUnder 1.0f rand
+            if probability < Constants.Field.TreasureProbability then
+                let (treasure, rand) =
+                    match fieldData.TreasureList with
+                    | _ :: _ ->
+                        let (index, rand) = Rand.nextIntUnder fieldData.TreasureList.Length rand
+                        (fieldData.TreasureList.[index], rand)
+                    | [] -> (Consumable GreenHerb, rand)
+                let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
+                let prop = { prop with PropData = Chest (WoodenChest, treasure, id, None, Set.empty, Set.empty) }
+                (prop, rand)
+            else ({ prop with PropData = EmptyProp }, rand)
+        | _ -> (prop, rand)
+
+    let tryGetTileMap omniSeedState fieldData world =
+        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
+        let memoKey = (rotatedSeedState, fieldData.FieldType)
+        match Map.tryFind memoKey tileMapsMemoized with
         | None ->
             let tileMapOpt =
                 match fieldData.FieldTileMap with
@@ -383,45 +426,86 @@ module FieldData =
                     | Some (_, _, tileMap) -> Some tileMap
                     | None -> None
                 | FieldRandom (walkLength, bias, origin, fieldPath) ->
-                    let rand = Rand.makeFromSeedState randSeedState
+                    let rand = Rand.makeFromSeedState rotatedSeedState
                     let (cursor, mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin rand
                     let mapTmx = MapRand.toTmx fieldPath origin cursor mapRand
                     Some mapTmx
-            tileMapsMemoized <- Map.add fieldData.FieldType tileMapOpt tileMapsMemoized
+            tileMapsMemoized <- Map.add memoKey tileMapOpt tileMapsMemoized
             tileMapOpt
         | Some tileMapOpt -> tileMapOpt
 
-    let getPropObjects randSeedState fieldData world =
-        match Map.tryFind fieldData.FieldType propObjectsMemoized with
+    let getPropObjects omniSeedState fieldData world =
+        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
+        let memoKey = (rotatedSeedState, fieldData.FieldType)
+        match Map.tryFind memoKey propObjectsMemoized with
         | None ->
             let propObjects =
-                match tryGetTileMap randSeedState fieldData world with
+                match tryGetTileMap omniSeedState fieldData world with
                 | Some tileMap ->
                     if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
                         let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
                         enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (tileMap, group, propObject)) |> Seq.toList
                     else []
                 | None -> []
-            propObjectsMemoized <- Map.add fieldData.FieldType propObjects propObjectsMemoized
+            propObjectsMemoized <- Map.add memoKey propObjects propObjectsMemoized
             propObjects
         | Some propObjects -> propObjects
 
-    let getProps randSeedState fieldData world =
-        match Map.tryFind fieldData.FieldType propsMemoized with
+    let getProps omniSeedState fieldData world =
+        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
+        let memoKey = (rotatedSeedState, fieldData.FieldType)
+        match Map.tryFind memoKey propsMemoized with
         | None ->
-            let propObjects = getPropObjects randSeedState fieldData world
-            let props = List.map (fun (tileMap, group, object) -> objectToProp object group tileMap) propObjects
-            propsMemoized <- Map.add fieldData.FieldType props propsMemoized
+            let propObjects = getPropObjects omniSeedState fieldData world
+            let propsUninflated =
+                propObjects |>
+                List.map (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) |>
+                List.definitize
+            let (props, _) =
+                List.foldBack (fun prop (props, rand) ->
+                    let (prop, rand) = inflateProp fieldData prop rand
+                    (prop :: props, rand))
+                    propsUninflated
+                    ([], Rand.makeFromSeedState rotatedSeedState)
+            propsMemoized <- Map.add memoKey props propsMemoized
             props
         | Some props -> props
 
-    let getPortals randSeedState fieldData world =
-        let props = getProps randSeedState fieldData world
+    let getPortals omniSeedState fieldData world =
+        let props = getProps omniSeedState fieldData world
         List.filter (fun prop -> match prop.PropData with Portal _ -> true | _ -> false) props
 
-    let tryGetPortal portalType randSeedState fieldData world =
-        let portals = getPortals randSeedState fieldData world
+    let tryGetPortal omniSeedState portalType fieldData world =
+        let portals = getPortals omniSeedState fieldData world
         List.tryFind (fun prop -> match prop.PropData with Portal (portalType2, _, _, _, _) -> portalType2 = portalType | _ -> failwithumf ()) portals
+
+    let tryGetBattleType omniSeedState avatarPosition (battleTypes : BattleType list) fieldData world =
+        match tryGetTileMap omniSeedState fieldData world with
+        | Some tmxTileMap ->
+            match fieldData.FieldTileMap with
+            | FieldRandom (_, _, origin, _) ->
+                let tileMapBounds = v4Bounds v2Zero (v2 (single tmxTileMap.Width * single tmxTileMap.TileWidth) (single tmxTileMap.Height * single tmxTileMap.TileHeight))
+                let distanceFromOriginMax = let delta = tileMapBounds.Bottom - tileMapBounds.Top in delta.Length ()
+                let distanceFromOrigin =
+                    match origin with
+                    | OriginC -> let delta = avatarPosition - tileMapBounds.Center in delta.Length ()
+                    | OriginN -> let delta = avatarPosition - tileMapBounds.Top in delta.Length ()
+                    | OriginE -> let delta = avatarPosition - tileMapBounds.Right in delta.Length ()
+                    | OriginS -> let delta = avatarPosition - tileMapBounds.Bottom in delta.Length ()
+                    | OriginW -> let delta = avatarPosition - tileMapBounds.Left in delta.Length ()
+                    | OriginNE -> let delta = avatarPosition - tileMapBounds.TopRight in delta.Length ()
+                    | OriginNW -> let delta = avatarPosition - tileMapBounds.TopLeft in delta.Length ()
+                    | OriginSE -> let delta = avatarPosition - tileMapBounds.BottomRight in delta.Length ()
+                    | OriginSW -> let delta = avatarPosition - tileMapBounds.BottomLeft in delta.Length ()
+                let battleTypes = battleTypes
+                let battleTypesLength = List.length battleTypes
+                let battleIndex = int (single battleTypesLength / distanceFromOriginMax * distanceFromOrigin)
+                let battleIndex = if Gen.randomf > 0.5f then inc battleIndex else battleIndex
+                if battleIndex >= 0 && battleIndex < battleTypesLength
+                then Some battleTypes.[battleIndex]
+                else List.tryItem (dec battleTypesLength) battleTypes
+            | FieldStatic _ -> Gen.randomItem battleTypes
+        | None -> None
 
 type [<NoComparison>] EnemyData =
     { EnemyType : EnemyType // key

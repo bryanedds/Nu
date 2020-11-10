@@ -10,7 +10,7 @@ open OmniBlade
 [<AutoOpen>]
 module ReticlesDispatcher =
 
-    type [<ReferenceEquality; NoComparison>] Reticles =
+    type [<StructuralEquality; NoComparison>] Reticles =
         { Battle : Battle // TODO: let's see if we can make this reference something smaller.
           AimType : AimType }
 
@@ -50,12 +50,12 @@ module ReticlesDispatcher =
              Content.entities reticles
                 (fun reticles -> (reticles.AimType, reticles.Battle))
                 (fun (aimType, battle) _ -> Battle.getTargets aimType battle) $ fun index character world ->
-                let buttonName = rets.Name + "+" + "Reticle" + "+" + scstring index
-                let button = rets.Parent / buttonName
-                Content.button button.Name
-                    [Entity.ParentNodeOpt == None
-                     Entity.Size == v2 128.0f 128.0f
-                     Entity.Center <== character --> fun (character : Character) -> character.CenterOffset
-                     Entity.UpImage == asset Assets.BattlePackageName "ReticleUp"
-                     Entity.DownImage == asset Assets.BattlePackageName "ReticleDown"
-                     Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterIndex)]]
+                    let buttonName = rets.Name + "+" + "Reticle" + "+" + scstring index
+                    let button = rets.Parent / buttonName
+                    Content.button button.Name
+                        [Entity.ParentNodeOpt == None
+                         Entity.Size == v2 128.0f 128.0f
+                         Entity.Center <== character --> fun (character : Character) -> character.CenterOffset
+                         Entity.UpImage == asset Assets.BattlePackageName "ReticleUp"
+                         Entity.DownImage == asset Assets.BattlePackageName "ReticleDown"
+                         Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterIndex)]]
