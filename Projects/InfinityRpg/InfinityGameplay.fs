@@ -21,8 +21,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       MetaMap : MetaMap
       Field : Field
       Chessboard : Chessboard
-      CharacterMoves : Map<CharacterIndex, Move>
-      Puppeteer : Puppeteer }
+      Puppeteer : Puppeteer
+      CharacterMoves : Map<CharacterIndex, Move> }
 
     static member initial =
         let field = Field.initial
@@ -30,24 +30,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
           MetaMap = MetaMap.make
           Field = field
           Chessboard = Chessboard.init field.FieldMapNp
-          CharacterMoves = Map.empty
-          Puppeteer = Puppeteer.initial }
+          Puppeteer = Puppeteer.initial
+          CharacterMoves = Map.empty }
 
-    static member updateMetaMap updater gameplay =
-        { gameplay with MetaMap = updater gameplay.MetaMap }
-    
-    static member updateField updater gameplay =
-        { gameplay with Field = updater gameplay.Field }
-    
-    static member updateChessboard updater gameplay =
-        { gameplay with Chessboard = updater gameplay.Chessboard }
-    
-    static member updateCharacterMoves updater gameplay =
-        { gameplay with CharacterMoves = updater gameplay.CharacterMoves }
-    
-    static member updatePuppeteer updater gameplay =
-        { gameplay with Puppeteer = updater gameplay.Puppeteer }
-    
     static member getEnemyIndices gameplay =
         gameplay.Chessboard.EnemyIndices
 
@@ -55,9 +40,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         match index with
         | PlayerIndex -> Gameplay.getEnemyIndices gameplay
         | _ -> [PlayerIndex]
-    
-    static member anyTurnsInProgress gameplay = 
-        gameplay.Puppeteer.AnyTurnsInProgress
     
     static member getCoordinates index gameplay =
         Chessboard.getCharacterCoordinates index gameplay.Chessboard
@@ -81,6 +63,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member turnInProgress index gameplay =
         Puppeteer.turnInProgress index gameplay.Puppeteer
     
+    static member anyTurnsInProgress gameplay = 
+        gameplay.Puppeteer.AnyTurnsInProgress
+    
     static member isPlayerAttacking gameplay =
         match Gameplay.tryGetCharacterTurn PlayerIndex gameplay with
         | Some turn -> turn.TurnType = AttackTurn
@@ -93,6 +78,21 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | WalkTurn multiRoundContext -> multiRoundContext
             | _ -> false
         | None -> false
+    
+    static member updateMetaMap updater gameplay =
+        { gameplay with MetaMap = updater gameplay.MetaMap }
+    
+    static member updateField updater gameplay =
+        { gameplay with Field = updater gameplay.Field }
+    
+    static member updateChessboard updater gameplay =
+        { gameplay with Chessboard = updater gameplay.Chessboard }
+    
+    static member updatePuppeteer updater gameplay =
+        { gameplay with Puppeteer = updater gameplay.Puppeteer }
+    
+    static member updateCharacterMoves updater gameplay =
+        { gameplay with CharacterMoves = updater gameplay.CharacterMoves }
     
     static member addMove index (move : Move) gameplay =
         let characterMoves = Map.add index move gameplay.CharacterMoves
@@ -118,9 +118,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member relocateCharacter index coordinates gameplay =
         Gameplay.updateChessboard (Chessboard.relocateCharacter index coordinates) gameplay
     
-    static member clearPickups gameplay =
-        Gameplay.updateChessboard Chessboard.clearPickups gameplay
-    
     static member removeEnemy index gameplay =
         match index with
         | EnemyIndex _ ->
@@ -131,6 +128,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     static member clearEnemies gameplay =
         Gameplay.updateChessboard Chessboard.clearEnemies gameplay
+
+    static member clearPickups gameplay =
+        Gameplay.updateChessboard Chessboard.clearPickups gameplay
 
     static member finishMove index gameplay =
         let gameplay = Gameplay.updatePuppeteer (Puppeteer.removeCharacterTurn index) gameplay
