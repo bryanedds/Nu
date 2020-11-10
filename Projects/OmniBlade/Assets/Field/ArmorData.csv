@@ -1,7 +1,7 @@
-Type,Subtype,HitPointsBase,SpecialPointsBase,Cost,Description
-LeatherMail,Mail,13,6,10,
+Type,Subtype,HitPointsBase,TechPointsBase,Cost,Description
+LeatherMail,Mail,13,7,10,
 LeatherVest,Vest,10,8,10,
 LeatherRobe,Robe,8,9,10,
-IronMail,Mail,18,9,25,
-IronVest,Vest,15,12,25,
-HeavyRobe,Robe,12,14,25,
+IronMail,Mail,18,14,25,
+IronVest,Vest,15,16,25,
+HeavyRobe,Robe,12,18,25,
