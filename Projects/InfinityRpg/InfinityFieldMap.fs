@@ -110,14 +110,9 @@ module FieldMap =
         let grid = makeGrid buildBoundsC
         Seq.fold
             (fun (generatedMap, rand) coordinates ->
-                let tile = Map.find coordinates originalMap
-                if  tile <> PathTile &&
-                    MapBounds.isPointInBounds coordinates buildBoundsC then
-                    if anAdjacentTileIs coordinates TreeTile buildBoundsC originalMap then 
-                        let (n, rand) = Rand.nextIntUnder 3 rand
-                        if n = 0 then (Map.add coordinates TreeTile generatedMap, rand)
-                        else (generatedMap, Rand.advance rand)
-                    else (generatedMap, Rand.advance rand)
+                let (n, rand) = Rand.nextIntUnder 3 rand
+                if n = 0 && Map.find coordinates originalMap <> PathTile && anAdjacentTileIs coordinates TreeTile buildBoundsC originalMap && MapBounds.isPointInBounds coordinates buildBoundsC
+                then (Map.add coordinates TreeTile generatedMap, rand)
                 else (generatedMap, Rand.advance rand))
             (generatedMap, rand)
             grid
@@ -129,10 +124,8 @@ module FieldMap =
             Seq.fold
                 (fun (generatedMap, rand) coordinates ->
                     let (n, rand) = Rand.nextIntUnder 128 rand
-                    if alldjacentTilesAre coordinates GrassTile buildBoundsC generatedMap then
-                        if n = 0 && Map.find coordinates generatedMap = GrassTile
-                        then (Map.add coordinates WaterTile generatedMap, rand)
-                        else (generatedMap, rand)
+                    if n = 0 && Map.find coordinates generatedMap = GrassTile && alldjacentTilesAre coordinates GrassTile buildBoundsC generatedMap
+                    then (Map.add coordinates WaterTile generatedMap, rand)
                     else (generatedMap, rand))
                 (generatedMap, rand)
                 grid
@@ -145,10 +138,8 @@ module FieldMap =
             Seq.fold
                 (fun (generatedMap, rand) coordinates ->
                     let (n, rand) = Rand.nextIntUnder 2 rand
-                    if anAdjacentTileIs coordinates WaterTile buildBoundsC generatedMap then
-                        if n = 0 && Map.find coordinates generatedMap <> PathTile
-                        then (Map.add coordinates WaterTile generatedMap, rand)
-                        else (generatedMap, rand)
+                    if n = 0 && Map.find coordinates generatedMap <> PathTile && anAdjacentTileIs coordinates WaterTile buildBoundsC generatedMap
+                    then (Map.add coordinates WaterTile generatedMap, rand)
                     else (generatedMap, rand))
                 (generatedMap, rand)
                 grid
@@ -162,10 +153,8 @@ module FieldMap =
             Seq.fold
                 (fun (generatedMap, rand) coordinates ->
                     let (n, rand) = Rand.nextIntUnder 1 rand
-                    if anAdjacentTileIs coordinates WaterTile buildBoundsC originalMap then
-                        if n = 0 && Map.find coordinates generatedMap <> PathTile
-                        then (Map.add coordinates WaterTile generatedMap, rand)
-                        else (generatedMap, rand)
+                    if n = 0 && Map.find coordinates generatedMap <> PathTile && anAdjacentTileIs coordinates WaterTile buildBoundsC originalMap
+                    then (Map.add coordinates WaterTile generatedMap, rand)
                     else (generatedMap, rand))
                 (generatedMap, rand)
                 grid
@@ -175,8 +164,8 @@ module FieldMap =
         let grid = makeGrid buildBoundsC
         Seq.fold
             (fun (generatedMap, rand) coordinates ->
-                if Map.find coordinates generatedMap = GrassTile && alldjacentTilesAre coordinates PathTile buildBoundsC generatedMap then
-                    (Map.add coordinates StoneTile generatedMap, Rand.advance rand)
+                if Map.find coordinates generatedMap = GrassTile && alldjacentTilesAre coordinates PathTile buildBoundsC generatedMap
+                then (Map.add coordinates StoneTile generatedMap, Rand.advance rand)
                 else (generatedMap, Rand.advance rand))
             (generatedMap, rand)
             grid
