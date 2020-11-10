@@ -25,6 +25,29 @@ module FieldMap =
     let StoneTile = { TileSheetCoordinates = v2i 2 3; TileType = Impassable }
     let WaterTile = { TileSheetCoordinates = v2i 0 1; TileType = Impassable }
 
+    let getTileInDirection coordinates direction =
+        match direction with
+        | Upward -> coordinates + v2iUp
+        | Rightward -> coordinates + v2iRight
+        | Downward -> coordinates + v2iDown
+        | LeftWard -> coordinates + v2iLeft
+
+    let tileInDirectionIs coordinates direction tile buildBoundsC tileMap =
+        let tileInDirection = getTileInDirection coordinates direction
+        MapBounds.isPointInBounds tileInDirection buildBoundsC && Map.find tileInDirection tileMap = tile
+
+    let anAdjacentTileIs coordinates tile buildBoundsC tileMap =
+        tileInDirectionIs coordinates Upward tile buildBoundsC tileMap ||
+        tileInDirectionIs coordinates Rightward tile buildBoundsC tileMap ||
+        tileInDirectionIs coordinates Downward tile buildBoundsC tileMap ||
+        tileInDirectionIs coordinates Leftward tile buildBoundsC tileMap
+
+    let alldjacentTilesAre coordinates tile buildBoundsC tileMap =
+        tileInDirectionIs coordinates Upward tile buildBoundsC tileMap &&
+        tileInDirectionIs coordinates Rightward tile buildBoundsC tileMap &&
+        tileInDirectionIs coordinates Downward tile buildBoundsC tileMap &&
+        tileInDirectionIs coordinates Leftward tile buildBoundsC tileMap
+    
     let makeGrid boundsC =
         seq {
             for i in boundsC.CornerNegative.X .. boundsC.CornerPositive.X do
@@ -90,14 +113,7 @@ module FieldMap =
                 let tile = Map.find coordinates originalMap
                 if  tile <> PathTile &&
                     MapBounds.isPointInBounds coordinates buildBoundsC then
-                    let upCoordinates = coordinates + v2iUp
-                    let rightCoordinates = coordinates + v2iRight
-                    let downCoordinates = coordinates + v2iDown
-                    let leftCoordinates = coordinates + v2iLeft
-                    if  MapBounds.isPointInBounds upCoordinates buildBoundsC && Map.find upCoordinates originalMap = TreeTile ||
-                        MapBounds.isPointInBounds rightCoordinates buildBoundsC && Map.find rightCoordinates originalMap = TreeTile ||
-                        MapBounds.isPointInBounds downCoordinates buildBoundsC && Map.find downCoordinates originalMap = TreeTile ||
-                        MapBounds.isPointInBounds leftCoordinates buildBoundsC && Map.find leftCoordinates originalMap = TreeTile then
+                    if anAdjacentTileIs coordinates TreeTile buildBoundsC originalMap then 
                         let (n, rand) = Rand.nextIntUnder 3 rand
                         if n = 0 then (Map.add coordinates TreeTile generatedMap, rand)
                         else (generatedMap, Rand.advance rand)
@@ -113,14 +129,7 @@ module FieldMap =
             Seq.fold
                 (fun (generatedMap, rand) coordinates ->
                     let (n, rand) = Rand.nextIntUnder 128 rand
-                    let upCoordinates = coordinates + v2iUp
-                    let rightCoordinates = coordinates + v2iRight
-                    let downCoordinates = coordinates + v2iDown
-                    let leftCoordinates = coordinates + v2iLeft
-                    if  MapBounds.isPointInBounds upCoordinates buildBoundsC && Map.find upCoordinates generatedMap = GrassTile &&
-                        MapBounds.isPointInBounds rightCoordinates buildBoundsC && Map.find rightCoordinates generatedMap = GrassTile &&
-                        MapBounds.isPointInBounds downCoordinates buildBoundsC && Map.find downCoordinates generatedMap = GrassTile &&
-                        MapBounds.isPointInBounds leftCoordinates buildBoundsC && Map.find leftCoordinates generatedMap = GrassTile then
+                    if alldjacentTilesAre coordinates GrassTile buildBoundsC generatedMap then
                         if n = 0 && Map.find coordinates generatedMap = GrassTile
                         then (Map.add coordinates WaterTile generatedMap, rand)
                         else (generatedMap, rand)
@@ -136,14 +145,7 @@ module FieldMap =
             Seq.fold
                 (fun (generatedMap, rand) coordinates ->
                     let (n, rand) = Rand.nextIntUnder 2 rand
-                    let upCoordinates = coordinates + v2iUp
-                    let rightCoordinates = coordinates + v2iRight
-                    let downCoordinates = coordinates + v2iDown
-                    let leftCoordinates = coordinates + v2iLeft
-                    if  MapBounds.isPointInBounds upCoordinates buildBoundsC && Map.find upCoordinates generatedMap = WaterTile ||
-                        MapBounds.isPointInBounds rightCoordinates buildBoundsC && Map.find rightCoordinates generatedMap = WaterTile ||
-                        MapBounds.isPointInBounds downCoordinates buildBoundsC && Map.find downCoordinates generatedMap = WaterTile ||
-                        MapBounds.isPointInBounds leftCoordinates buildBoundsC && Map.find leftCoordinates generatedMap = WaterTile then
+                    if anAdjacentTileIs coordinates WaterTile buildBoundsC generatedMap then
                         if n = 0 && Map.find coordinates generatedMap <> PathTile
                         then (Map.add coordinates WaterTile generatedMap, rand)
                         else (generatedMap, rand)
@@ -160,14 +162,7 @@ module FieldMap =
             Seq.fold
                 (fun (generatedMap, rand) coordinates ->
                     let (n, rand) = Rand.nextIntUnder 1 rand
-                    let upCoordinates = coordinates + v2iUp
-                    let rightCoordinates = coordinates + v2iRight
-                    let downCoordinates = coordinates + v2iDown
-                    let leftCoordinates = coordinates + v2iLeft
-                    if  MapBounds.isPointInBounds upCoordinates buildBoundsC && Map.find upCoordinates originalMap = WaterTile ||
-                        MapBounds.isPointInBounds rightCoordinates buildBoundsC && Map.find rightCoordinates originalMap = WaterTile ||
-                        MapBounds.isPointInBounds downCoordinates buildBoundsC && Map.find downCoordinates originalMap = WaterTile ||
-                        MapBounds.isPointInBounds leftCoordinates buildBoundsC && Map.find leftCoordinates originalMap = WaterTile then
+                    if anAdjacentTileIs coordinates WaterTile buildBoundsC originalMap then
                         if n = 0 && Map.find coordinates generatedMap <> PathTile
                         then (Map.add coordinates WaterTile generatedMap, rand)
                         else (generatedMap, rand)
@@ -180,17 +175,8 @@ module FieldMap =
         let grid = makeGrid buildBoundsC
         Seq.fold
             (fun (generatedMap, rand) coordinates ->
-                if Map.find coordinates generatedMap = GrassTile then
-                    let upCoordinates = coordinates + v2iUp
-                    let rightCoordinates = coordinates + v2iRight
-                    let downCoordinates = coordinates + v2iDown
-                    let leftCoordinates = coordinates + v2iLeft
-                    if  Map.find upCoordinates generatedMap = PathTile &&
-                        Map.find rightCoordinates generatedMap = PathTile &&
-                        Map.find downCoordinates generatedMap = PathTile &&
-                        Map.find leftCoordinates generatedMap = PathTile then
-                        (Map.add coordinates StoneTile generatedMap, Rand.advance rand)
-                    else (generatedMap, Rand.advance rand)
+                if Map.find coordinates generatedMap = GrassTile && alldjacentTilesAre coordinates PathTile buildBoundsC generatedMap then
+                    (Map.add coordinates StoneTile generatedMap, Rand.advance rand)
                 else (generatedMap, Rand.advance rand))
             (generatedMap, rand)
             grid
