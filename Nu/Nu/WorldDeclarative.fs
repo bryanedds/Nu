@@ -4,11 +4,12 @@
 namespace Nu
 open System
 open System.Collections
+open System.Collections.Generic
 open Prime
 open Nu
 
 type [<NoEquality; NoComparison>] 'c ContentTracker =
-    | Untracked
+    | NoTracking
     | AutoTracking
     | ExplicitTracking of ('c -> int)
 
@@ -166,43 +167,40 @@ module DeclarativeOperators =
 [<AutoOpen>]
 module WorldDeclarative =
 
-    let mutable internal LensError = false
-
     type World with
 
-        static member internal synchronizeSimulants tracking mapper mapper' origin owner parent current previous world =
-            let added = USet.differenceFast current previous
-            let removed = USet.differenceFast previous current
-            let changed = if tracking then added.Count <> 0 || removed.Count <> 0 else true
+        static member internal removeSynchronizedSimulants removed world =
+            Seq.fold (fun world guidAndContent ->
+                let (guid, _) = PartialComparable.unmake guidAndContent
+                match World.tryGetKeyedValue guid world with
+                | Some simulant ->
+                    let world = World.removeKeyedValue guid world
+                    WorldModule.destroy simulant world
+                | None -> world)
+                world removed
+                
+        static member internal addSynchronizedSimulants mapper monitorMapper added origin owner parent world =
+            Seq.fold (fun world guidAndContent ->
+                let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
+                let payloadOpt = ((Gen.id, monitorMapper) : Payload) :> obj |> Some
+                let lens = { lens with PayloadOpt = payloadOpt }
+                let content = mapper index lens world
+                match World.tryGetKeyedValue guid world with
+                | None ->
+                    let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin owner parent world
+                    match simulantOpt with
+                    | Some simulant -> World.addKeyedValue guid simulant world
+                    | None -> world
+                | Some _ -> world)
+                world added
+
+        static member internal synchronizeSimulants mapper monitorMapper tracking previous current origin owner parent world =
+            let added = if tracking then USet.differenceFast current previous else HashSet (USet.toSeq current, HashIdentity.Structural) // TODO: use USet.toHashSet once PRime is upgraded.
+            let removed = if tracking then USet.differenceFast previous current else HashSet (USet.toSeq previous, HashIdentity.Structural) // TODO: use USet.toHashSet once PRime is upgraded.
+            let changed = added.Count <> 0 || removed.Count <> 0
             if changed then
-                let world =
-                    Seq.fold (fun world guidAndContent ->
-                        let (guid, _) = PartialComparable.unmake guidAndContent
-                        match World.tryGetKeyedValue guid world with
-                        | Some simulant ->
-                            let world = World.removeKeyedValue guid world
-                            WorldModule.destroy simulant world
-                        | None -> world)
-                        world removed
-                let world =
-                    Seq.fold (fun world guidAndContent ->
-                        let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
-                        let payloadOpt =
-                            match lens.PayloadOpt with
-                            | Some payload ->
-                                let (indices, _, _) = payload :?> Payload
-                                (Array.add index indices, Gen.id, mapper') :> obj |> Some
-                            | None -> ([|index|], Gen.id, mapper') :> obj |> Some
-                        let lens = { lens with PayloadOpt = payloadOpt }
-                        let content = mapper index lens world
-                        match World.tryGetKeyedValue guid world with
-                        | None ->
-                            let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin owner parent world
-                            match simulantOpt with
-                            | Some simulant -> World.addKeyedValue guid simulant world
-                            | None -> world
-                        | Some _ -> world)
-                        world added
+                let world = World.removeSynchronizedSimulants removed world
+                let world = World.addSynchronizedSimulants mapper monitorMapper added origin owner parent world
                 world
             else world
 
@@ -218,23 +216,48 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
-            let expansionId = Gen.id
-            let previousSetKey = Gen.id
-            let sieve' = fun a ->
-                match lens.PayloadOpt with
-                | Some payload ->
-                    let (indices, _, _) = payload :?> Payload
-                    let item = Array.fold (fun current index -> IEnumerable.item index (current :?> IEnumerable)) a indices
-                    sieve item
-                | None -> sieve a
-            let mapper' = fun a (_ : obj option) (_ : World) -> sieve' a.Value
-            let filter = fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true
-            let lensSeq = lens |> Lens.map sieve |> Lens.mapWorld unfold
+            let mutable monitorResult = Unchecked.defaultof<obj>
+            let mutable lensResult = Unchecked.defaultof<obj>
+            let mutable sieveResultOpt = None
+            let mutable foldResultOpt = None
+            let lensSeq =
+                Lens.mapWorld (fun a world ->
+                    let (b, c) =
+                        if a = lensResult then
+                            match (sieveResultOpt, foldResultOpt) with
+                            | (Some b, Some c) -> (b, c)
+                            | (Some b, None) -> let c = unfold b world in (b, c)
+                            | (None, Some _) -> failwithumf ()
+                            | (None, None) -> let b = sieve a in let c = unfold b world in (b, c)
+                        else let b = sieve a in let c = unfold b world in (b, c)
+                    lensResult <- a
+                    sieveResultOpt <- Some b
+                    foldResultOpt <- Some c
+                    c)
+                    lens
             let (tracking, lenses) =
                 match tracker with
-                | Untracked -> (false, Lens.explodeIndexedOpt None lensSeq)
+                | NoTracking -> (false, Lens.explodeIndexedOpt None lensSeq)
                 | AutoTracking -> (true, Lens.explodeIndexedOpt None lensSeq)
                 | ExplicitTracking fn -> (true, Lens.explodeIndexedOpt (Some fn) lensSeq)
+            let expansionId = Gen.id
+            let previousSetKey = Gen.id
+            let monitorMapper =
+                fun a _ world ->
+                    let b =
+                        if a.Value = monitorResult then
+                            match sieveResultOpt with
+                            | Some b -> b
+                            | None -> sieve (lens.Get world)
+                        else sieve (lens.Get world)
+                    monitorResult <- a.Value
+                    sieveResultOpt <- Some b
+                    b
+            let monitorFilter =
+                fun a a2Opt _ ->
+                    match a2Opt with
+                    | Some a2 -> a <> a2
+                    | None -> true
             let subscription = fun _ world ->
                 let items = Lens.get lensSeq world
                 let mutable current = USet.makeEmpty Functional
@@ -254,9 +277,9 @@ module WorldDeclarative =
                     match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> USet> previousSetKey world with
                     | Some previous -> previous
                     | None -> USet.makeEmpty Functional
-                let world = World.synchronizeSimulants tracking mapper mapper' origin owner parent current previous world
+                let world = World.synchronizeSimulants mapper monitorMapper tracking previous current origin owner parent world
                 let world = World.addKeyedValue previousSetKey current world
                 (Cascade, world)
             let (_, world) = subscription (Unchecked.defaultof<_>) world // expand simulants immediately rather than waiting for parent registration
-            let (_, world) = World.monitorCompressed Gen.id (Some mapper') (Some filter) None (Left subscription) lens.ChangeEvent parent world
+            let (_, world) = World.monitorCompressed Gen.id (Some monitorMapper) (Some monitorFilter) None (Left subscription) lens.ChangeEvent parent world
             world

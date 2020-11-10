@@ -115,7 +115,7 @@ module WorldModuleLayer =
         static member internal setLayerVisible value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Visible then Some { layerState with Visible = value } else None) Property? Visible value layer world
         static member internal getLayerPersistent layer world = (World.getLayerState layer world).Persistent
         static member internal setLayerPersistent value layer world = World.updateLayerState (fun layerState -> if value <> layerState.Persistent then Some { layerState with Persistent = value } else None) Property? Persistent value layer world
-        static member internal getLayerDestroying (layer : Layer) world = Set.contains (layer :> Simulant).SimulantAddress world.DestructionSet
+        static member internal getLayerDestroying (layer : Layer) world = List.exists ((=) (layer :> Simulant)) world.DestructionListRev
         static member internal getLayerCreationTimeStamp layer world = (World.getLayerState layer world).CreationTimeStamp
         static member internal getLayerScriptFrame layer world = (World.getLayerState layer world).ScriptFrame
         static member internal setLayerScriptFrame value layer world = World.updateLayerState (fun layerState -> if value <> layerState.ScriptFrame then Some { layerState with ScriptFrame = value } else None) Property? ScriptFrame value layer world

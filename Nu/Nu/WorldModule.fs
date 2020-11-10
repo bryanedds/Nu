@@ -171,8 +171,7 @@ module WorldModule =
                       Dispatchers = dispatchers
                       ScriptingEnv = scriptingEnv
                       ScriptingContext = Game ()
-                      DestructionQueue = Queue.empty
-                      DestructionSet = Set.empty
+                      DestructionListRev = []
                       Plugin = plugin }
             let world =
                 World.choose
@@ -671,6 +670,14 @@ module WorldModule =
         /// Attempt to evaluate a script.
         static member tryEvalScript scriptFilePath world =
             ScriptingSystem.tryEvalScript World.choose scriptFilePath world
+
+    type World with // Destruction
+
+        static member addSimulantToDestruction simulant world =
+            { world with DestructionListRev = simulant :: world.DestructionListRev }
+
+        static member tryRemoveSimulantFromDestruction simulant world =
+            { world with DestructionListRev = List.remove ((=) simulant) world.DestructionListRev }
 
     type World with // Plugin
 
