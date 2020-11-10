@@ -123,6 +123,9 @@ module AvatarDispatcher =
                 // clear all temporary body shapes
                 let avatar = Avatar.updateCollidedBodyShapes (constant []) avatar
                 let avatar = Avatar.updateSeparatedBodyShapes (constant []) avatar
+
+                // update bounds
+                let avatar = Avatar.updateBounds (constant (entity.GetBounds world)) avatar
                 just avatar
 
             | Face direction ->

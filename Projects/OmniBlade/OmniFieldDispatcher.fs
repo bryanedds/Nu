@@ -289,8 +289,8 @@ module FieldDispatcher =
              field.UpdateEvent => msg UpdateDialog
              field.UpdateEvent => msg UpdatePortal
              field.UpdateEvent => msg UpdateSensor
-             field.UpdateEvent => msg UpdateFieldTransition
              Simulants.FieldInteract.ClickEvent => msg Interact
+             field.PostUpdateEvent => msg UpdateFieldTransition
              field.PostUpdateEvent => cmd UpdateEye]
 
         override this.Message (field, message, _, world) =
@@ -325,7 +325,6 @@ module FieldDispatcher =
                         let field = Field.updateFieldType (constant fieldTransition.FieldType) field
                         let field =
                             Field.updateAvatar (fun avatar ->
-                                let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
                                 let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
                                 let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
                                 avatar)
