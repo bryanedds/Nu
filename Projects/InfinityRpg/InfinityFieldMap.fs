@@ -30,7 +30,7 @@ module FieldMap =
         | Upward -> coordinates + v2iUp
         | Rightward -> coordinates + v2iRight
         | Downward -> coordinates + v2iDown
-        | LeftWard -> coordinates + v2iLeft
+        | Leftward -> coordinates + v2iLeft
 
     let tileInDirectionIs coordinates direction tile buildBoundsC tileMap =
         let tileInDirection = getTileInDirection coordinates direction
