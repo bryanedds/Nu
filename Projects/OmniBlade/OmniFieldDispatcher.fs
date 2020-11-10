@@ -310,44 +310,57 @@ module FieldDispatcher =
                 | None -> just field
 
             | UpdateFieldTransition ->
+
+                // check if transitioning
                 match field.FieldTransitionOpt with
                 | Some fieldTransition ->
+
+                    // handle field transition
                     let tickTime = World.getTickTime world
                     let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
-                    if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
+                    let (signals, field) =
+
                         // start transition
-                        match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
-                        | (true, fieldData) ->
-                            if currentSongOpt <> fieldData.FieldSongOpt
-                            then withCmd (FadeOutSong Constants.Audio.DefaultFadeOutMs) field
-                            else just field
-                        | (false, _) -> just field
-                    elif tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                        if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
+                            match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
+                            | (true, fieldData) ->
+                                if currentSongOpt <> fieldData.FieldSongOpt
+                                then withCmd (FadeOutSong Constants.Audio.DefaultFadeOutMs) field
+                                else just field
+                            | (false, _) -> just field
+                        
                         // half-way point of transition
-                        let field = Field.updateFieldType (constant fieldTransition.FieldType) field
-                        let field =
-                            Field.updateAvatar (fun avatar ->
-                                let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
-                                let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
-                                avatar)
-                                field
-                        let moveCmd = MoveAvatar fieldTransition.FieldDestination
-                        let songCmd =
-                            match Field.getFieldSongOpt field with
-                            | Some fieldSong ->
-                                if currentSongOpt <> Some fieldSong
-                                then PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)
-                                else Nop
-                            | None -> Nop
-                        withCmds [moveCmd; songCmd] field
-                    elif tickTime = fieldTransition.FieldTransitionTime then
+                        elif tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                            let field = Field.updateFieldType (constant fieldTransition.FieldType) field
+                            let field =
+                                Field.updateAvatar (fun avatar ->
+                                    let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
+                                    let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
+                                    avatar)
+                                    field
+                            let moveCmd = MoveAvatar fieldTransition.FieldDestination
+                            let songCmd =
+                                match Field.getFieldSongOpt field with
+                                | Some fieldSong ->
+                                    if currentSongOpt <> Some fieldSong
+                                    then PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)
+                                    else Nop
+                                | None -> Nop
+                            withCmds [moveCmd; songCmd] field
+
                         // finish transition
-                        let field = Field.updateFieldTransitionOpt (constant None) field
-                        just field
-                    else
-                        // produce a new field instance to make sure transition binding is activating
-                        let field = Field.updateFieldTransitionOpt id field
-                        just field
+                        elif tickTime = fieldTransition.FieldTransitionTime then
+                            let field = Field.updateFieldTransitionOpt (constant None) field
+                            just field
+
+                        // intermediate state
+                        else just field
+
+                    // update field reference to make sure transition binding actuates
+                    let field = Field.updateReference field
+                    (signals, field)
+
+                // no transition
                 | None -> just field
 
             | UpdatePortal ->
@@ -562,8 +575,8 @@ module FieldDispatcher =
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
                         | (false, _) -> Color.Black]
 
-                 // portal fade sprite
-                 Content.staticSprite Simulants.FieldPortalFade.Name
+                 // transition fade sprite
+                 Content.staticSprite Simulants.FieldTransitionFade.Name
                    [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
                     Entity.StaticImage == Assets.DefaultImage9
                     Entity.Color <== field --|> fun field world ->

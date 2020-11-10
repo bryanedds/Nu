@@ -275,6 +275,9 @@ module Field =
             BattleOpt_ = battleOpt
             EncounterCreep_ = if Option.isSome battleOpt then 0.0f else field.EncounterCreep_ }
 
+    let updateReference field =
+        { field with FieldType_ = field.FieldType_ }
+
     let restoreLegion field =
         { field with Legion_ = Map.map (fun _ -> Legionnaire.restore) field.Legion_ }
 
