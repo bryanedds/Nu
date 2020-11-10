@@ -6,11 +6,11 @@
   [Visible True]]
  [[TextDispatcher
    [[Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "I did not know if I would find it..."]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "I did not know if it existed..."]]
     [Optimized False]
     [Position [-32 -32]]
     [Size [64 64]]
-    [Text "I did not know if I would find it..."]]]
+    [Text "I did not know if it existed..."]]]
   [StaticSpriteDispatcher
    [[Color [0 0 0 255]]
     [Depth -10]

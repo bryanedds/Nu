@@ -42,6 +42,7 @@
 [X] hp / mp restore
 [X] fix field not fading in
 [X] figure out why creeping is happening before fading out from previous room
+[ ] make tech glow stronger
 [ ] make sure we're generating prop ids properly
 [ ] tech aim back button should go back to tech not main
 [ ] battle earnings display
