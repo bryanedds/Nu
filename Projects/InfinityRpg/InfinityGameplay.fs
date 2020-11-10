@@ -194,12 +194,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     static member resetFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboard (Chessboard.transitionMap fieldMap) gameplay
-        let field = { FieldMapNp = fieldMap }
-        Gameplay.updateField (constant field) gameplay
+        Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
     
     static member transitionMap direction gameplay =
-        let metaMap = gameplay.MetaMap.Transition direction
-        Gameplay.updateMetaMap (constant metaMap) gameplay
+        Gameplay.updateMetaMap (MetaMap.transition direction) gameplay
 
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.UnoccupiedSpaces

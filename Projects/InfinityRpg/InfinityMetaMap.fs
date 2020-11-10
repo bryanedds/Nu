@@ -5,74 +5,77 @@ open Nu
 
 type [<ReferenceEquality; NoComparison>] MetaTile =
     { RandSeed : uint64
-      OffsetCount : Vector2i
-      IsHorizontal : bool
+      DirectionNext : Direction
       PathStart : Vector2i
       PathEnd : Vector2i }
 
-    static member make MetaTileOpt =
+    static member make pathStart =
         let sysrandom = System.Random ()
         let randSeed = uint64 (sysrandom.Next ())
+        let directionNext = if Gen.random1 2 = 0 then Upward else Rightward
         let randResult = Gen.random1 (Constants.Layout.FieldMapSizeC.X - 4) // assumes X and Y are equal
         let pathEnd =
-            if randResult % 2 = 0
-            then v2i (randResult + 2) (Constants.Layout.FieldMapSizeC.Y - 2)
-            else v2i (Constants.Layout.FieldMapSizeC.X - 2) (randResult + 2)
-        let (offsetCount, pathStart) =
-            match MetaTileOpt with
-            | Some metaTile ->
-                match metaTile.IsHorizontal with
-                | true -> (metaTile.OffsetCount + v2iRight, v2i 1 metaTile.PathEnd.Y)
-                | false -> (metaTile.OffsetCount + v2iUp, v2i metaTile.PathEnd.X 1)
-            | None -> (v2iZero, v2iOne)
+            match directionNext with
+            | Upward -> v2i (randResult + 2) (Constants.Layout.FieldMapSizeC.Y - 2)
+            | Rightward -> v2i (Constants.Layout.FieldMapSizeC.X - 2) (randResult + 2)
+            | _ -> failwithumf ()
         { RandSeed = randSeed
-          OffsetCount = offsetCount
-          IsHorizontal = pathEnd.X > pathEnd.Y
+          DirectionNext = directionNext
           PathStart = pathStart
           PathEnd = pathEnd }
 
 type [<ReferenceEquality; NoComparison>] MetaMap =
     { MetaTiles : Map<Vector2i, MetaTile>
-      CurrentFieldOffset : Vector2i }
-
-    static member empty =
-        { MetaTiles = Map.empty
-          CurrentFieldOffset = v2iZero }
-
-    member this.AddMetaTile metaTile =
-        let metaTiles = Map.add metaTile.OffsetCount metaTile this.MetaTiles
-        { this with MetaTiles = metaTiles; CurrentFieldOffset = metaTile.OffsetCount }
+      CurrentMetaCoordinates : Vector2i }
 
     member this.Current =
-        this.MetaTiles.[this.CurrentFieldOffset]
+        this.MetaTiles.[this.CurrentMetaCoordinates]
+    
+    member this.MetaCoordinatesInDirection direction =
+        this.CurrentMetaCoordinates + dtovc direction
+    
+    member this.NextMetaCoordinates =
+        this.MetaCoordinatesInDirection this.Current.DirectionNext
 
-    member this.OffsetInDirection direction =
-        this.CurrentFieldOffset + dtovc direction
+    member this.NextPathStart =
+        match this.Current.DirectionNext with
+        | Upward -> v2i this.Current.PathEnd.X 1
+        | Rightward -> v2i 1 this.Current.PathEnd.Y
+        | _ -> failwithumf ()
     
     member this.ExistsInDirection direction =
-        Map.containsKey (this.OffsetInDirection direction) this.MetaTiles
+        Map.containsKey (this.MetaCoordinatesInDirection direction) this.MetaTiles
     
-    member this.NextOffset =
-        if this.Current.IsHorizontal
-        then this.OffsetInDirection Rightward
-        else this.OffsetInDirection Upward
-    
-    member this.NextOffsetInDirection direction =
-        this.NextOffset = this.OffsetInDirection direction
+    member this.NextMetaCoordinatesInDirection direction =
+        this.NextMetaCoordinates = this.MetaCoordinatesInDirection direction
 
     member this.PossibleInDirection direction =
-        this.ExistsInDirection direction || this.NextOffsetInDirection direction
+        this.ExistsInDirection direction || this.NextMetaCoordinatesInDirection direction
+
+    static member updateMetaTiles updater metaMap =
+        { metaMap with MetaTiles = updater metaMap.MetaTiles }
+
+    static member updateCurrentMetaCoordinates updater metaMap =
+        { metaMap with CurrentMetaCoordinates = updater metaMap.CurrentMetaCoordinates }
     
-    member this.MoveCurrent direction =
-        { this with CurrentFieldOffset = this.OffsetInDirection direction }
+    static member addMetaTile metaCoordinates metaTile metaMap =
+        let metaMap = MetaMap.updateMetaTiles (Map.add metaCoordinates metaTile) metaMap
+        MetaMap.updateCurrentMetaCoordinates (constant metaCoordinates) metaMap
     
-    member this.MakeMetaTile =
-        this.AddMetaTile (MetaTile.make (Some this.Current))
+    static member moveCurrent direction (metaMap : MetaMap) =
+        MetaMap.updateCurrentMetaCoordinates (constant (metaMap.MetaCoordinatesInDirection direction)) metaMap
     
-    member this.Transition direction =
-        if this.ExistsInDirection direction
-        then this.MoveCurrent direction
-        else this.MakeMetaTile
+    static member makeMetaTile (metaMap : MetaMap) =
+        MetaMap.addMetaTile metaMap.NextMetaCoordinates (MetaTile.make metaMap.NextPathStart) metaMap
+    
+    static member transition direction (metaMap : MetaMap) =
+        if metaMap.ExistsInDirection direction
+        then MetaMap.moveCurrent direction metaMap
+        else MetaMap.makeMetaTile metaMap
+    
+    static member empty =
+        { MetaTiles = Map.empty
+          CurrentMetaCoordinates = v2iZero }
     
     static member make =
-        MetaMap.empty.AddMetaTile (MetaTile.make None)
+        MetaMap.addMetaTile v2iZero (MetaTile.make v2iOne) MetaMap.empty

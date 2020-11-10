@@ -8,6 +8,9 @@ open InfinityRpg
 type [<ReferenceEquality; NoComparison>] Field =
     { FieldMapNp : FieldMap }
 
+    static member setFieldMap fieldMap field =
+        { field with FieldMapNp = fieldMap }
+    
     static member initial =
         let DefaultRand = Rand.make ()
         let DefaultSizeC = v2i 4 4
