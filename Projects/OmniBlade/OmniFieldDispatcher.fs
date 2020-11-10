@@ -315,6 +315,7 @@ module FieldDispatcher =
                     let tickTime = World.getTickTime world
                     let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
                     if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
+                        // start transition
                         match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
                         | (true, fieldData) ->
                             if currentSongOpt <> fieldData.FieldSongOpt
@@ -322,6 +323,7 @@ module FieldDispatcher =
                             else just field
                         | (false, _) -> just field
                     elif tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                        // half-way point of transition
                         let field = Field.updateFieldType (constant fieldTransition.FieldType) field
                         let field =
                             Field.updateAvatar (fun avatar ->
@@ -339,10 +341,11 @@ module FieldDispatcher =
                             | None -> Nop
                         withCmds [moveCmd; songCmd] field
                     elif tickTime = fieldTransition.FieldTransitionTime then
+                        // finish transition
                         let field = Field.updateFieldTransitionOpt (constant None) field
                         just field
                     else
-                        // produce a new field instance to make sure transition binding is hitting
+                        // produce a new field instance to make sure transition binding is activating
                         let field = Field.updateFieldTransitionOpt id field
                         just field
                 | None -> just field

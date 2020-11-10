@@ -120,7 +120,7 @@ module Algorithms =
         | None -> Set.empty
 
     let goldPrize scalar (level : int) =
-        let algo = level * 2
+        let algo = level
         int (single algo * scalar)
 
     let expPrize scalar (level : int) =
