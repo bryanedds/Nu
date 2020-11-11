@@ -205,8 +205,8 @@ module BattleDispatcher =
 
         and tickReady time timeStart battle =
             let timeLocal = time - timeStart
-            if timeLocal = 0L then withMsg ReadyCharacters battle
-            elif timeLocal >= 30L then
+            if timeLocal = 60L then withMsg ReadyCharacters battle
+            elif timeLocal >= 90L then
                 let battle = Battle.updateBattleState (constant BattleRunning) battle
                 withMsg PoiseCharacters battle
             else just battle
@@ -477,18 +477,21 @@ module BattleDispatcher =
                 let battle = Battle.updateInventory (Inventory.removeItem item) battle
                 just battle
 
-            | ConsumeCharacter2 (consumable, targetIndex) ->
+            | ConsumeCharacter2 (consumableType, targetIndex) ->
                 let time = World.getTickTime world
-                let healing =
-                    match consumable with
-                    | GreenHerb -> 50 // TODO: pull from data
-                    | RedHerb -> 250 // TODO: pull from data
-                    | GoldHerb -> 999 // TODO: pull from data
-                let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, false))) targetIndex battle
-                let battle = Battle.updateCharacter (Character.animate time SpinCycle) targetIndex battle
-                let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
-                let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
-                withCmds [displayHitPointsChange; playHealSound] battle
+                match Data.Value.Consumables.TryGetValue consumableType with
+                | (true, consumable) ->
+                    if consumable.Curative then
+                        let healing = int consumable.Scalar
+                        let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, false))) targetIndex battle
+                        let battle = Battle.updateCharacter (Character.animate time SpinCycle) targetIndex battle
+                        let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
+                        let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
+                        withCmds [displayHitPointsChange; playHealSound] battle
+                    else
+                        // TODO: non-curative case
+                        just battle
+                | (false, _) -> just battle
             
             | TechCharacter1 (sourceIndex, targetIndex, techType) ->
                 let source = Battle.getCharacter sourceIndex battle

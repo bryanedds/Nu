@@ -281,30 +281,33 @@ module Field =
     let restoreLegion field =
         { field with Legion_ = Map.map (fun _ -> Legionnaire.restore) field.Legion_ }
 
-    let advanceEncounterCreep (velocity : Vector2) (field : Field) world =
-        match Data.Value.Fields.TryGetValue field.FieldType with
-        | (true, fieldData) ->
-            match fieldData.EncounterTypeOpt with
-            | Some encounterType ->
-                match Data.Value.Encounters.TryGetValue encounterType with
-                | (true, encounterData) ->
-                    let speed = velocity.Length () / 60.0f
-                    let creep = speed
-                    let field =
-                        if creep <> 0.0f
-                        then { field with EncounterCreep_ = field.EncounterCreep_ + creep }
-                        else field
-                    if field.EncounterCreep_ >= encounterData.Threshold then
-                        match FieldData.tryGetBattleType field.OmniSeedState field.Avatar.Position encounterData.BattleTypes fieldData world with
-                        | Some battleType ->
-                            match Data.Value.Battles.TryGetValue battleType with
-                            | (true, battleData) -> (Some battleData, field)
-                            | (false, _) -> (None, field)
-                        | None -> (None, field)
-                    else (None, field)
-                | (false, _) -> (None, field)
-            | None -> (None, field)
-        | (false, _) -> (None, field)
+    let tryAdvanceEncounterCreep (velocity : Vector2) (field : Field) world =
+        match field.FieldTransitionOpt with
+        | None ->
+            match Data.Value.Fields.TryGetValue field.FieldType with
+            | (true, fieldData) ->
+                match fieldData.EncounterTypeOpt with
+                | Some encounterType ->
+                    match Data.Value.Encounters.TryGetValue encounterType with
+                    | (true, encounterData) ->
+                        let speed = velocity.Length () / 60.0f
+                        let creep = speed
+                        let field =
+                            if creep <> 0.0f
+                            then { field with EncounterCreep_ = field.EncounterCreep_ + creep }
+                            else field
+                        if field.EncounterCreep_ >= encounterData.Threshold then
+                            match FieldData.tryGetBattleType field.OmniSeedState field.Avatar.Position encounterData.BattleTypes fieldData world with
+                            | Some battleType ->
+                                match Data.Value.Battles.TryGetValue battleType with
+                                | (true, battleData) -> (Some battleData, field)
+                                | (false, _) -> (None, field)
+                            | None -> (None, field)
+                        else (None, field)
+                    | (false, _) -> (None, field)
+                | None -> (None, field)
+            | (false, _) -> (None, field)
+        | Some _ -> (None, field)
 
     let synchronizeLegionFromAllies allies field =
         List.foldi (fun i field (ally : Character) ->
