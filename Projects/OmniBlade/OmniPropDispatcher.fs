@@ -124,7 +124,7 @@ module PropDispatcher =
                                 | VillageWoman -> (1, 0)
                                 | VillageBoy -> (2, 0)
                                 | VillageGirl -> (3, 0)
-                                | FireGoblin -> (0, 4)
+                                | FireGoblinNpc -> (0, 4)
                             let column = column + CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
