@@ -532,6 +532,10 @@ module FieldDispatcher =
             match command with
             | UpdateEye ->
                 let world = World.setEyeCenter field.Avatar.Center world
+                let tileMapBounds = Simulants.FieldTileMap.GetBounds world
+                let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 64.0f)
+                let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 128.0f)
+                let world = World.constrainEyeBounds eyeBounds world
                 just world
 
             | MoveAvatar position ->
