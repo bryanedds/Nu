@@ -80,6 +80,10 @@ module GameplayDispatcher =
                             let gameplay = Gameplay.finishMove index gameplay
                             let reactorIndex = Option.get characterTurn.ReactorOpt
                             let reactorState = Gameplay.getCharacter reactorIndex gameplay
+                            let gameplay =
+                                if reactorIndex = PlayerIndex then
+                                    Gameplay.refreshPlayerPuppetHitPoints gameplay
+                                else gameplay
                             if reactorState.HitPoints <= 0 then
                                 match reactorIndex with
                                 | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
@@ -410,8 +414,7 @@ module GameplayDispatcher =
                  Content.text Gen.name
                     [Entity.Position == v2 -440.0f 200.0f; Entity.Depth == 9.0f
                      Entity.Text <== gameplay --> fun gameplay ->
-                        let player = Gameplay.getCharacter PlayerIndex gameplay
-                        "HP: " + scstring player.HitPoints]
+                        "HP: " + scstring gameplay.Puppeteer.PlayerPuppetState.HitPoints]
 
                  Content.label Gen.name
                     [Entity.Position == v2 -448.0f -240.0f; Entity.Size == v2 224.0f 224.0f; Entity.Depth == 9.0f

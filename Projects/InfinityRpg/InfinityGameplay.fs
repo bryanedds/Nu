@@ -26,11 +26,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     static member initial =
         let field = Field.initial
+        let chessboard = Chessboard.init field.FieldMapNp
         { ShallLoadGame = false
           MetaMap = MetaMap.make
           Field = field
-          Chessboard = Chessboard.init field.FieldMapNp
-          Puppeteer = Puppeteer.initial
+          Chessboard = chessboard
+          Puppeteer = Puppeteer.init <| Chessboard.getCharacter PlayerIndex chessboard
           CharacterMoves = Map.empty }
 
     static member getEnemyIndices gameplay =
@@ -132,6 +133,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member clearPickups gameplay =
         Gameplay.updateChessboard Chessboard.clearPickups gameplay
 
+    static member refreshPlayerPuppetHitPoints gameplay =
+        let player = Gameplay.getCharacter PlayerIndex gameplay
+        Gameplay.updatePuppeteer (Puppeteer.updatePlayerPuppetHitPoints (constant player.HitPoints)) gameplay
+    
     static member finishMove index gameplay =
         let gameplay = Gameplay.updatePuppeteer (Puppeteer.removeCharacterTurn index) gameplay
         Gameplay.removeMove index gameplay
@@ -140,6 +145,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         match index with
         | PlayerIndex ->
             let gameplay = Gameplay.updateCharacter index (Character.updateHitPoints (constant 30)) gameplay
+            let gameplay = Gameplay.refreshPlayerPuppetHitPoints gameplay
             Gameplay.updateChessboard (Chessboard.removePickup coordinates) gameplay
         | _ -> gameplay
     
