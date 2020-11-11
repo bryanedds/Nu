@@ -201,6 +201,7 @@ module Field =
               Avatar_ : Avatar
               Team_ : Team
               EncounterCreep_ : single
+              EncounterThresholdScalar_ : single
               Advents_ : Advent Set
               PropStates_ : Map<int, PropState>
               Inventory_ : Inventory
@@ -240,7 +241,8 @@ module Field =
     let updateFieldType updater field =
         { field with
             FieldType_ = updater field.FieldType_
-            EncounterCreep_ = 0.0f }
+            EncounterCreep_ = 0.0f
+            EncounterThresholdScalar_ = Gen.randomf + 0.5f }
 
     let updateAvatar updater field =
         { field with Avatar_ = updater field.Avatar_ }
@@ -290,13 +292,14 @@ module Field =
                 | Some encounterType ->
                     match Data.Value.Encounters.TryGetValue encounterType with
                     | (true, encounterData) ->
+                        let encounterThreshold = encounterData.Threshold * field.EncounterThresholdScalar_
                         let speed = velocity.Length () / 60.0f
                         let creep = speed
                         let field =
                             if creep <> 0.0f
                             then { field with EncounterCreep_ = field.EncounterCreep_ + creep }
                             else field
-                        if field.EncounterCreep_ >= encounterData.Threshold then
+                        if field.EncounterCreep_ >= encounterThreshold then
                             match FieldData.tryGetBattleType field.OmniSeedState field.Avatar.Position encounterData.BattleTypes fieldData world with
                             | Some battleType ->
                                 match Data.Value.Battles.TryGetValue battleType with
@@ -339,6 +342,7 @@ module Field =
           OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = avatar
           EncounterCreep_ = 0.0f
+          EncounterThresholdScalar_ = 1.0f
           Team_ = team
           Advents_ = advents
           PropStates_ = Map.empty
@@ -355,6 +359,7 @@ module Field =
           Avatar_ = Avatar.empty
           Team_ = Map.empty
           EncounterCreep_ = 0.0f
+          EncounterThresholdScalar_ = 1.0f
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
@@ -370,6 +375,7 @@ module Field =
           Avatar_ = Avatar.initial
           Team_ = Map.ofList [(0, Teammate.finn)]
           EncounterCreep_ = 0.0f
+          EncounterThresholdScalar_ = 1.0f
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = Inventory.initial
