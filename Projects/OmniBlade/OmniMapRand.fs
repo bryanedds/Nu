@@ -259,6 +259,9 @@ type MapRand =
             | OriginSE ->   MapRand.tryAddBossRoomFromNorthWest map
             | OriginSW ->   MapRand.tryAddBossRoomFromNorthEast map
             | OriginW ->    MapRand.tryAddBossRoomFromNorthEast map || MapRand.tryAddBossRoomFromSouthEast map
+#if DEV
+        MapRand.printn map
+#endif
         if not isMapValid // make another if no valid map could be created
         then MapRand.makeFromRand walkLength biasChance size origin rand
         else (cursor, map, rand)

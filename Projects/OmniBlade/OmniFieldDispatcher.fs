@@ -35,6 +35,7 @@ module FieldDispatcher =
         | ShopConfirmAccept
         | ShopConfirmDecline
         | ShopLeave
+        | TryBattle of BattleType
         | Traverse of Vector2
         | Interact
 
@@ -161,26 +162,23 @@ module FieldDispatcher =
                 let dialog = { dialog with DialogProgress = 0; DialogPage = inc dialog.DialogPage }
                 let field = Field.updateDialogOpt (constant (Some dialog)) field
                 just field
-            else just (Field.updateDialogOpt (constant None) field)
+            else
+                let field = Field.updateDialogOpt (constant None) field
+                match dialog.DialogBattleOpt with
+                | Some battleType -> withMsg (TryBattle battleType) field
+                | None -> just field
 
-        static let interactChest time itemType chestId battleTypeOpt requirements consequents (field : Field) =
+        static let interactChest itemType chestId battleTypeOpt requirements consequents (field : Field) =
             if field.Advents.IsSupersetOf requirements then
-                match battleTypeOpt with
-                | Some battleType ->
-                    match Map.tryFind battleType Data.Value.Battles with
-                    | Some battleData ->
-                        let prizePool = { Items = []; Gold = 0; Exp = 0 }
-                        let battle = Battle.makeFromTeam (Field.getParty field) field.Inventory prizePool battleData time
-                        let field = Field.updateBattleOpt (constant (Some battle)) field
-                        withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
-                    | None -> just field
-                | None ->
-                    let field = Field.updateInventory (Inventory.addItem itemType) field
-                    let field = Field.updateAdvents (Set.add (Opened chestId)) field
-                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0 })) field
-                    let field = Field.updateAdvents (Set.addMany consequents) field
-                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound)) field
-            else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) field)
+                let field = Field.updateInventory (Inventory.addItem itemType) field
+                let field = Field.updateAdvents (Set.add (Opened chestId)) field
+                let field =
+                    match battleTypeOpt with
+                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = Some battleType })) field
+                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = battleTypeOpt })) field
+                let field = Field.updateAdvents (Set.addMany consequents) field
+                withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound)) field
+            else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
 
         static let interactDoor requirements consequents (prop : Prop) (field : Field) =
             match prop.PropState with
@@ -189,7 +187,7 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (Set.addMany consequents) field
                     let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
                     withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenDoorSound)) field
-                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) field)
+                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
             | _ -> failwithumf ()
 
         static let interactSwitch requirements consequents (prop : Prop) (field : Field) =
@@ -199,13 +197,13 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (if on then Set.removeMany consequents else Set.addMany consequents) field
                     let field = Field.updatePropStates (Map.add prop.PropId (SwitchState (not on))) field
                     withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UseSwitchSound)) field
-                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0 })) field)
+                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
             | _ -> failwithumf ()
 
-        static let interactNpc dialogs (field : Field) =
+        static let interactNpc battleTypeOpt dialogs (field : Field) =
             let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if field.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
             let (dialog, consequents) = match List.tryHead dialogs with Some dialog -> dialog | None -> ("...", Set.empty)
-            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0 }
+            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = battleTypeOpt }
             let field = Field.updateDialogOpt (constant (Some dialogForm)) field
             let field = Field.updateAdvents (Set.addMany consequents) field
             just field
@@ -494,6 +492,16 @@ module FieldDispatcher =
                 let field = Field.updateShopOpt (constant None) field
                 just field
 
+            | TryBattle battleType ->
+                match Map.tryFind battleType Data.Value.Battles with
+                | Some battleData ->
+                    let time = World.getTickTime world
+                    let prizePool = { Items = []; Gold = 0; Exp = 0 }
+                    let battle = Battle.makeFromTeam (Field.getParty field) field.Inventory prizePool battleData time
+                    let field = Field.updateBattleOpt (constant (Some battle)) field
+                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
+                | None -> just field
+
             | Traverse velocity ->
                 match Field.tryAdvanceEncounterCreep velocity field world with
                 | (Some battleData, field) ->
@@ -513,12 +521,12 @@ module FieldDispatcher =
                         | Some prop ->
                             let prop = prop.GetProp world
                             match prop.PropData with
-                            | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest (World.getTickTime world) itemType chestId battleTypeOpt requirements consequents field
+                            | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest itemType chestId battleTypeOpt requirements consequents field
                             | Door (_, requirements, consequents) -> interactDoor requirements consequents prop field
                             | Portal (_, _, _, _, _) -> just field
                             | Switch (_, requirements, consequents) -> interactSwitch requirements consequents prop field
                             | Sensor (_, _, _, _) -> just field
-                            | Npc (_, _, dialogs, _) -> interactNpc dialogs field
+                            | Npc (_, specialty, _, dialogs, advents) -> interactNpc (NpcSpecialty.getBattleTypeOpt advents specialty) dialogs field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
                             | SavePoint -> just field
                             | ChestSpawn -> just field
@@ -696,9 +704,9 @@ module FieldDispatcher =
                                     match prop.PropData with
                                     | Door (_, _, _) -> DoorState false
                                     | Switch (_, _, _) -> SwitchState false
-                                    | Npc (_, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements)
+                                    | Npc (_, specialty, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements && NpcSpecialty.exists advents specialty)
                                     | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
-                                    | _ -> NilState
+                                    | Chest _ | Portal _ | Sensor _ | SavePoint | ChestSpawn | EmptyProp -> NilState
                                 | Some propState -> propState
                             Prop.make prop.PropBounds prop.PropDepth advents prop.PropData propState prop.PropId)
                         Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])

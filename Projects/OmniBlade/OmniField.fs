@@ -18,7 +18,8 @@ type [<ReferenceEquality; NoComparison>] Dialog =
     { DialogForm : DialogForm
       DialogText : string
       DialogProgress : int
-      DialogPage : int }
+      DialogPage : int
+      DialogBattleOpt : BattleType option }
 
 type [<ReferenceEquality; NoComparison>] SubmenuUse =
     { SubmenuUseSelection : int * ItemType
