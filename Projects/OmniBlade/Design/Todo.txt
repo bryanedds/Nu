@@ -50,11 +50,11 @@
 [X] battle opening animations visible
 [X] proper creep randomization
 [X] constrain camera / movement to maps
+[X] reducing equipment does not reduce HP / TP
 [ ] battle earnings display
 [ ] add boss room / boss
 [ ] enemy equipment from data
-[ ] reducing equipment does not reduce HP / TP
-[ ] see if we can make simulant stream keys more like Elm's Html.keyed.
+[ ] see if we can make simulant stream keys more like Elm's Html.Keyed.
 [ ] cyclone effect sprite
 [ ] tremor camera shake effect
 [ ] damage glow
