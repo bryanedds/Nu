@@ -47,10 +47,10 @@
 [X] make tech glow stronger
 [X] make sure we're generating prop ids properly
 [X] tech aim back button should go back to tech not main
-[ ] battle earnings display
 [X] battle opening animations visible
-[ ] proper creep randomization
-[ ] constrain camera / movement to maps
+[X] proper creep randomization
+[X] constrain camera / movement to maps
+[ ] battle earnings display
 [ ] add boss room / boss
 [ ] enemy equipment from data
 [ ] reducing equipment does not reduce HP / TP

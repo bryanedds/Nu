@@ -91,6 +91,13 @@ module WorldModuleGame =
         static member setEyeSize value world =
             World.updateGameState (fun gameState -> if value <> gameState.EyeSize then Some { gameState with EyeSize = value } else None) Property? EyeSize value world
 
+        /// Get the current eye bounds
+        [<FunctionBinding>]
+        static member getEyeBounds world =
+            let eyeCenter = World.getEyeCenter world
+            let eyeSize = World.getEyeSize world
+            v4Bounds (eyeCenter - eyeSize * 0.5f) eyeSize
+
         /// Get the omni-screen, if any.
         [<FunctionBinding>]
         static member getOmniScreenOpt world =
@@ -116,6 +123,20 @@ module WorldModuleGame =
         [<FunctionBinding>]
         static member getSelectedScreenOpt world =
             (World.getGameState world).SelectedScreenOpt
+
+        [<FunctionBinding>]
+        static member constrainEyeBounds (bounds : Vector4) world =
+            let eyeBounds = World.getEyeBounds world
+            let eyeBoundsConstrained =
+                eyeBounds.WithPosition
+                    (v2
+                        (if eyeBounds.X < bounds.X then bounds.X
+                         elif eyeBounds.Right.X > bounds.Right.X then bounds.Right.X - eyeBounds.Size.X
+                         else eyeBounds.X)
+                        (if eyeBounds.Y < bounds.Y then bounds.Y
+                         elif eyeBounds.Top.Y > bounds.Top.Y then bounds.Top.Y - eyeBounds.Size.Y
+                         else eyeBounds.Y))
+            World.setEyeCenter eyeBoundsConstrained.Center world
 
         /// Set the currently selected screen or None. Be careful using this function directly as
         /// you may be wanting to use the higher-level World.transitionScreen function instead.
