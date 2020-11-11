@@ -4,6 +4,7 @@
 namespace OmniBlade
 open System
 open System.Numerics
+open FSharp.Reflection
 open Prime
 open Nu
 
@@ -193,6 +194,19 @@ module Character =
     let getAnimationFinished time character =
         CharacterAnimationState.getFinished time character.AnimationState_
 
+    let getInputState character =
+        character.InputState_
+
+    let getActionTypeOpt character =
+        match character.InputState_ with
+        | AimReticles (item, _) ->
+            let actionType =
+                if typeof<ConsumableType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Consume (scvalue item)
+                elif typeof<TechType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Tech (scvalue item)
+                else Attack
+            Some actionType
+        | _ -> None
+
     let updateActionTime updater character =
         { character with ActionTime_ = updater character.ActionTime_ }
 
@@ -260,7 +274,7 @@ module Character =
         { character with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState_ }
 
     let make bounds characterIndex (characterState : CharacterState) animationSheet direction actionTime =
-        let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = ReadyCycle; Direction = direction }
+        let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = IdleCycle; Direction = direction }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = characterIndex
@@ -288,7 +302,7 @@ module Character =
 
     let empty =
         let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
-        let animationState = { TimeStart = 0L; AnimationSheet = Assets.FinnAnimationSheet; AnimationCycle = ReadyCycle; Direction = Downward }
+        let animationState = { TimeStart = 0L; AnimationSheet = Assets.FinnAnimationSheet; AnimationCycle = IdleCycle; Direction = Downward }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = AllyIndex 0
