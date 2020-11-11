@@ -72,30 +72,30 @@ type [<ReferenceEquality; NoComparison>] SubmenuUse =
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
-type [<ReferenceEquality; NoComparison>] SubmenuLegion =
-    { LegionIndex : int
-      LegionIndices : int list }
+type [<ReferenceEquality; NoComparison>] SubmenuTeam =
+    { TeamIndex : int
+      TeamIndices : int list }
       
-    static member tryGetLegionnaire (legion : Legion) submenuLegion =
-        Map.tryFind submenuLegion.LegionIndex legion
+    static member tryGetTeammate (team : Team) submenuTeam =
+        Map.tryFind submenuTeam.TeamIndex team
 
-    static member tryGetLegionnaireAndLegionData legion submenuLegion =
-        match SubmenuLegion.tryGetLegionnaire legion submenuLegion with
-        | Some legionnaire ->
-            match Map.tryFind legionnaire.CharacterType Data.Value.Characters with
-            | Some characterData -> Some (legionnaire, characterData)
+    static member tryGetTeammateAndTeamData team submenuTeam =
+        match SubmenuTeam.tryGetTeammate team submenuTeam with
+        | Some teammate ->
+            match Map.tryFind teammate.CharacterType Data.Value.Characters with
+            | Some characterData -> Some (teammate, characterData)
             | None -> None
         | None -> None
 
-    static member tryGetLegionData legion submenuLegion =
-        let lacdOpt = SubmenuLegion.tryGetLegionnaireAndLegionData legion submenuLegion
+    static member tryGetTeamData team submenuTeam =
+        let lacdOpt = SubmenuTeam.tryGetTeammateAndTeamData team submenuTeam
         Option.map snd lacdOpt
 
 type [<ReferenceEquality; NoComparison>] SubmenuItem =
     { ItemPage : int }
 
 type [<NoComparison>] SubmenuState =
-    | SubmenuLegion of SubmenuLegion
+    | SubmenuTeam of SubmenuTeam
     | SubmenuItem of SubmenuItem
     | SubmenuClosed
 
@@ -199,7 +199,7 @@ module Field =
             { FieldType_ : FieldType
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
-              Legion_ : Legion
+              Team_ : Team
               EncounterCreep_ : single
               Advents_ : Advent Set
               PropStates_ : Map<int, PropState>
@@ -214,7 +214,7 @@ module Field =
         member this.FieldType = this.FieldType_
         member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
-        member this.Legion = this.Legion_
+        member this.Team = this.Team_
         member this.EncounterCreep = this.EncounterCreep_
         member this.Advents = this.Advents_
         member this.PropStates = this.PropStates_
@@ -226,8 +226,8 @@ module Field =
         member this.BattleOpt = this.BattleOpt_
 
     let getParty field =
-        field.Legion_ |>
-        Map.filter (fun _ legionnaire -> Option.isSome legionnaire.PartyIndexOpt) |>
+        field.Team_ |>
+        Map.filter (fun _ teammate -> Option.isSome teammate.PartyIndexOpt) |>
         Map.toSeq |>
         Seq.tryTake 3 |>
         Map.ofSeq
@@ -245,8 +245,8 @@ module Field =
     let updateAvatar updater field =
         { field with Avatar_ = updater field.Avatar_ }
 
-    let updateLegion updater field =
-        { field with Legion_ = updater field.Legion_ }
+    let updateTeam updater field =
+        { field with Team_ = updater field.Team_ }
 
     let updateAdvents updater field =
         { field with Advents_ = updater field.Advents_ }
@@ -278,8 +278,8 @@ module Field =
     let updateReference field =
         { field with FieldType_ = field.FieldType_ }
 
-    let restoreLegion field =
-        { field with Legion_ = Map.map (fun _ -> Legionnaire.restore) field.Legion_ }
+    let restoreTeam field =
+        { field with Team_ = Map.map (fun _ -> Teammate.restore) field.Team_ }
 
     let tryAdvanceEncounterCreep (velocity : Vector2) (field : Field) world =
         match field.FieldTransitionOpt with
@@ -309,24 +309,24 @@ module Field =
             | (false, _) -> (None, field)
         | Some _ -> (None, field)
 
-    let synchronizeLegionFromAllies allies field =
+    let synchronizeTeamFromAllies allies field =
         List.foldi (fun i field (ally : Character) ->
-            updateLegion (fun legion ->
-                match Map.tryFind i legion with
-                | Some legionnaire ->
-                    let legionnaire =
-                        { legionnaire with
+            updateTeam (fun team ->
+                match Map.tryFind i team with
+                | Some teammate ->
+                    let teammate =
+                        { teammate with
                             HitPoints = ally.HitPoints
                             TechPoints = ally.TechPoints
                             ExpPoints = ally.ExpPoints }
-                    Map.add i legionnaire legion
-                | None -> legion)
+                    Map.add i teammate team
+                | None -> team)
                 field)
             field allies
 
     let synchronizeFromBattle battle field =
         let allies = Battle.getAllies battle
-        let field = synchronizeLegionFromAllies allies field
+        let field = synchronizeTeamFromAllies allies field
         let field = updateInventory (constant battle.Inventory) field
         let field = updateBattleOpt (constant None) field
         field
@@ -334,12 +334,12 @@ module Field =
     let toSymbolizable field =
         { field with Avatar_ = Avatar.toSymbolizable field.Avatar }
 
-    let make fieldType randSeedState avatar legion advents inventory =
+    let make fieldType randSeedState avatar team advents inventory =
         { FieldType_ = fieldType
           OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = avatar
           EncounterCreep_ = 0.0f
-          Legion_ = legion
+          Team_ = team
           Advents_ = advents
           PropStates_ = Map.empty
           Inventory_ = inventory
@@ -353,7 +353,7 @@ module Field =
         { FieldType_ = DebugRoom
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty
-          Legion_ = Map.empty
+          Team_ = Map.empty
           EncounterCreep_ = 0.0f
           Advents_ = Set.empty
           PropStates_ = Map.empty
@@ -368,7 +368,7 @@ module Field =
         { FieldType_ = TombOuter
           OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = Avatar.initial
-          Legion_ = Map.ofList [(0, Legionnaire.finn)]
+          Team_ = Map.ofList [(0, Teammate.finn)]
           EncounterCreep_ = 0.0f
           Advents_ = Set.empty
           PropStates_ = Map.empty

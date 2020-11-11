@@ -20,8 +20,8 @@ module FieldDispatcher =
         | UpdatePortal
         | UpdateSensor
         | UpdateFieldTransition
-        | SubmenuLegionOpen
-        | SubmenuLegionAlly of int
+        | SubmenuTeamOpen
+        | SubmenuTeamAlly of int
         | SubmenuItemOpen
         | SubmenuItemSelect of Lens<int * ItemType, World>
         | SubmenuItemUse of int
@@ -170,7 +170,7 @@ module FieldDispatcher =
                     match Map.tryFind battleType Data.Value.Battles with
                     | Some battleData ->
                         let prizePool = { Items = []; Gold = 0; Exp = 0 }
-                        let battle = Battle.makeFromLegion (Field.getParty field) field.Inventory prizePool battleData time
+                        let battle = Battle.makeFromTeam (Field.getParty field) field.Inventory prizePool battleData time
                         let field = Field.updateBattleOpt (constant (Some battle)) field
                         withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
                     | None -> just field
@@ -216,7 +216,7 @@ module FieldDispatcher =
             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)) field
 
         static let interactSavePoint (field : Field) =
-            let field = Field.restoreLegion field
+            let field = Field.restoreTeam field
             Field.save field
             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.SaveSound)) field
 
@@ -224,30 +224,30 @@ module FieldDispatcher =
             Content.group Gen.name []
                 [Content.button Gen.name
                    [Entity.PositionLocal == position; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
-                    Entity.Text == "L"
-                    Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuLegion _ -> false | _ -> true
-                    Entity.ClickEvent ==> msg SubmenuLegionOpen]
+                    Entity.Text == "T"
+                    Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuTeam _ -> false | _ -> true
+                    Entity.ClickEvent ==> msg SubmenuTeamOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 72.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
+                   [Entity.PositionLocal == position - v2 0.0f 80.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "I"
                     Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuItem _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuItemOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 144.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
+                   [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "X"
                     Entity.ClickEvent ==> msg SubmenuClose]]
 
-        static let legion (position : Vector2) depth rows (field : Lens<Field, World>) filter fieldMsg =
+        static let team (position : Vector2) depth rows (field : Lens<Field, World>) filter fieldMsg =
             Content.entities field
-                (fun field -> (field.Legion, field.Submenu))
-                (fun (legion, submenu) _ -> legion |> Map.toValueList |> List.filter (flip filter submenu))
-                (fun i legionnaireLens world ->
-                    let legionnaire = Lens.get legionnaireLens world
+                (fun field -> (field.Team, field.Submenu))
+                (fun (team, submenu) _ -> team |> Map.toValueList |> List.filter (flip filter submenu))
+                (fun i teammateLens world ->
+                    let teammate = Lens.get teammateLens world
                     let x = position.X
                     let y = position.Y - single (i % rows) * 72.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth
-                         Entity.Text == CharacterType.getName legionnaire.CharacterType
+                         Entity.Text == CharacterType.getName teammate.CharacterType
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
         static let items (position : Vector2) depth field fieldMsg =
@@ -275,7 +275,7 @@ module FieldDispatcher =
                     itemsSorted)
                 (fun i selectionLens _ ->
                     let x = if i < 5 then position.X else position.X + 368.0f
-                    let y = position.Y - single (i % 5) * 72.0f
+                    let y = position.Y - single (i % 5) * 80.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 336.0f 64.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
@@ -394,17 +394,17 @@ module FieldDispatcher =
                     results
                 | Some _ -> just field
 
-            | SubmenuLegionOpen ->
-                let state = SubmenuLegion { LegionIndex = 0; LegionIndices = Map.toKeyList field.Legion }
+            | SubmenuTeamOpen ->
+                let state = SubmenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
                 let field = Field.updateSubmenu (fun submenu -> { submenu with SubmenuState = state }) field
                 just field
 
-            | SubmenuLegionAlly index ->
+            | SubmenuTeamAlly index ->
                 let field =
                     Field.updateSubmenu (fun submenu ->
                         let state =
                             match submenu.SubmenuState with
-                            | SubmenuLegion submenuLegion -> SubmenuLegion { submenuLegion with LegionIndex = index }
+                            | SubmenuTeam submenuTeam -> SubmenuTeam { submenuTeam with TeamIndex = index }
                             | state -> state
                         { submenu with SubmenuState = state })
                         field
@@ -421,15 +421,15 @@ module FieldDispatcher =
                 just field
 
             | SubmenuItemUse index ->
-                match Map.tryFind index field.Legion with
-                | Some legionnaire ->
+                match Map.tryFind index field.Team with
+                | Some teammate ->
                     match field.Submenu.SubmenuUseOpt with
                     | Some submenuUse ->
                         let itemType = snd submenuUse.SubmenuUseSelection
-                        let (result, displacedOpt, legionnaire) = Legionnaire.tryUseItem itemType legionnaire
+                        let (result, displacedOpt, teammate) = Teammate.tryUseItem itemType teammate
                         let field = if result then Field.updateInventory (Inventory.removeItem itemType) field else field
                         let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.addItem displaced) field | None -> field
-                        let field = Field.updateLegion (Map.add index legionnaire) field
+                        let field = Field.updateTeam (Map.add index teammate) field
                         let field = Field.updateSubmenu (constant { field.Submenu with SubmenuUseOpt = None }) field
                         if result then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) field
                         else just field
@@ -498,7 +498,7 @@ module FieldDispatcher =
                 match Field.tryAdvanceEncounterCreep velocity field world with
                 | (Some battleData, field) ->
                     let prizePool = { Items = []; Gold = 0; Exp = 0 }
-                    let battle = Battle.makeFromLegion field.Legion field.Inventory prizePool battleData (World.getTickTime world)
+                    let battle = Battle.makeFromTeam field.Team field.Inventory prizePool battleData (World.getTickTime world)
                     let field = Field.updateBattleOpt (constant (Some battle)) field
                     withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
                 | (None, field) -> just field
@@ -626,7 +626,7 @@ module FieldDispatcher =
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt
-                     Entity.ClickEvent ==> msg SubmenuLegionOpen]
+                     Entity.ClickEvent ==> msg SubmenuTeamOpen]
 
                  // interact button
                  Content.button Simulants.FieldInteract.Name
@@ -699,19 +699,19 @@ module FieldDispatcher =
                             Prop.make prop.PropBounds prop.PropDepth advents prop.PropData propState prop.PropId)
                         Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
-                 // legion
-                 Content.panel Simulants.SubmenuLegion.Name
+                 // team
+                 Content.panel Simulants.SubmenuTeam.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogXXLImage
-                     Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuLegion _ -> true | _ -> false]
+                     Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuTeam _ -> true | _ -> false]
                     [sidebar (v2 40.0f 424.0f) 1.0f field
-                     legion (v2 136.0f 424.0f) 1.0f Int32.MaxValue field tautology2 SubmenuLegionAlly
+                     team (v2 136.0f 424.0f) 1.0f Int32.MaxValue field tautology2 SubmenuTeamAlly
                      Content.label Gen.name
                         [Entity.PositionLocal == v2 424.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionData field.Legion submenu with
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeamData field.Team submenu with
                                 | Some characterData ->
                                     match characterData.MugOpt with
                                     | Some mug -> mug
@@ -722,8 +722,8 @@ module FieldDispatcher =
                         [Entity.PositionLocal == v2 672.0f 384.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionData field.Legion submenu with
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeamData field.Team submenu with
                                 | Some characterData -> CharacterType.getName characterData.CharacterType
                                 | None -> ""
                             | _ -> ""]
@@ -731,36 +731,36 @@ module FieldDispatcher =
                         [Entity.PositionLocal == v2 672.0f 328.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
-                                | Some legionnaire -> "Level " + string (Algorithms.expPointsToLevel legionnaire.ExpPoints)
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeammate field.Team submenu with
+                                | Some teammate -> "Level " + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 224.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
-                                | Some legionnaire -> "W: " + Option.getOrDefault "None" legionnaire.WeaponOpt
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeammate field.Team submenu with
+                                | Some teammate -> "W: " + Option.getOrDefault "None" teammate.WeaponOpt
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 184.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
-                                | Some legionnaire -> "A: " + Option.getOrDefault "None" legionnaire.ArmorOpt
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeammate field.Team submenu with
+                                | Some teammate -> "A: " + Option.getOrDefault "None" teammate.ArmorOpt
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 144.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
-                                | Some legionnaire -> "1: " + Option.getOrDefault "None" (List.tryHead legionnaire.Accessories)
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeammate field.Team submenu with
+                                | Some teammate -> "1: " + Option.getOrDefault "None" (List.tryHead teammate.Accessories)
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
@@ -768,18 +768,18 @@ module FieldDispatcher =
                          Entity.Justification == Unjustified true
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaireAndLegionData field.Legion submenu with
-                                | Some (legionnaire, characterData) ->
-                                    let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
-                                    let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
-                                    let tpm = Algorithms.techPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
-                                    let pow = Algorithms.power legionnaire.WeaponOpt 1.0f characterData.ArchetypeType level
-                                    let mag = Algorithms.magic legionnaire.WeaponOpt 1.0f characterData.ArchetypeType level
-                                    "HP  "   + (string legionnaire.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
-                                    "\nTP  " + (string legionnaire.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeammateAndTeamData field.Team submenu with
+                                | Some (teammate, characterData) ->
+                                    let level = Algorithms.expPointsToLevel teammate.ExpPoints
+                                    let hpm = Algorithms.hitPointsMax teammate.ArmorOpt characterData.ArchetypeType level
+                                    let tpm = Algorithms.techPointsMax teammate.ArmorOpt characterData.ArchetypeType level
+                                    let pow = Algorithms.power teammate.WeaponOpt 1.0f characterData.ArchetypeType level
+                                    let mag = Algorithms.magic teammate.WeaponOpt 1.0f characterData.ArchetypeType level
+                                    "HP  "   + (string teammate.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
+                                    "\nTP  " + (string teammate.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
                                     "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
-                                    "\nExp " + (string legionnaire.ExpPoints).PadLeft 3 + "/" + (string (Legionnaire.getExpPointsForNextLevel legionnaire)).PadLeft 3
+                                    "\nExp " + (string teammate.ExpPoints).PadLeft 3 + "/" + (string (Teammate.getExpPointsForNextLevel teammate)).PadLeft 3
                                 | None -> ""
                             | _ -> ""]]
 
@@ -801,10 +801,10 @@ module FieldDispatcher =
                     [Entity.Position == v2 -448.0f -192.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 384.0f
                      Entity.LabelImage == Assets.DialogXLImage
                      Entity.Visible <== field --> fun field -> Option.isSome field.Submenu.SubmenuUseOpt]
-                    [legion (v2 160.0f 192.0f) 1.0f 3 field
-                        (fun legionnaire submenu ->
+                    [team (v2 160.0f 192.0f) 1.0f 3 field
+                        (fun teammate submenu ->
                             match submenu.SubmenuUseOpt with
-                            | Some submenuUse -> Legionnaire.canUseItem (snd submenuUse.SubmenuUseSelection) legionnaire
+                            | Some submenuUse -> Teammate.canUseItem (snd submenuUse.SubmenuUseSelection) teammate
                             | None -> false)
                         SubmenuItemUse
                      Content.button Gen.name
