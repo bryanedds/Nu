@@ -133,7 +133,7 @@ module FieldDispatcher =
                                     | Rightward -> portal.PropBounds.Right
                                     | Downward -> portal.PropBounds.Bottom
                                     | Leftward -> portal.PropBounds.Left
-                                let destinationOffset = Direction.toVector2 direction * v2Dup 72.0f // TODO: use constant.
+                                let destinationOffset = Direction.toVector2 direction * v2Dup Constants.Field.PortalOffset
                                 let destination = destinationCenter + destinationOffset
                                 Some (fieldType, destination, direction)
                             | _ -> None
@@ -495,7 +495,7 @@ module FieldDispatcher =
                 just field
 
             | Traverse velocity ->
-                match Field.advanceEncounterCreep velocity field world with
+                match Field.tryAdvanceEncounterCreep velocity field world with
                 | (Some battleData, field) ->
                     let prizePool = { Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromLegion field.Legion field.Inventory prizePool battleData (World.getTickTime world)

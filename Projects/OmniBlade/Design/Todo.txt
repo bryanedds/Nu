@@ -42,9 +42,9 @@
 [X] hp / mp restore
 [X] fix field not fading in
 [X] figure out why creeping is happening before fading out from previous room
-[ ] ensure creeping doesn't happen during screen transitioning
-[ ] rename legion to team and legionnaire to 
-[ ] make tech glow stronger
+[X] ensure creeping doesn't happen during screen transitioning
+[ ] rename legion to roster and legionnaire to 
+[X] make tech glow stronger
 [ ] make sure we're generating prop ids properly
 [ ] tech aim back button should go back to tech not main
 [ ] battle earnings display
