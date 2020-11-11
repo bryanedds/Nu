@@ -4,6 +4,15 @@ open Prime
 open Nu
 open InfinityRpg
 
+type PuppetState =
+    { HitPoints : int }
+
+    static member updateHitPoints updater puppetState =
+        { puppetState with HitPoints = updater puppetState.HitPoints }
+    
+    static member makeFromCharacter (character : Character ) =
+        { HitPoints = character.HitPoints }
+
 type TurnType =
     | WalkTurn of bool
     | AttackTurn
@@ -80,10 +89,12 @@ type Turn =
           StartTick = 0L }
 
 type [<ReferenceEquality; NoComparison>] Puppeteer =
-    { CharacterTurns : Turn list }
+    { CharacterTurns : Turn list
+      PlayerPuppetState : PuppetState }
 
-    static member initial =
-        { CharacterTurns = [] }
+    static member init (player : Character) =
+        { CharacterTurns = []
+          PlayerPuppetState = PuppetState.makeFromCharacter player }
 
     static member tryGetCharacterTurn index puppeteer =
         List.tryFind (fun x -> x.Actor = index) puppeteer.CharacterTurns
@@ -103,6 +114,9 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member updateCharacterTurns updater puppeteer =
         { puppeteer with CharacterTurns = updater puppeteer.CharacterTurns }
 
+    static member updatePlayerPuppetState updater puppeteer =
+        { puppeteer with PlayerPuppetState = updater puppeteer.PlayerPuppetState }
+
     static member addCharacterTurn turn puppeteer =
         Puppeteer.updateCharacterTurns (fun x -> turn :: x) puppeteer
 
@@ -111,6 +125,9 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
 
     static member removeCharacterTurn index puppeteer =
         Puppeteer.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) puppeteer
+
+    static member updatePlayerPuppetHitPoints updater puppeteer =
+        Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
 
     static member generatePositionsAndAnimationStates characters puppeteer =
         let generator coordinates character =
