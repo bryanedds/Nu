@@ -166,9 +166,9 @@ type MapRand =
 
     static member tryAddBossRoomFromNorthWest map =
         let mutable bossRoomAdded = false
-        for i in 0 .. 7 - 1 do
+        for i in 0 .. 7 - 1 do // starting from the north row
             if not bossRoomAdded then
-                for j in 0 .. 7 - 1 do
+                for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
                         if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i > 0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[j].[i] + SegmentRand.Segment1N
@@ -178,37 +178,37 @@ type MapRand =
 
     static member tryAddBossRoomFromNorthEast map =
         let mutable bossRoomAdded = false
-        for i in 0 .. 7 - 1 do
+        for i in 0 .. 7 - 1 do // starting from the north row
             if not bossRoomAdded then
-                for j in 7 - 1 .. - 1 .. 0 do
+                for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i < dec 7 then
+                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i > 0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] + SegmentRand.Segment1N
-                            map.MapSegments.[i].[dec j] <- SegmentRand.SegmentBS
+                            map.MapSegments.[dec i].[j] <- SegmentRand.SegmentBS
                             bossRoomAdded <- true
         bossRoomAdded
 
     static member tryAddBossRoomFromSouthWest map =
         let mutable bossRoomAdded = false
-        for i in 7 - 1 .. - 1 .. 0 do
+        for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
-                for j in 0 .. 7 - 1 do
+                for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i > 0 then
+                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i < dec 7 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] + SegmentRand.Segment1S
-                            map.MapSegments.[i].[dec j] <- SegmentRand.SegmentBN
+                            map.MapSegments.[inc i].[j] <- SegmentRand.SegmentBN
                             bossRoomAdded <- true
         bossRoomAdded
 
     static member tryAddBossRoomFromSouthEast map =
         let mutable bossRoomAdded = false
-        for i in 0 .. 7 - 1 do
+        for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
-                for j in 0 .. 7 - 1 do
+                for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
                         if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i < dec 7 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] + SegmentRand.Segment1S
-                            map.MapSegments.[i].[dec j] <- SegmentRand.SegmentBN
+                            map.MapSegments.[inc i].[j] <- SegmentRand.SegmentBN
                             bossRoomAdded <- true
         bossRoomAdded
 
@@ -248,8 +248,20 @@ type MapRand =
         match openingOpt with
         | Some opening -> map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
         | None -> ()
-        // TODO: add boss room
-        (cursor, map, rand)
+        let isMapValid =
+            match origin with
+            | OriginC ->    MapRand.tryAddBossRoomFromSouthWest map || MapRand.tryAddBossRoomFromNorthEast map
+            | OriginN ->    MapRand.tryAddBossRoomFromSouthEast map || MapRand.tryAddBossRoomFromSouthWest map
+            | OriginNE ->   MapRand.tryAddBossRoomFromSouthWest map
+            | OriginNW ->   MapRand.tryAddBossRoomFromSouthEast map
+            | OriginE ->    MapRand.tryAddBossRoomFromNorthWest map || MapRand.tryAddBossRoomFromSouthWest map
+            | OriginS ->    MapRand.tryAddBossRoomFromNorthWest map || MapRand.tryAddBossRoomFromNorthEast map
+            | OriginSE ->   MapRand.tryAddBossRoomFromNorthWest map
+            | OriginSW ->   MapRand.tryAddBossRoomFromNorthEast map
+            | OriginW ->    MapRand.tryAddBossRoomFromNorthEast map || MapRand.tryAddBossRoomFromSouthEast map
+        if not isMapValid // make another if no valid map could be created
+        then MapRand.makeFromRand walkLength biasChance size origin rand
+        else (cursor, map, rand)
 
     static member make (size : Vector2i) =
         if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."

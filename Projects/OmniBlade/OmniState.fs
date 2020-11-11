@@ -159,7 +159,7 @@ type [<ReferenceEquality; NoComparison>] Teammate =
                     match equipmentType with
                     | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) teammate.WeaponOpt, Teammate.equipWeaponOpt (Some weaponType) teammate)
                     | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) teammate.ArmorOpt, Teammate.equipArmorOpt (Some armorType) teammate)
-                    | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead teammate.Accessories), { teammate with Accessories = [accessoryType] })
+                    | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead teammate.Accessories), Teammate.equipAccessory1Opt (Some accessoryType) teammate)
                 | KeyItem _ -> (false, None, teammate)
                 | Stash _ -> (false, None, teammate)
             | None -> (false, None, teammate)
