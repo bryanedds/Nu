@@ -28,7 +28,7 @@ module BattleDispatcher =
         | TechItemCancel of CharacterIndex
         | ReticlesSelect of CharacterIndex * CharacterIndex
         | ReticlesCancel of CharacterIndex
-        | ReadyCharacters
+        | ReadyCharacters of int64
         | PoiseCharacters
         | CelebrateCharacters of bool
         | AttackCharacter1 of CharacterIndex
@@ -205,8 +205,10 @@ module BattleDispatcher =
 
         and tickReady time timeStart battle =
             let timeLocal = time - timeStart
-            if timeLocal = 60L then withMsg ReadyCharacters battle
-            elif timeLocal >= 90L then
+            if timeLocal >= 90L && timeLocal < 130L then
+                let timeLocalReady = timeLocal - 90L
+                withMsg (ReadyCharacters timeLocalReady) battle
+            elif timeLocal = 130L then
                 let battle = Battle.updateBattleState (constant BattleRunning) battle
                 withMsg PoiseCharacters battle
             else just battle
@@ -402,34 +404,38 @@ module BattleDispatcher =
                 | BattleRunning ->
                     match Battle.tryGetCharacter allyIndex battle with
                     | Some ally ->
-                        match ally.InputState with
-                        | AimReticles (item, _) ->
-                            let actionType =
-                                if typeof<ConsumableType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Consume (scvalue item)
-                                elif typeof<TechType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Tech (scvalue item)
-                                else Attack
+                        match Character.getActionTypeOpt ally with
+                        | Some actionType ->
                             let command = ActionCommand.make actionType allyIndex (Some targetIndex)
                             let battle = Battle.appendActionCommand command battle
                             withMsg (ResetCharacter allyIndex) battle
-                        | _ -> just battle
+                        | None -> just battle
                     | None -> just battle
                 | _ -> just battle
 
             | ReticlesCancel characterIndex ->
                 let battle =
-                    Battle.tryUpdateCharacter
-                        (Character.updateInputState (constant RegularMenu))
+                    Battle.tryUpdateCharacter (fun character ->
+                        match Character.getActionTypeOpt character with
+                        | Some actionType ->
+                            let inputState =
+                                match actionType with
+                                | Attack -> RegularMenu
+                                | Tech _ -> TechMenu
+                                | Consume _ -> ItemMenu
+                                | Wound -> failwithumf ()
+                            Character.updateInputState (constant inputState) character
+                        | None -> character)
                         characterIndex
                         battle
                 just battle
 
-            | ReadyCharacters ->
+            | ReadyCharacters timeLocal ->
                 let time = World.getTickTime world
-                let battle =
-                    Battle.updateCharacters
-                        (Character.animate time ReadyCycle)
-                        battle
-                just battle
+                let battle = Battle.updateCharacters (Character.animate time ReadyCycle) battle
+                if timeLocal = 20L
+                then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UnsheatheSound)) battle
+                else just battle
 
             | PoiseCharacters ->
                 let time = World.getTickTime world
