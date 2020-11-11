@@ -80,7 +80,7 @@ module AvatarDispatcher =
              entity.BodyShape == bodyShapes]
 
         override this.Channel (_, entity) =
-            [entity.UpdateEvent => msg Update
+            [entity.UpdateEvent => msg SynchronizeBounds
              entity.UpdateEvent =|> fun _ ->
                 let force = v2Zero
                 let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.WalkForce 0.0f + force else force
@@ -94,9 +94,9 @@ module AvatarDispatcher =
                 elif KeyboardState.isKeyDown KeyboardKey.Up then msg (Face Upward)
                 elif KeyboardState.isKeyDown KeyboardKey.Down then msg (Face Downward)
                 else msg Nil
-             entity.UpdateEvent => msg SynchronizeBounds
-             entity.Parent.PostUpdateEvent => msg PostUpdate
+             entity.UpdateEvent => msg Update
              entity.Parent.PostUpdateEvent => msg SynchronizeBounds
+             entity.Parent.PostUpdateEvent => msg PostUpdate
              entity.CollisionEvent =|> fun evt -> msg (Collision evt.Data)
              entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)]
 
@@ -126,7 +126,7 @@ module AvatarDispatcher =
                 just avatar
 
             | SynchronizeBounds ->
-                
+
                 // synchronize bounds
                 let avatar = Avatar.updateBounds (constant (entity.GetBounds world)) avatar
                 just avatar
