@@ -106,6 +106,17 @@ type [<ReferenceEquality; NoComparison>] Teammate =
     member this.Shield effectType = Algorithms.shield effectType this.Accessories 1.0f this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
+    static member equipWeaponOpt weaponTypeOpt teammate =
+        { teammate with WeaponOpt = weaponTypeOpt }
+
+    static member equipArmorOpt weaponTypeOpt teammate =
+        let teammate = { teammate with WeaponOpt = weaponTypeOpt }
+        let teammate = { teammate with HitPoints = min teammate.HitPoints teammate.HitPointsMax; TechPoints = min teammate.TechPoints teammate.HitPointsMax }
+        teammate
+
+    static member equipAccessory1Opt accessoryTypeOpt teammate =
+        { teammate with Accessories = Option.toList accessoryTypeOpt }
+
     static member canUseItem itemType teammate =
         match Map.tryFind teammate.CharacterType Data.Value.Characters with
         | Some characterData ->
@@ -146,8 +157,8 @@ type [<ReferenceEquality; NoComparison>] Teammate =
                     | (false, _) -> (false, None, teammate)
                 | Equipment equipmentType ->
                     match equipmentType with
-                    | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) teammate.WeaponOpt, { teammate with WeaponOpt = Some weaponType })
-                    | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) teammate.ArmorOpt, { teammate with ArmorOpt = Some armorType })
+                    | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) teammate.WeaponOpt, Teammate.equipWeaponOpt (Some weaponType) teammate)
+                    | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) teammate.ArmorOpt, Teammate.equipArmorOpt (Some armorType) teammate)
                     | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead teammate.Accessories), { teammate with Accessories = [accessoryType] })
                 | KeyItem _ -> (false, None, teammate)
                 | Stash _ -> (false, None, teammate)
