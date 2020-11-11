@@ -114,17 +114,18 @@ module PropDispatcher =
                         | AirSensor -> (true, None, Assets.EmptyImage)
                         | HiddenSensor -> (true, None, Assets.EmptyImage)
                         | StepPlateSensor -> (true, None, Assets.StepPlateImage)
-                    | Npc (npcType, direction, _, _) ->
+                    | Npc (npcType, _, direction, _, _) ->
                         match prop.PropState with
                         | NpcState true ->
                             let image = Assets.NpcAnimationSheet
-                            let row =
+                            let (row, column) =
                                 match npcType with
-                                | VillageMan -> 0
-                                | VillageWoman -> 1
-                                | VillageBoy -> 2
-                                | VillageGirl -> 3
-                            let column = CharacterAnimationState.directionToInt direction
+                                | VillageMan -> (0, 0)
+                                | VillageWoman -> (1, 0)
+                                | VillageBoy -> (2, 0)
+                                | VillageGirl -> (3, 0)
+                                | FireGoblin -> (0, 4)
+                            let column = column + CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
                             (false, Some inset, image)

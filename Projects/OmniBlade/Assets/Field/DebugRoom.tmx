@@ -6,7 +6,7 @@
    <property name="D" value="0"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYKAfmMoEwQMFRu0fnPbzAMV46Yz5kNyhA2Tr0hnrDUL7G4G4CQ9uJsJcdDNw6cFm/0IgXoQHLybCfnQzcOnBZv9BID6EBx+msf3UwOh+wOXmwZT+fIBsXzIwupmk6PVDsh9WLpGC0c0jxwxKATXMAgAHol7L
+   eJxjYKAPmMoEwQMFRu0fvPbzAMV56Yz5kNyiA2Tr0hnrDUL7G4G4CQ9uJsJcdDNw6cFm/0IgXoQHLybCfnQzcOnBZv9BID6EBx+msf3UwOh+wOXmwZT+fIBsXzIwupmk6PVDsh9WNpGC0c0jxwxKATXMAgAfOl7L
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="16">
@@ -14,7 +14,7 @@
    <property name="D" value="10"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJzN1V9KAlEUx/FzHU1qFyIE9aB7UAjzpT2kFf2jPaTWQ7WJ1NpHae2jpLbRd5gzzGW8gxcbswMf5jLn6O/ADExFRCrYQxdHqpvDNX2vqTlNzYxzj3GCPgYIjMgmtkx0Hli9rJl0v++YqXGvjkN0dI8WbnCLEcaoMruDXROdx1YvaybdHzlm4rpGDw3Nf8IzJpiGezG7j7aJzlOrlzWT7k8cM3E9Ymjlv+EdM9Vh9hRnJjrPZN4yM3G94NXK/8J30paecZ8lp5kPfFr566pV5h8E682/Chbv4cqveey9qM551he4NMkevvl51B2593jIeC9Xne9b/yF/Gxso/2FuAeFrUZXkOxTuUUTJ41rSfY0qaM/393buslpWfuMX//MDuTBYXA==
+   eJzNlVtKw1AQhs9prEV3UQqCPtQ9WJDqS/fgpdKqdA/Wy4O6CbW6Dy/tPmzRbfQ7ZILDadKTgqn+8DHDmT/5hySQqjGmKuzCERwXUBty/4bK07ltOIFLiKwxa7Bu4/5KznX1PaF5nbNtOIBDb48mXMMNPEEN/yZs2bgfyLmuvic0T3QBfdjx8p/hBd7dbvj3YN/G/Yec6+p7QvNED/CYkj+EEUzc88Hfga6N+4mZJeTx54le4S0l/wu+xdNXft1rhTxZ808Yp+QvW0Xnt6K/ze9F8/fIyq8H9s6jU973GZzbnz3y5v+Gbsm9g/uMb7fo/Dz6T/mOVagsIbcEkZn9Bzk2YEUoz6ll2dUKpZzXuVrLyF6Upsr3n+UiTAHDQlW9
   </data>
  </layer>
  <objectgroup id="4" name="Props">
@@ -23,7 +23,7 @@
   </properties>
   <object id="23" gid="488" x="960" y="512" width="160" height="160">
    <properties>
-    <property name="I" value="[Npc VillageMan Downward [[&quot;Welcome to Debug Room!^Aye aye aye!&quot;]]]"/>
+    <property name="I" value="[Npc VillageMan NoSpecialty Downward [[&quot;Welcome to Debug Room!^Aye aye aye!&quot;]]]"/>
    </properties>
   </object>
   <object id="25" gid="488" x="960" y="1058" width="128" height="64">
@@ -31,7 +31,7 @@
     <property name="I" value="[Portal South Upward DebugRoom2 North]"/>
    </properties>
   </object>
-  <object id="27" gid="488" x="1728" y="320" width="128" height="192">
+  <object id="27" gid="488" x="1664" y="320" width="128" height="192">
    <properties>
     <property name="I" value="[Door WoodenDoor]"/>
    </properties>
@@ -46,7 +46,7 @@
     <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 7ced2215-353f-4653-86f4-05200b99f641]"/>
    </properties>
   </object>
-  <object id="30" gid="488" x="1728" y="288" width="128" height="64">
+  <object id="30" gid="488" x="1664" y="288" width="128" height="64">
    <properties>
     <property name="I" value="[Portal North Downward TombInner [IX 0]]"/>
    </properties>

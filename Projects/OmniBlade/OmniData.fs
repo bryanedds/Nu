@@ -11,11 +11,10 @@ open Prime
 open Nu
 
 type Advent =
-    | Opened of Guid
     | DebugSwitch
     | DebugSwitch2
-    | KilledFinalBoss
-    | SavedPrincess
+    | Opened of Guid
+    | FireGoblinDefeated
 
 type Direction =
     | Downward
@@ -142,6 +141,18 @@ type ShopkeepAppearanceType =
     | Female
     | Fancy
 
+type BattleType =
+    | DebugBattle
+    | CaveBattle
+    | CaveBattle2
+    | CaveBattle3
+    | CaveBattle4
+    | FireGoblinBattle
+
+type EncounterType =
+    | DebugEncounter
+    | CaveEncounter
+
 type LockType =
     | BrassKey
 
@@ -169,6 +180,19 @@ type NpcType =
     | VillageWoman
     | VillageBoy
     | VillageGirl
+    | FireGoblin
+
+type NpcSpecialty =
+    | NoSpecialty
+    | FireGoblinSpecialty
+    static member exists advents specialty =
+        match specialty with
+        | NoSpecialty -> true
+        | FireGoblinSpecialty -> not (Set.contains FireGoblinDefeated advents)
+    static member getBattleTypeOpt advents specialty =
+        match specialty with
+        | NoSpecialty -> None
+        | FireGoblinSpecialty -> if not (Set.contains FireGoblinDefeated advents) then Some FireGoblinBattle else None
 
 type ShopkeepType =
     | ShopkeepMan
@@ -187,17 +211,6 @@ type SensorType =
     | AirSensor
     | HiddenSensor
     | StepPlateSensor
-
-type BattleType =
-    | DebugBattle
-    | CaveBattle
-    | CaveBattle2
-    | CaveBattle3
-    | CaveBattle4
-
-type EncounterType =
-    | DebugEncounter
-    | CaveEncounter
 
 type PoiseType =
     | Poising
@@ -352,7 +365,7 @@ type [<NoComparison>] PropData =
     | Portal of PortalType * Direction * FieldType * PortalType * Advent Set // leads to a different portal
     | Switch of SwitchType * Advent Set * Advent Set // anything that can affect another thing on the field through interaction
     | Sensor of SensorType * BodyShape option * Advent Set * Advent Set // anything that can affect another thing on the field through traversal
-    | Npc of NpcType * Direction * (string * Advent Set * Advent Set) list * Advent Set
+    | Npc of NpcType * NpcSpecialty * Direction * (string * Advent Set * Advent Set) list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
     | SavePoint
     | ChestSpawn
