@@ -265,6 +265,7 @@ type MapRand =
         let segments = SegmentsRand.load abstractPath
 
         // configure opening prop
+        let openingId = 0
         let (openingX, openingY, openingWidth, openingHeight, openingInfo) =
             match origin with
             | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2, mapTmx.TileHeight * 2, "[Portal Center Downward TombInner [IX 8]]")
@@ -278,12 +279,12 @@ type MapRand =
             | OriginSW ->   (14 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Upward TombInner [IX 0]]")
         let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
         let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * 32
-        let objectRef = objects.[0]
-        let object = TmxMap.makeObject objectRef.Id 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)
+        let object = TmxMap.makeObject openingId 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)
         object.Properties.Add ("I", openingInfo)
         objects.[0] <- object
 
         // add objects from segments
+        let mutable propId = inc openingId
         for i in 0 .. 7 - 1 do
             for j in 0 .. 7 - 1 do
                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
@@ -292,8 +293,9 @@ type MapRand =
                         for objectRef in Seq.toArray segment.ObjectGroups.[0].Objects do
                             let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
                             let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
-                            let object = TmxMap.makeObject objectRef.Id 0 x y objectRef.Width objectRef.Height
+                            let object = TmxMap.makeObject propId 0 x y objectRef.Width objectRef.Height
                             for propertyKvp in objectRef.Properties do object.Properties.Add (propertyKvp.Key, propertyKvp.Value)
+                            propId <- inc propId
                             objects.Add object
                 | None -> ()
 

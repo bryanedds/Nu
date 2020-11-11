@@ -45,7 +45,7 @@
 [X] ensure creeping doesn't happen during screen transitioning
 [ ] rename legion to roster and legionnaire to 
 [X] make tech glow stronger
-[ ] make sure we're generating prop ids properly
+[X] make sure we're generating prop ids properly
 [ ] tech aim back button should go back to tech not main
 [ ] battle earnings display
 [ ] battle opening animations visible
