@@ -180,7 +180,7 @@ type NpcType =
     | VillageWoman
     | VillageBoy
     | VillageGirl
-    | FireGoblin
+    | FireGoblinNpc
 
 type NpcSpecialty =
     | NoSpecialty
@@ -248,6 +248,7 @@ type AllyType =
 type EnemyType =
     | BlueGoblin
     | PoisonGoblin
+    | FireGoblin
 
 type CharacterType =
     | Ally of AllyType

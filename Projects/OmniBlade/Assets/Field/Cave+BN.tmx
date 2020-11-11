@@ -14,7 +14,7 @@
  <objectgroup id="3" name="Props">
   <object id="1" gid="54" x="945" y="1472" width="160" height="160">
    <properties>
-    <property name="I" value="[Npc FireGoblin FireGoblinSpecialty Upward [[&quot;Welcome to your doom!&quot;]]]"/>
+    <property name="I" value="[Npc FireGoblinNpc FireGoblinSpecialty Downward [[&quot;Welcome to your doom!&quot;]]]"/>
    </properties>
   </object>
  </objectgroup>
