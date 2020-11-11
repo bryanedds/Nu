@@ -167,9 +167,9 @@ module Battle =
     let prependActionCommand command battle =
          { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
-    let makeFromAllies allies inventory (prizePool : PrizePool) battleData time =
+    let makeFromParty party inventory (prizePool : PrizePool) battleData time =
         let enemies = List.mapi Character.makeEnemy battleData.BattleEnemies
-        let characters = allies @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
+        let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
         let battle =
@@ -181,9 +181,11 @@ module Battle =
               ActionCommands_ = Queue.empty }
         battle
 
-    let makeFromLegion (legion : Legion) inventory prizePool battleData time =
-        let legionnaires = legion |> Map.toList |> List.tryTake 3
-        let allies =
+    let makeFromTeam (team : Team) inventory prizePool battleData time =
+        let party =
+            team |>
+            Map.toList |>
+            List.tryTake 3 |>
             List.map
                 (fun (index, leg) ->
                     match Map.tryFind leg.CharacterType Data.Value.Characters with
@@ -198,8 +200,7 @@ module Battle =
                         let character = Character.make bounds characterIndex characterState animationSheet direction actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring leg.CharacterType + "'."))
-                legionnaires
-        let battle = makeFromAllies allies inventory prizePool battleData time
+        let battle = makeFromParty party inventory prizePool battleData time
         battle
 
     let empty =

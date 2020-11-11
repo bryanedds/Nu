@@ -84,8 +84,8 @@ type [<ReferenceEquality; NoComparison>] Inventory =
     static member initial =
         { Items = Map.singleton (Consumable GreenHerb) 1; Gold = 0 }
 
-type [<ReferenceEquality; NoComparison>] Legionnaire =
-    { LegionIndex : int // key
+type [<ReferenceEquality; NoComparison>] Teammate =
+    { TeamIndex : int // key
       PartyIndexOpt : int option
       ArchetypeType : ArchetypeType
       CharacterType : CharacterType
@@ -106,8 +106,8 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
     member this.Shield effectType = Algorithms.shield effectType this.Accessories 1.0f this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
-    static member canUseItem itemType legionnaire =
-        match Map.tryFind legionnaire.CharacterType Data.Value.Characters with
+    static member canUseItem itemType teammate =
+        match Map.tryFind teammate.CharacterType Data.Value.Characters with
         | Some characterData ->
             match Map.tryFind characterData.ArchetypeType Data.Value.Archetypes with
             | Some archetypeData ->
@@ -129,9 +129,9 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
             | None -> false
         | None -> false
 
-    static member tryUseItem itemType legionnaire =
-        if Legionnaire.canUseItem itemType legionnaire then
-            match Map.tryFind legionnaire.CharacterType Data.Value.Characters with
+    static member tryUseItem itemType teammate =
+        if Teammate.canUseItem itemType teammate then
+            match Map.tryFind teammate.CharacterType Data.Value.Characters with
             | Some characterData ->
                 match itemType with
                 | Consumable consumableType ->
@@ -139,35 +139,35 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
                     | (true, consumableData) ->
                         match consumableType with
                         | GreenHerb | RedHerb | GoldHerb ->
-                            let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
-                            let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
-                            let legionnaire = { legionnaire with HitPoints = min hpm (legionnaire.HitPoints + int consumableData.Scalar) }
-                            (true, None, legionnaire)
-                    | (false, _) -> (false, None, legionnaire)
+                            let level = Algorithms.expPointsToLevel teammate.ExpPoints
+                            let hpm = Algorithms.hitPointsMax teammate.ArmorOpt characterData.ArchetypeType level
+                            let teammate = { teammate with HitPoints = min hpm (teammate.HitPoints + int consumableData.Scalar) }
+                            (true, None, teammate)
+                    | (false, _) -> (false, None, teammate)
                 | Equipment equipmentType ->
                     match equipmentType with
-                    | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) legionnaire.WeaponOpt, { legionnaire with WeaponOpt = Some weaponType })
-                    | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) legionnaire.ArmorOpt, { legionnaire with ArmorOpt = Some armorType })
-                    | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead legionnaire.Accessories), { legionnaire with Accessories = [accessoryType] })
-                | KeyItem _ -> (false, None, legionnaire)
-                | Stash _ -> (false, None, legionnaire)
-            | None -> (false, None, legionnaire)
-        else (false, None, legionnaire)
+                    | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) teammate.WeaponOpt, { teammate with WeaponOpt = Some weaponType })
+                    | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) teammate.ArmorOpt, { teammate with ArmorOpt = Some armorType })
+                    | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead teammate.Accessories), { teammate with Accessories = [accessoryType] })
+                | KeyItem _ -> (false, None, teammate)
+                | Stash _ -> (false, None, teammate)
+            | None -> (false, None, teammate)
+        else (false, None, teammate)
 
-    static member getExpPointsForNextLevel legionnaire =
-        let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
+    static member getExpPointsForNextLevel teammate =
+        let level = Algorithms.expPointsToLevel teammate.ExpPoints
         let (_, nextExp) = Algorithms.levelToExpPointsRange level
         nextExp
 
-    static member getExpPointsRemainingForNextLevel legionnaire =
-        match Legionnaire.getExpPointsForNextLevel legionnaire with
+    static member getExpPointsRemainingForNextLevel teammate =
+        match Teammate.getExpPointsForNextLevel teammate with
         | Int32.MaxValue -> 0
-        | nextExp -> nextExp - legionnaire.ExpPoints
+        | nextExp -> nextExp - teammate.ExpPoints
 
-    static member restore legionnaire =
-        { legionnaire with
-            HitPoints = legionnaire.HitPointsMax
-            TechPoints = legionnaire.TechPointsMax }
+    static member restore teammate =
+        { teammate with
+            HitPoints = teammate.HitPointsMax
+            TechPoints = teammate.TechPointsMax }
 
     static member finn =
         let index = 0
@@ -178,7 +178,7 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
         let weaponOpt = Some "OakSword"
         let armorOpt = Some "LeatherMail"
         { ArchetypeType = archetypeType
-          LegionIndex = index
+          TeamIndex = index
           PartyIndexOpt = Some index
           CharacterType = characterType
           HitPoints = Algorithms.hitPointsMax armorOpt archetypeType character.LevelBase
@@ -197,7 +197,7 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
         let weaponOpt = Some "StoneSword"
         let armorOpt = None
         { ArchetypeType = archetypeType
-          LegionIndex = index
+          TeamIndex = index
           PartyIndexOpt = Some index
           CharacterType = characterType
           HitPoints = Algorithms.hitPointsMax armorOpt archetypeType character.LevelBase
@@ -207,8 +207,8 @@ type [<ReferenceEquality; NoComparison>] Legionnaire =
           ArmorOpt = armorOpt
           Accessories = [] }
 
-type Legion =
-    Map<int, Legionnaire>
+type Team =
+    Map<int, Teammate>
 
 type CharacterIndex =
     | AllyIndex of int
