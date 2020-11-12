@@ -185,7 +185,7 @@ module BattleDispatcher =
                         let enemies = Battle.getEnemies battle
                         if List.forall (fun (character : Character) -> character.IsWounded) allies then
                             // lost battle
-                            let battle = Battle.updateBattleState (constant (BattleCease (false, time))) battle
+                            let battle = Battle.updateBattleState (constant (BattleCease (false, Set.empty, time))) battle
                             let (sigs2, battle) = tick time battle
                             (sigs @ sigs2, battle)
                         elif
@@ -195,8 +195,7 @@ module BattleDispatcher =
                             let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
                             let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
                             let battle = Battle.updateInventory (Inventory.addItems battle.PrizePool.Items) battle
-                            //let battle = Battle.
-                            let battle = Battle.updateBattleState (constant (BattleCease (true, time))) battle
+                            let battle = Battle.updateBattleState (constant (BattleCease (true, battle.PrizePool.Consequents, time))) battle
                             let (sigs2, battle) = tick time battle
                             (sigs @ sigs2, battle)
                         else (sigs, battle)
@@ -206,10 +205,10 @@ module BattleDispatcher =
 
         and tickReady time timeStart battle =
             let timeLocal = time - timeStart
-            if timeLocal >= 90L && timeLocal < 130L then
+            if timeLocal >= 90L && timeLocal < 145L then
                 let timeLocalReady = timeLocal - 90L
                 withMsg (ReadyCharacters timeLocalReady) battle
-            elif timeLocal = 130L then
+            elif timeLocal = 145L then
                 let battle = Battle.updateBattleState (constant BattleRunning) battle
                 withMsg PoiseCharacters battle
             else just battle
@@ -314,7 +313,7 @@ module BattleDispatcher =
             match battle.BattleState with
             | BattleReady timeStart -> tickReady time timeStart battle
             | BattleRunning -> tickRunning time battle
-            | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome battle
+            | BattleCease (outcome, _, timeStart) -> tickCease time timeStart outcome battle
 
         override this.Channel (_, battle) =
             [battle.UpdateEvent => msg Tick
@@ -434,7 +433,7 @@ module BattleDispatcher =
             | ReadyCharacters timeLocal ->
                 let time = World.getTickTime world
                 let battle = Battle.updateCharacters (Character.animate time ReadyCycle) battle
-                if timeLocal = 20L
+                if timeLocal = 30L
                 then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UnsheatheSound)) battle
                 else just battle
 
