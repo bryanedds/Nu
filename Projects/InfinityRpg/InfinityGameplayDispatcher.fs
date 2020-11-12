@@ -18,8 +18,7 @@ module GameplayDispatcher =
     type [<StructuralEquality; NoComparison>] GameplayMessage =
         | FinishTurns of CharacterIndex list
         | TickTurns of CharacterIndex list
-        | BeginTurns of CharacterIndex list
-        | RunCharacterActivation
+        | BeginTurns
         | MakeEnemyMoves
         | TryContinuePlayerNavigation
         | TryMakePlayerMove of PlayerInput
@@ -115,7 +114,7 @@ module GameplayDispatcher =
                 let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnFinishing) indices
                 withMsg (FinishTurns indices) gameplay
             
-            | BeginTurns indices ->
+            | BeginTurns ->
                 let updater index gameplay =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
@@ -126,30 +125,11 @@ module GameplayDispatcher =
                             | WalkTurn _ -> gameplay
                         Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
+                let gameplay = Gameplay.updatePuppeteer (Puppeteer.runTurnCoordination) gameplay
+                let indices = Gameplay.getCharacterIndices gameplay |> List.filter (fun x -> Gameplay.turnInProgress x gameplay) |> List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus <> TurnPending)
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withMsg (TickTurns indices) gameplay
             
-            | RunCharacterActivation ->
-                let playerTurnOpt = Gameplay.tryGetCharacterTurn PlayerIndex gameplay
-                let gameplay = // NOTE: player's turn is converted to activity at the beginning of the round, activating the observable playback of his move
-                    match playerTurnOpt with
-                    | Some playerTurn -> if playerTurn.TurnStatus = TurnPending then Gameplay.setCharacterTurnStatus PlayerIndex TurnBeginning gameplay else gameplay
-                    | None -> gameplay
-                let indices = // NOTE: enemies are activated at the same time during player movement, or after player's action has finished playback
-                    Gameplay.getEnemyIndices gameplay |> List.filter (fun x -> Gameplay.turnInProgress x gameplay)
-                let gameplay =
-                    if (List.exists (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnPending) indices) then
-                        if not (Gameplay.isPlayerAttacking gameplay)
-                        then Gameplay.forEachIndex (fun index gameplay -> Gameplay.setCharacterTurnStatus index TurnBeginning gameplay) indices gameplay
-                        else gameplay
-                    else gameplay
-                let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus <> TurnPending) indices
-                let indices =
-                    match playerTurnOpt with
-                    | Some _ -> PlayerIndex :: indices
-                    | None -> indices
-                withMsg (BeginTurns indices) gameplay
-
             | MakeEnemyMoves ->
                 let indices = Gameplay.getEnemyIndices gameplay
                 let attackerOpt =
@@ -185,7 +165,7 @@ module GameplayDispatcher =
                             Gameplay.applyMove index gameplay
                         | None -> gameplay)
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
-                withMsg RunCharacterActivation gameplay
+                withMsg BeginTurns gameplay
 
             | TryContinuePlayerNavigation ->
                 let playerTurnOpt = Gameplay.tryGetCharacterTurn PlayerIndex gameplay
@@ -223,7 +203,7 @@ module GameplayDispatcher =
                 | _ ->
                     if not (Gameplay.anyTurnsInProgress gameplay)
                     then withCmd ListenKeyboard gameplay
-                    else withMsg RunCharacterActivation gameplay
+                    else withMsg BeginTurns gameplay
             
             | TryMakePlayerMove playerInput ->
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay

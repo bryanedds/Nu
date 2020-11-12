@@ -37,6 +37,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member getEnemyIndices gameplay =
         gameplay.Chessboard.EnemyIndices
 
+    static member getCharacterIndices gameplay =
+        PlayerIndex :: gameplay.Chessboard.EnemyIndices
+    
     static member getOpponentIndices index gameplay =
         match index with
         | PlayerIndex -> Gameplay.getEnemyIndices gameplay
