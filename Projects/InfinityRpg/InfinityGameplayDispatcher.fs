@@ -146,11 +146,9 @@ module GameplayDispatcher =
                             | Chaos ->
                                 if character.HitPoints > 0 then
                                     match attackerOpt with
-                                    | Some attackerIndex ->
-                                        if index = attackerIndex
-                                        then Some (Attack PlayerIndex)
-                                        else None
-                                    | None ->
+                                    | Some attackerIndex when attackerIndex = index ->
+                                        Some (Attack PlayerIndex)
+                                    | _ ->
                                         let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
                                         let direction = Gen.random1 4 |> Direction.fromInt
                                         if List.exists (fun x -> x = direction) openDirections
