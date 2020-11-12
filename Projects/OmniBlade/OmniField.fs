@@ -328,11 +328,12 @@ module Field =
                 field)
             field allies
 
-    let synchronizeFromBattle battle field =
+    let synchronizeFromBattle consequents battle field =
         let allies = Battle.getAllies battle
         let field = synchronizeTeamFromAllies allies field
         let field = updateInventory (constant battle.Inventory) field
         let field = updateBattleOpt (constant None) field
+        let field = updateAdvents (Set.union consequents) field
         field
 
     let toSymbolizable field =

@@ -93,10 +93,10 @@ module GameDispatcher =
                     match field.BattleOpt with
                     | Some battle ->
                         match battle.BattleState with
-                        | BattleCease (result, time) ->
+                        | BattleCease (result, consequents, time) ->
                             if World.getTickTime world - time = 120L then
                                 if result
-                                then withCmd (Show Simulants.Field) (Field (Field.synchronizeFromBattle battle field))
+                                then withCmd (Show Simulants.Field) (Field (Field.synchronizeFromBattle consequents battle field))
                                 else withCmd (Show Simulants.Title) (Gui Title)
                             else withCmd (Show Simulants.Battle) omni
                         | _ -> withCmd (Show Simulants.Battle) omni

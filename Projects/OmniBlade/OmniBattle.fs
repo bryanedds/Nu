@@ -11,7 +11,7 @@ open Nu
 type BattleState =
     | BattleReady of int64
     | BattleRunning
-    | BattleCease of bool * int64
+    | BattleCease of bool * Advent Set * int64
 
 type [<ReferenceEquality; NoComparison>] ActionCommand =
     { Action : ActionType
