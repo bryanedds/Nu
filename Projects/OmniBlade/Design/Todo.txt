@@ -56,7 +56,7 @@
 [ ] enemy equipment from data
 [ ] battle earnings display
 [ ] see if we can make simulant stream keys more like Elm's Html.Keyed.
-[ ] cyclone effect sprite
+[ ] cyclone effect sprite / wider cyclone circle
 [ ] tremor camera shake effect
 [ ] damage glow
 

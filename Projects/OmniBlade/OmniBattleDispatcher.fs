@@ -205,10 +205,10 @@ module BattleDispatcher =
 
         and tickReady time timeStart battle =
             let timeLocal = time - timeStart
-            if timeLocal >= 90L && timeLocal < 145L then
+            if timeLocal >= 90L && timeLocal < 160L then
                 let timeLocalReady = timeLocal - 90L
                 withMsg (ReadyCharacters timeLocalReady) battle
-            elif timeLocal = 145L then
+            elif timeLocal = 160L then
                 let battle = Battle.updateBattleState (constant BattleRunning) battle
                 withMsg PoiseCharacters battle
             else just battle
