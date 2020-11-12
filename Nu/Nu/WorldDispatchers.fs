@@ -329,9 +329,6 @@ module ScriptFacetModule =
         member this.GetPostUpdateScript world : Scripting.Expr = this.Get Property? PostUpdateScript world
         member this.SetPostUpdateScript (value : Scripting.Expr) world = this.SetFast Property? PostUpdateScript false value world
         member this.PostUpdateScript = lens Property? PostUpdateScript this.GetPostUpdateScript this.SetPostUpdateScript this
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
-        member this.RegisterEvent = Events.Register --> this
-        member this.UnregisteringEvent = Events.Unregistering --> this
 
     type ScriptFacet () =
         inherit Facet ()

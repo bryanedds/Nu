@@ -20,6 +20,8 @@ module BattleDispatcher =
 
     type BattleMessage =
         | Tick
+        | UpdateDialog
+        | InteractDialog
         | RegularItemSelect of CharacterIndex * string
         | RegularItemCancel of CharacterIndex
         | ConsumableItemSelect of CharacterIndex * string
@@ -195,7 +197,7 @@ module BattleDispatcher =
                             let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
                             let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
                             let battle = Battle.updateInventory (Inventory.addItems battle.PrizePool.Items) battle
-                            let battle = Battle.updateBattleState (constant (BattleCease (true, battle.PrizePool.Consequents, time))) battle
+                            let battle = Battle.updateBattleState (constant (BattleResults (true, battle.PrizePool.Consequents, time))) battle
                             let (sigs2, battle) = tick time battle
                             (sigs @ sigs2, battle)
                         else (sigs, battle)
@@ -303,6 +305,17 @@ module BattleDispatcher =
             | Some currentCommand -> tickCurrentCommand time currentCommand battle
             | None -> tickNoCurrentCommand time battle
 
+        and tickBattleResults time timeStart outcome consequents (battle : Battle) =
+            let localTime = time - timeStart
+            if localTime = 0L then
+                let dialog = { DialogForm = DialogLarge; DialogText = "Enemy routed!^Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None }
+                let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
+                withMsg (CelebrateCharacters outcome) battle
+            else
+                match battle.DialogOpt with
+                | None -> just (Battle.updateBattleState (constant (BattleCease (outcome, consequents, time))) battle)
+                | Some _ -> just battle
+
         and tickCease time timeStart outcome battle =
             let timeLocal = time - timeStart
             match timeLocal with
@@ -313,10 +326,12 @@ module BattleDispatcher =
             match battle.BattleState with
             | BattleReady timeStart -> tickReady time timeStart battle
             | BattleRunning -> tickRunning time battle
+            | BattleResults (outcome, consequents, timeStart) -> tickBattleResults time timeStart outcome consequents battle
             | BattleCease (outcome, _, timeStart) -> tickCease time timeStart outcome battle
 
         override this.Channel (_, battle) =
             [battle.UpdateEvent => msg Tick
+             battle.UpdateEvent => msg UpdateDialog
              battle.PostUpdateEvent => cmd UpdateEye]
 
         override this.Message (battle, message, _, world) =
@@ -326,6 +341,26 @@ module BattleDispatcher =
                 if World.isTicking world
                 then tick (World.getTickTime world) battle
                 else just battle
+
+            | UpdateDialog ->
+                match battle.DialogOpt with
+                | Some dialog ->
+                    let dialog = Dialog.update dialog world
+                    let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
+                    just battle
+                | None -> just battle
+
+            | InteractDialog ->
+                match battle.DialogOpt with
+                | Some dialog ->
+                    match Dialog.tryAdvance dialog with
+                    | (true, dialog) ->
+                        let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
+                        just battle
+                    | (false, _) ->
+                        let battle = Battle.updateDialogOpt (constant None) battle
+                        just battle
+                | None -> just battle
 
             | RegularItemSelect (characterIndex, item) ->
                 let battle =
@@ -755,6 +790,18 @@ module BattleDispatcher =
                      background.Size == v2 1024.0f 1024.0f
                      background.Depth == Constants.Battle.BackgroundDepth
                      background.LabelImage == asset "Battle" "Background"]
+
+                 // dialog
+                 Dialog.content Simulants.BattleDialog.Name
+                    (battle --> fun battle -> battle.DialogOpt)
+
+                 // dialog interact button
+                 Content.button Simulants.BattleInteract.Name
+                    [Entity.Position == v2 248.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
+                     Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
+                     Entity.Visible <== battle --> fun battle -> match battle.DialogOpt with Some dialog -> Dialog.canAdvance dialog | None -> false
+                     Entity.Text == "Next"
+                     Entity.ClickEvent ==> msg InteractDialog]
 
                  // allies
                  Content.entitiesTrackedBy battle

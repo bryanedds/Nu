@@ -65,4 +65,6 @@ module Simulants =
     let Battle = Screen "Battle"
     let BattleHud = Battle / "Hud"
     let BattleScene = Battle / "Scene"
+    let BattleDialog = BattleScene / "Dialog"
+    let BattleInteract = BattleScene / "Interact"
     let BattleRide = BattleScene / "Ride"

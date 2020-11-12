@@ -11,6 +11,7 @@ open Nu
 type BattleState =
     | BattleReady of int64
     | BattleRunning
+    | BattleResults of bool * Advent Set * int64
     | BattleCease of bool * Advent Set * int64
 
 type [<ReferenceEquality; NoComparison>] ActionCommand =
@@ -40,7 +41,8 @@ module Battle =
               Inventory_ : Inventory
               PrizePool_ : PrizePool
               CurrentCommandOpt_ : CurrentCommand option
-              ActionCommands_ : ActionCommand Queue }
+              ActionCommands_ : ActionCommand Queue
+              DialogOpt_ : Dialog option }
 
         (* Local Properties *)
         member this.BattleState = this.BattleState_
@@ -48,6 +50,7 @@ module Battle =
         member this.PrizePool = this.PrizePool_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
+        member this.DialogOpt = this.DialogOpt_
 
     let getAllies battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
@@ -157,6 +160,9 @@ module Battle =
     let updateActionCommands updater battle =
         { battle with ActionCommands_ = updater battle.ActionCommands_ }
 
+    let updateDialogOpt updater field =
+        { field with DialogOpt_ = updater field.DialogOpt_ }
+
     let characterAppendedActionCommand characterIndex battle =
         seq battle.ActionCommands_ |>
         Seq.exists (fun command -> command.Source = characterIndex)
@@ -178,7 +184,8 @@ module Battle =
               Inventory_ = inventory
               PrizePool_ = prizePool
               CurrentCommandOpt_ = None
-              ActionCommands_ = Queue.empty }
+              ActionCommands_ = Queue.empty
+              DialogOpt_ = None }
         battle
 
     let makeFromTeam (team : Team) inventory prizePool battleData time =
@@ -209,6 +216,7 @@ module Battle =
           Inventory_ = { Items = Map.empty; Gold = 0 }
           PrizePool_ = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
           CurrentCommandOpt_ = None
-          ActionCommands_ = Queue.empty }
+          ActionCommands_ = Queue.empty
+          DialogOpt_ = None }
 
 type Battle = Battle.Battle
