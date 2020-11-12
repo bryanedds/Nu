@@ -47,7 +47,10 @@ module GameDispatcher =
             base.Register (game, world)
 
         override this.Channel (_, _) =
-            [Simulants.TitleCredits.ClickEvent => msg (Change (Gui Credits))
+            [Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
+             Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
+             Simulants.Game.UpdateEvent => msg Update
+             Simulants.TitleCredits.ClickEvent => msg (Change (Gui Credits))
              Simulants.CreditsBack.ClickEvent => msg (Change (Gui Title))
              Simulants.FieldBack.ClickEvent => msg (Change (Gui Title))
 #if DEV
@@ -58,10 +61,7 @@ module GameDispatcher =
              Simulants.Intro5.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
 #endif
              Simulants.TitleLoad.ClickEvent =|> fun _ -> msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
-             Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
-             Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
-             Simulants.TitleExit.ClickEvent => cmd Exit
-             Simulants.Game.UpdateEvent => msg Update]
+             Simulants.TitleExit.ClickEvent => cmd Exit]
 
         override this.Message (omni, message, _, world) =
 
@@ -94,7 +94,7 @@ module GameDispatcher =
                     | Some battle ->
                         match battle.BattleState with
                         | BattleCease (result, consequents, time) ->
-                            if World.getTickTime world - time = 120L then
+                            if World.getTickTime world - time = 60L then
                                 if result
                                 then withCmd (Show Simulants.Field) (Field (Field.synchronizeFromBattle consequents battle field))
                                 else withCmd (Show Simulants.Title) (Gui Title)
