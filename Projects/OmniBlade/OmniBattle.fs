@@ -11,7 +11,7 @@ open Nu
 type BattleState =
     | BattleReady of int64
     | BattleRunning
-    | BattleResults of bool * Advent Set * int64
+    | BattleResults of bool * int64
     | BattleCease of bool * Advent Set * int64
 
 type [<ReferenceEquality; NoComparison>] ActionCommand =
@@ -200,11 +200,12 @@ module Battle =
                         // TODO: bounds checking
                         let bounds = v4Bounds battleData.BattleAllyPositions.[index] Constants.Gameplay.CharacterSize
                         let characterIndex = AllyIndex index
+                        let characterType = characterData.CharacterType
                         let characterState = CharacterState.make characterData leg.HitPoints leg.TechPoints leg.ExpPoints leg.WeaponOpt leg.ArmorOpt leg.Accessories
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.fromVector2 -bounds.Bottom
                         let actionTime = Constants.Battle.AllyActionTimeInitial
-                        let character = Character.make bounds characterIndex characterState animationSheet direction actionTime
+                        let character = Character.make bounds characterIndex characterType characterState animationSheet direction actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring leg.CharacterType + "'."))
         let battle = makeFromParty party inventory prizePool battleData time

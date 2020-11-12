@@ -38,6 +38,16 @@ module Algorithms =
         Option.map inc |> // level 1 is the minimum
         Option.getOrDefault levelMax
 
+    let expPointsForNextLevel expPoints =
+        let level = expPointsToLevel expPoints
+        let (_, nextExp) = levelToExpPointsRange level
+        nextExp
+        
+    let expPointsRemainingForNextLevel expPoints =
+        match expPointsForNextLevel expPoints with
+        | Int32.MaxValue -> 0
+        | nextExp -> nextExp - expPoints
+
     let hitPointsMax armorOpt archetypeType level =
         let stamina = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
