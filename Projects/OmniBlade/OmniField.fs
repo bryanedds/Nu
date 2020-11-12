@@ -19,7 +19,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
       DialogText : string
       DialogProgress : int
       DialogPage : int
-      DialogBattleOpt : BattleType option }
+      DialogBattleOpt : (Advent Set * BattleType) option }
 
 type [<ReferenceEquality; NoComparison>] SubmenuUse =
     { SubmenuUseSelection : int * ItemType

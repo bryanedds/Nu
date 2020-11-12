@@ -207,7 +207,7 @@ module Battle =
         { BattleState_ = BattleReady 0L
           Characters_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
-          PrizePool_ = { Items = []; Gold = 0; Exp = 0 }
+          PrizePool_ = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
           CurrentCommandOpt_ = None
           ActionCommands_ = Queue.empty }
 

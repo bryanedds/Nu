@@ -4,4 +4,4 @@ CaveBattle,[[-240 -180] [80 -140] [80 160]],[[BlueGoblin [-140 0]]],[Some [Battl
 CaveBattle2,[[-240 -180] [80 -140] [80 160]],[[BlueGoblin [-80 40]] [BlueGoblin [120 80]]],[Some [Battle Battle]]
 CaveBattle3,[[-240 -180] [80 -140] [80 160]],[[PoisonGoblin [80 40]]],[Some [Battle Battle]]
 CaveBattle4,[[-240 -180] [80 -140] [80 160]],[[BlueGoblin [-240 0]] [BlueGoblin [-80 40]] [PoisonGoblin [120 80]]],[Some [Battle Battle]]
-FireGoblinBattle,[[-240 -180] [80 -140] [80 160]],[[FireGoblin [80 40]]],[Some [Battle Battle]]
+FireGoblinBattle,[[-240 -180] [80 -140] [80 160]],[[BlueGoblin [-140 0]]],[Some [Battle Battle]]

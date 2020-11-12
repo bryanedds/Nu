@@ -15,7 +15,8 @@ type PropState =
     | NilState
 
 type [<ReferenceEquality; NoComparison>] PrizePool =
-    { Items : ItemType list
+    { Consequents : Advent Set
+      Items : ItemType list
       Gold : int
       Exp : int }
 

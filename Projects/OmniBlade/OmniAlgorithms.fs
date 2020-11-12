@@ -48,8 +48,8 @@ module Algorithms =
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
                 | Some armorData -> single armorData.HitPointsBase
-                | None -> 4.0f
-            | None -> 4.0f
+                | None -> single level
+            | None -> single level
         (intermediate + single level) * stamina |> int |> max 1
 
     let techPointsMax armorOpt archetypeType level =
@@ -62,8 +62,8 @@ module Algorithms =
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
                 | Some armorData -> single armorData.TechPointsBase
-                | None -> 4.0f
-            | None -> 4.0f
+                | None -> single level
+            | None -> single level
         (intermediate + single level) * focus |> int |> max 0
 
     let power weaponOpt powerBuff archetypeType level =

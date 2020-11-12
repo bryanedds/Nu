@@ -192,7 +192,7 @@ type NpcSpecialty =
     static member getBattleTypeOpt advents specialty =
         match specialty with
         | NoSpecialty -> None
-        | FireGoblinSpecialty -> if not (Set.contains FireGoblinDefeated advents) then Some FireGoblinBattle else None
+        | FireGoblinSpecialty -> if not (Set.contains FireGoblinDefeated advents) then Some (Set.singleton FireGoblinDefeated, FireGoblinBattle) else None
 
 type ShopkeepType =
     | ShopkeepMan
