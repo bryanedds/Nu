@@ -53,6 +53,7 @@
 [X] reducing equipment does not reduce HP / TP
 [X] add boss room
 [X] add boss
+[ ] buff consumables
 [ ] enemy equipment from data
 [ ] battle earnings display
 [ ] see if we can make simulant stream keys more like Elm's Html.Keyed.
