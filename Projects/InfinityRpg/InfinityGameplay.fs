@@ -70,11 +70,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member anyTurnsInProgress gameplay = 
         gameplay.Puppeteer.AnyTurnsInProgress
     
-    static member isPlayerAttacking gameplay =
-        match Gameplay.tryGetCharacterTurn PlayerIndex gameplay with
-        | Some turn -> turn.TurnType = AttackTurn
-        | None -> false
-
     static member isPlayerTraveling gameplay =
         match Gameplay.tryGetCharacterTurn PlayerIndex gameplay with
         | Some turn ->

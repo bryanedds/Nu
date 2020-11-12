@@ -124,7 +124,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
         List.tryFind (fun x -> x.ReactorOpt = Some index) puppeteer.CharacterTurns
     
     static member tryGetAttackingEnemyTurn puppeteer =
-        List.tryFind (fun x -> x.Actor.IsEnemy && x.TurnType = AttackTurn && x.TurnStatus = TurnPending) puppeteer.CharacterTurns
+        List.tryFind (fun x -> x.Actor.IsEnemy && x.TurnType = AttackTurn) puppeteer.CharacterTurns
     
     static member getCharacterTurn index puppeteer =
         List.find (fun x -> x.Actor = index) puppeteer.CharacterTurns
