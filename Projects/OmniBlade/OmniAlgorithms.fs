@@ -48,8 +48,8 @@ module Algorithms =
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
                 | Some armorData -> single armorData.HitPointsBase
-                | None -> single level + 1.0f
-            | None -> single level + 1.0f
+                | None -> single level * 1.5f
+            | None -> single level * 1.5f
         (intermediate + single level) * stamina |> int |> max 1
 
     let techPointsMax armorOpt archetypeType level =
