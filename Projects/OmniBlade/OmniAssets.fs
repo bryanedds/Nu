@@ -47,6 +47,7 @@ module Assets =
     let GlennMugImage = asset<Image> FieldPackageName "GlennMug"
     let GoblinAnimationSheet = asset<Image> FieldPackageName "Goblin"
     let UnsheatheSound = asset<Sound> FieldPackageName "Unsheathe"
+    let GrowthSound = asset<Sound> FieldPackageName "Growth"
     let BeastScreamSound = asset<Sound> FieldPackageName "BeastScream"
     let HitSound = asset<Sound> FieldPackageName "Hit"
     let ExplosionSound = asset<Sound> FieldPackageName "Explosion"

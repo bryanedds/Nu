@@ -97,6 +97,7 @@ type [<ReferenceEquality; NoComparison>] Teammate =
       ArmorOpt : string option
       Accessories : string list }
 
+    member this.Name = CharacterType.getName this.CharacterType
     member this.Level = Algorithms.expPointsToLevel this.ExpPoints
     member this.IsHealthy = this.HitPoints > 0
     member this.IsWounded = this.HitPoints <= 0
@@ -165,16 +166,6 @@ type [<ReferenceEquality; NoComparison>] Teammate =
                 | Stash _ -> (false, None, teammate)
             | None -> (false, None, teammate)
         else (false, None, teammate)
-
-    static member getExpPointsForNextLevel teammate =
-        let level = Algorithms.expPointsToLevel teammate.ExpPoints
-        let (_, nextExp) = Algorithms.levelToExpPointsRange level
-        nextExp
-
-    static member getExpPointsRemainingForNextLevel teammate =
-        match Teammate.getExpPointsForNextLevel teammate with
-        | Int32.MaxValue -> 0
-        | nextExp -> nextExp - teammate.ExpPoints
 
     static member restore teammate =
         { teammate with

@@ -20,6 +20,7 @@ module Character =
             { BoundsOriginal_ : Vector4
               Bounds_ : Vector4
               CharacterIndex_ : CharacterIndex
+              CharacterType_ : CharacterType
               CharacterState_ : CharacterState
               AnimationState_ : CharacterAnimationState
               AutoBattleOpt_ : AutoBattle option
@@ -49,7 +50,9 @@ module Character =
         member this.BottomOffset3 = this.Bottom + Constants.Battle.CharacterBottomOffset3
 
         (* CharacterState Properties *)
+        member this.Name = CharacterType.getName this.CharacterType_
         member this.CharacterIndex = this.CharacterIndex_
+        member this.CharacterType = this.CharacterType_
         member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
         member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
         member this.IsEnemy = not this.IsAlly
@@ -273,11 +276,12 @@ module Character =
     let animate time cycle character =
         { character with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState_ }
 
-    let make bounds characterIndex (characterState : CharacterState) animationSheet direction actionTime =
+    let make bounds characterIndex characterType (characterState : CharacterState) animationSheet direction actionTime =
         let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = IdleCycle; Direction = direction }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = characterIndex
+          CharacterType_ = characterType
           CharacterState_ = characterState
           AnimationState_ = animationState
           AutoBattleOpt_ = None
@@ -295,9 +299,10 @@ module Character =
         let hitPoints = Algorithms.hitPointsMax None archetypeType characterData.LevelBase
         let techPoints = Algorithms.techPointsMax None archetypeType characterData.LevelBase
         let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
+        let characterType = characterData.CharacterType
         let characterState = CharacterState.make characterData hitPoints techPoints expPoints None None [] // TODO: figure out if / how we should populate equipment
         let actionTime = Constants.Battle.EnemyActionTimeInitial
-        let enemy = make bounds (EnemyIndex index) characterState characterData.AnimationSheet Leftward actionTime
+        let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet Leftward actionTime
         enemy
 
     let empty =
@@ -306,6 +311,7 @@ module Character =
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = AllyIndex 0
+          CharacterType_ = Ally Finn
           CharacterState_ = CharacterState.empty
           AnimationState_ = animationState
           AutoBattleOpt_ = None

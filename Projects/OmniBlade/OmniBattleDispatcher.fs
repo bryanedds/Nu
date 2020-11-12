@@ -194,10 +194,7 @@ module BattleDispatcher =
                             List.forall (fun (character : Character) -> character.IsWounded) enemies &&
                             List.hasAtMost 1 enemies then
                             // won battle
-                            let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
-                            let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
-                            let battle = Battle.updateInventory (Inventory.addItems battle.PrizePool.Items) battle
-                            let battle = Battle.updateBattleState (constant (BattleResults (true, battle.PrizePool.Consequents, time))) battle
+                            let battle = Battle.updateBattleState (constant (BattleResults (true, time))) battle
                             let (sigs2, battle) = tick time battle
                             (sigs @ sigs2, battle)
                         else (sigs, battle)
@@ -305,29 +302,39 @@ module BattleDispatcher =
             | Some currentCommand -> tickCurrentCommand time currentCommand battle
             | None -> tickNoCurrentCommand time battle
 
-        and tickBattleResults time timeStart outcome consequents (battle : Battle) =
+        and tickBattleResults time timeStart outcome (battle : Battle) =
             let localTime = time - timeStart
             if localTime = 0L then
-                let dialog = { DialogForm = DialogLarge; DialogText = "Enemy routed!^Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None }
+                let charactersGainingLevel =
+                    battle |>
+                    Battle.getAllies |>
+                    List.filter (fun c -> Algorithms.expPointsRemainingForNextLevel c.ExpPoints <= battle.PrizePool.Exp)
+                let gainLevelText =
+                    match charactersGainingLevel with 
+                    | _ :: _ -> "\nLevel up for " + (charactersGainingLevel |> List.map (fun c -> c.Name) |> String.join ", ") + "!"
+                    | [] -> ""
+                let text = "Enemies defeated!^Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!" + gainLevelText
+                let dialog = { DialogForm = DialogLarge; DialogText = text; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None }
                 let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
-                withMsg (CelebrateCharacters outcome) battle
+                let sigs = [msg (CelebrateCharacters outcome)]
+                if outcome then
+                    let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
+                    let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
+                    let battle = Battle.updateInventory (Inventory.addItems battle.PrizePool.Items) battle
+                    let sigs = if List.notEmpty charactersGainingLevel then cmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.GrowthSound)) :: sigs else sigs
+                    withSigs sigs battle
+                else withSigs sigs battle
             else
                 match battle.DialogOpt with
-                | None -> just (Battle.updateBattleState (constant (BattleCease (outcome, consequents, time))) battle)
+                | None -> just (Battle.updateBattleState (constant (BattleCease (outcome, battle.PrizePool.Consequents, time))) battle)
                 | Some _ -> just battle
-
-        and tickCease time timeStart outcome battle =
-            let timeLocal = time - timeStart
-            match timeLocal with
-            | 0L -> withMsg (CelebrateCharacters outcome) battle
-            | _ -> just battle
 
         and tick time battle =
             match battle.BattleState with
             | BattleReady timeStart -> tickReady time timeStart battle
             | BattleRunning -> tickRunning time battle
-            | BattleResults (outcome, consequents, timeStart) -> tickBattleResults time timeStart outcome consequents battle
-            | BattleCease (outcome, _, timeStart) -> tickCease time timeStart outcome battle
+            | BattleResults (outcome, timeStart) -> tickBattleResults time timeStart outcome battle
+            | BattleCease (_, _, _) -> just battle
 
         override this.Channel (_, battle) =
             [battle.UpdateEvent => msg Tick
