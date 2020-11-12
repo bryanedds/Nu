@@ -35,7 +35,7 @@ module FieldDispatcher =
         | ShopConfirmAccept
         | ShopConfirmDecline
         | ShopLeave
-        | TryBattle of BattleType
+        | TryBattle of Advent Set * BattleType
         | Traverse of Vector2
         | Interact
 
@@ -165,7 +165,7 @@ module FieldDispatcher =
             else
                 let field = Field.updateDialogOpt (constant None) field
                 match dialog.DialogBattleOpt with
-                | Some battleType -> withMsg (TryBattle battleType) field
+                | Some (consequents, battleType) -> withMsg (TryBattle (consequents, battleType)) field
                 | None -> just field
 
         static let interactChest itemType chestId battleTypeOpt requirements consequents (field : Field) =
@@ -174,8 +174,8 @@ module FieldDispatcher =
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
                 let field =
                     match battleTypeOpt with
-                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = Some battleType })) field
-                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = battleTypeOpt })) field
+                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = Some (Set.empty, battleType) })) field
+                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field
                 let field = Field.updateAdvents (Set.addMany consequents) field
                 withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound)) field
             else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
@@ -200,7 +200,8 @@ module FieldDispatcher =
                 else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
             | _ -> failwithumf ()
 
-        static let interactNpc battleTypeOpt dialogs (field : Field) =
+        static let interactNpc specialty requirements dialogs (field : Field) =
+            let battleTypeOpt = NpcSpecialty.getBattleTypeOpt requirements specialty
             let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if field.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
             let (dialog, consequents) = match List.tryHead dialogs with Some dialog -> dialog | None -> ("...", Set.empty)
             let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = battleTypeOpt }
@@ -492,11 +493,11 @@ module FieldDispatcher =
                 let field = Field.updateShopOpt (constant None) field
                 just field
 
-            | TryBattle battleType ->
+            | TryBattle (consequents, battleType) ->
                 match Map.tryFind battleType Data.Value.Battles with
                 | Some battleData ->
                     let time = World.getTickTime world
-                    let prizePool = { Items = []; Gold = 0; Exp = 0 }
+                    let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromTeam (Field.getParty field) field.Inventory prizePool battleData time
                     let field = Field.updateBattleOpt (constant (Some battle)) field
                     withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
@@ -505,7 +506,7 @@ module FieldDispatcher =
             | Traverse velocity ->
                 match Field.tryAdvanceEncounterCreep velocity field world with
                 | (Some battleData, field) ->
-                    let prizePool = { Items = []; Gold = 0; Exp = 0 }
+                    let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromTeam field.Team field.Inventory prizePool battleData (World.getTickTime world)
                     let field = Field.updateBattleOpt (constant (Some battle)) field
                     withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
@@ -526,7 +527,7 @@ module FieldDispatcher =
                             | Portal (_, _, _, _, _) -> just field
                             | Switch (_, requirements, consequents) -> interactSwitch requirements consequents prop field
                             | Sensor (_, _, _, _) -> just field
-                            | Npc (_, specialty, _, dialogs, advents) -> interactNpc (NpcSpecialty.getBattleTypeOpt advents specialty) dialogs field
+                            | Npc (_, specialty, _, dialogs, requirements) -> interactNpc specialty requirements dialogs field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
                             | SavePoint -> just field
                             | ChestSpawn -> just field
@@ -646,6 +647,7 @@ module FieldDispatcher =
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Visible <== field --|> fun field world ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
+                        Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
                         Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar world)

@@ -195,6 +195,7 @@ module BattleDispatcher =
                             let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
                             let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
                             let battle = Battle.updateInventory (Inventory.addItems battle.PrizePool.Items) battle
+                            //let battle = Battle.
                             let battle = Battle.updateBattleState (constant (BattleCease (true, time))) battle
                             let (sigs2, battle) = tick time battle
                             (sigs @ sigs2, battle)
