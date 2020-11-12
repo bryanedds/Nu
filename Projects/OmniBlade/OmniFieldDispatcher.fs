@@ -105,8 +105,7 @@ module FieldDispatcher =
                 | ChestSpawn -> None
                 | EmptyProp -> None
             | Some dialog ->
-                if dialog.DialogProgress > dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
-                then Some "Next"
+                if Dialog.canAdvance dialog then Some "Next"
                 else None
 
         static let tryGetInteraction dialogOpt advents (avatar : Avatar) world =
@@ -158,11 +157,11 @@ module FieldDispatcher =
                 avatar.SeparatedBodyShapes
 
         static let interactDialog dialog field =
-            if dialog.DialogPage < dialog.DialogText.Split(Constants.Gameplay.DialogSplit).Length - 1 then
-                let dialog = { dialog with DialogProgress = 0; DialogPage = inc dialog.DialogPage }
+            match Dialog.tryAdvance dialog with
+            | (true, dialog) ->
                 let field = Field.updateDialogOpt (constant (Some dialog)) field
                 just field
-            else
+            | (false, dialog) ->
                 let field = Field.updateDialogOpt (constant None) field
                 match dialog.DialogBattleOpt with
                 | Some (consequents, battleType) -> withMsg (TryBattle (consequents, battleType)) field
@@ -283,12 +282,11 @@ module FieldDispatcher =
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
 
         override this.Channel (_, field) =
-            [field.SelectEvent => cmd PlayFieldSong
-             Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+            [Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+             field.SelectEvent => cmd PlayFieldSong
              field.UpdateEvent => msg UpdateDialog
              field.UpdateEvent => msg UpdatePortal
              field.UpdateEvent => msg UpdateSensor
-             Simulants.FieldInteract.ClickEvent => msg Interact
              field.PostUpdateEvent => msg UpdateFieldTransition
              field.PostUpdateEvent => cmd UpdateEye]
 
@@ -302,8 +300,7 @@ module FieldDispatcher =
             | UpdateDialog ->
                 match field.DialogOpt with
                 | Some dialog ->
-                    let increment = if World.getTickTime world % 2L = 0L then 1 else 0
-                    let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
+                    let dialog = Dialog.update dialog world
                     let field = Field.updateDialogOpt (constant (Some dialog)) field
                     just field
                 | None -> just field
@@ -576,7 +573,7 @@ module FieldDispatcher =
 
         override this.Content (field, _) =
 
-            [// main layer
+            [// scene layer
              Content.layer Simulants.FieldScene.Name []
 
                 [// backdrop sprite
@@ -655,39 +652,12 @@ module FieldDispatcher =
                         match tryGetInteraction field.DialogOpt field.Advents field.Avatar world with
                         | Some interaction -> interaction
                         | None -> ""
-                     Entity.ClickSoundOpt == None]
+                     Entity.ClickSoundOpt == None
+                     Entity.ClickEvent ==> msg Interact]
 
                  // dialog
-                 Content.text Simulants.FieldDialog.Name
-                    [Entity.Bounds <== field --> fun field ->
-                        match field.DialogOpt with
-                        | Some dialog ->
-                            match dialog.DialogForm with
-                            | DialogThin -> v4Bounds (v2 -448.0f 128.0f) (v2 896.0f 112.0f)
-                            | DialogMedium -> v4Bounds (v2 -448.0f 0.0f) (v2 640.0f 256.0f)
-                            | DialogLarge -> v4Bounds (v2 -448.0f 0.0f) (v2 896.0f 256.0f)
-                        | None -> v4Zero
-                     Entity.BackgroundImageOpt <== field --> fun field ->
-                        let image =
-                            match field.DialogOpt with
-                            | Some dialog ->
-                                match dialog.DialogForm with
-                                | DialogThin -> Assets.DialogThinImage
-                                | DialogMedium -> Assets.DialogMediumImage
-                                | DialogLarge -> Assets.DialogLargeImage
-                            | None -> Assets.DialogLargeImage
-                        Some image
-                     Entity.Text <== field --> fun field ->
-                        match field.DialogOpt with
-                        | Some dialog ->
-                            let textPage = dialog.DialogPage
-                            let text = dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[textPage]
-                            let textToShow = String.tryTake dialog.DialogProgress text
-                            textToShow
-                        | None -> ""
-                     Entity.Visible <== field --> fun field -> Option.isSome field.DialogOpt
-                     Entity.Justification == Unjustified true
-                     Entity.Margins == v2 40.0f 40.0f]
+                 Dialog.content Simulants.FieldDialog.Name
+                    (field --> fun field -> field.DialogOpt)
 
                  // props
                  Content.entities field

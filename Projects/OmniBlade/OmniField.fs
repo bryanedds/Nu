@@ -8,18 +8,7 @@ open System.Numerics
 open FSharpx.Collections
 open Prime
 open Nu
-
-type [<NoComparison>] DialogForm =
-    | DialogThin
-    | DialogMedium
-    | DialogLarge
-
-type [<ReferenceEquality; NoComparison>] Dialog =
-    { DialogForm : DialogForm
-      DialogText : string
-      DialogProgress : int
-      DialogPage : int
-      DialogBattleOpt : (Advent Set * BattleType) option }
+open Nu.Declarative
 
 type [<ReferenceEquality; NoComparison>] SubmenuUse =
     { SubmenuUseSelection : int * ItemType
