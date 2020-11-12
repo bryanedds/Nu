@@ -4,7 +4,7 @@ open Prime
 open Nu
 open InfinityRpg
 
-type PuppetState =
+type [<ReferenceEquality; NoComparison>] PuppetState =
     { HitPoints : int }
 
     static member updateHitPoints updater puppetState =
@@ -13,22 +13,37 @@ type PuppetState =
     static member makeFromCharacter (character : Character ) =
         { HitPoints = character.HitPoints }
 
-type TurnType =
+type [<ReferenceEquality; NoComparison>] CombatState =
+    | PlayerAttacking
+    | EnemyAttacking of CharacterIndex
+    | NoCombat
+
+type [<ReferenceEquality; NoComparison>] TurnType =
     | WalkTurn of bool
     | AttackTurn
 
-type TurnStatus =
+    member this.IsWalking =
+        match this with
+        | WalkTurn _ -> true
+        | _ -> false
+
+type [<ReferenceEquality; NoComparison>] TurnStatus =
     | TurnPending
     | TurnBeginning
     | TurnTicking of int64
     | TurnFinishing
+
+    member this.IsPending =
+        match this with
+        | TurnPending -> true
+        | _ -> false
 
     static member incTickCount turnStatus =
         match turnStatus with
         | TurnTicking tickCount -> TurnTicking (inc tickCount)
         | _ -> turnStatus
 
-type Turn =
+type [<ReferenceEquality; NoComparison>] Turn =
     { TurnType : TurnType
       TurnStatus : TurnStatus
       Actor : CharacterIndex
@@ -69,6 +84,12 @@ type Turn =
 
     static member incTickCount turn =
         Turn.updateTurnStatus TurnStatus.incTickCount turn
+
+    static member tryBeginTurn turn =
+        if turn.TurnStatus.IsPending then Turn.updateTurnStatus (constant TurnBeginning) turn else turn
+    
+    static member tryBeginEnemyWalkTurn turn =
+        if turn.Actor.IsEnemy && turn.TurnType.IsWalking then Turn.tryBeginTurn turn else turn
     
     static member makeWalk index multiRoundContext originC direction =
         { TurnType = WalkTurn multiRoundContext
@@ -102,6 +123,9 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member tryGetOpponentTurn index puppeteer =
         List.tryFind (fun x -> x.ReactorOpt = Some index) puppeteer.CharacterTurns
     
+    static member tryGetAttackingEnemyTurn puppeteer =
+        List.tryFind (fun x -> x.Actor.IsEnemy && x.TurnType = AttackTurn && x.TurnStatus = TurnPending) puppeteer.CharacterTurns
+    
     static member getCharacterTurn index puppeteer =
         List.find (fun x -> x.Actor = index) puppeteer.CharacterTurns
     
@@ -110,6 +134,17 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
 
     member this.AnyTurnsInProgress = 
         List.notEmpty this.CharacterTurns
+    
+    member this.CombatState =
+        match Puppeteer.tryGetCharacterTurn PlayerIndex this with
+        | Some turn ->
+            match turn.TurnType with
+            | AttackTurn -> PlayerAttacking
+            | _ -> NoCombat
+        | None ->
+            match Puppeteer.tryGetAttackingEnemyTurn this with
+            | Some turn -> EnemyAttacking turn.Actor
+            | None -> NoCombat
     
     static member updateCharacterTurns updater puppeteer =
         { puppeteer with CharacterTurns = updater puppeteer.CharacterTurns }
@@ -129,6 +164,20 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member updatePlayerPuppetHitPoints updater puppeteer =
         Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
 
+    static member beginEnemyWalkTurns puppeteer =
+        Puppeteer.updateCharacterTurns (List.map Turn.tryBeginEnemyWalkTurn) puppeteer
+    
+    static member runTurnCoordination puppeteer =
+        let puppeteer =
+            match Puppeteer.tryGetCharacterTurn PlayerIndex puppeteer with
+            | Some turn -> Puppeteer.updateCharacterTurn PlayerIndex Turn.tryBeginTurn puppeteer
+            | None -> puppeteer
+        
+        match puppeteer.CombatState with
+        | PlayerAttacking -> puppeteer
+        | EnemyAttacking index -> Puppeteer.updateCharacterTurn index Turn.tryBeginTurn puppeteer
+        | NoCombat -> Puppeteer.beginEnemyWalkTurns puppeteer
+    
     static member generatePositionsAndAnimationStates characters puppeteer =
         let generator coordinates character =
             let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
