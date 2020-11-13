@@ -54,6 +54,7 @@
 [X] add boss room
 [X] add boss
 [X] battle earnings display
+[ ] goblins drop green herbs?
 [ ] tiled battle background
 [ ] buff consumables
 [ ] enemy equipment from data
