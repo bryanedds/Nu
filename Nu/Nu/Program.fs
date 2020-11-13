@@ -118,7 +118,8 @@ module Program =
                 let newProjStr = newProjStr.Replace("$safeprojectname$", name)
                 File.WriteAllText (newProj, newProjStr)
 
-                // add project to sln file (not currently working due to project in old file format - user is instructed to do this manually)
+                // add project to sln file
+                // NOTE: not currently working due to project in old file format - user is instructed to do this manually
                 //Directory.SetCurrentDirectory slnDir
                 //Process.Start("dotnet", "sln add Nu.sln \"" + newProj + "\"").WaitForExit()
                 ignore (slnDir, newProj)

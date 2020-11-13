@@ -96,14 +96,6 @@ module WorldModule2 =
         static member relateGeneralized (address : obj Address) world =
             World.relate address world
 
-        /// Send a message to the renderer to reload its rendering assets.
-        [<FunctionBinding>]
-        static member reloadAssets world =
-            let world = World.reloadRenderAssets world
-            let world = World.reloadAudioAssets world
-            World.reloadSymbols world
-            world
-
         /// Try to check that the selected screen is idling; that is, neither transitioning in or
         /// out via another screen.
         [<FunctionBinding>]
@@ -461,6 +453,14 @@ module WorldModule2 =
                 | Left struct (error, world) -> (Left error, world)
             with exn -> (Left (scstring exn), World.choose world)
 
+        /// Send a message to the subcomponents to reload its assets.
+        [<FunctionBinding>]
+        static member reloadExistingAssets world =
+            let world = World.reloadRenderAssets world
+            let world = World.reloadAudioAssets world
+            World.reloadSymbols world
+            world
+
         /// Attempt to reload the asset graph.
         /// Currently does not support reloading of song assets, and possibly others that are
         /// locked by the engine's subsystems.
@@ -473,22 +473,29 @@ module WorldModule2 =
                      true)
 
                 // attempt to load asset graph
-                match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
+                match AssetGraph.tryMakeFromFile (outputDirectory + "/" + Assets.AssetGraphFilePath) with
                 | Right assetGraph ->
 
                     // build assets reload asset metadata
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
                     let metadata = Metadata.make assetGraph
                     let world = World.setMetadata metadata world
-                    let world = World.reloadRenderAssets world
-                    let world = World.reloadAudioAssets world
-                    World.reloadSymbols world
+                    let world = World.reloadExistingAssets world
                     let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Simulants.Game world
                     (Right assetGraph, world)
         
                 // propagate errors
                 | Left error -> (Left error, world)
             with exn -> (Left (scstring exn), World.choose world)
+
+        /// Reload asset graph, build assets, then reload built assets.
+        [<FunctionBinding>]
+        static member tryReloadAssets world =
+            let targetDir = AppDomain.CurrentDomain.BaseDirectory
+            let assetSourceDir = Path.Simplify (targetDir + "../..")
+            match World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world with
+            | (Right _, world) -> (true, world)
+            | (Left _, world) -> (false, world)
 
         /// Clear all messages in all subsystems.
         static member clearMessages world =
@@ -1075,9 +1082,7 @@ module GameDispatcherModule =
             match game.GetDispatcher world with
             | :? GameDispatcher<'model, 'message, 'command> as dispatcher ->
                 Signal.processSignal dispatcher.Message dispatcher.Command (game.Model<'model> ()) signal game world
-            | _ ->
-                Log.info "Failed to send signal to game."
-                world
+            | _ -> Log.info "Failed to send signal to game."; world
 
         /// Send a signal to a simulant.
         static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
