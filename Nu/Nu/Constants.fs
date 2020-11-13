@@ -52,13 +52,14 @@ module SymbolStore =
 [<RequireQualifiedAccess>]
 module Render =
 
-    let [<Literal>] DefaultResolutionX = 960
-    let [<Literal>] DefaultResolutionY = 540
+    let [<Literal>] VirtualResolutionX = 960
+    let [<Literal>] VirtualResolutionY = 540
+    let (*Literal*) VirtualScalar = Core.getVirtualScalarOrDefault 2
+    let (*Literal*) ResolutionX = VirtualResolutionX * VirtualScalar
+    let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
     let (*Literal*) DefaultRendererFlags =
         SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
         SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC
-    let (*Literal*) ResolutionX = Core.getResolutionOrDefault true DefaultResolutionX
-    let (*Literal*) ResolutionY = Core.getResolutionOrDefault false DefaultResolutionY
     let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy) // TODO: move this to ViewConfig or WorldConfig?
 
 [<RequireQualifiedAccess>]
