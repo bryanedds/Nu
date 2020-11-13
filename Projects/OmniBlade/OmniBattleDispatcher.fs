@@ -794,7 +794,7 @@ module BattleDispatcher =
 
                 [// background
                  Content.label background.Name
-                    [background.Position == v2 -480.0f -512.0f
+                    [background.Position == v2 -512.0f -512.0f
                      background.Size == v2 1024.0f 1024.0f
                      background.Depth == Constants.Battle.BackgroundDepth
                      background.LabelImage == asset "Battle" "Background"]
