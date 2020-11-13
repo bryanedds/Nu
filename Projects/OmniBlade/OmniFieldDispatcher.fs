@@ -364,13 +364,15 @@ module FieldDispatcher =
                 | None ->
                     match tryGetTouchingPortal field.OmniSeedState field.Avatar world with
                     | Some (fieldType, destination, direction) ->
-                        let transition =
-                            { FieldType = fieldType
-                              FieldDestination = destination
-                              FieldDirection = direction
-                              FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
-                        let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
-                        withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.StairStepsSound)) field
+                        if Option.isNone field.BattleOpt then // make sure we don't teleport if a battle is started earlier in the frame
+                            let transition =
+                                { FieldType = fieldType
+                                  FieldDestination = destination
+                                  FieldDirection = direction
+                                  FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
+                            let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
+                            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.StairStepsSound)) field
+                        else just field
                     | None -> just field
                 | Some _ -> just field
 
