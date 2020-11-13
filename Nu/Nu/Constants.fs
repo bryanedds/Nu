@@ -53,7 +53,7 @@ module SymbolStore =
 module Render =
 
     let [<Literal>] DefaultResolutionX = 960
-    let [<Literal>] DefaultResolutionY = 544
+    let [<Literal>] DefaultResolutionY = 540
     let (*Literal*) DefaultRendererFlags =
         SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
         SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC

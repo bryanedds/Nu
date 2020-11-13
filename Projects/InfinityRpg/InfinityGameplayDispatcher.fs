@@ -442,5 +442,5 @@ module GameplayDispatcher =
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Leftward))]
 
                  Content.feeler Simulants.HudFeeler.Name
-                    [Entity.Position == v2 -480.0f -272.0f; Entity.Size == v2 960.0f 544.0f; Entity.Depth == 9.0f
+                    [Entity.Position == v2 -480.0f -270.0f; Entity.Size == v2 960.0f 540.0f; Entity.Depth == 9.0f
                      Entity.TouchEvent ==|> fun evt -> cmd (HandlePlayerInput (TouchInput evt.Data))]]]
