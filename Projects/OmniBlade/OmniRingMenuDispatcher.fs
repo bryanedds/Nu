@@ -34,7 +34,7 @@ module RingMenuDispatcher =
         inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = []; ItemCancelOpt = None })
 
         static member Properties =
-            [define Entity.Radius 112.0f
+            [define Entity.Radius 84.0f
              define Entity.Rotation 0.0f
              define Entity.SwallowMouseLeft false
              define Entity.Visible false]
@@ -59,7 +59,7 @@ module RingMenuDispatcher =
                 let button = menu.Parent / buttonName
                 Content.button button.Name
                     [Entity.EnabledLocal <== item --> fun item -> fst item
-                     Entity.Size == v2 64.0f 64.0f
+                     Entity.Size == v2 48.0f 48.0f
                      Entity.Depth <== menu.Depth
                      Entity.UpImage == asset Assets.BattlePackageName (itemValue + "Up")
                      Entity.DownImage == asset Assets.BattlePackageName (itemValue + "Down")
@@ -72,7 +72,7 @@ module RingMenuDispatcher =
                 Content.button button.Name
                     [Entity.ParentNodeOpt == None
                      Entity.Visible <== menu.Visible
-                     Entity.Size == v2 64.0f 64.0f
+                     Entity.Size == v2 48.0f 48.0f
                      Entity.Position == Constants.Battle.CancelPosition
                      Entity.Depth <== menu.Depth
                      Entity.UpImage == asset Assets.BattlePackageName (itemCancelValue + "Up")

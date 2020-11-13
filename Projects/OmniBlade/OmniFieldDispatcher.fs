@@ -3,7 +3,6 @@
 
 namespace OmniBlade
 open System
-open System.IO
 open System.Numerics
 open FSharpx.Collections
 open Prime
@@ -20,8 +19,8 @@ module FieldDispatcher =
         | UpdatePortal
         | UpdateSensor
         | UpdateFieldTransition
-        | SubmenuLegionOpen
-        | SubmenuLegionAlly of int
+        | SubmenuTeamOpen
+        | SubmenuTeamAlly of int
         | SubmenuItemOpen
         | SubmenuItemSelect of Lens<int * ItemType, World>
         | SubmenuItemUse of int
@@ -35,6 +34,7 @@ module FieldDispatcher =
         | ShopConfirmAccept
         | ShopConfirmDecline
         | ShopLeave
+        | TryBattle of Advent Set * BattleType
         | Traverse of Vector2
         | Interact
 
@@ -104,8 +104,7 @@ module FieldDispatcher =
                 | ChestSpawn -> None
                 | EmptyProp -> None
             | Some dialog ->
-                if dialog.DialogProgress > dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[dialog.DialogPage].Length
-                then Some "Next"
+                if Dialog.canAdvance dialog then Some "Next"
                 else None
 
         static let tryGetInteraction dialogOpt advents (avatar : Avatar) world =
@@ -133,7 +132,7 @@ module FieldDispatcher =
                                     | Rightward -> portal.PropBounds.Right
                                     | Downward -> portal.PropBounds.Bottom
                                     | Leftward -> portal.PropBounds.Left
-                                let destinationOffset = Direction.toVector2 direction * v2Dup 72.0f // TODO: use constant.
+                                let destinationOffset = Direction.toVector2 direction * v2Dup Constants.Field.PortalOffset
                                 let destination = destinationCenter + destinationOffset
                                 Some (fieldType, destination, direction)
                             | _ -> None
@@ -157,30 +156,27 @@ module FieldDispatcher =
                 avatar.SeparatedBodyShapes
 
         static let interactDialog dialog field =
-            if dialog.DialogPage < dialog.DialogText.Split(Constants.Gameplay.DialogSplit).Length - 1 then
-                let dialog = { dialog with DialogProgress = 0; DialogPage = inc dialog.DialogPage }
+            match Dialog.tryAdvance dialog with
+            | (true, dialog) ->
                 let field = Field.updateDialogOpt (constant (Some dialog)) field
                 just field
-            else just (Field.updateDialogOpt (constant None) field)
+            | (false, dialog) ->
+                let field = Field.updateDialogOpt (constant None) field
+                match dialog.DialogBattleOpt with
+                | Some (consequents, battleType) -> withMsg (TryBattle (consequents, battleType)) field
+                | None -> just field
 
-        static let interactChest time itemType chestId battleTypeOpt requirements consequents (field : Field) =
+        static let interactChest itemType chestId battleTypeOpt requirements consequents (field : Field) =
             if field.Advents.IsSupersetOf requirements then
-                match battleTypeOpt with
-                | Some battleType ->
-                    match Map.tryFind battleType Data.Value.Battles with
-                    | Some battleData ->
-                        let prizePool = { Items = []; Gold = 0; Exp = 0 }
-                        let battle = Battle.makeFromLegion (Field.getParty field) field.Inventory prizePool battleData time
-                        let field = Field.updateBattleOpt (constant (Some battle)) field
-                        withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
-                    | None -> just field
-                | None ->
-                    let field = Field.updateInventory (Inventory.addItem itemType) field
-                    let field = Field.updateAdvents (Set.add (Opened chestId)) field
-                    let field = Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0 })) field
-                    let field = Field.updateAdvents (Set.addMany consequents) field
-                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound)) field
-            else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) field)
+                let field = Field.updateInventory (Inventory.addItem itemType) field
+                let field = Field.updateAdvents (Set.add (Opened chestId)) field
+                let field =
+                    match battleTypeOpt with
+                    | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = Some (Set.empty, battleType) })) field
+                    | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field
+                let field = Field.updateAdvents (Set.addMany consequents) field
+                withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound)) field
+            else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
 
         static let interactDoor requirements consequents (prop : Prop) (field : Field) =
             match prop.PropState with
@@ -189,7 +185,7 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (Set.addMany consequents) field
                     let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
                     withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenDoorSound)) field
-                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0 })) field)
+                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
             | _ -> failwithumf ()
 
         static let interactSwitch requirements consequents (prop : Prop) (field : Field) =
@@ -199,13 +195,14 @@ module FieldDispatcher =
                     let field = Field.updateAdvents (if on then Set.removeMany consequents else Set.addMany consequents) field
                     let field = Field.updatePropStates (Map.add prop.PropId (SwitchState (not on))) field
                     withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UseSwitchSound)) field
-                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0 })) field)
+                else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
             | _ -> failwithumf ()
 
-        static let interactNpc dialogs (field : Field) =
+        static let interactNpc specialty requirements dialogs (field : Field) =
+            let battleTypeOpt = NpcSpecialty.getBattleTypeOpt requirements specialty
             let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if field.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
             let (dialog, consequents) = match List.tryHead dialogs with Some dialog -> dialog | None -> ("...", Set.empty)
-            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0 }
+            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = battleTypeOpt }
             let field = Field.updateDialogOpt (constant (Some dialogForm)) field
             let field = Field.updateAdvents (Set.addMany consequents) field
             just field
@@ -216,7 +213,7 @@ module FieldDispatcher =
             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)) field
 
         static let interactSavePoint (field : Field) =
-            let field = Field.restoreLegion field
+            let field = Field.restoreTeam field
             Field.save field
             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.SaveSound)) field
 
@@ -224,58 +221,55 @@ module FieldDispatcher =
             Content.group Gen.name []
                 [Content.button Gen.name
                    [Entity.PositionLocal == position; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
-                    Entity.Text == "L"
-                    Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuLegion _ -> false | _ -> true
-                    Entity.ClickEvent ==> msg SubmenuLegionOpen]
+                    Entity.Text == "T"
+                    Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuTeam _ -> false | _ -> true
+                    Entity.ClickEvent ==> msg SubmenuTeamOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 72.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
+                   [Entity.PositionLocal == position - v2 0.0f 80.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "I"
                     Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuItem _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuItemOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 144.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
+                   [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
                     Entity.Text == "X"
                     Entity.ClickEvent ==> msg SubmenuClose]]
 
-        static let legion (position : Vector2) depth rows (field : Lens<Field, World>) filter fieldMsg =
+        static let team (position : Vector2) depth rows (field : Lens<Field, World>) filter fieldMsg =
             Content.entities field
-                (fun field -> (field.Legion, field.Submenu))
-                (fun (legion, submenu) _ -> legion |> Map.toValueList |> List.filter (flip filter submenu))
-                (fun i legionnaireLens world ->
-                    let legionnaire = Lens.get legionnaireLens world
+                (fun field -> (field.Team, field.Submenu))
+                (fun (team, submenu) _ -> team |> Map.toValueList |> List.filter (flip filter submenu))
+                (fun i teammateLens world ->
+                    let teammate = Lens.get teammateLens world
                     let x = position.X
                     let y = position.Y - single (i % rows) * 72.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth
-                         Entity.Text == CharacterType.getName legionnaire.CharacterType
+                         Entity.Text == CharacterType.getName teammate.CharacterType
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
         static let items (position : Vector2) depth field fieldMsg =
             Content.entities field
                 (fun (field : Field) -> (field.Submenu, field.ShopOpt, field.Inventory))
                 (fun (submenu, shopOpt, inventory : Inventory) _ ->
-                    let items =
-                        match submenu.SubmenuState with
-                        | SubmenuItem submenu -> pageItems submenu.ItemPage 10 (Inventory.indexItems inventory)
-                        | _ ->
-                            match shopOpt with
-                            | Some shop ->
-                                match shop.ShopState with
-                                | ShopBuying ->
-                                    match Map.tryFind shop.ShopType Data.Value.Shops with
-                                    | Some shopData -> shopData.ShopItems |> Set.toSeq |> Seq.indexed |> pageItems shop.ShopPage 10
-                                    | None -> []
-                                | ShopSelling ->
-                                    inventory |>
-                                    Inventory.indexItems |>
-                                    Seq.choose (function (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item | (_, KeyItem _) | (_, Stash _) -> None) |>
-                                    pageItems shop.ShopPage 10
-                            | None -> []
-                    let itemsSorted = List.sortBy snd items
-                    itemsSorted)
+                    match submenu.SubmenuState with
+                    | SubmenuItem submenu -> pageItems submenu.ItemPage 10 (Inventory.indexItems inventory)
+                    | _ ->
+                        match shopOpt with
+                        | Some shop ->
+                            match shop.ShopState with
+                            | ShopBuying ->
+                                match Map.tryFind shop.ShopType Data.Value.Shops with
+                                | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 10
+                                | None -> []
+                            | ShopSelling ->
+                                inventory |>
+                                Inventory.indexItems |>
+                                Seq.choose (function (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item | (_, KeyItem _) | (_, Stash _) -> None) |>
+                                pageItems shop.ShopPage 10
+                        | None -> [])
                 (fun i selectionLens _ ->
                     let x = if i < 5 then position.X else position.X + 368.0f
-                    let y = position.Y - single (i % 5) * 72.0f
+                    let y = position.Y - single (i % 5) * 80.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 336.0f 64.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
@@ -284,12 +278,11 @@ module FieldDispatcher =
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
 
         override this.Channel (_, field) =
-            [field.SelectEvent => cmd PlayFieldSong
-             Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+            [Simulants.FieldAvatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
+             field.SelectEvent => cmd PlayFieldSong
              field.UpdateEvent => msg UpdateDialog
              field.UpdateEvent => msg UpdatePortal
              field.UpdateEvent => msg UpdateSensor
-             Simulants.FieldInteract.ClickEvent => msg Interact
              field.PostUpdateEvent => msg UpdateFieldTransition
              field.PostUpdateEvent => cmd UpdateEye]
 
@@ -303,8 +296,7 @@ module FieldDispatcher =
             | UpdateDialog ->
                 match field.DialogOpt with
                 | Some dialog ->
-                    let increment = if World.getTickTime world % 2L = 0L then 1 else 0
-                    let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
+                    let dialog = Dialog.update dialog world
                     let field = Field.updateDialogOpt (constant (Some dialog)) field
                     just field
                 | None -> just field
@@ -368,13 +360,15 @@ module FieldDispatcher =
                 | None ->
                     match tryGetTouchingPortal field.OmniSeedState field.Avatar world with
                     | Some (fieldType, destination, direction) ->
-                        let transition =
-                            { FieldType = fieldType
-                              FieldDestination = destination
-                              FieldDirection = direction
-                              FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
-                        let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
-                        withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.StairStepsSound)) field
+                        if Option.isNone field.BattleOpt then // make sure we don't teleport if a battle is started earlier in the frame
+                            let transition =
+                                { FieldType = fieldType
+                                  FieldDestination = destination
+                                  FieldDirection = direction
+                                  FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
+                            let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
+                            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.StairStepsSound)) field
+                        else just field
                     | None -> just field
                 | Some _ -> just field
 
@@ -394,17 +388,17 @@ module FieldDispatcher =
                     results
                 | Some _ -> just field
 
-            | SubmenuLegionOpen ->
-                let state = SubmenuLegion { LegionIndex = 0; LegionIndices = Map.toKeyList field.Legion }
+            | SubmenuTeamOpen ->
+                let state = SubmenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
                 let field = Field.updateSubmenu (fun submenu -> { submenu with SubmenuState = state }) field
                 just field
 
-            | SubmenuLegionAlly index ->
+            | SubmenuTeamAlly index ->
                 let field =
                     Field.updateSubmenu (fun submenu ->
                         let state =
                             match submenu.SubmenuState with
-                            | SubmenuLegion submenuLegion -> SubmenuLegion { submenuLegion with LegionIndex = index }
+                            | SubmenuTeam submenuTeam -> SubmenuTeam { submenuTeam with TeamIndex = index }
                             | state -> state
                         { submenu with SubmenuState = state })
                         field
@@ -421,15 +415,15 @@ module FieldDispatcher =
                 just field
 
             | SubmenuItemUse index ->
-                match Map.tryFind index field.Legion with
-                | Some legionnaire ->
+                match Map.tryFind index field.Team with
+                | Some teammate ->
                     match field.Submenu.SubmenuUseOpt with
                     | Some submenuUse ->
                         let itemType = snd submenuUse.SubmenuUseSelection
-                        let (result, displacedOpt, legionnaire) = Legionnaire.tryUseItem itemType legionnaire
+                        let (result, displacedOpt, teammate) = Teammate.tryUseItem itemType teammate
                         let field = if result then Field.updateInventory (Inventory.removeItem itemType) field else field
                         let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.addItem displaced) field | None -> field
-                        let field = Field.updateLegion (Map.add index legionnaire) field
+                        let field = Field.updateTeam (Map.add index teammate) field
                         let field = Field.updateSubmenu (constant { field.Submenu with SubmenuUseOpt = None }) field
                         if result then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) field
                         else just field
@@ -494,11 +488,21 @@ module FieldDispatcher =
                 let field = Field.updateShopOpt (constant None) field
                 just field
 
+            | TryBattle (consequents, battleType) ->
+                match Map.tryFind battleType Data.Value.Battles with
+                | Some battleData ->
+                    let time = World.getTickTime world
+                    let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
+                    let battle = Battle.makeFromTeam (Field.getParty field) field.Inventory prizePool battleData time
+                    let field = Field.updateBattleOpt (constant (Some battle)) field
+                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
+                | None -> just field
+
             | Traverse velocity ->
-                match Field.advanceEncounterCreep velocity field world with
+                match Field.tryAdvanceEncounterCreep velocity field world with
                 | (Some battleData, field) ->
-                    let prizePool = { Items = []; Gold = 0; Exp = 0 }
-                    let battle = Battle.makeFromLegion field.Legion field.Inventory prizePool battleData (World.getTickTime world)
+                    let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
+                    let battle = Battle.makeFromTeam field.Team field.Inventory prizePool battleData (World.getTickTime world)
                     let field = Field.updateBattleOpt (constant (Some battle)) field
                     withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
                 | (None, field) -> just field
@@ -513,12 +517,12 @@ module FieldDispatcher =
                         | Some prop ->
                             let prop = prop.GetProp world
                             match prop.PropData with
-                            | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest (World.getTickTime world) itemType chestId battleTypeOpt requirements consequents field
+                            | Chest (_, itemType, chestId, battleTypeOpt, requirements, consequents) -> interactChest itemType chestId battleTypeOpt requirements consequents field
                             | Door (_, requirements, consequents) -> interactDoor requirements consequents prop field
                             | Portal (_, _, _, _, _) -> just field
                             | Switch (_, requirements, consequents) -> interactSwitch requirements consequents prop field
                             | Sensor (_, _, _, _) -> just field
-                            | Npc (_, _, dialogs, _) -> interactNpc dialogs field
+                            | Npc (_, specialty, _, dialogs, requirements) -> interactNpc specialty requirements dialogs field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
                             | SavePoint -> just field
                             | ChestSpawn -> just field
@@ -532,6 +536,10 @@ module FieldDispatcher =
             match command with
             | UpdateEye ->
                 let world = World.setEyeCenter field.Avatar.Center world
+                let tileMapBounds = Simulants.FieldTileMap.GetBounds world
+                let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 48.0f)
+                let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 96.0f)
+                let world = World.constrainEyeBounds eyeBounds world
                 just world
 
             | MoveAvatar position ->
@@ -563,7 +571,7 @@ module FieldDispatcher =
 
         override this.Content (field, _) =
 
-            [// main layer
+            [// scene layer
              Content.layer Simulants.FieldScene.Name []
 
                 [// backdrop sprite
@@ -606,7 +614,7 @@ module FieldDispatcher =
 
                  // avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
-                    [Entity.Position == v2 256.0f 256.0f; Entity.Depth == Constants.Field.ForgroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
+                    [Entity.Position == v2Dup 120.0f; Entity.Depth == Constants.Field.ForgroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled <== field --> fun field ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone field.DialogOpt &&
@@ -626,7 +634,7 @@ module FieldDispatcher =
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt
-                     Entity.ClickEvent ==> msg SubmenuLegionOpen]
+                     Entity.ClickEvent ==> msg SubmenuTeamOpen]
 
                  // interact button
                  Content.button Simulants.FieldInteract.Name
@@ -634,6 +642,7 @@ module FieldDispatcher =
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Visible <== field --|> fun field world ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
+                        Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
                         Option.isSome (tryGetInteraction field.DialogOpt field.Advents field.Avatar world)
@@ -641,39 +650,12 @@ module FieldDispatcher =
                         match tryGetInteraction field.DialogOpt field.Advents field.Avatar world with
                         | Some interaction -> interaction
                         | None -> ""
-                     Entity.ClickSoundOpt == None]
+                     Entity.ClickSoundOpt == None
+                     Entity.ClickEvent ==> msg Interact]
 
                  // dialog
-                 Content.text Simulants.FieldDialog.Name
-                    [Entity.Bounds <== field --> fun field ->
-                        match field.DialogOpt with
-                        | Some dialog ->
-                            match dialog.DialogForm with
-                            | DialogThin -> v4Bounds (v2 -448.0f 128.0f) (v2 896.0f 112.0f)
-                            | DialogMedium -> v4Bounds (v2 -448.0f 0.0f) (v2 640.0f 256.0f)
-                            | DialogLarge -> v4Bounds (v2 -448.0f 0.0f) (v2 896.0f 256.0f)
-                        | None -> v4Zero
-                     Entity.BackgroundImageOpt <== field --> fun field ->
-                        let image =
-                            match field.DialogOpt with
-                            | Some dialog ->
-                                match dialog.DialogForm with
-                                | DialogThin -> Assets.DialogThinImage
-                                | DialogMedium -> Assets.DialogMediumImage
-                                | DialogLarge -> Assets.DialogLargeImage
-                            | None -> Assets.DialogLargeImage
-                        Some image
-                     Entity.Text <== field --> fun field ->
-                        match field.DialogOpt with
-                        | Some dialog ->
-                            let textPage = dialog.DialogPage
-                            let text = dialog.DialogText.Split(Constants.Gameplay.DialogSplit).[textPage]
-                            let textToShow = String.tryTake dialog.DialogProgress text
-                            textToShow
-                        | None -> ""
-                     Entity.Visible <== field --> fun field -> Option.isSome field.DialogOpt
-                     Entity.Justification == Unjustified true
-                     Entity.Margins == v2 40.0f 40.0f]
+                 Dialog.content Simulants.FieldDialog.Name
+                    (field --> fun field -> field.DialogOpt)
 
                  // props
                  Content.entities field
@@ -692,26 +674,26 @@ module FieldDispatcher =
                                     match prop.PropData with
                                     | Door (_, _, _) -> DoorState false
                                     | Switch (_, _, _) -> SwitchState false
-                                    | Npc (_, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements)
+                                    | Npc (_, specialty, _, _, requirements) -> NpcState (advents.IsSupersetOf requirements && NpcSpecialty.exists advents specialty)
                                     | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
-                                    | _ -> NilState
+                                    | Chest _ | Portal _ | Sensor _ | SavePoint | ChestSpawn | EmptyProp -> NilState
                                 | Some propState -> propState
                             Prop.make prop.PropBounds prop.PropDepth advents prop.PropData propState prop.PropId)
                         Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
-                 // legion
-                 Content.panel Simulants.SubmenuLegion.Name
+                 // team
+                 Content.panel Simulants.SubmenuTeam.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogXXLImage
-                     Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuLegion _ -> true | _ -> false]
+                     Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuTeam _ -> true | _ -> false]
                     [sidebar (v2 40.0f 424.0f) 1.0f field
-                     legion (v2 136.0f 424.0f) 1.0f Int32.MaxValue field tautology2 SubmenuLegionAlly
+                     team (v2 136.0f 424.0f) 1.0f Int32.MaxValue field tautology2 SubmenuTeamAlly
                      Content.label Gen.name
                         [Entity.PositionLocal == v2 424.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionData field.Legion submenu with
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeamData field.Team submenu with
                                 | Some characterData ->
                                     match characterData.MugOpt with
                                     | Some mug -> mug
@@ -722,8 +704,8 @@ module FieldDispatcher =
                         [Entity.PositionLocal == v2 672.0f 384.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionData field.Legion submenu with
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeamData field.Team submenu with
                                 | Some characterData -> CharacterType.getName characterData.CharacterType
                                 | None -> ""
                             | _ -> ""]
@@ -731,36 +713,36 @@ module FieldDispatcher =
                         [Entity.PositionLocal == v2 672.0f 328.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
-                                | Some legionnaire -> "Level " + string (Algorithms.expPointsToLevel legionnaire.ExpPoints)
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeammate field.Team submenu with
+                                | Some teammate -> "Level " + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 224.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
-                                | Some legionnaire -> "W: " + Option.getOrDefault "None" legionnaire.WeaponOpt
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeammate field.Team submenu with
+                                | Some teammate -> "W: " + Option.getOrDefault "None" teammate.WeaponOpt
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 184.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
-                                | Some legionnaire -> "A: " + Option.getOrDefault "None" legionnaire.ArmorOpt
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeammate field.Team submenu with
+                                | Some teammate -> "A: " + Option.getOrDefault "None" teammate.ArmorOpt
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 448.0f 144.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaire field.Legion submenu with
-                                | Some legionnaire -> "1: " + Option.getOrDefault "None" (List.tryHead legionnaire.Accessories)
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeammate field.Team submenu with
+                                | Some teammate -> "1: " + Option.getOrDefault "None" (List.tryHead teammate.Accessories)
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
@@ -768,18 +750,18 @@ module FieldDispatcher =
                          Entity.Justification == Unjustified true
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
-                            | SubmenuLegion submenu ->
-                                match SubmenuLegion.tryGetLegionnaireAndLegionData field.Legion submenu with
-                                | Some (legionnaire, characterData) ->
-                                    let level = Algorithms.expPointsToLevel legionnaire.ExpPoints
-                                    let hpm = Algorithms.hitPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
-                                    let tpm = Algorithms.techPointsMax legionnaire.ArmorOpt characterData.ArchetypeType level
-                                    let pow = Algorithms.power legionnaire.WeaponOpt 1.0f characterData.ArchetypeType level
-                                    let mag = Algorithms.magic legionnaire.WeaponOpt 1.0f characterData.ArchetypeType level
-                                    "HP  "   + (string legionnaire.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
-                                    "\nTP  " + (string legionnaire.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
+                            | SubmenuTeam submenu ->
+                                match SubmenuTeam.tryGetTeammateAndTeamData field.Team submenu with
+                                | Some (teammate, characterData) ->
+                                    let level = Algorithms.expPointsToLevel teammate.ExpPoints
+                                    let hpm = Algorithms.hitPointsMax teammate.ArmorOpt characterData.ArchetypeType level
+                                    let tpm = Algorithms.techPointsMax teammate.ArmorOpt characterData.ArchetypeType level
+                                    let pow = Algorithms.power teammate.WeaponOpt 1.0f characterData.ArchetypeType level
+                                    let mag = Algorithms.magic teammate.WeaponOpt 1.0f characterData.ArchetypeType level
+                                    "HP  "   + (string teammate.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
+                                    "\nTP  " + (string teammate.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
                                     "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
-                                    "\nExp " + (string legionnaire.ExpPoints).PadLeft 3 + "/" + (string (Legionnaire.getExpPointsForNextLevel legionnaire)).PadLeft 3
+                                    "\nExp " + (string teammate.ExpPoints).PadLeft 3 + "/" + (string (Algorithms.expPointsForNextLevel teammate.ExpPoints)).PadLeft 3
                                 | None -> ""
                             | _ -> ""]]
 
@@ -801,10 +783,10 @@ module FieldDispatcher =
                     [Entity.Position == v2 -448.0f -192.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 384.0f
                      Entity.LabelImage == Assets.DialogXLImage
                      Entity.Visible <== field --> fun field -> Option.isSome field.Submenu.SubmenuUseOpt]
-                    [legion (v2 160.0f 192.0f) 1.0f 3 field
-                        (fun legionnaire submenu ->
+                    [team (v2 160.0f 192.0f) 1.0f 3 field
+                        (fun teammate submenu ->
                             match submenu.SubmenuUseOpt with
-                            | Some submenuUse -> Legionnaire.canUseItem (snd submenuUse.SubmenuUseSelection) legionnaire
+                            | Some submenuUse -> Teammate.canUseItem (snd submenuUse.SubmenuUseSelection) teammate
                             | None -> false)
                         SubmenuItemUse
                      Content.button Gen.name

@@ -55,7 +55,7 @@ module Effects =
                  [|Position
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = v2Zero; TweenLength = 10L }
-                       { TweenValue = v2 0.0f 48.0f; TweenLength = 10L }
+                       { TweenValue = v2 0.0f 36.0f; TweenLength = 10L }
                        { TweenValue = v2Zero; TweenLength = 10L }
                        { TweenValue = v2Zero; TweenLength = 50L }|])
                    Color
@@ -80,8 +80,8 @@ module Effects =
                    Size
                     (Set, EaseOut, Once,
                      [|{ TweenValue = v2Zero; TweenLength = 10L }
-                       { TweenValue = v2 208.0f 64.0f; TweenLength = 30L }
-                       { TweenValue = v2 208.0f 64.0f; TweenLength = 0L }|])|],
+                       { TweenValue = v2 156.0f 48.0f; TweenLength = 30L }
+                       { TweenValue = v2 156.0f 48.0f; TweenLength = 0L }|])|],
                  Nil) }
 
     let makeBoltEffect () =
@@ -90,10 +90,10 @@ module Effects =
                 (Resource (Assets.BoltAnimationSheet.PackageName, Assets.BoltAnimationSheet.AssetName),
                  [|Inset
                     (Set, Constant, Once,
-                     [|{ TweenValue = v4 0.0f   0.0f    256.0f  1024.0f; TweenLength = 5L }
-                       { TweenValue = v4 256.0f 0.0f    256.0f  1024.0f; TweenLength = 5L }
-                       { TweenValue = v4 512.0f 0.0f    256.0f  1024.0f; TweenLength = 5L }
-                       { TweenValue = v4 512.0f 0.0f    256.0f  1024.0f; TweenLength = 65L }|])
+                     [|{ TweenValue = v4 0.0f   0.0f    192.0f  768.0f; TweenLength = 5L }
+                       { TweenValue = v4 192.0f 0.0f    192.0f  768.0f; TweenLength = 5L }
+                       { TweenValue = v4 384.0f 0.0f    192.0f  768.0f; TweenLength = 5L }
+                       { TweenValue = v4 384.0f 0.0f    192.0f  768.0f; TweenLength = 65L }|])
                    Color
                     (Set, EaseOut, Once,
                      [|{ TweenValue = Color.White; TweenLength = 40L }
@@ -103,9 +103,9 @@ module Effects =
         let explosionSprite =
             AnimatedSprite
                 (Resource (Assets.ExplosionAnimationSheet.PackageName, Assets.ExplosionAnimationSheet.AssetName),
-                 v2i 128 128, 4, 12, 2L, Once,
-                 [|Size (Set, Constant, Once, [|{ TweenValue = v2 128.0f 128.0f; TweenLength = 0L }|])
-                   Position (Sum, Constant, Once, [|{ TweenValue = v2 0.0f -512.0f; TweenLength = 0L }|])
+                 v2i 96 96, 4, 12, 2L, Once,
+                 [|Size (Set, Constant, Once, [|{ TweenValue = v2 96.0f 96.0f; TweenLength = 0L }|])
+                   Position (Sum, Constant, Once, [|{ TweenValue = v2 0.0f -384.0f; TweenLength = 0L }|])
                    Color
                     (Set, EaseOut, Once,
                      [|{ TweenValue = Color.White; TweenLength = 30L }
@@ -131,7 +131,7 @@ module Effects =
         { EffectName = "Hop"
           LifetimeOpt = Some 20L
           Definitions = Map.empty
-          Content = Tag ("Tag", [|Hop (start, stop, 32.0f, 15L, 5L)|], Nil) }
+          Content = Tag ("Tag", [|Hop (start, stop, 24.0f, 15L, 5L)|], Nil) }
 
     let makeCircleEffect radius =
         { EffectName = "Circle"

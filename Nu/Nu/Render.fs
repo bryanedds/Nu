@@ -319,68 +319,68 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 | None -> None) |>
             Array.definitizePlus
         if allFound then
-                // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
-                let tileSourceRectRef = ref (SDL.SDL_Rect ())
-                let tileDestRectRef = ref (SDL.SDL_Rect ())
-                let tileRotationCenterRef = ref (SDL.SDL_Point ())
-                Array.iteri
-                    (fun n (tile : TmxLayerTile) ->
-                        if tile.Gid <> 0 then // not the empty tile
-                            let mapRun = mapSize.X
-                            let (i, j) = (n % mapRun, n / mapRun)
-                            let tilePosition =
+            // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
+            let tileSourceRectRef = ref (SDL.SDL_Rect ())
+            let tileDestRectRef = ref (SDL.SDL_Rect ())
+            let tileRotationCenterRef = ref (SDL.SDL_Point ())
+            Array.iteri
+                (fun n (tile : TmxLayerTile) ->
+                    if tile.Gid <> 0 then // not the empty tile
+                        let mapRun = mapSize.X
+                        let (i, j) = (n % mapRun, n / mapRun)
+                        let tilePosition =
+                            v2
+                                (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f)
+                                (-(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
+                        let tileBounds = v4Bounds tilePosition tileSize
+                        let viewBounds = v4Bounds Vector2.Zero eyeSize
+                        if Math.isBoundsIntersectingBounds tileBounds viewBounds then
+                            let tileFlip =
+                                match (tile.HorizontalFlip, tile.VerticalFlip) with
+                                | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
+                                | (true, false) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
+                                | (false, true) -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+                                | (true, true) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+                            let mutable tileOffset = 1 // gid 0 is the empty tile
+                            let mutable tileSetIndex = 0
+                            let mutable tileSetWidth = 0
+                            let mutable tileSetTexture = nativeint 0
+                            for (set, _, texture) in tileSetTextures do
+                                let tileCountOpt = set.TileCount
+                                let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
+                                if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
+                                    not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
+                                    tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
+                                    tileSetTexture <- texture
+                                if  tileSetTexture = nativeint 0 then
+                                    tileSetIndex <- inc tileSetIndex
+                                    tileOffset <- tileOffset + tileCount
+                            let tileId = tile.Gid - tileOffset
+                            let tileIdPosition = tileId * tileSourceSize.X
+                            let tileSourcePosition =
                                 v2
-                                    (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f)
-                                    (-(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
-                            let tileBounds = v4Bounds tilePosition tileSize
-                            let viewBounds = v4Bounds Vector2.Zero eyeSize
-                            if Math.isBoundsIntersectingBounds tileBounds viewBounds then
-                                let tileFlip =
-                                    match (tile.HorizontalFlip, tile.VerticalFlip) with
-                                    | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
-                                    | (true, false) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
-                                    | (false, true) -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-                                    | (true, true) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-                                let mutable tileOffset = 1 // gid 0 is the empty tile
-                                let mutable tileSetIndex = 0
-                                let mutable tileSetWidth = 0
-                                let mutable tileSetTexture = nativeint 0
-                                for (set, _, texture) in tileSetTextures do
-                                    let tileCountOpt = set.TileCount
-                                    let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
-                                    if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
-                                        not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
-                                        tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
-                                        tileSetTexture <- texture
-                                    if  tileSetTexture = nativeint 0 then
-                                        tileSetIndex <- inc tileSetIndex
-                                        tileOffset <- tileOffset + tileCount
-                                let tileId = tile.Gid - tileOffset
-                                let tileIdPosition = tileId * tileSourceSize.X
-                                let tileSourcePosition =
-                                    v2
-                                        (single (tileIdPosition % tileSetWidth))
-                                        (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
-                                let mutable sourceRect = SDL.SDL_Rect ()
-                                sourceRect.x <- int tileSourcePosition.X
-                                sourceRect.y <- int tileSourcePosition.Y
-                                sourceRect.w <- tileSourceSize.X
-                                sourceRect.h <- tileSourceSize.Y
-                                let mutable destRect = SDL.SDL_Rect ()
-                                destRect.x <- int tilePosition.X
-                                destRect.y <- int tilePosition.Y
-                                destRect.w <- int tileSize.X
-                                destRect.h <- int tileSize.Y
-                                let rotation = double -tileRotation * Constants.Math.RadiansToDegrees // negation for right-handedness
-                                let mutable rotationCenter = SDL.SDL_Point ()
-                                rotationCenter.x <- int (tileSize.X * 0.5f)
-                                rotationCenter.y <- int (tileSize.Y * 0.5f)
-                                tileSourceRectRef := sourceRect
-                                tileDestRectRef := destRect
-                                tileRotationCenterRef := rotationCenter
-                                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
-                                if renderResult <> 0 then Log.info ("Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + "."))
-                    tiles
+                                    (single (tileIdPosition % tileSetWidth))
+                                    (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
+                            let mutable sourceRect = SDL.SDL_Rect ()
+                            sourceRect.x <- int tileSourcePosition.X
+                            sourceRect.y <- int tileSourcePosition.Y
+                            sourceRect.w <- tileSourceSize.X
+                            sourceRect.h <- tileSourceSize.Y
+                            let mutable destRect = SDL.SDL_Rect ()
+                            destRect.x <- int tilePosition.X
+                            destRect.y <- int tilePosition.Y
+                            destRect.w <- int tileSize.X
+                            destRect.h <- int tileSize.Y
+                            let rotation = double -tileRotation * Constants.Math.RadiansToDegrees // negation for right-handedness
+                            let mutable rotationCenter = SDL.SDL_Point ()
+                            rotationCenter.x <- int (tileSize.X * 0.5f)
+                            rotationCenter.y <- int (tileSize.Y * 0.5f)
+                            tileSourceRectRef := sourceRect
+                            tileDestRectRef := destRect
+                            tileRotationCenterRef := rotationCenter
+                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
+                            if renderResult <> 0 then Log.info ("Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + "."))
+                tiles
         else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for '" + scstring tileSets + "'.")
 
     static member private renderTextDescriptor

@@ -20,6 +20,8 @@ module BattleDispatcher =
 
     type BattleMessage =
         | Tick
+        | UpdateDialog
+        | InteractDialog
         | RegularItemSelect of CharacterIndex * string
         | RegularItemCancel of CharacterIndex
         | ConsumableItemSelect of CharacterIndex * string
@@ -28,7 +30,7 @@ module BattleDispatcher =
         | TechItemCancel of CharacterIndex
         | ReticlesSelect of CharacterIndex * CharacterIndex
         | ReticlesCancel of CharacterIndex
-        | ReadyCharacters
+        | ReadyCharacters of int64
         | PoiseCharacters
         | CelebrateCharacters of bool
         | AttackCharacter1 of CharacterIndex
@@ -185,17 +187,14 @@ module BattleDispatcher =
                         let enemies = Battle.getEnemies battle
                         if List.forall (fun (character : Character) -> character.IsWounded) allies then
                             // lost battle
-                            let battle = Battle.updateBattleState (constant (BattleCease (false, time))) battle
+                            let battle = Battle.updateBattleState (constant (BattleCease (false, Set.empty, time))) battle
                             let (sigs2, battle) = tick time battle
                             (sigs @ sigs2, battle)
                         elif
                             List.forall (fun (character : Character) -> character.IsWounded) enemies &&
                             List.hasAtMost 1 enemies then
                             // won battle
-                            let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
-                            let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
-                            let battle = Battle.updateInventory (Inventory.addItems battle.PrizePool.Items) battle
-                            let battle = Battle.updateBattleState (constant (BattleCease (true, time))) battle
+                            let battle = Battle.updateBattleState (constant (BattleResults (true, time))) battle
                             let (sigs2, battle) = tick time battle
                             (sigs @ sigs2, battle)
                         else (sigs, battle)
@@ -205,8 +204,10 @@ module BattleDispatcher =
 
         and tickReady time timeStart battle =
             let timeLocal = time - timeStart
-            if timeLocal = 0L then withMsg ReadyCharacters battle
-            elif timeLocal >= 30L then
+            if timeLocal >= 90L && timeLocal < 160L then
+                let timeLocalReady = timeLocal - 90L
+                withMsg (ReadyCharacters timeLocalReady) battle
+            elif timeLocal = 160L then
                 let battle = Battle.updateBattleState (constant BattleRunning) battle
                 withMsg PoiseCharacters battle
             else just battle
@@ -301,20 +302,44 @@ module BattleDispatcher =
             | Some currentCommand -> tickCurrentCommand time currentCommand battle
             | None -> tickNoCurrentCommand time battle
 
-        and tickCease time timeStart outcome battle =
-            let timeLocal = time - timeStart
-            match timeLocal with
-            | 0L -> withMsg (CelebrateCharacters outcome) battle
-            | _ -> just battle
+        and tickBattleResults time timeStart outcome (battle : Battle) =
+            let localTime = time - timeStart
+            if localTime = 0L then
+                let charactersGainingLevel =
+                    battle |>
+                    Battle.getAllies |>
+                    List.filter (fun c -> Algorithms.expPointsRemainingForNextLevel c.ExpPoints <= battle.PrizePool.Exp)
+                let textA =
+                    match charactersGainingLevel with 
+                    | _ :: _ -> "Level up for " + (charactersGainingLevel |> List.map (fun c -> c.Name) |> String.join ", ") + "!"
+                    | [] -> "Enemies defeated!"
+                let textB = "Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"
+                let text = textA + "^" + textB
+                let dialog = { DialogForm = DialogLarge; DialogText = text; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None }
+                let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
+                let sigs = [msg (CelebrateCharacters outcome)]
+                if outcome then
+                    let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
+                    let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
+                    let battle = Battle.updateInventory (Inventory.addItems battle.PrizePool.Items) battle
+                    let sigs = if List.notEmpty charactersGainingLevel then cmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.GrowthSound)) :: sigs else sigs
+                    withSigs sigs battle
+                else withSigs sigs battle
+            else
+                match battle.DialogOpt with
+                | None -> just (Battle.updateBattleState (constant (BattleCease (outcome, battle.PrizePool.Consequents, time))) battle)
+                | Some _ -> just battle
 
         and tick time battle =
             match battle.BattleState with
             | BattleReady timeStart -> tickReady time timeStart battle
             | BattleRunning -> tickRunning time battle
-            | BattleCease (outcome, timeStart) -> tickCease time timeStart outcome battle
+            | BattleResults (outcome, timeStart) -> tickBattleResults time timeStart outcome battle
+            | BattleCease (_, _, _) -> just battle
 
         override this.Channel (_, battle) =
             [battle.UpdateEvent => msg Tick
+             battle.UpdateEvent => msg UpdateDialog
              battle.PostUpdateEvent => cmd UpdateEye]
 
         override this.Message (battle, message, _, world) =
@@ -324,6 +349,26 @@ module BattleDispatcher =
                 if World.isTicking world
                 then tick (World.getTickTime world) battle
                 else just battle
+
+            | UpdateDialog ->
+                match battle.DialogOpt with
+                | Some dialog ->
+                    let dialog = Dialog.update dialog world
+                    let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
+                    just battle
+                | None -> just battle
+
+            | InteractDialog ->
+                match battle.DialogOpt with
+                | Some dialog ->
+                    match Dialog.tryAdvance dialog with
+                    | (true, dialog) ->
+                        let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
+                        just battle
+                    | (false, _) ->
+                        let battle = Battle.updateDialogOpt (constant None) battle
+                        just battle
+                | None -> just battle
 
             | RegularItemSelect (characterIndex, item) ->
                 let battle =
@@ -402,34 +447,38 @@ module BattleDispatcher =
                 | BattleRunning ->
                     match Battle.tryGetCharacter allyIndex battle with
                     | Some ally ->
-                        match ally.InputState with
-                        | AimReticles (item, _) ->
-                            let actionType =
-                                if typeof<ConsumableType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Consume (scvalue item)
-                                elif typeof<TechType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Tech (scvalue item)
-                                else Attack
+                        match Character.getActionTypeOpt ally with
+                        | Some actionType ->
                             let command = ActionCommand.make actionType allyIndex (Some targetIndex)
                             let battle = Battle.appendActionCommand command battle
                             withMsg (ResetCharacter allyIndex) battle
-                        | _ -> just battle
+                        | None -> just battle
                     | None -> just battle
                 | _ -> just battle
 
             | ReticlesCancel characterIndex ->
                 let battle =
-                    Battle.tryUpdateCharacter
-                        (Character.updateInputState (constant RegularMenu))
+                    Battle.tryUpdateCharacter (fun character ->
+                        match Character.getActionTypeOpt character with
+                        | Some actionType ->
+                            let inputState =
+                                match actionType with
+                                | Attack -> RegularMenu
+                                | Tech _ -> TechMenu
+                                | Consume _ -> ItemMenu
+                                | Wound -> failwithumf ()
+                            Character.updateInputState (constant inputState) character
+                        | None -> character)
                         characterIndex
                         battle
                 just battle
 
-            | ReadyCharacters ->
+            | ReadyCharacters timeLocal ->
                 let time = World.getTickTime world
-                let battle =
-                    Battle.updateCharacters
-                        (Character.animate time ReadyCycle)
-                        battle
-                just battle
+                let battle = Battle.updateCharacters (Character.animate time ReadyCycle) battle
+                if timeLocal = 30L
+                then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UnsheatheSound)) battle
+                else just battle
 
             | PoiseCharacters ->
                 let time = World.getTickTime world
@@ -477,18 +526,21 @@ module BattleDispatcher =
                 let battle = Battle.updateInventory (Inventory.removeItem item) battle
                 just battle
 
-            | ConsumeCharacter2 (consumable, targetIndex) ->
+            | ConsumeCharacter2 (consumableType, targetIndex) ->
                 let time = World.getTickTime world
-                let healing =
-                    match consumable with
-                    | GreenHerb -> 50 // TODO: pull from data
-                    | RedHerb -> 250 // TODO: pull from data
-                    | GoldHerb -> 999 // TODO: pull from data
-                let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, false))) targetIndex battle
-                let battle = Battle.updateCharacter (Character.animate time SpinCycle) targetIndex battle
-                let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
-                let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
-                withCmds [displayHitPointsChange; playHealSound] battle
+                match Data.Value.Consumables.TryGetValue consumableType with
+                | (true, consumable) ->
+                    if consumable.Curative then
+                        let healing = int consumable.Scalar
+                        let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, false))) targetIndex battle
+                        let battle = Battle.updateCharacter (Character.animate time SpinCycle) targetIndex battle
+                        let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
+                        let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
+                        withCmds [displayHitPointsChange; playHealSound] battle
+                    else
+                        // TODO: non-curative case
+                        just battle
+                | (false, _) -> just battle
             
             | TechCharacter1 (sourceIndex, targetIndex, techType) ->
                 let source = Battle.getCharacter sourceIndex battle
@@ -592,7 +644,6 @@ module BattleDispatcher =
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, sigs) =
                         List.fold (fun (battle, sigs) (cancelled, hitPointsChange, characterIndex) ->
-                            let battle = Battle.updateCharacter (Character.updateTechPoints ((+) -techData.TechCost)) sourceIndex battle
                             let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) characterIndex battle
                             let wounded = (Battle.getCharacter characterIndex battle).IsWounded
                             let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
@@ -608,6 +659,7 @@ module BattleDispatcher =
                             (battle, sigs))
                             (battle, [])
                             results
+                    let battle = Battle.updateCharacter (Character.updateTechPoints ((+) -techData.TechCost)) sourceIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     let sigs = Message (PoiseCharacter sourceIndex) :: sigs
                     withSigs sigs battle
@@ -706,7 +758,7 @@ module BattleDispatcher =
                     let effect = Effects.makeBoltEffect ()
                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
                     let world = entity.SetEffect effect world
-                    let world = entity.SetSize (v2 256.0f 1024.0f) world
+                    let world = entity.SetSize (v2 192.0f 758.0f) world
                     let world = entity.SetBottom target.Bottom world
                     let world = entity.SetDepth Constants.Battle.EffectDepth world
                     let world = entity.SetSelfDestruct true world
@@ -742,10 +794,22 @@ module BattleDispatcher =
 
                 [// background
                  Content.label background.Name
-                    [background.Position == v2 -480.0f -512.0f
-                     background.Size == v2 1024.0f 1024.0f
+                    [background.Position == v2 -480.0f -270.0f
+                     background.Size == v2 960.0f 580.0f
                      background.Depth == Constants.Battle.BackgroundDepth
                      background.LabelImage == asset "Battle" "Background"]
+
+                 // dialog
+                 Dialog.content Simulants.BattleDialog.Name
+                    (battle --> fun battle -> battle.DialogOpt)
+
+                 // dialog interact button
+                 Content.button Simulants.BattleInteract.Name
+                    [Entity.Position == v2 248.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
+                     Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
+                     Entity.Visible <== battle --> fun battle -> match battle.DialogOpt with Some dialog -> Dialog.canAdvance dialog | None -> false
+                     Entity.Text == "Next"
+                     Entity.ClickEvent ==> msg InteractDialog]
 
                  // allies
                  Content.entitiesTrackedBy battle
@@ -769,7 +833,7 @@ module BattleDispatcher =
 
                     [// health bar
                      Content.fillBar "HealthBar" 
-                        [Entity.Size == v2 64.0f 8.0f
+                        [Entity.Size == v2 48.0f 6.0f
                          Entity.Center <== ally --> fun ally -> ally.BottomOffset
                          Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> ally.HitPoints > 0

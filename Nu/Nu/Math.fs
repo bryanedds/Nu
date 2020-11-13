@@ -246,6 +246,7 @@ module Vector4 =
         member this.WithTop top = this.Translate (top - this.Top)
         member this.WithLeft left = this.Translate (left - this.Left)
         member this.WithRight right = this.Translate (right - this.Right)
+        member this.WithSize (size : Vector2) = Vector4 (this.X, this.Y, size.X, size.Y)
 
     let inline v4 x y z w = Vector4 (x, y, z, w)
     let inline v4Dup a = v4 a a a a
@@ -499,6 +500,7 @@ module Vector4i =
         member this.WithTop top = this.Translate (top - this.Top)
         member this.WithLeft left = this.Translate (left - this.Left)
         member this.WithRight right = this.Translate (right - this.Right)
+        member this.WithSize (size : Vector2i) = Vector4i (this.X, this.Y, size.X, size.Y)
 
     let inline v4i x y z w = Vector4i (x, y, z, w)
     let inline v4iDup a = v4 a a a a

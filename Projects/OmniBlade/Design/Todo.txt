@@ -42,15 +42,34 @@
 [X] hp / mp restore
 [X] fix field not fading in
 [X] figure out why creeping is happening before fading out from previous room
-[ ] make sure we're generating prop ids properly
-[ ] tech aim back button should go back to tech not main
-[ ] battle earnings display
-[ ] battle opening animations visible
-[ ] proper creep randomization
-[ ] constrain camera / movement to maps
-[ ] add boss room / boss
+[X] ensure creeping doesn't happen during screen transitioning
+[X] rename legion to team and legionnaire to teammate
+[X] make tech glow stronger
+[X] make sure we're generating prop ids properly
+[X] tech aim back button should go back to tech not main
+[X] battle opening animations visible
+[X] proper creep randomization
+[X] constrain camera / movement to maps
+[X] reducing equipment does not reduce HP / TP
+[X] add boss room
+[X] add boss
+[X] battle earnings display
+[ ] new tech ability gain display
+[ ] make treasure value relative to distance from entry
+[ ] more and improved battle configurations
+[ ] goblins drop green herbs?
+[ ] tiled battle background
+[ ] buff consumables
 [ ] enemy equipment from data
-[ ] reducing equipment does not reduce HP / TP
-[ ] cyclone effect sprite
+[ ] see if we can make simulant stream keys more like Elm's Html.Keyed.
+[ ] cyclone effect sprite / wider cyclone circle
 [ ] tremor camera shake effect
 [ ] damage glow
+
+[0,0][0,1][0,2][0,3][0,4][0,5][0,6]
+[1,0][1,1][1,2][1,3][1,4][1,5][1,6]
+[2,0][2,1][2,2][2,3][2,4][2,5][2,6]
+[3,0][3,1][3,2][3,3][3,4][3,5][3,6]
+[4,0][4,1][4,2][4,3][4,4][4,5][4,6]
+[5,0][5,1][5,2][5,3][5,4][5,5][5,6]
+[6,0][6,1][6,2][6,3][6,4][6,5][6,6]

@@ -11,11 +11,10 @@ open Prime
 open Nu
 
 type Advent =
-    | Opened of Guid
     | DebugSwitch
     | DebugSwitch2
-    | KilledFinalBoss
-    | SavedPrincess
+    | Opened of Guid
+    | FireGoblinDefeated
 
 type Direction =
     | Downward
@@ -142,6 +141,18 @@ type ShopkeepAppearanceType =
     | Female
     | Fancy
 
+type BattleType =
+    | DebugBattle
+    | CaveBattle
+    | CaveBattle2
+    | CaveBattle3
+    | CaveBattle4
+    | FireGoblinBattle
+
+type EncounterType =
+    | DebugEncounter
+    | CaveEncounter
+
 type LockType =
     | BrassKey
 
@@ -169,6 +180,19 @@ type NpcType =
     | VillageWoman
     | VillageBoy
     | VillageGirl
+    | FireGoblinNpc
+
+type NpcSpecialty =
+    | NoSpecialty
+    | FireGoblinSpecialty
+    static member exists advents specialty =
+        match specialty with
+        | NoSpecialty -> true
+        | FireGoblinSpecialty -> not (Set.contains FireGoblinDefeated advents)
+    static member getBattleTypeOpt advents specialty =
+        match specialty with
+        | NoSpecialty -> None
+        | FireGoblinSpecialty -> if not (Set.contains FireGoblinDefeated advents) then Some (Set.singleton FireGoblinDefeated, FireGoblinBattle) else None
 
 type ShopkeepType =
     | ShopkeepMan
@@ -187,17 +211,6 @@ type SensorType =
     | AirSensor
     | HiddenSensor
     | StepPlateSensor
-
-type BattleType =
-    | DebugBattle
-    | CaveBattle
-    | CaveBattle2
-    | CaveBattle3
-    | CaveBattle4
-
-type EncounterType =
-    | DebugEncounter
-    | CaveEncounter
 
 type PoiseType =
     | Poising
@@ -235,6 +248,7 @@ type AllyType =
 type EnemyType =
     | BlueGoblin
     | PoisonGoblin
+    | FireGoblin
 
 type CharacterType =
     | Ally of AllyType
@@ -344,7 +358,7 @@ type [<NoComparison>] DoorData =
 
 type ShopData =
     { ShopType : ShopType // key
-      ShopItems : ItemType Set }
+      ShopItems : ItemType list }
 
 type [<NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Advent Set * Advent Set
@@ -352,7 +366,7 @@ type [<NoComparison>] PropData =
     | Portal of PortalType * Direction * FieldType * PortalType * Advent Set // leads to a different portal
     | Switch of SwitchType * Advent Set * Advent Set // anything that can affect another thing on the field through interaction
     | Sensor of SensorType * BodyShape option * Advent Set * Advent Set // anything that can affect another thing on the field through traversal
-    | Npc of NpcType * Direction * (string * Advent Set * Advent Set) list * Advent Set
+    | Npc of NpcType * NpcSpecialty * Direction * (string * Advent Set * Advent Set) list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
     | SavePoint
     | ChestSpawn
@@ -500,7 +514,7 @@ module FieldData =
                 let battleTypes = battleTypes
                 let battleTypesLength = List.length battleTypes
                 let battleIndex = int (single battleTypesLength / distanceFromOriginMax * distanceFromOrigin)
-                let battleIndex = if Gen.randomf > 0.5f then inc battleIndex else battleIndex
+                let battleIndex = if Gen.randomf < Constants.Field.HarderRandomBattleProbability then inc battleIndex else battleIndex
                 if battleIndex >= 0 && battleIndex < battleTypesLength
                 then Some battleTypes.[battleIndex]
                 else List.tryItem (dec battleTypesLength) battleTypes

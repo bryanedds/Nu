@@ -38,17 +38,17 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Gameplay =
 
-        let TileSize = v2 64.0f 64.0f
-        let CharacterSize = v2 160.0f 160.0f
+        let TileSize = v2 48.0f 48.0f
+        let CharacterSize = v2 120.0f 120.0f
         let DialogSplit = '^'
 
     [<RequireQualifiedAccess>]
     module Field =
 
 #if DEV
-        let WalkForce = 26000.0f * 3.0f
+        let WalkForce = 24000.0f
 #else
-        let WalkForce = 26000.0f
+        let WalkForce = 12000.0f
 #endif
         let LinearDamping = 19.0f
         let BackgroundDepth = -10.0f
@@ -59,8 +59,10 @@ module Constants =
         let PropsLayerName = "Props"
         let TransitionTime = 60L
         let MapRandSize = v2iDup 7
-        let AvatarBottomInset = v2 0.0f 32.0f
+        let AvatarBottomInset = v2 0.0f 24.0f
         let TreasureProbability = 0.75f
+        let HarderRandomBattleProbability = 0.25f
+        let PortalOffset = 54.0f
 
     [<RequireQualifiedAccess>]
     module Battle =
@@ -75,14 +77,13 @@ module Constants =
         let EnemyActionTimeDelta = 3
         let DefendingCounterBuff = 0.5f
         let CancelPosition = v2 -448.0f -240.0f
-        let CharacterCenterOffset = v2 0.0f -16.0f
-        let CharacterCenterOffset2 = v2 0.0f -32.0f
-        let CharacterCenterOffset3 = v2 0.0f 32.0f
+        let CharacterCenterOffset = v2 0.0f -12.0f
+        let CharacterCenterOffset2 = v2 0.0f -24.0f
+        let CharacterCenterOffset3 = v2 0.0f 24.0f
         let CharacterBottomOffset = v2 0.0f -8.0f
-        let CharacterBottomOffset2 = v2 0.0f -32.0f
-        let CharacterBottomOffset3 = v2 0.0f -64.0f
+        let CharacterBottomOffset2 = v2 0.0f -24.0f
+        let CharacterBottomOffset3 = v2 0.0f -48.0f
         let CharacterPulseLength = 60L
-        let LineWidth = 16.0f
         let BackgroundDepth = -10.0f
         let ForgroundDepth = 0.0f
         let EffectDepth = 10.0f
