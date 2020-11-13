@@ -309,11 +309,12 @@ module BattleDispatcher =
                     battle |>
                     Battle.getAllies |>
                     List.filter (fun c -> Algorithms.expPointsRemainingForNextLevel c.ExpPoints <= battle.PrizePool.Exp)
-                let gainLevelText =
+                let textA =
                     match charactersGainingLevel with 
-                    | _ :: _ -> "Level up for " + (charactersGainingLevel |> List.map (fun c -> c.Name) |> String.join ", ") + "!\n"
-                    | [] -> ""
-                let text = "Enemies defeated!^" + gainLevelText + "Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"
+                    | _ :: _ -> "Level up for " + (charactersGainingLevel |> List.map (fun c -> c.Name) |> String.join ", ") + "!"
+                    | [] -> "Enemies defeated!"
+                let textB = "Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"
+                let text = textA + "^" + textB
                 let dialog = { DialogForm = DialogLarge; DialogText = text; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None }
                 let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
                 let sigs = [msg (CelebrateCharacters outcome)]
