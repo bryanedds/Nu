@@ -122,7 +122,7 @@ module Avatar =
           IntersectedBodyShapes_ = [] }
 
     let initial =
-        let position = v2 2752.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
+        let position = v2 2064.0f 48.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
         let bounds = v4Bounds position Constants.Gameplay.CharacterSize
         let animationState = CharacterAnimationState.initial
         { empty with

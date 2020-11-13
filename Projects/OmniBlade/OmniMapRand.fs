@@ -166,9 +166,9 @@ type MapRand =
 
     static member tryAddBossRoomFromNorthWest map =
         let mutable bossRoomAdded = false
-        for i in 0 .. 7 - 1 do
+        for i in 0 .. 7 - 1 do // starting from the north row
             if not bossRoomAdded then
-                for j in 0 .. 7 - 1 do
+                for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
                         if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i > 0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[j].[i] + SegmentRand.Segment1N
@@ -178,37 +178,37 @@ type MapRand =
 
     static member tryAddBossRoomFromNorthEast map =
         let mutable bossRoomAdded = false
-        for i in 0 .. 7 - 1 do
+        for i in 0 .. 7 - 1 do // starting from the north row
             if not bossRoomAdded then
-                for j in 7 - 1 .. - 1 .. 0 do
+                for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i < dec 7 then
+                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i > 0 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] + SegmentRand.Segment1N
-                            map.MapSegments.[i].[dec j] <- SegmentRand.SegmentBS
+                            map.MapSegments.[dec i].[j] <- SegmentRand.SegmentBS
                             bossRoomAdded <- true
         bossRoomAdded
 
     static member tryAddBossRoomFromSouthWest map =
         let mutable bossRoomAdded = false
-        for i in 7 - 1 .. - 1 .. 0 do
+        for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
-                for j in 0 .. 7 - 1 do
+                for j in 0 .. 7 - 1 do // travel east
                     if not bossRoomAdded then
-                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i > 0 then
+                        if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i < dec 7 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] + SegmentRand.Segment1S
-                            map.MapSegments.[i].[dec j] <- SegmentRand.SegmentBN
+                            map.MapSegments.[inc i].[j] <- SegmentRand.SegmentBN
                             bossRoomAdded <- true
         bossRoomAdded
 
     static member tryAddBossRoomFromSouthEast map =
         let mutable bossRoomAdded = false
-        for i in 0 .. 7 - 1 do
+        for i in 7 - 1 .. - 1 .. 0 do // starting from the south row
             if not bossRoomAdded then
-                for j in 0 .. 7 - 1 do
+                for j in 7 - 1 .. - 1 .. 0 do // travel west
                     if not bossRoomAdded then
                         if  map.MapSegments.[i].[j] <> SegmentRand.Segment0 && i < dec 7 then
                             map.MapSegments.[i].[j] <- map.MapSegments.[i].[j] + SegmentRand.Segment1S
-                            map.MapSegments.[i].[dec j] <- SegmentRand.SegmentBN
+                            map.MapSegments.[inc i].[j] <- SegmentRand.SegmentBN
                             bossRoomAdded <- true
         bossRoomAdded
 
@@ -248,8 +248,23 @@ type MapRand =
         match openingOpt with
         | Some opening -> map.MapSegments.[cursor.Y].[cursor.X] <- map.MapSegments.[cursor.Y].[cursor.X] ||| opening
         | None -> ()
-        // TODO: add boss room
-        (cursor, map, rand)
+        let isMapValid =
+            match origin with
+            | OriginC ->    MapRand.tryAddBossRoomFromSouthWest map || MapRand.tryAddBossRoomFromNorthEast map
+            | OriginN ->    MapRand.tryAddBossRoomFromSouthEast map || MapRand.tryAddBossRoomFromSouthWest map
+            | OriginNE ->   MapRand.tryAddBossRoomFromSouthWest map
+            | OriginNW ->   MapRand.tryAddBossRoomFromSouthEast map
+            | OriginE ->    MapRand.tryAddBossRoomFromNorthWest map || MapRand.tryAddBossRoomFromSouthWest map
+            | OriginS ->    MapRand.tryAddBossRoomFromNorthWest map || MapRand.tryAddBossRoomFromNorthEast map
+            | OriginSE ->   MapRand.tryAddBossRoomFromNorthWest map
+            | OriginSW ->   MapRand.tryAddBossRoomFromNorthEast map
+            | OriginW ->    MapRand.tryAddBossRoomFromNorthEast map || MapRand.tryAddBossRoomFromSouthEast map
+#if DEV
+        MapRand.printn map
+#endif
+        if not isMapValid // make another if no valid map could be created
+        then MapRand.makeFromRand walkLength biasChance size origin rand
+        else (cursor, map, rand)
 
     static member make (size : Vector2i) =
         if size.X < 4 || size.Y < 4 then failwith "Invalid MapRand size."
@@ -265,6 +280,7 @@ type MapRand =
         let segments = SegmentsRand.load abstractPath
 
         // configure opening prop
+        let openingId = 0
         let (openingX, openingY, openingWidth, openingHeight, openingInfo) =
             match origin with
             | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2, mapTmx.TileHeight * 2, "[Portal Center Downward TombInner [IX 8]]")
@@ -278,12 +294,12 @@ type MapRand =
             | OriginSW ->   (14 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Upward TombInner [IX 0]]")
         let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
         let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * 32
-        let objectRef = objects.[0]
-        let object = TmxMap.makeObject objectRef.Id 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)
+        let object = TmxMap.makeObject openingId 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)
         object.Properties.Add ("I", openingInfo)
         objects.[0] <- object
 
         // add objects from segments
+        let mutable propId = inc openingId
         for i in 0 .. 7 - 1 do
             for j in 0 .. 7 - 1 do
                 match MapRand.getSegmentOpt map.MapSegments.[j].[i] segments with
@@ -292,8 +308,9 @@ type MapRand =
                         for objectRef in Seq.toArray segment.ObjectGroups.[0].Objects do
                             let x = objectRef.X + double i * 32.0 * double mapTmx.TileWidth
                             let y = objectRef.Y + double j * 32.0 * double mapTmx.TileHeight
-                            let object = TmxMap.makeObject objectRef.Id 0 x y objectRef.Width objectRef.Height
+                            let object = TmxMap.makeObject propId 0 x y objectRef.Width objectRef.Height
                             for propertyKvp in objectRef.Properties do object.Properties.Add (propertyKvp.Key, propertyKvp.Value)
+                            propId <- inc propId
                             objects.Add object
                 | None -> ()
 

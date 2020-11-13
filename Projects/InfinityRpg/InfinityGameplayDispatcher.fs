@@ -105,7 +105,7 @@ module GameplayDispatcher =
                                 then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                                 else gameplay
                             | WalkTurn _ ->
-                                if tickCount = (int64 Constants.InfinityRpg.CharacterWalkResolution) - 1L
+                                if tickCount = dec (int64 Constants.InfinityRpg.CharacterWalkSteps)
                                 then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                                 else gameplay
                         Gameplay.updateCharacterTurn index Turn.incTickCount gameplay
@@ -357,7 +357,7 @@ module GameplayDispatcher =
                      Content.entitiesUntracked gameplay
                         (fun gameplay -> gameplay.Chessboard.PickupSpaces)
                         (fun pickups _ -> Map.toListBy (fun positionM _ -> Pickup.makeHealth positionM) pickups)
-                        (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Pickup <== pickup])
+                        (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Pickup <== pickup])
 
                      // characters
                      Content.entitiesTrackedByFst gameplay
@@ -423,5 +423,5 @@ module GameplayDispatcher =
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Leftward))]
 
                  Content.feeler Simulants.HudFeeler.Name
-                    [Entity.Position == v2 -480.0f -272.0f; Entity.Size == v2 960.0f 544.0f; Entity.Depth == 9.0f
+                    [Entity.Position == v2 -480.0f -270.0f; Entity.Size == v2 960.0f 540.0f; Entity.Depth == 9.0f
                      Entity.TouchEvent ==|> fun evt -> cmd (HandlePlayerInput (TouchInput evt.Data))]]]

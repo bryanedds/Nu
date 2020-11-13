@@ -44,10 +44,11 @@ module CharacterDispatcher =
             let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
             let character = entity.GetCharacter world
             let statuses = character.Statuses
-            if Character.isAutoBattling character then Color (byte 255, byte 0, byte 0, pulseIntensity) // red
+            if character.IsWounded then Color.Zero
+            elif Character.isAutoBattling character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
             elif Set.contains PoisonStatus statuses then Color (byte 0, byte 255, byte 0, pulseIntensity) // green
             elif Set.contains MuteStatus statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
-            elif Set.contains SleepStatus statuses then Color (byte 0, byte 0,byte 255, pulseIntensity) // blue
+            elif Set.contains SleepStatus statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
             else Color.Zero
 
         static member Properties =

@@ -15,6 +15,7 @@ module AvatarDispatcher =
     type [<NoComparison>] AvatarMessage =
         | Update
         | PostUpdate
+        | SynchronizeBounds
         | Collision of CollisionData
         | Separation of SeparationData
         | Face of Direction
@@ -79,7 +80,7 @@ module AvatarDispatcher =
              entity.BodyShape == bodyShapes]
 
         override this.Channel (_, entity) =
-            [entity.UpdateEvent => msg Update
+            [entity.UpdateEvent => msg SynchronizeBounds
              entity.UpdateEvent =|> fun _ ->
                 let force = v2Zero
                 let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.WalkForce 0.0f + force else force
@@ -93,6 +94,8 @@ module AvatarDispatcher =
                 elif KeyboardState.isKeyDown KeyboardKey.Up then msg (Face Upward)
                 elif KeyboardState.isKeyDown KeyboardKey.Down then msg (Face Downward)
                 else msg Nil
+             entity.UpdateEvent => msg Update
+             entity.Parent.PostUpdateEvent => msg SynchronizeBounds
              entity.Parent.PostUpdateEvent => msg PostUpdate
              entity.CollisionEvent =|> fun evt -> msg (Collision evt.Data)
              entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)]
@@ -113,9 +116,6 @@ module AvatarDispatcher =
                             Avatar.animate time WalkCycle avatar
                         else avatar
                     else Avatar.animate time IdleCycle avatar
-
-                // update bounds
-                let avatar = Avatar.updateBounds (constant (entity.GetBounds world)) avatar
                 just avatar
 
             | PostUpdate ->
@@ -123,8 +123,11 @@ module AvatarDispatcher =
                 // clear all temporary body shapes
                 let avatar = Avatar.updateCollidedBodyShapes (constant []) avatar
                 let avatar = Avatar.updateSeparatedBodyShapes (constant []) avatar
+                just avatar
 
-                // update bounds
+            | SynchronizeBounds ->
+
+                // synchronize bounds
                 let avatar = Avatar.updateBounds (constant (entity.GetBounds world)) avatar
                 just avatar
 

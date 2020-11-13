@@ -1,7 +1,7 @@
 Type,AnimationType,LengthOpt,Run,Stutter,Offset
 WalkCycle,LoopedWithDirection,None,6,10,[0 0]
 CelebrateCycle,LoopedWithDirection,None,2,15,[0 1]
-ReadyCycle,SaturatedWithDirection,[Some 60],3,10,[0 2]
+ReadyCycle,SaturatedWithDirection,[Some 60],3,15,[0 2]
 [PoiseCycle Poising],LoopedWithDirection,None,3,10,[0 3]
 [PoiseCycle Defending],LoopedWithDirection,None,1,10,[0 9]
 [PoiseCycle Charging],LoopedWithDirection,None,2,10,[0 5]

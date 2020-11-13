@@ -174,29 +174,30 @@ module TmxMap =
 
                     // accumulate messages
                     let messages = List ()
-                    let mutable yC = r.Y
-                    while yC < r2.Y + tileSize.Y do
+                    let mutable yC = 0
+                    let mutable yO = r.Y + single yC * tileSize.Y
+                    while r.Y + single yC * tileSize.Y < r2.Y + tileSize.Y do
 
                         // compute y index and ensure it's in bounds
-                        let yI = tileMap.Height - 1 - int (yC / tileSize.Y)
-                        if yC >= 0.0f && yI >= 0 && yI < tileMap.Height then
+                        let yI = tileMap.Height - 1 - int (yO / tileSize.Y)
+                        if yO >= 0.0f && yI >= 0 && yI < tileMap.Height then
 
                             // accumulate strip tiles
                             let tiles = List ()
                             let mutable xS = 0.0f
-                            let mutable xC = r.X
-                            while xC < r2.X + tileSize.X do
-                                let xI = int (xC / tileSize.X)
-                                if xC >= 0.0f && xI >= 0 then
+                            let mutable xO = r.X
+                            while xO < r2.X + tileSize.X do
+                                let xI = int (xO / tileSize.X)
+                                if xO >= 0.0f && xI >= 0 then
                                     if xI < tileMap.Width then
                                         let xTile = layer.Tiles.[xI + yI * tileMap.Width]
                                         tiles.Add xTile
                                 else xS <- xS + tileSize.X
-                                xC <- xC + tileSize.X
+                                xO <- xO + tileSize.X
 
                             // compute strip transform
                             let transform =
-                                { Position = viewBounds.Position + v2 xS (yC - r.Y) + v2 (0.0f - modulus r.X tileSize.X) (0.0f - modulus r.Y tileSize.Y)
+                                { Position = v2 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) + viewBounds.Position
                                   Size = v2 (single tiles.Count * tileSize.X) tileSize.Y
                                   Rotation = 0.0f
                                   Depth = depth
@@ -219,9 +220,10 @@ module TmxMap =
                                                   TileSourceSize = tileSourceSize
                                                   TileSize = tileSize
                                                   TileImageAssets = tileImageAssets }}
-                        
+
                         // loop
-                        yC <- yC + tileSize.Y
+                        yC <- inc yC
+                        yO <- r.Y + single yC * tileSize.Y
                                     
                     Seq.toList messages :: messagess)
                 [] layers

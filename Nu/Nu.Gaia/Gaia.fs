@@ -703,7 +703,7 @@ module Gaia =
         let editorState = getEditorState world
         let targetDir = editorState.TargetDir
         let assetSourceDir = targetDir + "/../.."
-        World.tryReloadAssetGraph assetSourceDir targetDir Constants.Editor.RefinementDir world
+        World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world
 
     let private tryLoadAssetGraph (form : GaiaForm) world =
         match tryReloadAssetGraph form world with
@@ -1659,6 +1659,7 @@ module Gaia =
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v2 0f 0f] : Vector2") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v4 0f 0f 0f 0f] : Vector4") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[v2i 0 0] : Vector2i") |> ignore
+        form.entityDesignerPropertyTypeComboBox.Items.Add ("[v4i 0 0 0 0] : Vector4i") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[some 0] : int option") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[right 0] : Either<int, obj>") |> ignore
         form.entityDesignerPropertyTypeComboBox.Items.Add ("[list 0] : int list") |> ignore

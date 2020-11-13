@@ -59,7 +59,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
             | TurnPending
             | TurnBeginning -> vctovf turn.OriginCoordinates
             | TurnTicking tickCount ->
-                let offset = (int Constants.InfinityRpg.CharacterWalkResolution) * (int tickCount)
+                let offset = Constants.InfinityRpg.CharacterWalkStep * int tickCount
                 let offsetVector = dtovfScaled turn.Direction (single offset)
                 vctovf turn.OriginCoordinates + offsetVector
             | TurnFinishing -> turn.OriginCoordinates + dtovc turn.Direction |> vctovf

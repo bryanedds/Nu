@@ -7,7 +7,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Layout =
 
-        let TileSizeI = v2iDup 64
+        let TileSizeI = v2iDup 48
         let TileSize = let t = TileSizeI in t.Vector2
         let TileSheetSizeC = v2iDup 4
         let TileSheetSizeI = Vector2i.Multiply (TileSheetSizeC, TileSizeI)
@@ -33,8 +33,8 @@ module Constants =
 
         // general data
         let AttackName = "Attack"
-        let CharacterWalkSpeed = 8.0f // original value is 4.0f
-        let CharacterWalkResolution = Layout.TileSize.X / CharacterWalkSpeed
+        let CharacterWalkStep = 6
+        let CharacterWalkSteps = int Layout.TileSize.X / CharacterWalkStep
         let CharacterAnimationFacingDelay = 16L
         let CharacterAnimationActingDelay = 12L // original value is 24L
         let ReactionTick = CharacterAnimationActingDelay * 2L

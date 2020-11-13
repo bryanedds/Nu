@@ -329,9 +329,6 @@ module ScriptFacetModule =
         member this.GetPostUpdateScript world : Scripting.Expr = this.Get Property? PostUpdateScript world
         member this.SetPostUpdateScript (value : Scripting.Expr) world = this.SetFast Property? PostUpdateScript false value world
         member this.PostUpdateScript = lens Property? PostUpdateScript this.GetPostUpdateScript this.SetPostUpdateScript this
-        member this.ChangeEvent propertyName = Events.Change propertyName --> this
-        member this.RegisterEvent = Events.Register --> this
-        member this.UnregisteringEvent = Events.Unregistering --> this
 
     type ScriptFacet () =
         inherit Facet ()
@@ -642,6 +639,7 @@ module TileMapFacetModule =
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
+            let world = entity.SetSize (entity.GetQuickSize world) world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyEnabled) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Friction) entity world
@@ -649,6 +647,15 @@ module TileMapFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TileMap) entity world
+            let world =
+                World.monitor (fun _ world ->
+                    let quickSize = entity.GetQuickSize world
+                    let transform = entity.GetTransform world
+                    let world = entity.SetTransformWithoutEvent { transform with Size = quickSize } world
+                    (Cascade, entity.PropagatePhysics world))
+                    (entity.ChangeEvent Property? TileMap)
+                    entity
+                    world
             world
 
         override this.RegisterPhysics (entity, world) =
@@ -722,6 +729,7 @@ module TmxMapFacetModule =
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
+            let world = entity.SetSize (entity.GetQuickSize world) world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? BodyEnabled) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Transform) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Friction) entity world
@@ -729,6 +737,15 @@ module TmxMapFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionMask) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? TmxMap) entity world
+            let world =
+                World.monitor (fun _ world ->
+                    let quickSize = entity.GetQuickSize world
+                    let transform = entity.GetTransform world
+                    let world = entity.SetTransformWithoutEvent { transform with Size = quickSize } world
+                    (Cascade, entity.PropagatePhysics world))
+                    (entity.ChangeEvent Property? TmxMap)
+                    entity
+                    world
             world
 
         override this.RegisterPhysics (entity, world) =
@@ -1751,7 +1768,7 @@ module FeelerDispatcherModule =
             world
 
         override this.GetQuickSize (_, _) =
-            Vector2 64.0f
+            v2Dup 64.0f
 
 [<AutoOpen>]
 module FillBarDispatcherModule =

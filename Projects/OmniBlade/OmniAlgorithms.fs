@@ -11,12 +11,12 @@ open Nu
 module Algorithms =
 
     let expReqs =
-        [0; 7; 14
-         30; 60; 120; 250; 500; 1000 // 2x increase
-         1500; 2250; 3375; 5000; 7500 // 1.5x increase
-         9375; 11700; 14500; 18000; 22500 // 1.25x increase
-         25000; 28500; 32000; 36000; 40500; 45500 // 1.125x increase
-         48350; 51350; 54575; 5800; 61600; 65500] // 1.0625 increate
+        [0; 10; 20
+         40; 80; 160; 320; 640; 1280 // 2x increase
+         1920; 2880; 4320; 6480; 9720 // 1.5x increase
+         12150; 15187; 18984; 23730; 29663 // 1.25x increase
+         33370; 37542; 42235; 47514; 53453; 60135 // 1.125x increase
+         63893; 67886; 72129; 76637; 81427; 86516] // 1.0625 increate
 
     let expReqRanges =
         List.pairwise expReqs
@@ -38,6 +38,16 @@ module Algorithms =
         Option.map inc |> // level 1 is the minimum
         Option.getOrDefault levelMax
 
+    let expPointsForNextLevel expPoints =
+        let level = expPointsToLevel expPoints
+        let (_, nextExp) = levelToExpPointsRange level
+        nextExp
+        
+    let expPointsRemainingForNextLevel expPoints =
+        match expPointsForNextLevel expPoints with
+        | Int32.MaxValue -> 0
+        | nextExp -> nextExp - expPoints
+
     let hitPointsMax armorOpt archetypeType level =
         let stamina = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
@@ -48,8 +58,8 @@ module Algorithms =
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
                 | Some armorData -> single armorData.HitPointsBase
-                | None -> 4.0f
-            | None -> 4.0f
+                | None -> single level * 1.5f
+            | None -> single level * 1.5f
         (intermediate + single level) * stamina |> int |> max 1
 
     let techPointsMax armorOpt archetypeType level =
@@ -62,8 +72,8 @@ module Algorithms =
             | Some armor ->
                 match Map.tryFind armor Data.Value.Armors with
                 | Some armorData -> single armorData.TechPointsBase
-                | None -> 4.0f
-            | None -> 4.0f
+                | None -> single level
+            | None -> single level
         (intermediate + single level) * focus |> int |> max 0
 
     let power weaponOpt powerBuff archetypeType level =
@@ -120,9 +130,9 @@ module Algorithms =
         | None -> Set.empty
 
     let goldPrize scalar (level : int) =
-        let algo = level
-        int (single algo * scalar)
+        let algo = single level * 1.5f
+        int (algo * scalar)
 
     let expPrize scalar (level : int) =
-        let algo = level
-        int (single algo * scalar)
+        let algo = single level * 1.5f
+        int (algo * scalar)

@@ -11,7 +11,8 @@ open Nu
 type BattleState =
     | BattleReady of int64
     | BattleRunning
-    | BattleCease of bool * int64
+    | BattleResults of bool * int64
+    | BattleCease of bool * Advent Set * int64
 
 type [<ReferenceEquality; NoComparison>] ActionCommand =
     { Action : ActionType
@@ -40,7 +41,8 @@ module Battle =
               Inventory_ : Inventory
               PrizePool_ : PrizePool
               CurrentCommandOpt_ : CurrentCommand option
-              ActionCommands_ : ActionCommand Queue }
+              ActionCommands_ : ActionCommand Queue
+              DialogOpt_ : Dialog option }
 
         (* Local Properties *)
         member this.BattleState = this.BattleState_
@@ -48,6 +50,7 @@ module Battle =
         member this.PrizePool = this.PrizePool_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
+        member this.DialogOpt = this.DialogOpt_
 
     let getAllies battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
@@ -157,6 +160,9 @@ module Battle =
     let updateActionCommands updater battle =
         { battle with ActionCommands_ = updater battle.ActionCommands_ }
 
+    let updateDialogOpt updater field =
+        { field with DialogOpt_ = updater field.DialogOpt_ }
+
     let characterAppendedActionCommand characterIndex battle =
         seq battle.ActionCommands_ |>
         Seq.exists (fun command -> command.Source = characterIndex)
@@ -167,9 +173,9 @@ module Battle =
     let prependActionCommand command battle =
          { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
-    let makeFromAllies allies inventory (prizePool : PrizePool) battleData time =
+    let makeFromParty party inventory (prizePool : PrizePool) battleData time =
         let enemies = List.mapi Character.makeEnemy battleData.BattleEnemies
-        let characters = allies @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
+        let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
         let battle =
@@ -178,12 +184,15 @@ module Battle =
               Inventory_ = inventory
               PrizePool_ = prizePool
               CurrentCommandOpt_ = None
-              ActionCommands_ = Queue.empty }
+              ActionCommands_ = Queue.empty
+              DialogOpt_ = None }
         battle
 
-    let makeFromLegion (legion : Legion) inventory prizePool battleData time =
-        let legionnaires = legion |> Map.toList |> List.tryTake 3
-        let allies =
+    let makeFromTeam (team : Team) inventory prizePool battleData time =
+        let party =
+            team |>
+            Map.toList |>
+            List.tryTake 3 |>
             List.map
                 (fun (index, leg) ->
                     match Map.tryFind leg.CharacterType Data.Value.Characters with
@@ -191,23 +200,24 @@ module Battle =
                         // TODO: bounds checking
                         let bounds = v4Bounds battleData.BattleAllyPositions.[index] Constants.Gameplay.CharacterSize
                         let characterIndex = AllyIndex index
+                        let characterType = characterData.CharacterType
                         let characterState = CharacterState.make characterData leg.HitPoints leg.TechPoints leg.ExpPoints leg.WeaponOpt leg.ArmorOpt leg.Accessories
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.fromVector2 -bounds.Bottom
                         let actionTime = Constants.Battle.AllyActionTimeInitial
-                        let character = Character.make bounds characterIndex characterState animationSheet direction actionTime
+                        let character = Character.make bounds characterIndex characterType characterState animationSheet direction actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring leg.CharacterType + "'."))
-                legionnaires
-        let battle = makeFromAllies allies inventory prizePool battleData time
+        let battle = makeFromParty party inventory prizePool battleData time
         battle
 
     let empty =
         { BattleState_ = BattleReady 0L
           Characters_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
-          PrizePool_ = { Items = []; Gold = 0; Exp = 0 }
+          PrizePool_ = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
           CurrentCommandOpt_ = None
-          ActionCommands_ = Queue.empty }
+          ActionCommands_ = Queue.empty
+          DialogOpt_ = None }
 
 type Battle = Battle.Battle
