@@ -59,9 +59,9 @@ module Core =
         nextStamp
 
     /// Get a resolution along either an X or Y dimension.
-    let getResolutionOrDefault isX defaultResolution =
-        match ConfigurationManager.AppSettings.["Resolution" + if isX then "X" else "Y"] with
-        | null -> defaultResolution
+    let getVirtualScalarOrDefault defaultScalar =
+        match ConfigurationManager.AppSettings.["VirtualScalar"] with
+        | null -> defaultScalar
         | resolution -> scvalue<int> resolution
 
     /// Check that events should be trace as specified in the App.config file.
