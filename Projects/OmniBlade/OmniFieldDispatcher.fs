@@ -252,25 +252,22 @@ module FieldDispatcher =
             Content.entities field
                 (fun (field : Field) -> (field.Submenu, field.ShopOpt, field.Inventory))
                 (fun (submenu, shopOpt, inventory : Inventory) _ ->
-                    let items =
-                        match submenu.SubmenuState with
-                        | SubmenuItem submenu -> pageItems submenu.ItemPage 10 (Inventory.indexItems inventory)
-                        | _ ->
-                            match shopOpt with
-                            | Some shop ->
-                                match shop.ShopState with
-                                | ShopBuying ->
-                                    match Map.tryFind shop.ShopType Data.Value.Shops with
-                                    | Some shopData -> shopData.ShopItems |> Set.toSeq |> Seq.indexed |> pageItems shop.ShopPage 10
-                                    | None -> []
-                                | ShopSelling ->
-                                    inventory |>
-                                    Inventory.indexItems |>
-                                    Seq.choose (function (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item | (_, KeyItem _) | (_, Stash _) -> None) |>
-                                    pageItems shop.ShopPage 10
-                            | None -> []
-                    let itemsSorted = List.sortBy snd items
-                    itemsSorted)
+                    match submenu.SubmenuState with
+                    | SubmenuItem submenu -> pageItems submenu.ItemPage 10 (Inventory.indexItems inventory)
+                    | _ ->
+                        match shopOpt with
+                        | Some shop ->
+                            match shop.ShopState with
+                            | ShopBuying ->
+                                match Map.tryFind shop.ShopType Data.Value.Shops with
+                                | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 10
+                                | None -> []
+                            | ShopSelling ->
+                                inventory |>
+                                Inventory.indexItems |>
+                                Seq.choose (function (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item | (_, KeyItem _) | (_, Stash _) -> None) |>
+                                pageItems shop.ShopPage 10
+                        | None -> [])
                 (fun i selectionLens _ ->
                     let x = if i < 5 then position.X else position.X + 368.0f
                     let y = position.Y - single (i % 5) * 80.0f

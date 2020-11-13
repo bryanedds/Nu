@@ -358,7 +358,7 @@ type [<NoComparison>] DoorData =
 
 type ShopData =
     { ShopType : ShopType // key
-      ShopItems : ItemType Set }
+      ShopItems : ItemType list }
 
 type [<NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Advent Set * Advent Set
