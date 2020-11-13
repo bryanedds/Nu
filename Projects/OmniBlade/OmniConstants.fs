@@ -61,6 +61,7 @@ module Constants =
         let MapRandSize = v2iDup 7
         let AvatarBottomInset = v2 0.0f 32.0f
         let TreasureProbability = 0.75f
+        let HarderRandomBattleProbability = 0.25f
         let PortalOffset = 72.0f
 
     [<RequireQualifiedAccess>]

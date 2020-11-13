@@ -514,7 +514,7 @@ module FieldData =
                 let battleTypes = battleTypes
                 let battleTypesLength = List.length battleTypes
                 let battleIndex = int (single battleTypesLength / distanceFromOriginMax * distanceFromOrigin)
-                let battleIndex = if Gen.randomf > 0.5f then inc battleIndex else battleIndex
+                let battleIndex = if Gen.randomf < Constants.Field.HarderRandomBattleProbability then inc battleIndex else battleIndex
                 if battleIndex >= 0 && battleIndex < battleTypesLength
                 then Some battleTypes.[battleIndex]
                 else List.tryItem (dec battleTypesLength) battleTypes
