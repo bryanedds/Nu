@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.2" tiledversion="1.3.4" name="Colloseum" tilewidth="64" tileheight="64" tilecount="1024" columns="32">
+<tileset version="1.2" tiledversion="1.3.4" name="Colloseum" tilewidth="48" tileheight="48" tilecount="1024" columns="32">
  <properties>
   <property name="Image" value="[Field Colloseum]"/>
  </properties>
- <image source="Colloseum.png" width="2048" height="2048"/>
+ <image source="Colloseum.png" width="1536" height="1536"/>
  <tile id="32">
   <properties>
    <property name="C" value=""/>

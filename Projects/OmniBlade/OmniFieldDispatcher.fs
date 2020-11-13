@@ -537,8 +537,8 @@ module FieldDispatcher =
             | UpdateEye ->
                 let world = World.setEyeCenter field.Avatar.Center world
                 let tileMapBounds = Simulants.FieldTileMap.GetBounds world
-                let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 64.0f)
-                let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 128.0f)
+                let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 48.0f)
+                let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 96.0f)
                 let world = World.constrainEyeBounds eyeBounds world
                 just world
 
@@ -614,7 +614,7 @@ module FieldDispatcher =
 
                  // avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
-                    [Entity.Position == v2 256.0f 256.0f; Entity.Depth == Constants.Field.ForgroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
+                    [Entity.Position == v2Zero; Entity.Depth == Constants.Field.ForgroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled <== field --> fun field ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone field.DialogOpt &&

@@ -1768,7 +1768,7 @@ module FeelerDispatcherModule =
             world
 
         override this.GetQuickSize (_, _) =
-            Vector2 64.0f
+            v2Dup 64.0f
 
 [<AutoOpen>]
 module FillBarDispatcherModule =

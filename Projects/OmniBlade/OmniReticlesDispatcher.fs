@@ -42,7 +42,7 @@ module ReticlesDispatcher =
             [Content.button button.Name
                 [Entity.ParentNodeOpt == None
                  Entity.Visible <== rets.Visible
-                 Entity.Size == v2 64.0f 64.0f
+                 Entity.Size == v2 48.0f 48.0f
                  Entity.Position == Constants.Battle.CancelPosition
                  Entity.UpImage == asset Assets.BattlePackageName "CancelUp"
                  Entity.DownImage == asset Assets.BattlePackageName "CancelDown"
