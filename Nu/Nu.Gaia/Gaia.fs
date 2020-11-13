@@ -703,7 +703,7 @@ module Gaia =
         let editorState = getEditorState world
         let targetDir = editorState.TargetDir
         let assetSourceDir = targetDir + "/../.."
-        World.tryReloadAssetGraph assetSourceDir targetDir Constants.Editor.RefinementDir world
+        World.tryReloadAssetGraph assetSourceDir targetDir Constants.Engine.RefinementDir world
 
     let private tryLoadAssetGraph (form : GaiaForm) world =
         match tryReloadAssetGraph form world with
