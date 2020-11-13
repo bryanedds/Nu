@@ -17,7 +17,7 @@
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="2" gid="20" x="1088" y="512" width="64" height="64">
+  <object id="2" gid="20" x="1088" y="448" width="64" height="64">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
