@@ -111,8 +111,8 @@ type [<ReferenceEquality; NoComparison>] Teammate =
     static member equipWeaponOpt weaponTypeOpt teammate =
         { teammate with WeaponOpt = weaponTypeOpt }
 
-    static member equipArmorOpt weaponTypeOpt teammate =
-        let teammate = { teammate with WeaponOpt = weaponTypeOpt }
+    static member equipArmorOpt armorTypeOpt teammate =
+        let teammate = { teammate with ArmorOpt = armorTypeOpt }
         let teammate = { teammate with HitPoints = min teammate.HitPoints teammate.HitPointsMax; TechPoints = min teammate.TechPoints teammate.HitPointsMax }
         teammate
 
