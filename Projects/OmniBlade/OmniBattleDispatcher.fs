@@ -644,7 +644,6 @@ module BattleDispatcher =
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, sigs) =
                         List.fold (fun (battle, sigs) (cancelled, hitPointsChange, characterIndex) ->
-                            let battle = Battle.updateCharacter (Character.updateTechPoints ((+) -techData.TechCost)) sourceIndex battle
                             let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) characterIndex battle
                             let wounded = (Battle.getCharacter characterIndex battle).IsWounded
                             let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
@@ -660,6 +659,7 @@ module BattleDispatcher =
                             (battle, sigs))
                             (battle, [])
                             results
+                    let battle = Battle.updateCharacter (Character.updateTechPoints ((+) -techData.TechCost)) sourceIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     let sigs = Message (PoiseCharacter sourceIndex) :: sigs
                     withSigs sigs battle
