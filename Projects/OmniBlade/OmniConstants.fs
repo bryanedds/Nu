@@ -46,9 +46,9 @@ module Constants =
     module Field =
 
 #if DEV
-        let WalkForce = 26000.0f * 3.0f
+        let WalkForce = 56000.0f
 #else
-        let WalkForce = 26000.0f
+        let WalkForce = 28000.0f
 #endif
         let LinearDamping = 19.0f
         let BackgroundDepth = -10.0f
