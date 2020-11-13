@@ -62,7 +62,8 @@ module CharacterDispatcherModule =
             Some spriteInset
 
         static member Properties =
-            [define Entity.Depth Constants.Layout.CharacterDepth
+            [define Entity.Size Constants.Layout.TileSize
+             define Entity.Depth Constants.Layout.CharacterDepth
              define Entity.PublishChanges true
              define Entity.Omnipresent true
              define Entity.CharacterAnimationState CharacterAnimationState.initial

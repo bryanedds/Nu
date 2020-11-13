@@ -758,7 +758,7 @@ module BattleDispatcher =
                     let effect = Effects.makeBoltEffect ()
                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
                     let world = entity.SetEffect effect world
-                    let world = entity.SetSize (v2 256.0f 1024.0f) world
+                    let world = entity.SetSize (v2 192.0f 758.0f) world
                     let world = entity.SetBottom target.Bottom world
                     let world = entity.SetDepth Constants.Battle.EffectDepth world
                     let world = entity.SetSelfDestruct true world
@@ -794,8 +794,8 @@ module BattleDispatcher =
 
                 [// background
                  Content.label background.Name
-                    [background.Position == v2 -512.0f -512.0f
-                     background.Size == v2 1024.0f 1024.0f
+                    [background.Position == v2 -480.0f -270.0f
+                     background.Size == v2 960.0f 580.0f
                      background.Depth == Constants.Battle.BackgroundDepth
                      background.LabelImage == asset "Battle" "Background"]
 
@@ -833,7 +833,7 @@ module BattleDispatcher =
 
                     [// health bar
                      Content.fillBar "HealthBar" 
-                        [Entity.Size == v2 64.0f 8.0f
+                        [Entity.Size == v2 48.0f 6.0f
                          Entity.Center <== ally --> fun ally -> ally.BottomOffset
                          Entity.Depth == Constants.Battle.GuiDepth
                          Entity.Visible <== ally --> fun ally -> ally.HitPoints > 0

@@ -375,7 +375,7 @@ module GameplayDispatcher =
                      Content.entitiesUntracked gameplay
                         (fun gameplay -> gameplay.Chessboard.PickupSpaces)
                         (fun pickups _ -> Map.toListBy (fun positionM _ -> Pickup.makeHealth positionM) pickups)
-                        (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Pickup <== pickup])
+                        (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Pickup <== pickup])
 
                      // characters
                      Content.entitiesTrackedByFst gameplay

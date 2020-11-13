@@ -162,7 +162,7 @@ module AssetGraph =
             writeMagickImageAsPng false refinementFilePath image
         | Retro ->
             use image = new MagickImage (intermediateFilePath)
-            image.Scale (Percentage 400)
+            image.Scale (Percentage 300)
             writeMagickImageAsPng false refinementFilePath image
 
         // return the latest refinement localities
