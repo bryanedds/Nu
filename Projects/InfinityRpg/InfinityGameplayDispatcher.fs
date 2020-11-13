@@ -102,7 +102,7 @@ module GameplayDispatcher =
                                 then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                                 else gameplay
                             | WalkTurn _ ->
-                                if tickCount = (int64 Constants.InfinityRpg.CharacterWalkResolution) - 1L
+                                if tickCount = dec (int64 Constants.InfinityRpg.CharacterWalkSteps)
                                 then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                                 else gameplay
                         Gameplay.updateCharacterTurn index Turn.incTickCount gameplay
