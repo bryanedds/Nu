@@ -1,7 +1,7 @@
 Type,Subtype,PowerBase,MindBase,Cost,Description
 Melee,Melee,1,1,0,
 OakSword,Sword,1,1,10,
-IronSword,Sword,1,1,50,
+IronSword,Sword,2,1,50,
 BronzeSword,Sword,3,1,100,
 StoneSword,Heavesword,2,1,10,
 OakRod,Rod,1,2,10,
