@@ -33,8 +33,8 @@ module Constants =
 
         // general data
         let AttackName = "Attack"
-        let CharacterWalkSpeed = 6.0f // original value is 3.0f
-        let CharacterWalkResolution = Layout.TileSize.X / CharacterWalkSpeed
+        let CharacterWalkStep = 6
+        let CharacterWalkSteps = int Layout.TileSize.X / CharacterWalkStep
         let CharacterAnimationFacingDelay = 16L
         let CharacterAnimationActingDelay = 12L // original value is 24L
         let ReactionTick = CharacterAnimationActingDelay * 2L
