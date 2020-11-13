@@ -6,11 +6,11 @@
   [Visible True]]
  [[TextDispatcher
    [[Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "I began to question if it was real..."]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "I began to question its existence..."]]
     [Optimized False]
     [Position [-32 -32]]
     [Size [64 64]]
-    [Text "I began to question if it was real..."]]]
+    [Text "I began to question its existence..."]]]
   [StaticSpriteDispatcher
    [[Color [0 0 0 255]]
     [Depth -10]
