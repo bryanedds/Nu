@@ -54,6 +54,7 @@
 [X] add boss room
 [X] add boss
 [X] battle earnings display
+[ ] make treasure value relative to distance from entry
 [ ] more and improved battle configurations
 [ ] goblins drop green herbs?
 [ ] tiled battle background
