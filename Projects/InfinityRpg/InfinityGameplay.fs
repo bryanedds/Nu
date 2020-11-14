@@ -196,6 +196,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 Turn.makeWalk index true coordinates direction
         Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay
 
+    static member makeMove index move gameplay =
+        let gameplay = Gameplay.addMove index move gameplay
+        let gameplay = Gameplay.activateCharacter index gameplay
+        Gameplay.applyMove index gameplay
+    
     static member resetFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboard (Chessboard.transitionMap fieldMap) gameplay
         Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
