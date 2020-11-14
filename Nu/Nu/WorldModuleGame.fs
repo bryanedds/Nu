@@ -270,9 +270,9 @@ module WorldModuleGame =
         static member mouseToScreen (mousePosition : Vector2) world =
             let gameState = World.getGameState world
             let positionScreen =
-                Vector2
-                    (mousePosition.X - gameState.EyeSize.X * 0.5f,
-                     -(mousePosition.Y - gameState.EyeSize.Y * 0.5f)) // negation for right-handedness
+                v2
+                    +(mousePosition.X / single Constants.Render.VirtualScalar - gameState.EyeSize.X * 0.5f)
+                    -(mousePosition.Y / single Constants.Render.VirtualScalar - gameState.EyeSize.Y * 0.5f) // negation for right-handedness
             positionScreen
 
         /// Transform the given mouse position to world space.
