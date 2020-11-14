@@ -8,7 +8,7 @@
    [Assets Assets/Default ogg [Audio] []]
    [Assets Assets/Default tmx [] []]]]
  [Gui
-  [[Asset Font "Assets/Gui/Manaspc.032.ttf" [Render] []]
+  [[Asset Font "Assets/Gui/Manaspc.024.ttf" [Render] []]
    [Assets Assets/Gui csv [Symbol] []]
    [Assets Assets/Gui psd [Render] [PsdToPng Retro]]
    [Assets Assets/Gui png [Render] []]
