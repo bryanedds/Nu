@@ -41,17 +41,17 @@ type MyGameplayDispatcher () =
             | MoveLeft ->
                 let physicsId = Simulants.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 -3000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 -750.0f 0.0f) physicsId world
+                then World.applyBodyForce (v2 -2000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 -500.0f 0.0f) physicsId world
             | MoveRight ->
                 let physicsId = Simulants.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 3000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 750.0f 0.0f) physicsId world
+                then World.applyBodyForce (v2 2000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 500.0f 0.0f) physicsId world
             | Jump ->
                 let physicsId = Simulants.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
-                    let world = World.applyBodyForce (v2 0.0f 175000.0f) physicsId world
+                    let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
                     World.playSound Constants.Audio.DefaultSoundVolume (asset "Gameplay" "Jump") world
                 else world
             | EyeTrack ->
@@ -67,12 +67,12 @@ type MyGameplayDispatcher () =
             Content.layer Simulants.Hud.Name []
                 [Content.button Simulants.Back.Name
                     [Entity.Text == "Back"
-                     Entity.Position == v2 220.0f -260.0f
+                     Entity.Position == v2 260.0f -260.0f
                      Entity.Depth == 10.0f]]
          Content.layerIfScreenSelected screen $ fun _ _ ->
             Content.layer Simulants.Scene.Name []
                 [Content.character Simulants.Player.Name
                     [Entity.Position == v2 0.0f 0.0f
-                     Entity.Size == v2 144.0f 144.0f]]
+                     Entity.Size == v2 108.0f 108.0f]]
          Content.layerIfScreenSelected screen $ fun _ _ ->
             Content.layerFromFile Simulants.Level.Name "Assets/Gameplay/Level.nulyr"]

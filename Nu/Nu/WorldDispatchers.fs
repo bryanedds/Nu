@@ -1426,7 +1426,7 @@ module ButtonDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
+            [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Down false
              define Entity.UpImage Assets.DefaultImage
@@ -1477,7 +1477,7 @@ module LabelDispatcherModule =
         inherit GuiDispatcher ()
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
+            [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
              define Entity.LabelImage Assets.DefaultImage3]
 
@@ -1521,7 +1521,7 @@ module TextDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
+            [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
              define Entity.BackgroundImageOpt None
              define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
@@ -1632,7 +1632,7 @@ module ToggleDispatcherModule =
             [typeof<TextFacet>]
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
+            [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Open true
              define Entity.Pressed false
@@ -1758,7 +1758,7 @@ module FeelerDispatcherModule =
             else (Cascade, world)
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
+            [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Touched false]
 
@@ -1768,7 +1768,7 @@ module FeelerDispatcherModule =
             world
 
         override this.GetQuickSize (_, _) =
-            v2Dup 64.0f
+            Vector2 (192.0f, 48.0f)
 
 [<AutoOpen>]
 module FillBarDispatcherModule =
@@ -1799,7 +1799,7 @@ module FillBarDispatcherModule =
             (spritePosition, Vector2 (spriteWidth, spriteHeight))
 
         static member Properties =
-            [define Entity.Size (Vector2 (256.0f, 64.0f))
+            [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f

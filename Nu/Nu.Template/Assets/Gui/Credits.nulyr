@@ -1,21 +1,26 @@
 [LayerDispatcher
- [[Depth 0]
+ [[Model
+   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Gui]
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
    [[Name Back]
-    [Position [-128.0f -224.0f]]
+    [Position [-96 -184]]
     [Text Back]]]
   [TextDispatcher
-   [[BackgroundImageOpt [Some [Default Image3]]]
+   [[BackgroundImageOpt
+     [Some [Default Image3]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Position [-320.0f 96.0f]]
-    [Size [640.0f 128.0f]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" Credits]]
+    [Position [-256 96]]
+    [Size [512 96]]
     [Text Credits]]]
   [TextDispatcher
-   [[BackgroundImageOpt [Some [Default Image3]]]
+   [[BackgroundImageOpt
+     [Some [Default Image3]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Position [-320.0f -56.0f]]
-    [Size [640.0f 64.0f]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Your Name Here!"]]
+    [Position [-256 -48]]
+    [Size [512 48]]
     [Text "Your Name Here!"]]]]]
