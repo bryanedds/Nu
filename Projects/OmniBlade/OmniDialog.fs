@@ -38,7 +38,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                match dialogOpt with
                | Some dialog ->
                    match dialog.DialogForm with
-                   | DialogThin -> v4Bounds (v2 -432.0f 132.0f) (v2 864.0f 108.0f)
+                   | DialogThin -> v4Bounds (v2 -432.0f 150.0f) (v2 864.0f 90.0f)
                    | DialogThick -> v4Bounds (v2 -432.0f 0.0f) (v2 864.0f 252.0f)
                | None -> v4Zero
             Entity.BackgroundImageOpt <== dialogOpt --> fun dialogOpt ->
@@ -60,4 +60,4 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                | None -> ""
             Entity.Visible <== dialogOpt --> Option.isSome
             Entity.Justification == Unjustified true
-            Entity.Margins == v2 40.0f 40.0f]
+            Entity.Margins == v2 32.0f 32.0f]

@@ -775,7 +775,7 @@ module FieldDispatcher =
                     [sidebar (v2 24.0f 420.0f) 1.0f field
                      items (v2 136.0f 420.0f) 1.0f field SubmenuItemSelect
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 368.0f 12.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 368.0f 3.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
@@ -824,60 +824,60 @@ module FieldDispatcher =
                      Entity.Enabled <== field --> fun field -> match field.ShopOpt with Some shop -> Option.isNone shop.ShopConfirmOpt | None -> true]
                     [items (v2 96.0f 368.0f) 1.0f field ShopSelect
                      Content.button Simulants.FieldShopBuy.Name
-                        [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 24.0f 444.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Buy"
                          Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false
                          Entity.ClickEvent ==> msg ShopBuy]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 24.0f 444.0f; Entity.DepthLocal == 1.0f
+                         Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                         Entity.Text == "Buy what?"
+                         Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false]
                      Content.button Simulants.FieldShopSell.Name
-                        [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 352.0f 444.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Sell"
                          Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false
                          Entity.ClickEvent ==> msg ShopSell]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 1.0f
-                         Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                         Entity.Text == "Buy what?"
-                         Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false]
-                     Content.text Gen.name
-                        [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 352.0f 444.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text == "Sell what?"
                          Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false]
                      Content.button Simulants.FieldShopLeave.Name
-                        [Entity.PositionLocal == v2 628.0f 440.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 678.0f 444.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Leave"
                          Entity.ClickEvent ==> msg ShopLeave]
                      Content.button Simulants.FieldShopPageUp.Name
-                        [Entity.PositionLocal == v2 16.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
+                        [Entity.PositionLocal == v2 24.0f 18.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
                          Entity.Text == "<"
                          Entity.ClickEvent ==> msg ShopPageUp]
                      Content.button Simulants.FieldShopPageDown.Name
-                        [Entity.PositionLocal == v2 832.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
+                        [Entity.PositionLocal == v2 822.0f 18.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
                          Entity.Text == ">"
                          Entity.ClickEvent ==> msg ShopPageDown]
                      Content.text Simulants.FieldShopGold.Name
-                        [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 352.0f 3.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
                  // shop confirm
                  Content.panel Simulants.FieldShopConfirm.Name
-                    [Entity.Position == v2 -448.0f -128.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 256.0f
+                    [Entity.Position == v2 -448.0f -128.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 864.0f 252.0f
                      Entity.LabelImage == Assets.DialogThickImage
                      Entity.Visible <== field --> fun field ->
                         match field.ShopOpt with
                         | Some shop -> Option.isSome shop.ShopConfirmOpt
                         | None -> false]
                     [Content.button Simulants.FieldShopConfirmAccept.Name
-                        [Entity.PositionLocal == v2 160.0f 16.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 198.0f 42.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Accept"
                          Entity.ClickEvent ==> msg ShopConfirmAccept]
                      Content.button Simulants.FieldShopConfirmDecline.Name
-                        [Entity.PositionLocal == v2 456.0f 16.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 498.0f 42.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Decline"
                          Entity.ClickEvent ==> msg ShopConfirmDecline]
                      Content.text Simulants.FieldShopConfirmOffer.Name
-                        [Entity.PositionLocal == v2 32.0f 176.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 42.0f 180.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                             match field.ShopOpt with
                             | Some shop ->
@@ -886,7 +886,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | None -> ""]
                      Content.text Simulants.FieldShopConfirmLine1.Name
-                        [Entity.PositionLocal == v2 64.0f 128.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 60.0f 138.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                             match field.ShopOpt with
                             | Some shop ->
@@ -895,7 +895,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | None -> ""]
                      Content.text Simulants.FieldShopConfirmLine2.Name
-                        [Entity.PositionLocal == v2 64.0f 80.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 60.0f 96.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                             match field.ShopOpt with
                             | Some shop ->
