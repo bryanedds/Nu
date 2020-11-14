@@ -36,17 +36,17 @@ type ElmarioDispatcher () =
             | MoveLeft ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 -3000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 -750.0f 0.0f) physicsId world
+                then World.applyBodyForce (v2 -2000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 -500.0f 0.0f) physicsId world
             | MoveRight ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
-                then World.applyBodyForce (v2 3000.0f 0.0f) physicsId world
-                else World.applyBodyForce (v2 750.0f 0.0f) physicsId world
+                then World.applyBodyForce (v2 2000.0f 0.0f) physicsId world
+                else World.applyBodyForce (v2 500.0f 0.0f) physicsId world
             | Jump ->
                 let physicsId = Simulants.Elmario.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
-                    let world = World.applyBodyForce (v2 0.0f 175000.0f) physicsId world
+                    let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
                     World.playSound Constants.Audio.DefaultSoundVolume (asset "Gameplay" "Jump") world
                 else world
             | Nop -> world
@@ -58,7 +58,7 @@ type ElmarioDispatcher () =
             [Content.layer Simulants.DefaultLayer.Name []
                 [Content.character Simulants.Elmario.Name
                     [Entity.Position == v2 0.0f 0.0f
-                     Entity.Size == v2 144.0f 144.0f]
+                     Entity.Size == v2 108.0f 108.0f]
                  Content.block "Ground"
                     [Entity.Position == v2 -384.0f -256.0f
                      Entity.Size == v2 768.0f 64.0f
