@@ -1491,8 +1491,13 @@ module Gaia =
     let selectTargetDirAndMakeNuPluginFromFilePath filePath =
         let dirName = Path.GetDirectoryName filePath
         Directory.SetCurrentDirectory dirName
-        let assembly = Assembly.Load (File.ReadAllBytes filePath)
-        let assemblyTypes = assembly.GetTypes ()
+        let assemblyTypes =
+            try let assembly = Assembly.Load (File.ReadAllBytes filePath)
+                assembly.GetTypes ()
+            with _ ->
+                Log.info "Could not load assembly dependencies when utilitzing Assembly.Load (.NET does not look in the assembly's directory for dependencies for some reason). Using non-shadow assemply load instead."
+                let assembly = Assembly.LoadFrom filePath
+                assembly.GetTypes ()
         let dispatcherTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) assemblyTypes
         match dispatcherTypeOpt with
         | Some ty -> let plugin = Activator.CreateInstance ty :?> NuPlugin in (dirName, plugin)

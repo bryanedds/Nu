@@ -9,6 +9,10 @@ type InfinityPlugin () =
     // specify the game dispatcher to use at run-time
     override this.GetGameDispatcher () =
         typeof<InfinityDispatcher>
+        
+    // specify the screen dispatcher to use in the editor
+    override this.GetEditorScreenDispatcher () =
+        typeof<GameplayDispatcher>
 
     // route overlays to specific dispatchers
     override this.MakeOverlayRoutes () =
