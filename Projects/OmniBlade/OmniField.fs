@@ -360,21 +360,17 @@ module Field =
           DialogOpt_ = None
           BattleOpt_ = None }
 
+    let debug =
+        { empty with
+            Team_ = Map.singleton 0 Teammate.finn }
+
     let initial randSeedState =
-        { FieldType_ = TombOuter
-          OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
-          Avatar_ = Avatar.initial
-          Team_ = Map.ofList [(0, Teammate.finn)]
-          EncounterCreep_ = 0.0f
-          EncounterThresholdScalar_ = 1.0f
-          Advents_ = Set.empty
-          PropStates_ = Map.empty
-          Inventory_ = Inventory.initial
-          Submenu_ = { SubmenuState = SubmenuClosed; SubmenuUseOpt = None }
-          ShopOpt_ = None
-          FieldTransitionOpt_ = None
-          DialogOpt_ = None
-          BattleOpt_ = None }
+        { empty with
+            FieldType_ = TombOuter
+            OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
+            Avatar_ = Avatar.initial
+            Team_ = Map.singleton 0 Teammate.finn
+            Inventory_ = Inventory.initial }
 
     let save field =
         let fieldSymbolizable = toSymbolizable field

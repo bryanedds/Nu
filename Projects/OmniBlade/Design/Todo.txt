@@ -54,6 +54,7 @@
 [X] add boss room
 [X] add boss
 [X] battle earnings display
+[ ] rejigger gui
 [ ] new tech ability gain display
 [ ] make treasure value relative to distance from entry
 [ ] more and improved battle configurations
