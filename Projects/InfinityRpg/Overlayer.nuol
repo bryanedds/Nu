@@ -1,6 +1,8 @@
 ﻿[[ButtonDispatcherRoute
   [ButtonDispatcher]
-  [[ClickSoundOpt
+  [[DownImage [Gui ButtonDown]]
+   [UpImage [Gui ButtonUp]]
+   [ClickSoundOpt
     [Some [Gui Affirm]]]
    [Font [Gui Font]]]]
  [TextDispatcherRoute
