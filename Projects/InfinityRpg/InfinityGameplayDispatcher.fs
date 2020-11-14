@@ -141,27 +141,21 @@ module GameplayDispatcher =
                 let updater =
                     (fun index gameplay ->
                         let character = Gameplay.getCharacter index gameplay
-                        let enemyMoveOpt =
-                            match character.ControlType with
-                            | Chaos ->
-                                if character.HitPoints > 0 then
-                                    match attackerOpt with
-                                    | Some attackerIndex when attackerIndex = index ->
-                                        Some (Attack PlayerIndex)
-                                    | _ ->
-                                        let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
-                                        let direction = Gen.random1 4 |> Direction.fromInt
-                                        if List.exists (fun x -> x = direction) openDirections
-                                        then Some (Step direction)
-                                        else None
-                                else None
-                            | _ -> None
-                        match enemyMoveOpt with
-                        | Some move ->
-                            let gameplay = Gameplay.addMove index move gameplay
-                            let gameplay = Gameplay.activateCharacter index gameplay
-                            Gameplay.applyMove index gameplay
-                        | None -> gameplay)
+                        match character.ControlType with
+                        | Chaos ->
+                            if character.HitPoints > 0 then
+                                match attackerOpt with
+                                | Some attackerIndex when attackerIndex = index ->
+                                    Gameplay.makeMove index (Attack PlayerIndex) gameplay
+                                | _ ->
+                                    let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
+                                    let direction = Gen.random1 4 |> Direction.fromInt
+                                    if List.exists (fun x -> x = direction) openDirections
+                                    then Gameplay.makeMove index (Step direction) gameplay
+                                    else gameplay
+                            else gameplay
+                        | _ -> gameplay
+                        )
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withMsg BeginTurns gameplay
 
