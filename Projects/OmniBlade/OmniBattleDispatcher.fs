@@ -315,7 +315,7 @@ module BattleDispatcher =
                     | [] -> "Enemies defeated!"
                 let textB = "Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"
                 let text = textA + "^" + textB
-                let dialog = { DialogForm = DialogLarge; DialogText = text; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None }
+                let dialog = { DialogForm = DialogThick; DialogText = text; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None }
                 let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
                 let sigs = [msg (CelebrateCharacters outcome)]
                 if outcome then

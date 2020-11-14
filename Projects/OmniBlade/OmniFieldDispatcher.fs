@@ -53,7 +53,7 @@ module FieldDispatcher =
         member this.Field = this.Model<Field> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.debug)
 
         static let pageItems pageIndex pageSize items =
             items |>
@@ -202,7 +202,7 @@ module FieldDispatcher =
             let battleTypeOpt = NpcSpecialty.getBattleTypeOpt requirements specialty
             let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if field.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
             let (dialog, consequents) = match List.tryHead dialogs with Some dialog -> dialog | None -> ("...", Set.empty)
-            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = battleTypeOpt }
+            let dialogForm = { DialogForm = DialogThick; DialogText = dialog; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = battleTypeOpt }
             let field = Field.updateDialogOpt (constant (Some dialogForm)) field
             let field = Field.updateAdvents (Set.addMany consequents) field
             just field
@@ -220,17 +220,17 @@ module FieldDispatcher =
         static let sidebar position depth (field : Lens<Field, World>) =
             Content.group Gen.name []
                 [Content.button Gen.name
-                   [Entity.PositionLocal == position; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
+                   [Entity.PositionLocal == position; Entity.DepthLocal == depth; Entity.Size == v2 72.0f 72.0f
                     Entity.Text == "T"
                     Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuTeam _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuTeamOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 80.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
+                   [Entity.PositionLocal == position - v2 0.0f 80.0f; Entity.DepthLocal == depth; Entity.Size == v2 72.0f 72.0f
                     Entity.Text == "I"
                     Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuItem _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuItemOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
+                   [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.DepthLocal == depth; Entity.Size == v2 72.0f 72.0f
                     Entity.Text == "X"
                     Entity.ClickEvent ==> msg SubmenuClose]]
 
@@ -243,7 +243,7 @@ module FieldDispatcher =
                     let x = position.X
                     let y = position.Y - single (i % rows) * 72.0f
                     Content.button Gen.name
-                        [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth
+                        [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 256.0f 72.0f
                          Entity.Text == CharacterType.getName teammate.CharacterType
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
@@ -271,7 +271,7 @@ module FieldDispatcher =
                     let x = if i < 5 then position.X else position.X + 368.0f
                     let y = position.Y - single (i % 5) * 80.0f
                     Content.button Gen.name
-                        [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 336.0f 64.0f
+                        [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 336.0f 72.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
                          Entity.Text <== selectionLens --> fun (_, itemType) -> ItemType.getName itemType
                          Entity.EnabledLocal <== selectionLens --> fun (_, itemType) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
@@ -587,6 +587,7 @@ module FieldDispatcher =
                  Content.staticSprite Simulants.FieldTransitionFade.Name
                    [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
                     Entity.StaticImage == Assets.DefaultImage9
+                    Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
                     Entity.Color <== field --|> fun field world ->
                         match field.FieldTransitionOpt with
                         | Some transition ->
@@ -626,7 +627,7 @@ module FieldDispatcher =
 
                  // submenu button
                  Content.button Simulants.FieldSubmenu.Name
-                    [Entity.Position == v2 -444.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
+                    [Entity.Position == v2 -456.0f -246.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 144.0f 48.0f
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Text == "Submenu"
                      Entity.Visible <== field --> fun field ->
@@ -638,7 +639,7 @@ module FieldDispatcher =
 
                  // interact button
                  Content.button Simulants.FieldInteract.Name
-                    [Entity.Position == v2 248.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
+                    [Entity.Position == v2 306.0f -246.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 144.0f 48.0f
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Visible <== field --|> fun field world ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
@@ -686,10 +687,10 @@ module FieldDispatcher =
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogXXLImage
                      Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuTeam _ -> true | _ -> false]
-                    [sidebar (v2 40.0f 424.0f) 1.0f field
-                     team (v2 136.0f 424.0f) 1.0f Int32.MaxValue field tautology2 SubmenuTeamAlly
+                    [sidebar (v2 24.0f 420.0f) 1.0f field
+                     team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology2 SubmenuTeamAlly
                      Content.label Gen.name
-                        [Entity.PositionLocal == v2 424.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
+                        [Entity.PositionLocal == v2 438.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -701,7 +702,7 @@ module FieldDispatcher =
                                 | None -> Assets.EmptyImage
                             | _ -> Assets.EmptyImage]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 672.0f 384.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 666.0f 372.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -710,7 +711,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 672.0f 328.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 666.0f 336.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -719,7 +720,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 448.0f 224.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 444.0f 234.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -728,7 +729,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 448.0f 184.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 444.0f 204.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -737,7 +738,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 448.0f 144.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 444.0f 174.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -746,7 +747,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 448.0f -104.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 512.0f 256.0f
+                        [Entity.PositionLocal == v2 444.0f -84.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 512.0f 256.0f
                          Entity.Justification == Unjustified true
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
@@ -771,10 +772,10 @@ module FieldDispatcher =
                      Entity.LabelImage == Assets.DialogXXLImage
                      Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuItem _ -> true | _ -> false
                      Entity.Enabled <== field --> fun field -> Option.isNone field.Submenu.SubmenuUseOpt]
-                    [sidebar (v2 40.0f 424.0f) 1.0f field
-                     items (v2 136.0f 424.0f) 1.0f field SubmenuItemSelect
+                    [sidebar (v2 24.0f 420.0f) 1.0f field
+                     items (v2 136.0f 420.0f) 1.0f field SubmenuItemSelect
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 368.0f 12.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
@@ -783,30 +784,30 @@ module FieldDispatcher =
                     [Entity.Position == v2 -448.0f -192.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 384.0f
                      Entity.LabelImage == Assets.DialogXLImage
                      Entity.Visible <== field --> fun field -> Option.isSome field.Submenu.SubmenuUseOpt]
-                    [team (v2 160.0f 192.0f) 1.0f 3 field
+                    [team (v2 160.0f 150.0f) 1.0f 3 field
                         (fun teammate submenu ->
                             match submenu.SubmenuUseOpt with
                             | Some submenuUse -> Teammate.canUseItem (snd submenuUse.SubmenuUseSelection) teammate
                             | None -> false)
                         SubmenuItemUse
                      Content.button Gen.name
-                        [Entity.PositionLocal == v2 820.0f 312.0f; Entity.DepthLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
+                        [Entity.PositionLocal == v2 810.0f 306.0f; Entity.DepthLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
                          Entity.Text == "X"
                          Entity.ClickEvent ==> msg SubmenuItemCancel]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 32.0f 304.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 42.0f 306.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuUseOpt with
                             | Some submenu -> submenu.SubmenuUseLine1
                             | None -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 64.0f 256.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 60.0f 264.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                              match field.Submenu.SubmenuUseOpt with
                              | Some submenu -> submenu.SubmenuUseLine2
                              | None -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 64.0f 208.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 60.0f 222.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                             match field.ShopOpt with
                             | Some shop ->
@@ -862,7 +863,7 @@ module FieldDispatcher =
                  // shop confirm
                  Content.panel Simulants.FieldShopConfirm.Name
                     [Entity.Position == v2 -448.0f -128.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 256.0f
-                     Entity.LabelImage == Assets.DialogLargeImage
+                     Entity.LabelImage == Assets.DialogThickImage
                      Entity.Visible <== field --> fun field ->
                         match field.ShopOpt with
                         | Some shop -> Option.isSome shop.ShopConfirmOpt

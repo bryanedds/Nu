@@ -82,3 +82,14 @@ ______
 Twisted Ring Topology
 
 Degenerate Connected 5 Pentagon
+
+character types
+
+lead - physical geomo
+
+wizard - elemental geomo
+
+brawler - scalar single attack / provoke / counter
+
+cleric - healer / buffer / debuffer
+
