@@ -16,13 +16,33 @@ type [<NoComparison>] Move =
         | Travel (head :: _) -> Travel [head]
         | _ -> this
 
+type [<ReferenceEquality; NoComparison>] Round =
+    { CharacterMoves : Map<CharacterIndex, Move>
+      AttackingEnemies : CharacterIndex list }
+
+    static member updateCharacterMoves updater round =
+        { round with CharacterMoves = updater round.CharacterMoves }
+    
+    static member updateAttackingEnemies updater round =
+        { round with AttackingEnemies = updater round.AttackingEnemies }
+    
+    static member addMove index move round =
+        Round.updateCharacterMoves (Map.add index move) round
+
+    static member removeMove index round =
+        Round.updateCharacterMoves (Map.remove index) round
+    
+    static member empty =
+        { CharacterMoves = Map.empty
+          AttackingEnemies = [] }
+
 type [<ReferenceEquality; NoComparison>] Gameplay =
     { ShallLoadGame : bool
       MetaMap : MetaMap
       Field : Field
       Chessboard : Chessboard
       Puppeteer : Puppeteer
-      CharacterMoves : Map<CharacterIndex, Move> }
+      Round : Round }
 
     static member initial =
         let field = Field.initial
@@ -32,7 +52,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
           Field = field
           Chessboard = chessboard
           Puppeteer = Puppeteer.init <| Chessboard.getCharacter PlayerIndex chessboard
-          CharacterMoves = Map.empty }
+          Round = Round.empty }
 
     static member getEnemyIndices gameplay =
         gameplay.Chessboard.EnemyIndices
@@ -56,7 +76,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         character.CharacterIndex
     
     static member getCharacterMove index gameplay =
-        gameplay.CharacterMoves.[index]
+        gameplay.Round.CharacterMoves.[index]
     
     static member tryGetCharacterTurn index gameplay =
         Puppeteer.tryGetCharacterTurn index gameplay.Puppeteer
@@ -90,19 +110,17 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updatePuppeteer updater gameplay =
         { gameplay with Puppeteer = updater gameplay.Puppeteer }
     
-    static member updateCharacterMoves updater gameplay =
-        { gameplay with CharacterMoves = updater gameplay.CharacterMoves }
+    static member updateRound updater gameplay =
+        { gameplay with Round = updater gameplay.Round }
     
     static member addMove index (move : Move) gameplay =
-        let characterMoves = Map.add index move gameplay.CharacterMoves
-        Gameplay.updateCharacterMoves (constant characterMoves) gameplay
+        Gameplay.updateRound (Round.addMove index move) gameplay
 
     static member removeMove index gameplay =
-        let characterMoves = Map.remove index gameplay.CharacterMoves
-        Gameplay.updateCharacterMoves (constant characterMoves) gameplay
+        Gameplay.updateRound (Round.removeMove index) gameplay
     
     static member truncatePlayerPath gameplay =
-        let move = gameplay.CharacterMoves.[PlayerIndex].TruncatePath
+        let move = gameplay.Round.CharacterMoves.[PlayerIndex].TruncatePath
         Gameplay.addMove PlayerIndex move gameplay
     
     static member updateCharacterTurn index updater gameplay =

@@ -233,7 +233,7 @@ module GameplayDispatcher =
                 | _ -> just gameplay
 
             | TryHaltPlayer ->
-                match Map.tryFind PlayerIndex gameplay.CharacterMoves with
+                match Map.tryFind PlayerIndex gameplay.Round.CharacterMoves with
                 | Some _ ->
                     let gameplay = Gameplay.truncatePlayerPath gameplay
                     just gameplay
