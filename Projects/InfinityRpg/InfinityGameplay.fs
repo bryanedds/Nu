@@ -18,23 +18,40 @@ type [<NoComparison>] Move =
 
 type [<ReferenceEquality; NoComparison>] Round =
     { CharacterMoves : Map<CharacterIndex, Move>
-      AttackingEnemies : CharacterIndex list }
+      WalkingEnemyGroup : CharacterIndex list
+      AttackingEnemyGroup : CharacterIndex list }
 
     static member updateCharacterMoves updater round =
         { round with CharacterMoves = updater round.CharacterMoves }
     
-    static member updateAttackingEnemies updater round =
-        { round with AttackingEnemies = updater round.AttackingEnemies }
+    static member updateWalkingEnemyGroup updater round =
+        { round with WalkingEnemyGroup = updater round.WalkingEnemyGroup }
+    
+    static member updateAttackingEnemyGroup updater round =
+        { round with AttackingEnemyGroup = updater round.AttackingEnemyGroup }
     
     static member addMove index move round =
         Round.updateCharacterMoves (Map.add index move) round
 
     static member removeMove index round =
         Round.updateCharacterMoves (Map.remove index) round
+
+    static member addWalkingEnemyGroup group round =
+        Round.updateWalkingEnemyGroup (constant group) round
+
+    static member removeWalkingEnemyGroup round =
+        Round.updateWalkingEnemyGroup (constant []) round
+
+    static member addAttackingEnemyGroup group round =
+        Round.updateAttackingEnemyGroup (constant group) round
+
+    static member removeHeadFromAttackingEnemyGroup round =
+        Round.updateAttackingEnemyGroup List.tail round
     
     static member empty =
         { CharacterMoves = Map.empty
-          AttackingEnemies = [] }
+          WalkingEnemyGroup = []
+          AttackingEnemyGroup = [] }
 
 type [<ReferenceEquality; NoComparison>] Gameplay =
     { ShallLoadGame : bool
@@ -218,6 +235,19 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let gameplay = Gameplay.addMove index move gameplay
         let gameplay = Gameplay.activateCharacter index gameplay
         Gameplay.applyMove index gameplay
+    
+    static member addAttackingEnemyGroup group gameplay =
+        Gameplay.updateRound (Round.addAttackingEnemyGroup group) gameplay
+
+    static member removeHeadFromAttackingEnemyGroup gameplay =
+        Gameplay.updateRound Round.removeHeadFromAttackingEnemyGroup gameplay
+    
+    static member createWalkingEnemyGroup gameplay =
+        let group = Gameplay.getEnemyIndices gameplay |> List.except gameplay.Round.AttackingEnemyGroup
+        Gameplay.updateRound (Round.addWalkingEnemyGroup group) gameplay
+
+    static member removeWalkingEnemyGroup gameplay =
+        Gameplay.updateRound Round.removeWalkingEnemyGroup gameplay
     
     static member resetFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboard (Chessboard.transitionMap fieldMap) gameplay
