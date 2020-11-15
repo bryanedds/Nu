@@ -232,9 +232,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay
 
     static member makeMove index move gameplay =
-        let gameplay = Gameplay.addMove index move gameplay
-        let gameplay = Gameplay.activateCharacter index gameplay
-        Gameplay.applyMove index gameplay
+        if (Gameplay.getCharacter index gameplay).IsAlive then
+            let gameplay = Gameplay.addMove index move gameplay
+            let gameplay = Gameplay.activateCharacter index gameplay
+            Gameplay.applyMove index gameplay
+        else gameplay
     
     static member addAttackingEnemyGroup group gameplay =
         Gameplay.updateRound (Round.addAttackingEnemyGroup group) gameplay

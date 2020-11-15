@@ -19,6 +19,8 @@ module GameplayDispatcher =
         | FinishTurns of CharacterIndex list
         | TickTurns of CharacterIndex list
         | BeginTurns
+        | MakeEnemyAttack
+        | MakeEnemiesWalk
         | MakeEnemyMoves
         | TryContinuePlayerNavigation
         | TryMakePlayerMove of PlayerInput
@@ -130,6 +132,32 @@ module GameplayDispatcher =
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withMsg (TickTurns indices) gameplay
             
+            | MakeEnemyAttack ->
+                let gameplay =
+                    if List.notEmpty gameplay.Round.AttackingEnemyGroup then
+                        let index = gameplay.Round.AttackingEnemyGroup.Head
+                        let gameplay = Gameplay.makeMove index (Attack PlayerIndex) gameplay
+                        Gameplay.removeHeadFromAttackingEnemyGroup gameplay
+                    else gameplay
+                withMsg BeginTurns gameplay
+
+            | MakeEnemiesWalk ->
+                let updater =
+                    (fun index gameplay ->
+                        let character = Gameplay.getCharacter index gameplay
+                        match character.ControlType with
+                        | Chaos ->
+                            let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
+                            let direction = Gen.random1 4 |> Direction.fromInt
+                            if List.exists (fun x -> x = direction) openDirections
+                            then Gameplay.makeMove index (Step direction) gameplay
+                            else gameplay
+                        | _ -> gameplay)
+                        
+                let gameplay = Gameplay.forEachIndex updater gameplay.Round.WalkingEnemyGroup gameplay
+                let gameplay = Gameplay.removeWalkingEnemyGroup gameplay
+                withMsg MakeEnemyAttack gameplay
+            
             | MakeEnemyMoves ->
                 let indices = Gameplay.getEnemyIndices gameplay
                 let attackerOpt =
@@ -138,26 +166,14 @@ module GameplayDispatcher =
                             (Gameplay.getCoordinates x gameplay)
                             (Gameplay.getCoordinates PlayerIndex gameplay))
                         indices
-                let updater =
-                    (fun index gameplay ->
-                        let character = Gameplay.getCharacter index gameplay
-                        match character.ControlType with
-                        | Chaos ->
-                            if character.HitPoints > 0 then
-                                match attackerOpt with
-                                | Some attackerIndex when attackerIndex = index ->
-                                    Gameplay.makeMove index (Attack PlayerIndex) gameplay
-                                | _ ->
-                                    let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
-                                    let direction = Gen.random1 4 |> Direction.fromInt
-                                    if List.exists (fun x -> x = direction) openDirections
-                                    then Gameplay.makeMove index (Step direction) gameplay
-                                    else gameplay
-                            else gameplay
-                        | _ -> gameplay
-                        )
-                let gameplay = Gameplay.forEachIndex updater indices gameplay
-                withMsg BeginTurns gameplay
+                
+                let gameplay =
+                    match attackerOpt with
+                    | Some index -> Gameplay.addAttackingEnemyGroup [index] gameplay
+                    | None -> gameplay
+
+                let gameplay = Gameplay.createWalkingEnemyGroup gameplay
+                withMsg MakeEnemiesWalk gameplay
 
             | TryContinuePlayerNavigation ->
                 let playerTurnOpt = Gameplay.tryGetCharacterTurn PlayerIndex gameplay
