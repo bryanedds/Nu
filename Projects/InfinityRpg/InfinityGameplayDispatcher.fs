@@ -209,7 +209,7 @@ module GameplayDispatcher =
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ ->
-                    if not (Gameplay.anyTurnsInProgress gameplay)
+                    if not gameplay.Round.InProgress
                     then withCmd ListenKeyboard gameplay
                     else withMsg BeginTurns gameplay
             
@@ -303,7 +303,7 @@ module GameplayDispatcher =
 
             match command with
             | HandlePlayerInput playerInput ->
-                if not (Gameplay.anyTurnsInProgress gameplay) then
+                if not gameplay.Round.InProgress then
                     match (Gameplay.getCharacter PlayerIndex gameplay).ControlType with
                     | PlayerControlled -> withMsg (HandleMapChange playerInput) world
                     | _ -> just world
@@ -322,7 +322,7 @@ module GameplayDispatcher =
                 else just world
             
             | Update ->
-                if (Gameplay.anyTurnsInProgress gameplay)
+                if gameplay.Round.InProgress
                 then withMsg TryContinuePlayerNavigation world
                 else withCmd ListenKeyboard world
 
@@ -392,7 +392,7 @@ module GameplayDispatcher =
                  Content.button Simulants.HudSaveGame.Name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
                      Entity.Text == "Save Game"
-                     Entity.Enabled <== gameplay --> fun gameplay -> if Gameplay.anyTurnsInProgress gameplay then false else true
+                     Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress then false else true
                      Entity.ClickEvent ==> cmd SaveGame]
 
                  Content.button Simulants.HudBack.Name
