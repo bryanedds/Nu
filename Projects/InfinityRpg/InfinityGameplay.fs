@@ -21,6 +21,9 @@ type [<ReferenceEquality; NoComparison>] Round =
       WalkingEnemyGroup : CharacterIndex list
       AttackingEnemyGroup : CharacterIndex list }
 
+    member this.InProgress =
+        Map.notEmpty this.CharacterMoves || List.notEmpty this.WalkingEnemyGroup || List.notEmpty this.AttackingEnemyGroup
+    
     static member updateCharacterMoves updater round =
         { round with CharacterMoves = updater round.CharacterMoves }
     
@@ -103,9 +106,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member turnInProgress index gameplay =
         Puppeteer.turnInProgress index gameplay.Puppeteer
-    
-    static member anyTurnsInProgress gameplay = 
-        gameplay.Puppeteer.AnyTurnsInProgress
     
     static member isPlayerTraveling gameplay =
         match Gameplay.tryGetCharacterTurn PlayerIndex gameplay with
