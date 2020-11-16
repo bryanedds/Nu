@@ -1,0 +1,90 @@
+[LayerDispatcher
+ [[Model
+   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Name Layer]
+  [Persistent True]
+  [Visible True]]
+ [[CharacterDispatcher
+   [[Model
+     ["OmniBlade.CharacterModule+Character, OmniBlade, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[0 0 120 120]
+       [0 0 120 120]
+       [AllyIndex 0]
+       [Ally Finn]
+       [Squire 0 None None [] 1 0 [] False False 1 1 1 1 0 0]
+       [0 [Field Finn] IdleCycle Upward]
+       None
+       0
+       NoInput]]]
+    [Position [-60 -192]]
+    [Size [120 120]]]]
+  [CharacterDispatcher
+   [[Model
+     ["OmniBlade.CharacterModule+Character, OmniBlade, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[0 0 120 120]
+       [0 0 120 120]
+       [EnemyIndex 0]
+       [Enemy PoisonGoblin]
+       [Squire 0 None None [] 1 0 [] False False 1 1 1 1 0 0]
+       [0 [Field PoisonGoblin] IdleCycle Downward]
+       None
+       0
+       NoInput]]]
+    [Position [-54 126]]
+    [Size [120 120]]]]
+  [CharacterDispatcher
+   [[Model
+     ["OmniBlade.CharacterModule+Character, OmniBlade, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[0 0 120 120]
+       [0 0 120 120]
+       [AllyIndex 1]
+       [Ally Finn]
+       [Squire 0 None None [] 1 0 [] False False 1 1 1 1 0 0]
+       [0 [Field Finn] IdleCycle Rightward]
+       None
+       0
+       NoInput]]]
+    [Position [-342 -54]]
+    [Size [120 120]]]]
+  [CharacterDispatcher
+   [[Model
+     ["OmniBlade.CharacterModule+Character, OmniBlade, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[0 0 120 120]
+       [0 0 120 120]
+       [AllyIndex 2]
+       [Ally Finn]
+       [Squire 0 None None [] 1 0 [] False False 1 1 1 1 0 0]
+       [0 [Field Finn] IdleCycle Leftward]
+       None
+       0
+       NoInput]]]
+    [Position [234 -30]]
+    [Size [120 120]]]]
+  [CharacterDispatcher
+   [[Model
+     ["OmniBlade.CharacterModule+Character, OmniBlade, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[0 0 120 120]
+       [0 0 120 120]
+       [EnemyIndex 0]
+       [Enemy BlueGoblin]
+       [Squire 0 None None [] 1 0 [] False False 1 1 1 1 0 0]
+       [0 [Field BlueGoblin] IdleCycle Downward]
+       None
+       0
+       NoInput]]]
+    [Position [60 54]]
+    [Size [120 120]]]]
+  [CharacterDispatcher
+   [[Model
+     ["OmniBlade.CharacterModule+Character, OmniBlade, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[0 0 120 120]
+       [0 0 120 120]
+       [EnemyIndex 0]
+       [Enemy BlueGoblin]
+       [Squire 0 None None [] 1 0 [] False False 1 1 1 1 0 0]
+       [0 [Field BlueGoblin] IdleCycle Downward]
+       None
+       0
+       NoInput]]]
+    [Position [-180 66]]
+    [Size [120 120]]]]]]
