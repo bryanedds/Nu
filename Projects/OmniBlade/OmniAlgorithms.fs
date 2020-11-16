@@ -48,6 +48,21 @@ module Algorithms =
         | Int32.MaxValue -> 0
         | nextExp -> nextExp - expPoints
 
+    let expPointsToTechs expPoints archetypeType =
+        match Data.Value.Archetypes.TryGetValue archetypeType with
+        | (true, archetypeData) ->
+            let level = expPointsToLevel expPoints
+            archetypeData.Techs |>
+            Map.filter (fun key _ -> key <= level)  |>
+            Map.toValueList |>
+            Set.ofList
+        | (false, _) -> Set.empty
+
+    let expPointsToTechs3 expPoints expPointsDelta archetypeType =
+        let techs = expPointsToTechs expPoints archetypeType
+        let techs2 = expPointsToTechs (expPoints + expPointsDelta) archetypeType
+        Set.difference techs2 techs
+
     let hitPointsMax armorOpt archetypeType level =
         let stamina = 
             match Map.tryFind archetypeType Data.Value.Archetypes with

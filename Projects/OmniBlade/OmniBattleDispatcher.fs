@@ -304,16 +304,27 @@ module BattleDispatcher =
         and tickBattleResults time timeStart outcome (battle : Battle) =
             let localTime = time - timeStart
             if localTime = 0L then
-                let charactersGainingLevel =
+                let alliesLevelingUp =
                     battle |>
                     Battle.getAllies |>
-                    List.filter (fun c -> Algorithms.expPointsRemainingForNextLevel c.ExpPoints <= battle.PrizePool.Exp)
+                    List.filter (fun ally -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
                 let textA =
-                    match charactersGainingLevel with 
-                    | _ :: _ -> "Level up for " + (charactersGainingLevel |> List.map (fun c -> c.Name) |> String.join ", ") + "!"
-                    | [] -> "Enemies defeated!"
-                let textB = "Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"
-                let text = textA + "^" + textB
+                    match alliesLevelingUp with
+                    | _ :: _ -> "Level up for " + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + "!^"
+                    | [] -> "Enemies defeated!^"
+                let textB =
+                    alliesLevelingUp |>
+                    List.choose (fun ally ->
+                        let techs = Algorithms.expPointsToTechs3 ally.ExpPoints battle.PrizePool.Exp ally.ArchetypeType
+                        if Set.notEmpty techs then Some (ally, techs) else None) |>
+                    List.map (fun (ally, techs) ->
+                        let text = techs |> Set.toList |> List.map scstring |> String.join ", "
+                        ally.Name + " learned " + text + "!") |>
+                    function
+                    | _ :: _ as texts -> String.join "\n" texts + "^"
+                    | [] -> ""
+                let textC = "Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"
+                let text = textA + textB + textC
                 let dialog = { DialogForm = DialogThick; DialogText = text; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None }
                 let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
                 let sigs = [msg (CelebrateCharacters outcome)]
@@ -321,7 +332,7 @@ module BattleDispatcher =
                     let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
                     let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
                     let battle = Battle.updateInventory (Inventory.tryAddItems battle.PrizePool.Items >> snd) battle
-                    let sigs = if List.notEmpty charactersGainingLevel then cmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.GrowthSound)) :: sigs else sigs
+                    let sigs = if List.notEmpty alliesLevelingUp then cmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.GrowthSound)) :: sigs else sigs
                     withSigs sigs battle
                 else withSigs sigs battle
             else

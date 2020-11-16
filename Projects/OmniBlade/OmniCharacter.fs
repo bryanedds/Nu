@@ -57,6 +57,7 @@ module Character =
         member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
         member this.IsEnemy = not this.IsAlly
         member this.ActionTime = this.ActionTime_
+        member this.ArchetypeType = this.CharacterState_.ArchetypeType
         member this.ExpPoints = this.CharacterState_.ExpPoints
         member this.HitPoints = this.CharacterState_.HitPoints
         member this.TechPoints = this.CharacterState_.TechPoints

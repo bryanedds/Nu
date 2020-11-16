@@ -27,12 +27,12 @@ module Program =
     script language | s-expr DSL                | Visual Studio & Gaia
     effect system   | s-expr DSL                | Gaia & Aether (TBA)
     mind (TBA)      | s-expr DSL                | Gaia & Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
-    interactions    | F# (chains)               | Visual Studio
     subsystems      | F#                        | Visual Studio
     components      | F# (facets / dispatchers) | Visual Studio
     elmish / MVU    | F# (facets / dispatchers) | Visual Studio
+    interactions    | F# (chains)               | Visual Studio (deprecated, but still usable)
 
-    The advantages and limitations that fall out of this is as such -
+    The advantages and limitations that fall out of this are as such -
 
     The systems that provide an s-expr DSL have their DSLs interpreted at run-time and, unlike code
     in F#, allow for hot-reloading for optimal authoring experiences. For these systems, however,
@@ -52,22 +52,8 @@ module Program =
     buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only
     applies to 2D ~ will not apply to 3D once implemented in Nu (for obvious reasons). *)
 
-    (* WISDOM: On threading physics...
-    
-    A simulation that would put physics on another thread should likely do so in a different app
-    domain with communication via .NET remoting to make 100% sure that no sharing is happening.
-    This should keep debugging easy and even possibly give a boost to GC latency what with
-    spreading collection pauses across two separate collectors.
-    
-    NOTE: AppDomains are discontinued in .NET Core -
-    https://blogs.msdn.microsoft.com/dotnet/2016/02/10/porting-to-net-core/
-    It is suggested instead to run in separate processes, which is fine. *)
-
     (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
     need to move the app from 60fps to 30fps. *)
-
-    (* IDEA: it was suggested that time-travel debugging a la Elm or http://vimeo.com/36579366
-    would be appropriate to this engine given its pure functional nature. *)
 
     (* TODO: investigate Gaia extensibility mechanism. *)
 
