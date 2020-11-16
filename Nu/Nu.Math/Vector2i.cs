@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace Nu
 {
@@ -111,14 +112,38 @@ namespace Nu
                 v.Y / v2.Y);
         }
 
-        public static Vector2i Zero { get { return new Vector2i(0); } }
-        public static Vector2i One { get { return new Vector2i(1); } }
+        public int this[int index]
+        {
+            get
+            {
+                switch (index)
+                {
+                    case 0: return X;
+                    case 1: return Y;
+                    default: throw new IndexOutOfRangeException("You tried to access this vector at index: " + index);
+                }
+            }
+
+            set
+            {
+                switch (index)
+                {
+                    case 0: X = value; break;
+                    case 1: Y = value; break;
+                    default: throw new IndexOutOfRangeException("You tried to set this vector at index: " + index);
+                }
+            }
+        }
+
         public static Vector2i UnitX { get { return new Vector2i(1, 0); } }
         public static Vector2i UnitY { get { return new Vector2i(0, 1); } }
+        public static Vector2i Zero { get { return new Vector2i(0); } }
+        public static Vector2i One { get { return new Vector2i(1); } }
         public static Vector2i Up { get { return new Vector2i(0, 1); } }
         public static Vector2i Right { get { return new Vector2i(1, 0); } }
         public static Vector2i Down { get { return new Vector2i(0, -1); } }
         public static Vector2i Left { get { return new Vector2i(-1, 0); } }
+        public static readonly int SizeInBytes = Marshal.SizeOf<Vector2i>();
 
         public override string ToString()
         {
@@ -130,9 +155,6 @@ namespace Nu
             return X ^ Y;
         }
 
-        /// <summary>Indicates whether the current vector is equal to another vector.</summary>
-        /// <param name="other">A vector to compare with this vector.</param>
-        /// <returns>true if the current vector is equal to the vector parameter; otherwise, false.</returns>
         public bool Equals(Vector2i other)
         {
             return
