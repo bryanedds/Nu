@@ -85,11 +85,14 @@ Degenerate Connected 5 Pentagon
 
 character types
 
-lead - physical geomo
+lead character - sword / physical geometric attacks
 
-wizard - elemental geomo
+wizard - scythe / elemental geometric attacks
 
-brawler - scalar single attack / provoke / counter
+brawler - heavesword / scalar single attack / provoke / counter
 
-cleric - healer / buffer / debuffer
+cleric - archer / healer / buffer / debuffer
 
+dimensionalist - gunner / time magic / summon (expensive elemental all attacks)
+
+assassin - physical attacker / steal / mixes two items, either doubles the power or produces a new effect (curative or offensive)

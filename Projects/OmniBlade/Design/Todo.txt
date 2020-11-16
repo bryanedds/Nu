@@ -54,12 +54,12 @@
 [X] add boss room
 [X] add boss
 [X] battle earnings display
-[ ] rejigger gui
+[X] rejigger gui
 [ ] new tech ability gain display
-[ ] make treasure value relative to distance from entry
+[ ] make treasure value relative to distance from entry?
 [ ] more and improved battle configurations
 [ ] goblins drop green herbs?
-[ ] tiled battle background
+[ ] tiled battle background?
 [ ] buff consumables
 [ ] enemy equipment from data
 [ ] see if we can make simulant stream keys more like Elm's Html.Keyed.

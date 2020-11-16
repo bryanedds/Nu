@@ -41,6 +41,7 @@ module Constants =
         let TileSize = v2 48.0f 48.0f
         let CharacterSize = v2 120.0f 120.0f
         let DialogSplit = '^'
+        let ItemLimit = 9
 
     [<RequireQualifiedAccess>]
     module Field =
