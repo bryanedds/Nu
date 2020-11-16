@@ -321,7 +321,7 @@ module BattleDispatcher =
                 if outcome then
                     let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
                     let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
-                    let battle = Battle.updateInventory (Inventory.addItems battle.PrizePool.Items) battle
+                    let battle = Battle.updateInventory (Inventory.tryAddItems battle.PrizePool.Items >> snd) battle
                     let sigs = if List.notEmpty charactersGainingLevel then cmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.GrowthSound)) :: sigs else sigs
                     withSigs sigs battle
                 else withSigs sigs battle

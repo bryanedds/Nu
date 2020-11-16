@@ -168,7 +168,7 @@ module FieldDispatcher =
 
         static let interactChest itemType chestId battleTypeOpt requirements consequents (field : Field) =
             if field.Advents.IsSupersetOf requirements then
-                let field = Field.updateInventory (Inventory.addItem itemType) field
+                let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
                 let field =
                     match battleTypeOpt with
@@ -422,7 +422,7 @@ module FieldDispatcher =
                         let itemType = snd submenuUse.SubmenuUseSelection
                         let (result, displacedOpt, teammate) = Teammate.tryUseItem itemType teammate
                         let field = if result then Field.updateInventory (Inventory.removeItem itemType) field else field
-                        let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.addItem displaced) field | None -> field
+                        let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                         let field = Field.updateTeam (Map.add index teammate) field
                         let field = Field.updateSubmenu (constant { field.Submenu with SubmenuUseOpt = None }) field
                         if result then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) field
@@ -469,10 +469,15 @@ module FieldDispatcher =
                 | Some shop ->
                     match shop.ShopConfirmOpt with
                     | Some shopConfirm ->
-                        let valid = match shop.ShopState with ShopBuying -> field.Inventory.Gold >= shopConfirm.ShopConfirmPrice | ShopSelling -> true
+                        let itemType = snd shopConfirm.ShopConfirmSelection
+                        let valid =
+                            match shop.ShopState with
+                            | ShopBuying ->
+                                Inventory.canAddItem itemType field.Inventory &&
+                                field.Inventory.Gold >= shopConfirm.ShopConfirmPrice
+                            | ShopSelling -> true
                         if valid then
-                            let itemType = snd shopConfirm.ShopConfirmSelection
-                            let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.addItem itemType | ShopSelling -> Inventory.removeItem itemType) field
+                            let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.removeItem itemType) field
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirm.ShopConfirmPrice) | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirm.ShopConfirmPrice)) field
                             let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
                             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) field

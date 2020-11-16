@@ -20,6 +20,7 @@ type [<ReferenceEquality; NoComparison>] PrizePool =
       Gold : int
       Exp : int }
 
+// TODO: make this abstract due to item limit constraints.
 type [<ReferenceEquality; NoComparison>] Inventory =
     { Items : Map<ItemType, int>
       Gold : int }
@@ -43,16 +44,32 @@ type [<ReferenceEquality; NoComparison>] Inventory =
         | Some itemCount when itemCount > 0 -> true
         | _ -> false
 
-    static member addItem item inventory =
+    static member canAddItem item inventory =
         match item with
         | Equipment _ | Consumable _ | KeyItem _ ->
             match Map.tryFind item inventory.Items with
-            | Some itemCount -> { inventory with Items = Map.add item (inc itemCount) inventory.Items }
-            | None -> { inventory with Items = Map.add item 1 inventory.Items }
-        | Stash gold -> { inventory with Gold = inventory.Gold + gold }
+            | Some itemCount -> itemCount < Constants.Gameplay.ItemLimit
+            | None -> true
+        | Stash _ -> true
 
-    static member addItems items inventory =
-        List.fold (flip Inventory.addItem) inventory items
+    static member tryAddItem item inventory =
+        match item with
+        | Equipment _ | Consumable _ | KeyItem _ ->
+            match Map.tryFind item inventory.Items with
+            | Some itemCount ->
+                if itemCount < Constants.Gameplay.ItemLimit then
+                    let inventory = { inventory with Items = Map.add item (inc itemCount) inventory.Items }
+                    (true, inventory)
+                else (false, inventory)
+            | None -> (true, { inventory with Items = Map.add item 1 inventory.Items })
+        | Stash gold -> (true, { inventory with Gold = inventory.Gold + gold })
+
+    static member tryAddItems items inventory =
+        List.foldBack (fun item (failures, inventory) ->
+            match Inventory.tryAddItem item inventory with
+            | (true, inventory) -> (failures, inventory)
+            | (false, inventory) -> (Some item :: failures, inventory))
+            items ([], inventory)
 
     static member removeItem item inventory =
         match Map.tryFind item inventory.Items with
