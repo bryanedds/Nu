@@ -1,35 +1,34 @@
 [LayerDispatcher
  [[Model
-   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.5.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Gui]
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
    [[Name Back]
-    [Optimized False]
-    [Position [-128 -192]]
+    [Position [-96 -222]]
     [Text Back]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Optimized False]
-    [Position [-448 144]]
-    [Size [896 112]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" Credits]]
+    [Position [-432 126]]
+    [Size [864 90]]
     [Text Credits]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Optimized False]
-    [Position [-448 16]]
-    [Size [896 112]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Code: Bryan Edds"]]
+    [Position [-432 0]]
+    [Size [864 90]]
     [Text "Code: Bryan Edds"]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Optimized False]
-    [Position [-448 -112]]
-    [Size [896 112]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Art: Placeholder for now."]]
+    [Position [-432 -126]]
+    [Size [864 90]]
     [Text "Art: Placeholder for now."]]]]]

@@ -54,7 +54,7 @@ module ReticlesDispatcher =
                     let button = rets.Parent / buttonName
                     Content.button button.Name
                         [Entity.ParentNodeOpt == None
-                         Entity.Size == v2 128.0f 128.0f
+                         Entity.Size == v2 96.0f 96.0f
                          Entity.Center <== character --> fun (character : Character) -> character.CenterOffset
                          Entity.UpImage == asset Assets.BattlePackageName "ReticleUp"
                          Entity.DownImage == asset Assets.BattlePackageName "ReticleDown"
