@@ -4,7 +4,6 @@
 namespace OmniBlade
 open System
 open System.Numerics
-open FSharp.Reflection
 open FSharpx.Collections
 open Prime
 open Nu
@@ -541,7 +540,7 @@ module BattleDispatcher =
                         // TODO: non-curative case
                         just battle
                 | (false, _) -> just battle
-            
+
             | TechCharacter1 (sourceIndex, targetIndex, techType) ->
                 let source = Battle.getCharacter sourceIndex battle
                 let target = Battle.getCharacter targetIndex battle
@@ -553,8 +552,8 @@ module BattleDispatcher =
                     | Bolt | Tremor -> None
                 match hopOpt with
                 | None ->
-                    if target.IsHealthy
-                    then withMsg (ChargeCharacter sourceIndex) battle
+                    if target.IsHealthy then
+                        withMsg (ChargeCharacter sourceIndex) battle
                     else
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
                         withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
