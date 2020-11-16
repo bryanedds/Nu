@@ -23,6 +23,7 @@ module GameplayDispatcher =
         | MakeEnemiesWalk
         | MakeEnemyMoves
         | TryContinuePlayerNavigation
+        | TryContinueRound
         | TryMakePlayerMove of PlayerInput
         | TryHaltPlayer
         | TransitionMap of Direction
@@ -134,11 +135,9 @@ module GameplayDispatcher =
             
             | MakeEnemyAttack ->
                 let gameplay =
-                    if List.notEmpty gameplay.Round.AttackingEnemyGroup then
-                        let index = gameplay.Round.AttackingEnemyGroup.Head
-                        let gameplay = Gameplay.makeMove index (Attack PlayerIndex) gameplay
-                        Gameplay.removeHeadFromAttackingEnemyGroup gameplay
-                    else gameplay
+                    let index = gameplay.Round.AttackingEnemyGroup.Head
+                    let gameplay = Gameplay.makeMove index (Attack PlayerIndex) gameplay
+                    Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
 
             | MakeEnemiesWalk ->
@@ -156,7 +155,7 @@ module GameplayDispatcher =
                         
                 let gameplay = Gameplay.forEachIndex updater gameplay.Round.WalkingEnemyGroup gameplay
                 let gameplay = Gameplay.removeWalkingEnemyGroup gameplay
-                withMsg MakeEnemyAttack gameplay
+                withMsg BeginTurns gameplay
             
             | MakeEnemyMoves ->
                 let indices = Gameplay.getEnemyIndices gameplay
@@ -173,7 +172,11 @@ module GameplayDispatcher =
                     | None -> gameplay
 
                 let gameplay = Gameplay.createWalkingEnemyGroup gameplay
-                withMsg MakeEnemiesWalk gameplay
+                
+                match Gameplay.getCharacterMove PlayerIndex gameplay with
+                | Step _
+                | Travel _ -> withMsg MakeEnemiesWalk gameplay
+                | _ -> withMsg BeginTurns gameplay
 
             | TryContinuePlayerNavigation ->
                 let playerTurnOpt = Gameplay.tryGetCharacterTurn PlayerIndex gameplay
@@ -212,6 +215,18 @@ module GameplayDispatcher =
                     if not gameplay.Round.InProgress
                     then withCmd ListenKeyboard gameplay
                     else withMsg BeginTurns gameplay
+            
+            | TryContinueRound ->
+                if Map.notEmpty gameplay.Round.CharacterMoves then withMsg TryContinuePlayerNavigation gameplay
+                else
+                    let gameplay = Gameplay.refreshAttackingEnemyGroup gameplay
+                    if List.notEmpty gameplay.Round.AttackingEnemyGroup then
+                        withMsg MakeEnemyAttack gameplay
+                    else
+                        let gameplay = Gameplay.refreshWalkingEnemyGroup gameplay
+                        if List.notEmpty gameplay.Round.WalkingEnemyGroup then
+                            withMsg MakeEnemiesWalk gameplay
+                        else withCmd Update gameplay // if it gets to this point, Round.InProgress was true only because of dead enemies remaining in lists.
             
             | TryMakePlayerMove playerInput ->
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
@@ -323,7 +338,7 @@ module GameplayDispatcher =
             
             | Update ->
                 if gameplay.Round.InProgress
-                then withMsg TryContinuePlayerNavigation world
+                then withMsg TryContinueRound world
                 else withCmd ListenKeyboard world
 
             | PostUpdate ->
@@ -386,7 +401,7 @@ module GameplayDispatcher =
                 [Content.button Simulants.HudHalt.Name
                     [Entity.Position == v2 184.0f -144.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
                      Entity.Text == "Halt"
-                     Entity.Enabled <== gameplay --> fun gameplay -> Gameplay.isPlayerTraveling gameplay
+                     Entity.Enabled <== gameplay --> fun gameplay -> gameplay.Round.IsPlayerTraveling
                      Entity.ClickEvent ==> msg TryHaltPlayer]
 
                  Content.button Simulants.HudSaveGame.Name

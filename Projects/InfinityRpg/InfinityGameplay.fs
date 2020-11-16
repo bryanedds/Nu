@@ -24,6 +24,14 @@ type [<ReferenceEquality; NoComparison>] Round =
     member this.InProgress =
         Map.notEmpty this.CharacterMoves || List.notEmpty this.WalkingEnemyGroup || List.notEmpty this.AttackingEnemyGroup
     
+    member this.IsPlayerTraveling =
+        match Map.tryFind PlayerIndex this.CharacterMoves with
+        | Some move ->
+            match move with
+            | Travel _ -> true
+            | _ -> false
+        | None -> false
+    
     static member updateCharacterMoves updater round =
         { round with CharacterMoves = updater round.CharacterMoves }
     
@@ -106,14 +114,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member turnInProgress index gameplay =
         Puppeteer.turnInProgress index gameplay.Puppeteer
-    
-    static member isPlayerTraveling gameplay =
-        match Gameplay.tryGetCharacterTurn PlayerIndex gameplay with
-        | Some turn ->
-            match turn.TurnType with
-            | WalkTurn multiRoundContext -> multiRoundContext
-            | _ -> false
-        | None -> false
     
     static member updateMetaMap updater gameplay =
         { gameplay with MetaMap = updater gameplay.MetaMap }
@@ -200,7 +200,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateCharacter reactorIndex (Character.updateHitPoints (fun x -> x - reactorDamage)) gameplay
     
     static member stopTravelingPlayer reactorIndex gameplay =
-        if reactorIndex = PlayerIndex then Gameplay.truncatePlayerPath gameplay else gameplay
+        if reactorIndex = PlayerIndex && gameplay.Round.IsPlayerTraveling then Gameplay.truncatePlayerPath gameplay else gameplay
     
     static member applyMove index gameplay =
         let move = Gameplay.getCharacterMove index gameplay
@@ -241,13 +241,19 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member addAttackingEnemyGroup group gameplay =
         Gameplay.updateRound (Round.addAttackingEnemyGroup group) gameplay
 
+    static member refreshAttackingEnemyGroup gameplay =
+        Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
+    
     static member removeHeadFromAttackingEnemyGroup gameplay =
         Gameplay.updateRound Round.removeHeadFromAttackingEnemyGroup gameplay
-    
+
     static member createWalkingEnemyGroup gameplay =
         let group = Gameplay.getEnemyIndices gameplay |> List.except gameplay.Round.AttackingEnemyGroup
         Gameplay.updateRound (Round.addWalkingEnemyGroup group) gameplay
 
+    static member refreshWalkingEnemyGroup gameplay =
+        Gameplay.updateRound (Round.updateWalkingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
+    
     static member removeWalkingEnemyGroup gameplay =
         Gameplay.updateRound Round.removeWalkingEnemyGroup gameplay
     
