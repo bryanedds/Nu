@@ -388,7 +388,7 @@ type [<NoComparison>] FieldData =
       FieldBackgroundColor : Color
       FieldSongOpt : Song AssetTag option
       EncounterTypeOpt : EncounterType option
-      TreasureList : ItemType list }
+      Treasures : ItemType list }
 
 [<RequireQualifiedAccess>]
 module FieldData =
@@ -411,22 +411,21 @@ module FieldData =
             Some { PropBounds = propBounds; PropDepth = propDepth; PropData = propData; PropId = object.Id }
         | (false, _) -> None
 
-    let inflateProp fieldData prop rand =
+    let inflateProp prop (treasures : ItemType FStack) rand =
         match prop.PropData with
         | ChestSpawn ->
             let (probability, rand) = Rand.nextSingleUnder 1.0f rand
             if probability < Constants.Field.TreasureProbability then
-                let (treasure, rand) =
-                    match fieldData.TreasureList with
-                    | _ :: _ ->
-                        let (index, rand) = Rand.nextIntUnder fieldData.TreasureList.Length rand
-                        (fieldData.TreasureList.[index], rand)
-                    | [] -> (Consumable GreenHerb, rand)
+                let (treasure, treasures, rand) =
+                    if FStack.notEmpty treasures then
+                        let (index, rand) = Rand.nextIntUnder (FStack.length treasures) rand
+                        (FStack.index index treasures, FStack.removeAt index treasures, rand)
+                    else (Consumable GreenHerb, treasures, rand)
                 let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
                 let prop = { prop with PropData = Chest (WoodenChest, treasure, id, None, Set.empty, Set.empty) }
-                (prop, rand)
-            else ({ prop with PropData = EmptyProp }, rand)
-        | _ -> (prop, rand)
+                (prop, treasures, rand)
+            else ({ prop with PropData = EmptyProp }, treasures, rand)
+        | _ -> (prop, treasures, rand)
 
     let tryGetTileMap omniSeedState fieldData world =
         let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
@@ -475,12 +474,13 @@ module FieldData =
                 propObjects |>
                 List.map (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) |>
                 List.definitize
-            let (props, _) =
-                List.foldBack (fun prop (props, rand) ->
-                    let (prop, rand) = inflateProp fieldData prop rand
-                    (prop :: props, rand))
+            let (props, _, _) =
+                List.foldBack (fun prop (props, treasures, rand) ->
+                    let (prop, treasures, rand) = inflateProp prop treasures rand
+                    let treasures = if FStack.isEmpty treasures then FStack.fromSeq fieldData.Treasures else treasures
+                    (prop :: props, treasures, rand))
                     propsUninflated
-                    ([], Rand.makeFromSeedState rotatedSeedState)
+                    ([], FStack.fromSeq fieldData.Treasures, Rand.makeFromSeedState rotatedSeedState)
             propsMemoized <- Map.add memoKey props propsMemoized
             props
         | Some props -> props
