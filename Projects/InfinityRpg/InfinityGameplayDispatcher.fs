@@ -91,7 +91,7 @@ module GameplayDispatcher =
                                 | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
                                 | EnemyIndex _ -> Gameplay.removeEnemy reactorIndex gameplay
                             else gameplay
-                        | WalkTurn _ -> if index.IsEnemy then Gameplay.finishMove index gameplay else gameplay
+                        | WalkTurn _ -> Gameplay.finishMove index gameplay
                     | _ -> failwith "non-finishing turns should be filtered out by this point"
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 just gameplay
@@ -179,34 +179,24 @@ module GameplayDispatcher =
                 | _ -> withMsg BeginTurns gameplay
 
             | TryContinuePlayerNavigation ->
-                let playerTurnOpt = Gameplay.tryGetCharacterTurn PlayerIndex gameplay
                 let playerMoveOpt =
-                    match playerTurnOpt with
-                    | Some playerTurn ->
-                        match playerTurn.TurnStatus with
-                        | TurnFinishing ->
-                            match Gameplay.getCharacterMove PlayerIndex gameplay with
-                            | Travel path ->
-                                match path with
-                                | _ :: [] -> None
-                                | _ :: navigationPath ->
-                                    let targetCoordinates = (List.head navigationPath).Coordinates
-                                    if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
-                                    then Some (Travel navigationPath)
-                                    else None
-                                | [] -> failwithumf ()
-                            | _ -> None
+                    if gameplay.Round.IsPlayerNavigationTransitioning then
+                        match gameplay.Round.PlayerNavigation with
+                        | Automatic path ->
+                            match path with
+                            | _ :: [] -> None
+                            | _ :: navigationPath ->
+                                let targetCoordinates = (List.head navigationPath).Coordinates
+                                if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
+                                then Some (Travel navigationPath)
+                                else None
+                            | [] -> failwithumf ()
                         | _ -> None
-                    | None -> None
+                    else None
                 let gameplay =
-                    match playerTurnOpt with
-                    | Some playerTurn ->
-                        match playerTurn.TurnStatus with
-                        | TurnFinishing ->
-                            let gameplay = Gameplay.updateRound (Round.updatePlayerNavigation (constant NoNavigation)) gameplay
-                            Gameplay.finishMove PlayerIndex gameplay
-                        | _ -> gameplay
-                    | None -> gameplay
+                    if gameplay.Round.IsPlayerNavigationTransitioning then
+                        Gameplay.updateRound (Round.updatePlayerNavigation (constant NoNavigation)) gameplay
+                    else gameplay
                 match playerMoveOpt with
                 | Some move ->
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
