@@ -37,16 +37,21 @@ type [<ReferenceEquality; NoComparison>] Round =
       WalkingEnemyGroup : CharacterIndex list
       AttackingEnemyGroup : CharacterIndex list }
 
-    member this.InProgress =
-        Map.notEmpty this.CharacterMoves || List.notEmpty this.WalkingEnemyGroup || List.notEmpty this.AttackingEnemyGroup
+    member this.IsPlayerWalking =
+        match this.PlayerNavigation with
+        | NoNavigation -> false
+        | _ -> true
     
     member this.IsPlayerTraveling =
-        match Map.tryFind PlayerIndex this.CharacterMoves with
-        | Some move ->
-            match move with
-            | Travel _ -> true
-            | _ -> false
-        | None -> false
+        match this.PlayerNavigation with
+        | Automatic _ -> true
+        | _ -> false
+    
+    member this.IsPlayerNavigationTransitioning =
+        this.IsPlayerWalking && not (Map.exists (fun k _ -> k = PlayerIndex) this.CharacterMoves)
+    
+    member this.InProgress =
+        Map.notEmpty this.CharacterMoves || List.notEmpty this.WalkingEnemyGroup || List.notEmpty this.AttackingEnemyGroup || this.IsPlayerWalking
     
     static member updatePlayerNavigation updater round =
         { round with PlayerNavigation = updater round.PlayerNavigation }
