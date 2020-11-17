@@ -31,21 +31,9 @@ Editing a special effect in Nu.
 Getting Started
 ===============
 
-The best way to get started is to pull down the repository with a git client, and to take a look at the following documents -
+The best way to get started is to pull down the repository with a git client, and to take a look at the following document -
 
-The current documentation for the **Nu Game Engine** is found here - https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engine.pdf
-
-There is additional documentation on **advanced Nu game programming techniques** in an 'experience report' found here -
-https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Iterative%20Functional%20Reactive%20Programming%20with%20the%20Nu%20Game%20Engine.pdf
-
-Finally, please check out the license for this repository below!
-
-Thanks all for checking out my work so far!
-
-Sponsors
-========
-
-The **Nu Game Engine** is looking for sponsors! If you're interested in sponsoring development for what I hope will become **the world's first mainstream functional game engine**, please contact me at bryanedds@gmail.com . Otherwise, I'll just have to work on it in my spare time, which can be erratic :S
+https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engine.pdf
 
 No Code of Conduct
 ===============
