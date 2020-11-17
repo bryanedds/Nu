@@ -157,6 +157,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateRound (Round.removeMove index) gameplay
     
     static member truncatePlayerPath gameplay =
+        let gameplay = Gameplay.updateRound (Round.updatePlayerNavigation PlayerNavigation.truncatePath) gameplay
         let move = gameplay.Round.CharacterMoves.[PlayerIndex].TruncatePath
         Gameplay.addMove PlayerIndex move gameplay
     
