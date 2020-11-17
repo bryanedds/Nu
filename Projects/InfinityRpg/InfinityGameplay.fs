@@ -6,6 +6,21 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
+type [<ReferenceEquality; NoComparison>] PlayerNavigation =
+    | Manual
+    | Automatic of NavigationNode list
+    | NoNavigation
+
+    static member progressPath playerNavigation =
+        match playerNavigation with
+        | Automatic (_ :: tail) -> Automatic tail
+        | _ -> failwithumf ()
+    
+    static member truncatePath playerNavigation =
+        match playerNavigation with
+        | Automatic (head :: _) -> Automatic [head]
+        | _ -> failwithumf ()
+
 type [<NoComparison>] Move =
     | Step of Direction
     | Attack of CharacterIndex
@@ -17,7 +32,8 @@ type [<NoComparison>] Move =
         | _ -> this
 
 type [<ReferenceEquality; NoComparison>] Round =
-    { CharacterMoves : Map<CharacterIndex, Move>
+    { PlayerNavigation : PlayerNavigation
+      CharacterMoves : Map<CharacterIndex, Move>
       WalkingEnemyGroup : CharacterIndex list
       AttackingEnemyGroup : CharacterIndex list }
 
@@ -31,6 +47,9 @@ type [<ReferenceEquality; NoComparison>] Round =
             | Travel _ -> true
             | _ -> false
         | None -> false
+    
+    static member updatePlayerNavigation updater round =
+        { round with PlayerNavigation = updater round.PlayerNavigation }
     
     static member updateCharacterMoves updater round =
         { round with CharacterMoves = updater round.CharacterMoves }
@@ -60,7 +79,8 @@ type [<ReferenceEquality; NoComparison>] Round =
         Round.updateAttackingEnemyGroup List.tail round
     
     static member empty =
-        { CharacterMoves = Map.empty
+        { PlayerNavigation = NoNavigation
+          CharacterMoves = Map.empty
           WalkingEnemyGroup = []
           AttackingEnemyGroup = [] }
 
