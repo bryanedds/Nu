@@ -202,7 +202,9 @@ module GameplayDispatcher =
                     match playerTurnOpt with
                     | Some playerTurn ->
                         match playerTurn.TurnStatus with
-                        | TurnFinishing -> Gameplay.finishMove PlayerIndex gameplay
+                        | TurnFinishing ->
+                            let gameplay = Gameplay.updateRound (Round.updatePlayerNavigation (constant NoNavigation)) gameplay
+                            Gameplay.finishMove PlayerIndex gameplay
                         | _ -> gameplay
                     | None -> gameplay
                 match playerMoveOpt with
@@ -210,6 +212,11 @@ module GameplayDispatcher =
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
                     let gameplay = Gameplay.activateCharacter PlayerIndex gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
+                    let gameplay =
+                        match move with
+                        | Step _ -> Gameplay.updateRound (Round.updatePlayerNavigation (constant Manual)) gameplay
+                        | Travel path -> Gameplay.updateRound (Round.updatePlayerNavigation (constant (Automatic path))) gameplay
+                        | _ -> gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ ->
                     if not gameplay.Round.InProgress
@@ -260,6 +267,11 @@ module GameplayDispatcher =
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
                     let gameplay = Gameplay.activateCharacter PlayerIndex gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
+                    let gameplay =
+                        match move with
+                        | Step _ -> Gameplay.updateRound (Round.updatePlayerNavigation (constant Manual)) gameplay
+                        | Travel path -> Gameplay.updateRound (Round.updatePlayerNavigation (constant (Automatic path))) gameplay
+                        | _ -> gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ -> just gameplay
 
