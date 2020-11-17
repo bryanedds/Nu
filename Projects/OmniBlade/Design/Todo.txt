@@ -59,7 +59,7 @@
 [X] new tech ability gain display
 [X] more and improved battle configurations
 [X] swap names of bronze and iron armor
-[ ] attempt to fix order of treasure assignment so that gaps aren't caused by empty props
+[X] attempt to fix order of treasure assignment so that gaps aren't caused by empty props
 [ ] status burndown / buff consumables
 [ ] enemy equipment from data
 [ ] tiled battle background?
