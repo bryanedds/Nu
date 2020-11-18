@@ -135,7 +135,7 @@ module GameplayDispatcher =
             | MakeEnemyAttack ->
                 let gameplay =
                     let index = gameplay.Round.AttackingEnemyGroup.Head
-                    let gameplay = Gameplay.makeMove index (Attack PlayerIndex) gameplay
+                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove index (Attack PlayerIndex) gameplay else gameplay
                     Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
 
@@ -157,19 +157,8 @@ module GameplayDispatcher =
                 withMsg BeginTurns gameplay
             
             | MakeEnemyMoves ->
-                let indices = Gameplay.getEnemyIndices gameplay
-                let attackerOpt =
-                    List.tryFind (fun x ->
-                        Math.areCoordinatesAdjacent
-                            (Gameplay.getCoordinates x gameplay)
-                            (Gameplay.getCoordinates PlayerIndex gameplay))
-                        indices
-                
-                let gameplay =
-                    match attackerOpt with
-                    | Some index -> Gameplay.addAttackingEnemyGroup [index] gameplay
-                    | None -> gameplay
-
+                let adjacentEnemies = Gameplay.getEnemyIndices gameplay |> List.filter (fun x -> Gameplay.areCharactersAdjacent x PlayerIndex gameplay)
+                let gameplay = Gameplay.addAttackingEnemyGroup adjacentEnemies gameplay
                 let gameplay = Gameplay.createWalkingEnemyGroup gameplay
                 
                 match Gameplay.getCharacterMove PlayerIndex gameplay with

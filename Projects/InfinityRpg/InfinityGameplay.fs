@@ -154,6 +154,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member turnInProgress index gameplay =
         Puppeteer.turnInProgress index gameplay.Puppeteer
     
+    static member areCharactersAdjacent index1 index2 gameplay =
+        Math.areCoordinatesAdjacent (Gameplay.getCoordinates index1 gameplay) (Gameplay.getCoordinates index2 gameplay)
+    
     static member updateMetaMap updater gameplay =
         { gameplay with MetaMap = updater gameplay.MetaMap }
     
