@@ -6,6 +6,28 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
+type RoundStatus =
+    | RunningCharacterMoves
+    | MakingEnemyAttack
+    | MakingEnemiesWalk
+    | FinishingRound
+    | NoRound
+
+type [<ReferenceEquality; NoComparison>] PlayerNavigation =
+    | Manual
+    | Automatic of NavigationNode list
+    | NoNavigation
+
+    static member progressPath playerNavigation =
+        match playerNavigation with
+        | Automatic (_ :: tail) -> Automatic tail
+        | _ -> failwithumf ()
+    
+    static member truncatePath playerNavigation =
+        match playerNavigation with
+        | Automatic (head :: _) -> Automatic [head]
+        | _ -> failwithumf ()
+
 type [<NoComparison>] Move =
     | Step of Direction
     | Attack of CharacterIndex
@@ -16,26 +38,95 @@ type [<NoComparison>] Move =
         | Travel (head :: _) -> Travel [head]
         | _ -> this
 
+type [<ReferenceEquality; NoComparison>] Round =
+    { PlayerNavigation : PlayerNavigation
+      CharacterMoves : Map<CharacterIndex, Move>
+      WalkingEnemyGroup : CharacterIndex list
+      AttackingEnemyGroup : CharacterIndex list }
+
+    member this.IsPlayerWalking =
+        match this.PlayerNavigation with
+        | NoNavigation -> false
+        | _ -> true
+    
+    member this.IsPlayerTraveling =
+        match this.PlayerNavigation with
+        | Automatic _ -> true
+        | _ -> false
+    
+    member this.IsPlayerNavigationTransitioning =
+        this.IsPlayerWalking && not (Map.exists (fun k _ -> k = PlayerIndex) this.CharacterMoves)
+    
+    member this.InProgress =
+        Map.notEmpty this.CharacterMoves || List.notEmpty this.WalkingEnemyGroup || List.notEmpty this.AttackingEnemyGroup || this.IsPlayerWalking
+    
+    member this.RoundStatus =
+        if Map.notEmpty this.CharacterMoves then RunningCharacterMoves
+        elif List.notEmpty this.AttackingEnemyGroup then MakingEnemyAttack
+        elif List.notEmpty this.WalkingEnemyGroup then MakingEnemiesWalk
+        elif this.IsPlayerWalking then FinishingRound
+        else NoRound
+    
+    static member updatePlayerNavigation updater round =
+        { round with PlayerNavigation = updater round.PlayerNavigation }
+    
+    static member updateCharacterMoves updater round =
+        { round with CharacterMoves = updater round.CharacterMoves }
+    
+    static member updateWalkingEnemyGroup updater round =
+        { round with WalkingEnemyGroup = updater round.WalkingEnemyGroup }
+    
+    static member updateAttackingEnemyGroup updater round =
+        { round with AttackingEnemyGroup = updater round.AttackingEnemyGroup }
+    
+    static member addMove index move round =
+        Round.updateCharacterMoves (Map.add index move) round
+
+    static member removeMove index round =
+        Round.updateCharacterMoves (Map.remove index) round
+
+    static member addWalkingEnemyGroup group round =
+        Round.updateWalkingEnemyGroup (constant group) round
+
+    static member removeWalkingEnemyGroup round =
+        Round.updateWalkingEnemyGroup (constant []) round
+
+    static member addAttackingEnemyGroup group round =
+        Round.updateAttackingEnemyGroup (constant group) round
+
+    static member removeHeadFromAttackingEnemyGroup round =
+        Round.updateAttackingEnemyGroup List.tail round
+    
+    static member empty =
+        { PlayerNavigation = NoNavigation
+          CharacterMoves = Map.empty
+          WalkingEnemyGroup = []
+          AttackingEnemyGroup = [] }
+
 type [<ReferenceEquality; NoComparison>] Gameplay =
     { ShallLoadGame : bool
       MetaMap : MetaMap
       Field : Field
       Chessboard : Chessboard
       Puppeteer : Puppeteer
-      CharacterMoves : Map<CharacterIndex, Move> }
+      Round : Round }
 
     static member initial =
         let field = Field.initial
+        let chessboard = Chessboard.init field.FieldMapNp
         { ShallLoadGame = false
           MetaMap = MetaMap.make
           Field = field
-          Chessboard = Chessboard.init field.FieldMapNp
-          Puppeteer = Puppeteer.initial
-          CharacterMoves = Map.empty }
+          Chessboard = chessboard
+          Puppeteer = Puppeteer.init <| Chessboard.getCharacter PlayerIndex chessboard
+          Round = Round.empty }
 
     static member getEnemyIndices gameplay =
         gameplay.Chessboard.EnemyIndices
 
+    static member getCharacterIndices gameplay =
+        PlayerIndex :: gameplay.Chessboard.EnemyIndices
+    
     static member getOpponentIndices index gameplay =
         match index with
         | PlayerIndex -> Gameplay.getEnemyIndices gameplay
@@ -52,7 +143,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         character.CharacterIndex
     
     static member getCharacterMove index gameplay =
-        gameplay.CharacterMoves.[index]
+        gameplay.Round.CharacterMoves.[index]
     
     static member tryGetCharacterTurn index gameplay =
         Puppeteer.tryGetCharacterTurn index gameplay.Puppeteer
@@ -63,21 +154,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member turnInProgress index gameplay =
         Puppeteer.turnInProgress index gameplay.Puppeteer
     
-    static member anyTurnsInProgress gameplay = 
-        gameplay.Puppeteer.AnyTurnsInProgress
-    
-    static member isPlayerAttacking gameplay =
-        match Gameplay.tryGetCharacterTurn PlayerIndex gameplay with
-        | Some turn -> turn.TurnType = AttackTurn
-        | None -> false
-
-    static member isPlayerTraveling gameplay =
-        match Gameplay.tryGetCharacterTurn PlayerIndex gameplay with
-        | Some turn ->
-            match turn.TurnType with
-            | WalkTurn multiRoundContext -> multiRoundContext
-            | _ -> false
-        | None -> false
+    static member areCharactersAdjacent index1 index2 gameplay =
+        Math.areCoordinatesAdjacent (Gameplay.getCoordinates index1 gameplay) (Gameplay.getCoordinates index2 gameplay)
     
     static member updateMetaMap updater gameplay =
         { gameplay with MetaMap = updater gameplay.MetaMap }
@@ -91,20 +169,17 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updatePuppeteer updater gameplay =
         { gameplay with Puppeteer = updater gameplay.Puppeteer }
     
-    static member updateCharacterMoves updater gameplay =
-        { gameplay with CharacterMoves = updater gameplay.CharacterMoves }
+    static member updateRound updater gameplay =
+        { gameplay with Round = updater gameplay.Round }
     
     static member addMove index (move : Move) gameplay =
-        let characterMoves = Map.add index move gameplay.CharacterMoves
-        Gameplay.updateCharacterMoves (constant characterMoves) gameplay
+        Gameplay.updateRound (Round.addMove index move) gameplay
 
     static member removeMove index gameplay =
-        let characterMoves = Map.remove index gameplay.CharacterMoves
-        Gameplay.updateCharacterMoves (constant characterMoves) gameplay
+        Gameplay.updateRound (Round.removeMove index) gameplay
     
     static member truncatePlayerPath gameplay =
-        let move = gameplay.CharacterMoves.[PlayerIndex].TruncatePath
-        Gameplay.addMove PlayerIndex move gameplay
+        Gameplay.updateRound (Round.updatePlayerNavigation PlayerNavigation.truncatePath) gameplay
     
     static member updateCharacterTurn index updater gameplay =
         Gameplay.updatePuppeteer (Puppeteer.updateCharacterTurn index updater) gameplay
@@ -118,12 +193,20 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member relocateCharacter index coordinates gameplay =
         Gameplay.updateChessboard (Chessboard.relocateCharacter index coordinates) gameplay
     
+    static member refreshWalkingEnemyGroup gameplay =
+        Gameplay.updateRound (Round.updateWalkingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
+    
+    static member refreshAttackingEnemyGroup gameplay =
+        Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
+    
     static member removeEnemy index gameplay =
         match index with
         | EnemyIndex _ ->
             let coordinates = Gameplay.getCoordinates index gameplay
             let gameplay = Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
-            Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
+            let gameplay = Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
+            let gameplay = Gameplay.refreshWalkingEnemyGroup gameplay
+            Gameplay.refreshAttackingEnemyGroup gameplay
         | PlayerIndex -> failwithumf ()
 
     static member clearEnemies gameplay =
@@ -132,6 +215,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member clearPickups gameplay =
         Gameplay.updateChessboard Chessboard.clearPickups gameplay
 
+    static member refreshPlayerPuppetHitPoints gameplay =
+        let player = Gameplay.getCharacter PlayerIndex gameplay
+        Gameplay.updatePuppeteer (Puppeteer.updatePlayerPuppetHitPoints (constant player.HitPoints)) gameplay
+    
     static member finishMove index gameplay =
         let gameplay = Gameplay.updatePuppeteer (Puppeteer.removeCharacterTurn index) gameplay
         Gameplay.removeMove index gameplay
@@ -140,6 +227,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         match index with
         | PlayerIndex ->
             let gameplay = Gameplay.updateCharacter index (Character.updateHitPoints (constant 30)) gameplay
+            let gameplay = Gameplay.refreshPlayerPuppetHitPoints gameplay
             Gameplay.updateChessboard (Chessboard.removePickup coordinates) gameplay
         | _ -> gameplay
     
@@ -161,7 +249,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateCharacter reactorIndex (Character.updateHitPoints (fun x -> x - reactorDamage)) gameplay
     
     static member stopTravelingPlayer reactorIndex gameplay =
-        if reactorIndex = PlayerIndex then Gameplay.truncatePlayerPath gameplay else gameplay
+        if reactorIndex = PlayerIndex && gameplay.Round.IsPlayerTraveling then Gameplay.truncatePlayerPath gameplay else gameplay
     
     static member applyMove index gameplay =
         let move = Gameplay.getCharacterMove index gameplay
@@ -192,6 +280,26 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 Turn.makeWalk index true coordinates direction
         Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay
 
+    static member makeMove index move gameplay =
+        if (Gameplay.getCharacter index gameplay).IsAlive then
+            let gameplay = Gameplay.addMove index move gameplay
+            let gameplay = Gameplay.activateCharacter index gameplay
+            Gameplay.applyMove index gameplay
+        else gameplay
+    
+    static member addAttackingEnemyGroup group gameplay =
+        Gameplay.updateRound (Round.addAttackingEnemyGroup group) gameplay
+
+    static member removeHeadFromAttackingEnemyGroup gameplay =
+        Gameplay.updateRound Round.removeHeadFromAttackingEnemyGroup gameplay
+
+    static member createWalkingEnemyGroup gameplay =
+        let group = Gameplay.getEnemyIndices gameplay |> List.except gameplay.Round.AttackingEnemyGroup
+        Gameplay.updateRound (Round.addWalkingEnemyGroup group) gameplay
+
+    static member removeWalkingEnemyGroup gameplay =
+        Gameplay.updateRound Round.removeWalkingEnemyGroup gameplay
+    
     static member resetFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboard (Chessboard.transitionMap fieldMap) gameplay
         Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
