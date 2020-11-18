@@ -18,8 +18,9 @@ module GameplayDispatcher =
     type [<StructuralEquality; NoComparison>] GameplayMessage =
         | FinishTurns of CharacterIndex list
         | TickTurns of CharacterIndex list
-        | BeginTurns of CharacterIndex list
-        | RunCharacterActivation
+        | BeginTurns
+        | MakeEnemyAttack
+        | MakeEnemiesWalk
         | MakeEnemyMoves
         | TryContinuePlayerNavigation
         | TryMakePlayerMove of PlayerInput
@@ -80,12 +81,16 @@ module GameplayDispatcher =
                             let gameplay = Gameplay.finishMove index gameplay
                             let reactorIndex = Option.get characterTurn.ReactorOpt
                             let reactorState = Gameplay.getCharacter reactorIndex gameplay
+                            let gameplay =
+                                if reactorIndex = PlayerIndex then
+                                    Gameplay.refreshPlayerPuppetHitPoints gameplay
+                                else gameplay
                             if reactorState.HitPoints <= 0 then
                                 match reactorIndex with
                                 | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
                                 | EnemyIndex _ -> Gameplay.removeEnemy reactorIndex gameplay
                             else gameplay
-                        | WalkTurn _ -> if index.IsEnemy then Gameplay.finishMove index gameplay else gameplay
+                        | WalkTurn _ -> Gameplay.finishMove index gameplay
                     | _ -> failwith "non-finishing turns should be filtered out by this point"
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 just gameplay
@@ -111,7 +116,7 @@ module GameplayDispatcher =
                 let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnFinishing) indices
                 withMsg (FinishTurns indices) gameplay
             
-            | BeginTurns indices ->
+            | BeginTurns ->
                 let updater index gameplay =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
@@ -122,104 +127,76 @@ module GameplayDispatcher =
                             | WalkTurn _ -> gameplay
                         Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
+                let gameplay = Gameplay.updatePuppeteer (Puppeteer.runTurnCoordination) gameplay
+                let indices = Gameplay.getCharacterIndices gameplay |> List.filter (fun x -> Gameplay.turnInProgress x gameplay) |> List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus <> TurnPending)
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withMsg (TickTurns indices) gameplay
             
-            | RunCharacterActivation ->
-                let playerTurnOpt = Gameplay.tryGetCharacterTurn PlayerIndex gameplay
-                let gameplay = // NOTE: player's turn is converted to activity at the beginning of the round, activating the observable playback of his move
-                    match playerTurnOpt with
-                    | Some playerTurn -> if playerTurn.TurnStatus = TurnPending then Gameplay.setCharacterTurnStatus PlayerIndex TurnBeginning gameplay else gameplay
-                    | None -> gameplay
-                let indices = // NOTE: enemies are activated at the same time during player movement, or after player's action has finished playback
-                    Gameplay.getEnemyIndices gameplay |> List.filter (fun x -> Gameplay.turnInProgress x gameplay)
+            | MakeEnemyAttack ->
                 let gameplay =
-                    if (List.exists (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnPending) indices) then
-                        if not (Gameplay.isPlayerAttacking gameplay)
-                        then Gameplay.forEachIndex (fun index gameplay -> Gameplay.setCharacterTurnStatus index TurnBeginning gameplay) indices gameplay
-                        else gameplay
-                    else gameplay
-                let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus <> TurnPending) indices
-                let indices =
-                    match playerTurnOpt with
-                    | Some _ -> PlayerIndex :: indices
-                    | None -> indices
-                withMsg (BeginTurns indices) gameplay
+                    let index = gameplay.Round.AttackingEnemyGroup.Head
+                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove index (Attack PlayerIndex) gameplay else gameplay
+                    Gameplay.removeHeadFromAttackingEnemyGroup gameplay
+                withMsg BeginTurns gameplay
 
-            | MakeEnemyMoves ->
-                let indices = Gameplay.getEnemyIndices gameplay
-                let attackerOpt =
-                    List.tryFind (fun x ->
-                        Math.areCoordinatesAdjacent
-                            (Gameplay.getCoordinates x gameplay)
-                            (Gameplay.getCoordinates PlayerIndex gameplay))
-                        indices
+            | MakeEnemiesWalk ->
                 let updater =
                     (fun index gameplay ->
                         let character = Gameplay.getCharacter index gameplay
-                        let enemyMoveOpt =
-                            match character.ControlType with
-                            | Chaos ->
-                                if character.HitPoints > 0 then
-                                    match attackerOpt with
-                                    | Some attackerIndex ->
-                                        if index = attackerIndex
-                                        then Some (Attack PlayerIndex)
-                                        else None
-                                    | None ->
-                                        let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
-                                        let direction = Gen.random1 4 |> Direction.fromInt
-                                        if List.exists (fun x -> x = direction) openDirections
-                                        then Some (Step direction)
-                                        else None
-                                else None
-                            | _ -> None
-                        match enemyMoveOpt with
-                        | Some move ->
-                            let gameplay = Gameplay.addMove index move gameplay
-                            let gameplay = Gameplay.activateCharacter index gameplay
-                            Gameplay.applyMove index gameplay
-                        | None -> gameplay)
-                let gameplay = Gameplay.forEachIndex updater indices gameplay
-                withMsg RunCharacterActivation gameplay
+                        match character.ControlType with
+                        | Chaos ->
+                            let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
+                            let direction = Gen.random1 4 |> Direction.fromInt
+                            if List.exists (fun x -> x = direction) openDirections
+                            then Gameplay.makeMove index (Step direction) gameplay
+                            else gameplay
+                        | _ -> gameplay)
+                        
+                let gameplay = Gameplay.forEachIndex updater gameplay.Round.WalkingEnemyGroup gameplay
+                let gameplay = Gameplay.removeWalkingEnemyGroup gameplay
+                withMsg BeginTurns gameplay
+            
+            | MakeEnemyMoves ->
+                let adjacentEnemies = Gameplay.getEnemyIndices gameplay |> List.filter (fun x -> Gameplay.areCharactersAdjacent x PlayerIndex gameplay)
+                let gameplay = Gameplay.addAttackingEnemyGroup adjacentEnemies gameplay
+                let gameplay = Gameplay.createWalkingEnemyGroup gameplay
+                
+                match Gameplay.getCharacterMove PlayerIndex gameplay with
+                | Step _
+                | Travel _ -> withMsg MakeEnemiesWalk gameplay
+                | _ -> withMsg BeginTurns gameplay
 
             | TryContinuePlayerNavigation ->
-                let playerTurnOpt = Gameplay.tryGetCharacterTurn PlayerIndex gameplay
                 let playerMoveOpt =
-                    match playerTurnOpt with
-                    | Some playerTurn ->
-                        match playerTurn.TurnStatus with
-                        | TurnFinishing ->
-                            match Gameplay.getCharacterMove PlayerIndex gameplay with
-                            | Travel path ->
-                                match path with
-                                | _ :: [] -> None
-                                | _ :: navigationPath ->
-                                    let targetCoordinates = (List.head navigationPath).Coordinates
-                                    if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
-                                    then Some (Travel navigationPath)
-                                    else None
-                                | [] -> failwithumf ()
-                            | _ -> None
-                        | _ -> None
-                    | None -> None
-                let gameplay =
-                    match playerTurnOpt with
-                    | Some playerTurn ->
-                        match playerTurn.TurnStatus with
-                        | TurnFinishing -> Gameplay.finishMove PlayerIndex gameplay
-                        | _ -> gameplay
-                    | None -> gameplay
+                    match gameplay.Round.PlayerNavigation with
+                    | Automatic path ->
+                        match path with
+                        | _ :: [] -> None
+                        | _ :: navigationPath ->
+                            let targetCoordinates = (List.head navigationPath).Coordinates
+                            if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
+                            then Some (Travel navigationPath)
+                            else None
+                        | [] -> failwithumf ()
+                    | _ -> None
+                
+                let gameplay = Gameplay.updateRound (Round.updatePlayerNavigation (constant NoNavigation)) gameplay
+                
                 match playerMoveOpt with
                 | Some move ->
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
                     let gameplay = Gameplay.activateCharacter PlayerIndex gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
+                    let gameplay =
+                        match move with
+                        | Step _ -> Gameplay.updateRound (Round.updatePlayerNavigation (constant Manual)) gameplay
+                        | Travel path -> Gameplay.updateRound (Round.updatePlayerNavigation (constant (Automatic path))) gameplay
+                        | _ -> gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ ->
-                    if not (Gameplay.anyTurnsInProgress gameplay)
+                    if not gameplay.Round.InProgress
                     then withCmd ListenKeyboard gameplay
-                    else withMsg RunCharacterActivation gameplay
+                    else withMsg BeginTurns gameplay
             
             | TryMakePlayerMove playerInput ->
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
@@ -253,11 +230,16 @@ module GameplayDispatcher =
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
                     let gameplay = Gameplay.activateCharacter PlayerIndex gameplay
                     let gameplay = Gameplay.applyMove PlayerIndex gameplay
+                    let gameplay =
+                        match move with
+                        | Step _ -> Gameplay.updateRound (Round.updatePlayerNavigation (constant Manual)) gameplay
+                        | Travel path -> Gameplay.updateRound (Round.updatePlayerNavigation (constant (Automatic path))) gameplay
+                        | _ -> gameplay
                     withMsg MakeEnemyMoves gameplay
                 | _ -> just gameplay
 
             | TryHaltPlayer ->
-                match Map.tryFind PlayerIndex gameplay.CharacterMoves with
+                match Map.tryFind PlayerIndex gameplay.Round.CharacterMoves with
                 | Some _ ->
                     let gameplay = Gameplay.truncatePlayerPath gameplay
                     just gameplay
@@ -311,7 +293,7 @@ module GameplayDispatcher =
 
             match command with
             | HandlePlayerInput playerInput ->
-                if not (Gameplay.anyTurnsInProgress gameplay) then
+                if not gameplay.Round.InProgress then
                     match (Gameplay.getCharacter PlayerIndex gameplay).ControlType with
                     | PlayerControlled -> withMsg (HandleMapChange playerInput) world
                     | _ -> just world
@@ -330,9 +312,12 @@ module GameplayDispatcher =
                 else just world
             
             | Update ->
-                if (Gameplay.anyTurnsInProgress gameplay)
-                then withMsg TryContinuePlayerNavigation world
-                else withCmd ListenKeyboard world
+                match gameplay.Round.RoundStatus with
+                | RunningCharacterMoves -> withMsg BeginTurns world
+                | MakingEnemyAttack -> withMsg MakeEnemyAttack world
+                | MakingEnemiesWalk -> withMsg MakeEnemiesWalk world
+                | FinishingRound -> withMsg TryContinuePlayerNavigation world
+                | NoRound -> withCmd ListenKeyboard world
 
             | PostUpdate ->
                 let playerCenter = Simulants.Player.GetCenter world
@@ -394,13 +379,13 @@ module GameplayDispatcher =
                 [Content.button Simulants.HudHalt.Name
                     [Entity.Position == v2 184.0f -144.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
                      Entity.Text == "Halt"
-                     Entity.Enabled <== gameplay --> fun gameplay -> Gameplay.isPlayerTraveling gameplay
+                     Entity.Enabled <== gameplay --> fun gameplay -> gameplay.Round.IsPlayerTraveling
                      Entity.ClickEvent ==> msg TryHaltPlayer]
 
                  Content.button Simulants.HudSaveGame.Name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
                      Entity.Text == "Save Game"
-                     Entity.Enabled <== gameplay --> fun gameplay -> if Gameplay.anyTurnsInProgress gameplay then false else true
+                     Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress then false else true
                      Entity.ClickEvent ==> cmd SaveGame]
 
                  Content.button Simulants.HudBack.Name
@@ -410,8 +395,7 @@ module GameplayDispatcher =
                  Content.text Gen.name
                     [Entity.Position == v2 -440.0f 200.0f; Entity.Depth == 9.0f
                      Entity.Text <== gameplay --> fun gameplay ->
-                        let player = Gameplay.getCharacter PlayerIndex gameplay
-                        "HP: " + scstring player.HitPoints]
+                        "HP: " + scstring gameplay.Puppeteer.PlayerPuppetState.HitPoints]
 
                  Content.label Gen.name
                     [Entity.Position == v2 -447.0f -240.0f; Entity.Size == v2 168.0f 168.0f; Entity.Depth == 9.0f
