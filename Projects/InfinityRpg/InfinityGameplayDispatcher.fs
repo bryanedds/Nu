@@ -127,8 +127,7 @@ module GameplayDispatcher =
                             | WalkTurn _ -> gameplay
                         Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
-                let gameplay = Gameplay.updatePuppeteer (Puppeteer.runTurnCoordination) gameplay
-                let indices = Gameplay.getCharacterIndices gameplay |> List.filter (fun x -> Gameplay.turnInProgress x gameplay) |> List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus <> TurnPending)
+                let indices = gameplay.Puppeteer.GetActingCharacters
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withMsg (TickTurns indices) gameplay
             
