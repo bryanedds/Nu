@@ -214,7 +214,7 @@ module GameplayDispatcher =
                     else withMsg BeginTurns gameplay
             
             | TryContinueRound ->
-                if Map.notEmpty gameplay.Round.CharacterMoves then withMsg TryContinuePlayerNavigation gameplay
+                if gameplay.Round.IsPlayerWalking || Map.notEmpty gameplay.Round.CharacterMoves then withMsg TryContinuePlayerNavigation gameplay
                 else
                     let gameplay = Gameplay.refreshAttackingEnemyGroup gameplay
                     if List.notEmpty gameplay.Round.AttackingEnemyGroup then
