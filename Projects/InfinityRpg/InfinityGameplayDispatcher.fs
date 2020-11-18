@@ -23,7 +23,6 @@ module GameplayDispatcher =
         | MakeEnemiesWalk
         | MakeEnemyMoves
         | TryContinuePlayerNavigation
-        | TryContinueRound
         | TryMakePlayerMove of PlayerInput
         | TryHaltPlayer
         | TransitionMap of Direction
@@ -180,23 +179,20 @@ module GameplayDispatcher =
 
             | TryContinuePlayerNavigation ->
                 let playerMoveOpt =
-                    if gameplay.Round.IsPlayerNavigationTransitioning then
-                        match gameplay.Round.PlayerNavigation with
-                        | Automatic path ->
-                            match path with
-                            | _ :: [] -> None
-                            | _ :: navigationPath ->
-                                let targetCoordinates = (List.head navigationPath).Coordinates
-                                if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
-                                then Some (Travel navigationPath)
-                                else None
-                            | [] -> failwithumf ()
-                        | _ -> None
-                    else None
-                let gameplay =
-                    if gameplay.Round.IsPlayerNavigationTransitioning then
-                        Gameplay.updateRound (Round.updatePlayerNavigation (constant NoNavigation)) gameplay
-                    else gameplay
+                    match gameplay.Round.PlayerNavigation with
+                    | Automatic path ->
+                        match path with
+                        | _ :: [] -> None
+                        | _ :: navigationPath ->
+                            let targetCoordinates = (List.head navigationPath).Coordinates
+                            if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
+                            then Some (Travel navigationPath)
+                            else None
+                        | [] -> failwithumf ()
+                    | _ -> None
+                
+                let gameplay = Gameplay.updateRound (Round.updatePlayerNavigation (constant NoNavigation)) gameplay
+                
                 match playerMoveOpt with
                 | Some move ->
                     let gameplay = Gameplay.addMove PlayerIndex move gameplay
@@ -212,18 +208,6 @@ module GameplayDispatcher =
                     if not gameplay.Round.InProgress
                     then withCmd ListenKeyboard gameplay
                     else withMsg BeginTurns gameplay
-            
-            | TryContinueRound ->
-                if gameplay.Round.IsPlayerWalking || Map.notEmpty gameplay.Round.CharacterMoves then withMsg TryContinuePlayerNavigation gameplay
-                else
-                    let gameplay = Gameplay.refreshAttackingEnemyGroup gameplay
-                    if List.notEmpty gameplay.Round.AttackingEnemyGroup then
-                        withMsg MakeEnemyAttack gameplay
-                    else
-                        let gameplay = Gameplay.refreshWalkingEnemyGroup gameplay
-                        if List.notEmpty gameplay.Round.WalkingEnemyGroup then
-                            withMsg MakeEnemiesWalk gameplay
-                        else withCmd Update gameplay // if it gets to this point, Round.InProgress was true only because of dead enemies remaining in lists.
             
             | TryMakePlayerMove playerInput ->
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
@@ -339,9 +323,12 @@ module GameplayDispatcher =
                 else just world
             
             | Update ->
-                if gameplay.Round.InProgress
-                then withMsg TryContinueRound world
-                else withCmd ListenKeyboard world
+                match gameplay.Round.RoundStatus with
+                | RunningCharacterMoves -> withMsg BeginTurns world
+                | MakingEnemyAttack -> withMsg MakeEnemyAttack world
+                | MakingEnemiesWalk -> withMsg MakeEnemiesWalk world
+                | FinishingRound -> withMsg TryContinuePlayerNavigation world
+                | NoRound -> withCmd ListenKeyboard world
 
             | PostUpdate ->
                 let playerCenter = Simulants.Player.GetCenter world

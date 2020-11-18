@@ -6,6 +6,13 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
+type RoundStatus =
+    | RunningCharacterMoves
+    | MakingEnemyAttack
+    | MakingEnemiesWalk
+    | FinishingRound
+    | NoRound
+
 type [<ReferenceEquality; NoComparison>] PlayerNavigation =
     | Manual
     | Automatic of NavigationNode list
@@ -52,6 +59,13 @@ type [<ReferenceEquality; NoComparison>] Round =
     
     member this.InProgress =
         Map.notEmpty this.CharacterMoves || List.notEmpty this.WalkingEnemyGroup || List.notEmpty this.AttackingEnemyGroup || this.IsPlayerWalking
+    
+    member this.RoundStatus =
+        if Map.notEmpty this.CharacterMoves then RunningCharacterMoves
+        elif List.notEmpty this.AttackingEnemyGroup then MakingEnemyAttack
+        elif List.notEmpty this.WalkingEnemyGroup then MakingEnemiesWalk
+        elif this.IsPlayerWalking then FinishingRound
+        else NoRound
     
     static member updatePlayerNavigation updater round =
         { round with PlayerNavigation = updater round.PlayerNavigation }
@@ -162,9 +176,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateRound (Round.removeMove index) gameplay
     
     static member truncatePlayerPath gameplay =
-        let gameplay = Gameplay.updateRound (Round.updatePlayerNavigation PlayerNavigation.truncatePath) gameplay
-        let move = gameplay.Round.CharacterMoves.[PlayerIndex].TruncatePath
-        Gameplay.addMove PlayerIndex move gameplay
+        Gameplay.updateRound (Round.updatePlayerNavigation PlayerNavigation.truncatePath) gameplay
     
     static member updateCharacterTurn index updater gameplay =
         Gameplay.updatePuppeteer (Puppeteer.updateCharacterTurn index updater) gameplay
@@ -178,12 +190,20 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member relocateCharacter index coordinates gameplay =
         Gameplay.updateChessboard (Chessboard.relocateCharacter index coordinates) gameplay
     
+    static member refreshWalkingEnemyGroup gameplay =
+        Gameplay.updateRound (Round.updateWalkingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
+    
+    static member refreshAttackingEnemyGroup gameplay =
+        Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
+    
     static member removeEnemy index gameplay =
         match index with
         | EnemyIndex _ ->
             let coordinates = Gameplay.getCoordinates index gameplay
             let gameplay = Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
-            Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
+            let gameplay = Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
+            let gameplay = Gameplay.refreshWalkingEnemyGroup gameplay
+            Gameplay.refreshAttackingEnemyGroup gameplay
         | PlayerIndex -> failwithumf ()
 
     static member clearEnemies gameplay =
@@ -267,9 +287,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member addAttackingEnemyGroup group gameplay =
         Gameplay.updateRound (Round.addAttackingEnemyGroup group) gameplay
 
-    static member refreshAttackingEnemyGroup gameplay =
-        Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
-    
     static member removeHeadFromAttackingEnemyGroup gameplay =
         Gameplay.updateRound Round.removeHeadFromAttackingEnemyGroup gameplay
 
@@ -277,9 +294,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let group = Gameplay.getEnemyIndices gameplay |> List.except gameplay.Round.AttackingEnemyGroup
         Gameplay.updateRound (Round.addWalkingEnemyGroup group) gameplay
 
-    static member refreshWalkingEnemyGroup gameplay =
-        Gameplay.updateRound (Round.updateWalkingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
-    
     static member removeWalkingEnemyGroup gameplay =
         Gameplay.updateRound Round.removeWalkingEnemyGroup gameplay
     
