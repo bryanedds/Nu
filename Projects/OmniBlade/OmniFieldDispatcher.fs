@@ -762,8 +762,8 @@ module FieldDispatcher =
                                     let level = Algorithms.expPointsToLevel teammate.ExpPoints
                                     let hpm = Algorithms.hitPointsMax teammate.ArmorOpt characterData.ArchetypeType level
                                     let tpm = Algorithms.techPointsMax teammate.ArmorOpt characterData.ArchetypeType level
-                                    let pow = Algorithms.power teammate.WeaponOpt 1.0f characterData.ArchetypeType level
-                                    let mag = Algorithms.magic teammate.WeaponOpt 1.0f characterData.ArchetypeType level
+                                    let pow = Algorithms.power teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
+                                    let mag = Algorithms.magic teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
                                     "HP  "   + (string teammate.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
                                     "\nTP  " + (string teammate.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
                                     "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +

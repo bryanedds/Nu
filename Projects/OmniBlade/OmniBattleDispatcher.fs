@@ -236,19 +236,12 @@ module BattleDispatcher =
             let battle = Battle.updateActionCommands (constant futureCommands) battle
             tick time battle
 
-        and tickNoNextCommand time (battle : Battle) =
+        and tickNoNextCommand (_ : int64) (battle : Battle) =
             let (allySignalsRev, battle) =
                 List.fold (fun (signals, battle) (ally : Character) ->
                     if  ally.ActionTime >= Constants.Battle.ActionTime &&
                         ally.InputState = NoInput then
-                        let battle =
-                            Battle.updateCharacter
-                                (fun character ->
-                                    let character = Character.updateInputState (constant RegularMenu) character
-                                    let character = Character.animate time (PoiseCycle Poising) character
-                                    character)
-                                ally.CharacterIndex
-                                battle
+                        let battle = Battle.updateCharacter (Character.updateInputState (constant RegularMenu)) ally.CharacterIndex battle
                         let playActionTimeSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)
                         (Command playActionTimeSound :: signals, battle)
                     else (signals, battle))
@@ -385,28 +378,26 @@ module BattleDispatcher =
                     match item with
                     | "Attack" ->
                         Battle.updateCharacter
-                            (Character.updateInputState (constant (AimReticles (item, EnemyAim true))))
+                            (Character.updateInputState (constant (AimReticles (item, EnemyAim true))) >> Character.undefend)
                             characterIndex
                             battle
                     | "Defend" ->
+                        let time = World.getTickTime world
                         Battle.updateCharacter
-                            (fun character ->
-                                let time = World.getTickTime world
-                                let character = Character.updateActionTime (constant 0) character
-                                let character = Character.updateInputState (constant NoInput) character
-                                let character = Character.defend character
-                                let character = Character.animate time (PoiseCycle Defending) character
-                                character)
+                            (Character.updateActionTime (constant 0) >>
+                             Character.updateInputState (constant NoInput) >>
+                             Character.animate time (PoiseCycle Defending) >>
+                             Character.defend)
                             characterIndex
                             battle
                     | "Consumable" ->
                         Battle.updateCharacter
-                            (Character.updateInputState (constant ItemMenu))
+                            (Character.updateInputState (constant ItemMenu) >> Character.undefend)
                             characterIndex
                             battle
                     | "Tech" ->
                         Battle.updateCharacter
-                            (Character.updateInputState (constant TechMenu))
+                            (Character.updateInputState (constant TechMenu) >> Character.undefend)
                             characterIndex
                             battle
                     | _ -> failwithumf ()

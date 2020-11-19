@@ -174,7 +174,7 @@ module Battle =
          { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
     let makeFromParty party inventory (prizePool : PrizePool) battleData time =
-        let enemies = List.mapi Character.makeEnemy battleData.BattleEnemies
+        let enemies = battleData.BattleEnemies |> List.mapi Character.tryMakeEnemy |> List.definitize
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
