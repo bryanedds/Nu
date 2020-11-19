@@ -257,8 +257,8 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
         let power = source.Power
         let shield = target.Shield effectType
-        let damageUnscaled = power - shield
-        let damage = single damageUnscaled |> int |> max 1
+        let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
+        let damage = single (power - shield) * defendingScalar |> int |> max 1
         damage
 
     static member burndownStatuses burndown state =
