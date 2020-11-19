@@ -236,7 +236,7 @@ module BattleDispatcher =
             let battle = Battle.updateActionCommands (constant futureCommands) battle
             tick time battle
 
-        and tickNoNextCommand time (battle : Battle) =
+        and tickNoNextCommand (_ : int64) (battle : Battle) =
             let (allySignalsRev, battle) =
                 List.fold (fun (signals, battle) (ally : Character) ->
                     if  ally.ActionTime >= Constants.Battle.ActionTime &&

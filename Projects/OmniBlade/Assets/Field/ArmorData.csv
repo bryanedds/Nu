@@ -2,6 +2,8 @@ Type,Subtype,HitPointsBase,TechPointsBase,Cost,Description
 TinMail,Mail,13,7,10,
 LeatherVest,Vest,10,8,10,
 LeatherRobe,Robe,7,9,10,
+ThinFur,Pelt,10,8,10,
 BronzeMail,Mail,18,20,25,
 HeavyVest,Vest,15,24,25,
 HeavyRobe,Robe,12,28,25,
+ThickFur,Pelt,15,24,25,

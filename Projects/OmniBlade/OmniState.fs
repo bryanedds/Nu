@@ -125,15 +125,15 @@ type [<ReferenceEquality; NoComparison>] Teammate =
     member this.Shield effectType = Algorithms.shield effectType this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
-    static member equipWeaponOpt weaponTypeOpt teammate =
+    static member equipWeaponOpt weaponTypeOpt (teammate : Teammate) =
         { teammate with WeaponOpt = weaponTypeOpt }
 
-    static member equipArmorOpt armorTypeOpt teammate =
+    static member equipArmorOpt armorTypeOpt (teammate : Teammate) =
         let teammate = { teammate with ArmorOpt = armorTypeOpt }
         let teammate = { teammate with HitPoints = min teammate.HitPoints teammate.HitPointsMax; TechPoints = min teammate.TechPoints teammate.HitPointsMax }
         teammate
 
-    static member equipAccessory1Opt accessoryTypeOpt teammate =
+    static member equipAccessory1Opt accessoryTypeOpt (teammate : Teammate) =
         { teammate with Accessories = Option.toList accessoryTypeOpt }
 
     static member canUseItem itemType teammate =
@@ -195,8 +195,9 @@ type [<ReferenceEquality; NoComparison>] Teammate =
         let character = Map.find characterType Data.Value.Characters
         let expPoints = Algorithms.levelToExpPoints character.LevelBase
         let archetypeType = character.ArchetypeType
-        let weaponOpt = Some "OakSword"
-        let armorOpt = Some "TinMail"
+        let weaponOpt = character.WeaponOpt
+        let armorOpt = character.ArmorOpt
+        let accessories = character.Accessories
         { ArchetypeType = archetypeType
           TeamIndex = index
           PartyIndexOpt = Some index
@@ -206,7 +207,7 @@ type [<ReferenceEquality; NoComparison>] Teammate =
           ExpPoints = expPoints
           WeaponOpt = weaponOpt
           ArmorOpt = armorOpt
-          Accessories = [] }
+          Accessories = accessories }
 
     static member glenn =
         let index = 1
@@ -214,8 +215,9 @@ type [<ReferenceEquality; NoComparison>] Teammate =
         let character = Map.find characterType Data.Value.Characters
         let expPoints = Algorithms.levelToExpPoints character.LevelBase
         let archetypeType = character.ArchetypeType
-        let weaponOpt = Some "StoneSword"
-        let armorOpt = None
+        let weaponOpt = character.WeaponOpt
+        let armorOpt = character.ArmorOpt
+        let accessories = character.Accessories
         { ArchetypeType = archetypeType
           TeamIndex = index
           PartyIndexOpt = Some index
@@ -225,7 +227,7 @@ type [<ReferenceEquality; NoComparison>] Teammate =
           ExpPoints = expPoints
           WeaponOpt = weaponOpt
           ArmorOpt = armorOpt
-          Accessories = [] }
+          Accessories = accessories }
 
 type Team =
     Map<int, Teammate>

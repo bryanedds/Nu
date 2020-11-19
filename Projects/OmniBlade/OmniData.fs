@@ -112,7 +112,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
 type EquipmentType =
     | WeaponType of string
     | ArmorType of string
-    | AccessoryType of string
+    | AccessoryType of string // TODO: might want to make this a static type since many accessories will involve custom coding.
 
 type ConsumableType =
     | GreenHerb
@@ -592,7 +592,10 @@ type [<NoComparison>] CharacterData =
       ArchetypeType : ArchetypeType
       LevelBase : int
       AnimationSheet : Image AssetTag
-      MugOpt : Image AssetTag option
+      MugOpt : Image AssetTag option // TODO: rename this to Portrait
+      WeaponOpt : string option
+      ArmorOpt : string option
+      Accessories : string list
       GoldScalar : single
       ExpScalar : single
       Description : string }

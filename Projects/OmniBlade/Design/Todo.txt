@@ -63,14 +63,15 @@
 [X] status burndown
 [X] status utilization in algorithms
 [X] make defense do something at least
+[X] initial / enemy equipment from data
+[ ] cyclone effect sprite / wider cyclone circle
+[ ] slash attack for Finn
 [ ] buff consumables
-[ ] enemy equipment from data
 [ ] tiled battle background?
 [ ] enemy item drops / goblins drop green herbs?
 [ ] make treasure value relative to distance from entry?
 [ ] see if we can make simulant stream keys more like Elm's Html.Keyed.
 [ ] implement counter-attacking
-[ ] cyclone effect sprite / wider cyclone circle
 [ ] tremor camera shake effect
 [ ] damage glow
 
