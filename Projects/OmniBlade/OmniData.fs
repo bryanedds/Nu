@@ -10,6 +10,15 @@ open TiledSharp
 open Prime
 open Nu
 
+type CharacterIndex =
+    | AllyIndex of int
+    | EnemyIndex of int
+    static member isFriendly index index2 =
+        match (index, index2) with
+        | (AllyIndex _, AllyIndex _) -> true
+        | (EnemyIndex _, EnemyIndex _) -> true
+        | (_, _) -> false
+
 type Advent =
     | DebugSwitch
     | DebugSwitch2
@@ -52,16 +61,58 @@ type ElementType =
     | Light // beats dark, weaker scalar
     | Earth // beats nothing, strongest scalar
 
-type StatusType =
-    | DefendStatus // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
-    | PoisonStatus
-    | MuteStatus
-    | SleepStatus
+type [<CustomEquality; CustomComparison>] StatusType =
+    | Poison
+    | Silence
+    | Sleep
+    | Time of bool // true = Haste, false = Slow
+    | Counter of bool * bool // true = Up, false = Down; true = 2, false = 1
+    | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
+    | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
+    | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
+    | Provoke
+    | ProvokeOne of CharacterIndex
+
+    static member enumerate this =
+        match this with
+        | Poison -> 0
+        | Silence -> 1
+        | Sleep -> 2
+        | Time _ -> 3
+        | Counter (_, _) -> 4
+        | Power (_, _) -> 5
+        | Magic (_, _) -> 6
+        | Shield (_, _) -> 7
+        | Provoke -> 8
+        | ProvokeOne i -> 9 + (match i with AllyIndex i -> i | EnemyIndex i -> i) <<< 6
+
+    static member compare this that =
+        compare
+            (StatusType.enumerate this)
+            (StatusType.enumerate that)
+
+    interface StatusType IComparable with
+        member this.CompareTo that =
+            StatusType.compare this that
+
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? StatusType as that -> (this :> StatusType IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+    override this.Equals that =
+        match that with
+        | :? StatusType as that -> StatusType.enumerate this = StatusType.enumerate that
+        | _ -> false
+
+    override this.GetHashCode () =
+        StatusType.enumerate this
 
 type EquipmentType =
     | WeaponType of string
     | ArmorType of string
-    | AccessoryType of string
+    | AccessoryType of string // TODO: might want to make this a static type since many accessories will involve custom coding.
 
 type ConsumableType =
     | GreenHerb
@@ -541,7 +592,10 @@ type [<NoComparison>] CharacterData =
       ArchetypeType : ArchetypeType
       LevelBase : int
       AnimationSheet : Image AssetTag
-      MugOpt : Image AssetTag option
+      MugOpt : Image AssetTag option // TODO: rename this to Portrait
+      WeaponOpt : string option
+      ArmorOpt : string option
+      Accessories : string list
       GoldScalar : single
       ExpScalar : single
       Description : string }

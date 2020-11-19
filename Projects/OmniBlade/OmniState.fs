@@ -120,20 +120,20 @@ type [<ReferenceEquality; NoComparison>] Teammate =
     member this.IsWounded = this.HitPoints <= 0
     member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
-    member this.Power = Algorithms.power this.WeaponOpt 1.0f this.ArchetypeType this.Level
-    member this.Magic = Algorithms.magic this.WeaponOpt 1.0f this.ArchetypeType this.Level
-    member this.Shield effectType = Algorithms.shield effectType this.Accessories 1.0f this.ArchetypeType this.Level
+    member this.Power = Algorithms.power this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle
+    member this.Magic = Algorithms.magic this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle
+    member this.Shield effectType = Algorithms.shield effectType this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
-    static member equipWeaponOpt weaponTypeOpt teammate =
+    static member equipWeaponOpt weaponTypeOpt (teammate : Teammate) =
         { teammate with WeaponOpt = weaponTypeOpt }
 
-    static member equipArmorOpt armorTypeOpt teammate =
+    static member equipArmorOpt armorTypeOpt (teammate : Teammate) =
         let teammate = { teammate with ArmorOpt = armorTypeOpt }
         let teammate = { teammate with HitPoints = min teammate.HitPoints teammate.HitPointsMax; TechPoints = min teammate.TechPoints teammate.HitPointsMax }
         teammate
 
-    static member equipAccessory1Opt accessoryTypeOpt teammate =
+    static member equipAccessory1Opt accessoryTypeOpt (teammate : Teammate) =
         { teammate with Accessories = Option.toList accessoryTypeOpt }
 
     static member canUseItem itemType teammate =
@@ -195,8 +195,9 @@ type [<ReferenceEquality; NoComparison>] Teammate =
         let character = Map.find characterType Data.Value.Characters
         let expPoints = Algorithms.levelToExpPoints character.LevelBase
         let archetypeType = character.ArchetypeType
-        let weaponOpt = Some "OakSword"
-        let armorOpt = Some "TinMail"
+        let weaponOpt = character.WeaponOpt
+        let armorOpt = character.ArmorOpt
+        let accessories = character.Accessories
         { ArchetypeType = archetypeType
           TeamIndex = index
           PartyIndexOpt = Some index
@@ -206,7 +207,7 @@ type [<ReferenceEquality; NoComparison>] Teammate =
           ExpPoints = expPoints
           WeaponOpt = weaponOpt
           ArmorOpt = armorOpt
-          Accessories = [] }
+          Accessories = accessories }
 
     static member glenn =
         let index = 1
@@ -214,8 +215,9 @@ type [<ReferenceEquality; NoComparison>] Teammate =
         let character = Map.find characterType Data.Value.Characters
         let expPoints = Algorithms.levelToExpPoints character.LevelBase
         let archetypeType = character.ArchetypeType
-        let weaponOpt = Some "StoneSword"
-        let armorOpt = None
+        let weaponOpt = character.WeaponOpt
+        let armorOpt = character.ArmorOpt
+        let accessories = character.Accessories
         { ArchetypeType = archetypeType
           TeamIndex = index
           PartyIndexOpt = Some index
@@ -225,19 +227,10 @@ type [<ReferenceEquality; NoComparison>] Teammate =
           ExpPoints = expPoints
           WeaponOpt = weaponOpt
           ArmorOpt = armorOpt
-          Accessories = [] }
+          Accessories = accessories }
 
 type Team =
     Map<int, Teammate>
-
-type CharacterIndex =
-    | AllyIndex of int
-    | EnemyIndex of int
-    static member isTeammate index index2 =
-        match (index, index2) with
-        | (AllyIndex _, AllyIndex _) -> true
-        | (EnemyIndex _, EnemyIndex _) -> true
-        | (_, _) -> false
 
 type [<ReferenceEquality; NoComparison>] CharacterState =
     { ArchetypeType : ArchetypeType
@@ -247,13 +240,9 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
       Accessories : string list
       HitPoints : int
       TechPoints : int
-      Statuses : StatusType Set
-      Defending : bool
+      Statuses : Map<StatusType, int>
+      Defending : bool // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
       Charging : bool
-      PowerBuff : single
-      ShieldBuff : single
-      MagicBuff : single
-      CounterBuff : single
       GoldPrize : int
       ExpPrize : int }
 
@@ -262,17 +251,28 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     member this.IsWounded = this.HitPoints <= 0
     member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
-    member this.Power = Algorithms.power this.WeaponOpt this.PowerBuff this.ArchetypeType this.Level
-    member this.Magic = Algorithms.magic this.WeaponOpt this.MagicBuff this.ArchetypeType this.Level
-    member this.Shield effectType = Algorithms.shield effectType this.Accessories this.ShieldBuff this.ArchetypeType this.Level
+    member this.Power = Algorithms.power this.WeaponOpt this.Statuses this.ArchetypeType this.Level
+    member this.Magic = Algorithms.magic this.WeaponOpt this.Statuses this.ArchetypeType this.Level
+    member this.Shield effectType = Algorithms.shield effectType this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
     static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
         let power = source.Power
         let shield = target.Shield effectType
-        let damageUnscaled = power - shield
-        let damage = single damageUnscaled |> int |> max 1
+        let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
+        let damage = single (power - shield) * defendingScalar |> int |> max 1
         damage
+
+    static member burndownStatuses burndown state =
+        let statuses =
+            Map.fold (fun statuses status burndown2 ->
+                let burndown3 = burndown2 - burndown
+                if burndown3 <= 0
+                then Map.remove status statuses
+                else Map.add status burndown3 statuses)
+                Map.empty
+                state.Statuses
+        { state with Statuses = statuses }
 
     static member updateHitPoints updater (state : CharacterState) =
         let hitPoints = updater state.HitPoints
@@ -315,13 +315,9 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Accessories = accessories
               HitPoints = hitPoints
               TechPoints = techPoints
-              Statuses = Set.empty
+              Statuses = Map.empty
               Defending = false
               Charging = false
-              PowerBuff = 1.0f
-              MagicBuff = 1.0f
-              ShieldBuff = 1.0f
-              CounterBuff = 1.0f
               GoldPrize = Algorithms.goldPrize characterData.GoldScalar level
               ExpPrize = Algorithms.expPrize characterData.ExpScalar level }
         characterState
@@ -335,13 +331,9 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Accessories = []
               HitPoints = 1
               TechPoints = 0
-              Statuses = Set.empty
+              Statuses = Map.empty
               Defending = false
               Charging = false
-              PowerBuff = 1.0f
-              MagicBuff = 1.0f
-              ShieldBuff = 1.0f
-              CounterBuff = 1.0f
               GoldPrize = 0
               ExpPrize = 0 }
         characterState
