@@ -120,9 +120,9 @@ type [<ReferenceEquality; NoComparison>] Teammate =
     member this.IsWounded = this.HitPoints <= 0
     member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
-    member this.Power = Algorithms.power this.WeaponOpt 1.0f this.ArchetypeType this.Level
-    member this.Magic = Algorithms.magic this.WeaponOpt 1.0f this.ArchetypeType this.Level
-    member this.Shield effectType = Algorithms.shield effectType this.Accessories 1.0f this.ArchetypeType this.Level
+    member this.Power = Algorithms.power this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle
+    member this.Magic = Algorithms.magic this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle
+    member this.Shield effectType = Algorithms.shield effectType this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
     static member equipWeaponOpt weaponTypeOpt teammate =
@@ -230,15 +230,6 @@ type [<ReferenceEquality; NoComparison>] Teammate =
 type Team =
     Map<int, Teammate>
 
-type CharacterIndex =
-    | AllyIndex of int
-    | EnemyIndex of int
-    static member isTeammate index index2 =
-        match (index, index2) with
-        | (AllyIndex _, AllyIndex _) -> true
-        | (EnemyIndex _, EnemyIndex _) -> true
-        | (_, _) -> false
-
 type [<ReferenceEquality; NoComparison>] CharacterState =
     { ArchetypeType : ArchetypeType
       ExpPoints : int
@@ -248,12 +239,8 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
       HitPoints : int
       TechPoints : int
       Statuses : Map<StatusType, int>
-      Defending : bool
+      Defending : bool // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
       Charging : bool
-      PowerBuff : single
-      ShieldBuff : single
-      MagicBuff : single
-      CounterBuff : single
       GoldPrize : int
       ExpPrize : int }
 
@@ -262,12 +249,10 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     member this.IsWounded = this.HitPoints <= 0
     member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
-    member this.Power = Algorithms.power this.WeaponOpt this.PowerBuff this.ArchetypeType this.Level
-    member this.Magic = Algorithms.magic this.WeaponOpt this.MagicBuff this.ArchetypeType this.Level
-    member this.Shield effectType = Algorithms.shield effectType this.Accessories this.ShieldBuff this.ArchetypeType this.Level
+    member this.Power = Algorithms.power this.WeaponOpt this.Statuses this.ArchetypeType this.Level
+    member this.Magic = Algorithms.magic this.WeaponOpt this.Statuses this.ArchetypeType this.Level
+    member this.Shield effectType = Algorithms.shield effectType this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
-    member this.StatusesActive = this.Statuses |> Map.toList |> List.choose (fun (k, v) -> if v > 0 then Some k else None) |> Set.ofList
-    member this.StatusesInactive = this.Statuses |> Map.toList |> List.choose (fun (k, v) -> if v <= 0 then Some k else None) |> Set.ofList
 
     static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
         let power = source.Power
@@ -331,10 +316,6 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Statuses = Map.empty
               Defending = false
               Charging = false
-              PowerBuff = 1.0f
-              MagicBuff = 1.0f
-              ShieldBuff = 1.0f
-              CounterBuff = 1.0f
               GoldPrize = Algorithms.goldPrize characterData.GoldScalar level
               ExpPrize = Algorithms.expPrize characterData.ExpScalar level }
         characterState
@@ -351,10 +332,6 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Statuses = Map.empty
               Defending = false
               Charging = false
-              PowerBuff = 1.0f
-              MagicBuff = 1.0f
-              ShieldBuff = 1.0f
-              CounterBuff = 1.0f
               GoldPrize = 0
               ExpPrize = 0 }
         characterState

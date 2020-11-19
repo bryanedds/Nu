@@ -66,14 +66,8 @@ module Character =
         member this.Accessories = this.CharacterState_.Accessories
         member this.Techs = this.CharacterState_.Techs
         member this.Statuses = this.CharacterState_.Statuses
-        member this.StatusesActive = this.CharacterState_.StatusesActive
-        member this.StatusesInactive = this.CharacterState_.StatusesInactive
         member this.Defending = this.CharacterState_.Defending
         member this.Charging = this.CharacterState_.Charging
-        member this.PowerBuff = this.CharacterState_.PowerBuff
-        member this.ShieldBuff = this.CharacterState_.ShieldBuff
-        member this.MagicBuff = this.CharacterState_.MagicBuff
-        member this.CounterBuff = this.CharacterState_.CounterBuff
         member this.IsHealthy = this.CharacterState_.IsHealthy
         member this.IsWounded = this.CharacterState_.IsWounded
         member this.Level = this.CharacterState_.Level
@@ -94,8 +88,8 @@ module Character =
         member this.AutoBattleOpt = this.AutoBattleOpt_
         member this.InputState = this.InputState_
 
-    let isTeammate (character : Character) (character2 : Character) =
-        CharacterIndex.isTeammate character.CharacterIndex character2.CharacterIndex
+    let isFriendly (character : Character) (character2 : Character) =
+        CharacterIndex.isFriendly character.CharacterIndex character2.CharacterIndex
 
     let isReadyForAutoBattle character =
         Option.isNone character.AutoBattleOpt_ &&
@@ -121,7 +115,7 @@ module Character =
             List.filter (fun target -> target.IsHealthy = healthy)
         | EnemyAim healthy | AllyAim healthy ->
             characters |>
-            List.filter (isTeammate target) |>
+            List.filter (isFriendly target) |>
             List.filter (fun target -> target.IsHealthy = healthy)
         | NoAim ->
             []
@@ -262,21 +256,11 @@ module Character =
 
     let defend character =
         let characterState = character.CharacterState_
-        let characterState =
-            // TODO: shield buff
-            if not characterState.Defending
-            then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff + Constants.Battle.DefendingCounterBuff) }
-            else characterState
         let characterState = { characterState with Defending = true }
         { character with CharacterState_ = characterState }
 
     let undefend character =
         let characterState = character.CharacterState_
-        let characterState =
-            // TODO: shield buff
-            if characterState.Defending
-            then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff - Constants.Battle.DefendingCounterBuff) }
-            else characterState
         let characterState = { characterState with Defending = false }
         { character with CharacterState_ = characterState }
 
