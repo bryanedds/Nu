@@ -164,9 +164,9 @@ module Character =
             (false, healing, target.CharacterIndex)
         else
             let cancelled = techData.Cancels && isAutoBattling target
-            let shield = target.CharacterState_.Shield techData.EffectType
-            let damageUnscaled = power - shield
-            let damage = single damageUnscaled * techData.Scalar |> int |> max 1
+            let shield = target.Shield techData.EffectType
+            let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
+            let damage = single (power - shield) * techData.Scalar * defendingScalar |> int |> max 1
             (cancelled, -damage, target.CharacterIndex)
 
     let evaluateTechMove techData source target characters =
