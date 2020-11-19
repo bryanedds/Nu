@@ -66,6 +66,8 @@ module Character =
         member this.Accessories = this.CharacterState_.Accessories
         member this.Techs = this.CharacterState_.Techs
         member this.Statuses = this.CharacterState_.Statuses
+        member this.StatusesActive = this.CharacterState_.StatusesActive
+        member this.StatusesInactive = this.CharacterState_.StatusesInactive
         member this.Defending = this.CharacterState_.Defending
         member this.Charging = this.CharacterState_.Charging
         member this.PowerBuff = this.CharacterState_.PowerBuff
@@ -212,7 +214,11 @@ module Character =
         | _ -> None
 
     let updateActionTime updater character =
-        { character with ActionTime_ = updater character.ActionTime_ }
+        let actionTime = updater character.ActionTime_
+        let actionTimeDelta = actionTime - character.ActionTime
+        { character with
+            ActionTime_ = updater character.ActionTime_
+            CharacterState_ = CharacterState.burndownStatuses actionTimeDelta character.CharacterState_ }
 
     let updateHitPoints updater character =
         let (hitPoints, cancel) = updater character.CharacterState_.HitPoints

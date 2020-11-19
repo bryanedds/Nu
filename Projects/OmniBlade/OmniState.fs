@@ -247,7 +247,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
       Accessories : string list
       HitPoints : int
       TechPoints : int
-      Statuses : StatusType Set
+      Statuses : Map<StatusType, int>
       Defending : bool
       Charging : bool
       PowerBuff : single
@@ -266,6 +266,8 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     member this.Magic = Algorithms.magic this.WeaponOpt this.MagicBuff this.ArchetypeType this.Level
     member this.Shield effectType = Algorithms.shield effectType this.Accessories this.ShieldBuff this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
+    member this.StatusesActive = this.Statuses |> Map.toList |> List.choose (fun (k, v) -> if v > 0 then Some k else None) |> Set.ofList
+    member this.StatusesInactive = this.Statuses |> Map.toList |> List.choose (fun (k, v) -> if v <= 0 then Some k else None) |> Set.ofList
 
     static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
         let power = source.Power
@@ -273,6 +275,17 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         let damageUnscaled = power - shield
         let damage = single damageUnscaled |> int |> max 1
         damage
+
+    static member burndownStatuses burndown state =
+        let statuses =
+            Map.fold (fun statuses status burndown2 ->
+                let burndown3 = burndown2 - burndown
+                if burndown3 <= 0
+                then Map.remove status statuses
+                else Map.add status burndown3 statuses)
+                Map.empty
+                state.Statuses
+        { state with Statuses = statuses }
 
     static member updateHitPoints updater (state : CharacterState) =
         let hitPoints = updater state.HitPoints
@@ -315,7 +328,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Accessories = accessories
               HitPoints = hitPoints
               TechPoints = techPoints
-              Statuses = Set.empty
+              Statuses = Map.empty
               Defending = false
               Charging = false
               PowerBuff = 1.0f
@@ -335,7 +348,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Accessories = []
               HitPoints = 1
               TechPoints = 0
-              Statuses = Set.empty
+              Statuses = Map.empty
               Defending = false
               Charging = false
               PowerBuff = 1.0f
