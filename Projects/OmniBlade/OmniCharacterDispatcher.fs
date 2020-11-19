@@ -43,7 +43,7 @@ module CharacterDispatcher =
             let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseLength
             let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
             let character = entity.GetCharacter world
-            let statuses = character.Statuses
+            let statuses = character.StatusesActive
             if character.IsWounded then Color.Zero
             elif Character.isAutoBattling character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
             elif Set.contains PoisonStatus statuses then Color (byte 0, byte 255, byte 0, pulseIntensity) // green
