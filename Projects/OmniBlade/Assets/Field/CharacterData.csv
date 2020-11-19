@@ -1,6 +1,6 @@
-Type,ArchetypeType,LevelBase,AnimationSheet,Mug,GoldScalar,ExpScalar,Description
-[Ally Finn],Fighter,3,[Field Finn],[Some [Field FinnMug]],1,1,The main protagonist.
-[Ally Glenn],Brawler,3,[Field Glenn],[Some [Field GlennMug]],1,1,Finn's best friend.
-[Enemy BlueGoblin],Goblin,2,[Field BlueGoblin],None,1,1,A minor goblin from the Golobogos Islands.
-[Enemy PoisonGoblin],Goblin,4,[Field PoisonGoblin],None,1,1,A poisonous goblin evolved from within the earth.
-[Enemy FireGoblin],Goblin,8,[Field FireGoblin],None,2,2,A goblin borne from the Golobogos Volcano.
+Type,ArchetypeType,LevelBase,AnimationSheet,Mug,WeaponOpt,ArmorOpt,Accessories,GoldScalar,ExpScalar,Description
+[Ally Finn],Fighter,3,[Field Finn],[Some [Field FinnMug]],[Some OakSword],[Some TinMail],[],1,1,The main protagonist.
+[Ally Glenn],Brawler,3,[Field Glenn],[Some [Field GlennMug]],[Some StoneSword],[Some TinMail],[],1,1,Finn's best friend.
+[Enemy BlueGoblin],Goblin,2,[Field BlueGoblin],None,[Some Paws],None,[],1,1,A minor goblin from the Golobogos Islands.
+[Enemy PoisonGoblin],Goblin,4,[Field PoisonGoblin],None,[Some Paws],None,[],1,1,A poisonous goblin evolved from within the earth.
+[Enemy FireGoblin],Goblin,8,[Field FireGoblin],None,[Some Paws],None,[],2,2,A goblin borne from the Golobogos Volcano.

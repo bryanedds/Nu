@@ -279,22 +279,20 @@ module Character =
           ActionTime_ = actionTime
           InputState_ = NoInput }
 
-    let makeEnemy index enemyData =
-        // TODO: better error checking
-        let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
-        let characterData =
-            match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
-            | Some characterData -> characterData
-            | None -> failwith ("Could not find CharacterData for '" + scstring enemyData.EnemyType + "'")
-        let archetypeType = characterData.ArchetypeType
-        let hitPoints = Algorithms.hitPointsMax None archetypeType characterData.LevelBase
-        let techPoints = Algorithms.techPointsMax None archetypeType characterData.LevelBase
-        let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
-        let characterType = characterData.CharacterType
-        let characterState = CharacterState.make characterData hitPoints techPoints expPoints None None [] // TODO: figure out if / how we should populate equipment
-        let actionTime = Constants.Battle.EnemyActionTimeInitial
-        let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet Leftward actionTime
-        enemy
+    let tryMakeEnemy index enemyData =
+        match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
+        | Some characterData ->
+            let archetypeType = characterData.ArchetypeType
+            let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
+            let hitPoints = Algorithms.hitPointsMax None archetypeType characterData.LevelBase
+            let techPoints = Algorithms.techPointsMax None archetypeType characterData.LevelBase
+            let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
+            let characterType = characterData.CharacterType
+            let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
+            let actionTime = Constants.Battle.EnemyActionTimeInitial
+            let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet Leftward actionTime
+            Some enemy
+        | None -> None
 
     let empty =
         let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
