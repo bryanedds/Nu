@@ -64,7 +64,7 @@
 [X] status utilization in algorithms
 [X] make defense do something at least
 [X] initial / enemy equipment from data
-[ ] cyclone effect sprite / wider cyclone circle
+[X] cyclone effect sprite / wider cyclone circle
 [ ] slash attack for Finn
 [ ] buff consumables
 [ ] tiled battle background?

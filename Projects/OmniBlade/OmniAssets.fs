@@ -13,7 +13,7 @@ module Assets =
     // gui assets
     let Font = asset<Font> GuiPackageName "Font"
     let DialogThinImage = asset<Image> GuiPackageName "DialogThin"
-    let DialogThickImage = asset<Image> GuiPackageName "DialogLarge"
+    let DialogThickImage = asset<Image> GuiPackageName "DialogThick"
     let DialogXLImage = asset<Image> GuiPackageName "DialogXL"
     let DialogXXLImage = asset<Image> GuiPackageName "DialogXXL"
     let ButtonUpImage = asset<Image> GuiPackageName "ButtonUp"
@@ -65,7 +65,9 @@ module Assets =
     // battle assets
     let CancelImage = asset<Image> BattlePackageName "Cancel"
     let BoltAnimationSheet = asset<Image> BattlePackageName "Bolt"
+    let CycloneBlurAnimationSheet = asset<Image> BattlePackageName "CycloneBlur"
     let ExplosionAnimationSheet = asset<Image> BattlePackageName "Explosion"
+    let ImpactSplashAnimationSheet = asset<Image> BattlePackageName "ImpactSplash"
     let BattleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> BattlePackageName "Battle" }
 
     // layer file paths
