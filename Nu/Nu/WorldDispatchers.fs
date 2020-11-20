@@ -178,6 +178,9 @@ module EffectFacetModule =
         member this.GetEffectOffset world : Vector2 = this.Get Property? EffectOffset world
         member this.SetEffectOffset (value : Vector2) world = this.SetFast Property? EffectOffset false value world
         member this.EffectOffset = lens Property? EffectOffset this.GetEffectOffset this.SetEffectOffset this
+        member this.GetEffectSliceOffset world : Vector2 = this.Get Property? EffectSliceOffset world
+        member this.SetEffectSliceOffset (value : Vector2) world = this.SetFast Property? EffectSliceOffset false value world
+        member this.EffectSliceOffset = lens Property? EffectSliceOffset this.GetEffectSliceOffset this.SetEffectSliceOffset this
         member this.GetEffectPhysicsShapes world : unit = this.Get Property? EffectPhysicsShapes world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
         member private this.SetEffectPhysicsShapes (value : unit) world = this.SetFast Property? EffectPhysicsShapes false value world
         member this.EffectPhysicsShapes = lensReadOnly Property? EffectPhysicsShapes this.GetEffectPhysicsShapes this
@@ -236,6 +239,7 @@ module EffectFacetModule =
              define Entity.EffectDefinitions Map.empty
              define Entity.Effect Effect.empty
              define Entity.EffectOffset (Vector2 0.5f)
+             define Entity.EffectSliceOffset (Vector2 0.5f)
              define Entity.EffectPhysicsShapes ()
              define Entity.EffectTags Map.empty
              define Entity.EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
@@ -256,7 +260,7 @@ module EffectFacetModule =
                       Effects.Size = entity.GetSize world
                       Effects.Rotation = entity.GetRotation world
                       Effects.Depth = entity.GetDepth world
-                      Effects.Offset = Vector2 0.5f
+                      Effects.Offset = entity.GetEffectSliceOffset world
                       Effects.InsetOpt = None
                       Effects.Color = Color.White
                       Effects.Glow = Color.Zero

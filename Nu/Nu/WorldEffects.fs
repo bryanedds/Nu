@@ -120,7 +120,7 @@ module Effects =
 
     and [<StructuralEquality; NoComparison>] Aspect =
         | Enabled of bool
-        | Position of Vector2
+        | PositionAbsolute of Vector2
         | PositionRelative of Vector2
         | Translation of Vector2
         | Offset of Vector2
@@ -179,7 +179,7 @@ module Effects =
             "Rate " +
             "Shift " +
             "Expand Resource " +
-            "Expand Enabled Position PositionRelative Translation Offset Inset Size Rotation Depth Color Glow Volume " +
+            "Expand Enabled PositionAbsolute PositionRelative Translation Offset Inset Size Rotation Depth Color Glow Volume " +
             "Expand Enableds Positions Translations Offsets Insets Sizes Rotations Depths Colors Glows Volumes Aspects " +
             "Expand StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
             "View",
@@ -385,7 +385,7 @@ module EffectSystem =
     and private evalAspect aspect (slice : Slice) effectSystem =
         match aspect with
         | Enabled enabled -> { slice with Enabled = enabled }
-        | Position position -> { slice with Position = position }
+        | PositionAbsolute position -> { slice with Position = position }
         | PositionRelative position -> { slice with Position = slice.Position + position }
         | Translation translation ->
             let oriented = Vector2.Transform (translation, Quaternion.CreateFromAxisAngle (Vector3.UnitZ, slice.Rotation))
