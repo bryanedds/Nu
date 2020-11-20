@@ -54,6 +54,7 @@ module BattleDispatcher =
         | DisplayCancel of CharacterIndex
         | DisplayHitPointsChange of CharacterIndex * int
         | DisplayBolt of CharacterIndex
+        | DisplayCycloneBlur of CharacterIndex * single
         | DisplayHop of Hop
         | DisplayCircle of Vector2 * single
         | PlaySound of int64 * single * AssetTag<Sound>
@@ -573,12 +574,18 @@ module BattleDispatcher =
                 | Cyclone ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time WhirlCycle) sourceIndex battle
+                    let radius = 64.0f
+                    let position = (Battle.getCharacter sourceIndex battle).Bottom
                     let playHitSounds =
                         [PlaySound (20L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (40L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (80L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
-                    withCmds (DisplayCircle ((Battle.getCharacter sourceIndex battle).Bottom, 64.0f) :: playHitSounds) battle
+                    withCmds
+                        (DisplayCircle (position, radius) ::
+                         DisplayCycloneBlur (sourceIndex, radius) ::
+                         playHitSounds)
+                        battle
                 | Bolt ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Cycle) sourceIndex battle
@@ -761,6 +768,19 @@ module BattleDispatcher =
                     let world = entity.SetEffect effect world
                     let world = entity.SetSize (v2 192.0f 758.0f) world
                     let world = entity.SetBottom target.Bottom world
+                    let world = entity.SetDepth Constants.Battle.EffectDepth world
+                    let world = entity.SetSelfDestruct true world
+                    just world
+                | None -> just world
+
+            | DisplayCycloneBlur (targetIndex, radius) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target ->
+                    let effect = Effects.makeCycloneBlurEffect radius
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                    let world = entity.SetEffect effect world
+                    let world = entity.SetSize (v2 234.0f 234.0f) world
+                    let world = entity.SetCenter target.Center world
                     let world = entity.SetDepth Constants.Battle.EffectDepth world
                     let world = entity.SetSelfDestruct true world
                     just world
