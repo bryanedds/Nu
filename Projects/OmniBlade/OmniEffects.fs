@@ -72,6 +72,7 @@ module Effects =
           Content =
             StaticSprite
                 (Resource (AssetTag.toPair Assets.CancelImage),
+                 FlipNone,
                  [|Rotation
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = single Math.PI * -2.0f; TweenLength = 10L }
@@ -88,6 +89,7 @@ module Effects =
         let boltSprite =
             StaticSprite
                 (Resource (AssetTag.toPair Assets.BoltAnimationSheet),
+                 FlipNone,
                  [|Inset
                     (Set, Constant, Once,
                      [|{ TweenValue = v4 0.0f   0.0f    192.0f  768.0f; TweenLength = 5L }
@@ -103,7 +105,7 @@ module Effects =
         let explosionSprite =
             AnimatedSprite
                 (Resource (AssetTag.toPair Assets.ExplosionAnimationSheet),
-                 v2i 96 96, 4, 12, 2L, Once,
+                 v2i 96 96, 4, 12, 2L, Once, FlipNone,
                  [|Size (Set, Constant, Once, [|{ TweenValue = v2 96.0f 96.0f; TweenLength = 0L }|])
                    Position (Sum, Constant, Once, [|{ TweenValue = v2 0.0f -384.0f; TweenLength = 0L }|])
                    Color
@@ -127,6 +129,17 @@ module Effects =
                    Delay (10L, explosionSprite)
                    Delay (10L, explosionSoundEffect)|]) }
 
+    let makeSlashSplashEffect () =
+        { EffectName = "SlashSplash"
+          LifetimeOpt = Some 24L
+          Definitions = Map.empty
+          Content =
+              AnimatedSprite
+               (Resource (AssetTag.toPair Assets.SlashSplashAnimationSheet),
+                v2i 96 96, 3, 3, 8L, Once, FlipNone,
+                [||],
+                Nil) }
+
     let makeCycloneBlurEffect radius =
         { EffectName = "CycloneBlur"
           LifetimeOpt = Some 100L
@@ -134,7 +147,7 @@ module Effects =
           Content =
               AnimatedSprite
                (Resource (AssetTag.toPair Assets.CycloneBlurAnimationSheet),
-                v2i 234 234, 2, 4, 3L, Loop,
+                v2i 234 234, 2, 4, 3L, Loop, FlipNone,
                 [|Circle (radius, 2.0f, 100L)|],
                 Nil) }
 

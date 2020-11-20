@@ -1222,7 +1222,7 @@ module EffectDispatcherModule =
 
         static member Properties =
             [define Entity.PublishChanges true
-             define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
+             define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] FlipNone [] Nil]]]]")]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =

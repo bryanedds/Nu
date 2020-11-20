@@ -67,6 +67,7 @@ module Assets =
     let BoltAnimationSheet = asset<Image> BattlePackageName "Bolt"
     let CycloneBlurAnimationSheet = asset<Image> BattlePackageName "CycloneBlur"
     let ExplosionAnimationSheet = asset<Image> BattlePackageName "Explosion"
+    let SlashSplashAnimationSheet = asset<Image> BattlePackageName "SlashSplash"
     let BattleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> BattlePackageName "Battle" }
 
     // layer file paths
