@@ -134,10 +134,11 @@ module Effects =
         | Expand of string * Argument array
         | Aspects of Aspect array
 
+
     and [<StructuralEquality; NoComparison>] Content =
         | Nil // first to make default value when missing
-        | StaticSprite of Resource * Aspect array * Content
-        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Aspect array * Content
+        | StaticSprite of Resource * Flip * Aspect array * Content
+        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Flip * Aspect array * Content
         | TextSprite of Resource * string * Aspect array * Content
         | SoundEffect of Resource * Aspect array * Content
         | Mount of Shift * Aspect array * Content
@@ -303,8 +304,10 @@ module EffectSystem =
         | Ratio -> div (value, value2)
         | Set -> value2
 
-    let private evalInset (celSize : Vector2i) celRun celCount stutter playback effectSystem =
+    let private evalInset (celSize : Vector2i) celRun celCount stutter playback flip effectSystem =
         // TODO: make sure Bounce playback works as intended!
+        // TODO: stop assuming that animation sheets are fully and evenly populated when flipping!
+        let celRuns = celCount % celRun
         let celUnmodulated = int (effectSystem.EffectTime / stutter)
         let cel = celUnmodulated % celCount
         let celI = cel % celRun
@@ -317,6 +320,13 @@ module EffectSystem =
             if bouncing
             then (celRun - celI, (celRun % celCount) - celJ)
             else (celI, celJ)
+        let (celI, celJ) =
+            // NOTE: this assumes that animation sheets are fully and evenly populated!
+            match flip with
+            | FlipNone -> (celI, celJ)
+            | FlipH -> (celRun - celI, celJ)
+            | FlipV -> (celI, celRuns - celJ)
+            | FlipHV -> (celRun - celI, celRuns - celJ)
         let celX = celI * celSize.X
         let celY = celJ * celSize.Y
         let celPosition = Vector2 (single celX, single celY)
@@ -484,7 +494,7 @@ module EffectSystem =
             | _ -> Log.info ("Expected Content for definition '" + definitionName + "'."); effectSystem
         | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); effectSystem
 
-    and private evalStaticSprite resource aspects content slice effectSystem =
+    and private evalStaticSprite resource flip aspects content slice effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -510,15 +520,15 @@ module EffectSystem =
                               InsetOpt = slice.InsetOpt
                               Image = AssetTag.specialize<Image> image
                               Color = slice.Color
-                              Glow = Color.Zero
-                              Flip = FlipNone })
+                              Glow = slice.Glow
+                              Flip = flip })
                 addView spriteView effectSystem
             else effectSystem
 
         // build implicitly mounted content
         evalContent content slice effectSystem
 
-    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount stutter playback aspects content slice effectSystem =
+    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount stutter playback flip aspects content slice effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -533,7 +543,7 @@ module EffectSystem =
             let cel = int (effectSystem.EffectTime / stutter)
 
             // eval inset
-            let inset = evalInset celSize celRun celCount stutter playback effectSystem
+            let inset = evalInset celSize celRun celCount stutter playback flip effectSystem
 
             // build animated sprite views
             let effectSystem =
@@ -555,7 +565,7 @@ module EffectSystem =
                                  Image = AssetTag.specialize<Image> image
                                  Color = slice.Color
                                  Glow = slice.Glow
-                                 Flip = FlipNone })
+                                 Flip = flip })
                     addView animatedSpriteView effectSystem
                 else effectSystem
 
@@ -703,10 +713,10 @@ module EffectSystem =
         match content with
         | Nil ->
             effectSystem
-        | StaticSprite (resource, aspects, content) ->
-            evalStaticSprite resource aspects content slice effectSystem
-        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, playback, aspects, content) ->
-            evalAnimatedSprite resource celSize celRun celCount stutter playback aspects content slice effectSystem
+        | StaticSprite (resource, flip, aspects, content) ->
+            evalStaticSprite resource flip aspects content slice effectSystem
+        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, playback, flip, aspects, content) ->
+            evalAnimatedSprite resource celSize celRun celCount stutter playback flip aspects content slice effectSystem
         | TextSprite (resource, text, aspects, content) ->
             evalTextSprite resource text aspects content slice effectSystem
         | SoundEffect (resource, aspects, content) ->
