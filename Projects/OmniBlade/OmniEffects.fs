@@ -50,7 +50,7 @@ module Effects =
           Definitions = Map.empty
           Content =
             TextSprite
-                (Resource (Assets.Font.PackageName, Assets.Font.AssetName),
+                (Resource (AssetTag.toPair Assets.Font),
                  scstring (abs delta),
                  [|Position
                     (Sum, Linear, Bounce,
@@ -71,7 +71,7 @@ module Effects =
           Definitions = Map.empty
           Content =
             StaticSprite
-                (Resource (Assets.CancelImage.PackageName, Assets.CancelImage.AssetName),
+                (Resource (AssetTag.toPair Assets.CancelImage),
                  [|Rotation
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = single Math.PI * -2.0f; TweenLength = 10L }
@@ -87,7 +87,7 @@ module Effects =
     let makeBoltEffect () =
         let boltSprite =
             StaticSprite
-                (Resource (Assets.BoltAnimationSheet.PackageName, Assets.BoltAnimationSheet.AssetName),
+                (Resource (AssetTag.toPair Assets.BoltAnimationSheet),
                  [|Inset
                     (Set, Constant, Once,
                      [|{ TweenValue = v4 0.0f   0.0f    192.0f  768.0f; TweenLength = 5L }
@@ -102,7 +102,7 @@ module Effects =
                  Nil)
         let explosionSprite =
             AnimatedSprite
-                (Resource (Assets.ExplosionAnimationSheet.PackageName, Assets.ExplosionAnimationSheet.AssetName),
+                (Resource (AssetTag.toPair Assets.ExplosionAnimationSheet),
                  v2i 96 96, 4, 12, 2L, Once,
                  [|Size (Set, Constant, Once, [|{ TweenValue = v2 96.0f 96.0f; TweenLength = 0L }|])
                    Position (Sum, Constant, Once, [|{ TweenValue = v2 0.0f -384.0f; TweenLength = 0L }|])
@@ -112,9 +112,9 @@ module Effects =
                        { TweenValue = Color.White; TweenLength = 30L }
                        { TweenValue = Color.White.WithA (byte 0); TweenLength = 0L }|])|],
                  Nil)
-        let explostionSoundEffect =
+        let explosionSoundEffect =
             SoundEffect
-                (Resource (Assets.ExplosionSound.PackageName, Assets.ExplosionSound.AssetName),
+                (Resource (AssetTag.toPair Assets.ExplosionSound),
                  [|Enabled (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
                  Nil)
         { EffectName = "Bolt"
@@ -125,7 +125,18 @@ module Effects =
                 (Shift 0.0f,
                  [|boltSprite
                    Delay (10L, explosionSprite)
-                   Delay (10L, explostionSoundEffect)|]) }
+                   Delay (10L, explosionSoundEffect)|]) }
+
+    let makeCycloneBlurEffect radius =
+        { EffectName = "CycloneBlur"
+          LifetimeOpt = Some 100L
+          Definitions = Map.empty
+          Content =
+              AnimatedSprite
+               (Resource (AssetTag.toPair Assets.CycloneBlurAnimationSheet),
+                v2i 234 234, 2, 4, 3L, Loop,
+                [|Circle (radius, 2.0f, 100L)|],
+                Nil) }
 
     let makeHopEffect start stop =
         { EffectName = "Hop"

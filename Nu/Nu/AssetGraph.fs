@@ -32,6 +32,12 @@ module AssetTag =
     let make<'a> packageName assetName : AssetTag<'a> =
         { PackageName = packageName; AssetName = assetName }
 
+    let toPair<'a> (assetTag : 'a AssetTag) =
+        (assetTag.PackageName, assetTag.AssetName)
+
+    let ofPair<'a> (packageName, assetName) =
+        make<'a> packageName assetName
+
     let convert<'a, 'b> (assetTag : 'a AssetTag) : 'b AssetTag =
         make<'b> assetTag.PackageName assetTag.AssetName
 
