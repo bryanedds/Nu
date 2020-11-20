@@ -151,6 +151,7 @@ type TargetType =
 type TechType =
     | Critical
     | Cyclone
+    | Slash
     | Bolt
     | Tremor
 
