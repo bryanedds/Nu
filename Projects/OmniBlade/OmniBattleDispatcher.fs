@@ -553,7 +553,7 @@ module BattleDispatcher =
                     match techType with
                     | Critical -> Some { HopStart = source.Bottom; HopStop = target.BottomOffset3 }
                     | Cyclone -> Some { HopStart = source.Bottom; HopStop = target.BottomOffset2 }
-                    | Bolt | Tremor -> None
+                    | Bolt | Slash | Tremor -> None
                 match hopOpt with
                 | None ->
                     if target.IsHealthy then
@@ -588,6 +588,8 @@ module BattleDispatcher =
                          DisplayCycloneBlur (sourceIndex, radius) ::
                          playHitSounds)
                         battle
+                | Slash ->
+                    just battle
                 | Bolt ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Cycle) sourceIndex battle
@@ -640,7 +642,7 @@ module BattleDispatcher =
                 let hopOpt =
                     match techType with
                     | Critical | Cyclone -> Some { HopStart = target.BottomOffset2; HopStop = source.BottomOriginal }
-                    | Bolt | Tremor -> None
+                    | Bolt | Slash | Tremor -> None
                 match hopOpt with
                 | None -> just battle
                 | Some hop -> withCmd (DisplayHop hop) battle
