@@ -55,6 +55,7 @@ module BattleDispatcher =
         | DisplayHitPointsChange of CharacterIndex * int
         | DisplayBolt of CharacterIndex
         | DisplayCycloneBlur of CharacterIndex * single
+        | DisplayImpactSplash of CharacterIndex
         | DisplayHop of Hop
         | DisplayCircle of Vector2 * single
         | PlaySound of int64 * single * AssetTag<Sound>
@@ -570,7 +571,8 @@ module BattleDispatcher =
                     let battle = Battle.updateCharacter (Character.animate time AttackCycle) sourceIndex battle
                     let playHitSoundDelay = 10L
                     let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                    withCmd playHitSound battle
+                    let impactSplash = DisplayImpactSplash targetIndex
+                    withCmds [playHitSound; impactSplash] battle
                 | Cyclone ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time WhirlCycle) sourceIndex battle
@@ -781,6 +783,19 @@ module BattleDispatcher =
                     let world = entity.SetEffect effect world
                     let world = entity.SetSize (v2 234.0f 234.0f) world
                     let world = entity.SetCenter target.Center world
+                    let world = entity.SetDepth Constants.Battle.EffectDepth world
+                    let world = entity.SetSelfDestruct true world
+                    just world
+                | None -> just world
+
+            | DisplayImpactSplash targetIndex ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target ->
+                    let effect = Effects.makeImpactSplashEffect ()
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                    let world = entity.SetEffect effect world
+                    let world = entity.SetSize (v2 192.0f 96.0f) world
+                    let world = entity.SetBottom target.Bottom world
                     let world = entity.SetDepth Constants.Battle.EffectDepth world
                     let world = entity.SetSelfDestruct true world
                     just world
