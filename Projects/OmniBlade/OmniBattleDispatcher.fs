@@ -55,7 +55,7 @@ module BattleDispatcher =
         | DisplayHitPointsChange of CharacterIndex * int
         | DisplayBolt of CharacterIndex
         | DisplayCycloneBlur of CharacterIndex * single
-        | DisplayImpactSplash of CharacterIndex
+        | DisplayImpactSplash of CharacterIndex * int64
         | DisplayHop of Hop
         | DisplayCircle of Vector2 * single
         | PlaySound of int64 * single * AssetTag<Sound>
@@ -505,9 +505,8 @@ module BattleDispatcher =
             | AttackCharacter1 sourceIndex ->
                 let time = World.getTickTime world
                 let battle = Battle.updateCharacter (Character.animate time AttackCycle) sourceIndex battle
-                let playHitSoundDelay = 15L
-                let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                withCmd playHitSound battle
+                let playHit = PlaySound (15L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                withCmd playHit battle
 
             | AttackCharacter2 (sourceIndex, targetIndex) ->
                 let time = World.getTickTime world
@@ -568,28 +567,28 @@ module BattleDispatcher =
                 match techType with
                 | Critical ->
                     let time = World.getTickTime world
+                    let playHit = PlaySound (10L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                    let impactSplash = DisplayImpactSplash (targetIndex, 30L)
                     let battle = Battle.updateCharacter (Character.animate time AttackCycle) sourceIndex battle
-                    let playHitSoundDelay = 10L
-                    let playHitSound = PlaySound (playHitSoundDelay, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                    let impactSplash = DisplayImpactSplash targetIndex
-                    withCmds [playHitSound; impactSplash] battle
+                    withCmds [playHit; impactSplash] battle
                 | Cyclone ->
                     let time = World.getTickTime world
-                    let battle = Battle.updateCharacter (Character.animate time WhirlCycle) sourceIndex battle
                     let radius = 64.0f
                     let position = (Battle.getCharacter sourceIndex battle).Bottom
-                    let playHitSounds =
+                    let playHits =
                         [PlaySound (20L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (40L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                          PlaySound (80L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
-                    withCmds
-                        (DisplayCircle (position, radius) ::
-                         DisplayCycloneBlur (sourceIndex, radius) ::
-                         playHitSounds)
-                        battle
+                    let battle = Battle.updateCharacter (Character.animate time WhirlCycle) sourceIndex battle
+                    withCmds (DisplayCircle (position, radius) :: DisplayCycloneBlur (sourceIndex, radius) :: playHits) battle
                 | Slash ->
-                    just battle
+                    let time = World.getTickTime world
+                    let playSlash = PlaySound (10L, Constants.Audio.DefaultSoundVolume, Assets.SlashSound)
+                    let playHit = PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                    let impactSplash = DisplayImpactSplash (targetIndex, 60L)
+                    let battle = Battle.updateCharacter (Character.animate time SlashCycle) sourceIndex battle
+                    withCmds [playSlash; playHit; impactSplash] battle
                 | Bolt ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Cycle) sourceIndex battle
@@ -790,16 +789,20 @@ module BattleDispatcher =
                     just world
                 | None -> just world
 
-            | DisplayImpactSplash targetIndex ->
+            | DisplayImpactSplash (targetIndex, delay) ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
-                    let effect = Effects.makeImpactSplashEffect ()
-                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
-                    let world = entity.SetEffect effect world
-                    let world = entity.SetSize (v2 192.0f 96.0f) world
-                    let world = entity.SetBottom target.Bottom world
-                    let world = entity.SetDepth Constants.Battle.EffectDepth world
-                    let world = entity.SetSelfDestruct true world
+                    let world =
+                        World.delay (fun world ->
+                            let effect = Effects.makeImpactSplashEffect ()
+                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                            let world = entity.SetEffect effect world
+                            let world = entity.SetSize (v2 192.0f 96.0f) world
+                            let world = entity.SetBottom target.Bottom world
+                            let world = entity.SetDepth Constants.Battle.EffectDepth world
+                            entity.SetSelfDestruct true world)
+                            delay
+                            world
                     just world
                 | None -> just world
 

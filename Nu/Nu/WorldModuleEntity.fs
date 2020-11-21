@@ -1078,7 +1078,7 @@ module WorldModuleEntity =
         /// Reassign an entity's identity and / or layer.
         [<FunctionBinding>]
         static member reassignEntity entity nameOpt layer world =
-            World.schedule2 (World.reassignEntityImmediate entity nameOpt layer >> snd) world
+            World.frame (World.reassignEntityImmediate entity nameOpt layer >> snd) world
 
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =
