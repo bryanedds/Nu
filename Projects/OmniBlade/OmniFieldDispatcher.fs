@@ -620,7 +620,7 @@ module FieldDispatcher =
 
                  // avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
-                    [Entity.Position == v2Dup 120.0f; Entity.Depth == Constants.Field.ForgroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
+                    [Entity.Position == v2Dup 120.0f; Entity.Depth == Constants.Field.ForegroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled <== field --> fun field ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone field.DialogOpt &&

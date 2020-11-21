@@ -53,7 +53,7 @@ module Constants =
 #endif
         let LinearDamping = 19.0f
         let BackgroundDepth = -10.0f
-        let ForgroundDepth = 0.0f
+        let ForegroundDepth = 0.0f
         let EffectDepth = 10.0f
         let GuiDepth = 20.0f
         let GuiEffectDepth = 30.0f

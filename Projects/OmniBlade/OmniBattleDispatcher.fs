@@ -588,7 +588,7 @@ module BattleDispatcher =
                     let playSlash = PlaySound (10L, Constants.Audio.DefaultSoundVolume, Assets.SlashSound)
                     let playHit = PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
                     let slashSpike = DisplaySlashSpike ((Battle.getCharacter sourceIndex battle).Bottom, targetIndex, 10L)
-                    let impactSplash = DisplayImpactSplash (targetIndex, 60L)
+                    let impactSplash = DisplayImpactSplash (targetIndex, 70L)
                     let battle = Battle.updateCharacter (Character.animate time SlashCycle) sourceIndex battle
                     withCmds [playSlash; playHit; slashSpike; impactSplash] battle
                 | Bolt ->
@@ -818,7 +818,6 @@ module BattleDispatcher =
                             let world = entity.SetEffect effect world
                             let world = entity.SetSize (v2 96.0f 96.0f) world
                             let world = entity.SetBottom target.Bottom world
-                            let world = entity.SetDepth Constants.Battle.EffectDepth world
                             entity.SetSelfDestruct true world)
                             delay
                             world
