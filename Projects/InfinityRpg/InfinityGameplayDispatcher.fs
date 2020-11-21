@@ -24,7 +24,7 @@ module GameplayDispatcher =
         | MakeEnemyMoves
         | TryContinuePlayerNavigation
         | TryMakePlayerMove of PlayerInput
-        | TryHaltPlayer
+        | HaltPlayer
         | TransitionMap of Direction
         | HandleMapChange of PlayerInput
         | StartGameplay
@@ -45,7 +45,7 @@ module GameplayDispatcher =
     type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.initial)
 
-        static let tryGetNavigationPath (_ : CharacterIndex) coordinates gameplay =
+        static let tryGetNavigationPath coordinates gameplay =
             let fieldTiles = gameplay.Field.FieldMapNp.FieldTiles
             let characterPositions = gameplay.Chessboard.OccupiedSpaces |> List.map (fun coordinates -> vctovf coordinates)
             let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
@@ -207,7 +207,7 @@ module GameplayDispatcher =
                                 Gameplay.makeMove PlayerIndex (Attack targetIndex) gameplay
                             else gameplay
                         else
-                            match tryGetNavigationPath PlayerIndex coordinates gameplay with
+                            match tryGetNavigationPath coordinates gameplay with
                             | Some navigationPath ->
                                 match navigationPath with
                                 | _ :: _ -> Gameplay.makeMove PlayerIndex (Travel navigationPath) gameplay
@@ -219,12 +219,9 @@ module GameplayDispatcher =
                     withMsg MakeEnemyMoves gameplay
                 else just gameplay
 
-            | TryHaltPlayer ->
-                match Map.tryFind PlayerIndex gameplay.Round.CharacterMoves with
-                | Some _ ->
-                    let gameplay = Gameplay.truncatePlayerPath gameplay
-                    just gameplay
-                | None -> just gameplay
+            | HaltPlayer ->
+                let gameplay = Gameplay.truncatePlayerPath gameplay
+                just gameplay
 
             | TransitionMap direction ->
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
@@ -361,7 +358,7 @@ module GameplayDispatcher =
                     [Entity.Position == v2 184.0f -144.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
                      Entity.Text == "Halt"
                      Entity.Enabled <== gameplay --> fun gameplay -> gameplay.Round.IsPlayerTraveling
-                     Entity.ClickEvent ==> msg TryHaltPlayer]
+                     Entity.ClickEvent ==> msg HaltPlayer]
 
                  Content.button Simulants.HudSaveGame.Name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
