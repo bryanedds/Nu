@@ -456,8 +456,8 @@ module FieldData =
         let propBounds = v4Bounds propPosition propSize
         let propDepth =
             match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-            | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
-            | (false, _) -> Constants.Field.ForgroundDepth
+            | (true, depthStr) -> Constants.Field.ForegroundDepth + scvalue depthStr
+            | (false, _) -> Constants.Field.ForegroundDepth
         match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
         | (true, propDataStr) ->
             let propData = scvalue propDataStr
