@@ -56,6 +56,7 @@ module BattleDispatcher =
         | DisplayBolt of CharacterIndex
         | DisplayCycloneBlur of CharacterIndex * single
         | DisplayImpactSplash of CharacterIndex * int64
+        | DisplaySlashSpike of Vector2 * CharacterIndex * int64
         | DisplayHop of Hop
         | DisplayCircle of Vector2 * single
         | PlaySound of int64 * single * AssetTag<Sound>
@@ -586,9 +587,10 @@ module BattleDispatcher =
                     let time = World.getTickTime world
                     let playSlash = PlaySound (10L, Constants.Audio.DefaultSoundVolume, Assets.SlashSound)
                     let playHit = PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                    let slashSpike = DisplaySlashSpike ((Battle.getCharacter sourceIndex battle).Bottom, targetIndex, 10L)
                     let impactSplash = DisplayImpactSplash (targetIndex, 60L)
                     let battle = Battle.updateCharacter (Character.animate time SlashCycle) sourceIndex battle
-                    withCmds [playSlash; playHit; impactSplash] battle
+                    withCmds [playSlash; playHit; slashSpike; impactSplash] battle
                 | Bolt ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Cycle) sourceIndex battle
@@ -798,6 +800,23 @@ module BattleDispatcher =
                             let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
                             let world = entity.SetEffect effect world
                             let world = entity.SetSize (v2 192.0f 96.0f) world
+                            let world = entity.SetBottom target.Bottom world
+                            let world = entity.SetDepth Constants.Battle.EffectDepth world
+                            entity.SetSelfDestruct true world)
+                            delay
+                            world
+                    just world
+                | None -> just world
+
+            | DisplaySlashSpike (position, targetIndex, delay) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target ->
+                    let world =
+                        World.delay (fun world ->
+                            let effect = Effects.makeSlashSpikeEffect position target.Bottom
+                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                            let world = entity.SetEffect effect world
+                            let world = entity.SetSize (v2 96.0f 96.0f) world
                             let world = entity.SetBottom target.Bottom world
                             let world = entity.SetDepth Constants.Battle.EffectDepth world
                             entity.SetSelfDestruct true world)

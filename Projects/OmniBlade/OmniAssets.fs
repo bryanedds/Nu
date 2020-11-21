@@ -67,6 +67,7 @@ module Assets =
     let CancelImage = asset<Image> BattlePackageName "Cancel"
     let BoltAnimationSheet = asset<Image> BattlePackageName "Bolt"
     let CycloneBlurAnimationSheet = asset<Image> BattlePackageName "CycloneBlur"
+    let SpikeAnimationSheet = asset<Image> BattlePackageName "Spike"
     let ExplosionAnimationSheet = asset<Image> BattlePackageName "Explosion"
     let ImpactSplashAnimationSheet = asset<Image> BattlePackageName "ImpactSplash"
     let BattleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> BattlePackageName "Battle" }
