@@ -147,6 +147,20 @@ module Effects =
                      [|PositionRelative (v2 48.0f 0.0f); Size (v2 96.0f 96.0f)|],
                      Nil)|]) }
 
+    let makeSlashSpikeEffect position position2 =
+        let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.SpikeAnimationSheet), v2i 96 96, 5, 5, 10L, Once, FlipNone, [||], Nil)
+        let emit =
+            Emit
+                (Shift 0.1f,
+                 Rate 5.0f,
+                 [|Positions (Set, Linear, Once, [|{ TweenValue = position; TweenLength = 60L }; { TweenValue = position2; TweenLength = 0L }|])|],
+                 [|Size (v2 96.0f 96.0f)|],
+                 spike)
+        { EffectName = "SlashSpike"
+          LifetimeOpt = Some 60L
+          Definitions = Map.empty
+          Content = emit }
+
     let makeCycloneBlurEffect radius =
         { EffectName = "CycloneBlur"
           LifetimeOpt = Some 100L
