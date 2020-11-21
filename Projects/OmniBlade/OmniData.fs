@@ -286,6 +286,7 @@ type CharacterAnimationCycle =
     | DamageCycle
     | IdleCycle
     | Cast2Cycle
+    | SlashCycle
     | WhirlCycle
     | BuryCycle
     | FlyCycle

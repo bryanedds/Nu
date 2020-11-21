@@ -49,6 +49,7 @@ module Assets =
     let GrowthSound = asset<Sound> FieldPackageName "Growth"
     let BeastScreamSound = asset<Sound> FieldPackageName "BeastScream"
     let HitSound = asset<Sound> FieldPackageName "Hit"
+    let SlashSound = asset<Sound> FieldPackageName "Slash"
     let ExplosionSound = asset<Sound> FieldPackageName "Explosion"
     let EnterBattleSound = asset<Sound> FieldPackageName "EnterBattle"
     let HealSound = asset<Sound> FieldPackageName "Heal"
