@@ -284,7 +284,15 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         if (Gameplay.getCharacter index gameplay).IsAlive then
             let gameplay = Gameplay.addMove index move gameplay
             let gameplay = Gameplay.activateCharacter index gameplay
-            Gameplay.applyMove index gameplay
+            let gameplay = Gameplay.applyMove index gameplay
+            let gameplay =
+                if index = PlayerIndex then
+                    match move with
+                    | Step _ -> Gameplay.updateRound (Round.updatePlayerNavigation (constant Manual)) gameplay
+                    | Travel path -> Gameplay.updateRound (Round.updatePlayerNavigation (constant (Automatic path))) gameplay
+                    | _ -> gameplay
+                else gameplay
+            gameplay
         else gameplay
     
     static member addAttackingEnemyGroup group gameplay =
