@@ -192,7 +192,7 @@ module WorldLayerModule =
         /// Destroy multiple layers from the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyLayers layers world =
-            World.schedule2 (World.destroyLayersImmediate layers) world
+            World.frame (World.destroyLayersImmediate layers) world
 
         /// Write a layer to a layer descriptor.
         static member writeLayer layer layerDescriptor world =

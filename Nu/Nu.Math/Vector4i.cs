@@ -154,50 +154,25 @@ namespace Nu
         {
             get
             {
-                if (index == 0)
+                switch (index)
                 {
-                    return X;
+                    case 0: return X;
+                    case 1: return Y;
+                    case 2: return Z;
+                    case 3: return W;
+                    default: throw new IndexOutOfRangeException("You tried to access this vector at index: " + index);
                 }
-
-                if (index == 1)
-                {
-                    return Y;
-                }
-
-                if (index == 2)
-                {
-                    return Z;
-                }
-
-                if (index == 3)
-                {
-                    return W;
-                }
-
-                throw new IndexOutOfRangeException("You tried to access this vector at index: " + index);
             }
 
             set
             {
-                if (index == 0)
+                switch (index)
                 {
-                    X = value;
-                }
-                else if (index == 1)
-                {
-                    Y = value;
-                }
-                else if (index == 2)
-                {
-                    Z = value;
-                }
-                else if (index == 3)
-                {
-                    W = value;
-                }
-                else
-                {
-                    throw new IndexOutOfRangeException("You tried to set this vector at index: " + index);
+                    case 0: X = value; break;
+                    case 1: Y = value; break;
+                    case 2: Z = value; break;
+                    case 3: W = value; break;
+                    default: throw new IndexOutOfRangeException("You tried to set this vector at index: " + index);
                 }
             }
         }

@@ -6,25 +6,25 @@
   [Visible True]]
  [[ButtonDispatcher
    [[Name Credits]
-    [Position [-304 -176]]
+    [Position [-96 -156]]
     [Text Credits]]]
   [ButtonDispatcher
    [[Name Exit]
-    [Position [48 -176]]
+    [Position [-96 -222]]
     [Text Exit]]]
   [ButtonDispatcher
    [[Name New]
-    [Position [-304 -72]]
+    [Position [-96 -24]]
     [Text "New Game"]]]
   [ButtonDispatcher
    [[Name Load]
-    [Position [48 -72]]
+    [Position [-96 -90]]
     [Text "Load Game"]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" OmniBlade]]
-    [Position [-440 104]]
-    [Size [896 112]]
+    [Position [-426 96]]
+    [Size [864 90]]
     [Text OmniBlade]]]]]

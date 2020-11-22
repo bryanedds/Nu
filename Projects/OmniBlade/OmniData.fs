@@ -10,6 +10,15 @@ open TiledSharp
 open Prime
 open Nu
 
+type CharacterIndex =
+    | AllyIndex of int
+    | EnemyIndex of int
+    static member isFriendly index index2 =
+        match (index, index2) with
+        | (AllyIndex _, AllyIndex _) -> true
+        | (EnemyIndex _, EnemyIndex _) -> true
+        | (_, _) -> false
+
 type Advent =
     | DebugSwitch
     | DebugSwitch2
@@ -52,16 +61,58 @@ type ElementType =
     | Light // beats dark, weaker scalar
     | Earth // beats nothing, strongest scalar
 
-type StatusType =
-    | DefendStatus // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
-    | PoisonStatus
-    | MuteStatus
-    | SleepStatus
+type [<CustomEquality; CustomComparison>] StatusType =
+    | Poison
+    | Silence
+    | Sleep
+    | Time of bool // true = Haste, false = Slow
+    | Counter of bool * bool // true = Up, false = Down; true = 2, false = 1
+    | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
+    | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
+    | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
+    | Provoke
+    | ProvokeOne of CharacterIndex
+
+    static member enumerate this =
+        match this with
+        | Poison -> 0
+        | Silence -> 1
+        | Sleep -> 2
+        | Time _ -> 3
+        | Counter (_, _) -> 4
+        | Power (_, _) -> 5
+        | Magic (_, _) -> 6
+        | Shield (_, _) -> 7
+        | Provoke -> 8
+        | ProvokeOne i -> 9 + (match i with AllyIndex i -> i | EnemyIndex i -> i) <<< 6
+
+    static member compare this that =
+        compare
+            (StatusType.enumerate this)
+            (StatusType.enumerate that)
+
+    interface StatusType IComparable with
+        member this.CompareTo that =
+            StatusType.compare this that
+
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? StatusType as that -> (this :> StatusType IComparable).CompareTo that
+            | _ -> failwithumf ()
+
+    override this.Equals that =
+        match that with
+        | :? StatusType as that -> StatusType.enumerate this = StatusType.enumerate that
+        | _ -> false
+
+    override this.GetHashCode () =
+        StatusType.enumerate this
 
 type EquipmentType =
     | WeaponType of string
     | ArmorType of string
-    | AccessoryType of string
+    | AccessoryType of string // TODO: might want to make this a static type since many accessories will involve custom coding.
 
 type ConsumableType =
     | GreenHerb
@@ -100,6 +151,7 @@ type TargetType =
 type TechType =
     | Critical
     | Cyclone
+    | Slash
     | Bolt
     | Tremor
 
@@ -234,6 +286,7 @@ type CharacterAnimationCycle =
     | DamageCycle
     | IdleCycle
     | Cast2Cycle
+    | SlashCycle
     | WhirlCycle
     | BuryCycle
     | FlyCycle
@@ -388,7 +441,7 @@ type [<NoComparison>] FieldData =
       FieldBackgroundColor : Color
       FieldSongOpt : Song AssetTag option
       EncounterTypeOpt : EncounterType option
-      TreasureList : ItemType list }
+      Treasures : ItemType list }
 
 [<RequireQualifiedAccess>]
 module FieldData =
@@ -403,30 +456,29 @@ module FieldData =
         let propBounds = v4Bounds propPosition propSize
         let propDepth =
             match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-            | (true, depthStr) -> Constants.Field.ForgroundDepth + scvalue depthStr
-            | (false, _) -> Constants.Field.ForgroundDepth
+            | (true, depthStr) -> Constants.Field.ForegroundDepth + scvalue depthStr
+            | (false, _) -> Constants.Field.ForegroundDepth
         match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
         | (true, propDataStr) ->
             let propData = scvalue propDataStr
             Some { PropBounds = propBounds; PropDepth = propDepth; PropData = propData; PropId = object.Id }
         | (false, _) -> None
 
-    let inflateProp fieldData prop rand =
+    let inflateProp prop (treasures : ItemType FStack) rand =
         match prop.PropData with
         | ChestSpawn ->
             let (probability, rand) = Rand.nextSingleUnder 1.0f rand
             if probability < Constants.Field.TreasureProbability then
-                let (treasure, rand) =
-                    match fieldData.TreasureList with
-                    | _ :: _ ->
-                        let (index, rand) = Rand.nextIntUnder fieldData.TreasureList.Length rand
-                        (fieldData.TreasureList.[index], rand)
-                    | [] -> (Consumable GreenHerb, rand)
+                let (treasure, treasures, rand) =
+                    if FStack.notEmpty treasures then
+                        let (index, rand) = Rand.nextIntUnder (FStack.length treasures) rand
+                        (FStack.index index treasures, FStack.removeAt index treasures, rand)
+                    else (Consumable GreenHerb, treasures, rand)
                 let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
                 let prop = { prop with PropData = Chest (WoodenChest, treasure, id, None, Set.empty, Set.empty) }
-                (prop, rand)
-            else ({ prop with PropData = EmptyProp }, rand)
-        | _ -> (prop, rand)
+                (prop, treasures, rand)
+            else ({ prop with PropData = EmptyProp }, treasures, rand)
+        | _ -> (prop, treasures, rand)
 
     let tryGetTileMap omniSeedState fieldData world =
         let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
@@ -475,12 +527,13 @@ module FieldData =
                 propObjects |>
                 List.map (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) |>
                 List.definitize
-            let (props, _) =
-                List.foldBack (fun prop (props, rand) ->
-                    let (prop, rand) = inflateProp fieldData prop rand
-                    (prop :: props, rand))
+            let (props, _, _) =
+                List.foldBack (fun prop (props, treasures, rand) ->
+                    let (prop, treasures, rand) = inflateProp prop treasures rand
+                    let treasures = if FStack.isEmpty treasures then FStack.fromSeq fieldData.Treasures else treasures
+                    (prop :: props, treasures, rand))
                     propsUninflated
-                    ([], Rand.makeFromSeedState rotatedSeedState)
+                    ([], FStack.fromSeq fieldData.Treasures, Rand.makeFromSeedState rotatedSeedState)
             propsMemoized <- Map.add memoKey props propsMemoized
             props
         | Some props -> props
@@ -541,7 +594,10 @@ type [<NoComparison>] CharacterData =
       ArchetypeType : ArchetypeType
       LevelBase : int
       AnimationSheet : Image AssetTag
-      MugOpt : Image AssetTag option
+      MugOpt : Image AssetTag option // TODO: rename this to Portrait
+      WeaponOpt : string option
+      ArmorOpt : string option
+      Accessories : string list
       GoldScalar : single
       ExpScalar : single
       Description : string }

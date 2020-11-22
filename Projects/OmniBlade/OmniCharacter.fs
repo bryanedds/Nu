@@ -57,6 +57,7 @@ module Character =
         member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
         member this.IsEnemy = not this.IsAlly
         member this.ActionTime = this.ActionTime_
+        member this.ArchetypeType = this.CharacterState_.ArchetypeType
         member this.ExpPoints = this.CharacterState_.ExpPoints
         member this.HitPoints = this.CharacterState_.HitPoints
         member this.TechPoints = this.CharacterState_.TechPoints
@@ -67,10 +68,6 @@ module Character =
         member this.Statuses = this.CharacterState_.Statuses
         member this.Defending = this.CharacterState_.Defending
         member this.Charging = this.CharacterState_.Charging
-        member this.PowerBuff = this.CharacterState_.PowerBuff
-        member this.ShieldBuff = this.CharacterState_.ShieldBuff
-        member this.MagicBuff = this.CharacterState_.MagicBuff
-        member this.CounterBuff = this.CharacterState_.CounterBuff
         member this.IsHealthy = this.CharacterState_.IsHealthy
         member this.IsWounded = this.CharacterState_.IsWounded
         member this.Level = this.CharacterState_.Level
@@ -91,8 +88,8 @@ module Character =
         member this.AutoBattleOpt = this.AutoBattleOpt_
         member this.InputState = this.InputState_
 
-    let isTeammate (character : Character) (character2 : Character) =
-        CharacterIndex.isTeammate character.CharacterIndex character2.CharacterIndex
+    let isFriendly (character : Character) (character2 : Character) =
+        CharacterIndex.isFriendly character.CharacterIndex character2.CharacterIndex
 
     let isReadyForAutoBattle character =
         Option.isNone character.AutoBattleOpt_ &&
@@ -118,7 +115,7 @@ module Character =
             List.filter (fun target -> target.IsHealthy = healthy)
         | EnemyAim healthy | AllyAim healthy ->
             characters |>
-            List.filter (isTeammate target) |>
+            List.filter (isFriendly target) |>
             List.filter (fun target -> target.IsHealthy = healthy)
         | NoAim ->
             []
@@ -167,9 +164,9 @@ module Character =
             (false, healing, target.CharacterIndex)
         else
             let cancelled = techData.Cancels && isAutoBattling target
-            let shield = target.CharacterState_.Shield techData.EffectType
-            let damageUnscaled = power - shield
-            let damage = single damageUnscaled * techData.Scalar |> int |> max 1
+            let shield = target.Shield techData.EffectType
+            let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
+            let damage = single (power - shield) * techData.Scalar * defendingScalar |> int |> max 1
             (cancelled, -damage, target.CharacterIndex)
 
     let evaluateTechMove techData source target characters =
@@ -211,7 +208,11 @@ module Character =
         | _ -> None
 
     let updateActionTime updater character =
-        { character with ActionTime_ = updater character.ActionTime_ }
+        let actionTime = updater character.ActionTime_
+        let actionTimeDelta = actionTime - character.ActionTime
+        { character with
+            ActionTime_ = updater character.ActionTime_
+            CharacterState_ = CharacterState.burndownStatuses actionTimeDelta character.CharacterState_ }
 
     let updateHitPoints updater character =
         let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
@@ -255,21 +256,11 @@ module Character =
 
     let defend character =
         let characterState = character.CharacterState_
-        let characterState =
-            // TODO: shield buff
-            if not characterState.Defending
-            then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff + Constants.Battle.DefendingCounterBuff) }
-            else characterState
         let characterState = { characterState with Defending = true }
         { character with CharacterState_ = characterState }
 
     let undefend character =
         let characterState = character.CharacterState_
-        let characterState =
-            // TODO: shield buff
-            if characterState.Defending
-            then { characterState with CounterBuff = max 0.0f (characterState.CounterBuff - Constants.Battle.DefendingCounterBuff) }
-            else characterState
         let characterState = { characterState with Defending = false }
         { character with CharacterState_ = characterState }
 
@@ -288,22 +279,20 @@ module Character =
           ActionTime_ = actionTime
           InputState_ = NoInput }
 
-    let makeEnemy index enemyData =
-        // TODO: better error checking
-        let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
-        let characterData =
-            match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
-            | Some characterData -> characterData
-            | None -> failwith ("Could not find CharacterData for '" + scstring enemyData.EnemyType + "'")
-        let archetypeType = characterData.ArchetypeType
-        let hitPoints = Algorithms.hitPointsMax None archetypeType characterData.LevelBase
-        let techPoints = Algorithms.techPointsMax None archetypeType characterData.LevelBase
-        let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
-        let characterType = characterData.CharacterType
-        let characterState = CharacterState.make characterData hitPoints techPoints expPoints None None [] // TODO: figure out if / how we should populate equipment
-        let actionTime = Constants.Battle.EnemyActionTimeInitial
-        let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet Leftward actionTime
-        enemy
+    let tryMakeEnemy index enemyData =
+        match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
+        | Some characterData ->
+            let archetypeType = characterData.ArchetypeType
+            let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
+            let hitPoints = Algorithms.hitPointsMax None archetypeType characterData.LevelBase
+            let techPoints = Algorithms.techPointsMax None archetypeType characterData.LevelBase
+            let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
+            let characterType = characterData.CharacterType
+            let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
+            let actionTime = Constants.Battle.EnemyActionTimeInitial
+            let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet Leftward actionTime
+            Some enemy
+        | None -> None
 
     let empty =
         let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize

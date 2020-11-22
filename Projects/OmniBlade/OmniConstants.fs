@@ -41,6 +41,7 @@ module Constants =
         let TileSize = v2 48.0f 48.0f
         let CharacterSize = v2 120.0f 120.0f
         let DialogSplit = '^'
+        let ItemLimit = 9
 
     [<RequireQualifiedAccess>]
     module Field =
@@ -52,7 +53,7 @@ module Constants =
 #endif
         let LinearDamping = 19.0f
         let BackgroundDepth = -10.0f
-        let ForgroundDepth = 0.0f
+        let ForegroundDepth = 0.0f
         let EffectDepth = 10.0f
         let GuiDepth = 20.0f
         let GuiEffectDepth = 30.0f
@@ -75,7 +76,7 @@ module Constants =
         let AllyActionTimeDelta = 4
         let EnemyActionTimeInitial = 0
         let EnemyActionTimeDelta = 3
-        let DefendingCounterBuff = 0.5f
+        let DefendingDamageScalar = 0.5f
         let CancelPosition = v2 -448.0f -240.0f
         let CharacterCenterOffset = v2 0.0f -12.0f
         let CharacterCenterOffset2 = v2 0.0f -24.0f

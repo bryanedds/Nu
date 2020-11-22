@@ -253,22 +253,22 @@ module WorldModule =
         /// Set the tick rate, starting at the end of the current frame.
         [<FunctionBinding>]
         static member setTickRate tickRate world =
-            World.schedule2 (World.updateAmbientState (AmbientState.setTickRateImmediate tickRate)) world
+            World.frame (World.updateAmbientState (AmbientState.setTickRateImmediate tickRate)) world
 
         /// Reset the tick time to 0 at the end of the current frame.
         [<FunctionBinding>]
         static member resetTickTime world =
-            World.schedule2 (World.updateAmbientState AmbientState.resetTickTimeImmediate) world
+            World.frame (World.updateAmbientState AmbientState.resetTickTimeImmediate) world
 
         /// Increment the tick time at the end of the current frame.
         [<FunctionBinding>]
         static member incTickTime world =
-            World.schedule2 (World.updateAmbientState AmbientState.incTickTimeImmediate) world
+            World.frame (World.updateAmbientState AmbientState.incTickTimeImmediate) world
 
         /// Decrement the tick time at the end of the current frame.
         [<FunctionBinding>]
         static member decTickTime world =
-            World.schedule2 (World.updateAmbientState AmbientState.decTickTimeImmediate) world
+            World.frame (World.updateAmbientState AmbientState.decTickTimeImmediate) world
 
         /// Get the world's tick time.
         [<FunctionBinding>]
@@ -397,9 +397,14 @@ module WorldModule =
             World.addTasklet tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame.
-        static member schedule2 fn world =
+        static member frame fn world =
             let taskletsProcessing = World.getTaskletsProcessing world
             World.schedule fn (World.getTickTime world + if taskletsProcessing then 1L else 0L) world
+
+        /// Schedule an operation to be executed by the engine with the given delay.
+        static member delay fn delay world =
+            let tasklet = { ScheduledTime = World.getTickTime world + delay; Command = { Execute = fn }}
+            World.addTasklet tasklet world
 
         /// Attempt to get the window flags.
         static member tryGetWindowFlags world =

@@ -12,12 +12,12 @@ module Effects =
 
     let Hop (start, stop, height, hopLength, landLength) =
         Aspects
-            [|Position
+            [|Positions
                 (Sum, Linear, Once,
                  [|{ TweenValue = start; TweenLength = hopLength }
                    { TweenValue = stop; TweenLength = landLength }
                    { TweenValue = stop; TweenLength = 0L }|])
-              Position
+              Positions
                 (Sum, SinScaled 0.5f, Once,
                  [|{ TweenValue = v2Zero; TweenLength = hopLength }
                    { TweenValue = v2 0.0f height; TweenLength = landLength }
@@ -25,15 +25,15 @@ module Effects =
 
     let Circle (radius, repetitions, length) =
         Aspects
-            [|Position
+            [|Positions
                (Sum, SinScaled repetitions, Once,
                 [|{ TweenValue = v2Zero; TweenLength = length }
                   { TweenValue = v2 -radius 0.0f; TweenLength = 0L }|])
-              Position
+              Positions
                (Sum, CosScaled repetitions, Once,
                 [|{ TweenValue = v2Zero; TweenLength = length }
                   { TweenValue = v2 0.0f -radius; TweenLength = 0L }|])
-              Position
+              Positions
                (Sum, Constant, Once,
                 [|{ TweenValue = v2 0.0f radius; TweenLength = length }
                   { TweenValue = v2 0.0f radius; TweenLength = 0L }|])|]
@@ -50,15 +50,15 @@ module Effects =
           Definitions = Map.empty
           Content =
             TextSprite
-                (Resource (Assets.Font.PackageName, Assets.Font.AssetName),
+                (Resource (AssetTag.toPair Assets.Font),
                  scstring (abs delta),
-                 [|Position
+                 [|Positions
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = v2Zero; TweenLength = 10L }
                        { TweenValue = v2 0.0f 36.0f; TweenLength = 10L }
                        { TweenValue = v2Zero; TweenLength = 10L }
                        { TweenValue = v2Zero; TweenLength = 50L }|])
-                   Color
+                   Colors
                     (Set, EaseOut, Once,
                      [|{ TweenValue = colorOpaque; TweenLength = 50L }
                        { TweenValue = colorOpaque; TweenLength = 30L }
@@ -71,13 +71,14 @@ module Effects =
           Definitions = Map.empty
           Content =
             StaticSprite
-                (Resource (Assets.CancelImage.PackageName, Assets.CancelImage.AssetName),
-                 [|Rotation
+                (Resource (AssetTag.toPair Assets.CancelImage),
+                 FlipNone,
+                 [|Rotations
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = single Math.PI * -2.0f; TweenLength = 10L }
                        { TweenValue = 0.0f; TweenLength = 30L }
                        { TweenValue = 0.0f; TweenLength = 0L }|])
-                   Size
+                   Sizes
                     (Set, EaseOut, Once,
                      [|{ TweenValue = v2Zero; TweenLength = 10L }
                        { TweenValue = v2 156.0f 48.0f; TweenLength = 30L }
@@ -87,14 +88,15 @@ module Effects =
     let makeBoltEffect () =
         let boltSprite =
             StaticSprite
-                (Resource (Assets.BoltAnimationSheet.PackageName, Assets.BoltAnimationSheet.AssetName),
-                 [|Inset
+                (Resource (AssetTag.toPair Assets.BoltAnimationSheet),
+                 FlipNone,
+                 [|Insets
                     (Set, Constant, Once,
                      [|{ TweenValue = v4 0.0f   0.0f    192.0f  768.0f; TweenLength = 5L }
                        { TweenValue = v4 192.0f 0.0f    192.0f  768.0f; TweenLength = 5L }
                        { TweenValue = v4 384.0f 0.0f    192.0f  768.0f; TweenLength = 5L }
                        { TweenValue = v4 384.0f 0.0f    192.0f  768.0f; TweenLength = 65L }|])
-                   Color
+                   Colors
                     (Set, EaseOut, Once,
                      [|{ TweenValue = Color.White; TweenLength = 40L }
                        { TweenValue = Color.White; TweenLength = 40L }
@@ -102,20 +104,20 @@ module Effects =
                  Nil)
         let explosionSprite =
             AnimatedSprite
-                (Resource (Assets.ExplosionAnimationSheet.PackageName, Assets.ExplosionAnimationSheet.AssetName),
-                 v2i 96 96, 4, 12, 2L, Once,
-                 [|Size (Set, Constant, Once, [|{ TweenValue = v2 96.0f 96.0f; TweenLength = 0L }|])
-                   Position (Sum, Constant, Once, [|{ TweenValue = v2 0.0f -384.0f; TweenLength = 0L }|])
-                   Color
+                (Resource (AssetTag.toPair Assets.ExplosionAnimationSheet),
+                 v2i 96 96, 4, 12, 2L, Once, FlipNone,
+                 [|PositionRelative (v2 0.0f -384.0f)
+                   Size (v2 96.0f 96.0f)
+                   Colors
                     (Set, EaseOut, Once,
                      [|{ TweenValue = Color.White; TweenLength = 30L }
                        { TweenValue = Color.White; TweenLength = 30L }
                        { TweenValue = Color.White.WithA (byte 0); TweenLength = 0L }|])|],
                  Nil)
-        let explostionSoundEffect =
+        let explosionSoundEffect =
             SoundEffect
-                (Resource (Assets.ExplosionSound.PackageName, Assets.ExplosionSound.AssetName),
-                 [|Enabled (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
+                (Resource (AssetTag.toPair Assets.ExplosionSound),
+                 [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
                  Nil)
         { EffectName = "Bolt"
           LifetimeOpt = Some 80L
@@ -125,7 +127,50 @@ module Effects =
                 (Shift 0.0f,
                  [|boltSprite
                    Delay (10L, explosionSprite)
-                   Delay (10L, explostionSoundEffect)|]) }
+                   Delay (10L, explosionSoundEffect)|]) }
+
+    let makeImpactSplashEffect () =
+        { EffectName = "ImpactSplash"
+          LifetimeOpt = Some 24L
+          Definitions = Map.empty
+          Content =
+            Contents
+                (Shift 0.0f,
+                 [|AnimatedSprite
+                    (Resource (AssetTag.toPair Assets.ImpactSplashAnimationSheet),
+                     v2i 96 96, 3, 3, 8L, Once, FlipH,
+                     [|PositionRelative (v2 -48.0f 0.0f); Size (v2 96.0f 96.0f)|],
+                     Nil)
+                   AnimatedSprite
+                    (Resource (AssetTag.toPair Assets.ImpactSplashAnimationSheet),
+                     v2i 96 96, 3, 3, 8L, Once, FlipNone,
+                     [|PositionRelative (v2 48.0f 0.0f); Size (v2 96.0f 96.0f)|],
+                     Nil)|]) }
+
+    let makeSlashSpikeEffect position position2 =
+        let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.SpikeAnimationSheet), v2i 96 96, 5, 5, 3L, Once, FlipNone, [||], Nil)
+        let emit =
+            Emit
+                (Shift 0.1f,
+                 Rate 0.2f,
+                 [|Positions (Set, Linear, Once, [|{ TweenValue = position; TweenLength = 60L }; { TweenValue = position2; TweenLength = 0L }|])|],
+                 [|Size (v2 96.0f 96.0f)|],
+                 spike)
+        { EffectName = "SlashSpike"
+          LifetimeOpt = Some 75L
+          Definitions = Map.empty
+          Content = emit }
+
+    let makeCycloneBlurEffect radius =
+        { EffectName = "CycloneBlur"
+          LifetimeOpt = Some 100L
+          Definitions = Map.empty
+          Content =
+              AnimatedSprite
+               (Resource (AssetTag.toPair Assets.CycloneBlurAnimationSheet),
+                v2i 234 234, 2, 4, 3L, Loop, FlipNone,
+                [|Circle (radius, 2.0f, 100L)|],
+                Nil) }
 
     let makeHopEffect start stop =
         { EffectName = "Hop"
