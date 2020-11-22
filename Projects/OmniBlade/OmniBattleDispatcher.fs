@@ -873,17 +873,17 @@ module BattleDispatcher =
                  // allies
                  Content.entitiesTrackedBy battle
                     (fun battle -> Battle.getAllies battle) constant
-                    (fun battle -> box battle.PartyIndex)
+                    (fun battle -> battle.PartyIndex)
                     (fun index battle _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.Character <== battle])
 
                  // enemies
                  Content.entitiesTrackedBy battle
                     (fun battle -> Battle.getEnemies battle) constant
-                    (fun battle -> box battle.PartyIndex)
+                    (fun battle -> battle.PartyIndex)
                     (fun index battle _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.Character <== battle])]
 
              // input layers
-             Content.layers battle (fun battle -> Battle.getAllies battle) constant $ fun index ally _ ->
+             Content.layersLinear battle (fun battle -> Battle.getAllies battle) constant $ fun index ally _ ->
 
                 // input layer
                 let allyIndex = AllyIndex index
