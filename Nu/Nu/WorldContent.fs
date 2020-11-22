@@ -46,10 +46,10 @@ module Content =
             | ExplicitTracking fn -> ExplicitTracking (fun (o : obj) -> fn (o :?> 'c) :> obj)
         let mapper = fun i (c : obj) world -> mapper i (c :?> Lens<obj, World> --> cast<'c>) world
         LayersFromStream (lens, sieve, unfold, tracker, mapper)
-        
+
     /// Describe layers to be instantiated from a lens.
     /// Supports identity preservation only when inserting and removing at the end.
-    let layersLinear lens sieve unfold mapper =
+    let layers lens sieve unfold mapper =
         layersPlus lens sieve unfold AutoTracking mapper
 
     /// Describe layers to be instantiated from a lens.
@@ -110,7 +110,7 @@ module Content =
 
     /// Describe entities to be instantiated from a lens.
     /// Supports identity preservation only when inserting and removing at the end.
-    let entitiesLinear lens sieve unfold mapper =
+    let entities lens sieve unfold mapper =
         entitiesPlus lens sieve unfold AutoTracking mapper
 
     /// Describe entities to be instantiated from a lens.

@@ -235,7 +235,7 @@ module FieldDispatcher =
                     Entity.ClickEvent ==> msg SubmenuClose]]
 
         static let team (position : Vector2) depth rows (field : Lens<Field, World>) filter fieldMsg =
-            Content.entitiesLinear field
+            Content.entities field
                 (fun field -> (field.Team, field.Submenu))
                 (fun (team, submenu) _ -> team |> Map.toValueList |> List.filter (flip filter submenu))
                 (fun i teammateLens world ->
@@ -248,7 +248,7 @@ module FieldDispatcher =
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
         static let items (position : Vector2) depth field fieldMsg =
-            Content.entitiesLinear field
+            Content.entities field
                 (fun (field : Field) -> (field.Submenu, field.ShopOpt, field.Inventory))
                 (fun (submenu, shopOpt, inventory : Inventory) _ ->
                     match submenu.SubmenuState with
@@ -664,7 +664,7 @@ module FieldDispatcher =
                     (field --> fun field -> field.DialogOpt)
 
                  // props
-                 Content.entitiesLinear field
+                 Content.entities field
                     (fun field -> (field.FieldType, field.OmniSeedState, field.Advents, field.PropStates))
                     (fun (fieldType, rotatedSeedState, advents, propStates) world ->
                         match Map.tryFind fieldType Data.Value.Fields with
