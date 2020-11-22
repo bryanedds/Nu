@@ -48,6 +48,21 @@ module Algorithms =
         | Int32.MaxValue -> 0
         | nextExp -> nextExp - expPoints
 
+    let expPointsToTechs expPoints archetypeType =
+        match Data.Value.Archetypes.TryGetValue archetypeType with
+        | (true, archetypeData) ->
+            let level = expPointsToLevel expPoints
+            archetypeData.Techs |>
+            Map.filter (fun key _ -> key <= level)  |>
+            Map.toValueList |>
+            Set.ofList
+        | (false, _) -> Set.empty
+
+    let expPointsToTechs3 expPoints expPointsDelta archetypeType =
+        let techs = expPointsToTechs expPoints archetypeType
+        let techs2 = expPointsToTechs (expPoints + expPointsDelta) archetypeType
+        Set.difference techs2 techs
+
     let hitPointsMax armorOpt archetypeType level =
         let stamina = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
@@ -76,7 +91,11 @@ module Algorithms =
             | None -> single level
         (intermediate + single level) * focus |> int |> max 0
 
-    let power weaponOpt powerBuff archetypeType level =
+    let power weaponOpt statuses archetypeType level =
+        let powerBuff =
+            statuses |>
+            Map.tryFindKey (function Power (_, _) -> constant true | _ -> constant false) |>
+            Option.mapOrDefault (function Power (false, false) -> 0.667f | Power (false, true) -> 0.333f | Power (true, false) -> 1.333f | Power (true, true) -> 1.667f | _ -> 1.0f) 1.0f
         let strength = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Strength
@@ -90,7 +109,11 @@ module Algorithms =
             | None -> 1.0f
         (intermediate + single level) * powerBuff * strength |> int |> max 1
 
-    let magic weaponOpt magicBuff archetypeType level =
+    let magic weaponOpt statuses archetypeType level =
+        let magicBuff =
+            statuses |>
+            Map.tryFindKey (function Magic (_, _) -> constant true | _ -> constant false) |>
+            Option.mapOrDefault (function Magic (false, false) -> 0.667f | Magic (false, true) -> 0.333f | Magic (true, false) -> 1.333f | Magic (true, true) -> 1.667f | _ -> 1.0f) 1.0f
         let intelligence = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Intelligence
@@ -104,7 +127,11 @@ module Algorithms =
             | None -> 1.0f
         (intermediate + single level) * magicBuff * intelligence |> int |> max 1
 
-    let shield effectType accessories shieldBuff archetypeType level =
+    let shield effectType accessories statuses archetypeType level =
+        let shieldBuff =
+            statuses |>
+            Map.tryFindKey (function Shield (_, _) -> constant true | _ -> constant false) |>
+            Option.mapOrDefault (function Shield (false, false) -> 0.667f | Shield (false, true) -> 0.333f | Shield (true, false) -> 1.333f | Shield (true, true) -> 1.667f | _ -> 1.0f) 1.0f
         let (toughness, intelligence) = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> (archetypeData.Toughness, archetypeData.Intelligence)
@@ -124,8 +151,7 @@ module Algorithms =
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Techs
             | None -> Map.empty
-        let indexOpt = techs |> Map.toList |> List.tryFindIndexBack (fun (levelReq, _) -> level >= levelReq)
-        match indexOpt with
+        match techs |> Map.toList |> List.tryFindIndexBack (fun (levelReq, _) -> level >= levelReq) with
         | Some index -> techs |> Map.toList |> List.take (inc index) |> List.map snd |> Set.ofList
         | None -> Set.empty
 

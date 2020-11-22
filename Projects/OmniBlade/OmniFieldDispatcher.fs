@@ -53,7 +53,7 @@ module FieldDispatcher =
         member this.Field = this.Model<Field> ()
 
     type FieldDispatcher () =
-        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
+        inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.debug)
 
         static let pageItems pageIndex pageSize items =
             items |>
@@ -168,7 +168,7 @@ module FieldDispatcher =
 
         static let interactChest itemType chestId battleTypeOpt requirements consequents (field : Field) =
             if field.Advents.IsSupersetOf requirements then
-                let field = Field.updateInventory (Inventory.addItem itemType) field
+                let field = Field.updateInventory (Inventory.tryAddItem itemType >> snd) field
                 let field = Field.updateAdvents (Set.add (Opened chestId)) field
                 let field =
                     match battleTypeOpt with
@@ -202,7 +202,7 @@ module FieldDispatcher =
             let battleTypeOpt = NpcSpecialty.getBattleTypeOpt requirements specialty
             let dialogs = dialogs |> List.choose (fun (dialog, requirements, consequents) -> if field.Advents.IsSupersetOf requirements then Some (dialog, consequents) else None) |> List.rev
             let (dialog, consequents) = match List.tryHead dialogs with Some dialog -> dialog | None -> ("...", Set.empty)
-            let dialogForm = { DialogForm = DialogLarge; DialogText = dialog; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = battleTypeOpt }
+            let dialogForm = { DialogForm = DialogThick; DialogText = dialog; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = battleTypeOpt }
             let field = Field.updateDialogOpt (constant (Some dialogForm)) field
             let field = Field.updateAdvents (Set.addMany consequents) field
             just field
@@ -220,17 +220,17 @@ module FieldDispatcher =
         static let sidebar position depth (field : Lens<Field, World>) =
             Content.group Gen.name []
                 [Content.button Gen.name
-                   [Entity.PositionLocal == position; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
+                   [Entity.PositionLocal == position; Entity.DepthLocal == depth; Entity.Size == v2 72.0f 72.0f
                     Entity.Text == "T"
                     Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuTeam _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuTeamOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 80.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
+                   [Entity.PositionLocal == position - v2 0.0f 80.0f; Entity.DepthLocal == depth; Entity.Size == v2 72.0f 72.0f
                     Entity.Text == "I"
                     Entity.EnabledLocal <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuItem _ -> false | _ -> true
                     Entity.ClickEvent ==> msg SubmenuItemOpen]
                  Content.button Gen.name
-                   [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.DepthLocal == depth; Entity.Size == v2 64.0f 64.0f
+                   [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.DepthLocal == depth; Entity.Size == v2 72.0f 72.0f
                     Entity.Text == "X"
                     Entity.ClickEvent ==> msg SubmenuClose]]
 
@@ -243,7 +243,7 @@ module FieldDispatcher =
                     let x = position.X
                     let y = position.Y - single (i % rows) * 72.0f
                     Content.button Gen.name
-                        [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth
+                        [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 256.0f 72.0f
                          Entity.Text == CharacterType.getName teammate.CharacterType
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
@@ -271,7 +271,7 @@ module FieldDispatcher =
                     let x = if i < 5 then position.X else position.X + 368.0f
                     let y = position.Y - single (i % 5) * 80.0f
                     Content.button Gen.name
-                        [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 336.0f 64.0f
+                        [Entity.PositionLocal == v2 x y; Entity.DepthLocal == depth; Entity.Size == v2 336.0f 72.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
                          Entity.Text <== selectionLens --> fun (_, itemType) -> ItemType.getName itemType
                          Entity.EnabledLocal <== selectionLens --> fun (_, itemType) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
@@ -422,7 +422,7 @@ module FieldDispatcher =
                         let itemType = snd submenuUse.SubmenuUseSelection
                         let (result, displacedOpt, teammate) = Teammate.tryUseItem itemType teammate
                         let field = if result then Field.updateInventory (Inventory.removeItem itemType) field else field
-                        let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.addItem displaced) field | None -> field
+                        let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                         let field = Field.updateTeam (Map.add index teammate) field
                         let field = Field.updateSubmenu (constant { field.Submenu with SubmenuUseOpt = None }) field
                         if result then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) field
@@ -469,10 +469,15 @@ module FieldDispatcher =
                 | Some shop ->
                     match shop.ShopConfirmOpt with
                     | Some shopConfirm ->
-                        let valid = match shop.ShopState with ShopBuying -> field.Inventory.Gold >= shopConfirm.ShopConfirmPrice | ShopSelling -> true
+                        let itemType = snd shopConfirm.ShopConfirmSelection
+                        let valid =
+                            match shop.ShopState with
+                            | ShopBuying ->
+                                Inventory.canAddItem itemType field.Inventory &&
+                                field.Inventory.Gold >= shopConfirm.ShopConfirmPrice
+                            | ShopSelling -> true
                         if valid then
-                            let itemType = snd shopConfirm.ShopConfirmSelection
-                            let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.addItem itemType | ShopSelling -> Inventory.removeItem itemType) field
+                            let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.removeItem itemType) field
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirm.ShopConfirmPrice) | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirm.ShopConfirmPrice)) field
                             let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
                             withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) field
@@ -587,6 +592,7 @@ module FieldDispatcher =
                  Content.staticSprite Simulants.FieldTransitionFade.Name
                    [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
                     Entity.StaticImage == Assets.DefaultImage9
+                    Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
                     Entity.Color <== field --|> fun field world ->
                         match field.FieldTransitionOpt with
                         | Some transition ->
@@ -614,7 +620,7 @@ module FieldDispatcher =
 
                  // avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
-                    [Entity.Position == v2Dup 120.0f; Entity.Depth == Constants.Field.ForgroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
+                    [Entity.Position == v2Dup 120.0f; Entity.Depth == Constants.Field.ForegroundDepth; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled <== field --> fun field ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone field.DialogOpt &&
@@ -626,7 +632,7 @@ module FieldDispatcher =
 
                  // submenu button
                  Content.button Simulants.FieldSubmenu.Name
-                    [Entity.Position == v2 -444.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
+                    [Entity.Position == v2 -456.0f -246.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 144.0f 48.0f
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Text == "Submenu"
                      Entity.Visible <== field --> fun field ->
@@ -638,7 +644,7 @@ module FieldDispatcher =
 
                  // interact button
                  Content.button Simulants.FieldInteract.Name
-                    [Entity.Position == v2 248.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 192.0f 64.0f
+                    [Entity.Position == v2 306.0f -246.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 144.0f 48.0f
                      Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
                      Entity.Visible <== field --|> fun field world ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
@@ -686,10 +692,10 @@ module FieldDispatcher =
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
                      Entity.LabelImage == Assets.DialogXXLImage
                      Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuTeam _ -> true | _ -> false]
-                    [sidebar (v2 40.0f 424.0f) 1.0f field
-                     team (v2 136.0f 424.0f) 1.0f Int32.MaxValue field tautology2 SubmenuTeamAlly
+                    [sidebar (v2 24.0f 420.0f) 1.0f field
+                     team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology2 SubmenuTeamAlly
                      Content.label Gen.name
-                        [Entity.PositionLocal == v2 424.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
+                        [Entity.PositionLocal == v2 438.0f 288.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -701,7 +707,7 @@ module FieldDispatcher =
                                 | None -> Assets.EmptyImage
                             | _ -> Assets.EmptyImage]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 672.0f 384.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 666.0f 372.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -710,7 +716,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 672.0f 328.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 666.0f 336.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -719,7 +725,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 448.0f 224.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 444.0f 234.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -728,7 +734,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 448.0f 184.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 444.0f 204.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -737,7 +743,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 448.0f 144.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 444.0f 174.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
                             | SubmenuTeam submenu ->
@@ -746,7 +752,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | _ -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 448.0f -104.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 512.0f 256.0f
+                        [Entity.PositionLocal == v2 444.0f -84.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 512.0f 256.0f
                          Entity.Justification == Unjustified true
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuState with
@@ -756,8 +762,8 @@ module FieldDispatcher =
                                     let level = Algorithms.expPointsToLevel teammate.ExpPoints
                                     let hpm = Algorithms.hitPointsMax teammate.ArmorOpt characterData.ArchetypeType level
                                     let tpm = Algorithms.techPointsMax teammate.ArmorOpt characterData.ArchetypeType level
-                                    let pow = Algorithms.power teammate.WeaponOpt 1.0f characterData.ArchetypeType level
-                                    let mag = Algorithms.magic teammate.WeaponOpt 1.0f characterData.ArchetypeType level
+                                    let pow = Algorithms.power teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
+                                    let mag = Algorithms.magic teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
                                     "HP  "   + (string teammate.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
                                     "\nTP  " + (string teammate.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
                                     "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
@@ -771,10 +777,10 @@ module FieldDispatcher =
                      Entity.LabelImage == Assets.DialogXXLImage
                      Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuItem _ -> true | _ -> false
                      Entity.Enabled <== field --> fun field -> Option.isNone field.Submenu.SubmenuUseOpt]
-                    [sidebar (v2 40.0f 424.0f) 1.0f field
-                     items (v2 136.0f 424.0f) 1.0f field SubmenuItemSelect
+                    [sidebar (v2 24.0f 420.0f) 1.0f field
+                     items (v2 136.0f 420.0f) 1.0f field SubmenuItemSelect
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 368.0f 3.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
@@ -783,30 +789,30 @@ module FieldDispatcher =
                     [Entity.Position == v2 -448.0f -192.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 384.0f
                      Entity.LabelImage == Assets.DialogXLImage
                      Entity.Visible <== field --> fun field -> Option.isSome field.Submenu.SubmenuUseOpt]
-                    [team (v2 160.0f 192.0f) 1.0f 3 field
+                    [team (v2 160.0f 150.0f) 1.0f 3 field
                         (fun teammate submenu ->
                             match submenu.SubmenuUseOpt with
                             | Some submenuUse -> Teammate.canUseItem (snd submenuUse.SubmenuUseSelection) teammate
                             | None -> false)
                         SubmenuItemUse
                      Content.button Gen.name
-                        [Entity.PositionLocal == v2 820.0f 312.0f; Entity.DepthLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
+                        [Entity.PositionLocal == v2 810.0f 306.0f; Entity.DepthLocal == 2.0f; Entity.Size == v2 64.0f 64.0f
                          Entity.Text == "X"
                          Entity.ClickEvent ==> msg SubmenuItemCancel]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 32.0f 304.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 42.0f 306.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                             match field.Submenu.SubmenuUseOpt with
                             | Some submenu -> submenu.SubmenuUseLine1
                             | None -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 64.0f 256.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 60.0f 264.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                              match field.Submenu.SubmenuUseOpt with
                              | Some submenu -> submenu.SubmenuUseLine2
                              | None -> ""]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 64.0f 208.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 60.0f 222.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                             match field.ShopOpt with
                             | Some shop ->
@@ -823,60 +829,60 @@ module FieldDispatcher =
                      Entity.Enabled <== field --> fun field -> match field.ShopOpt with Some shop -> Option.isNone shop.ShopConfirmOpt | None -> true]
                     [items (v2 96.0f 368.0f) 1.0f field ShopSelect
                      Content.button Simulants.FieldShopBuy.Name
-                        [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 24.0f 444.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Buy"
                          Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false
                          Entity.ClickEvent ==> msg ShopBuy]
+                     Content.text Gen.name
+                        [Entity.PositionLocal == v2 24.0f 444.0f; Entity.DepthLocal == 1.0f
+                         Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                         Entity.Text == "Buy what?"
+                         Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false]
                      Content.button Simulants.FieldShopSell.Name
-                        [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 352.0f 444.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Sell"
                          Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false
                          Entity.ClickEvent ==> msg ShopSell]
                      Content.text Gen.name
-                        [Entity.PositionLocal == v2 12.0f 440.0f; Entity.DepthLocal == 1.0f
-                         Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                         Entity.Text == "Buy what?"
-                         Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopBuying | None -> false]
-                     Content.text Gen.name
-                        [Entity.PositionLocal == v2 320.0f 440.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 352.0f 444.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text == "Sell what?"
                          Entity.Visible <== field --> fun field -> match field.ShopOpt with Some shop -> shop.ShopState = ShopSelling | None -> false]
                      Content.button Simulants.FieldShopLeave.Name
-                        [Entity.PositionLocal == v2 628.0f 440.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 678.0f 444.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Leave"
                          Entity.ClickEvent ==> msg ShopLeave]
                      Content.button Simulants.FieldShopPageUp.Name
-                        [Entity.PositionLocal == v2 16.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
+                        [Entity.PositionLocal == v2 24.0f 18.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
                          Entity.Text == "<"
                          Entity.ClickEvent ==> msg ShopPageUp]
                      Content.button Simulants.FieldShopPageDown.Name
-                        [Entity.PositionLocal == v2 832.0f 12.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
+                        [Entity.PositionLocal == v2 822.0f 18.0f; Entity.DepthLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
                          Entity.Text == ">"
                          Entity.ClickEvent ==> msg ShopPageDown]
                      Content.text Simulants.FieldShopGold.Name
-                        [Entity.PositionLocal == v2 316.0f 12.0f; Entity.DepthLocal == 1.0f
+                        [Entity.PositionLocal == v2 352.0f 3.0f; Entity.DepthLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
                  // shop confirm
                  Content.panel Simulants.FieldShopConfirm.Name
-                    [Entity.Position == v2 -448.0f -128.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 256.0f
-                     Entity.LabelImage == Assets.DialogLargeImage
+                    [Entity.Position == v2 -448.0f -128.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 864.0f 252.0f
+                     Entity.LabelImage == Assets.DialogThickImage
                      Entity.Visible <== field --> fun field ->
                         match field.ShopOpt with
                         | Some shop -> Option.isSome shop.ShopConfirmOpt
                         | None -> false]
                     [Content.button Simulants.FieldShopConfirmAccept.Name
-                        [Entity.PositionLocal == v2 160.0f 16.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 198.0f 42.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Accept"
                          Entity.ClickEvent ==> msg ShopConfirmAccept]
                      Content.button Simulants.FieldShopConfirmDecline.Name
-                        [Entity.PositionLocal == v2 456.0f 16.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 498.0f 42.0f; Entity.DepthLocal == 2.0f
                          Entity.Text == "Decline"
                          Entity.ClickEvent ==> msg ShopConfirmDecline]
                      Content.text Simulants.FieldShopConfirmOffer.Name
-                        [Entity.PositionLocal == v2 32.0f 176.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 42.0f 180.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                             match field.ShopOpt with
                             | Some shop ->
@@ -885,7 +891,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | None -> ""]
                      Content.text Simulants.FieldShopConfirmLine1.Name
-                        [Entity.PositionLocal == v2 64.0f 128.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 60.0f 138.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                             match field.ShopOpt with
                             | Some shop ->
@@ -894,7 +900,7 @@ module FieldDispatcher =
                                 | None -> ""
                             | None -> ""]
                      Content.text Simulants.FieldShopConfirmLine2.Name
-                        [Entity.PositionLocal == v2 64.0f 80.0f; Entity.DepthLocal == 2.0f
+                        [Entity.PositionLocal == v2 60.0f 96.0f; Entity.DepthLocal == 2.0f
                          Entity.Text <== field --> fun field ->
                             match field.ShopOpt with
                             | Some shop ->

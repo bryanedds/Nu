@@ -9,8 +9,7 @@ open Nu.Declarative
 
 type [<NoComparison>] DialogForm =
     | DialogThin
-    | DialogMedium
-    | DialogLarge
+    | DialogThick
 
 type [<ReferenceEquality; NoComparison>] Dialog =
     { DialogForm : DialogForm
@@ -39,9 +38,8 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                match dialogOpt with
                | Some dialog ->
                    match dialog.DialogForm with
-                   | DialogThin -> v4Bounds (v2 -448.0f 128.0f) (v2 896.0f 112.0f)
-                   | DialogMedium -> v4Bounds (v2 -448.0f 0.0f) (v2 640.0f 256.0f)
-                   | DialogLarge -> v4Bounds (v2 -448.0f 0.0f) (v2 896.0f 256.0f)
+                   | DialogThin -> v4Bounds (v2 -432.0f 150.0f) (v2 864.0f 90.0f)
+                   | DialogThick -> v4Bounds (v2 -432.0f 0.0f) (v2 864.0f 252.0f)
                | None -> v4Zero
             Entity.BackgroundImageOpt <== dialogOpt --> fun dialogOpt ->
                let image =
@@ -49,9 +47,8 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                    | Some dialog ->
                        match dialog.DialogForm with
                        | DialogThin -> Assets.DialogThinImage
-                       | DialogMedium -> Assets.DialogMediumImage
-                       | DialogLarge -> Assets.DialogLargeImage
-                   | None -> Assets.DialogLargeImage
+                       | DialogThick -> Assets.DialogThickImage
+                   | None -> Assets.DialogThickImage
                Some image
             Entity.Text <== dialogOpt --> fun dialogOpt ->
                match dialogOpt with
@@ -63,4 +60,4 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                | None -> ""
             Entity.Visible <== dialogOpt --> Option.isSome
             Entity.Justification == Unjustified true
-            Entity.Margins == v2 40.0f 40.0f]
+            Entity.Margins == v2 32.0f 32.0f]

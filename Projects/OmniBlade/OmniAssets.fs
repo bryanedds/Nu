@@ -13,8 +13,7 @@ module Assets =
     // gui assets
     let Font = asset<Font> GuiPackageName "Font"
     let DialogThinImage = asset<Image> GuiPackageName "DialogThin"
-    let DialogMediumImage = asset<Image> GuiPackageName "DialogMedium"
-    let DialogLargeImage = asset<Image> GuiPackageName "DialogLarge"
+    let DialogThickImage = asset<Image> GuiPackageName "DialogThick"
     let DialogXLImage = asset<Image> GuiPackageName "DialogXL"
     let DialogXXLImage = asset<Image> GuiPackageName "DialogXXL"
     let ButtonUpImage = asset<Image> GuiPackageName "ButtonUp"
@@ -50,6 +49,7 @@ module Assets =
     let GrowthSound = asset<Sound> FieldPackageName "Growth"
     let BeastScreamSound = asset<Sound> FieldPackageName "BeastScream"
     let HitSound = asset<Sound> FieldPackageName "Hit"
+    let SlashSound = asset<Sound> FieldPackageName "Slash"
     let ExplosionSound = asset<Sound> FieldPackageName "Explosion"
     let EnterBattleSound = asset<Sound> FieldPackageName "EnterBattle"
     let HealSound = asset<Sound> FieldPackageName "Heal"
@@ -66,7 +66,10 @@ module Assets =
     // battle assets
     let CancelImage = asset<Image> BattlePackageName "Cancel"
     let BoltAnimationSheet = asset<Image> BattlePackageName "Bolt"
+    let CycloneBlurAnimationSheet = asset<Image> BattlePackageName "CycloneBlur"
+    let SpikeAnimationSheet = asset<Image> BattlePackageName "Spike"
     let ExplosionAnimationSheet = asset<Image> BattlePackageName "Explosion"
+    let ImpactSplashAnimationSheet = asset<Image> BattlePackageName "ImpactSplash"
     let BattleSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> BattlePackageName "Battle" }
 
     // layer file paths

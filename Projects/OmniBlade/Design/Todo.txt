@@ -54,15 +54,24 @@
 [X] add boss room
 [X] add boss
 [X] battle earnings display
-[ ] new tech ability gain display
-[ ] make treasure value relative to distance from entry
-[ ] more and improved battle configurations
-[ ] goblins drop green herbs?
-[ ] tiled battle background
+[X] rejigger gui
+[X] dup item limit
+[X] new tech ability gain display
+[X] more and improved battle configurations
+[X] swap names of bronze and iron armor
+[X] attempt to fix order of treasure assignment so that gaps aren't caused by empty props
+[X] status burndown
+[X] status utilization in algorithms
+[X] make defense do something at least
+[X] initial / enemy equipment from data
+[X] cyclone effect sprite / wider cyclone circle
+[ ] slash attack for Finn
 [ ] buff consumables
-[ ] enemy equipment from data
+[ ] tiled battle background?
+[ ] enemy item drops / goblins drop green herbs?
+[ ] make treasure value relative to distance from entry?
 [ ] see if we can make simulant stream keys more like Elm's Html.Keyed.
-[ ] cyclone effect sprite / wider cyclone circle
+[ ] implement counter-attacking
 [ ] tremor camera shake effect
 [ ] damage glow
 

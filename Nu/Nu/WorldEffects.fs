@@ -119,25 +119,36 @@ module Effects =
         | Expand of string * Argument array
 
     and [<StructuralEquality; NoComparison>] Aspect =
-        | Enabled of LogicApplicator * Playback * LogicKeyFrame array
-        | Position of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Translation of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Offset of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Size of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Rotation of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
-        | Depth of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
-        | Inset of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
-        | Color of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
-        | Glow of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
-        | Volume of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
-        | Bone // TODO: implement bone aspect
+        | Enabled of bool
+        | PositionAbsolute of Vector2
+        | PositionRelative of Vector2
+        | Translation of Vector2
+        | Offset of Vector2
+        | Size of Vector2
+        | Rotation of single
+        | Depth of single
+        | Inset of Vector4
+        | Color of Color
+        | Glow of Color
+        | Volume of single
+        | Enableds of LogicApplicator * Playback * LogicKeyFrame array
+        | Positions of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Translations of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Offsets of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Sizes of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
+        | Rotations of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Depths of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Insets of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
+        | Colors of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
+        | Glows of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
+        | Volumes of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Expand of string * Argument array
         | Aspects of Aspect array
 
     and [<StructuralEquality; NoComparison>] Content =
         | Nil // first to make default value when missing
-        | StaticSprite of Resource * Aspect array * Content
-        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Aspect array * Content
+        | StaticSprite of Resource * Flip * Aspect array * Content
+        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Flip * Aspect array * Content
         | TextSprite of Resource * string * Aspect array * Content
         | SoundEffect of Resource * Aspect array * Content
         | Mount of Shift * Aspect array * Content
@@ -168,7 +179,8 @@ module Effects =
             "Rate " +
             "Shift " +
             "Expand Resource " +
-            "Expand Enabled Position Translation Offset Inset Size Rotation Depth Color Glow Volume Bone Aspects " +
+            "Expand Enabled PositionAbsolute PositionRelative Translation Offset Inset Size Rotation Depth Color Glow Volume " +
+            "Expand Enableds Positions Translations Offsets Insets Sizes Rotations Depths Colors Glows Volumes Aspects " +
             "Expand StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
             "View",
             "", "", "", "",
@@ -303,8 +315,10 @@ module EffectSystem =
         | Ratio -> div (value, value2)
         | Set -> value2
 
-    let private evalInset (celSize : Vector2i) celRun celCount stutter playback effectSystem =
+    let private evalInset (celSize : Vector2i) celRun celCount stutter playback flip effectSystem =
         // TODO: make sure Bounce playback works as intended!
+        // TODO: stop assuming that animation sheets are fully and evenly populated when flipping!
+        let celRuns = celCount % celRun
         let celUnmodulated = int (effectSystem.EffectTime / stutter)
         let cel = celUnmodulated % celCount
         let celI = cel % celRun
@@ -317,6 +331,13 @@ module EffectSystem =
             if bouncing
             then (celRun - celI, (celRun % celCount) - celJ)
             else (celI, celJ)
+        let (celI, celJ) =
+            // NOTE: this assumes that animation sheets are fully and evenly populated!
+            match flip with
+            | FlipNone -> (celI, celJ)
+            | FlipH -> (celRun - celI, celJ)
+            | FlipV -> (celI, celRuns - celJ)
+            | FlipHV -> (celRun - celI, celRuns - celJ)
         let celX = celI * celSize.X
         let celY = celJ * celSize.Y
         let celPosition = Vector2 (single celX, single celY)
@@ -361,15 +382,30 @@ module EffectSystem =
         let progress = progress + effectSystem.ProgressOffset
         if progress > 1.0f then progress - 1.0f else progress
 
-    and private evalAspect aspect slice effectSystem =
+    and private evalAspect aspect (slice : Slice) effectSystem =
         match aspect with
-        | Enabled (applicator, playback, keyFrames) ->
+        | Enabled enabled -> { slice with Enabled = enabled }
+        | PositionAbsolute position -> { slice with Position = position }
+        | PositionRelative position -> { slice with Position = slice.Position + position }
+        | Translation translation ->
+            let oriented = Vector2.Transform (translation, Quaternion.CreateFromAxisAngle (Vector3.UnitZ, slice.Rotation))
+            let translated = slice.Position + oriented
+            { slice with Position = translated }
+        | Size size -> { slice with Size = size }
+        | Rotation rotation -> { slice with Rotation = rotation }
+        | Depth depth -> { slice with Depth = depth }
+        | Offset offset -> { slice with Offset = offset }
+        | Inset inset -> { slice with InsetOpt = Some inset }
+        | Color color -> { slice with Color = color }
+        | Glow glow -> { slice with Glow = glow }
+        | Volume volume -> { slice with Volume = volume }
+        | Enableds (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (_, keyFrame, _) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let applied = applyLogic slice.Enabled keyFrame.LogicValue applicator
                 { slice with Enabled = applied }
             else slice
-        | Position (applicator, algorithm, playback, keyFrames) ->
+        | Positions (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -377,7 +413,7 @@ module EffectSystem =
                 let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
                 { slice with Position = applied }
             else slice
-        | Translation (applicator, algorithm, playback, keyFrames) ->
+        | Translations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -386,7 +422,7 @@ module EffectSystem =
                 let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
                 { slice with Position = applied }
             else slice
-        | Size (applicator, algorithm, playback, keyFrames) ->
+        | Sizes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -394,7 +430,7 @@ module EffectSystem =
                 let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
                 { slice with Size = applied }
             else slice
-        | Rotation (applicator, algorithm, playback, keyFrames) ->
+        | Rotations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -402,7 +438,7 @@ module EffectSystem =
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
                 { slice with Rotation = applied }
             else slice
-        | Depth (applicator, algorithm, playback, keyFrames) ->
+        | Depths (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -410,7 +446,7 @@ module EffectSystem =
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
                 { slice with Depth = applied }
             else slice
-        | Offset (applicator, algorithm, playback, keyFrames) ->
+        | Offsets (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -418,7 +454,7 @@ module EffectSystem =
                 let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
                 { slice with Offset = applied }
             else slice
-        | Inset (applicator, algorithm, playback, keyFrames) ->
+        | Insets (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -427,7 +463,7 @@ module EffectSystem =
                 let applied = applyTween Vector4.Multiply Vector4.Divide inset tweened applicator
                 { slice with InsetOpt = Some applied }
             else slice
-        | Color (applicator, algorithm, playback, keyFrames) ->
+        | Colors (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -435,7 +471,7 @@ module EffectSystem =
                 let applied = applyTween Color.Multiply Color.Divide slice.Color (Nu.Color tweened) applicator
                 { slice with Color = applied }
             else slice
-        | Glow (applicator, algorithm, playback, keyFrames) ->
+        | Glows (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -443,7 +479,7 @@ module EffectSystem =
                 let applied = applyTween Color.Multiply Color.Divide slice.Color tweened applicator
                 { slice with Color = applied }
             else slice
-        | Volume (applicator, algorithm, playback, keyFrames) ->
+        | Volumes (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
@@ -451,8 +487,6 @@ module EffectSystem =
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
                 { slice with Volume = applied }
             else slice
-        | Bone ->
-            slice
         | Aspect.Expand (definitionName, _) ->
             match Map.tryFind definitionName effectSystem.EffectEnv with
             | Some definition ->
@@ -484,7 +518,7 @@ module EffectSystem =
             | _ -> Log.info ("Expected Content for definition '" + definitionName + "'."); effectSystem
         | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); effectSystem
 
-    and private evalStaticSprite resource aspects content slice effectSystem =
+    and private evalStaticSprite resource flip aspects content slice effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -510,15 +544,15 @@ module EffectSystem =
                               InsetOpt = slice.InsetOpt
                               Image = AssetTag.specialize<Image> image
                               Color = slice.Color
-                              Glow = Color.Zero
-                              Flip = FlipNone })
+                              Glow = slice.Glow
+                              Flip = flip })
                 addView spriteView effectSystem
             else effectSystem
 
         // build implicitly mounted content
         evalContent content slice effectSystem
 
-    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount stutter playback aspects content slice effectSystem =
+    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount stutter playback flip aspects content slice effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -533,7 +567,7 @@ module EffectSystem =
             let cel = int (effectSystem.EffectTime / stutter)
 
             // eval inset
-            let inset = evalInset celSize celRun celCount stutter playback effectSystem
+            let inset = evalInset celSize celRun celCount stutter playback flip effectSystem
 
             // build animated sprite views
             let effectSystem =
@@ -555,7 +589,7 @@ module EffectSystem =
                                  Image = AssetTag.specialize<Image> image
                                  Color = slice.Color
                                  Glow = slice.Glow
-                                 Flip = FlipNone })
+                                 Flip = flip })
                     addView animatedSpriteView effectSystem
                 else effectSystem
 
@@ -703,10 +737,10 @@ module EffectSystem =
         match content with
         | Nil ->
             effectSystem
-        | StaticSprite (resource, aspects, content) ->
-            evalStaticSprite resource aspects content slice effectSystem
-        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, playback, aspects, content) ->
-            evalAnimatedSprite resource celSize celRun celCount stutter playback aspects content slice effectSystem
+        | StaticSprite (resource, flip, aspects, content) ->
+            evalStaticSprite resource flip aspects content slice effectSystem
+        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, playback, flip, aspects, content) ->
+            evalAnimatedSprite resource celSize celRun celCount stutter playback flip aspects content slice effectSystem
         | TextSprite (resource, text, aspects, content) ->
             evalTextSprite resource text aspects content slice effectSystem
         | SoundEffect (resource, aspects, content) ->

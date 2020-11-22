@@ -313,7 +313,7 @@ module WorldEntityModule =
         /// Destroy multiple entities in the world at the end of the current update.
         [<FunctionBinding>]
         static member destroyEntities entities world =
-            World.schedule2 (World.destroyEntitiesImmediate entities) world
+            World.frame (World.destroyEntitiesImmediate entities) world
 
         /// Sort the given entities.
         static member sortEntities entities world =

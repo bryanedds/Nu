@@ -750,7 +750,7 @@ module WorldScripting =
             match exprs with
             | [|body|] ->
                 let world =
-                    World.schedule2
+                    World.frame
                         (fun world ->
                             let context = World.getScriptContext world
                             match World.tryGetScriptFrame context world with

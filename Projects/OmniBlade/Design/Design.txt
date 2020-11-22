@@ -82,3 +82,17 @@ ______
 Twisted Ring Topology
 
 Degenerate Connected 5 Pentagon
+
+character types
+
+lead character - sword / physical geometric attacks
+
+wizard - scythe / elemental geometric attacks
+
+brawler - heavesword / scalar single attack / provoke / counter
+
+cleric - archer / healer / buffer / debuffer
+
+dimensionalist - gunner / time magic / summon (expensive elemental all attacks)
+
+assassin - physical attacker / steal / mixes two items, either doubles the power or produces a new effect (curative or offensive)

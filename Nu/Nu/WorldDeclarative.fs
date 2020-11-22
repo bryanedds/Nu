@@ -219,12 +219,12 @@ module WorldDeclarative =
             let mutable monitorResult = Unchecked.defaultof<obj>
             let mutable lensResult = Unchecked.defaultof<obj>
             let mutable sieveResultOpt = None
-            let mutable foldResultOpt = None
+            let mutable unfoldResultOpt = None
             let lensSeq =
                 Lens.mapWorld (fun a world ->
                     let (b, c) =
                         if a = lensResult then
-                            match (sieveResultOpt, foldResultOpt) with
+                            match (sieveResultOpt, unfoldResultOpt) with
                             | (Some b, Some c) -> (b, c)
                             | (Some b, None) -> let c = unfold b world in (b, c)
                             | (None, Some _) -> failwithumf ()
@@ -232,7 +232,7 @@ module WorldDeclarative =
                         else let b = sieve a in let c = unfold b world in (b, c)
                     lensResult <- a
                     sieveResultOpt <- Some b
-                    foldResultOpt <- Some c
+                    unfoldResultOpt <- Some c
                     c)
                     lens
             let (tracking, lenses) =
