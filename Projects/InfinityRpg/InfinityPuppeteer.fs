@@ -7,10 +7,10 @@ open InfinityRpg
 type [<ReferenceEquality; NoComparison>] PuppetState =
     { HitPoints : int }
 
-    static member updateHitPoints updater puppetState =
+    static member updateHitPoints updater (puppetState : PuppetState) =
         { puppetState with HitPoints = updater puppetState.HitPoints }
     
-    static member makeFromCharacter (character : Character ) =
+    static member makeFromCharacter (character : Character) =
         { HitPoints = character.HitPoints }
 
 type [<ReferenceEquality; NoComparison>] TurnType =
