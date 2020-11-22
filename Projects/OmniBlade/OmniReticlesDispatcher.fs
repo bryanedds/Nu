@@ -47,7 +47,7 @@ module ReticlesDispatcher =
                  Entity.UpImage == asset Assets.BattlePackageName "CancelUp"
                  Entity.DownImage == asset Assets.BattlePackageName "CancelDown"
                  Entity.ClickEvent ==> cmd TargetCancel]
-             Content.entities reticles
+             Content.entitiesLinear reticles
                 (fun reticles -> (reticles.AimType, reticles.Battle))
                 (fun (aimType, battle) _ -> Battle.getTargets aimType battle) $ fun index character world ->
                     let buttonName = rets.Name + "+" + "Reticle" + "+" + scstring index

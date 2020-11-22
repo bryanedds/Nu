@@ -8,10 +8,10 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-type [<NoEquality; NoComparison>] 'c ContentTracker =
+type [<NoEquality; NoComparison>] ContentTracker<'v, 'k> =
     | NoTracking
     | AutoTracking
-    | ExplicitTracking of ('c -> obj)
+    | ExplicitTracking of ('v -> 'k)
 
 /// Describes the behavior of a screen.
 type [<StructuralEquality; NoComparison>] ScreenBehavior =
@@ -22,7 +22,7 @@ type [<StructuralEquality; NoComparison>] ScreenBehavior =
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
-    | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> obj seq) * obj ContentTracker * (int -> Lens<obj, World> -> World -> EntityContent)
+    | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> obj seq) * ContentTracker<obj, obj> * (int -> Lens<obj, World> -> World -> EntityContent)
     | EntityFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
@@ -40,7 +40,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 
 /// Describes the content of a layer.
 type [<NoEquality; NoComparison>] LayerContent =
-    | LayersFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> obj seq) * obj ContentTracker * (int -> obj -> World -> LayerContent)
+    | LayersFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> obj seq) * ContentTracker<obj, obj> * (int -> Lens<obj, World> -> World -> LayerContent)
     | LayerFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | LayerFromFile of string * string
     interface SimulantContent
@@ -210,7 +210,7 @@ module WorldDeclarative =
             (lens : Lens<obj, World>)
             (sieve : obj -> obj)
             (unfold : obj -> World -> obj seq)
-            (tracker : obj ContentTracker)
+            (tracker : ContentTracker<obj, obj>)
             (mapper : int -> Lens<obj, World> -> World -> SimulantContent)
             (origin : ContentOrigin)
             (owner : Simulant)
@@ -218,7 +218,7 @@ module WorldDeclarative =
             world =
             let mutable indexCurrent = 0
             let mutable indexes = dictPlus<obj, int> []
-            let indexer index =
+            let indexer (index : obj) =
                 match indexes.TryGetValue index with
                 | (false, _) ->
                     let index' = indexCurrent
@@ -249,7 +249,7 @@ module WorldDeclarative =
                 match tracker with
                 | NoTracking -> (false, Lens.explodeIndexedOpt None lensSeq)
                 | AutoTracking -> (true, Lens.explodeIndexedOpt None lensSeq)
-                | ExplicitTracking fn -> (true, Lens.explodeIndexedOpt (Some (fun index -> indexer (fn index))) lensSeq)
+                | ExplicitTracking fn -> (true, Lens.explodeIndexedOpt (Some (fun index -> (indexer (fn index)))) lensSeq)
             let expansionId = Gen.id
             let previousSetKey = Gen.id
             let monitorMapper =
@@ -277,10 +277,9 @@ module WorldDeclarative =
                     let lens' = enr.Current
                     match lens'.Get world with
                     | Some (index, _) ->
-                        let index' = indexer index
-                        let guid = Gen.idDeterministic index' expansionId
+                        let guid = Gen.idDeterministic index expansionId
                         let lens'' = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) } --> snd
-                        let item = PartialComparable.make guid (index', lens'')
+                        let item = PartialComparable.make guid (index, lens'')
                         current <- USet.add item current
                         count <- dec count
                     | None -> ()
