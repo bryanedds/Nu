@@ -24,7 +24,7 @@ module GameplayDispatcher =
         | MakeEnemyMoves
         | TryContinuePlayerNavigation
         | TryMakePlayerMove of PlayerInput
-        | TryHaltPlayer
+        | HaltPlayer
         | TransitionMap of Direction
         | HandleMapChange of PlayerInput
         | StartGameplay
@@ -45,7 +45,7 @@ module GameplayDispatcher =
     type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.initial)
 
-        static let tryGetNavigationPath (_ : CharacterIndex) coordinates gameplay =
+        static let tryGetNavigationPath coordinates gameplay =
             let fieldTiles = gameplay.Field.FieldMapNp.FieldTiles
             let characterPositions = gameplay.Chessboard.OccupiedSpaces |> List.map (fun coordinates -> vctovf coordinates)
             let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
@@ -127,8 +127,7 @@ module GameplayDispatcher =
                             | WalkTurn _ -> gameplay
                         Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
-                let gameplay = Gameplay.updatePuppeteer (Puppeteer.runTurnCoordination) gameplay
-                let indices = Gameplay.getCharacterIndices gameplay |> List.filter (fun x -> Gameplay.turnInProgress x gameplay) |> List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus <> TurnPending)
+                let indices = gameplay.Puppeteer.GetActingCharacters
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withMsg (TickTurns indices) gameplay
             
@@ -167,33 +166,23 @@ module GameplayDispatcher =
                 | _ -> withMsg BeginTurns gameplay
 
             | TryContinuePlayerNavigation ->
-                let playerMoveOpt =
+                let gameplay =
                     match gameplay.Round.PlayerNavigation with
                     | Automatic path ->
                         match path with
-                        | _ :: [] -> None
+                        | _ :: [] -> gameplay
                         | _ :: navigationPath ->
                             let targetCoordinates = (List.head navigationPath).Coordinates
                             if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
-                            then Some (Travel navigationPath)
-                            else None
+                            then Gameplay.makeMove PlayerIndex (Travel navigationPath) gameplay
+                            else gameplay
                         | [] -> failwithumf ()
-                    | _ -> None
+                    | _ -> gameplay
                 
-                let gameplay = Gameplay.updateRound (Round.updatePlayerNavigation (constant NoNavigation)) gameplay
-                
-                match playerMoveOpt with
-                | Some move ->
-                    let gameplay = Gameplay.addMove PlayerIndex move gameplay
-                    let gameplay = Gameplay.activateCharacter PlayerIndex gameplay
-                    let gameplay = Gameplay.applyMove PlayerIndex gameplay
-                    let gameplay =
-                        match move with
-                        | Step _ -> Gameplay.updateRound (Round.updatePlayerNavigation (constant Manual)) gameplay
-                        | Travel path -> Gameplay.updateRound (Round.updatePlayerNavigation (constant (Automatic path))) gameplay
-                        | _ -> gameplay
+                if Map.exists (fun k _ -> k = PlayerIndex) gameplay.Round.CharacterMoves then
                     withMsg MakeEnemyMoves gameplay
-                | _ ->
+                else
+                    let gameplay = Gameplay.updateRound (Round.updatePlayerNavigation (constant NoNavigation)) gameplay
                     if not gameplay.Round.InProgress
                     then withCmd ListenKeyboard gameplay
                     else withMsg BeginTurns gameplay
@@ -205,45 +194,34 @@ module GameplayDispatcher =
                     | TouchInput touchPosition -> Some (World.mouseToWorld false touchPosition world |> vftovc)
                     | DetailInput direction -> Some (currentCoordinates + dtovc direction)
                     | NoInput -> None
-                let playerMoveOpt =
+                let gameplay =
                     match targetCoordinatesOpt with
                     | Some coordinates ->
                         if Math.areCoordinatesAdjacent coordinates currentCoordinates then
                             let openDirections = gameplay.Chessboard.OpenDirections currentCoordinates
                             let direction = Math.directionToTarget currentCoordinates coordinates
                             let opponents = Gameplay.getOpponentIndices PlayerIndex gameplay
-                            if List.exists (fun x -> x = direction) openDirections then Some (Step direction)
+                            if List.exists (fun x -> x = direction) openDirections then Gameplay.makeMove PlayerIndex (Step direction) gameplay
                             elif List.exists (fun index -> (Gameplay.getCoordinates index gameplay) = coordinates) opponents then
                                 let targetIndex = Gameplay.getIndexByCoordinates coordinates gameplay
-                                Some (Attack targetIndex)
-                            else None
+                                Gameplay.makeMove PlayerIndex (Attack targetIndex) gameplay
+                            else gameplay
                         else
-                            match tryGetNavigationPath PlayerIndex coordinates gameplay with
+                            match tryGetNavigationPath coordinates gameplay with
                             | Some navigationPath ->
                                 match navigationPath with
-                                | _ :: _ -> Some (Travel navigationPath)
-                                | [] -> None
-                            | None -> None
-                    | None -> None
-                match playerMoveOpt with
-                | Some move ->
-                    let gameplay = Gameplay.addMove PlayerIndex move gameplay
-                    let gameplay = Gameplay.activateCharacter PlayerIndex gameplay
-                    let gameplay = Gameplay.applyMove PlayerIndex gameplay
-                    let gameplay =
-                        match move with
-                        | Step _ -> Gameplay.updateRound (Round.updatePlayerNavigation (constant Manual)) gameplay
-                        | Travel path -> Gameplay.updateRound (Round.updatePlayerNavigation (constant (Automatic path))) gameplay
-                        | _ -> gameplay
+                                | _ :: _ -> Gameplay.makeMove PlayerIndex (Travel navigationPath) gameplay
+                                | [] -> gameplay
+                            | None -> gameplay
+                    | None -> gameplay
+                
+                if Map.exists (fun k _ -> k = PlayerIndex) gameplay.Round.CharacterMoves then
                     withMsg MakeEnemyMoves gameplay
-                | _ -> just gameplay
+                else just gameplay
 
-            | TryHaltPlayer ->
-                match Map.tryFind PlayerIndex gameplay.Round.CharacterMoves with
-                | Some _ ->
-                    let gameplay = Gameplay.truncatePlayerPath gameplay
-                    just gameplay
-                | None -> just gameplay
+            | HaltPlayer ->
+                let gameplay = Gameplay.truncatePlayerPath gameplay
+                just gameplay
 
             | TransitionMap direction ->
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
@@ -380,7 +358,7 @@ module GameplayDispatcher =
                     [Entity.Position == v2 184.0f -144.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
                      Entity.Text == "Halt"
                      Entity.Enabled <== gameplay --> fun gameplay -> gameplay.Round.IsPlayerTraveling
-                     Entity.ClickEvent ==> msg TryHaltPlayer]
+                     Entity.ClickEvent ==> msg HaltPlayer]
 
                  Content.button Simulants.HudSaveGame.Name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
