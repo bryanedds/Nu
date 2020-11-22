@@ -871,13 +871,13 @@ module BattleDispatcher =
                      Entity.ClickEvent ==> msg InteractDialog]
 
                  // allies
-                 Content.entitiesTrackedBy battle
+                 Content.entitiesTracked battle
                     (fun battle -> Battle.getAllies battle) constant
                     (fun battle -> battle.PartyIndex)
                     (fun index battle _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.Character <== battle])
 
                  // enemies
-                 Content.entitiesTrackedBy battle
+                 Content.entitiesTracked battle
                     (fun battle -> Battle.getEnemies battle) constant
                     (fun battle -> battle.PartyIndex)
                     (fun index battle _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.Character <== battle])]
