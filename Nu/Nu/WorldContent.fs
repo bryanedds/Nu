@@ -70,11 +70,11 @@ module Content =
     /// Allows for tracking by fst for insertion and removal in arbitrary order.
     let layersTrackedByFst lens sieve unfold mapper =
         let mapper = (fun i lens world -> mapper i (lens --> snd) world)
-        layersPlus lens sieve unfold (ExplicitTracking (fun c -> fst c)) mapper
+        layersPlus lens sieve unfold (ExplicitTracking (fun c -> box (fst c))) mapper
 
     /// Describe a layer to be optionally instantiated from a lens.
     let layerIf lens predicate mapper =
-        layersPlus lens (fun a _ -> if predicate a then [a] else []) id (ExplicitTracking (constant 0)) (constant mapper)
+        layersPlus lens (fun a _ -> if predicate a then [a] else []) id (ExplicitTracking (constant (box 0))) (constant mapper)
 
     /// Describe a layer to be instantiated when a screen is selected.
     let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> LayerContent) =
@@ -84,7 +84,7 @@ module Content =
     /// Describe a layer to be optionally instantiated from a lens.
     let layerOpt lens sieve mapper =
         let mapper = (fun _ lens world -> mapper (lens --> Option.get) world)
-        layersPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) (ExplicitTracking (constant 0)) mapper
+        layersPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) (ExplicitTracking (constant (box 0))) mapper
 
     /// Describe a layer to be loaded from a file.
     let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
@@ -135,11 +135,11 @@ module Content =
     /// Allows for tracking by fst for insertion and removal in arbitrary order.
     let entitiesTrackedByFst lens sieve unfold mapper =
         let mapper = (fun i lens world -> mapper i (lens --> snd) world)
-        entitiesPlus lens sieve unfold (ExplicitTracking (fun c -> fst c)) mapper
+        entitiesPlus lens sieve unfold (ExplicitTracking (fun c -> box (fst c))) mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
-        entitiesPlus lens (fun a _ -> if predicate a then [a] else []) id (ExplicitTracking (constant 0)) (constant mapper)
+        entitiesPlus lens (fun a _ -> if predicate a then [a] else []) id (ExplicitTracking (constant (box 0))) (constant mapper)
 
     /// Describe an entity to be instantiated when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
@@ -149,7 +149,7 @@ module Content =
     /// Describe an entity to be optionally instantiated from a lens.
     let entityOpt lens sieve mapper =
         let mapper = (fun _ lens world -> mapper (lens --> Option.get) world)
-        entitiesPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) (ExplicitTracking (constant 0)) mapper
+        entitiesPlus lens sieve (fun a _ -> if Option.isSome a then [a] else []) (ExplicitTracking (constant (box 0))) mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
