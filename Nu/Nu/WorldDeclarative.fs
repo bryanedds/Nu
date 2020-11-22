@@ -11,7 +11,7 @@ open Nu
 type [<NoEquality; NoComparison>] 'c ContentTracker =
     | NoTracking
     | AutoTracking
-    | ExplicitTracking of ('c -> int)
+    | ExplicitTracking of ('c -> obj)
 
 /// Describes the behavior of a screen.
 type [<StructuralEquality; NoComparison>] ScreenBehavior =
@@ -216,6 +216,16 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
+            let mutable indexCurrent = 0
+            let mutable indexes = dictPlus<obj, int> []
+            let indexer index =
+                match indexes.TryGetValue index with
+                | (false, _) ->
+                    let index' = indexCurrent
+                    indexes.Add (index, index')
+                    indexCurrent <- inc indexCurrent
+                    index'
+                | (true, index') -> index'
             let mutable monitorResult = Unchecked.defaultof<obj>
             let mutable lensResult = Unchecked.defaultof<obj>
             let mutable sieveResultOpt = None
@@ -239,7 +249,7 @@ module WorldDeclarative =
                 match tracker with
                 | NoTracking -> (false, Lens.explodeIndexedOpt None lensSeq)
                 | AutoTracking -> (true, Lens.explodeIndexedOpt None lensSeq)
-                | ExplicitTracking fn -> (true, Lens.explodeIndexedOpt (Some fn) lensSeq)
+                | ExplicitTracking fn -> (true, Lens.explodeIndexedOpt (Some (fun index -> indexer (fn index))) lensSeq)
             let expansionId = Gen.id
             let previousSetKey = Gen.id
             let monitorMapper =
@@ -267,11 +277,12 @@ module WorldDeclarative =
                     let lens' = enr.Current
                     match lens'.Get world with
                     | Some (index, _) ->
-                        let guid = Gen.idDeterministic index expansionId
+                        let index' = indexer index
+                        let guid = Gen.idDeterministic index' expansionId
                         let lens'' = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) } --> snd
-                        let item = PartialComparable.make guid (index, lens'')
+                        let item = PartialComparable.make guid (index', lens'')
                         current <- USet.add item current
-                        count <- count - 1
+                        count <- dec count
                     | None -> ()
                 let previous =
                     match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> USet> previousSetKey world with
