@@ -199,15 +199,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member refreshAttackingEnemyGroup gameplay =
         Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
     
-    static member removeEnemy index gameplay =
-        match index with
-        | EnemyIndex _ ->
-            let coordinates = Gameplay.getCoordinates index gameplay
-            let gameplay = Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
-            let gameplay = Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
-            let gameplay = Gameplay.refreshWalkingEnemyGroup gameplay
-            Gameplay.refreshAttackingEnemyGroup gameplay
-        | PlayerIndex -> failwithumf ()
+    static member removeCharacter index gameplay =
+        let coordinates = Gameplay.getCoordinates index gameplay
+        let gameplay = Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
+        let gameplay = Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
+        let gameplay = Gameplay.refreshWalkingEnemyGroup gameplay
+        Gameplay.refreshAttackingEnemyGroup gameplay
 
     static member clearEnemies gameplay =
         Gameplay.updateChessboard Chessboard.clearEnemies gameplay
@@ -308,12 +305,26 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member removeWalkingEnemyGroup gameplay =
         Gameplay.updateRound Round.removeWalkingEnemyGroup gameplay
     
-    static member resetFieldMap fieldMap gameplay =
+    static member resetFieldMap fieldMap gameplay = // TODO: clean up this mess
+        let gameplay = Gameplay.updateChessboard (Chessboard.setFieldSpaces fieldMap) gameplay
+        Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
+    
+    static member resetFieldMapWithPlayer fieldMap gameplay =
         let gameplay = Gameplay.updateChessboard (Chessboard.transitionMap fieldMap) gameplay
         Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
     
     static member transitionMap direction gameplay =
-        Gameplay.updateMetaMap (MetaMap.transition direction) gameplay
+        let player = Gameplay.getCharacter PlayerIndex gameplay
+        let gameplay = Gameplay.removeCharacter PlayerIndex gameplay
+        let gameplay = Gameplay.updateMetaMap (MetaMap.transition direction) gameplay
+        let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
+        let newCoordinates =
+            match direction with
+            | Upward
+            | Rightward -> gameplay.MetaMap.Current.PathStart
+            | Downward
+            | Leftward -> gameplay.MetaMap.Current.PathEnd
+        Gameplay.updateChessboard (Chessboard.addCharacter player newCoordinates) gameplay
 
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.UnoccupiedSpaces

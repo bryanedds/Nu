@@ -88,7 +88,7 @@ module GameplayDispatcher =
                             if reactorState.HitPoints <= 0 then
                                 match reactorIndex with
                                 | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
-                                | EnemyIndex _ -> Gameplay.removeEnemy reactorIndex gameplay
+                                | EnemyIndex _ -> Gameplay.removeCharacter reactorIndex gameplay
                             else gameplay
                         | WalkTurn _ -> Gameplay.finishMove index gameplay
                     | _ -> failwith "non-finishing turns should be filtered out by this point"
@@ -224,18 +224,9 @@ module GameplayDispatcher =
                 just gameplay
 
             | TransitionMap direction ->
-                let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
-                let newCoordinates =
-                    match direction with
-                    | Upward -> currentCoordinates.WithY 0
-                    | Rightward -> currentCoordinates.WithX 0
-                    | Downward -> currentCoordinates.WithY (Constants.Layout.FieldMapSizeC.Y - 1)
-                    | Leftward -> currentCoordinates.WithX (Constants.Layout.FieldMapSizeC.X - 1)
                 let gameplay = Gameplay.clearEnemies gameplay
                 let gameplay = Gameplay.clearPickups gameplay
-                let gameplay = Gameplay.relocateCharacter PlayerIndex newCoordinates gameplay
                 let gameplay = Gameplay.transitionMap direction gameplay
-                let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
                 let gameplay = Gameplay.makeEnemies 4 gameplay
                 just gameplay
 
@@ -250,7 +241,7 @@ module GameplayDispatcher =
                             | Rightward -> currentCoordinates.X = Constants.Layout.FieldMapSizeC.X - 1
                             | Downward -> currentCoordinates.Y = 0
                             | Leftward -> currentCoordinates.X = 0
-                        if targetOutside && gameplay.MetaMap.PossibleInDirection direction
+                        if targetOutside && gameplay.MetaMap.PossibleInDirection direction && gameplay.MetaMap.OnPathBoundary currentCoordinates
                         then TransitionMap direction
                         else TryMakePlayerMove playerInput
                     | _ -> TryMakePlayerMove playerInput
@@ -263,7 +254,7 @@ module GameplayDispatcher =
                     just gameplay
                 else
                     let gameplay = Gameplay.initial
-                    let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
+                    let gameplay = Gameplay.resetFieldMapWithPlayer (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
                     let gameplay = Gameplay.makeEnemies 4 gameplay
                     just gameplay
 

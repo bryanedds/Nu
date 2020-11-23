@@ -16,8 +16,8 @@ type [<ReferenceEquality; NoComparison>] MetaTile =
         let randResult = Gen.random1 (Constants.Layout.FieldMapSizeC.X - 4) // assumes X and Y are equal
         let pathEnd =
             match directionNext with
-            | Upward -> v2i (randResult + 2) (Constants.Layout.FieldMapSizeC.Y - 2)
-            | Rightward -> v2i (Constants.Layout.FieldMapSizeC.X - 2) (randResult + 2)
+            | Upward -> v2i (randResult + 2) (Constants.Layout.FieldMapSizeC.Y - 1)
+            | Rightward -> v2i (Constants.Layout.FieldMapSizeC.X - 1) (randResult + 2)
             | _ -> failwithumf ()
         { RandSeed = randSeed
           DirectionNext = directionNext
@@ -39,8 +39,8 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
 
     member this.NextPathStart =
         match this.Current.DirectionNext with
-        | Upward -> v2i this.Current.PathEnd.X 1
-        | Rightward -> v2i 1 this.Current.PathEnd.Y
+        | Upward -> v2i this.Current.PathEnd.X 0
+        | Rightward -> v2i 0 this.Current.PathEnd.Y
         | _ -> failwithumf ()
     
     member this.ExistsInDirection direction =
@@ -52,6 +52,9 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
     member this.PossibleInDirection direction =
         this.ExistsInDirection direction || this.NextMetaCoordinatesInDirection direction
 
+    member this.OnPathBoundary coordinates =
+        this.Current.PathStart = coordinates || this.Current.PathEnd = coordinates
+    
     static member updateMetaTiles updater metaMap =
         { metaMap with MetaTiles = updater metaMap.MetaTiles }
 
@@ -78,4 +81,4 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
           CurrentMetaCoordinates = v2iZero }
     
     static member make =
-        MetaMap.addMetaTile v2iZero (MetaTile.make v2iOne) MetaMap.empty
+        MetaMap.addMetaTile v2iZero (MetaTile.make v2iZero) MetaMap.empty
