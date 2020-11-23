@@ -171,7 +171,7 @@ module FieldMap =
             grid
     
     let make tileSheet (offsetC : Vector2i) sizeC pathEdgesC rand =
-        let buildBoundsC = { CornerNegative = offsetC + v2iOne; CornerPositive = offsetC + sizeC - v2iOne * 2 }
+        let buildBoundsC = { CornerNegative = offsetC; CornerPositive = offsetC + sizeC - v2iOne }
         let generatedMap = generateEmptyMap offsetC sizeC
         let (generatedMap, rand) = addPaths buildBoundsC pathEdgesC generatedMap rand
         let (generatedMap, rand) = addTrees buildBoundsC generatedMap rand
