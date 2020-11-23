@@ -6,6 +6,7 @@ open Prime
 open System.Collections.Generic
 
 /// A garbage-collected keyed array.
+/// TODO: once this is well-tested, let's consider moving into Prime.
 type [<NoEquality; NoComparison>] KeyedArray<'k, 'v when 'k : comparison> =
     private
         { Keys_ : SortedDictionary<int, 'k>
