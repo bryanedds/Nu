@@ -235,7 +235,7 @@ module GameplayDispatcher =
                 let gameplay = Gameplay.clearEnemies gameplay
                 let gameplay = Gameplay.clearPickups gameplay
                 let gameplay = Gameplay.transitionMap direction gameplay
-                let gameplay = Gameplay.makeEnemies 4 gameplay
+                let gameplay = Gameplay.populateFieldMap gameplay
                 just gameplay
 
             | HandleMapChange playerInput ->
@@ -263,7 +263,7 @@ module GameplayDispatcher =
                 else
                     let gameplay = Gameplay.initial
                     let gameplay = Gameplay.resetFieldMapWithPlayer (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
-                    let gameplay = Gameplay.makeEnemies 4 gameplay
+                    let gameplay = Gameplay.populateFieldMap gameplay
                     just gameplay
 
         override this.Command (gameplay, command, _, world) =

@@ -344,6 +344,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             else Gameplay.makeEnemy (EnemyIndex count) gameplay |> recursion (count + 1)
         recursion 0 gameplay
     
+    static member populateFieldMap gameplay =
+        let enemyCount = 1 + Gen.random1 5
+        Gameplay.makeEnemies enemyCount gameplay
+    
     static member forEachIndex updater indices gameplay =
         let rec recursion (indices : CharacterIndex list) gameplay =
             if indices.Length = 0 then gameplay
