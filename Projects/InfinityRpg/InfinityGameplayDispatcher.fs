@@ -22,8 +22,9 @@ module GameplayDispatcher =
         | MakeEnemyAttack
         | MakeEnemiesWalk
         | MakeEnemyMoves
-        | TryContinuePlayerNavigation
+        | TryTransitionRound
         | TryMakePlayerMove of PlayerInput
+        | SkipPlayerTurn
         | HaltPlayer
         | TransitionMap of Direction
         | HandleMapChange of PlayerInput
@@ -160,15 +161,18 @@ module GameplayDispatcher =
                 let gameplay = Gameplay.addAttackingEnemyGroup adjacentEnemies gameplay
                 let gameplay = Gameplay.createWalkingEnemyGroup gameplay
                 
-                match Gameplay.getCharacterMove PlayerIndex gameplay with
-                | Step _
-                | Travel _ -> withMsg MakeEnemiesWalk gameplay
-                | _ -> withMsg BeginTurns gameplay
+                match gameplay.Round.TryGetPlayerMove with
+                | Some move ->
+                    match move with
+                    | Step _
+                    | Travel _ -> withMsg MakeEnemiesWalk gameplay
+                    | _ -> withMsg BeginTurns gameplay
+                | None -> withMsg MakeEnemiesWalk gameplay
 
-            | TryContinuePlayerNavigation ->
+            | TryTransitionRound ->
                 let gameplay =
-                    match gameplay.Round.PlayerNavigation with
-                    | Automatic path ->
+                    match gameplay.Round.PlayerContinuity with
+                    | AutomaticNavigation path ->
                         match path with
                         | _ :: [] -> gameplay
                         | _ :: navigationPath ->
@@ -182,7 +186,7 @@ module GameplayDispatcher =
                 if Map.exists (fun k _ -> k = PlayerIndex) gameplay.Round.CharacterMoves then
                     withMsg MakeEnemyMoves gameplay
                 else
-                    let gameplay = Gameplay.updateRound (Round.updatePlayerNavigation (constant NoNavigation)) gameplay
+                    let gameplay = Gameplay.updateRound (Round.updatePlayerContinuity (constant NoContinuity)) gameplay
                     if not gameplay.Round.InProgress
                     then withCmd ListenKeyboard gameplay
                     else withMsg BeginTurns gameplay
@@ -219,6 +223,10 @@ module GameplayDispatcher =
                     withMsg MakeEnemyMoves gameplay
                 else just gameplay
 
+            | SkipPlayerTurn ->
+                let gameplay = Gameplay.updateRound (Round.updatePlayerContinuity (constant Waiting)) gameplay
+                withMsg MakeEnemyMoves gameplay
+            
             | HaltPlayer ->
                 let gameplay = Gameplay.truncatePlayerPath gameplay
                 just gameplay
@@ -278,6 +286,7 @@ module GameplayDispatcher =
                 elif KeyboardState.isKeyDown KeyboardKey.Right then withCmd (HandlePlayerInput (DetailInput Rightward)) world
                 elif KeyboardState.isKeyDown KeyboardKey.Down then withCmd (HandlePlayerInput (DetailInput Downward)) world
                 elif KeyboardState.isKeyDown KeyboardKey.Left then withCmd (HandlePlayerInput (DetailInput Leftward)) world
+                elif KeyboardState.isKeyDown KeyboardKey.Space then withMsg SkipPlayerTurn world
                 else just world
             
             | Update ->
@@ -285,7 +294,7 @@ module GameplayDispatcher =
                 | RunningCharacterMoves -> withMsg BeginTurns world
                 | MakingEnemyAttack -> withMsg MakeEnemyAttack world
                 | MakingEnemiesWalk -> withMsg MakeEnemiesWalk world
-                | FinishingRound -> withMsg TryContinuePlayerNavigation world
+                | FinishingRound -> withMsg TryTransitionRound world
                 | NoRound -> withCmd ListenKeyboard world
 
             | PostUpdate ->

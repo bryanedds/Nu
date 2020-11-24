@@ -13,19 +13,20 @@ type RoundStatus =
     | FinishingRound
     | NoRound
 
-type [<ReferenceEquality; NoComparison>] PlayerNavigation =
-    | Manual
-    | Automatic of NavigationNode list
-    | NoNavigation
+// continuity here is the player's ability to perform operations across multiple rounds without processing NoRound in between.
+// rounds are thus linked together preventing the game from alternating between "round on" and "round off" states.
+// in other words, PlayerContinuity effectively tells the game whether to advance the round cycle or turn it off.
+// this is what prevents things like a save button blinking on and off during player navigation and waiting.
 
-    static member progressPath playerNavigation =
-        match playerNavigation with
-        | Automatic (_ :: tail) -> Automatic tail
-        | _ -> failwithumf ()
-    
-    static member truncatePath playerNavigation =
-        match playerNavigation with
-        | Automatic (head :: _) -> Automatic [head]
+type [<ReferenceEquality; NoComparison>] PlayerContinuity =
+    | ManualNavigation
+    | AutomaticNavigation of NavigationNode list
+    | Waiting
+    | NoContinuity
+
+    static member truncatePath playerContinuity =
+        match playerContinuity with
+        | AutomaticNavigation (head :: _) -> AutomaticNavigation [head]
         | _ -> failwithumf ()
 
 type [<NoComparison>] Move =
@@ -39,36 +40,36 @@ type [<NoComparison>] Move =
         | _ -> this
 
 type [<ReferenceEquality; NoComparison>] Round =
-    { PlayerNavigation : PlayerNavigation
+    { PlayerContinuity : PlayerContinuity
       CharacterMoves : Map<CharacterIndex, Move>
       WalkingEnemyGroup : CharacterIndex list
       AttackingEnemyGroup : CharacterIndex list }
 
-    member this.IsPlayerWalking =
-        match this.PlayerNavigation with
-        | NoNavigation -> false
+    member this.TryGetPlayerMove =
+        Map.tryFind PlayerIndex this.CharacterMoves
+    
+    member this.IsPlayerContinuity =
+        match this.PlayerContinuity with
+        | NoContinuity -> false
         | _ -> true
     
     member this.IsPlayerTraveling =
-        match this.PlayerNavigation with
-        | Automatic _ -> true
+        match this.PlayerContinuity with
+        | AutomaticNavigation _ -> true
         | _ -> false
     
-    member this.IsPlayerNavigationTransitioning =
-        this.IsPlayerWalking && not (Map.exists (fun k _ -> k = PlayerIndex) this.CharacterMoves)
-    
     member this.InProgress =
-        Map.notEmpty this.CharacterMoves || List.notEmpty this.WalkingEnemyGroup || List.notEmpty this.AttackingEnemyGroup || this.IsPlayerWalking
+        Map.notEmpty this.CharacterMoves || List.notEmpty this.WalkingEnemyGroup || List.notEmpty this.AttackingEnemyGroup || this.IsPlayerContinuity
     
     member this.RoundStatus =
         if Map.notEmpty this.CharacterMoves then RunningCharacterMoves
         elif List.notEmpty this.AttackingEnemyGroup then MakingEnemyAttack
         elif List.notEmpty this.WalkingEnemyGroup then MakingEnemiesWalk
-        elif this.IsPlayerWalking then FinishingRound
+        elif this.IsPlayerContinuity then FinishingRound
         else NoRound
     
-    static member updatePlayerNavigation updater round =
-        { round with PlayerNavigation = updater round.PlayerNavigation }
+    static member updatePlayerContinuity updater round =
+        { round with PlayerContinuity = updater round.PlayerContinuity }
     
     static member updateCharacterMoves updater round =
         { round with CharacterMoves = updater round.CharacterMoves }
@@ -98,7 +99,7 @@ type [<ReferenceEquality; NoComparison>] Round =
         Round.updateAttackingEnemyGroup List.tail round
     
     static member empty =
-        { PlayerNavigation = NoNavigation
+        { PlayerContinuity = NoContinuity
           CharacterMoves = Map.empty
           WalkingEnemyGroup = []
           AttackingEnemyGroup = [] }
@@ -179,7 +180,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateRound (Round.removeMove index) gameplay
     
     static member truncatePlayerPath gameplay =
-        Gameplay.updateRound (Round.updatePlayerNavigation PlayerNavigation.truncatePath) gameplay
+        Gameplay.updateRound (Round.updatePlayerContinuity PlayerContinuity.truncatePath) gameplay
     
     static member updateCharacterTurn index updater gameplay =
         Gameplay.updatePuppeteer (Puppeteer.updateCharacterTurn index updater) gameplay
@@ -285,8 +286,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             let gameplay =
                 if index = PlayerIndex then
                     match move with
-                    | Step _ -> Gameplay.updateRound (Round.updatePlayerNavigation (constant Manual)) gameplay
-                    | Travel path -> Gameplay.updateRound (Round.updatePlayerNavigation (constant (Automatic path))) gameplay
+                    | Step _ -> Gameplay.updateRound (Round.updatePlayerContinuity (constant ManualNavigation)) gameplay
+                    | Travel path -> Gameplay.updateRound (Round.updatePlayerContinuity (constant (AutomaticNavigation path))) gameplay
                     | _ -> gameplay
                 else gameplay
             gameplay
