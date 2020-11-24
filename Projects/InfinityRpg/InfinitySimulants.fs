@@ -40,6 +40,7 @@ module Simulants =
     let HudDetailRightward = Hud / "DetailRightward"
     let HudDetailDownward = Hud / "DetailDownward"
     let HudDetailLeftward = Hud / "DetailLeftward"
+    let HudWait = Hud / "Wait"
     let Scene = Gameplay / "Scene"
     let Field = Scene / "Field"
     let Player = Scene / "Player"

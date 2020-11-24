@@ -403,6 +403,12 @@ module GameplayDispatcher =
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Leftward))]
 
+                 Content.button Simulants.HudWait.Name
+                    [Entity.Position == v2 -387.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Depth == 10.0f
+                     Entity.Text == "W"
+                     Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress then false else true
+                     Entity.ClickEvent ==> msg SkipPlayerTurn]
+                 
                  Content.feeler Simulants.HudFeeler.Name
                     [Entity.Position == v2 -480.0f -270.0f; Entity.Size == v2 960.0f 540.0f; Entity.Depth == 9.0f
                      Entity.TouchEvent ==|> fun evt -> cmd (HandlePlayerInput (TouchInput evt.Data))]]]
