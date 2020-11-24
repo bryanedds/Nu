@@ -202,10 +202,16 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member removeCharacter index gameplay =
         let coordinates = Gameplay.getCoordinates index gameplay
-        let gameplay = Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
         let gameplay = Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
-        let gameplay = Gameplay.refreshWalkingEnemyGroup gameplay
-        Gameplay.refreshAttackingEnemyGroup gameplay
+        match index with
+        | EnemyIndex _ ->
+            let gameplay =
+                if Gen.random1 2 = 0
+                then Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
+                else gameplay
+            let gameplay = Gameplay.refreshWalkingEnemyGroup gameplay
+            Gameplay.refreshAttackingEnemyGroup gameplay
+        | PlayerIndex -> gameplay
 
     static member clearEnemies gameplay =
         Gameplay.updateChessboard Chessboard.clearEnemies gameplay
