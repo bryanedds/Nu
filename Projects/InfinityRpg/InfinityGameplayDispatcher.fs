@@ -145,7 +145,7 @@ module GameplayDispatcher =
                         match character.ControlType with
                         | Chaos ->
                             let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
-                            let direction = Gen.random1 4 |> Direction.fromInt
+                            let direction = Gen.random1 4 |> Direction.ofInt
                             if List.exists (fun x -> x = direction) openDirections
                             then Gameplay.makeMove index (Step direction) gameplay
                             else gameplay

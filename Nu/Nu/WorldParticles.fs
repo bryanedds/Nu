@@ -101,7 +101,7 @@ module Particles =
         static member addMany behaviorsMany behaviors =
             { Behaviors = Seq.fold (fun behaviors behavior -> FStack.conj behavior behaviors) behaviors.Behaviors behaviorsMany }
 
-        static member fromSeq seq =
+        static member ofSeq seq =
             Behaviors.addMany seq Behaviors.empty
 
         static member run currentTime behaviors (particles : 'a array) =
