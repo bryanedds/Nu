@@ -111,7 +111,7 @@ module KeyedArray =
         | (true, index) ->
             karr.Keys_.Remove index |> ignore
             karr.Indices_.Remove key |> ignore
-            karr.Values_.[index] <- (false, key, Unchecked.defaultof<'v>)
+            karr.Values_.[index] <- struct (false, key, Unchecked.defaultof<'v>)
             karr.Removed_ <- inc karr.Removed_
             compact karr
         | (false, _) -> ()
