@@ -203,7 +203,7 @@ module Battle =
                         let characterType = characterData.CharacterType
                         let characterState = CharacterState.make characterData leg.HitPoints leg.TechPoints leg.ExpPoints leg.WeaponOpt leg.ArmorOpt leg.Accessories
                         let animationSheet = characterData.AnimationSheet
-                        let direction = Direction.fromVector2 -bounds.Bottom
+                        let direction = Direction.ofVector2 -bounds.Bottom
                         let actionTime = Constants.Battle.AllyActionTimeInitial
                         let character = Character.make bounds characterIndex characterType characterState animationSheet direction actionTime
                         character

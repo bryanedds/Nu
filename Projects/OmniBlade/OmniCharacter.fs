@@ -249,7 +249,7 @@ module Character =
 
     let autoBattle (source : Character) (target : Character) =
         let sourceToTarget = target.Position - source.Position
-        let direction = Direction.fromVector2 sourceToTarget
+        let direction = Direction.ofVector2 sourceToTarget
         let animationState = { source.AnimationState_ with Direction = direction }
         let autoBattle = evaluateAutoBattle source target
         { source with AnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
