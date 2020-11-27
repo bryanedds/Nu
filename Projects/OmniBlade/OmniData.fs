@@ -13,6 +13,7 @@ open Nu
 type CharacterIndex =
     | AllyIndex of int
     | EnemyIndex of int
+
     static member isFriendly index index2 =
         match (index, index2) with
         | (AllyIndex _, AllyIndex _) -> true
@@ -31,7 +32,7 @@ type Direction =
     | Upward
     | Rightward
 
-    static member fromVector2 (v2 : Vector2) =
+    static member ofVector2 (v2 : Vector2) =
         let angle = double (atan2 v2.Y v2.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
         let direction =

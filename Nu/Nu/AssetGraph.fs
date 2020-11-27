@@ -15,7 +15,7 @@ type Refinement =
     | Retro
     
     /// Convert a string to a refinement value.
-    static member fromString str =
+    static member ofString str =
         match str with
         | "PsdToPng" -> PsdToPng
         | "Retro" -> Retro
