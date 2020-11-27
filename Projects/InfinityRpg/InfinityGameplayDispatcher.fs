@@ -344,12 +344,15 @@ module GameplayDispatcher =
                      Content.entitiesTrackedByFst gameplay
                         (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer))
                         (fun (characters, puppeteer) _ -> Puppeteer.generatePositionsAndAnimationStates characters puppeteer)
-                        (fun index characterData _ ->
-                            let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
+                        (fun _ characterData world ->
+                            let name =
+                                match Lens.get characterData world with
+                                | (0, _) -> Simulants.Player.Name
+                                | (index, _) -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.Position <== characterData --> fun (position, _) -> position
-                                 Entity.CharacterAnimationSheet <== characterData --> fun _ -> match index with 0 -> Assets.PlayerImage | _ -> Assets.GoopyImage // TODO: pull this from data
-                                 Entity.CharacterAnimationState <== characterData --> fun (_, characterAnimationState) -> characterAnimationState])])
+                                [Entity.CharacterAnimationSheet <== characterData --> fun (index, _) -> match index with 0 -> Assets.PlayerImage | _ -> Assets.GoopyImage // TODO: pull this from data
+                                 Entity.CharacterAnimationState <== characterData --> fun (_, (_, characterAnimationState)) -> characterAnimationState
+                                 Entity.Position <== characterData --> fun (_, (position, _)) -> position])])
 
              // hud layer
              Content.layer Simulants.Hud.Name []
