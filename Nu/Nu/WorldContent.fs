@@ -60,7 +60,6 @@ module Content =
     /// Describe layers to be instantiated from a lens tracked by fst.
     /// Supports identity preservation even with arbitrary insertion and removal.
     let layersTrackedByFst lens sieve unfold mapper =
-        let mapper = (fun i lens world -> mapper i (lens --> snd) world)
         layersPlus lens sieve unfold (ExplicitTracking (fun c -> box (fst c))) mapper
 
     /// Describe layers to be instantiated from a lens.
@@ -121,7 +120,6 @@ module Content =
     /// Describe entities to be instantiated from a lens tracked by fst.
     /// Supports identity preservation even with arbitrary insertion and removal.
     let entitiesTrackedByFst lens sieve unfold mapper =
-        let mapper = (fun i lens world -> mapper i (lens --> snd) world)
         entitiesPlus lens sieve unfold (ExplicitTracking (fun c -> box (fst c))) mapper
 
     /// Describe entities to be instantiated from a lens.

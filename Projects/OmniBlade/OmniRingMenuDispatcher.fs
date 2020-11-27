@@ -54,11 +54,11 @@ module RingMenuDispatcher =
 
         override this.Content (ringMenu, menu) =
             [Content.entitiesTrackedByFst ringMenu (fun ringMenu -> ringMenu.Items) constant $ fun index item world ->
-                let itemValue = item.Get world |> snd
+                let itemValue = item.Get world |> snd |> snd
                 let buttonName = menu.Name + "+" + itemValue
                 let button = menu.Parent / buttonName
                 Content.button button.Name
-                    [Entity.EnabledLocal <== item --> fun item -> fst item
+                    [Entity.EnabledLocal <== item --> fun item -> fst (snd item)
                      Entity.Size == v2 48.0f 48.0f
                      Entity.Depth <== menu.Depth
                      Entity.UpImage == asset Assets.BattlePackageName (itemValue + "Up")
