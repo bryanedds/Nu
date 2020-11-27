@@ -14,8 +14,31 @@ type [<StructuralEquality; StructuralComparison>] MouseButton =
     | MouseRight
     | MouseX1
     | MouseX2
-    override this.ToString () = scstring this
-    static member toEventName this = ((scstring this).Substring "Mouse".Length)
+    static member toEventName this = this.ToString().Substring("Mouse".Length)
+    static member ofEventName eventName = scvalue<MouseButton> ("Mouse" + eventName)
+
+/// Describes a gamepad direction.
+type [<StructuralEquality; StructuralComparison>] GamepadDirection =
+    | DirectionUp
+    | DirectionUpLeft
+    | DirectionLeft
+    | DirectionDownLeft
+    | DirectionDown
+    | DirectionDownRight
+    | DirectionRight
+    | DirectionUpRight
+    | DirectionCentered
+
+/// Describes a gamepad button.
+type [<StructuralEquality; StructuralComparison>] GamepadButton =
+    | ButtonA
+    | ButtonB
+    | ButtonX
+    | ButtonY
+    | ButtonL
+    | ButtonR
+    | ButtonSelect
+    | ButtonStart
 
 [<RequireQualifiedAccess>]
 module MouseState =
@@ -80,29 +103,6 @@ module KeyboardState =
     let isShiftDown () =
         isKeyDown KeyboardKey.Lshift ||
         isKeyDown KeyboardKey.Rshift
-
-/// Describes a gamepad direction.
-type [<StructuralEquality; StructuralComparison>] GamepadDirection =
-    | DirectionUp
-    | DirectionUpLeft
-    | DirectionLeft
-    | DirectionDownLeft
-    | DirectionDown
-    | DirectionDownRight
-    | DirectionRight
-    | DirectionUpRight
-    | DirectionCentered
-
-/// Describes a gamepad button.
-type [<StructuralEquality; StructuralComparison>] GamepadButton =
-    | ButtonA
-    | ButtonB
-    | ButtonX
-    | ButtonY
-    | ButtonL
-    | ButtonR
-    | ButtonSelect
-    | ButtonStart
 
 [<RequireQualifiedAccess>]        
 module GamepadState =

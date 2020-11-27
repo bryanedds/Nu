@@ -57,7 +57,7 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
     static member inline (!>) componentRef =
         &componentRef.ComponentArrRef.Array.[componentRef.ComponentIndex]
 
-    static member inline make index arr =
+    static member inline make index arr : 'c ComponentRef =
         { ComponentIndex = index
           ComponentArrRef = arr }
 
@@ -530,7 +530,7 @@ type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
         let systemName = typeof<'c>.Name
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> systemName
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.ComponentArrRef.Array.[correlated.ComponentIndex] : 'c byref
+        &correlated.ComponentArrRef.Array.[correlated.ComponentIndex]
     member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef

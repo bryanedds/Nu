@@ -536,7 +536,7 @@ module WorldTypes =
         /// Copy a screen such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
             { this with ScreenState.Dispatcher = this.Dispatcher }
-    
+
     /// Hosts the ongoing state of a layer.
     and [<NoEquality; NoComparison; CLIMutable>] LayerState =
         { Dispatcher : LayerDispatcher

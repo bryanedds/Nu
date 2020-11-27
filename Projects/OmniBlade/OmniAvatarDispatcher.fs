@@ -107,7 +107,7 @@ module AvatarDispatcher =
 
                 // update animation generally
                 let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
-                let direction = Direction.fromVector2 velocity
+                let direction = Direction.ofVector2 velocity
                 let speed = velocity.Length ()
                 let avatar =
                     if speed > 10.0f then
