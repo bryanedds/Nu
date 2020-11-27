@@ -21,6 +21,6 @@ module OverlayRouter =
     /// Make an OverlayRouter.
     let make userRoutes =
         { Routes = Map.ofList userRoutes }
-
-/// Maps from dispatcher names to optional overlay names.
+        
+/// Maps from type names to overlay descriptors.
 type OverlayRouter = OverlayRouter.OverlayRouter

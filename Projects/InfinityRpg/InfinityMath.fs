@@ -34,7 +34,7 @@ module Direction =
     let mutable GlobalTryStumbleCounter = 0
     let mutable GlobalWanderCounter = 0
 
-    let fromInt n =
+    let ofInt n =
         match n with
         | 0 -> Upward
         | 1 -> Rightward
@@ -45,7 +45,7 @@ module Direction =
     let next rand =
         let randMax = 4
         let (randValue, rand) = Rand.nextIntUnder randMax rand
-        let direction = fromInt randValue
+        let direction = ofInt randValue
         (direction, rand)
 
     let walk (source : Vector2i) direction =

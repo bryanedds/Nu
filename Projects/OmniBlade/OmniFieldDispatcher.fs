@@ -66,7 +66,7 @@ module FieldDispatcher =
         static let isFacingBodyShape bodyShape (avatar : Avatar) world =
             if bodyShape.Entity.Is<PropDispatcher> world then
                 let v = bodyShape.Entity.GetBottom world - avatar.Bottom
-                let direction = Direction.fromVector2 v
+                let direction = Direction.ofVector2 v
                 direction = avatar.Direction
             else false
 
