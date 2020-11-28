@@ -68,9 +68,9 @@
   <ItemGroup>
     <Compile Include="Core.fs" />
     <Compile Include="Assets.fs" />
-    <Compile Include="Constants.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Gen.fs" />
+    <Compile Include="Constants.fs" />
     <Compile Include="ListTree.fs" />
     <Compile Include="KeyedArray.fs" />
     <Compile Include="Ecs.fs" />

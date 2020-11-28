@@ -242,8 +242,8 @@ module EffectFacetModule =
              define Entity.EffectSliceOffset (Vector2 0.5f)
              define Entity.EffectPhysicsShapes ()
              define Entity.EffectTags Map.empty
-             define Entity.EffectHistoryMax Constants.Effects.DefaultEffectHistoryMax
-             variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.DefaultEffectHistoryMax))]
+             define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
+             variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))]
 
         override this.Actualize (entity, world) =
 
@@ -265,7 +265,7 @@ module EffectFacetModule =
                       Effects.Color = Color.White
                       Effects.Glow = Color.Zero
                       Effects.Enabled = true
-                      Effects.Volume = Constants.Audio.DefaultSoundVolume }
+                      Effects.Volume = Constants.Audio.SoundVolumeDefault }
                 let effectHistory = entity.GetEffectHistory world
                 let effectEnv = entity.GetEffectDefinitions world
                 let effectSystem = EffectSystem.make effectAbsolute effectHistory effectTime effectEnv
@@ -406,7 +406,7 @@ module TextFacetModule =
 
         static member Properties =
             [define Entity.Text ""
-             define Entity.Font Assets.DefaultFont
+             define Entity.Font Assets.Default.Font
              define Entity.Margins Vector2.Zero
              define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
              define Entity.TextColor Color.Black
@@ -637,7 +637,7 @@ module TileMapFacetModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMap Assets.DefaultTileMap
+             define Entity.TileMap Assets.Default.TileMap
              define Entity.TileLayerClearance 2.0f
              define Entity.Parallax 0.0f
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
@@ -706,7 +706,7 @@ module TileMapFacetModule =
         override this.GetQuickSize (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
             | Some tileMap -> TmxMap.getQuickSize tileMap
-            | None -> Constants.Engine.DefaultEntitySize
+            | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
 module TmxMapFacetModule =
@@ -727,7 +727,7 @@ module TmxMapFacetModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TmxMap (TmxMap Assets.DefaultTmxFilePath)
+             define Entity.TmxMap (TmxMap Assets.Default.TmxFilePath)
              define Entity.TileLayerClearance 2.0f
              define Entity.Parallax 0.0f
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
@@ -1019,7 +1019,7 @@ module StaticSpriteFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.StaticImage Assets.DefaultImage4
+            [define Entity.StaticImage Assets.Default.Image4
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.InsetOpt None
@@ -1048,7 +1048,7 @@ module StaticSpriteFacetModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetStaticImage world) world with
             | Some size -> size
-            | None -> Constants.Engine.DefaultEntitySize
+            | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
@@ -1092,7 +1092,7 @@ module AnimatedSpriteFacetModule =
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet Assets.DefaultImage7
+             define Entity.AnimationSheet Assets.Default.Image7
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
@@ -1238,7 +1238,7 @@ module StaticSpriteDispatcherModule =
             [typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.StaticImage Assets.DefaultImage4
+            [define Entity.StaticImage Assets.Default.Image4
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.InsetOpt None
@@ -1258,7 +1258,7 @@ module AnimatedSpriteDispatcherModule =
              define Entity.CelRun 4
              define Entity.CelCount 16
              define Entity.AnimationDelay 4L
-             define Entity.AnimationSheet Assets.DefaultImage7
+             define Entity.AnimationSheet Assets.Default.Image7
              define Entity.Color Color.White
              define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
@@ -1433,10 +1433,10 @@ module ButtonDispatcherModule =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
              define Entity.Down false
-             define Entity.UpImage Assets.DefaultImage
-             define Entity.DownImage Assets.DefaultImage2
-             define Entity.ClickSoundOpt (Some Assets.DefaultSound)
-             define Entity.ClickSoundVolume Constants.Audio.DefaultSoundVolume]
+             define Entity.UpImage Assets.Default.Image
+             define Entity.DownImage Assets.Default.Image2
+             define Entity.ClickSoundOpt (Some Assets.Default.Sound)
+             define Entity.ClickSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
@@ -1467,7 +1467,7 @@ module ButtonDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetUpImage world) world with
             | Some size -> size
-            | None -> Constants.Engine.DefaultEntitySize
+            | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
 module LabelDispatcherModule =
@@ -1483,7 +1483,7 @@ module LabelDispatcherModule =
         static member Properties =
             [define Entity.Size (Vector2 (192.0f, 48.0f))
              define Entity.SwallowMouseLeft false
-             define Entity.LabelImage Assets.DefaultImage3]
+             define Entity.LabelImage Assets.Default.Image3]
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -1508,7 +1508,7 @@ module LabelDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetLabelImage world) world with
             | Some size -> size
-            | None -> Constants.Engine.DefaultEntitySize
+            | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
 module TextDispatcherModule =
@@ -1563,8 +1563,8 @@ module TextDispatcherModule =
             | Some image ->
                 match World.tryGetTextureSizeF image world with
                 | Some size -> size
-                | None -> Constants.Engine.DefaultEntitySize
-            | None -> Constants.Engine.DefaultEntitySize
+                | None -> Constants.Engine.EntitySizeDefault
+            | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
 module ToggleDispatcherModule =
@@ -1640,10 +1640,10 @@ module ToggleDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Open true
              define Entity.Pressed false
-             define Entity.OpenImage Assets.DefaultImage
-             define Entity.ClosedImage Assets.DefaultImage2
-             define Entity.ToggleSoundOpt (Some Assets.DefaultSound)
-             define Entity.ToggleSoundVolume Constants.Audio.DefaultSoundVolume]
+             define Entity.OpenImage Assets.Default.Image
+             define Entity.ClosedImage Assets.Default.Image2
+             define Entity.ToggleSoundOpt (Some Assets.Default.Sound)
+             define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
             let world = bind (entity.Model<bool> ()) entity.Open world
@@ -1679,7 +1679,7 @@ module ToggleDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetOpenImage world) world with
             | Some size -> size
-            | None -> Constants.Engine.DefaultEntitySize
+            | None -> Constants.Engine.EntitySizeDefault
             
 [<AutoOpen>]
 module FpsDispatcherModule =
@@ -1807,8 +1807,8 @@ module FillBarDispatcherModule =
              define Entity.SwallowMouseLeft false
              define Entity.Fill 0.0f
              define Entity.FillInset 0.0f
-             define Entity.FillImage Assets.DefaultImage11
-             define Entity.BorderImage Assets.DefaultImage12]
+             define Entity.FillImage Assets.Default.Image11
+             define Entity.BorderImage Assets.Default.Image12]
 
         override this.Register (entity, world) =
             let world = bind (entity.Model<single> ()) entity.Fill world
@@ -1863,7 +1863,7 @@ module FillBarDispatcherModule =
         override this.GetQuickSize (entity, world) =
             match World.tryGetTextureSizeF (entity.GetBorderImage world) world with
             | Some size -> size
-            | None -> Constants.Engine.DefaultEntitySize
+            | None -> Constants.Engine.EntitySizeDefault
 
 [<AutoOpen>]
 module BlockDispatcherModule =
@@ -1878,7 +1878,7 @@ module BlockDispatcherModule =
         static member Properties =
             [define Entity.PublishChanges true
              define Entity.BodyType Static
-             define Entity.StaticImage Assets.DefaultImage4]
+             define Entity.StaticImage Assets.Default.Image4]
 
 [<AutoOpen>]
 module BoxDispatcherModule =
@@ -1892,7 +1892,7 @@ module BoxDispatcherModule =
 
         static member Properties =
             [define Entity.PublishChanges true
-             define Entity.StaticImage Assets.DefaultImage4]
+             define Entity.StaticImage Assets.Default.Image4]
 
 [<AutoOpen>]
 module CharacterDispatcherModule =
@@ -1933,9 +1933,9 @@ module CharacterDispatcherModule =
              define Entity.FixedRotation true
              define Entity.GravityScale 3.0f
              define Entity.BodyShape (BodyCapsule { Height = 0.5f; Radius = 0.25f; Center = v2Zero; PropertiesOpt = None })
-             define Entity.CharacterIdleImage Assets.DefaultCharacterIdleImage
-             define Entity.CharacterJumpImage Assets.DefaultCharacterJumpImage
-             define Entity.CharacterWalkSheet Assets.DefaultCharacterWalkImage
+             define Entity.CharacterIdleImage Assets.Default.CharacterIdleImage
+             define Entity.CharacterJumpImage Assets.Default.CharacterJumpImage
+             define Entity.CharacterWalkSheet Assets.Default.CharacterWalkImage
              define Entity.CharacterFacingLeft false]
 
         override this.Update (entity, world) =
@@ -2000,7 +2000,7 @@ module TileMapDispatcherModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMap Assets.DefaultTileMap
+             define Entity.TileMap Assets.Default.TileMap
              define Entity.Parallax 0.0f]
 
 [<AutoOpen>]
@@ -2019,7 +2019,7 @@ module TmxMapDispatcherModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TmxMap (TmxMap Assets.DefaultTmxFilePath)
+             define Entity.TmxMap (TmxMap Assets.Default.TmxFilePath)
              define Entity.Parallax 0.0f]
 
 [<AutoOpen>]

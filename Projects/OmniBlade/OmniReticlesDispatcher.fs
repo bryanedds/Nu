@@ -44,8 +44,8 @@ module ReticlesDispatcher =
                  Entity.Visible <== rets.Visible
                  Entity.Size == v2 48.0f 48.0f
                  Entity.Position == Constants.Battle.CancelPosition
-                 Entity.UpImage == asset Assets.BattlePackageName "CancelUp"
-                 Entity.DownImage == asset Assets.BattlePackageName "CancelDown"
+                 Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
+                 Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
                  Entity.ClickEvent ==> cmd TargetCancel]
              Content.entitiesTracked reticles
                 (fun reticles -> (reticles.AimType, reticles.Battle))
@@ -58,6 +58,6 @@ module ReticlesDispatcher =
                         [Entity.ParentNodeOpt == None
                          Entity.Size == v2 96.0f 96.0f
                          Entity.Center <== character --> fun (character : Character) -> character.CenterOffset
-                         Entity.UpImage == asset Assets.BattlePackageName "ReticleUp"
-                         Entity.DownImage == asset Assets.BattlePackageName "ReticleDown"
+                         Entity.UpImage == asset Assets.Battle.PackageName "ReticleUp"
+                         Entity.DownImage == asset Assets.Battle.PackageName "ReticleDown"
                          Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterIndex)])]

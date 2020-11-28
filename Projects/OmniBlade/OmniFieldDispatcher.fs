@@ -175,7 +175,7 @@ module FieldDispatcher =
                     | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = Some (Set.empty, battleType) })) field
                     | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field
                 let field = Field.updateAdvents (Set.addMany consequents) field
-                withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenChestSound)) field
+                withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.OpenChestSound)) field
             else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
 
         static let interactDoor requirements consequents (prop : Prop) (field : Field) =
@@ -184,7 +184,7 @@ module FieldDispatcher =
                 if field.Advents.IsSupersetOf requirements then
                     let field = Field.updateAdvents (Set.addMany consequents) field
                     let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
-                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.OpenDoorSound)) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.OpenDoorSound)) field
                 else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
             | _ -> failwithumf ()
 
@@ -194,7 +194,7 @@ module FieldDispatcher =
                 if field.Advents.IsSupersetOf requirements then
                     let field = Field.updateAdvents (if on then Set.removeMany consequents else Set.addMany consequents) field
                     let field = Field.updatePropStates (Map.add prop.PropId (SwitchState (not on))) field
-                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UseSwitchSound)) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UseSwitchSound)) field
                 else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Won't budge!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
             | _ -> failwithumf ()
 
@@ -210,12 +210,12 @@ module FieldDispatcher =
         static let interactShopkeep shopType (field : Field) =
             let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
             let field = Field.updateShopOpt (constant (Some shop)) field
-            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)) field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
         static let interactSavePoint (field : Field) =
             let field = Field.restoreTeam field
             Field.save field
-            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.SaveSound)) field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SaveSound)) field
 
         static let sidebar position depth (field : Lens<Field, World>) =
             Content.group Gen.name []
@@ -317,7 +317,7 @@ module FieldDispatcher =
                             match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
                             | (true, fieldData) ->
                                 if currentSongOpt <> fieldData.FieldSongOpt
-                                then withCmd (FadeOutSong Constants.Audio.DefaultFadeOutMs) field
+                                then withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
                                 else just field
                             | (false, _) -> just field
                         
@@ -335,7 +335,7 @@ module FieldDispatcher =
                                 match Field.getFieldSongOpt field with
                                 | Some fieldSong ->
                                     if currentSongOpt <> Some fieldSong
-                                    then PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)
+                                    then PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)
                                     else Nop
                                 | None -> Nop
                             withCmds [moveCmd; songCmd] field
@@ -367,7 +367,7 @@ module FieldDispatcher =
                                   FieldDirection = direction
                                   FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
                             let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
-                            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.StairStepsSound)) field
+                            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StairStepsSound)) field
                         else just field
                     | None -> just field
                 | Some _ -> just field
@@ -382,7 +382,7 @@ module FieldDispatcher =
                                 let field = Field.updateAdvents (constant (Set.union consequents field.Advents)) field
                                 match sensorType with
                                 | AirSensor -> (cmds, field)
-                                | HiddenSensor | StepPlateSensor -> (Command (PlaySound (0L,  Constants.Audio.DefaultSoundVolume, Assets.TriggerSound)) :: cmds, field)
+                                | HiddenSensor | StepPlateSensor -> (Command (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.TriggerSound)) :: cmds, field)
                             else (cmds, field))
                             ([], field) sensors
                     results
@@ -425,7 +425,7 @@ module FieldDispatcher =
                         let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                         let field = Field.updateTeam (Map.add index teammate) field
                         let field = Field.updateSubmenu (constant { field.Submenu with SubmenuUseOpt = None }) field
-                        if result then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) field
+                        if result then withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
                         else just field
                     | None -> just field
                 | None -> just field
@@ -480,8 +480,8 @@ module FieldDispatcher =
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.removeItem itemType) field
                             let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.updateGold (fun gold -> gold - shopConfirm.ShopConfirmPrice) | ShopSelling -> Inventory.updateGold (fun gold -> gold + shopConfirm.ShopConfirmPrice)) field
                             let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
-                            withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.PurchaseSound)) field
-                        else withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.MistakeSound)) field
+                            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
+                        else withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
                     | None -> just field
                 | None -> just field
 
@@ -500,7 +500,7 @@ module FieldDispatcher =
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromTeam (Field.getParty field) field.Inventory prizePool battleData time
                     let field = Field.updateBattleOpt (constant (Some battle)) field
-                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastScreamSound)) field
                 | None -> just field
 
             | Traverse velocity ->
@@ -509,7 +509,7 @@ module FieldDispatcher =
                     let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromTeam field.Team field.Inventory prizePool battleData (World.getTickTime world)
                     let field = Field.updateBattleOpt (constant (Some battle)) field
-                    withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.BeastScreamSound)) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastScreamSound)) field
                 | (None, field) -> just field
 
             | Interact ->
@@ -556,7 +556,7 @@ module FieldDispatcher =
                 match Data.Value.Fields.TryGetValue field.FieldType with
                 | (true, fieldData) ->
                     match fieldData.FieldSongOpt with
-                    | Some fieldSong -> withCmd (PlaySong (Constants.Audio.DefaultFadeOutMs, Constants.Audio.DefaultSongVolume, fieldSong)) world
+                    | Some fieldSong -> withCmd (PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)) world
                     | None -> just world
                 | (false, _) -> just world
 
@@ -582,7 +582,7 @@ module FieldDispatcher =
                 [// backdrop sprite
                  Content.staticSprite Simulants.FieldBackdrop.Name
                     [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MinValue; Entity.Absolute == true
-                     Entity.StaticImage == Assets.DefaultImage9
+                     Entity.StaticImage == Assets.Default.Image9
                      Entity.Color <== field --> fun field ->
                         match Data.Value.Fields.TryGetValue field.FieldType with
                         | (true, fieldData) -> fieldData.FieldBackgroundColor
@@ -591,7 +591,7 @@ module FieldDispatcher =
                  // transition fade sprite
                  Content.staticSprite Simulants.FieldTransitionFade.Name
                    [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Depth == Single.MaxValue; Entity.Absolute == true
-                    Entity.StaticImage == Assets.DefaultImage9
+                    Entity.StaticImage == Assets.Default.Image9
                     Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
                     Entity.Color <== field --|> fun field world ->
                         match field.FieldTransitionOpt with
@@ -633,7 +633,7 @@ module FieldDispatcher =
                  // submenu button
                  Content.button Simulants.FieldSubmenu.Name
                     [Entity.Position == v2 -456.0f -246.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 144.0f 48.0f
-                     Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
+                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Text == "Submenu"
                      Entity.Visible <== field --> fun field ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
@@ -645,7 +645,7 @@ module FieldDispatcher =
                  // interact button
                  Content.button Simulants.FieldInteract.Name
                     [Entity.Position == v2 306.0f -246.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 144.0f 48.0f
-                     Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
+                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible <== field --|> fun field world ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone field.BattleOpt &&
@@ -690,7 +690,7 @@ module FieldDispatcher =
                  // team
                  Content.panel Simulants.SubmenuTeam.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
-                     Entity.LabelImage == Assets.DialogXXLImage
+                     Entity.LabelImage == Assets.Gui.DialogXXLImage
                      Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuTeam _ -> true | _ -> false]
                     [sidebar (v2 24.0f 420.0f) 1.0f field
                      team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology2 SubmenuTeamAlly
@@ -703,9 +703,9 @@ module FieldDispatcher =
                                 | Some characterData ->
                                     match characterData.MugOpt with
                                     | Some mug -> mug
-                                    | None -> Assets.EmptyImage
-                                | None -> Assets.EmptyImage
-                            | _ -> Assets.EmptyImage]
+                                    | None -> Assets.Default.EmptyImage
+                                | None -> Assets.Default.EmptyImage
+                            | _ -> Assets.Default.EmptyImage]
                      Content.text Gen.name
                         [Entity.PositionLocal == v2 666.0f 372.0f; Entity.DepthLocal == 1.0f
                          Entity.Text <== field --> fun field ->
@@ -774,7 +774,7 @@ module FieldDispatcher =
                  // item
                  Content.panel Simulants.SubmenuItem.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
-                     Entity.LabelImage == Assets.DialogXXLImage
+                     Entity.LabelImage == Assets.Gui.DialogXXLImage
                      Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuItem _ -> true | _ -> false
                      Entity.Enabled <== field --> fun field -> Option.isNone field.Submenu.SubmenuUseOpt]
                     [sidebar (v2 24.0f 420.0f) 1.0f field
@@ -787,7 +787,7 @@ module FieldDispatcher =
                  // use
                  Content.panel Simulants.SubmenuUse.Name
                     [Entity.Position == v2 -448.0f -192.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 896.0f 384.0f
-                     Entity.LabelImage == Assets.DialogXLImage
+                     Entity.LabelImage == Assets.Gui.DialogXLImage
                      Entity.Visible <== field --> fun field -> Option.isSome field.Submenu.SubmenuUseOpt]
                     [team (v2 160.0f 150.0f) 1.0f 3 field
                         (fun teammate submenu ->
@@ -824,7 +824,7 @@ module FieldDispatcher =
                  // shop
                  Content.panel Simulants.FieldShop.Name
                     [Entity.Position == v2 -448.0f -256.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 896.0f 512.0f
-                     Entity.LabelImage == Assets.DialogXXLImage
+                     Entity.LabelImage == Assets.Gui.DialogXXLImage
                      Entity.Visible <== field --> fun field -> Option.isSome field.ShopOpt
                      Entity.Enabled <== field --> fun field -> match field.ShopOpt with Some shop -> Option.isNone shop.ShopConfirmOpt | None -> true]
                     [items (v2 96.0f 368.0f) 1.0f field ShopSelect
@@ -868,7 +868,7 @@ module FieldDispatcher =
                  // shop confirm
                  Content.panel Simulants.FieldShopConfirm.Name
                     [Entity.Position == v2 -448.0f -128.0f; Entity.Depth == Constants.Field.GuiDepth + 10.0f; Entity.Size == v2 864.0f 252.0f
-                     Entity.LabelImage == Assets.DialogThickImage
+                     Entity.LabelImage == Assets.Gui.DialogThickImage
                      Entity.Visible <== field --> fun field ->
                         match field.ShopOpt with
                         | Some shop -> Option.isSome shop.ShopConfirmOpt

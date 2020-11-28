@@ -67,7 +67,7 @@ module CharacterDispatcherModule =
              define Entity.PublishChanges true
              define Entity.Omnipresent true
              define Entity.CharacterAnimationState CharacterAnimationState.initial
-             define Entity.CharacterAnimationSheet Assets.PlayerImage]
+             define Entity.CharacterAnimationSheet Assets.Gameplay.PlayerImage]
         
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then

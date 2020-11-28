@@ -32,7 +32,7 @@ module AvatarDispatcher =
 
     type AvatarDispatcher () =
         inherit EntityDispatcher<Avatar, AvatarMessage, AvatarCommand>
-            (Avatar.make (v4Bounds v2Zero Constants.Gameplay.CharacterSize) Assets.FinnAnimationSheet Downward)
+            (Avatar.make (v4Bounds v2Zero Constants.Gameplay.CharacterSize) Assets.Field.FinnAnimationSheet Downward)
 
         static let coreShapeId = Gen.id
         static let sensorShapeId = Gen.id

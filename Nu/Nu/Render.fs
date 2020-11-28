@@ -177,7 +177,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | extension -> Log.debug ("Could not load render asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
 
     static member private tryLoadRenderPackage packageName renderer =
-        match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
+        match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
             | Right assets ->

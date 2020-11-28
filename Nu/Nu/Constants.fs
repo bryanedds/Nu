@@ -18,16 +18,13 @@ module Engine =
     let [<Literal>] RendererSubsystemName = "RendererSubsystem"
     let [<Literal>] AudioPlayerSubsystemName = "AudioPlayerSubsystem"
     let [<Literal>] PhysicsEngineSubsystemName = "PhysicsEngineSubsystem"
-    let [<Literal>] DefaultScreenName = "Screen"
-    let [<Literal>] DefaultLayerName = "Layer"
-    let [<Literal>] DefaultEntityName = "Entity"
-    let [<Literal>] DefaultEffectName = "Effect"
+    let [<Literal>] EffectNameDefault = "Effect"
     let [<Literal>] GameSortPriority = Single.MaxValue
     let [<Literal>] RefinementDir = "refinement"
     let (*Literal*) ScreenSortPriority = GameSortPriority - 1.0f
     let (*Literal*) LayerSortPriority = ScreenSortPriority - 1.0f
     let (*Literal*) EntitySortPriority = LayerSortPriority - 1.0f
-    let (*Literal*) DefaultEntitySize = Vector2 48.0f
+    let (*Literal*) EntitySizeDefault = Vector2 48.0f
     let (*Literal*) EntityTreeGranularity = 4
     let (*Literal*) EntityTreeDepth = 3
     let (*Literal*) EntityTreeSize = Vector2 (single (Math.Pow (2.0, 16.0)))
@@ -57,7 +54,7 @@ module Render =
     let (*Literal*) VirtualScalar = Core.getVirtualScalarOrDefault 2
     let (*Literal*) ResolutionX = VirtualResolutionX * VirtualScalar
     let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
-    let (*Literal*) DefaultRendererFlags =
+    let (*Literal*) RendererFlagsDefault =
         SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
         SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC
     let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy) // TODO: move this to ViewConfig or WorldConfig?
@@ -66,10 +63,10 @@ module Render =
 module Audio =
 
     let [<Literal>] Frequency = 44100
-    let [<Literal>] DefaultSongVolume = 0.25f
-    let [<Literal>] DefaultSoundVolume = 0.5f
-    let [<Literal>] DefaultBufferSize = 1024
-    let [<Literal>] DefaultFadeOutMs = 500
+    let [<Literal>] SongVolumeDefault = 0.25f
+    let [<Literal>] SoundVolumeDefault = 0.5f
+    let [<Literal>] BufferSizeDefault = 1024
+    let [<Literal>] FadeOutMsDefault = 500
     let (*Literal*) AssetMapConfig = Functional
 
 [<RequireQualifiedAccess>]
@@ -97,7 +94,7 @@ module Metadata =
 [<RequireQualifiedAccess>]
 module Effects =
 
-    let [<Literal>] DefaultEffectHistoryMax = 300 // 5 seconds
+    let [<Literal>] EffectHistoryMaxDefault = 300 // 5 seconds
 
 [<RequireQualifiedAccess>]
 module Math =

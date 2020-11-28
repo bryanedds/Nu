@@ -515,7 +515,7 @@ module WorldModule3 =
             Nu.init config.NuConfig
 
             // attempt to create asset graph
-            match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
+            match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
             | Right assetGraph ->
 
                 // make the world's event system
@@ -559,19 +559,19 @@ module WorldModule3 =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
                         | None -> MockRenderer.make () :> Renderer
-                    renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackageName) // enqueue default package hint
+                    renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
-                    audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.DefaultPackageName) // enqueue default package hint
+                    audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
                     { PhysicsEngine = physicsEngine
                       Renderer = renderer
                       AudioPlayer = audioPlayer }
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
-                match Overlayer.tryMakeFromFile intrinsicOverlays Assets.OverlayerFilePath with
+                match Overlayer.tryMakeFromFile intrinsicOverlays Assets.Global.OverlayerFilePath with
                 | Right overlayer ->
 
                     // make the world's scripting environment
