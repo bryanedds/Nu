@@ -306,7 +306,7 @@ module WorldTypes =
 
         static member Properties =
             [Define? Position Vector2.Zero
-             Define? Size Constants.Engine.DefaultEntitySize
+             Define? Size Constants.Engine.EntitySizeDefault
              Define? Rotation 0.0f
              Define? Depth 0.0f
              Define? Omnipresent false
@@ -346,7 +346,7 @@ module WorldTypes =
 
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         abstract GetQuickSize : Entity * World -> Vector2
-        default this.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
+        default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
 
         /// Try to send a signal to an entity's facet.
         abstract TrySignalFacet : obj * string * Entity * World -> World
@@ -391,7 +391,7 @@ module WorldTypes =
 
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector2
-        default this.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
+        default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
 
         /// Try to send a signal to a facet.
         abstract TrySignal : obj * Entity * World -> World
@@ -622,7 +622,7 @@ module WorldTypes =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Transform =
                 { Position = Vector2.Zero
-                  Size = Constants.Engine.DefaultEntitySize
+                  Size = Constants.Engine.EntitySizeDefault
                   Rotation = 0.0f
                   Depth = 0.0f
                   Flags = 0b0001000110000001 }

@@ -296,7 +296,7 @@ module Character =
 
     let empty =
         let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
-        let animationState = { TimeStart = 0L; AnimationSheet = Assets.FinnAnimationSheet; AnimationCycle = IdleCycle; Direction = Downward }
+        let animationState = { TimeStart = 0L; AnimationSheet = Assets.Field.FinnAnimationSheet; AnimationCycle = IdleCycle; Direction = Downward }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = AllyIndex 0

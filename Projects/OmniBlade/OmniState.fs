@@ -421,7 +421,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
 
     static member empty =
         { TimeStart = 0L
-          AnimationSheet = Assets.FinnAnimationSheet
+          AnimationSheet = Assets.Field.FinnAnimationSheet
           AnimationCycle = IdleCycle
           Direction = Downward }
 

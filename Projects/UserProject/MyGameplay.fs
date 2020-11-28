@@ -52,7 +52,7 @@ type MyGameplayDispatcher () =
                 let physicsId = Simulants.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
                     let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
-                    World.playSound Constants.Audio.DefaultSoundVolume (asset "Gameplay" "Jump") world
+                    World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                 else world
             | EyeTrack ->
                 if World.getTickRate world <> 0L

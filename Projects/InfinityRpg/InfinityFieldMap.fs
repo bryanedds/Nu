@@ -188,4 +188,4 @@ module FieldMap =
 
     let makeFromMetaTile (metaTile : MetaTile) =
         let rand = Rand.makeFromSeedState metaTile.RandSeed
-        make Assets.FieldTileSheetImage v2iZero Constants.Layout.FieldMapSizeC [(metaTile.PathStart, metaTile.PathEnd)] rand |> fst
+        make Assets.Gameplay.FieldTileSheetImage v2iZero Constants.Layout.FieldMapSizeC [(metaTile.PathStart, metaTile.PathEnd)] rand |> fst

@@ -15,5 +15,5 @@ type [<ReferenceEquality; NoComparison>] Field =
         let DefaultRand = Rand.make ()
         let DefaultSizeC = v2i 4 4
         let DefaultPathEdgesC = [(v2i 1 1, v2i 2 2)]
-        let DefaultFieldMap = fst (FieldMap.make Assets.FieldTileSheetImage v2iZero DefaultSizeC DefaultPathEdgesC DefaultRand)
+        let DefaultFieldMap = fst (FieldMap.make Assets.Gameplay.FieldTileSheetImage v2iZero DefaultSizeC DefaultPathEdgesC DefaultRand)
         { FieldMapNp = DefaultFieldMap }
