@@ -17,6 +17,7 @@ type GameplayCommand =
     | MoveRight
     | Jump
     | EyeTrack
+    | Back
     | Nop
 
 // this is the screen dispatcher that defines the screen where gameplay takes place
@@ -58,21 +59,32 @@ type MyGameplayDispatcher () =
                 if World.getTickRate world <> 0L
                 then Simulants.Game.SetEyeCenter (Simulants.Player.GetCenter world) world
                 else world
+            | Back ->
+                World.transitionScreen Simulants.Title world
             | Nop -> world
         just world
 
-    // here we describe the content of the game including the player and the level
+    // here we describe the content of the game including the level, the hud, and the player
     override this.Content (_, screen) =
-        [Content.layerIfScreenSelected screen $ fun _ _ ->
-            Content.layer Simulants.Hud.Name []
-                [Content.button Simulants.Back.Name
+
+        [// the level layer
+         Content.layerIfScreenSelected screen $ fun _ _ ->
+            Content.layerFromFile
+                Simulants.Level.Name
+                "Assets/Gameplay/Level.nulyr"
+
+         // the hud layer
+         Content.layerIfScreenSelected screen $ fun _ _ ->
+            Content.layer "Hud" []
+                [Content.button Gen.name
                     [Entity.Text == "Back"
                      Entity.Position == v2 260.0f -260.0f
-                     Entity.Depth == 10.0f]]
+                     Entity.Depth == 10.0f
+                     Entity.ClickEvent ==> cmd Back]]
+
+         // the player layer
          Content.layerIfScreenSelected screen $ fun _ _ ->
             Content.layer Simulants.Scene.Name []
                 [Content.character Simulants.Player.Name
                     [Entity.Position == v2 0.0f 0.0f
-                     Entity.Size == v2 108.0f 108.0f]]
-         Content.layerIfScreenSelected screen $ fun _ _ ->
-            Content.layerFromFile Simulants.Level.Name "Assets/Gameplay/Level.nulyr"]
+                     Entity.Size == v2 108.0f 108.0f]]]
