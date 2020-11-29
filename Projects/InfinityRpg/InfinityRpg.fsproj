@@ -74,6 +74,7 @@
     <Compile Include="InfinityConstants.fs" />
     <Compile Include="InfinitySimulants.fs" />
     <Compile Include="InfinityMath.fs" />
+    <Compile Include="InfinityEffects.fs" />
     <Compile Include="InfinityPickup.fs" />
     <Compile Include="InfinityCharacter.fs" />
     <Compile Include="InfinityCharacterAnimationState.fs" />

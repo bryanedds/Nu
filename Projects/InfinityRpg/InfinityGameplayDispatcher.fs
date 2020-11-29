@@ -17,7 +17,7 @@ module GameplayDispatcher =
 
     type [<StructuralEquality; NoComparison>] GameplayMessage =
         | FinishTurns of CharacterIndex list
-        | TickTurns of CharacterIndex list
+        | TickTurns
         | BeginTurns
         | MakeEnemyAttack
         | MakeEnemiesWalk
@@ -31,6 +31,7 @@ module GameplayDispatcher =
         | StartGameplay
 
     type [<NoEquality; NoComparison>] GameplayCommand =
+        | DisplayTurnEffects of CharacterIndex list
         | HandlePlayerInput of PlayerInput
         | SaveGame
         | ListenKeyboard
@@ -96,7 +97,7 @@ module GameplayDispatcher =
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 just gameplay
             
-            | TickTurns indices ->
+            | TickTurns ->
                 let updater index gameplay =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
@@ -113,6 +114,7 @@ module GameplayDispatcher =
                                 else gameplay
                         Gameplay.updateCharacterTurn index Turn.incTickCount gameplay
                     | _ -> gameplay
+                let indices = gameplay.Puppeteer.GetActingCharacters
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnFinishing) indices
                 withMsg (FinishTurns indices) gameplay
@@ -130,7 +132,7 @@ module GameplayDispatcher =
                     | _ -> gameplay
                 let indices = gameplay.Puppeteer.GetActingCharacters
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
-                withMsg (TickTurns indices) gameplay
+                withCmd (DisplayTurnEffects indices) gameplay
             
             | MakeEnemyAttack ->
                 let gameplay =
@@ -187,9 +189,7 @@ module GameplayDispatcher =
                     withMsg MakeEnemyMoves gameplay
                 else
                     let gameplay = Gameplay.updateRound (Round.updatePlayerContinuity (constant NoContinuity)) gameplay
-                    if not gameplay.Round.InProgress
-                    then withCmd ListenKeyboard gameplay
-                    else withMsg BeginTurns gameplay
+                    withCmd ListenKeyboard gameplay
             
             | TryMakePlayerMove playerInput ->
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
@@ -269,6 +269,26 @@ module GameplayDispatcher =
         override this.Command (gameplay, command, _, world) =
 
             match command with
+            | DisplayTurnEffects indices ->
+                let world =
+                    match Puppeteer.tryGetCharacterTurn PlayerIndex gameplay.Puppeteer with
+                    | Some turn ->
+                        match turn.TurnType with
+                        | AttackTurn ->
+                            if turn.IsFirstTick then
+                                let effect = Effects.makeSwordStrikeEffect turn.Direction
+                                let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Scene world
+                                let world = entity.SetEffect effect world
+                                let world = entity.SetSize (v2Dup 144.0f) world
+                                let world = entity.SetPosition ((vctovf turn.OriginCoordinates) - Constants.Layout.TileSize) world
+                                let world = entity.SetDepth Constants.Layout.EffectDepth world
+                                entity.SetSelfDestruct true world
+                            else world
+                        | _ -> world
+                    | None -> world
+
+                withMsg TickTurns world
+            
             | HandlePlayerInput playerInput ->
                 if not gameplay.Round.InProgress then
                     match (Gameplay.getCharacter PlayerIndex gameplay).ControlType with
@@ -291,7 +311,7 @@ module GameplayDispatcher =
             
             | Update ->
                 match gameplay.Round.RoundStatus with
-                | RunningCharacterMoves -> withMsg BeginTurns world
+                | RunningCharacterMoves -> withMsg TickTurns world
                 | MakingEnemyAttack -> withMsg MakeEnemyAttack world
                 | MakingEnemiesWalk -> withMsg MakeEnemiesWalk world
                 | FinishingRound -> withMsg TryTransitionRound world

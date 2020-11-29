@@ -41,6 +41,11 @@ type [<ReferenceEquality; NoComparison>] Turn =
       Direction : Direction
       StartTick : int64 }
     
+    member this.IsFirstTick =
+        match this.TurnStatus with
+        | TurnTicking tickCount -> tickCount = 0L
+        | _ -> false
+    
     static member calculatePosition turn =
         match turn.TurnType with
         | WalkTurn _ ->
