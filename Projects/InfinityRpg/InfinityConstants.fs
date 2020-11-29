@@ -15,6 +15,7 @@ module Constants =
         let FieldMapSizeC = v2iDup 20
         let CharacterDepth = 1.0f
         let PickupDepth = 0.5f
+        let EffectDepth = 2.0f
 
     [<RequireQualifiedAccess>]
     module InfinityRpg =
