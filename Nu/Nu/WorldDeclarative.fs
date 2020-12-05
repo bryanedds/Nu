@@ -217,7 +217,7 @@ module WorldDeclarative =
             (parent : Simulant)
             world =
             let mutable indexCurrent = 0
-            let mutable indexes = dictPlus<obj, int> []
+            let mutable indexes = dictPlus<obj, int> [] // TODO: replace with KeyedArray.
             let indexer (index : obj) =
                 match indexes.TryGetValue index with
                 | (false, _) ->
