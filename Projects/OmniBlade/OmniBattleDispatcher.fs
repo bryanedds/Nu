@@ -173,7 +173,7 @@ module BattleDispatcher =
                         | DamageCycle ->
                             if Character.getAnimationFinished time character then
                                 let woundCharacter = WoundCharacter targetIndex
-                                let playDeathSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.DeathSound)
+                                let playDeathSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DeathSound)
                                 ([Message woundCharacter; Command playDeathSound], battle)
                             else ([], battle)
                         | WoundCycle ->
@@ -245,7 +245,7 @@ module BattleDispatcher =
                     if  ally.ActionTime >= Constants.Battle.ActionTime &&
                         ally.InputState = NoInput then
                         let battle = Battle.updateCharacter (Character.updateInputState (constant RegularMenu)) ally.CharacterIndex battle
-                        let playActionTimeSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.AffirmSound)
+                        let playActionTimeSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)
                         (Command playActionTimeSound :: signals, battle)
                     else (signals, battle))
                     ([], battle)
@@ -328,7 +328,7 @@ module BattleDispatcher =
                     let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
                     let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
                     let battle = Battle.updateInventory (Inventory.tryAddItems battle.PrizePool.Items >> snd) battle
-                    let sigs = if List.notEmpty alliesLevelingUp then cmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.GrowthSound)) :: sigs else sigs
+                    let sigs = if List.notEmpty alliesLevelingUp then cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.GrowthSound)) :: sigs else sigs
                     withSigs sigs battle
                 else withSigs sigs battle
             else
@@ -481,7 +481,7 @@ module BattleDispatcher =
                 let time = World.getTickTime world
                 let battle = Battle.updateCharacters (Character.animate time ReadyCycle) battle
                 if timeLocal = 30L
-                then withCmd (PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.UnsheatheSound)) battle
+                then withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UnsheatheSound)) battle
                 else just battle
 
             | PoiseCharacters ->
@@ -506,7 +506,7 @@ module BattleDispatcher =
             | AttackCharacter1 sourceIndex ->
                 let time = World.getTickTime world
                 let battle = Battle.updateCharacter (Character.animate time AttackCycle) sourceIndex battle
-                let playHit = PlaySound (15L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                let playHit = PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                 withCmd playHit battle
 
             | AttackCharacter2 (sourceIndex, targetIndex) ->
@@ -538,7 +538,7 @@ module BattleDispatcher =
                         let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, false))) targetIndex battle
                         let battle = Battle.updateCharacter (Character.animate time SpinCycle) targetIndex battle
                         let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
-                        let playHealSound = PlaySound (0L, Constants.Audio.DefaultSoundVolume, Assets.HealSound)
+                        let playHealSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)
                         withCmds [displayHitPointsChange; playHealSound] battle
                     else
                         // TODO: non-curative case
@@ -568,7 +568,7 @@ module BattleDispatcher =
                 match techType with
                 | Critical ->
                     let time = World.getTickTime world
-                    let playHit = PlaySound (10L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                    let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                     let impactSplash = DisplayImpactSplash (targetIndex, 30L)
                     let battle = Battle.updateCharacter (Character.animate time AttackCycle) sourceIndex battle
                     withCmds [playHit; impactSplash] battle
@@ -577,16 +577,16 @@ module BattleDispatcher =
                     let radius = 64.0f
                     let position = (Battle.getCharacter sourceIndex battle).Bottom
                     let playHits =
-                        [PlaySound (20L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                         PlaySound (40L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                         PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
-                         PlaySound (80L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)]
+                        [PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                         PlaySound (40L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                         PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
+                         PlaySound (80L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)]
                     let battle = Battle.updateCharacter (Character.animate time WhirlCycle) sourceIndex battle
                     withCmds (DisplayCircle (position, radius) :: DisplayCycloneBlur (sourceIndex, radius) :: playHits) battle
                 | Slash ->
                     let time = World.getTickTime world
-                    let playSlash = PlaySound (10L, Constants.Audio.DefaultSoundVolume, Assets.SlashSound)
-                    let playHit = PlaySound (60L, Constants.Audio.DefaultSoundVolume, Assets.HitSound)
+                    let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
+                    let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                     let slashSpike = DisplaySlashSpike ((Battle.getCharacter sourceIndex battle).Bottom, targetIndex, 10L)
                     let impactSplash = DisplayImpactSplash (targetIndex, 70L)
                     let battle = Battle.updateCharacter (Character.animate time SlashCycle) sourceIndex battle
@@ -865,7 +865,7 @@ module BattleDispatcher =
                  // dialog interact button
                  Content.button Simulants.BattleInteract.Name
                     [Entity.Position == v2 248.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 144.0f 48.0f
-                     Entity.UpImage == Assets.ButtonShortUpImage; Entity.DownImage == Assets.ButtonShortDownImage
+                     Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible <== battle --> fun battle -> match battle.DialogOpt with Some dialog -> Dialog.canAdvance dialog | None -> false
                      Entity.Text == "Next"
                      Entity.ClickEvent ==> msg InteractDialog]

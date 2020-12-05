@@ -61,8 +61,8 @@ module RingMenuDispatcher =
                     [Entity.EnabledLocal <== item --> fun item -> fst (snd item)
                      Entity.Size == v2 48.0f 48.0f
                      Entity.Depth <== menu.Depth
-                     Entity.UpImage == asset Assets.BattlePackageName (itemValue + "Up")
-                     Entity.DownImage == asset Assets.BattlePackageName (itemValue + "Down")
+                     Entity.UpImage == asset Assets.Battle.PackageName (itemValue + "Up")
+                     Entity.DownImage == asset Assets.Battle.PackageName (itemValue + "Down")
                      Entity.ClickEvent ==> cmd (ItemSelect itemValue)
                      Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
              Content.entityOpt ringMenu (fun ringMenu -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
@@ -75,6 +75,6 @@ module RingMenuDispatcher =
                      Entity.Size == v2 48.0f 48.0f
                      Entity.Position == Constants.Battle.CancelPosition
                      Entity.Depth <== menu.Depth
-                     Entity.UpImage == asset Assets.BattlePackageName (itemCancelValue + "Up")
-                     Entity.DownImage == asset Assets.BattlePackageName (itemCancelValue + "Down")
+                     Entity.UpImage == asset Assets.Battle.PackageName (itemCancelValue + "Up")
+                     Entity.DownImage == asset Assets.Battle.PackageName (itemCancelValue + "Down")
                      Entity.ClickEvent ==> cmd ItemCancel]]

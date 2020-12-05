@@ -17,7 +17,7 @@ type [<ReferenceEquality; NoComparison>] Pickup =
 
     static member initial =
         { PickupType = Health
-          PickupSheet = Assets.PickupSheetImage
+          PickupSheet = Assets.Gameplay.PickupSheetImage
           PickupSheetCoordinates = v2iZero
           Position = v2Zero }
 

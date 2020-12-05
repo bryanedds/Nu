@@ -636,19 +636,19 @@ module Data =
         Map.ofListBy (fun data -> getKey data, data) value
 
     let private readFromFiles () =
-        { Weapons = readSheet Assets.WeaponDataFilePath (fun data -> data.WeaponType)
-          Armors = readSheet Assets.ArmorDataFilePath (fun data -> data.ArmorType)
-          Accessories = readSheet Assets.AccessoryDataFilePath (fun data -> data.AccessoryType)
-          Consumables = readSheet Assets.ConsumableDataFilePath (fun data -> data.ConsumableType)
-          Techs = readSheet Assets.TechDataFilePath (fun data -> data.TechType)
-          Archetypes = readSheet Assets.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
-          Characters = readSheet Assets.CharacterDataFilePath (fun data -> data.CharacterType)
-          Shops = readSheet Assets.ShopDataFilePath (fun data -> data.ShopType)
-          Fields = readSheet Assets.FieldDataFilePath (fun data -> data.FieldType)
-          Battles = readSheet Assets.BattleDataFilePath (fun data -> data.BattleType)
-          Encounters = readSheet Assets.EncounterDataFilePath (fun data -> data.EncounterType)
-          TechAnimations = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
-          CharacterAnimations = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
+        { Weapons = readSheet Assets.Field.WeaponDataFilePath (fun data -> data.WeaponType)
+          Armors = readSheet Assets.Field.ArmorDataFilePath (fun data -> data.ArmorType)
+          Accessories = readSheet Assets.Field.AccessoryDataFilePath (fun data -> data.AccessoryType)
+          Consumables = readSheet Assets.Field.ConsumableDataFilePath (fun data -> data.ConsumableType)
+          Techs = readSheet Assets.Field.TechDataFilePath (fun data -> data.TechType)
+          Archetypes = readSheet Assets.Field.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
+          Characters = readSheet Assets.Field.CharacterDataFilePath (fun data -> data.CharacterType)
+          Shops = readSheet Assets.Field.ShopDataFilePath (fun data -> data.ShopType)
+          Fields = readSheet Assets.Field.FieldDataFilePath (fun data -> data.FieldType)
+          Battles = readSheet Assets.Field.BattleDataFilePath (fun data -> data.BattleType)
+          Encounters = readSheet Assets.Field.EncounterDataFilePath (fun data -> data.EncounterType)
+          TechAnimations = readSheet Assets.Field.TechAnimationDataFilePath (fun data -> data.TechType)
+          CharacterAnimations = readSheet Assets.Field.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
 
     let Value =
         readFromFiles ()

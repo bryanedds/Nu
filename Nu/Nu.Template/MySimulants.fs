@@ -21,8 +21,6 @@ module Simulants =
 
     // gameplay screen handles
     let Gameplay = Screen "Gameplay"
-    let Hud = Gameplay / "Hud"
-    let Back = Hud / "Back"
+    let Level = Gameplay / "Level"
     let Scene = Gameplay / "Scene"
     let Player = Scene / "Player"
-    let Level = Gameplay / "Level"

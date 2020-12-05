@@ -375,10 +375,10 @@ module Field =
     let save field =
         let fieldSymbolizable = toSymbolizable field
         let fileStr = scstring fieldSymbolizable
-        try File.WriteAllText (Assets.SaveFilePath, fileStr) with _ -> ()
+        try File.WriteAllText (Assets.Global.SaveFilePath, fileStr) with _ -> ()
 
     let loadOrInitial randSeedState =
-        try let fieldStr = File.ReadAllText Assets.SaveFilePath
+        try let fieldStr = File.ReadAllText Assets.Global.SaveFilePath
             scvalue<Field> fieldStr
         with _ -> initial randSeedState
 

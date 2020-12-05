@@ -197,7 +197,7 @@ module Effect =
 
     /// The empty effect.
     let empty =
-        { EffectName = Constants.Engine.DefaultEffectName
+        { EffectName = Constants.Engine.EffectNameDefault
           LifetimeOpt = None
           Definitions = Map.empty
           Content = Effects.Contents (Effects.Shift 0.0f, [||]) }
@@ -363,10 +363,10 @@ module EffectSystem =
                 | SymbolicCompressionA resource -> evalResource resource effectSystem
                 | _ ->
                     Log.info ("Expected Resource for definition '" + definitionName + ".")
-                    AssetTag.generalize Assets.DefaultImage
+                    AssetTag.generalize Assets.Default.Image
             | None ->
                 Log.info ("Could not find definition with name '" + definitionName + "'.")
-                AssetTag.generalize Assets.DefaultImage
+                AssetTag.generalize Assets.Default.Image
 
     let rec private iterateViews incrementAspects content slice effectSystem =
         let effectSystem = { effectSystem with ProgressOffset = 0.0f }

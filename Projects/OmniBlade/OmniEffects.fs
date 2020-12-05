@@ -50,7 +50,7 @@ module Effects =
           Definitions = Map.empty
           Content =
             TextSprite
-                (Resource (AssetTag.toPair Assets.Font),
+                (Resource (AssetTag.toPair Assets.Gui.Font),
                  scstring (abs delta),
                  [|Positions
                     (Sum, Linear, Bounce,
@@ -71,7 +71,7 @@ module Effects =
           Definitions = Map.empty
           Content =
             StaticSprite
-                (Resource (AssetTag.toPair Assets.CancelImage),
+                (Resource (AssetTag.toPair Assets.Battle.CancelImage),
                  FlipNone,
                  [|Rotations
                     (Sum, Linear, Bounce,
@@ -88,7 +88,7 @@ module Effects =
     let makeBoltEffect () =
         let boltSprite =
             StaticSprite
-                (Resource (AssetTag.toPair Assets.BoltAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.BoltAnimationSheet),
                  FlipNone,
                  [|Insets
                     (Set, Constant, Once,
@@ -104,7 +104,7 @@ module Effects =
                  Nil)
         let explosionSprite =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.ExplosionAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet),
                  v2i 96 96, 4, 12, 2L, Once, FlipNone,
                  [|PositionRelative (v2 0.0f -384.0f)
                    Size (v2 96.0f 96.0f)
@@ -116,7 +116,7 @@ module Effects =
                  Nil)
         let explosionSoundEffect =
             SoundEffect
-                (Resource (AssetTag.toPair Assets.ExplosionSound),
+                (Resource (AssetTag.toPair Assets.Field.ExplosionSound),
                  [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
                  Nil)
         { EffectName = "Bolt"
@@ -137,18 +137,18 @@ module Effects =
             Contents
                 (Shift 0.0f,
                  [|AnimatedSprite
-                    (Resource (AssetTag.toPair Assets.ImpactSplashAnimationSheet),
+                    (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
                      v2i 96 96, 3, 3, 8L, Once, FlipH,
                      [|PositionRelative (v2 -48.0f 0.0f); Size (v2 96.0f 96.0f)|],
                      Nil)
                    AnimatedSprite
-                    (Resource (AssetTag.toPair Assets.ImpactSplashAnimationSheet),
+                    (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
                      v2i 96 96, 3, 3, 8L, Once, FlipNone,
                      [|PositionRelative (v2 48.0f 0.0f); Size (v2 96.0f 96.0f)|],
                      Nil)|]) }
 
     let makeSlashSpikeEffect position position2 =
-        let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.SpikeAnimationSheet), v2i 96 96, 5, 5, 3L, Once, FlipNone, [||], Nil)
+        let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.SpikeAnimationSheet), v2i 96 96, 5, 5, 3L, Once, FlipNone, [||], Nil)
         let emit =
             Emit
                 (Shift 0.1f,
@@ -167,7 +167,7 @@ module Effects =
           Definitions = Map.empty
           Content =
               AnimatedSprite
-               (Resource (AssetTag.toPair Assets.CycloneBlurAnimationSheet),
+               (Resource (AssetTag.toPair Assets.Battle.CycloneBlurAnimationSheet),
                 v2i 234 234, 2, 4, 3L, Loop, FlipNone,
                 [|Circle (radius, 2.0f, 100L)|],
                 Nil) }

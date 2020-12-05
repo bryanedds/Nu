@@ -691,7 +691,7 @@ module Gaia =
         let oldWorld = world
         let editorState = getEditorState world
         let preludeSourceDir = editorState.TargetDir + "/../.."
-        let preludeFilePath = preludeSourceDir + "/" + Assets.PreludeFilePath
+        let preludeFilePath = preludeSourceDir + "/" + Assets.Global.PreludeFilePath
         try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
             File.WriteAllText (preludeFilePath, preludeStr)
             (true, world)
@@ -723,7 +723,7 @@ module Gaia =
         let oldWorld = world
         let editorState = getEditorState world
         let assetSourceDir = editorState.TargetDir + "/../.."
-        let assetGraphFilePath = assetSourceDir + "/" + Assets.AssetGraphFilePath
+        let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
             File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
@@ -759,7 +759,7 @@ module Gaia =
         let oldWorld = world
         let editorState = getEditorState world
         let overlayerSourceDir = editorState.TargetDir + "/../.."
-        let overlayerFilePath = overlayerSourceDir + "/" + Assets.OverlayerFilePath
+        let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.OverlayerFilePath
         try let overlays = scvalue<Overlay list> (form.overlayerTextBox.Text.TrimEnd ())
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
             File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
@@ -1526,9 +1526,9 @@ module Gaia =
 
         // configure controls
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        form.positionSnapTextBox.Text <- scstring Constants.Editor.DefaultPositionSnap
-        form.rotationSnapTextBox.Text <- scstring Constants.Editor.DefaultRotationSnap
-        form.createDepthTextBox.Text <- scstring Constants.Editor.DefaultCreationDepth
+        form.positionSnapTextBox.Text <- scstring Constants.Editor.PositionSnapDefault
+        form.rotationSnapTextBox.Text <- scstring Constants.Editor.RotationSnapDefault
+        form.createDepthTextBox.Text <- scstring Constants.Editor.CreationDepthDefault
 
         // build tree view sorter
         let treeViewSorter =
@@ -1712,8 +1712,8 @@ module Gaia =
             { ViewConfig = sdlViewConfig
               ViewW = form.displayPanel.MaximumSize.Width
               ViewH = form.displayPanel.MaximumSize.Height
-              RendererFlags = Constants.Render.DefaultRendererFlags
-              AudioChunkSize = Constants.Audio.DefaultBufferSize }
+              RendererFlags = Constants.Render.RendererFlagsDefault
+              AudioChunkSize = Constants.Audio.BufferSizeDefault }
         SdlDeps.attemptMake sdlConfig
 
     /// Run Gaia from the F# evaluator.
