@@ -102,8 +102,10 @@ module KeyedArray =
             karr.Indices_.Add (key, index)
             karr.Values_.[index] <- struct (true, key, value)
             karr.Current_ <- inc karr.Current_
+            index
         | (true, index) ->
             karr.Values_.[index] <- struct (true, key, value)
+            index
 
     /// Remove a keyed value if it exists.
     let remove key karr =
@@ -147,7 +149,7 @@ module KeyedArray =
     let ofSeq threshold seq =
         let arr = Seq.toArray seq
         let karr = make threshold arr.Length
-        for (key, value) in arr do add key value karr
+        for (key, value) in arr do add key value karr |> ignore
         karr
 
 /// A garbage-collected keyed array.

@@ -8,10 +8,10 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-type [<NoEquality; NoComparison>] ContentTracker<'v, 'k> =
+type [<NoEquality; NoComparison>] ContentTracker<'a, 'k> =
     | NoTracking
     | AutoTracking
-    | ExplicitTracking of ('v -> 'k)
+    | ExplicitTracking of ('a -> 'k)
 
 /// Describes the behavior of a screen.
 type [<StructuralEquality; NoComparison>] ScreenBehavior =
@@ -217,15 +217,15 @@ module WorldDeclarative =
             (parent : Simulant)
             world =
             let mutable indexCurrent = 0
-            let mutable indexes = dictPlus<obj, int> [] // TODO: replace with KeyedArray.
-            let indexer (index : obj) =
-                match indexes.TryGetValue index with
+            let mutable indexes = dictPlus<obj, int> []
+            let getIndex (key : obj) =
+                match indexes.TryGetValue key with
                 | (false, _) ->
-                    let index' = indexCurrent
-                    indexes.Add (index, index')
+                    let index = indexCurrent
+                    indexes.Add (key, index)
                     indexCurrent <- inc indexCurrent
-                    index'
-                | (true, index') -> index'
+                    index
+                | (true, index) -> index
             let mutable monitorResult = Unchecked.defaultof<obj>
             let mutable lensResult = Unchecked.defaultof<obj>
             let mutable sieveResultOpt = None
@@ -249,7 +249,7 @@ module WorldDeclarative =
                 match tracker with
                 | NoTracking -> (false, Lens.explodeIndexedOpt None lensSeq)
                 | AutoTracking -> (true, Lens.explodeIndexedOpt None lensSeq)
-                | ExplicitTracking fn -> (true, Lens.explodeIndexedOpt (Some (fun index -> (indexer (fn index)))) lensSeq)
+                | ExplicitTracking getKey -> (true, Lens.explodeIndexedOpt (Some (fun input -> (getIndex (getKey input)))) lensSeq)
             let expansionId = Gen.id
             let previousSetKey = Gen.id
             let monitorMapper =
