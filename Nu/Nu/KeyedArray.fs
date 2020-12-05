@@ -43,7 +43,7 @@ module KeyedArray =
         karr.Current_ = karr.Values.Length
 
     let private underflowing karr =
-        karr.Removed_ / single karr.Keys_.Count > karr.Threshold_
+        karr.Removed_ / single karr.Keys_.Count >= 1.0f / karr.Threshold_
 
     let private expand karr =
 
@@ -51,7 +51,7 @@ module KeyedArray =
         if overflowing karr then
 
             // grow
-            let values = Array.zeroCreate (karr.Current_ * int (1.0f / karr.Threshold_))
+            let values = Array.zeroCreate (max 1 karr.Current_ * int karr.Threshold_)
             Array.blit karr.Values_ 0 values 0 karr.Current_
             karr.Values_ <- values
 
@@ -62,17 +62,17 @@ module KeyedArray =
 
             // reorg
             let mutable current = 0
-            for kvp in karr.Keys_ do
-                let key = kvp.Key
+            for key in Seq.toArray karr.Keys_.Values do
                 let index = karr.Indices_.[key]
                 let value = karr.Values_.[index]
-                karr.Keys_.[current] <- key
+                karr.Keys_.Remove index |> ignore
+                karr.Keys_.Add (current, key)
                 karr.Indices_.[key] <- current
                 karr.Values_.[current] <- value
                 current <- inc current
 
             // shrink
-            let values = Array.zeroCreate (karr.Current_ * int karr.Threshold_)
+            let values = Array.zeroCreate (int (single karr.Current_ * (1.0f / karr.Threshold_)))
             Array.blit karr.Values_ 0 values 0 values.Length
             karr.Values_ <- values
 
@@ -131,13 +131,24 @@ module KeyedArray =
         &karr.[key]
 
     /// Make a KeyedArray with the given compaction threshold and initial capaticy.
-    let make<'k, 'v when 'k : comparison> threshold capacity =
+    let make<'k, 'v when 'k : comparison> threshold capacity : KeyedArray<'k, 'v> =
         { Keys_ = SortedDictionary<int, 'k> ()
           Indices_ = Dictionary<'k, int> ()
           Values_ = Array.zeroCreate capacity
           Current_ = 0
           Removed_ = 0.0f
           Threshold_ = threshold }
+
+    /// Convert a keyed array to a sequence.
+    let toSeq (karr : KeyedArray<_, _>) =
+        seq karr
+
+    /// Convert a keyed array from a sequence.
+    let ofSeq threshold seq =
+        let arr = Seq.toArray seq
+        let karr = make threshold arr.Length
+        for (key, value) in arr do add key value karr
+        karr
 
 /// A garbage-collected keyed array.
 /// TODO: once this is well-tested, let's consider moving into Prime.
