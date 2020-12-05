@@ -40,8 +40,8 @@ type [<StructuralEquality; NoComparison>] SdlConfig =
         { ViewConfig = NewWindow SdlWindowConfig.defaultConfig
           ViewW = Constants.Render.ResolutionX
           ViewH = Constants.Render.ResolutionY
-          RendererFlags = Constants.Render.DefaultRendererFlags
-          AudioChunkSize = Constants.Audio.DefaultBufferSize }
+          RendererFlags = Constants.Render.RendererFlagsDefault
+          AudioChunkSize = Constants.Audio.BufferSizeDefault }
 
 [<AutoOpen>]
 module SdlDeps =

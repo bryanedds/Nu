@@ -114,7 +114,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         | extension -> Log.debug ("Could not load audio asset '" + scstring asset + "' due to unknown extension '" + extension + "'."); None
 
     static member private tryLoadAudioPackage packageName audioPlayer =
-        match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
+        match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Audio) packageName assetGraph with
             | Right assets ->

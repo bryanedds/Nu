@@ -256,8 +256,8 @@ module GameplayDispatcher =
                 withMsg msg gameplay
             
             | StartGameplay ->
-                if gameplay.ShallLoadGame && File.Exists Assets.SaveFilePath then
-                    let gameplayStr = File.ReadAllText Assets.SaveFilePath
+                if gameplay.ShallLoadGame && File.Exists Assets.Global.SaveFilePath then
+                    let gameplayStr = File.ReadAllText Assets.Global.SaveFilePath
                     let gameplay = scvalue<Gameplay> gameplayStr
                     just gameplay
                 else
@@ -298,7 +298,7 @@ module GameplayDispatcher =
 
             | SaveGame ->
                 let gameplayStr = scstring gameplay
-                File.WriteAllText (Assets.SaveFilePath, gameplayStr)
+                File.WriteAllText (Assets.Global.SaveFilePath, gameplayStr)
                 just world
 
             | ListenKeyboard ->
@@ -370,7 +370,7 @@ module GameplayDispatcher =
                                 | (0, _) -> Simulants.Player.Name
                                 | (index, _) -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.CharacterAnimationSheet <== characterData --> fun (index, _) -> match index with 0 -> Assets.PlayerImage | _ -> Assets.GoopyImage // TODO: pull this from data
+                                [Entity.CharacterAnimationSheet <== characterData --> fun (index, _) -> match index with 0 -> Assets.Gameplay.PlayerImage | _ -> Assets.Gameplay.GoopyImage // TODO: pull this from data
                                  Entity.CharacterAnimationState <== characterData --> fun (_, (_, characterAnimationState)) -> characterAnimationState
                                  Entity.Position <== characterData --> fun (_, (position, _)) -> position])])
 

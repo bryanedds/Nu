@@ -17,13 +17,13 @@ module Simulants =
     let Game = Game ()
 
     /// The default screen - may or may not exist.
-    let DefaultScreen = Screen Constants.Engine.DefaultScreenName
+    let DefaultScreen = Screen "Screen"
     
     /// The default layer - may or may not exist.
-    let DefaultLayer = DefaultScreen / Constants.Engine.DefaultLayerName
+    let DefaultLayer = DefaultScreen / "Layer"
     
     /// The default entity - may or may not exist.
-    let DefaultEntity = DefaultLayer / Constants.Engine.DefaultEntityName
+    let DefaultEntity = DefaultLayer / "Entity"
 
 [<AutoOpen>]
 module WorldModuleOperators =

@@ -10,10 +10,10 @@ module Effects =
     let makeSwordStrikeEffect direction =
         let resource =
             match direction with
-            | Upward -> Assets.OakSwordStrikeUp
-            | Rightward -> Assets.OakSwordStrikeRight
-            | Downward -> Assets.OakSwordStrikeDown
-            | Leftward -> Assets.OakSwordStrikeLeft
+            | Upward -> Assets.Gameplay.OakSwordStrikeUp
+            | Rightward -> Assets.Gameplay.OakSwordStrikeRight
+            | Downward -> Assets.Gameplay.OakSwordStrikeDown
+            | Leftward -> Assets.Gameplay.OakSwordStrikeLeft
 
         let animationSprite =
             AnimatedSprite

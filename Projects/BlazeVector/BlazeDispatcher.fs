@@ -32,7 +32,7 @@ module BlazeDispatcherModule =
         override this.Command (_, command, _, world) =
             let world =
                 match command with
-                | PlaySplashSound -> World.playSound Constants.Audio.DefaultSoundVolume Assets.SplashSound world
+                | PlaySplashSound -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.SplashSound world
                 | ShowTitle -> World.transitionScreen Simulants.Title world
                 | ShowCredits -> World.transitionScreen Simulants.Credits world
                 | ShowGameplay -> World.transitionScreen Simulants.Gameplay world
@@ -42,12 +42,12 @@ module BlazeDispatcherModule =
         // here we describe the content of the game including all of its screens.
         override this.Content (_, _) =
             [Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Some Simulants.Title)) [] []
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some Assets.MachinerySong)) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some Assets.MachinerySong)) Assets.CreditsLayerFilePath
-             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.DeadBlazeSong))) Assets.GameplayLayerFilePath]
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsLayerFilePath
+             Content.screenFromLayerFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.Gameplay.DeadBlazeSong))) Assets.Gui.GameplayLayerFilePath]
 
         // here we hint to the renderer and audio system that the 'Gui' package should be loaded
         override this.Register (game, world) =
-            let world = World.hintRenderPackageUse Assets.GuiPackageName world
-            let world = World.hintAudioPackageUse Assets.GuiPackageName world
+            let world = World.hintRenderPackageUse Assets.Gui.PackageName world
+            let world = World.hintAudioPackageUse Assets.Gui.PackageName world
             base.Register (game, world)
