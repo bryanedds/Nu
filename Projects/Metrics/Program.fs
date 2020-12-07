@@ -196,9 +196,7 @@ type ElmishGameDispatcher () =
 
     override this.Message (model, message, _, _) =
         match message with
-        | 0 ->
-            let model = { model with IntLists = List.map (fun intList -> { intList with Ints = List.map inc intList.Ints }) model.IntLists }
-            just model
+        | 0 -> just { model with IntLists = List.map (fun intList -> { intList with Ints = List.map inc intList.Ints }) model.IntLists }
         | _ -> just model
 
     override this.Content (model, _) =

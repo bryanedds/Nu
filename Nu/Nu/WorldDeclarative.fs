@@ -273,7 +273,7 @@ module WorldDeclarative =
                 let mutable current = USet.makeEmpty Functional
                 let mutable count = Seq.length items
                 let mutable enr = lenses.GetEnumerator ()
-                while count <> 0 && enr.MoveNext () do
+                while count <> 0 && enr.MoveNext () do // NOTE: n^2 algorithm here in combination with Lens.explodeIndexedOpt!
                     let lens' = enr.Current
                     match lens'.Get world with
                     | Some (index, _) ->
@@ -290,6 +290,6 @@ module WorldDeclarative =
                 let world = World.synchronizeSimulants mapper monitorMapper tracking previous current origin owner parent world
                 let world = World.addKeyedValue previousSetKey current world
                 (Cascade, world)
-            let (_, world) = subscription (Unchecked.defaultof<_>) world // expand simulants immediately rather than waiting for parent registration
+            let (_, world) = subscription Unchecked.defaultof<_> world // expand simulants immediately rather than waiting for parent registration
             let (_, world) = World.monitorCompressed Gen.id (Some monitorMapper) (Some monitorFilter) None (Left subscription) lens.ChangeEvent parent world
             world
