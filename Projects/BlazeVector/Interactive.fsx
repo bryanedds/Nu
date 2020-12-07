@@ -41,7 +41,7 @@ File.Copy ("../../Overlayer.nuol", "Overlayer.nuol", true)
 File.Copy ("../../Prelude.nuscript", "Prelude.nuscript", true)
 
 // build assets
-match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
+match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
 | Right assetGraph -> AssetGraph.buildAssets "../.." "." "../../refinement" false assetGraph
 | Left _ -> ()
 
