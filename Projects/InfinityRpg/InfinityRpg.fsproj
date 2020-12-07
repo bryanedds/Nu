@@ -76,6 +76,7 @@
     <Compile Include="InfinityMath.fs" />
     <Compile Include="InfinityEffects.fs" />
     <Compile Include="InfinityPickup.fs" />
+    <Compile Include="InfinityProp.fs" />
     <Compile Include="InfinityCharacter.fs" />
     <Compile Include="InfinityCharacterAnimationState.fs" />
     <Compile Include="InfinityMetaMap.fs" />
@@ -86,6 +87,7 @@
     <Compile Include="InfinityChessboard.fs" />
     <Compile Include="InfinityGameplay.fs" />
     <Compile Include="InfinityPickupDispatcher.fs" />
+    <Compile Include="InfinityPropDispatcher.fs" />
     <Compile Include="InfinityFieldDispatcher.fs" />
     <Compile Include="InfinityCharacterDispatcher.fs" />
     <Compile Include="InfinityGameplayDispatcher.fs" />

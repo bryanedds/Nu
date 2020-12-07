@@ -1,0 +1,25 @@
+namespace InfinityRpg
+open System
+open System.Numerics
+open Prime
+open Nu
+open Nu.Declarative
+open InfinityRpg
+
+type PropType =
+    | LongGrass
+
+type [<ReferenceEquality; NoComparison>] Prop =
+    { PropType : PropType
+      PropImage : Image AssetTag
+      Position : Vector2 }
+
+    static member initial =
+        { PropType = LongGrass
+          PropImage = Assets.Gameplay.LongGrassImage
+          Position = v2Zero}
+    
+    static member makeLongGrass coordinates =
+        { PropType = LongGrass
+          PropImage = Assets.Gameplay.LongGrassImage
+          Position = vctovf coordinates }
