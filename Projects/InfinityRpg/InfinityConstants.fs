@@ -14,6 +14,7 @@ module Constants =
         let TileSheetSize = let t = TileSheetSizeI in t.Vector2
         let FieldMapSizeC = v2iDup 20
         let CharacterDepth = 1.0f
+        let PropDepth = 1.0f
         let PickupDepth = 0.5f
         let EffectDepth = 2.0f
 
