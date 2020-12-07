@@ -333,6 +333,18 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | Leftward -> gameplay.MetaMap.Current.PathEnd
         Gameplay.updateChessboard (Chessboard.addCharacter player newCoordinates) gameplay
 
+    static member makeLongGrass gameplay =
+        let mapBounds = MapBounds.make v2iZero Constants.Layout.FieldMapSizeC
+        let predicate1 coordinates = FieldMap.tileIs coordinates FieldMap.GrassTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
+        let predicate2 coordinates = FieldMap.atLeastNAdjacentTilesAre 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
+        let rec recursion (spaces : Vector2i list) gameplay =
+            if spaces.Length = 0 then gameplay
+            else
+                let coordinates = spaces.Head
+                let gameplay = if predicate1 coordinates && predicate2 coordinates then Gameplay.updateChessboard (Chessboard.addProp LongGrass coordinates) gameplay else gameplay
+                recursion spaces.Tail gameplay
+        recursion gameplay.Chessboard.UnoccupiedSpaces gameplay
+    
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.UnoccupiedSpaces
         let coordinates = availableCoordinates.Item(Gen.random1 availableCoordinates.Length)
@@ -345,6 +357,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         recursion 0 gameplay
     
     static member populateFieldMap gameplay =
+        let gameplay = Gameplay.makeLongGrass gameplay
         let enemyCount = 1 + Gen.random1 5
         Gameplay.makeEnemies enemyCount gameplay
     
