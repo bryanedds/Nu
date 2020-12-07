@@ -8,10 +8,10 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-type [<NoEquality; NoComparison>] ContentTracker<'v, 'k> =
+type [<NoEquality; NoComparison>] ContentTracker<'a, 'k> =
     | NoTracking
     | AutoTracking
-    | ExplicitTracking of ('v -> 'k)
+    | ExplicitTracking of ('a -> 'k)
 
 /// Describes the behavior of a screen.
 type [<StructuralEquality; NoComparison>] ScreenBehavior =
@@ -218,14 +218,14 @@ module WorldDeclarative =
             world =
             let mutable indexCurrent = 0
             let mutable indexes = dictPlus<obj, int> []
-            let indexer (index : obj) =
-                match indexes.TryGetValue index with
+            let getIndex (key : obj) =
+                match indexes.TryGetValue key with
                 | (false, _) ->
-                    let index' = indexCurrent
-                    indexes.Add (index, index')
+                    let index = indexCurrent
+                    indexes.Add (key, index)
                     indexCurrent <- inc indexCurrent
-                    index'
-                | (true, index') -> index'
+                    index
+                | (true, index) -> index
             let mutable monitorResult = Unchecked.defaultof<obj>
             let mutable lensResult = Unchecked.defaultof<obj>
             let mutable sieveResultOpt = None
@@ -249,7 +249,7 @@ module WorldDeclarative =
                 match tracker with
                 | NoTracking -> (false, Lens.explodeIndexedOpt None lensSeq)
                 | AutoTracking -> (true, Lens.explodeIndexedOpt None lensSeq)
-                | ExplicitTracking fn -> (true, Lens.explodeIndexedOpt (Some (fun index -> (indexer (fn index)))) lensSeq)
+                | ExplicitTracking getKey -> (true, Lens.explodeIndexedOpt (Some (fun input -> (getIndex (getKey input)))) lensSeq)
             let expansionId = Gen.id
             let previousSetKey = Gen.id
             let monitorMapper =
@@ -273,7 +273,7 @@ module WorldDeclarative =
                 let mutable current = USet.makeEmpty Functional
                 let mutable count = Seq.length items
                 let mutable enr = lenses.GetEnumerator ()
-                while count <> 0 && enr.MoveNext () do
+                while count <> 0 && enr.MoveNext () do // NOTE: n^2 algorithm here in combination with Lens.explodeIndexedOpt!
                     let lens' = enr.Current
                     match lens'.Get world with
                     | Some (index, _) ->
@@ -290,6 +290,6 @@ module WorldDeclarative =
                 let world = World.synchronizeSimulants mapper monitorMapper tracking previous current origin owner parent world
                 let world = World.addKeyedValue previousSetKey current world
                 (Cascade, world)
-            let (_, world) = subscription (Unchecked.defaultof<_>) world // expand simulants immediately rather than waiting for parent registration
+            let (_, world) = subscription Unchecked.defaultof<_> world // expand simulants immediately rather than waiting for parent registration
             let (_, world) = World.monitorCompressed Gen.id (Some monitorMapper) (Some monitorFilter) None (Left subscription) lens.ChangeEvent parent world
             world

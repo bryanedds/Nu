@@ -10,7 +10,7 @@ module KeyedArray =
 
     /// A garbage-collected keyed array.
     /// TODO: once this is well-tested, let's consider moving into Prime.
-    type [<NoEquality; NoComparison>] KeyedArray<'k, 'v when 'k : comparison> =
+    type [<NoEquality; NoComparison>] KeyedArray<'k, 'v when 'k : equality> =
         private
             { Keys_ : SortedDictionary<int, 'k> // sorted so that compacting does not change order
               Indices_ : Dictionary<'k, int>
@@ -102,8 +102,10 @@ module KeyedArray =
             karr.Indices_.Add (key, index)
             karr.Values_.[index] <- struct (true, key, value)
             karr.Current_ <- inc karr.Current_
+            index
         | (true, index) ->
             karr.Values_.[index] <- struct (true, key, value)
+            index
 
     /// Remove a keyed value if it exists.
     let remove key karr =
@@ -131,7 +133,7 @@ module KeyedArray =
         &karr.[key]
 
     /// Make a KeyedArray with the given compaction threshold and initial capaticy.
-    let make<'k, 'v when 'k : comparison> threshold capacity : KeyedArray<'k, 'v> =
+    let make<'k, 'v when 'k : equality> threshold capacity : KeyedArray<'k, 'v> =
         { Keys_ = SortedDictionary<int, 'k> ()
           Indices_ = Dictionary<'k, int> ()
           Values_ = Array.zeroCreate capacity
@@ -147,9 +149,9 @@ module KeyedArray =
     let ofSeq threshold seq =
         let arr = Seq.toArray seq
         let karr = make threshold arr.Length
-        for (key, value) in arr do add key value karr
+        for (key, value) in arr do add key value karr |> ignore
         karr
 
 /// A garbage-collected keyed array.
 /// TODO: once this is well-tested, let's consider moving into Prime.
-type KeyedArray<'k, 'v when 'k : comparison> = KeyedArray.KeyedArray<'k, 'v>
+type KeyedArray<'k, 'v when 'k : equality> = KeyedArray.KeyedArray<'k, 'v>

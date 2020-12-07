@@ -53,19 +53,19 @@ module Content =
         layersPlus lens sieve unfold AutoTracking mapper
 
     /// Describe layers to be instantiated from a lens.
-    /// Supports identity preservation even with arbitrary insertion and removal.
+    /// Does not support identity preservation for insertion or removal.
+    let layersUntracked lens sieve unfold mapper =
+        layersPlus lens sieve unfold NoTracking mapper
+
+    /// Describe layers to be instantiated from a lens.
+    /// Supports identity preservation amidst arbitrary insertion and removal.
     let layersTracked lens sieve unfold tracker mapper =
         layersPlus lens sieve unfold (ExplicitTracking tracker) mapper
 
     /// Describe layers to be instantiated from a lens tracked by fst.
-    /// Supports identity preservation even with arbitrary insertion and removal.
+    /// Supports identity preservation amidst arbitrary insertion and removal.
     let layersTrackedByFst lens sieve unfold mapper =
         layersPlus lens sieve unfold (ExplicitTracking (fun c -> box (fst c))) mapper
-
-    /// Describe layers to be instantiated from a lens.
-    /// Does not support identity preservation for insertion or removal.
-    let layersUntracked lens sieve unfold mapper =
-        layersPlus lens sieve unfold NoTracking mapper
 
     /// Describe a layer to be optionally instantiated from a lens.
     let layerIf lens predicate mapper =
@@ -113,19 +113,19 @@ module Content =
         entitiesPlus lens sieve unfold AutoTracking mapper
 
     /// Describe entities to be instantiated from a lens.
-    /// Supports identity preservation even with arbitrary insertion and removal.
+    /// Does not support identity preservation for insertion or removal.
+    let entitiesUntracked lens sieve unfold mapper =
+        entitiesPlus lens sieve unfold NoTracking mapper
+
+    /// Describe entities to be instantiated from a lens.
+    /// Supports identity preservation amidst arbitrary insertion and removal.
     let entitiesTracked lens sieve unfold tracker mapper =
         entitiesPlus lens sieve unfold (ExplicitTracking tracker) mapper
 
     /// Describe entities to be instantiated from a lens tracked by fst.
-    /// Supports identity preservation even with arbitrary insertion and removal.
+    /// Supports identity preservation amidst arbitrary insertion and removal.
     let entitiesTrackedByFst lens sieve unfold mapper =
         entitiesPlus lens sieve unfold (ExplicitTracking (fun c -> box (fst c))) mapper
-
-    /// Describe entities to be instantiated from a lens.
-    /// Does not support identity preservation for insertion or removal.
-    let entitiesUntracked lens sieve unfold mapper =
-        entitiesPlus lens sieve unfold NoTracking mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
