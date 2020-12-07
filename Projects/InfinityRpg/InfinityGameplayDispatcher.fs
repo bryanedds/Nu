@@ -360,6 +360,12 @@ module GameplayDispatcher =
                         (fun pickups _ -> Map.toListBy (fun positionM _ -> Pickup.makeHealth positionM) pickups)
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Pickup <== pickup])
 
+                     // props
+                     Content.entitiesUntracked gameplay
+                        (fun gameplay -> gameplay.Chessboard.PropSpaces)
+                        (fun props _ -> Map.toListBy (fun positionM _ -> Prop.makeLongGrass positionM) props)
+                        (fun index prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Prop <== prop])
+                     
                      // characters
                      Content.entitiesTrackedByFst gameplay
                         (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer))
