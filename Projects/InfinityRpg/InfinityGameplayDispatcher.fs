@@ -81,17 +81,19 @@ module GameplayDispatcher =
                         match characterTurn.TurnType with
                         | AttackTurn ->
                             let gameplay = Gameplay.finishMove index gameplay
-                            let reactorIndex = Option.get characterTurn.ReactorOpt
-                            let reactorState = Gameplay.getCharacter reactorIndex gameplay
-                            let gameplay =
-                                if reactorIndex = PlayerIndex then
-                                    Gameplay.refreshPlayerPuppetHitPoints gameplay
+                            match characterTurn.GetReactor with
+                            | ReactingCharacter reactorIndex ->
+                                let reactorState = Gameplay.getCharacter reactorIndex gameplay
+                                let gameplay =
+                                    if reactorIndex = PlayerIndex then
+                                        Gameplay.refreshPlayerPuppetHitPoints gameplay
+                                    else gameplay
+                                if reactorState.HitPoints <= 0 then
+                                    match reactorIndex with
+                                    | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
+                                    | EnemyIndex _ -> Gameplay.removeCharacter reactorIndex gameplay
                                 else gameplay
-                            if reactorState.HitPoints <= 0 then
-                                match reactorIndex with
-                                | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
-                                | EnemyIndex _ -> Gameplay.removeCharacter reactorIndex gameplay
-                            else gameplay
+                            | ReactingProp coordinates -> failwithumf ()
                         | WalkTurn _ -> Gameplay.finishMove index gameplay
                     | _ -> failwith "non-finishing turns should be filtered out by this point"
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
