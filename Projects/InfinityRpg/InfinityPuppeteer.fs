@@ -104,11 +104,11 @@ type [<ReferenceEquality; NoComparison>] Turn =
           Direction = direction
           StartTick = 0L }
 
-    static member makeAttack index targetIndex originC direction =
+    static member makeAttack index reactor originC direction =
         { TurnType = AttackTurn
           TurnStatus = TurnBeginning
           Actor = index
-          ReactorOpt = Some (ReactingCharacter targetIndex)
+          ReactorOpt = Some reactor
           OriginCoordinates = originC
           Direction = direction
           StartTick = 0L }
