@@ -630,6 +630,7 @@ module Data =
           CharacterAnimations : Map<CharacterAnimationCycle, CharacterAnimationData> }
 
     let private readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
+        Math.init () // HACK: initializing Math type converters for required type converters fsx script.
         let text = File.ReadAllText filePath
         let symbol = flip (Symbol.fromStringCsv true) (Some filePath) text
         let value = symbolToValue<'d list> symbol
