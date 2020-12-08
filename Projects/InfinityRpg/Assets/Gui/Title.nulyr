@@ -25,7 +25,7 @@
     [Size [288 48]]
     [Text Exit]]]
   [LabelDispatcher
-   [[Depth -1]
+   [[Elevation -1]
     [LabelImage [Gui TitleLabel]]
     [Name Title]
     [Position [-384 48]]

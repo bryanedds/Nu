@@ -428,7 +428,7 @@ type [<NoComparison>] PropData =
 
 type [<NoComparison>] PropDescriptor =
     { PropBounds : Vector4
-      PropDepth : single
+      PropElevation : single
       PropData : PropData
       PropId : int }
 
@@ -455,14 +455,14 @@ module FieldData =
         let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
         let propSize = v2 (single object.Width) (single object.Height)
         let propBounds = v4Bounds propPosition propSize
-        let propDepth =
-            match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-            | (true, depthStr) -> Constants.Field.ForegroundDepth + scvalue depthStr
-            | (false, _) -> Constants.Field.ForegroundDepth
+        let propElevation =
+            match group.Properties.TryGetValue Constants.TileMap.ElevationPropertyName with
+            | (true, elevationStr) -> Constants.Field.ForegroundElevation + scvalue elevationStr
+            | (false, _) -> Constants.Field.ForegroundElevation
         match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
         | (true, propDataStr) ->
             let propData = scvalue propDataStr
-            Some { PropBounds = propBounds; PropDepth = propDepth; PropData = propData; PropId = object.Id }
+            Some { PropBounds = propBounds; PropElevation = propElevation; PropData = propData; PropId = object.Id }
         | (false, _) -> None
 
     let inflateProp prop (treasures : ItemType FStack) rand =

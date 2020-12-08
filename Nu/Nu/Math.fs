@@ -32,7 +32,7 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
       mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3D capabilities
-      mutable Depth : single // NOTE: will become part of position if Nu gets 3D capabilities
+      mutable Elevation : single // NOTE: will *NOT* become part of Position if Nu gets 3D capabilities
       mutable Flags : int }
       // 4 bytes free
 
@@ -63,14 +63,14 @@ type [<StructuralEquality; NoComparison; Struct>] Transform =
         this.Position <- that.Position
         this.Size <- that.Size
         this.Rotation <- that.Rotation
-        this.Depth <- that.Depth
+        this.Elevation <- that.Elevation
         this.Flags <- that.Flags
 
     static member makeEmpty () =
         { Position = Vector2.Zero
           Size = Vector2.One
           Rotation = 0.0f
-          Depth = 0.0f
+          Elevation = 0.0f
           Flags = 0 }
 
 [<AutoOpen>]

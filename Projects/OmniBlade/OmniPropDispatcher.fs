@@ -149,10 +149,10 @@ module PropDispatcher =
                         (false, Some inset, image)
                     | ChestSpawn | EmptyProp ->
                         (false, None, Assets.Default.EmptyImage)
-                let depth = if background then Constants.Field.BackgroundDepth else Constants.Field.ForegroundDepth
+                let elevation = if background then Constants.Field.BackgroundElevation else Constants.Field.ForegroundElevation
                 let positionY = transform.Position.Y
                 let assetTag = AssetTag.generalize image
-                [Render (depth, positionY, assetTag,
+                [Render (elevation, positionY, assetTag,
                     SpriteDescriptor
                         { Transform = transform
                           Offset = Vector2.Zero

@@ -26,7 +26,7 @@ module PickupDispatcher =
             Some spriteInset
         
         static member Properties =
-            [define Entity.Depth Constants.Layout.PickupDepth
+            [define Entity.Elevation Constants.Layout.PickupElevation
              define Entity.PublishChanges true
              define Entity.Omnipresent true]
         
@@ -36,7 +36,7 @@ module PickupDispatcher =
         override this.View (pickup, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize pickup.PickupSheet,
+                [Render (transform.Elevation, transform.Position.Y, AssetTag.generalize pickup.PickupSheet,
                      SpriteDescriptor
                        { Transform = transform
                          Offset = v2Zero
