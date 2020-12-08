@@ -6,6 +6,10 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
+type Occupant =
+    | OccupyingCharacter of Character
+    | OccupyingProp of PropType
+
 type [<ReferenceEquality; NoComparison>] FieldSpace =
     { CharacterOpt : Character Option
       PropOpt : PropType Option
@@ -16,6 +20,14 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
     
     member this.GetCharacterIndex =
         this.GetCharacter.CharacterIndex
+    
+    member this.TryGetOccupant =
+        match this.CharacterOpt with
+        | Some character -> Some (OccupyingCharacter character)
+        | None ->
+            match this.PropOpt with
+            | Some prop -> Some (OccupyingProp prop)
+            | None -> None
     
     member this.ContainsCharacter =
         match this.CharacterOpt with Some _ -> true | None -> false
@@ -142,6 +154,12 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member getCharacter index chessboard =
         let coordinates = Chessboard.getCharacterCoordinates index chessboard
         Chessboard.getCharacterAtCoordinates coordinates chessboard
+    
+    static member tryGetOccupantAtCoordinates coordinates chessboard =
+        chessboard.FieldSpaces.[coordinates].TryGetOccupant
+    
+    static member spaceExists coordinates chessboard =
+        Map.exists (fun k _ -> k = coordinates) chessboard.FieldSpaces
     
     static member characterExists index chessboard =
         Map.exists (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.FieldSpaces
