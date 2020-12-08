@@ -79,7 +79,7 @@ type MyGameplayDispatcher () =
                 [Content.button Gen.name
                     [Entity.Text == "Back"
                      Entity.Position == v2 260.0f -260.0f
-                     Entity.Depth == 10.0f
+                     Entity.Elevation == 10.0f
                      Entity.ClickEvent ==> cmd Back]]
 
          // the player layer

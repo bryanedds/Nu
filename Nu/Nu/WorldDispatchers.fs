@@ -26,8 +26,8 @@ module DeclarativeOperators2 =
         static member internal actualizeViews views world =
             Seq.fold (fun world view ->
                 match view with
-                | Render (depth, positionY, assetTag, descriptor) ->
-                    let layeredDescriptor = { Depth = depth; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
+                | Render (elevation, positionY, assetTag, descriptor) ->
+                    let layeredDescriptor = { Elevation = elevation; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
                     World.enqueueRenderMessage (LayeredDescriptorMessage layeredDescriptor) world
                 | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
                 | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
@@ -259,7 +259,7 @@ module EffectFacetModule =
                     { Effects.Position = entity.GetPosition world + Vector2.Multiply (entity.GetSize world, entity.GetEffectOffset world)
                       Effects.Size = entity.GetSize world
                       Effects.Rotation = entity.GetRotation world
-                      Effects.Depth = entity.GetDepth world
+                      Effects.Elevation = entity.GetElevation world
                       Effects.Offset = entity.GetEffectSliceOffset world
                       Effects.InsetOpt = None
                       Effects.Color = Color.White
@@ -419,11 +419,11 @@ module TextFacetModule =
                     { Position = entity.GetPosition world + entity.GetMargins world
                       Size = entity.GetSize world - entity.GetMargins world * 2.0f
                       Rotation = 0.0f
-                      Depth = entity.GetDepth world + 0.5f
+                      Elevation = entity.GetElevation world + 0.5f
                       Flags = entity.GetFlags world }
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
-                        { Depth = transform.Depth
+                        { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = entity.GetFont world |> AssetTag.generalize
                           RenderDescriptor =
@@ -696,7 +696,7 @@ module TileMapFacetModule =
                             viewBounds
                             (entity.GetTileLayerClearance world)
                             (entity.GetPosition world)
-                            (entity.GetDepth world)
+                            (entity.GetElevation world)
                             (entity.GetParallax world)
                             tileMap
                     World.enqueueRenderMessages tileMapRenderMessages world
@@ -782,7 +782,7 @@ module TmxMapFacetModule =
                         viewBounds
                         (entity.GetTileLayerClearance world)
                         (entity.GetPosition world)
-                        (entity.GetDepth world)
+                        (entity.GetElevation world)
                         (entity.GetParallax world)
                         (entity.GetTmxMap world)
                 World.enqueueRenderMessages tileMapRenderMessages world
@@ -808,9 +808,9 @@ module NodeFacetModule =
         member this.GetBottomLocal world : Vector2 = this.Get Property? BottomLocal world
         member this.SetBottomLocal (value : Vector2) world = this.SetFast Property? BottomLocal false value world
         member this.BottomLocal = lens Property? BottomLocal this.GetBottomLocal this.SetBottomLocal this
-        member this.GetDepthLocal world : single = this.Get Property? DepthLocal world
-        member this.SetDepthLocal (value : single) world = this.SetFast Property? DepthLocal false value world
-        member this.DepthLocal = lens Property? DepthLocal this.GetDepthLocal this.SetDepthLocal this
+        member this.GetElevationLocal world : single = this.Get Property? ElevationLocal world
+        member this.SetElevationLocal (value : single) world = this.SetFast Property? ElevationLocal false value world
+        member this.ElevationLocal = lens Property? ElevationLocal this.GetElevationLocal this.SetElevationLocal this
         member this.GetVisibleLocal world : bool = this.Get Property? VisibleLocal world
         member this.SetVisibleLocal (value : bool) world = this.SetFast Property? VisibleLocal false value world
         member this.VisibleLocal = lens Property? VisibleLocal this.GetVisibleLocal this.SetVisibleLocal this
@@ -829,9 +829,9 @@ module NodeFacetModule =
                     let parentNew = this.Resolve relationNew
                     if parentOld.Exists world && parentNew.Exists world then
                         let position = this.GetPositionLocal world + parentNew.GetPosition world
-                        let depth = this.GetDepthLocal world + parentNew.GetDepth world
+                        let elevation = this.GetElevationLocal world + parentNew.GetElevation world
                         let world = this.SetPosition position world
-                        let world = this.SetDepth depth world
+                        let world = this.SetElevation elevation world
                         let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
                         world
@@ -840,9 +840,9 @@ module NodeFacetModule =
                     let parentOld = this.Resolve relationOld
                     if parentOld.Exists world then
                         let position = this.GetPositionLocal world + parentOld.GetPosition world
-                        let depth = this.GetDepthLocal world + parentOld.GetDepth world
+                        let elevation = this.GetElevationLocal world + parentOld.GetElevation world
                         let world = this.SetPosition position world
-                        let world = this.SetDepth depth world
+                        let world = this.SetElevation elevation world
                         let world = this.SetVisible (this.GetVisibleLocal world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world) world
                         world
@@ -851,9 +851,9 @@ module NodeFacetModule =
                     let parentNew = this.Resolve relationNew
                     if parentNew.Exists world then
                         let position = this.GetPosition world - parentNew.GetPosition world
-                        let depth = this.GetDepth world - parentNew.GetDepth world
+                        let elevation = this.GetElevation world - parentNew.GetElevation world
                         let world = this.SetPositionLocal position world
-                        let world = this.SetDepthLocal depth world
+                        let world = this.SetElevationLocal elevation world
                         let world = this.SetVisible (this.GetVisibleLocal world && parentNew.GetVisible world) world
                         let world = this.SetEnabled (this.GetEnabledLocal world && parentNew.GetEnabled world) world
                         world
@@ -884,7 +884,7 @@ module NodeFacetModule =
         static let updatePropertyFromLocal3 propertyName (entity : Entity) world =
             match propertyName with
             | "Position" -> entity.SetPosition (entity.GetPositionLocal world) world
-            | "Depth" -> entity.SetDepth (entity.GetDepthLocal world) world
+            | "Elevation" -> entity.SetElevation (entity.GetElevationLocal world) world
             | "Visible" -> entity.SetVisible (entity.GetVisibleLocal world) world
             | "Enabled" -> entity.SetEnabled (entity.GetEnabledLocal world) world
             | _ -> world
@@ -893,7 +893,7 @@ module NodeFacetModule =
             if node.Exists world then
                 match propertyName with
                 | "PositionLocal" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-                | "DepthLocal" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
+                | "ElevationLocal" -> entity.SetElevation (node.GetElevation world + entity.GetElevationLocal world) world
                 | "VisibleLocal" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
                 | "EnabledLocal" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
                 | _ -> world
@@ -903,7 +903,7 @@ module NodeFacetModule =
             if node.Exists world then
                 match propertyName with
                 | "Position" -> entity.SetPosition (node.GetPosition world + entity.GetPositionLocal world) world
-                | "Depth" -> entity.SetDepth (node.GetDepth world + entity.GetDepthLocal world) world
+                | "Elevation" -> entity.SetElevation (node.GetElevation world + entity.GetElevationLocal world) world
                 | "Visible" -> entity.SetVisible (node.GetVisible world && entity.GetVisibleLocal world) world
                 | "Enabled" -> entity.SetEnabled (node.GetEnabled world && entity.GetEnabledLocal world) world
                 | _ -> world
@@ -911,7 +911,7 @@ module NodeFacetModule =
 
         static let updateFromNode (node : Entity) (entity : Entity) world =
             let world = updatePropertyFromNode "Position" node entity world
-            let world = updatePropertyFromNode "Depth" node entity world
+            let world = updatePropertyFromNode "Elevation" node entity world
             let world = updatePropertyFromNode "Visible" node entity world
             let world = updatePropertyFromNode "Enabled" node entity world
             world
@@ -955,7 +955,7 @@ module NodeFacetModule =
                     World.choose oldWorld
                 else
                     let (unsubscribe, world) = World.monitorPlus handleNodePropertyChange node.Position.ChangeEvent entity world
-                    let (unsubscribe2, world) = World.monitorPlus handleNodePropertyChange node.Depth.ChangeEvent entity world
+                    let (unsubscribe2, world) = World.monitorPlus handleNodePropertyChange node.Elevation.ChangeEvent entity world
                     let (unsubscribe3, world) = World.monitorPlus handleNodePropertyChange node.Visible.ChangeEvent entity world
                     let (unsubscribe4, world) = World.monitorPlus handleNodePropertyChange node.Enabled.ChangeEvent entity world
                     entity.SetNodeUnsubscribe (unsubscribe4 >> unsubscribe3 >> unsubscribe2 >> unsubscribe) world
@@ -970,7 +970,7 @@ module NodeFacetModule =
         static member Properties =
             [define Entity.ParentNodeOpt None
              define Entity.PositionLocal Vector2.Zero
-             define Entity.DepthLocal 0.0f
+             define Entity.ElevationLocal 0.0f
              define Entity.VisibleLocal true
              define Entity.EnabledLocal true
              define Entity.NodeUnsubscribe (id : World -> World)
@@ -985,7 +985,7 @@ module NodeFacetModule =
             let world = entity.SetNodeUnsubscribe id world // ensure unsubscribe function reference doesn't get copied in Gaia...
             let world = World.monitor handleNodeChange entity.ParentNodeOpt.ChangeEvent entity world
             let world = World.monitorPlus handleLocalPropertyChange entity.PositionLocal.ChangeEvent entity world |> snd
-            let world = World.monitorPlus handleLocalPropertyChange entity.DepthLocal.ChangeEvent entity world |> snd
+            let world = World.monitorPlus handleLocalPropertyChange entity.ElevationLocal.ChangeEvent entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.VisibleLocal.ChangeEvent entity world |> snd
             let world = World.monitorPlus handleLocalPropertyChange entity.EnabledLocal.ChangeEvent entity world |> snd
             let world = tryUpdateFromNode entity world
@@ -1030,7 +1030,7 @@ module StaticSpriteFacetModule =
                 let transform = entity.GetTransform world
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
-                        { Depth = transform.Depth
+                        { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = entity.GetStaticImage world |> AssetTag.generalize
                           RenderDescriptor =
@@ -1102,7 +1102,7 @@ module AnimatedSpriteFacetModule =
                 let transform = entity.GetTransform world
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
-                        { Depth = transform.Depth
+                        { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = entity.GetAnimationSheet world |> AssetTag.generalize
                           RenderDescriptor =
@@ -1449,7 +1449,7 @@ module ButtonDispatcherModule =
                 let image = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
-                        { Depth = transform.Depth
+                        { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = AssetTag.generalize image
                           RenderDescriptor =
@@ -1490,7 +1490,7 @@ module LabelDispatcherModule =
                 let transform = entity.GetTransform world
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
-                        { Depth = transform.Depth
+                        { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = entity.GetLabelImage world |> AssetTag.generalize
                           RenderDescriptor =
@@ -1542,7 +1542,7 @@ module TextDispatcherModule =
                     let transform = entity.GetTransform world
                     World.enqueueRenderMessage
                         (LayeredDescriptorMessage
-                            { Depth = transform.Depth
+                            { Elevation = transform.Elevation
                               PositionY = transform.Position.Y
                               AssetTag = AssetTag.generalize image
                               RenderDescriptor =
@@ -1661,7 +1661,7 @@ module ToggleDispatcherModule =
                     else entity.GetClosedImage world
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
-                        { Depth = transform.Depth
+                        { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = AssetTag.generalize image
                           RenderDescriptor =
@@ -1821,19 +1821,19 @@ module FillBarDispatcherModule =
                     { Position = entity.GetPosition world
                       Size = entity.GetSize world
                       Rotation = 0.0f
-                      Depth = entity.GetDepth world + 0.5f
+                      Elevation = entity.GetElevation world + 0.5f
                       Flags = entity.GetFlags world }
                 let (fillBarSpritePosition, fillBarSpriteSize) = getFillBarSpriteDims entity world
                 let fillBarSpriteTransform =
                     { Position = fillBarSpritePosition
                       Size = fillBarSpriteSize
                       Rotation = 0.0f
-                      Depth = entity.GetDepth world
+                      Elevation = entity.GetElevation world
                       Flags = entity.GetFlags world }
                 let fillBarColor = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
                 World.enqueueRenderMessage
                     (LayeredDescriptorsMessage
-                        [|{ Depth = borderSpriteTransform.Depth
+                        [|{ Elevation = borderSpriteTransform.Elevation
                             PositionY = borderSpriteTransform.Position.Y
                             AssetTag = entity.GetBorderImage world |> AssetTag.generalize
                             RenderDescriptor =
@@ -1845,7 +1845,7 @@ module FillBarDispatcherModule =
                                       Color = fillBarColor
                                       Glow = Color.Zero
                                       Flip = FlipNone }}
-                          { Depth = fillBarSpriteTransform.Depth
+                          { Elevation = fillBarSpriteTransform.Elevation
                             PositionY = fillBarSpriteTransform.Position.Y
                             AssetTag = entity.GetFillImage world |> AssetTag.generalize
                             RenderDescriptor =
@@ -1969,7 +1969,7 @@ module CharacterDispatcherModule =
                         (Some (computeWalkCelInset celSize celRun animationDelay tickTime), image)
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
-                        { Depth = transform.Depth
+                        { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = AssetTag.generalize image
                           RenderDescriptor =

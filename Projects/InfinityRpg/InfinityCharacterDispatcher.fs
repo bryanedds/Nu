@@ -63,7 +63,7 @@ module CharacterDispatcherModule =
 
         static member Properties =
             [define Entity.Size Constants.Layout.TileSize
-             define Entity.Depth Constants.Layout.CharacterDepth
+             define Entity.Elevation Constants.Layout.CharacterElevation
              define Entity.PublishChanges true
              define Entity.Omnipresent true
              define Entity.CharacterAnimationState CharacterAnimationState.initial
@@ -76,7 +76,7 @@ module CharacterDispatcherModule =
                 let animationSheet = entity.GetCharacterAnimationSheet world
                 let renderMessage =
                     LayeredDescriptorMessage
-                        { Depth = transform.Depth
+                        { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = AssetTag.generalize animationSheet
                           RenderDescriptor =
