@@ -93,7 +93,7 @@ module GameplayDispatcher =
                                     | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
                                     | EnemyIndex _ -> Gameplay.removeCharacter reactorIndex gameplay
                                 else gameplay
-                            | ReactingProp coordinates -> failwithumf ()
+                            | ReactingProp coordinates -> Gameplay.removeLongGrass coordinates gameplay
                         | WalkTurn _ -> Gameplay.finishMove index gameplay
                     | _ -> failwith "non-finishing turns should be filtered out by this point"
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
@@ -139,7 +139,7 @@ module GameplayDispatcher =
             | MakeEnemyAttack ->
                 let gameplay =
                     let index = gameplay.Round.AttackingEnemyGroup.Head
-                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove index (Attack PlayerIndex) gameplay else gameplay
+                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove index (Attack (ReactingCharacter PlayerIndex)) gameplay else gameplay
                     Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
 
@@ -208,8 +208,8 @@ module GameplayDispatcher =
                                 match Chessboard.tryGetOccupantAtCoordinates coordinates gameplay.Chessboard with
                                 | Some occupant ->
                                     match occupant with
-                                    | OccupyingCharacter character -> Gameplay.makeMove PlayerIndex (Attack character.CharacterIndex) gameplay
-                                    | OccupyingProp prop -> gameplay
+                                    | OccupyingCharacter character -> Gameplay.makeMove PlayerIndex (Attack (ReactingCharacter character.CharacterIndex)) gameplay
+                                    | OccupyingProp _ -> Gameplay.makeMove PlayerIndex (Attack (ReactingProp coordinates)) gameplay
                                 | None ->
                                     let direction = Math.directionToTarget currentCoordinates coordinates
                                     Gameplay.makeMove PlayerIndex (Step direction) gameplay
