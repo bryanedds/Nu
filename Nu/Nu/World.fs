@@ -256,16 +256,16 @@ module Nu =
             WorldModule.isSelected <- 
                 World.isSelected
 
-            // init sortSubscriptionByDepth F# reach-around
-            WorldModule.sortSubscriptionsByDepth <- fun subscriptions worldObj ->
+            // init sortSubscriptionByElevation F# reach-around
+            WorldModule.sortSubscriptionsByElevation <- fun subscriptions worldObj ->
                 let world = worldObj :?> World
                 sortSubscriptionsBy
                     (fun (simulant : Simulant) _ ->
                         match simulant with
-                        | :? Entity as entity -> { SortDepth = entity.GetDepth world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
-                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
-                        | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
-                        | :? Game | :? GlobalSimulantGeneralized -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
+                        | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
+                        | :? Layer as layer -> { SortElevation = Constants.Engine.LayerSortPriority; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
+                        | :? Screen as screen -> { SortElevation = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
+                        | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
                         | _ -> failwithumf ())
                     subscriptions
                     world

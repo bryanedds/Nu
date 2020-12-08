@@ -139,7 +139,7 @@ module TmxMap =
               IsSensor = false }
         bodyProperties
 
-    let getRenderMessages absolute (viewBounds : Vector4) tileLayerClearance (tileMapPosition : Vector2) tileMapDepth tileMapParallax (tileMap : TmxMap) =
+    let getRenderMessages absolute (viewBounds : Vector4) tileLayerClearance (tileMapPosition : Vector2) tileMapElevation tileMapParallax (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.Layers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
@@ -148,18 +148,18 @@ module TmxMap =
             List.foldi
                 (fun i messagess (layer : TmxLayer) ->
 
-                    // compute depth value
-                    let depthOffset =
-                        match layer.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-                        | (true, depth) -> scvalue depth
+                    // compute elevation value
+                    let elevationOffset =
+                        match layer.Properties.TryGetValue Constants.TileMap.ElevationPropertyName with
+                        | (true, elevation) -> scvalue elevation
                         | (false, _) -> single i * tileLayerClearance
-                    let depth = tileMapDepth + depthOffset
+                    let elevation = tileMapElevation + elevationOffset
 
                     // compute parallax position
                     let parallaxPosition =
                         if absolute
                         then tileMapPosition
-                        else tileMapPosition + tileMapParallax * depth * -viewBounds.Center
+                        else tileMapPosition + tileMapParallax * elevation * -viewBounds.Center
 
                     // compute positions relative to tile map
                     let (r, r2) =
@@ -200,7 +200,7 @@ module TmxMap =
                                 { Position = v2 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) + viewBounds.Position
                                   Size = v2 (single tiles.Count * tileSize.X) tileSize.Y
                                   Rotation = 0.0f
-                                  Depth = depth
+                                  Elevation = elevation
                                   Flags = 0 }
 
                             // check if in view bounds
@@ -209,7 +209,7 @@ module TmxMap =
                                 // accumulate message
                                 messages.Add $
                                     LayeredDescriptorMessage
-                                        { Depth = transform.Depth
+                                        { Elevation = transform.Elevation
                                           PositionY = transform.Position.Y
                                           AssetTag = AssetTag.make "" "" // just disregard asset for render ordering
                                           RenderDescriptor =

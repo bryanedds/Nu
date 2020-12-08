@@ -283,7 +283,7 @@ module WorldModuleEntity =
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Transform.Position
         static member internal getEntitySize entity world = (World.getEntityState entity world).Transform.Size
         static member internal getEntityRotation entity world = (World.getEntityState entity world).Transform.Rotation
-        static member internal getEntityDepth entity world = (World.getEntityState entity world).Transform.Depth
+        static member internal getEntityElevation entity world = (World.getEntityState entity world).Transform.Elevation
         static member internal getEntityFlags entity world = (World.getEntityState entity world).Transform.Flags
         static member internal getEntityOmnipresent entity world = (World.getEntityState entity world).Omnipresent
         static member internal getEntityAbsolute entity world = (World.getEntityState entity world).Absolute
@@ -306,7 +306,7 @@ module WorldModuleEntity =
         static member internal setEntityPosition value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Position then World.setEntityTransform { transform with Transform.Position = value } entity world else world
         static member internal setEntitySize value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Size then World.setEntityTransform { transform with Size = value } entity world else world
         static member internal setEntityRotation value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Rotation then World.setEntityTransform { transform with Rotation = value } entity world else world
-        static member internal setEntityDepth value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Depth then World.setEntityTransform { transform with Depth = value } entity world else world
+        static member internal setEntityElevation value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Elevation then World.setEntityTransform { transform with Elevation = value } entity world else world
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then Some (if entityState.Imperative then entityState.Omnipresent <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Omnipresent <- value; entityState)) else None) false Property? Omnipresent value entity world
         static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then Some (if entityState.Imperative then entityState.Absolute <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Absolute <- value; entityState)) else None) false Property? Absolute value entity world
         static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChanges then Some (if entityState.Imperative then entityState.PublishChanges <- value; entityState else (let entityState = EntityState.copy entityState in entityState.PublishChanges <- value; entityState)) else None) false Property? PublishChanges value entity world
@@ -363,7 +363,7 @@ module WorldModuleEntity =
                     let world = World.publishEntityChange Property? Bottom (value.Position + value.Size.WithY 0.0f * 0.5f) entity world
                     let world = World.publishEntityChange Property? Size value.Size entity world
                     let world = World.publishEntityChange Property? Rotation value.Rotation entity world
-                    let world = World.publishEntityChange Property? Depth value.Depth entity world
+                    let world = World.publishEntityChange Property? Elevation value.Elevation entity world
                     world
                 else world
             else world
@@ -718,7 +718,7 @@ module WorldModuleEntity =
 
         static member internal getEntitySortingPriority entity world =
             let entityState = World.getEntityState entity world
-            { SortDepth = entityState.Transform.Depth // TODO: P1: see if this should be DepthLayered
+            { SortElevation = entityState.Transform.Elevation // TODO: P1: see if this should be ElevationLayered
               SortPositionY = entityState.Transform.Position.Y
               SortTarget = entity }
 
@@ -1253,7 +1253,7 @@ module WorldModuleEntity =
         Getters.Add ("Bottom", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityBottom entity world })
         Getters.Add ("Size", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world })
         Getters.Add ("Rotation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world })
-        Getters.Add ("Depth", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityDepth entity world })
+        Getters.Add ("Elevation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevation entity world })
         Getters.Add ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
         Getters.Add ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
         Getters.Add ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
@@ -1283,7 +1283,7 @@ module WorldModuleEntity =
         Setters.Add ("Bottom", fun property entity world -> (true, World.setEntityBottom (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("Size", fun property entity world -> (true, World.setEntitySize (property.PropertyValue :?> Vector2) entity world))
         Setters.Add ("Rotation", fun property entity world -> (true, World.setEntityRotation (property.PropertyValue :?> single) entity world))
-        Setters.Add ("Depth", fun property entity world -> (true, World.setEntityDepth (property.PropertyValue :?> single) entity world))
+        Setters.Add ("Elevation", fun property entity world -> (true, World.setEntityElevation (property.PropertyValue :?> single) entity world))
         Setters.Add ("Omnipresent", fun property entity world -> (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Absolute", fun property entity world -> (true, World.setEntityAbsolute (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Model", fun property entity world -> (true, World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world))
