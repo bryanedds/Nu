@@ -204,13 +204,15 @@ module GameplayDispatcher =
                     match targetCoordinatesOpt with
                     | Some coordinates ->
                         if Math.areCoordinatesAdjacent coordinates currentCoordinates then
-                            let openDirections = gameplay.Chessboard.OpenDirections currentCoordinates
-                            let direction = Math.directionToTarget currentCoordinates coordinates
-                            let opponents = Gameplay.getOpponentIndices PlayerIndex gameplay
-                            if List.exists (fun x -> x = direction) openDirections then Gameplay.makeMove PlayerIndex (Step direction) gameplay
-                            elif List.exists (fun index -> (Gameplay.getCoordinates index gameplay) = coordinates) opponents then
-                                let targetIndex = Gameplay.getIndexByCoordinates coordinates gameplay
-                                Gameplay.makeMove PlayerIndex (Attack targetIndex) gameplay
+                            if Chessboard.spaceExists coordinates gameplay.Chessboard then
+                                match Chessboard.tryGetOccupantAtCoordinates coordinates gameplay.Chessboard with
+                                | Some occupant ->
+                                    match occupant with
+                                    | OccupyingCharacter character -> Gameplay.makeMove PlayerIndex (Attack character.CharacterIndex) gameplay
+                                    | OccupyingProp prop -> gameplay
+                                | None ->
+                                    let direction = Math.directionToTarget currentCoordinates coordinates
+                                    Gameplay.makeMove PlayerIndex (Step direction) gameplay
                             else gameplay
                         else
                             match tryGetNavigationPath coordinates gameplay with
