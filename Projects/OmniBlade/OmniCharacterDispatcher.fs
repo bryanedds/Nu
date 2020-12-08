@@ -60,7 +60,7 @@ module CharacterDispatcher =
         override this.View (character, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize character.AnimationSheet,
+                [Render (transform.Elevation, transform.Position.Y, AssetTag.generalize character.AnimationSheet,
                      SpriteDescriptor
                        { Transform = transform
                          Offset = Vector2.Zero

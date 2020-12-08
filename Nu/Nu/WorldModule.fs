@@ -69,7 +69,7 @@ module WorldModule =
     let mutable internal isSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
-    let mutable internal sortSubscriptionsByDepth : (Guid * SubscriptionEntry) seq -> obj -> (Guid * SubscriptionEntry) seq =
+    let mutable internal sortSubscriptionsByElevation : (Guid * SubscriptionEntry) seq -> obj -> (Guid * SubscriptionEntry) seq =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
@@ -550,7 +550,7 @@ module WorldModule =
             let subscriptions =
                 if sorted then
                     EventSystemDelegate.getSubscriptionsSorted
-                        sortSubscriptionsByDepth eventAddressObj world.EventSystemDelegate world
+                        sortSubscriptionsByElevation eventAddressObj world.EventSystemDelegate world
                 else
                     let subscriptions = EventSystemDelegate.getSubscriptions world.EventSystemDelegate
                     match UMap.tryFind eventAddressObj subscriptions with Some subscriptions -> OMap.toSeq subscriptions | None -> Seq.empty

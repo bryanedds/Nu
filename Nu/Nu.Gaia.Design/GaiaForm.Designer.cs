@@ -111,10 +111,10 @@
             this.createEntityComboBox = new System.Windows.Forms.ToolStripComboBox();
             this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
             this.overlayComboBox = new System.Windows.Forms.ToolStripComboBox();
-            this.creationDepthLabel = new System.Windows.Forms.ToolStripLabel();
-            this.createDepthMinusButton = new System.Windows.Forms.ToolStripButton();
-            this.createDepthTextBox = new System.Windows.Forms.ToolStripTextBox();
-            this.createDepthPlusButton = new System.Windows.Forms.ToolStripButton();
+            this.creationElevationLabel = new System.Windows.Forms.ToolStripLabel();
+            this.createElevationMinusButton = new System.Windows.Forms.ToolStripButton();
+            this.createElevationTextBox = new System.Windows.Forms.ToolStripTextBox();
+            this.createElevationPlusButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.quickSizeToolStripButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
@@ -1097,39 +1097,39 @@
             this.overlayComboBox.Name = "overlayComboBox";
             this.overlayComboBox.Size = new System.Drawing.Size(114, 25);
             // 
-            // creationDepthLabel
+            // creationElevationLabel
             // 
-            this.creationDepthLabel.Name = "creationDepthLabel";
-            this.creationDepthLabel.Size = new System.Drawing.Size(52, 22);
-            this.creationDepthLabel.Text = "@ depth";
+            this.creationElevationLabel.Name = "creationElevationLabel";
+            this.creationElevationLabel.Size = new System.Drawing.Size(52, 22);
+            this.creationElevationLabel.Text = "@ elevation";
             // 
-            // createDepthMinusButton
+            // createElevationMinusButton
             // 
-            this.createDepthMinusButton.AutoSize = false;
-            this.createDepthMinusButton.AutoToolTip = false;
-            this.createDepthMinusButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.createDepthMinusButton.Image = ((System.Drawing.Image)(resources.GetObject("createDepthMinusButton.Image")));
-            this.createDepthMinusButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.createDepthMinusButton.Name = "createDepthMinusButton";
-            this.createDepthMinusButton.Size = new System.Drawing.Size(17, 22);
-            this.createDepthMinusButton.Text = "[-";
+            this.createElevationMinusButton.AutoSize = false;
+            this.createElevationMinusButton.AutoToolTip = false;
+            this.createElevationMinusButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.createElevationMinusButton.Image = ((System.Drawing.Image)(resources.GetObject("createElevationMinusButton.Image")));
+            this.createElevationMinusButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.createElevationMinusButton.Name = "createElevationMinusButton";
+            this.createElevationMinusButton.Size = new System.Drawing.Size(17, 22);
+            this.createElevationMinusButton.Text = "[-";
             // 
-            // createDepthTextBox
+            // createElevationTextBox
             // 
-            this.createDepthTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
-            this.createDepthTextBox.Name = "createDepthTextBox";
-            this.createDepthTextBox.Size = new System.Drawing.Size(20, 25);
+            this.createElevationTextBox.Font = new System.Drawing.Font("Tahoma", 8.25F);
+            this.createElevationTextBox.Name = "createElevationTextBox";
+            this.createElevationTextBox.Size = new System.Drawing.Size(20, 25);
             // 
-            // createDepthPlusButton
+            // createElevationPlusButton
             // 
-            this.createDepthPlusButton.AutoSize = false;
-            this.createDepthPlusButton.AutoToolTip = false;
-            this.createDepthPlusButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.createDepthPlusButton.Image = ((System.Drawing.Image)(resources.GetObject("createDepthPlusButton.Image")));
-            this.createDepthPlusButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.createDepthPlusButton.Name = "createDepthPlusButton";
-            this.createDepthPlusButton.Size = new System.Drawing.Size(17, 22);
-            this.createDepthPlusButton.Text = "+]";
+            this.createElevationPlusButton.AutoSize = false;
+            this.createElevationPlusButton.AutoToolTip = false;
+            this.createElevationPlusButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.createElevationPlusButton.Image = ((System.Drawing.Image)(resources.GetObject("createElevationPlusButton.Image")));
+            this.createElevationPlusButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.createElevationPlusButton.Name = "createElevationPlusButton";
+            this.createElevationPlusButton.Size = new System.Drawing.Size(17, 22);
+            this.createElevationPlusButton.Text = "+]";
             // 
             // toolStripSeparator3
             // 
@@ -1243,10 +1243,10 @@
             this.createEntityComboBox,
             this.toolStripLabel1,
             this.overlayComboBox,
-            this.creationDepthLabel,
-            this.createDepthMinusButton,
-            this.createDepthTextBox,
-            this.createDepthPlusButton,
+            this.creationElevationLabel,
+            this.createElevationMinusButton,
+            this.createElevationTextBox,
+            this.createElevationPlusButton,
             this.toolStripSeparator3,
             this.quickSizeToolStripButton,
             this.toolStripSeparator4,
@@ -1793,10 +1793,10 @@
         public System.Windows.Forms.ToolStripComboBox createEntityComboBox;
         private System.Windows.Forms.ToolStripLabel toolStripLabel1;
         public System.Windows.Forms.ToolStripComboBox overlayComboBox;
-        public System.Windows.Forms.ToolStripLabel creationDepthLabel;
-        public System.Windows.Forms.ToolStripButton createDepthMinusButton;
-        public System.Windows.Forms.ToolStripTextBox createDepthTextBox;
-        public System.Windows.Forms.ToolStripButton createDepthPlusButton;
+        public System.Windows.Forms.ToolStripLabel creationElevationLabel;
+        public System.Windows.Forms.ToolStripButton createElevationMinusButton;
+        public System.Windows.Forms.ToolStripTextBox createElevationTextBox;
+        public System.Windows.Forms.ToolStripButton createElevationPlusButton;
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         public System.Windows.Forms.ToolStripButton quickSizeToolStripButton;
         public System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
