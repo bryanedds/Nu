@@ -230,7 +230,7 @@ type [<ReferenceEquality; NoComparison>] Teammate =
           Accessories = accessories }
 
 type Team =
-    Map<int, Teammate>
+    HMap<int, Teammate>
 
 type [<ReferenceEquality; NoComparison>] CharacterState =
     { ArchetypeType : ArchetypeType

@@ -237,7 +237,7 @@ module FieldDispatcher =
         static let team (position : Vector2) elevation rows (field : Lens<Field, World>) filter fieldMsg =
             Content.entities field
                 (fun field -> (field.Team, field.Submenu))
-                (fun (team, submenu) _ -> team |> Map.toValueList |> List.filter (flip filter submenu))
+                (fun (team, submenu) _ -> team |> HMap.filter (flip filter submenu))
                 (fun i teammateLens world ->
                     let teammate = Lens.get teammateLens world
                     let x = position.X
@@ -389,7 +389,7 @@ module FieldDispatcher =
                 | Some _ -> just field
 
             | SubmenuTeamOpen ->
-                let state = SubmenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
+                let state = SubmenuTeam { TeamIndex = 0; TeamIndices = HMap.toKeyList field.Team }
                 let field = Field.updateSubmenu (fun submenu -> { submenu with SubmenuState = state }) field
                 just field
 
@@ -415,7 +415,7 @@ module FieldDispatcher =
                 just field
 
             | SubmenuItemUse index ->
-                match Map.tryFind index field.Team with
+                match HMap.tryFind index field.Team with
                 | Some teammate ->
                     match field.Submenu.SubmenuUseOpt with
                     | Some submenuUse ->
@@ -423,7 +423,7 @@ module FieldDispatcher =
                         let (result, displacedOpt, teammate) = Teammate.tryUseItem itemType teammate
                         let field = if result then Field.updateInventory (Inventory.removeItem itemType) field else field
                         let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
-                        let field = Field.updateTeam (Map.add index teammate) field
+                        let field = Field.updateTeam (HMap.add index teammate) field
                         let field = Field.updateSubmenu (constant { field.Submenu with SubmenuUseOpt = None }) field
                         if result then withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
                         else just field

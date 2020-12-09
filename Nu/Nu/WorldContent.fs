@@ -42,8 +42,9 @@ module Content =
         LayersFromStream (lens, sieve, unfold, mapper)
 
     /// Describe a layer to be optionally instantiated from a lens.
-    let layerIf lens predicate mapper =
-        layers lens (fun a _ -> if predicate a then (HMap.singleton 0 a) else HMap.makeEmpty ()) id (constant mapper)
+    let layerIf lens predicate (mapper : Lens<'a, World> -> World -> LayerContent) =
+        let mapper = fun _ a world -> mapper a world
+        layers lens (fun a _ -> if predicate a then HMap.singleton 0 a else HMap.makeEmpty ()) id mapper
 
     /// Describe a layer to be instantiated when a screen is selected.
     let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> LayerContent) =
@@ -51,9 +52,9 @@ module Content =
         layerIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a layer to be optionally instantiated from a lens.
-    let layerOpt lens sieve mapper =
-        let mapper = (fun _ lens world -> mapper (lens --> Option.get) world)
-        layers lens sieve (fun a _ -> if Option.isSome a then (HMap.singleton 0 a) else HMap.makeEmpty ()) mapper
+    let layerOpt lens sieve (mapper : Lens<'a, World> -> World -> LayerContent) =
+        let mapper = fun _ a world -> mapper (a --> Option.get) world
+        layers lens sieve (fun a _ -> if Option.isSome a then HMap.singleton 0 a else HMap.makeEmpty ()) mapper
 
     /// Describe a layer to be loaded from a file.
     let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
@@ -77,7 +78,8 @@ module Content =
 
     /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
-        entities lens (fun a _ -> if predicate a then (HMap.singleton 0 a) else HMap.makeEmpty ()) id (constant mapper)
+        let mapper = fun _ a world -> mapper a world
+        entities lens (fun a _ -> if predicate a then HMap.singleton 0 a else HMap.makeEmpty ()) id mapper
 
     /// Describe an entity to be instantiated when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
@@ -85,8 +87,9 @@ module Content =
         entityIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
-    let entityOpt lens sieve mapper =
-        entities lens sieve (fun a _ -> if Option.isSome a then (HMap.singleton 0 a) else HMap.makeEmpty ()) mapper
+    let entityOpt lens sieve (mapper : Lens<'a, World> -> World -> EntityContent) =
+        let mapper = fun _ a world -> mapper (a --> Option.get) world
+        entities lens sieve (fun a _ -> if Option.isSome a then HMap.singleton 0 a else HMap.makeEmpty ()) mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
