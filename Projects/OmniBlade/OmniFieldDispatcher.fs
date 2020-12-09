@@ -61,7 +61,9 @@ module FieldDispatcher =
             Seq.trySkip pageIndex |>
             Seq.map List.ofArray |>
             Seq.tryHead |>
-            Option.defaultValue []
+            Option.defaultValue [] |>
+            Seq.indexed |>
+            Map.ofSeq
 
         static let isFacingBodyShape bodyShape (avatar : Avatar) world =
             if bodyShape.Entity.Is<PropDispatcher> world then
@@ -237,15 +239,15 @@ module FieldDispatcher =
         static let team (position : Vector2) elevation rows (field : Lens<Field, World>) filter fieldMsg =
             Content.entities field
                 (fun field -> (field.Team, field.Submenu))
-                (fun (team, submenu) _ -> team |> Map.filter (flip filter submenu))
-                (fun i teammateLens world ->
+                (fun (team, submenu) _ -> Map.filter (flip filter submenu) team)
+                (fun index teammateLens world ->
                     let teammate = Lens.get teammateLens world
                     let x = position.X
-                    let y = position.Y - single (i % rows) * 72.0f
+                    let y = position.Y - single (index % rows) * 72.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 256.0f 72.0f
                          Entity.Text == CharacterType.getName teammate.CharacterType
-                         Entity.ClickEvent ==> msg (fieldMsg i)])
+                         Entity.ClickEvent ==> msg (fieldMsg index)])
 
         static let items (position : Vector2) elevation field fieldMsg =
             Content.entities field
@@ -260,13 +262,13 @@ module FieldDispatcher =
                             | ShopBuying ->
                                 match Map.tryFind shop.ShopType Data.Value.Shops with
                                 | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 10
-                                | None -> []
+                                | None -> Map.empty
                             | ShopSelling ->
                                 inventory |>
                                 Inventory.indexItems |>
                                 Seq.choose (function (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item | (_, KeyItem _) | (_, Stash _) -> None) |>
                                 pageItems shop.ShopPage 10
-                        | None -> [])
+                        | None -> Map.empty)
                 (fun i selectionLens _ ->
                     let x = if i < 5 then position.X else position.X + 368.0f
                     let y = position.Y - single (i % 5) * 80.0f
@@ -669,9 +671,10 @@ module FieldDispatcher =
                     (fun (fieldType, rotatedSeedState, advents, propStates) world ->
                         match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
-                            let props = FieldData.getProps rotatedSeedState fieldData world
-                            List.map (fun prop -> (prop, advents, propStates)) props
-                        | None -> [])
+                            FieldData.getProps rotatedSeedState fieldData world |>
+                            List.map (fun prop -> (prop.PropId, (prop, advents, propStates))) |>
+                            Map.ofList
+                        | None -> Map.empty)
                     (fun _ propLens _ ->
                         let prop = flip Lens.map propLens (fun (prop, advents, propStates) ->
                             let propState =
@@ -693,7 +696,7 @@ module FieldDispatcher =
                      Entity.LabelImage == Assets.Gui.DialogXXLImage
                      Entity.Visible <== field --> fun field -> match field.Submenu.SubmenuState with SubmenuTeam _ -> true | _ -> false]
                     [sidebar (v2 24.0f 420.0f) 1.0f field
-                     team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology2 SubmenuTeamAlly
+                     team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology3 SubmenuTeamAlly
                      Content.label Gen.name
                         [Entity.PositionLocal == v2 438.0f 288.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                          Entity.LabelImage <== field --> fun field ->
@@ -790,7 +793,7 @@ module FieldDispatcher =
                      Entity.LabelImage == Assets.Gui.DialogXLImage
                      Entity.Visible <== field --> fun field -> Option.isSome field.Submenu.SubmenuUseOpt]
                     [team (v2 160.0f 150.0f) 1.0f 3 field
-                        (fun teammate submenu ->
+                        (fun _ submenu teammate ->
                             match submenu.SubmenuUseOpt with
                             | Some submenuUse -> Teammate.canUseItem (snd submenuUse.SubmenuUseSelection) teammate
                             | None -> false)

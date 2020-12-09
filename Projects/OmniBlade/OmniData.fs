@@ -531,10 +531,10 @@ module FieldData =
             let (props, _, _) =
                 List.foldBack (fun prop (props, treasures, rand) ->
                     let (prop, treasures, rand) = inflateProp prop treasures rand
-                    let treasures = if FStack.isEmpty treasures then FStack.fromSeq fieldData.Treasures else treasures
+                    let treasures = if FStack.isEmpty treasures then FStack.ofSeq fieldData.Treasures else treasures
                     (prop :: props, treasures, rand))
                     propsUninflated
-                    ([], FStack.fromSeq fieldData.Treasures, Rand.makeFromSeedState rotatedSeedState)
+                    ([], FStack.ofSeq fieldData.Treasures, Rand.makeFromSeedState rotatedSeedState)
             propsMemoized <- Map.add memoKey props propsMemoized
             props
         | Some props -> props
@@ -632,7 +632,7 @@ module Data =
     let private readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
         Math.init () // HACK: initializing Math type converters for required type converters fsx script.
         let text = File.ReadAllText filePath
-        let symbol = flip (Symbol.fromStringCsv true) (Some filePath) text
+        let symbol = flip (Symbol.ofStringCsv true) (Some filePath) text
         let value = symbolToValue<'d list> symbol
         Map.ofListBy (fun data -> getKey data, data) value
 

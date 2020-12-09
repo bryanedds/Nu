@@ -52,6 +52,9 @@ module Battle =
         member this.ActionCommands = this.ActionCommands_
         member this.DialogOpt = this.DialogOpt_
 
+    let getCharacters battle =
+        battle.Characters_
+
     let getAllies battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
@@ -80,7 +83,7 @@ module Battle =
                 then getAlliesHealthy battle
                 else getAlliesWounded battle
             let enemies = getEnemies battle
-            let characters = Map.addMany allies enemies
+            let characters = allies @@ enemies
             characters
         | NoAim -> Map.empty
 
@@ -126,9 +129,6 @@ module Battle =
 
     let updateEnemies updater battle =
         updateCharactersIf (function EnemyIndex _ -> true | _ -> false) updater battle
-
-    let getCharacters battle =
-        battle.Characters_ |> Map.toValueList
 
     let tryGetCharacter characterIndex battle =
         Map.tryFind characterIndex battle.Characters_
