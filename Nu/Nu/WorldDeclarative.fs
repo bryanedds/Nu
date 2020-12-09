@@ -17,7 +17,7 @@ type [<StructuralEquality; NoComparison>] ScreenBehavior =
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
-    | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> HMap<IComparable, obj>) * (obj -> Lens<obj, World> -> World -> EntityContent)
+    | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> Map<IComparable, obj>) * (obj -> Lens<obj, World> -> World -> EntityContent)
     | EntityFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
@@ -35,7 +35,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 
 /// Describes the content of a layer.
 type [<NoEquality; NoComparison>] LayerContent =
-    | LayersFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> HMap<IComparable, obj>) * (obj -> Lens<obj, World> -> World -> LayerContent)
+    | LayersFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> Map<IComparable, obj>) * (obj -> Lens<obj, World> -> World -> LayerContent)
     | LayerFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | LayerFromFile of string * string
     interface SimulantContent
@@ -169,11 +169,11 @@ module WorldDeclarative =
                 let (key, _) = PartialComparable.unmake keyAndLens
                 match World.tryGetKeyedValue simulantMapId world with
                 | Some simulantMap ->
-                    match HMap.tryFind key simulantMap with
+                    match Map.tryFind key simulantMap with
                     | Some simulant ->
-                        let simulantMap = HMap.remove key simulantMap
+                        let simulantMap = Map.remove key simulantMap
                         let world =
-                            if HMap.isEmpty simulantMap
+                            if Map.isEmpty simulantMap
                             then World.removeKeyedValue simulantMapId world
                             else World.addKeyedValue simulantMapId simulantMap world
                         WorldModule.destroy simulant world
@@ -191,11 +191,11 @@ module WorldDeclarative =
                 match World.tryGetKeyedValue simulantMapId world with
                 | None ->
                     match simulantOpt with
-                    | Some simulant -> World.addKeyedValue simulantMapId (HMap.singleton key simulant) world
+                    | Some simulant -> World.addKeyedValue simulantMapId (Map.singleton key simulant) world
                     | None -> Log.debug "Expected entity to be created from expandContent, but none was created."; world
                 | Some simulantMap ->
                     match simulantOpt with
-                    | Some simulant -> World.addKeyedValue simulantMapId (HMap.add key simulant simulantMap) world
+                    | Some simulant -> World.addKeyedValue simulantMapId (Map.add key simulant simulantMap) world
                     | None -> Log.debug "Expected entity to be created from expandContent, but none was created."; world)
                 world added
 
@@ -214,7 +214,7 @@ module WorldDeclarative =
         static member expandSimulants
             (lens : Lens<obj, World>)
             (sieve : obj -> obj)
-            (unfold : obj -> World -> HMap<IComparable, obj>)
+            (unfold : obj -> World -> Map<IComparable, obj>)
             (mapper : IComparable -> Lens<obj, World> -> World -> SimulantContent)
             (origin : ContentOrigin)
             (owner : Simulant)
@@ -265,8 +265,8 @@ module WorldDeclarative =
                 let mutable current = USet.makeEmpty Functional
                 let mutable enr = (map :> _ seq).GetEnumerator ()
                 while enr.MoveNext () do
-                    let key = fst enr.Current
-                    let lens' = Lens.map (fun map -> HMap.tryFind key map) lensMap
+                    let key = let ec = enr.Current in ec.Key
+                    let lens' = Lens.map (fun map -> Map.tryFind key map) lensMap
                     match lens'.Get world with
                     | Some _ ->
                         let lens'' = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) }

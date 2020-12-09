@@ -33,18 +33,18 @@ module Content =
     let layers
         (lens : Lens<'a, World>)
         (sieve : 'a -> 'b)
-        (unfold : 'b -> World -> HMap<'k, 'c>)
+        (unfold : 'b -> World -> Map<'k, 'c>)
         (mapper : 'k -> Lens<'c, World> -> World -> LayerContent) =
         let lens = lens.Map box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
-        let unfold = fun (b : obj) w -> unfold (b :?> 'b) w |> Seq.map (fun (k, v) -> (k :> IComparable, v :> obj)) |> HMap.ofSeq
+        let unfold = fun (b : obj) w -> unfold (b :?> 'b) w |> Seq.map (fun kvp -> (kvp.Key :> IComparable, kvp.Value :> obj)) |> Map.ofSeq
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> --> cast<'c>) world
         LayersFromStream (lens, sieve, unfold, mapper)
 
     /// Describe a layer to be optionally instantiated from a lens.
     let layerIf lens predicate (mapper : Lens<'a, World> -> World -> LayerContent) =
         let mapper = fun _ a world -> mapper a world
-        layers lens (fun a _ -> if predicate a then HMap.singleton 0 a else HMap.makeEmpty ()) id mapper
+        layers lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) id mapper
 
     /// Describe a layer to be instantiated when a screen is selected.
     let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> LayerContent) =
@@ -54,7 +54,7 @@ module Content =
     /// Describe a layer to be optionally instantiated from a lens.
     let layerOpt lens sieve (mapper : Lens<'a, World> -> World -> LayerContent) =
         let mapper = fun _ a world -> mapper (a --> Option.get) world
-        layers lens sieve (fun a _ -> if Option.isSome a then HMap.singleton 0 a else HMap.makeEmpty ()) mapper
+        layers lens sieve (fun a _ -> if Option.isSome a then Map.singleton 0 a else Map.empty) mapper
 
     /// Describe a layer to be loaded from a file.
     let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
@@ -68,18 +68,18 @@ module Content =
     let entities
         (lens : Lens<'a, World>)
         (sieve : 'a -> 'b)
-        (unfold : 'b -> World -> HMap<'k, 'c>)
+        (unfold : 'b -> World -> Map<'k, 'c>)
         (mapper : 'k -> Lens<'c, World> -> World -> EntityContent) =
         let lens = lens.Map box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
-        let unfold = fun (b : obj) w -> unfold (b :?> 'b) w |> Seq.map (fun (k, v) -> (k :> IComparable, v :> obj)) |> HMap.ofSeq
+        let unfold = fun (b : obj) w -> unfold (b :?> 'b) w |> Seq.map (fun kvp -> (kvp.Key :> IComparable, kvp.Value :> obj)) |> Map.ofSeq
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> --> cast<'c>) world
         EntitiesFromStream (lens, sieve, unfold, mapper)
 
     /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
         let mapper = fun _ a world -> mapper a world
-        entities lens (fun a _ -> if predicate a then HMap.singleton 0 a else HMap.makeEmpty ()) id mapper
+        entities lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) id mapper
 
     /// Describe an entity to be instantiated when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
@@ -89,7 +89,7 @@ module Content =
     /// Describe an entity to be optionally instantiated from a lens.
     let entityOpt lens sieve (mapper : Lens<'a, World> -> World -> EntityContent) =
         let mapper = fun _ a world -> mapper (a --> Option.get) world
-        entities lens sieve (fun a _ -> if Option.isSome a then HMap.singleton 0 a else HMap.makeEmpty ()) mapper
+        entities lens sieve (fun a _ -> if Option.isSome a then Map.singleton 0 a else Map.empty) mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
