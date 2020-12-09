@@ -366,8 +366,8 @@ module GameplayDispatcher =
 
                      // props
                      Content.entitiesUntracked gameplay
-                        (fun gameplay -> gameplay.Chessboard.PropSpaces)
-                        (fun props _ -> Map.toListBy (fun positionM _ -> Prop.makeLongGrass positionM) props)
+                        (fun gameplay -> (gameplay.Chessboard.PropSpaces, gameplay.Puppeteer))
+                        (fun (props, puppeteer) _ -> Map.toListBy (fun positionM _ -> Prop.makeLongGrass positionM) props)
                         (fun index prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Prop <== prop])
                      
                      // characters
