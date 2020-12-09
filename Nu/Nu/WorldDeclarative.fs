@@ -165,8 +165,8 @@ module WorldDeclarative =
     type World with
 
         static member internal removeSynchronizedSimulants simulantMapId removed world =
-            Seq.fold (fun world keyAndContent ->
-                let (key, _) = PartialComparable.unmake keyAndContent
+            Seq.fold (fun world keyAndLens ->
+                let (key, _) = PartialComparable.unmake keyAndLens
                 match World.tryGetKeyedValue simulantMapId world with
                 | Some simulantMap ->
                     match HMap.tryFind key simulantMap with
@@ -182,18 +182,21 @@ module WorldDeclarative =
                 world removed
                 
         static member internal addSynchronizedSimulants mapper monitorMapper simulantMapId added origin owner parent world =
-            Seq.fold (fun world keyAndContent ->
-                let (key, lens) = PartialComparable.unmake keyAndContent
+            Seq.fold (fun world keyAndLens ->
+                let (key, lens) = PartialComparable.unmake keyAndLens
                 let payloadOpt = ((Gen.id, monitorMapper) : Payload) :> obj |> Some
                 let lens = { lens with PayloadOpt = payloadOpt }
                 let content = mapper key lens world
+                let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin owner parent world
                 match World.tryGetKeyedValue simulantMapId world with
                 | None ->
-                    let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin owner parent world
                     match simulantOpt with
-                    | Some simulant -> World.addKeyedValue simulantMapId (() |> HMap.makeEmpty |> HMap.add key simulant) world
-                    | None -> world
-                | Some _ -> world)
+                    | Some simulant -> World.addKeyedValue simulantMapId (HMap.singleton key simulant) world
+                    | None -> Log.debug "Expected entity to be created from expandContent, but none was created."; world
+                | Some simulantMap ->
+                    match simulantOpt with
+                    | Some simulant -> World.addKeyedValue simulantMapId (HMap.add key simulant simulantMap) world
+                    | None -> Log.debug "Expected entity to be created from expandContent, but none was created."; world)
                 world added
 
         static member internal synchronizeSimulants mapper monitorMapper simulantMapId previous current origin owner parent world =
@@ -219,42 +222,45 @@ module WorldDeclarative =
             world =
             let previousSetKey = Gen.id
             let simulantMapKey = Gen.id
-            //let mutable monitorResult = Unchecked.defaultof<obj>
-            //let mutable lensResult = Unchecked.defaultof<obj>
-            //let mutable sieveResultOpt = None
-            //let mutable unfoldResultOpt = None
+            let mutable monitorResult = Unchecked.defaultof<obj>
+            let mutable lensResult = Unchecked.defaultof<obj>
+            let mutable sieveResultOpt = None
+            let mutable unfoldResultOpt = None
             let lensMap =
                 Lens.mapWorld (fun a world ->
                     let (b, c) =
-                        //if a = lensResult then
-                        //    match (sieveResultOpt, unfoldResultOpt) with
-                        //    | (Some b, Some c) -> (b, c)
-                        //    | (Some b, None) -> let c = unfold b world in (b, c)
-                        //    | (None, Some _) -> failwithumf ()
-                        //    | (None, None) -> let b = sieve a in let c = unfold b world in (b, c)
-                        //else
-                            let b = sieve a in let c = unfold b world in (b, c)
-                    //lensResult <- a
-                    //sieveResultOpt <- Some b
-                    //unfoldResultOpt <- Some c
+                        if refEq a lensResult || genEq a lensResult then
+                            match (sieveResultOpt, unfoldResultOpt) with
+                            | (Some b, Some c) -> (b, c)
+                            | (Some b, None) -> let c = unfold b world in (b, c)
+                            | (None, Some _) -> failwithumf ()
+                            | (None, None) -> let b = sieve a in let c = unfold b world in (b, c)
+                        else
+                            let b = sieve a
+                            let c = unfold b world
+                            (b, c)
+                    lensResult <- a
+                    sieveResultOpt <- Some b
+                    unfoldResultOpt <- Some c
                     c)
                     lens
             let monitorMapper =
                 fun a _ world ->
                     let b =
-                        //if a.Value = monitorResult then
-                        //    match sieveResultOpt with
-                        //    | Some b -> b
-                        //    | None -> sieve (lens.Get world)
-                        //else
-                            sieve (lens.Get world)
-                    //monitorResult <- a.Value
-                    //sieveResultOpt <- Some b
+                        if refEq a.Value monitorResult || genEq a.Value monitorResult then
+                            match sieveResultOpt with
+                            | Some b -> b
+                            | None -> sieve (lens.Get world)
+                        else sieve (lens.Get world)
+                    monitorResult <- a.Value
+                    sieveResultOpt <- Some b
                     b
             let monitorFilter =
                 fun a a2Opt _ ->
                     match a2Opt with
-                    | Some a2 -> a <> a2
+                    | Some a2 ->
+                        if refEq a a2 then genEq a a2
+                        else false
                     | None -> true
             let subscription = fun _ world ->
                 let map = Lens.get lensMap world

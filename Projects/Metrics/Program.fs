@@ -197,7 +197,7 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Seq.map (fun (k, v) -> (k, Ints.inc v)) |> HMap.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 3) // 1225 Elmish entities
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 48) // 2304 Elmish entities
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -209,9 +209,9 @@ type ElmishGameDispatcher () =
 
     override this.Content (intss, _) =
         [Content.screen "Screen" Vanilla []
-            [Content.layers intss (fun intss -> intss.Intss) (fun a _ -> a) (fun i intss _ ->
+            [Content.layers intss (fun intss -> intss.Intss) constant (fun i intss _ ->
                 Content.layer (string i) []
-                    [Content.entities intss (fun ints -> ints.Ints) (fun a _ -> a) (fun j int _ ->
+                    [Content.entities intss (fun ints -> ints.Ints) constant (fun j int _ ->
                         Content.staticSprite (string j)
                             [Entity.Imperative == true
                              Entity.Omnipresent == true
