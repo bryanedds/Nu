@@ -258,9 +258,7 @@ module WorldDeclarative =
             let monitorFilter =
                 fun a a2Opt _ ->
                     match a2Opt with
-                    | Some a2 ->
-                        if refEq a a2 then genEq a a2
-                        else false
+                    | Some a2 -> not (refEq a a2 || genEq a a2)
                     | None -> true
             let subscription = fun _ world ->
                 let map = Lens.get lensMap world
