@@ -53,43 +53,18 @@ module Battle =
         member this.DialogOpt = this.DialogOpt_
 
     let getAllies battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> HMap.ofSeq
 
     let getEnemies battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> HMap.ofSeq
 
     let getAlliesHealthy battle =
         getAllies battle |>
-        List.filter (fun character -> character.IsHealthy)
+        HMap.filter (fun _ character -> character.IsHealthy)
 
     let getAlliesWounded battle =
         getAllies battle |>
-        List.filter (fun character -> character.IsWounded)
-
-    let getAllyIndices battle =
-        getAllies battle |>
-        List.map (fun ally -> ally.CharacterIndex)
-
-    let getEnemyIndices battle =
-        getEnemies battle |>
-        List.map (fun enemy -> enemy.CharacterIndex)
-
-    let getAlliesHealthyIndices battle =
-        getAlliesHealthy battle |>
-        List.map (fun ally -> ally.CharacterIndex)
-
-    let getAlliesWoundedIndices battle =
-        getAlliesWounded battle |>
-        List.map (fun enemy -> enemy.CharacterIndex)
-
-    let getAllyIndexRandom battle =
-        let alliesHealthyIndices = getAlliesHealthyIndices battle
-        List.item (Gen.random1 alliesHealthyIndices.Length) alliesHealthyIndices
-
-    let getEnemyIndexRandom battle =
-        let enemyIndices = getEnemyIndices battle
-        let enemyIndex = List.item (Gen.random1 enemyIndices.Length) enemyIndices
-        enemyIndex
+        HMap.filter (fun _ character -> character.IsWounded)
 
     let getTargets aimType battle =
         match aimType with
@@ -105,9 +80,34 @@ module Battle =
                 then getAlliesHealthy battle
                 else getAlliesWounded battle
             let enemies = getEnemies battle
-            let characters = allies @ enemies
+            let characters = HMap.addMany allies enemies
             characters
-        | NoAim -> []
+        | NoAim -> HMap.makeEmpty ()
+
+    let getAllyIndices battle =
+        getAllies battle |>
+        HMap.toKeyList
+
+    let getEnemyIndices battle =
+        getEnemies battle |>
+        HMap.toKeyList
+
+    let getAlliesHealthyIndices battle =
+        getAlliesHealthy battle |>
+        HMap.toKeyList
+
+    let getAlliesWoundedIndices battle =
+        getAlliesWounded battle |>
+        HMap.toKeyList
+
+    let getAllyIndexRandom battle =
+        let alliesHealthyIndices = getAlliesHealthyIndices battle
+        List.item (Gen.random1 alliesHealthyIndices.Length) alliesHealthyIndices
+
+    let getEnemyIndexRandom battle =
+        let enemyIndices = getEnemyIndices battle
+        let enemyIndex = List.item (Gen.random1 enemyIndices.Length) enemyIndices
+        enemyIndex
 
     let addCharacter index character (battle : Battle) =
         { battle with Characters_ = Map.add index character battle.Characters_ }
