@@ -197,7 +197,7 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Seq.map (fun (k, v) -> (k, Ints.inc v)) |> HMap.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 48) // 2304 Elmish entities
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 43) // 1849 Elmish entities
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
