@@ -183,27 +183,35 @@ type MyGameDispatcher () =
 
 #if ELMISH
 type [<ReferenceEquality>] Ints =
-    { Ints : int list }
+    { Ints : HMap<int, int> }
+    static member init n =
+        { Ints = Seq.init n (fun a -> (a, a)) |> HMap.ofSeq }
+    static member inc ints =
+        { Ints = ints.Ints |> Seq.map (fun (k, v) -> (k, inc v)) |> HMap.ofSeq }
 
-type [<ReferenceEquality>] Model =
-    { IntLists : Ints list }
+type [<ReferenceEquality>] Intss =
+    { Intss : HMap<int, Ints> }
+    static member init n =
+        { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> HMap.ofSeq }
+    static member inc intss =
+        { Intss = intss.Intss |> Seq.map (fun (k, v) -> (k, Ints.inc v)) |> HMap.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Model, int, unit> ({ IntLists = List.init 35 (fun _ -> { Ints = List.init 35 id })}) // 1225 Elmish entities
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 3) // 1225 Elmish entities
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
 
-    override this.Message (model, message, _, _) =
+    override this.Message (intss, message, _, _) =
         match message with
-        | 0 -> just { model with IntLists = List.map (fun intList -> { intList with Ints = List.map inc intList.Ints }) model.IntLists }
-        | _ -> just model
+        | 0 -> just (Intss.inc intss)
+        | _ -> just intss
 
-    override this.Content (model, _) =
+    override this.Content (intss, _) =
         [Content.screen "Screen" Vanilla []
-            [Content.layers model (fun model -> model.IntLists) (fun a _ -> a) (fun i intLists _ ->
+            [Content.layers intss (fun intss -> intss.Intss) (fun a _ -> a) (fun i intss _ ->
                 Content.layer (string i) []
-                    [Content.entities intLists (fun ints -> ints.Ints) (fun a _ -> a) (fun j int _ ->
+                    [Content.entities intss (fun ints -> ints.Ints) (fun a _ -> a) (fun j int _ ->
                         Content.staticSprite (string j)
                             [Entity.Imperative == true
                              Entity.Omnipresent == true
