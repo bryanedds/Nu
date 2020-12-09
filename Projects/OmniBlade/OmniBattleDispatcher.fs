@@ -300,15 +300,15 @@ module BattleDispatcher =
             let localTime = time - timeStart
             if localTime = 0L then
                 let alliesLevelingUp =
-                    battle |> Battle.getAllies |> List.ofSeq |>
-                    List.filter (fun (_, ally) -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
+                    battle |> Battle.getAllies |> Map.toValueList |>
+                    List.filter (fun ally -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
                 let textA =
                     match alliesLevelingUp with
-                    | _ :: _ -> "Level up for " + (alliesLevelingUp |> List.map (fun (_, c) -> c.Name) |> String.join ", ") + "!^"
+                    | _ :: _ -> "Level up for " + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + "!^"
                     | [] -> "Enemies defeated!^"
                 let textB =
                     alliesLevelingUp |>
-                    List.choose (fun (_, ally) ->
+                    List.choose (fun ally ->
                         let techs = Algorithms.expPointsToTechs3 ally.ExpPoints battle.PrizePool.Exp ally.ArchetypeType
                         if Set.notEmpty techs then Some (ally, techs) else None) |>
                     List.map (fun (ally, techs) ->
@@ -607,7 +607,7 @@ module BattleDispatcher =
                     let characters = Battle.getCharacters battle
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, cmds) =
-                        List.fold (fun (battle, cmds) (cancelled, hitPointsChange, characterIndex) ->
+                        Map.fold (fun (battle, cmds) characterIndex (cancelled, hitPointsChange) ->
                             let character = Battle.getCharacter characterIndex battle
                             if hitPointsChange < 0 && character.IsHealthy then
                                 let battle = Battle.updateCharacter (Character.animate time DamageCycle) characterIndex battle
@@ -627,7 +627,7 @@ module BattleDispatcher =
                     let characters = Battle.getCharacters battle
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, sigs) =
-                        List.fold (fun (battle, sigs) (_, _, _) ->
+                        Map.fold (fun (battle, sigs) _ (_, _) ->
                             // TODO: glow effect
                             (battle, sigs))
                             (battle, [])
@@ -654,7 +654,7 @@ module BattleDispatcher =
                     let characters = Battle.getCharacters battle
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, sigs) =
-                        List.fold (fun (battle, sigs) (cancelled, hitPointsChange, characterIndex) ->
+                        Map.fold (fun (battle, sigs) characterIndex (cancelled, hitPointsChange) ->
                             let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) characterIndex battle
                             let wounded = (Battle.getCharacter characterIndex battle).IsWounded
                             let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
