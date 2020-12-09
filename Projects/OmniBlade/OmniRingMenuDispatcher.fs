@@ -12,7 +12,7 @@ open OmniBlade
 module RingMenuDispatcher =
 
     type [<StructuralEquality; NoComparison>] RingMenu =
-        { Items : HMap<string, int * bool>
+        { Items : Map<string, int * bool>
           ItemCancelOpt : string option }
 
     type RingMenuCommand =
@@ -31,7 +31,7 @@ module RingMenuDispatcher =
         member this.CancelEvent = Events.Cancel --> this
 
     type RingMenuDispatcher () =
-        inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = HMap.makeEmpty (); ItemCancelOpt = None })
+        inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = Map.empty; ItemCancelOpt = None })
 
         static member Properties =
             [define Entity.Radius 84.0f
@@ -45,7 +45,7 @@ module RingMenuDispatcher =
             | ItemSelect item -> just (World.publishPlus item menu.ItemSelectEvent [] menu true world)
             | ArrangeItemButton (button, index) ->
                 let radius = menu.GetRadius world
-                let itemCount = HMap.count ringMenu.Items
+                let itemCount = Map.count ringMenu.Items
                 let progress = single index / single itemCount
                 let rotation = progress * single Math.PI * 2.0f
                 let position = v2 (radius * sin rotation) (radius * cos rotation)

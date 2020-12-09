@@ -183,18 +183,18 @@ type MyGameDispatcher () =
 
 #if ELMISH
 type [<ReferenceEquality>] Ints =
-    { Ints : HMap<int, int> }
+    { Ints : Map<int, int> }
     static member init n =
-        { Ints = Seq.init n (fun a -> (a, a)) |> HMap.ofSeq }
+        { Ints = Seq.init n (fun a -> (a, a)) |> Map.ofSeq }
     static member inc ints =
-        { Ints = ints.Ints |> Seq.map (fun (k, v) -> (k, inc v)) |> HMap.ofSeq }
+        { Ints = ints.Ints |> Seq.map (fun kvp -> (kvp.Key, inc kvp.Value)) |> Map.ofSeq }
 
 type [<ReferenceEquality>] Intss =
-    { Intss : HMap<int, Ints> }
+    { Intss : Map<int, Ints> }
     static member init n =
-        { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> HMap.ofSeq }
+        { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> Map.ofSeq }
     static member inc intss =
-        { Intss = intss.Intss |> Seq.map (fun (k, v) -> (k, Ints.inc v)) |> HMap.ofSeq }
+        { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, Ints.inc kvp.Value)) |> Map.ofSeq }
 
 type ElmishGameDispatcher () =
     inherit GameDispatcher<Intss, int, unit> (Intss.init 43) // 1849 Elmish entities

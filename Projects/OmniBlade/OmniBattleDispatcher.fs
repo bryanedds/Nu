@@ -185,8 +185,8 @@ module BattleDispatcher =
                 let (sigs, battle) =
                     match battle.CurrentCommandOpt with
                     | None ->
-                        let allies = battle |> Battle.getAllies |> HMap.toValueList
-                        let enemies = battle |> Battle.getEnemies |> HMap.toValueList
+                        let allies = battle |> Battle.getAllies |> Map.toValueList
+                        let enemies = battle |> Battle.getEnemies |> Map.toValueList
                         if List.forall (fun (character : Character) -> character.IsWounded) allies then
                             // lost battle
                             let battle = Battle.updateBattleState (constant (BattleCease (false, Set.empty, time))) battle
@@ -241,7 +241,7 @@ module BattleDispatcher =
 
         and tickNoNextCommand (_ : int64) (battle : Battle) =
             let (allySignalsRev, battle) =
-                HMap.fold (fun (signals, battle) allyIndex (ally : Character) ->
+                Map.fold (fun (signals, battle) allyIndex (ally : Character) ->
                     if  ally.ActionTime >= Constants.Battle.ActionTime &&
                         ally.InputState = NoInput then
                         let battle = Battle.updateCharacter (Character.updateInputState (constant RegularMenu)) allyIndex battle
@@ -251,7 +251,7 @@ module BattleDispatcher =
                     ([], battle)
                     (Battle.getAllies battle)
             let (enemySignalsRev, battle) =
-                HMap.fold (fun (signals, battle) enemyIndex (enemy : Character) ->
+                Map.fold (fun (signals, battle) enemyIndex (enemy : Character) ->
                     if  enemy.ActionTime >= Constants.Battle.ActionTime &&
                         not (Battle.characterAppendedActionCommand enemyIndex battle) then
                         match enemy.AutoBattleOpt with
@@ -899,13 +899,13 @@ module BattleDispatcher =
                          Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
                          Entity.Enabled <== battle --> fun battle ->
-                            let allies = battle |> Battle.getAllies |> HMap.toValueList
+                            let allies = battle |> Battle.getAllies |> Map.toValueList
                             let alliesPastRegularMenu =
                                 Seq.notExists (fun (ally : Character) ->
                                     match ally.InputState with NoInput | RegularMenu -> false | _ -> true)
                                     allies
                             alliesPastRegularMenu
-                         Entity.RingMenu == { Items = HMap.ofList [("Attack", (0, true)); ("Defend", (0, true)); ("Consumable", (0, true)); ("Tech", (0, true))]; ItemCancelOpt = None }
+                         Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Defend", (0, true)); ("Consumable", (0, true)); ("Tech", (0, true))]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (index, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel index)]
 
@@ -917,7 +917,7 @@ module BattleDispatcher =
                          Entity.RingMenu <== battle --> fun battle ->
                             let consumables = Inventory.getConsumables battle.Inventory
                             let consumables = Map.toKeyList consumables
-                            let consumables = consumables |> List.map (fun consumable -> (scstring consumable, (getTag consumable, true))) |> HMap.ofList
+                            let consumables = consumables |> List.map (fun consumable -> (scstring consumable, (getTag consumable, true))) |> Map.ofList
                             { Items = consumables; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ConsumableItemSelect (index, evt.Data))
                          Entity.CancelEvent ==> msg (ConsumableItemCancel index)]
@@ -939,7 +939,7 @@ module BattleDispatcher =
                                         | None -> false
                                     let techName = scstring tech
                                     (techName, (techTag, techUsable))) |>
-                                HMap.ofList
+                                Map.ofList
                             { Items = techs; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (TechItemSelect (index, evt.Data))
                          Entity.CancelEvent ==> msg (TechItemCancel index)]

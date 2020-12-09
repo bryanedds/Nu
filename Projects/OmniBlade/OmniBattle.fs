@@ -53,18 +53,18 @@ module Battle =
         member this.DialogOpt = this.DialogOpt_
 
     let getAllies battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> HMap.ofSeq
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
     let getEnemies battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> HMap.ofSeq
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
     let getAlliesHealthy battle =
         getAllies battle |>
-        HMap.filter (fun _ character -> character.IsHealthy)
+        Map.filter (fun _ character -> character.IsHealthy)
 
     let getAlliesWounded battle =
         getAllies battle |>
-        HMap.filter (fun _ character -> character.IsWounded)
+        Map.filter (fun _ character -> character.IsWounded)
 
     let getTargets aimType battle =
         match aimType with
@@ -80,25 +80,25 @@ module Battle =
                 then getAlliesHealthy battle
                 else getAlliesWounded battle
             let enemies = getEnemies battle
-            let characters = HMap.addMany allies enemies
+            let characters = Map.addMany allies enemies
             characters
-        | NoAim -> HMap.makeEmpty ()
+        | NoAim -> Map.empty
 
     let getAllyIndices battle =
         getAllies battle |>
-        HMap.toKeyList
+        Map.toKeyList
 
     let getEnemyIndices battle =
         getEnemies battle |>
-        HMap.toKeyList
+        Map.toKeyList
 
     let getAlliesHealthyIndices battle =
         getAlliesHealthy battle |>
-        HMap.toKeyList
+        Map.toKeyList
 
     let getAlliesWoundedIndices battle =
         getAlliesWounded battle |>
-        HMap.toKeyList
+        Map.toKeyList
 
     let getAllyIndexRandom battle =
         let alliesHealthyIndices = getAlliesHealthyIndices battle
