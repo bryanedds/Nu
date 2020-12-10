@@ -116,7 +116,7 @@ module GameplayDispatcher =
                                 else gameplay
                         Gameplay.updateCharacterTurn index Turn.incTickCount gameplay
                     | _ -> gameplay
-                let indices = gameplay.Puppeteer.GetActingCharacters
+                let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnFinishing) indices
                 withMsg (FinishTurns indices) gameplay
@@ -132,7 +132,7 @@ module GameplayDispatcher =
                             | WalkTurn _ -> gameplay
                         Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
-                let indices = gameplay.Puppeteer.GetActingCharacters
+                let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withCmd (DisplayTurnEffects indices) gameplay
             
