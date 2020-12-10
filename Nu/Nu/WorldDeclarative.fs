@@ -7,7 +7,7 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-/// Emulates generic casting of a dictionary or map.
+/// Efficiently emulates root type casting of a dictionary or map.
 type [<NoEquality; NoComparison>] Keyed =
     { Seq : (IComparable * obj) seq
       TryFind : IComparable -> obj option }
