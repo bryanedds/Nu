@@ -560,7 +560,7 @@ module WorldModule =
             let (_, world) =
                 let mutable result = (Cascade, world)
                 let mutable going = true
-                let mutable enr = (subscriptions :> IEnumerable<_>).GetEnumerator ()
+                let mutable enr = (subscriptions :> _ seq).GetEnumerator ()
                 while going && enr.MoveNext () do
                     let (_, subscription) = enr.Current
                     if fst result = Cascade && World.getLiveness (snd result) = Running then
@@ -575,7 +575,7 @@ module WorldModule =
                         subscription.PreviousDataOpt <- Some mapped
                         if filtered then
                             // OPTIMIZATION: inlined fold for speed.
-                            let mutable enr2 = (subscription.Callbacks :> IEnumerable<Guid * Simulant * Callback>).GetEnumerator ()
+                            let mutable enr2 = (subscription.Callbacks :> seq<Guid * Simulant * Callback>).GetEnumerator ()
                             while fst result = Cascade && enr2.MoveNext () do
                                 let (_, subscriber, callback) = enr2.Current
                                 match callback with
