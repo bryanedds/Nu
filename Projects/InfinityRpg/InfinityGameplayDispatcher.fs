@@ -103,7 +103,8 @@ module GameplayDispatcher =
                 let updater index gameplay =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
-                    | TurnTicking tickCount ->
+                    | TurnTicking _ ->
+                        let tickCount = (World.getTickTime world) - characterTurn.StartTick
                         let gameplay =
                             match characterTurn.TurnType with
                             | AttackTurn ->
@@ -125,12 +126,7 @@ module GameplayDispatcher =
                 let updater index gameplay =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
-                    | TurnBeginning ->
-                        let gameplay =
-                            match characterTurn.TurnType with
-                            | AttackTurn -> Gameplay.updateCharacterTurn index (Turn.updateStartTick (constant (World.getTickTime world))) gameplay
-                            | WalkTurn _ -> gameplay
-                        Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
+                    | TurnBeginning -> Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
                 let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
@@ -139,7 +135,7 @@ module GameplayDispatcher =
             | MakeEnemyAttack ->
                 let gameplay =
                     let index = gameplay.Round.AttackingEnemyGroup.Head
-                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove index (Attack (ReactingCharacter PlayerIndex)) gameplay else gameplay
+                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove (World.getTickTime world) index (Attack (ReactingCharacter PlayerIndex)) gameplay else gameplay
                     Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
 
@@ -152,7 +148,7 @@ module GameplayDispatcher =
                             let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
                             let direction = Gen.random1 4 |> Direction.ofInt
                             if List.exists (fun x -> x = direction) openDirections
-                            then Gameplay.makeMove index (Step direction) gameplay
+                            then Gameplay.makeMove (World.getTickTime world) index (Step direction) gameplay
                             else gameplay
                         | _ -> gameplay)
                         
@@ -182,7 +178,7 @@ module GameplayDispatcher =
                         | _ :: navigationPath ->
                             let targetCoordinates = (List.head navigationPath).Coordinates
                             if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
-                            then Gameplay.makeMove PlayerIndex (Travel navigationPath) gameplay
+                            then Gameplay.makeMove (World.getTickTime world) PlayerIndex (Travel navigationPath) gameplay
                             else gameplay
                         | [] -> failwithumf ()
                     | _ -> gameplay
@@ -194,6 +190,7 @@ module GameplayDispatcher =
                     withCmd ListenKeyboard gameplay
             
             | TryMakePlayerMove playerInput ->
+                let time = World.getTickTime world
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
                 let targetCoordinatesOpt =
                     match playerInput with
@@ -208,17 +205,17 @@ module GameplayDispatcher =
                                 match Chessboard.tryGetOccupantAtCoordinates coordinates gameplay.Chessboard with
                                 | Some occupant ->
                                     match occupant with
-                                    | OccupyingCharacter character -> Gameplay.makeMove PlayerIndex (Attack (ReactingCharacter character.CharacterIndex)) gameplay
-                                    | OccupyingProp _ -> Gameplay.makeMove PlayerIndex (Attack (ReactingProp coordinates)) gameplay
+                                    | OccupyingCharacter character -> Gameplay.makeMove time PlayerIndex (Attack (ReactingCharacter character.CharacterIndex)) gameplay
+                                    | OccupyingProp _ -> Gameplay.makeMove time PlayerIndex (Attack (ReactingProp coordinates)) gameplay
                                 | None ->
                                     let direction = Math.directionToTarget currentCoordinates coordinates
-                                    Gameplay.makeMove PlayerIndex (Step direction) gameplay
+                                    Gameplay.makeMove time PlayerIndex (Step direction) gameplay
                             else gameplay
                         else
                             match tryGetNavigationPath coordinates gameplay with
                             | Some navigationPath ->
                                 match navigationPath with
-                                | _ :: _ -> Gameplay.makeMove PlayerIndex (Travel navigationPath) gameplay
+                                | _ :: _ -> Gameplay.makeMove time PlayerIndex (Travel navigationPath) gameplay
                                 | [] -> gameplay
                             | None -> gameplay
                     | None -> gameplay
@@ -279,7 +276,7 @@ module GameplayDispatcher =
                     | Some turn ->
                         match turn.TurnType with
                         | AttackTurn ->
-                            if turn.IsFirstTick then
+                            if turn.StartTick = (World.getTickTime world) then
                                 let effect = Effects.makeSwordStrikeEffect turn.Direction
                                 let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Scene world
                                 let world = entity.SetEffect effect world
@@ -373,7 +370,7 @@ module GameplayDispatcher =
                      // characters
                      Content.entities gameplay
                         (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer))
-                        (fun (characters, puppeteer) _ -> puppeteer |> Puppeteer.getPositionsAndAnimationStates characters |> Map.ofSeq)
+                        (fun (characters, puppeteer) world -> puppeteer |> Puppeteer.getPositionsAndAnimationStates (World.getTickTime world) characters |> Map.ofSeq)
                         (fun index characterData _ ->
                             let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
