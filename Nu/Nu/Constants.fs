@@ -83,7 +83,7 @@ module Physics =
 module TileMap =
 
     let [<Literal>] CollisionPropertyName = "C"
-    let [<Literal>] DepthPropertyName = "D"
+    let [<Literal>] ElevationPropertyName = "E"
     let [<Literal>] InfoPropertyName = "I"
 
 [<RequireQualifiedAccess>]

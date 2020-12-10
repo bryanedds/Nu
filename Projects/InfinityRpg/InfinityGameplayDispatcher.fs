@@ -285,7 +285,7 @@ module GameplayDispatcher =
                                 let world = entity.SetEffect effect world
                                 let world = entity.SetSize (v2Dup 144.0f) world
                                 let world = entity.SetPosition ((vctovf turn.OriginCoordinates) - Constants.Layout.TileSize) world
-                                let world = entity.SetDepth Constants.Layout.EffectDepth world
+                                let world = entity.SetElevation Constants.Layout.EffectElevation world
                                 entity.SetSelfDestruct true world
                             else world
                         | _ -> world
@@ -388,60 +388,60 @@ module GameplayDispatcher =
              Content.layer Simulants.Hud.Name []
 
                 [Content.button Simulants.HudHalt.Name
-                    [Entity.Position == v2 184.0f -144.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
+                    [Entity.Position == v2 184.0f -144.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Halt"
                      Entity.Enabled <== gameplay --> fun gameplay -> gameplay.Round.IsPlayerTraveling
                      Entity.ClickEvent ==> msg HaltPlayer]
 
                  Content.button Simulants.HudSaveGame.Name
-                    [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
+                    [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Save Game"
                      Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress then false else true
                      Entity.ClickEvent ==> cmd SaveGame]
 
                  Content.button Simulants.HudBack.Name
-                    [Entity.Position == v2 184.0f -256.0f; Entity.Size == v2 288.0f 48.0f; Entity.Depth == 10.0f
+                    [Entity.Position == v2 184.0f -256.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Back"]
 
                  Content.text Gen.name
-                    [Entity.Position == v2 -440.0f 200.0f; Entity.Depth == 9.0f
+                    [Entity.Position == v2 -440.0f 200.0f; Entity.Elevation == 9.0f
                      Entity.Text <== gameplay --> fun gameplay ->
                         "HP: " + scstring gameplay.Puppeteer.PlayerPuppetState.HitPoints]
 
                  Content.label Gen.name
-                    [Entity.Position == v2 -447.0f -240.0f; Entity.Size == v2 168.0f 168.0f; Entity.Depth == 9.0f
+                    [Entity.Position == v2 -447.0f -240.0f; Entity.Size == v2 168.0f 168.0f; Entity.Elevation == 9.0f
                      Entity.LabelImage == asset "Gui" "DetailBacking"]
 
                  Content.button Simulants.HudDetailUpward.Name
-                    [Entity.Position == v2 -387.0f -126.0f; Entity.Size == v2 48.0f 48.0f; Entity.Depth == 10.0f
+                    [Entity.Position == v2 -387.0f -126.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailUpwardUp"; Entity.DownImage == asset "Gui" "DetailUpwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Upward))]
 
                  Content.button Simulants.HudDetailRightward.Name
-                    [Entity.Position == v2 -336.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Depth == 10.0f
+                    [Entity.Position == v2 -336.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailRightwardUp"; Entity.DownImage == asset "Gui" "DetailRightwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Rightward))]
 
                  Content.button Simulants.HudDetailDownward.Name
-                    [Entity.Position == v2 -387.0f -234.0f; Entity.Size == v2 48.0f 48.0f; Entity.Depth == 10.0f
+                    [Entity.Position == v2 -387.0f -234.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailDownwardUp"; Entity.DownImage == asset "Gui" "DetailDownwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Downward))]
 
                  Content.button Simulants.HudDetailLeftward.Name
-                    [Entity.Position == v2 -438.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Depth == 10.0f
+                    [Entity.Position == v2 -438.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailLeftwardUp"; Entity.DownImage == asset "Gui" "DetailLeftwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Leftward))]
 
                  Content.button Simulants.HudWait.Name
-                    [Entity.Position == v2 -387.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Depth == 10.0f
+                    [Entity.Position == v2 -387.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "W"
                      Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress then false else true
                      Entity.ClickEvent ==> msg SkipPlayerTurn]
                  
                  Content.feeler Simulants.HudFeeler.Name
-                    [Entity.Position == v2 -480.0f -270.0f; Entity.Size == v2 960.0f 540.0f; Entity.Depth == 9.0f
+                    [Entity.Position == v2 -480.0f -270.0f; Entity.Size == v2 960.0f 540.0f; Entity.Elevation == 9.0f
                      Entity.TouchEvent ==|> fun evt -> cmd (HandlePlayerInput (TouchInput evt.Data))]]]

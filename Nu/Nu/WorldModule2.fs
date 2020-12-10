@@ -819,10 +819,10 @@ module WorldModule2 =
                 let color = Color.White.WithA (byte (alpha * 255.0f))
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
-                let transform = { Position = position; Size = size; Rotation = 0.0f; Depth = Single.MaxValue; Flags = -1 }
+                let transform = { Position = position; Size = size; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = -1 }
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
-                        { Depth = transform.Depth
+                        { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = AssetTag.generalize dissolveImage
                           RenderDescriptor =

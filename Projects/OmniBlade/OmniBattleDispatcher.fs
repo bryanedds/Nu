@@ -748,7 +748,7 @@ module BattleDispatcher =
                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
                     let world = entity.SetEffect effect world
                     let world = entity.SetCenter target.CenterOffset3 world
-                    let world = entity.SetDepth (Constants.Battle.GuiEffectDepth - 1.0f) world
+                    let world = entity.SetElevation (Constants.Battle.GuiEffectElevation - 1.0f) world
                     let world = entity.SetSelfDestruct true world
                     just world
                 | None -> just world
@@ -760,7 +760,7 @@ module BattleDispatcher =
                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
                     let world = entity.SetEffect effect world
                     let world = entity.SetCenter target.CenterOffset2 world
-                    let world = entity.SetDepth Constants.Battle.GuiEffectDepth world
+                    let world = entity.SetElevation Constants.Battle.GuiEffectElevation world
                     let world = entity.SetSelfDestruct true world
                     just world
                 | None -> just world
@@ -773,7 +773,7 @@ module BattleDispatcher =
                     let world = entity.SetEffect effect world
                     let world = entity.SetSize (v2 192.0f 758.0f) world
                     let world = entity.SetBottom target.Bottom world
-                    let world = entity.SetDepth Constants.Battle.EffectDepth world
+                    let world = entity.SetElevation Constants.Battle.EffectElevation world
                     let world = entity.SetSelfDestruct true world
                     just world
                 | None -> just world
@@ -786,7 +786,7 @@ module BattleDispatcher =
                     let world = entity.SetEffect effect world
                     let world = entity.SetSize (v2 234.0f 234.0f) world
                     let world = entity.SetCenter target.Center world
-                    let world = entity.SetDepth Constants.Battle.EffectDepth world
+                    let world = entity.SetElevation Constants.Battle.EffectElevation world
                     let world = entity.SetSelfDestruct true world
                     just world
                 | None -> just world
@@ -801,7 +801,7 @@ module BattleDispatcher =
                             let world = entity.SetEffect effect world
                             let world = entity.SetSize (v2 192.0f 96.0f) world
                             let world = entity.SetBottom target.Bottom world
-                            let world = entity.SetDepth Constants.Battle.EffectDepth world
+                            let world = entity.SetElevation Constants.Battle.EffectElevation world
                             entity.SetSelfDestruct true world)
                             delay
                             world
@@ -855,7 +855,7 @@ module BattleDispatcher =
                  Content.label background.Name
                     [background.Position == v2 -480.0f -270.0f
                      background.Size == v2 960.0f 580.0f
-                     background.Depth == Constants.Battle.BackgroundDepth
+                     background.Elevation == Constants.Battle.BackgroundElevation
                      background.LabelImage == asset "Battle" "Background"]
 
                  // dialog
@@ -864,7 +864,7 @@ module BattleDispatcher =
 
                  // dialog interact button
                  Content.button Simulants.BattleInteract.Name
-                    [Entity.Position == v2 248.0f -240.0f; Entity.Depth == Constants.Field.GuiDepth; Entity.Size == v2 144.0f 48.0f
+                    [Entity.Position == v2 248.0f -240.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 144.0f 48.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible <== battle --> fun battle -> match battle.DialogOpt with Some dialog -> Dialog.canAdvance dialog | None -> false
                      Entity.Text == "Next"
@@ -894,14 +894,14 @@ module BattleDispatcher =
                      Content.fillBar "HealthBar" 
                         [Entity.Size == v2 48.0f 6.0f
                          Entity.Center <== ally --> fun ally -> ally.BottomOffset
-                         Entity.Depth == Constants.Battle.GuiDepth
+                         Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> ally.HitPoints > 0
                          Entity.Fill <== ally --> fun ally -> single ally.HitPoints / single ally.HitPointsMax]
 
                      // regular menu
                      Content.entity<RingMenuDispatcher> "RegularMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
-                         Entity.Depth == Constants.Battle.GuiDepth
+                         Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
                          Entity.Enabled <== battle --> fun battle ->
                             let allies = Battle.getAllies battle
@@ -917,7 +917,7 @@ module BattleDispatcher =
                      // consumable menu
                      Content.entity<RingMenuDispatcher> "ConsumableMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
-                         Entity.Depth == Constants.Battle.GuiDepth
+                         Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> ally.InputState = ItemMenu
                          Entity.RingMenu <== battle --> fun battle ->
                             let consumables = Inventory.getConsumables battle.Inventory
@@ -930,7 +930,7 @@ module BattleDispatcher =
                      // tech menu
                      Content.entity<RingMenuDispatcher> "TechMenu"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
-                         Entity.Depth == Constants.Battle.GuiDepth
+                         Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> ally.InputState = TechMenu
                          Entity.RingMenu <== ally --> fun ally ->
                             let techs = List.ofSeq ally.Techs
@@ -951,7 +951,7 @@ module BattleDispatcher =
                      // reticles
                      Content.entity<ReticlesDispatcher> "Reticles"
                         [Entity.Position <== ally --> fun ally -> ally.CenterOffset
-                         Entity.Depth == Constants.Battle.GuiDepth
+                         Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
                          Entity.Reticles <== battle --> fun battle ->
                             let aimType =
