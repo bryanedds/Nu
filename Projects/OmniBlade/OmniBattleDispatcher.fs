@@ -905,7 +905,7 @@ module BattleDispatcher =
                                     match ally.InputState with NoInput | RegularMenu -> false | _ -> true)
                                     allies
                             alliesPastRegularMenu
-                         Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Defend", (1, true)); ("Consumable", (2, true)); ("Tech", (3, true))]; ItemCancelOpt = None }
+                         Entity.RingMenu == { Items = Map.ofList [(0, ("Attack", true)); (1, ("Defend", true)); (2, ("Consumable", true)); (3, ("Tech", true))]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (index, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel index)]
 
@@ -915,9 +915,13 @@ module BattleDispatcher =
                          Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> ally.InputState = ItemMenu
                          Entity.RingMenu <== battle --> fun battle ->
-                            let consumables = Inventory.getConsumables battle.Inventory
-                            let consumables = Map.toKeyList consumables
-                            let consumables = consumables |> List.map (fun consumable -> (scstring consumable, (getTag consumable, true))) |> Map.ofList
+                            let consumables =
+                                battle.Inventory |>
+                                Inventory.getConsumables |>
+                                Map.toKeyList |>
+                                Map.ofListBy (fun consumable -> (getTag consumable, (scstring consumable, true))) |>
+                                Map.toValueList |>
+                                Map.indexed
                             { Items = consumables; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (ConsumableItemSelect (index, evt.Data))
                          Entity.CancelEvent ==> msg (ConsumableItemCancel index)]
@@ -930,16 +934,15 @@ module BattleDispatcher =
                          Entity.RingMenu <== ally --> fun ally ->
                             let techs =
                                 ally.Techs |>
-                                List.ofSeq |>
-                                List.map (fun tech ->
-                                    let techTag = getTag tech
+                                Map.ofSeqBy (fun tech ->
+                                    let techName = scstring tech
                                     let techUsable =
                                         match Map.tryFind tech Data.Value.Techs with
                                         | Some techData -> techData.TechCost <= ally.TechPoints
                                         | None -> false
-                                    let techName = scstring tech
-                                    (techName, (techTag, techUsable))) |>
-                                Map.ofList
+                                    (getTag tech, (techName, techUsable))) |>
+                                Map.toValueList |>
+                                Map.indexed
                             { Items = techs; ItemCancelOpt = Some "Cancel" }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (TechItemSelect (index, evt.Data))
                          Entity.CancelEvent ==> msg (TechItemCancel index)]
