@@ -116,7 +116,7 @@ module GameplayDispatcher =
                                 else gameplay
                         Gameplay.updateCharacterTurn index Turn.incTickCount gameplay
                     | _ -> gameplay
-                let indices = gameplay.Puppeteer.GetActingCharacters
+                let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnFinishing) indices
                 withMsg (FinishTurns indices) gameplay
@@ -132,7 +132,7 @@ module GameplayDispatcher =
                             | WalkTurn _ -> gameplay
                         Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
-                let indices = gameplay.Puppeteer.GetActingCharacters
+                let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withCmd (DisplayTurnEffects indices) gameplay
             
@@ -359,30 +359,27 @@ module GameplayDispatcher =
                        [Entity.Field <== gameplay --> fun gameplay -> gameplay.Field]
 
                      // pickups
-                     Content.entitiesUntracked gameplay
+                     Content.entities gameplay
                         (fun gameplay -> gameplay.Chessboard.PickupSpaces)
-                        (fun pickups _ -> Map.toListBy (fun positionM _ -> Pickup.makeHealth positionM) pickups)
+                        (fun pickups _ -> pickups |> Map.toSeqBy (fun positionM _ -> Pickup.makeHealth positionM) |> Map.indexed)
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Pickup <== pickup])
 
                      // props
-                     Content.entitiesUntracked gameplay
+                     Content.entities gameplay
                         (fun gameplay -> (gameplay.Chessboard.PropSpaces, gameplay.Puppeteer))
-                        (fun (props, puppeteer) _ -> Map.toListBy (fun positionM _ -> Prop.makeLongGrass positionM) props)
+                        (fun (props, puppeteer) _ -> props |> Map.toSeqBy (fun positionM _ -> Prop.makeLongGrass positionM) |> Map.indexed)
                         (fun index prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Prop <== prop])
-                     
+
                      // characters
-                     Content.entitiesTrackedByFst gameplay
+                     Content.entities gameplay
                         (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer))
-                        (fun (characters, puppeteer) _ -> Puppeteer.generatePositionsAndAnimationStates characters puppeteer)
-                        (fun _ characterData world ->
-                            let name =
-                                match Lens.get characterData world with
-                                | (0, _) -> Simulants.Player.Name
-                                | (index, _) -> "Enemy+" + scstring index
+                        (fun (characters, puppeteer) _ -> puppeteer |> Puppeteer.getPositionsAndAnimationStates characters |> Map.ofSeq)
+                        (fun index characterData _ ->
+                            let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.CharacterAnimationSheet <== characterData --> fun (index, _) -> match index with 0 -> Assets.Gameplay.PlayerImage | _ -> Assets.Gameplay.GoopyImage // TODO: pull this from data
-                                 Entity.CharacterAnimationState <== characterData --> fun (_, (_, characterAnimationState)) -> characterAnimationState
-                                 Entity.Position <== characterData --> fun (_, (position, _)) -> position])])
+                                [Entity.CharacterAnimationSheet <== characterData --> fun (_, _) -> match index with 0 -> Assets.Gameplay.PlayerImage | _ -> Assets.Gameplay.GoopyImage // TODO: pull this from data
+                                 Entity.CharacterAnimationState <== characterData --> fun (_, characterAnimationState) -> characterAnimationState
+                                 Entity.Position <== characterData --> fun (position, _) -> position])])
 
              // hud layer
              Content.layer Simulants.Hud.Name []
