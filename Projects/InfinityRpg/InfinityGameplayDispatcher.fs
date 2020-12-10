@@ -362,22 +362,22 @@ module GameplayDispatcher =
                      Content.entities gameplay
                         (fun gameplay -> gameplay.Chessboard.PickupSpaces)
                         (fun pickups _ -> pickups |> Map.toSeqBy (fun positionM _ -> Pickup.makeHealth positionM) |> Map.indexed)
-                        (fun key pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring key) [Entity.Size == Constants.Layout.TileSize; Entity.Pickup <== pickup])
+                        (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Pickup <== pickup])
 
                      // props
                      Content.entities gameplay
                         (fun gameplay -> (gameplay.Chessboard.PropSpaces, gameplay.Puppeteer))
                         (fun (props, puppeteer) _ -> props |> Map.toSeqBy (fun positionM _ -> Prop.makeLongGrass positionM) |> Map.indexed)
-                        (fun key prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring key) [Entity.Size == Constants.Layout.TileSize; Entity.Prop <== prop])
+                        (fun index prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Prop <== prop])
 
                      // characters
                      Content.entities gameplay
                         (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer))
                         (fun (characters, puppeteer) _ -> puppeteer |> Puppeteer.getPositionsAndAnimationStates characters |> Map.ofSeq)
-                        (fun key characterData _ ->
-                            let name = match key with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring key
+                        (fun index characterData _ ->
+                            let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.CharacterAnimationSheet <== characterData --> fun (_, _) -> match key with 0 -> Assets.Gameplay.PlayerImage | _ -> Assets.Gameplay.GoopyImage // TODO: pull this from data
+                                [Entity.CharacterAnimationSheet <== characterData --> fun (_, _) -> match index with 0 -> Assets.Gameplay.PlayerImage | _ -> Assets.Gameplay.GoopyImage // TODO: pull this from data
                                  Entity.CharacterAnimationState <== characterData --> fun (_, characterAnimationState) -> characterAnimationState
                                  Entity.Position <== characterData --> fun (position, _) -> position])])
 
