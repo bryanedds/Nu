@@ -52,44 +52,22 @@ module Battle =
         member this.ActionCommands = this.ActionCommands_
         member this.DialogOpt = this.DialogOpt_
 
+    let getCharacters battle =
+        battle.Characters_
+
     let getAllies battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
     let getEnemies battle =
-        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Seq.map snd |> Seq.toList
+        battle.Characters_ |> Map.toSeq |> Seq.filter (function (EnemyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
     let getAlliesHealthy battle =
         getAllies battle |>
-        List.filter (fun character -> character.IsHealthy)
+        Map.filter (fun _ character -> character.IsHealthy)
 
     let getAlliesWounded battle =
         getAllies battle |>
-        List.filter (fun character -> character.IsWounded)
-
-    let getAllyIndices battle =
-        getAllies battle |>
-        List.map (fun ally -> ally.CharacterIndex)
-
-    let getEnemyIndices battle =
-        getEnemies battle |>
-        List.map (fun enemy -> enemy.CharacterIndex)
-
-    let getAlliesHealthyIndices battle =
-        getAlliesHealthy battle |>
-        List.map (fun ally -> ally.CharacterIndex)
-
-    let getAlliesWoundedIndices battle =
-        getAlliesWounded battle |>
-        List.map (fun enemy -> enemy.CharacterIndex)
-
-    let getAllyIndexRandom battle =
-        let alliesHealthyIndices = getAlliesHealthyIndices battle
-        List.item (Gen.random1 alliesHealthyIndices.Length) alliesHealthyIndices
-
-    let getEnemyIndexRandom battle =
-        let enemyIndices = getEnemyIndices battle
-        let enemyIndex = List.item (Gen.random1 enemyIndices.Length) enemyIndices
-        enemyIndex
+        Map.filter (fun _ character -> character.IsWounded)
 
     let getTargets aimType battle =
         match aimType with
@@ -105,9 +83,34 @@ module Battle =
                 then getAlliesHealthy battle
                 else getAlliesWounded battle
             let enemies = getEnemies battle
-            let characters = allies @ enemies
+            let characters = allies @@ enemies
             characters
-        | NoAim -> []
+        | NoAim -> Map.empty
+
+    let getAllyIndices battle =
+        getAllies battle |>
+        Map.toKeyList
+
+    let getEnemyIndices battle =
+        getEnemies battle |>
+        Map.toKeyList
+
+    let getAlliesHealthyIndices battle =
+        getAlliesHealthy battle |>
+        Map.toKeyList
+
+    let getAlliesWoundedIndices battle =
+        getAlliesWounded battle |>
+        Map.toKeyList
+
+    let getAllyIndexRandom battle =
+        let alliesHealthyIndices = getAlliesHealthyIndices battle
+        List.item (Gen.random1 alliesHealthyIndices.Length) alliesHealthyIndices
+
+    let getEnemyIndexRandom battle =
+        let enemyIndices = getEnemyIndices battle
+        let enemyIndex = List.item (Gen.random1 enemyIndices.Length) enemyIndices
+        enemyIndex
 
     let addCharacter index character (battle : Battle) =
         { battle with Characters_ = Map.add index character battle.Characters_ }
@@ -126,9 +129,6 @@ module Battle =
 
     let updateEnemies updater battle =
         updateCharactersIf (function EnemyIndex _ -> true | _ -> false) updater battle
-
-    let getCharacters battle =
-        battle.Characters_ |> Map.toValueList
 
     let tryGetCharacter characterIndex battle =
         Map.tryFind characterIndex battle.Characters_

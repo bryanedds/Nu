@@ -368,16 +368,16 @@ module WorldEntityModule =
                     ([], world)
 
         /// Turn an entity lens into a series of live entities.
-        static member expandEntities (lens : Lens<obj, World>) sieve spread indexOpt mapper origin owner layer world =
+        static member expandEntities (lens : Lens<obj, World>) sieve unfold mapper origin owner layer world =
             let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
-            World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin owner layer world
+            World.expandSimulants lens sieve unfold mapperGeneralized origin owner layer world
 
         /// Turn entity content into a live entity.
         static member expandEntityContent content origin (owner : Simulant) layer world =
             if World.getLayerExists layer world then
                 match EntityContent.expand content layer world with
-                | Choice1Of3 (lens, sieve, spread, indexOpt, mapper) ->
-                    let world = World.expandEntities lens sieve spread indexOpt mapper origin owner layer world
+                | Choice1Of3 (lens, sieve, unfold, mapper) ->
+                    let world = World.expandEntities lens sieve unfold mapper origin owner layer world
                     (None, world)
                 | Choice2Of3 (_, descriptor, handlers, binds, content) ->
                     let (entity, world) =

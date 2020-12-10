@@ -12,7 +12,7 @@ open OmniBlade
 module RingMenuDispatcher =
 
     type [<StructuralEquality; NoComparison>] RingMenu =
-        { Items : (int * (bool * string)) list
+        { Items : Map<int, string * bool>
           ItemCancelOpt : string option }
 
     type RingMenuCommand =
@@ -31,7 +31,7 @@ module RingMenuDispatcher =
         member this.CancelEvent = Events.Cancel --> this
 
     type RingMenuDispatcher () =
-        inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = []; ItemCancelOpt = None })
+        inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = Map.empty; ItemCancelOpt = None })
 
         static member Properties =
             [define Entity.Radius 84.0f
@@ -45,7 +45,7 @@ module RingMenuDispatcher =
             | ItemSelect item -> just (World.publishPlus item menu.ItemSelectEvent [] menu true world)
             | ArrangeItemButton (button, index) ->
                 let radius = menu.GetRadius world
-                let itemCount = List.length ringMenu.Items
+                let itemCount = Map.count ringMenu.Items
                 let progress = single index / single itemCount
                 let rotation = progress * single Math.PI * 2.0f
                 let position = v2 (radius * sin rotation) (radius * cos rotation)
@@ -53,18 +53,21 @@ module RingMenuDispatcher =
                 just world
 
         override this.Content (ringMenu, menu) =
-            [Content.entitiesTrackedByFst ringMenu (fun ringMenu -> ringMenu.Items) constant $ fun index item world ->
-                let itemValue = item.Get world |> snd |> snd
-                let buttonName = menu.Name + "+" + itemValue
-                let button = menu.Parent / buttonName
-                Content.button button.Name
-                    [Entity.EnabledLocal <== item --> fun item -> fst (snd item)
-                     Entity.Size == v2 48.0f 48.0f
-                     Entity.Elevation <== menu.Elevation
-                     Entity.UpImage == asset Assets.Battle.PackageName (itemValue + "Up")
-                     Entity.DownImage == asset Assets.Battle.PackageName (itemValue + "Down")
-                     Entity.ClickEvent ==> cmd (ItemSelect itemValue)
-                     Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))]
+            [Content.entities ringMenu
+                (fun ringMenu -> ringMenu.Items)
+                (fun items _ -> items)
+                (fun index itemNameAndEnabled world ->
+                    let itemName = Lens.get itemNameAndEnabled world |> fst
+                    let buttonName = menu.Name + "+" + scstring index
+                    let button = menu.Parent / buttonName
+                    Content.button button.Name
+                        [Entity.EnabledLocal <== itemNameAndEnabled --> snd
+                         Entity.Size == v2 48.0f 48.0f
+                         Entity.Elevation <== menu.Elevation
+                         Entity.UpImage == asset Assets.Battle.PackageName (itemName + "Up")
+                         Entity.DownImage == asset Assets.Battle.PackageName (itemName + "Down")
+                         Entity.ClickEvent ==> cmd (ItemSelect itemName)
+                         Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))])
              Content.entityOpt ringMenu (fun ringMenu -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
                 let buttonName = menu.Name + "+" + itemCancelValue

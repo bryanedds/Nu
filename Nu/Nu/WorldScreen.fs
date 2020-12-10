@@ -318,12 +318,12 @@ module WorldScreenModule =
                             address simulant world)
                         world handlers
                 let world =
-                    List.fold (fun world (screen, lens, sieve, unfold, indexOpt, mapper) ->
-                        World.expandLayers lens sieve unfold indexOpt mapper origin screen world)
+                    List.fold (fun world (screen, lens, sieve, unfold, mapper) ->
+                        World.expandLayers lens sieve unfold mapper origin screen world)
                         world layerStreams
                 let world =
-                    List.fold (fun world (layer, lens, sieve, unfold, indexOpt, mapper) ->
-                        World.expandEntities lens sieve unfold indexOpt mapper origin layer layer world)
+                    List.fold (fun world (layer, lens, sieve, unfold, mapper) ->
+                        World.expandEntities lens sieve unfold mapper origin layer layer world)
                         world entityStreams
                 let world =
                     List.fold (fun world (owner : Entity, entityContents) ->
