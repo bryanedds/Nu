@@ -81,17 +81,19 @@ module GameplayDispatcher =
                         match characterTurn.TurnType with
                         | AttackTurn ->
                             let gameplay = Gameplay.finishMove index gameplay
-                            let reactorIndex = Option.get characterTurn.ReactorOpt
-                            let reactorState = Gameplay.getCharacter reactorIndex gameplay
-                            let gameplay =
-                                if reactorIndex = PlayerIndex then
-                                    Gameplay.refreshPlayerPuppetHitPoints gameplay
+                            match characterTurn.GetReactor with
+                            | ReactingCharacter reactorIndex ->
+                                let reactorState = Gameplay.getCharacter reactorIndex gameplay
+                                let gameplay =
+                                    if reactorIndex = PlayerIndex then
+                                        Gameplay.refreshPlayerPuppetHitPoints gameplay
+                                    else gameplay
+                                if reactorState.HitPoints <= 0 then
+                                    match reactorIndex with
+                                    | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
+                                    | EnemyIndex _ -> Gameplay.removeCharacter reactorIndex gameplay
                                 else gameplay
-                            if reactorState.HitPoints <= 0 then
-                                match reactorIndex with
-                                | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
-                                | EnemyIndex _ -> Gameplay.removeCharacter reactorIndex gameplay
-                            else gameplay
+                            | ReactingProp coordinates -> Gameplay.removeLongGrass coordinates gameplay
                         | WalkTurn _ -> Gameplay.finishMove index gameplay
                     | _ -> failwith "non-finishing turns should be filtered out by this point"
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
@@ -137,7 +139,7 @@ module GameplayDispatcher =
             | MakeEnemyAttack ->
                 let gameplay =
                     let index = gameplay.Round.AttackingEnemyGroup.Head
-                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove index (Attack PlayerIndex) gameplay else gameplay
+                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove index (Attack (ReactingCharacter PlayerIndex)) gameplay else gameplay
                     Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
 
@@ -202,13 +204,15 @@ module GameplayDispatcher =
                     match targetCoordinatesOpt with
                     | Some coordinates ->
                         if Math.areCoordinatesAdjacent coordinates currentCoordinates then
-                            let openDirections = gameplay.Chessboard.OpenDirections currentCoordinates
-                            let direction = Math.directionToTarget currentCoordinates coordinates
-                            let opponents = Gameplay.getOpponentIndices PlayerIndex gameplay
-                            if List.exists (fun x -> x = direction) openDirections then Gameplay.makeMove PlayerIndex (Step direction) gameplay
-                            elif List.exists (fun index -> (Gameplay.getCoordinates index gameplay) = coordinates) opponents then
-                                let targetIndex = Gameplay.getIndexByCoordinates coordinates gameplay
-                                Gameplay.makeMove PlayerIndex (Attack targetIndex) gameplay
+                            if Chessboard.spaceExists coordinates gameplay.Chessboard then
+                                match Chessboard.tryGetOccupantAtCoordinates coordinates gameplay.Chessboard with
+                                | Some occupant ->
+                                    match occupant with
+                                    | OccupyingCharacter character -> Gameplay.makeMove PlayerIndex (Attack (ReactingCharacter character.CharacterIndex)) gameplay
+                                    | OccupyingProp _ -> Gameplay.makeMove PlayerIndex (Attack (ReactingProp coordinates)) gameplay
+                                | None ->
+                                    let direction = Math.directionToTarget currentCoordinates coordinates
+                                    Gameplay.makeMove PlayerIndex (Step direction) gameplay
                             else gameplay
                         else
                             match tryGetNavigationPath coordinates gameplay with
@@ -362,8 +366,8 @@ module GameplayDispatcher =
 
                      // props
                      Content.entitiesUntracked gameplay
-                        (fun gameplay -> gameplay.Chessboard.PropSpaces)
-                        (fun props _ -> Map.toListBy (fun positionM _ -> Prop.makeLongGrass positionM) props)
+                        (fun gameplay -> (gameplay.Chessboard.PropSpaces, gameplay.Puppeteer))
+                        (fun (props, puppeteer) _ -> Map.toListBy (fun positionM _ -> Prop.makeLongGrass positionM) props)
                         (fun index prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Prop <== prop])
                      
                      // characters
