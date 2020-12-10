@@ -46,8 +46,8 @@ module Gaia =
         let rotationSnap = snd (Int32.TryParse form.rotationSnapTextBox.Text)
         (positionSnap, rotationSnap)
     
-    let private getCreationDepth (form : GaiaForm) =
-        snd (Single.TryParse form.createDepthTextBox.Text)
+    let private getCreationElevation (form : GaiaForm) =
+        snd (Single.TryParse form.createElevationTextBox.Text)
 
     let private getExpansionState (treeView : TreeView) =
         let nodeStates =
@@ -429,13 +429,13 @@ module Gaia =
     let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
         form.Close ()
 
-    let private handleFormCreateDepthPlusClick (form : GaiaForm) (_ : EventArgs) =
-        let depth = snd (Single.TryParse form.createDepthTextBox.Text)
-        form.createDepthTextBox.Text <- scstring (depth + 1.0f)
+    let private handleFormCreateElevationPlusClick (form : GaiaForm) (_ : EventArgs) =
+        let elevation = snd (Single.TryParse form.createElevationTextBox.Text)
+        form.createElevationTextBox.Text <- scstring (elevation + 1.0f)
 
-    let private handleFormCreateDepthMinusClick (form : GaiaForm) (_ : EventArgs) =
-        let depth = snd (Single.TryParse form.createDepthTextBox.Text)
-        form.createDepthTextBox.Text <- scstring (depth - 1.0f)
+    let private handleFormCreateElevationMinusClick (form : GaiaForm) (_ : EventArgs) =
+        let elevation = snd (Single.TryParse form.createElevationTextBox.Text)
+        form.createElevationTextBox.Text <- scstring (elevation - 1.0f)
 
     let private handlePropertyPickAsset (form : GaiaForm) world =
         use assetPicker = new AssetPicker ()
@@ -691,7 +691,7 @@ module Gaia =
         let oldWorld = world
         let editorState = getEditorState world
         let preludeSourceDir = editorState.TargetDir + "/../.."
-        let preludeFilePath = preludeSourceDir + "/" + Assets.PreludeFilePath
+        let preludeFilePath = preludeSourceDir + "/" + Assets.Global.PreludeFilePath
         try let preludeStr = form.preludeTextBox.Text.TrimEnd ()
             File.WriteAllText (preludeFilePath, preludeStr)
             (true, world)
@@ -723,7 +723,7 @@ module Gaia =
         let oldWorld = world
         let editorState = getEditorState world
         let assetSourceDir = editorState.TargetDir + "/../.."
-        let assetGraphFilePath = assetSourceDir + "/" + Assets.AssetGraphFilePath
+        let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
         try let packageDescriptorsStr = form.assetGraphTextBox.Text.TrimEnd () |> scvalue<Map<string, PackageDescriptor>> |> scstring
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<AssetGraph>).PrettyPrinter
             File.WriteAllText (assetGraphFilePath, PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter)
@@ -759,7 +759,7 @@ module Gaia =
         let oldWorld = world
         let editorState = getEditorState world
         let overlayerSourceDir = editorState.TargetDir + "/../.."
-        let overlayerFilePath = overlayerSourceDir + "/" + Assets.OverlayerFilePath
+        let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.OverlayerFilePath
         try let overlays = scvalue<Overlay list> (form.overlayerTextBox.Text.TrimEnd ())
             let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Overlay>).PrettyPrinter
             File.WriteAllText (overlayerFilePath, PrettyPrinter.prettyPrint (scstring overlays) prettyPrinter)
@@ -860,7 +860,7 @@ module Gaia =
                     { Position = entityPosition
                       Size = entity.GetQuickSize world
                       Rotation = entity.GetRotation world
-                      Depth = getCreationDepth form
+                      Elevation = getCreationElevation form
                       Flags = entity.GetFlags world }
                 let world = entity.SetTransformSnapped positionSnap rotationSnap entityTransform world
                 selectEntity entity form world
@@ -1526,9 +1526,9 @@ module Gaia =
 
         // configure controls
         form.displayPanel.MaximumSize <- Drawing.Size (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
-        form.positionSnapTextBox.Text <- scstring Constants.Editor.DefaultPositionSnap
-        form.rotationSnapTextBox.Text <- scstring Constants.Editor.DefaultRotationSnap
-        form.createDepthTextBox.Text <- scstring Constants.Editor.DefaultCreationDepth
+        form.positionSnapTextBox.Text <- scstring Constants.Editor.PositionSnapDefault
+        form.rotationSnapTextBox.Text <- scstring Constants.Editor.RotationSnapDefault
+        form.createElevationTextBox.Text <- scstring Constants.Editor.CreationElevationDefault
 
         // build tree view sorter
         let treeViewSorter =
@@ -1550,8 +1550,8 @@ module Gaia =
 
         // set up events handlers
         form.exitToolStripMenuItem.Click.Add (handleFormExit form)
-        form.createDepthPlusButton.Click.Add (handleFormCreateDepthPlusClick form)
-        form.createDepthMinusButton.Click.Add (handleFormCreateDepthMinusClick form)
+        form.createElevationPlusButton.Click.Add (handleFormCreateElevationPlusClick form)
+        form.createElevationMinusButton.Click.Add (handleFormCreateElevationMinusClick form)
         form.entityPropertyGrid.SelectedObjectsChanged.Add (handleFormEntityPropertyGridSelectedObjectsChanged form)
         form.entityPropertyGrid.SelectedGridItemChanged.Add (handleFormEntityPropertyGridSelectedGridItemChanged form)
         form.layerPropertyGrid.SelectedObjectsChanged.Add (handleFormLayerPropertyGridSelectedObjectsChanged form)
@@ -1712,8 +1712,8 @@ module Gaia =
             { ViewConfig = sdlViewConfig
               ViewW = form.displayPanel.MaximumSize.Width
               ViewH = form.displayPanel.MaximumSize.Height
-              RendererFlags = Constants.Render.DefaultRendererFlags
-              AudioChunkSize = Constants.Audio.DefaultBufferSize }
+              RendererFlags = Constants.Render.RendererFlagsDefault
+              AudioChunkSize = Constants.Audio.BufferSizeDefault }
         SdlDeps.attemptMake sdlConfig
 
     /// Run Gaia from the F# evaluator.

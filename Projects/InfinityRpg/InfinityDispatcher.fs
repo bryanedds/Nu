@@ -30,10 +30,10 @@ module InfinityDispatcher =
         override this.Register (game, world) =
             // NOTE: just pre-loading all assets in the application for simplicity...
             // May have to make this more efficient later.
-            let world = World.hintRenderPackageUse Assets.GuiPackageName world
-            let world = World.hintAudioPackageUse Assets.GuiPackageName world
-            let world = World.hintRenderPackageUse Assets.GameplayPackageName world
-            let world = World.hintAudioPackageUse Assets.GameplayPackageName world
+            let world = World.hintRenderPackageUse Assets.Gui.PackageName world
+            let world = World.hintAudioPackageUse Assets.Gui.PackageName world
+            let world = World.hintRenderPackageUse Assets.Gameplay.PackageName world
+            let world = World.hintAudioPackageUse Assets.Gameplay.PackageName world
             base.Register (game, world)
 
         override this.Channel (_, _) =
@@ -54,7 +54,7 @@ module InfinityDispatcher =
 
         override this.Content (infinity, _) =
             [Content.screen Simulants.Splash.Name (Splash (Constants.InfinityRpg.DissolveDescriptor, Constants.InfinityRpg.SplashData, None, Some Simulants.Title)) [] []
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.InfinityRpg.DissolveDescriptor, Some Assets.ButterflyGirlSong)) Assets.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.InfinityRpg.DissolveDescriptor, Some Assets.ButterflyGirlSong)) Assets.CreditsLayerFilePath
-             Content.screen<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.InfinityRpg.DissolveDescriptor, Some Assets.HerosVengeanceSong))
+             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.InfinityRpg.DissolveDescriptor, Some Assets.Gui.ButterflyGirlSong)) Assets.Gui.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.InfinityRpg.DissolveDescriptor, Some Assets.Gui.ButterflyGirlSong)) Assets.Gui.CreditsLayerFilePath
+             Content.screen<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.InfinityRpg.DissolveDescriptor, Some Assets.Gameplay.HerosVengeanceSong))
                  [Screen.Gameplay <== infinity --> fun infinity -> infinity.Gameplay] []]

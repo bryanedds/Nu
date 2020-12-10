@@ -46,9 +46,9 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                    match dialogOpt with
                    | Some dialog ->
                        match dialog.DialogForm with
-                       | DialogThin -> Assets.DialogThinImage
-                       | DialogThick -> Assets.DialogThickImage
-                   | None -> Assets.DialogThickImage
+                       | DialogThin -> Assets.Gui.DialogThinImage
+                       | DialogThick -> Assets.Gui.DialogThickImage
+                   | None -> Assets.Gui.DialogThickImage
                Some image
             Entity.Text <== dialogOpt --> fun dialogOpt ->
                match dialogOpt with

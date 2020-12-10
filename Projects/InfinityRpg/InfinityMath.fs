@@ -21,6 +21,9 @@ type MapBounds =
              point.Y < bounds.CornerNegative.Y ||
              point.Y > bounds.CornerPositive.Y)
 
+    static member make (offsetC : Vector2i) sizeC =
+        { CornerNegative = offsetC; CornerPositive = offsetC + sizeC - v2iOne }
+
 type Direction =
     | Upward
     | Rightward

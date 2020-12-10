@@ -337,7 +337,7 @@ module WorldModule2 =
                         let world = splashSprite.SetVisible true world
                         world
                     | None ->
-                        let world = splashSprite.SetStaticImage Assets.DefaultImage10 world
+                        let world = splashSprite.SetStaticImage Assets.Default.Image10 world
                         let world = splashSprite.SetVisible false world
                         world
                 let (unsub, world) = World.monitorCompressed Gen.id None None None (Left (World.handleSplashScreenIdle splashDescriptor.IdlingTime destinationOpt screen)) (Events.IncomingFinish --> screen) screen world
@@ -421,8 +421,8 @@ module WorldModule2 =
         static member tryReloadOverlays inputDirectory outputDirectory world =
             
             // attempt to reload overlay file
-            let inputOverlayerFilePath = inputDirectory + "/" + Assets.OverlayerFilePath
-            let outputOverlayerFilePath = outputDirectory + "/" + Assets.OverlayerFilePath
+            let inputOverlayerFilePath = inputDirectory + "/" + Assets.Global.OverlayerFilePath
+            let outputOverlayerFilePath = outputDirectory + "/" + Assets.Global.OverlayerFilePath
             try File.Copy (inputOverlayerFilePath, outputOverlayerFilePath, true)
 
                 // cache old overlayer and make new one
@@ -445,8 +445,8 @@ module WorldModule2 =
 
         /// Try to reload the prelude currently in use by the world.
         static member tryReloadPrelude inputDirectory outputDirectory world =
-            let inputPreludeFilePath = inputDirectory + "/" + Assets.PreludeFilePath
-            let outputPreludeFilePath = outputDirectory + "/" + Assets.PreludeFilePath
+            let inputPreludeFilePath = inputDirectory + "/" + Assets.Global.PreludeFilePath
+            let outputPreludeFilePath = outputDirectory + "/" + Assets.Global.PreludeFilePath
             try File.Copy (inputPreludeFilePath, outputPreludeFilePath, true)
                 match World.tryEvalPrelude world with
                 | Right struct (preludeStr, world) -> (Right preludeStr, world)
@@ -468,12 +468,12 @@ module WorldModule2 =
             
             // attempt to reload asset graph file
             try File.Copy
-                    (inputDirectory + "/" + Assets.AssetGraphFilePath,
-                     outputDirectory + "/" + Assets.AssetGraphFilePath,
+                    (inputDirectory + "/" + Assets.Global.AssetGraphFilePath,
+                     outputDirectory + "/" + Assets.Global.AssetGraphFilePath,
                      true)
 
                 // attempt to load asset graph
-                match AssetGraph.tryMakeFromFile (outputDirectory + "/" + Assets.AssetGraphFilePath) with
+                match AssetGraph.tryMakeFromFile (outputDirectory + "/" + Assets.Global.AssetGraphFilePath) with
                 | Right assetGraph ->
 
                     // build assets reload asset metadata
@@ -819,10 +819,10 @@ module WorldModule2 =
                 let color = Color.White.WithA (byte (alpha * 255.0f))
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
-                let transform = { Position = position; Size = size; Rotation = 0.0f; Depth = Single.MaxValue; Flags = -1 }
+                let transform = { Position = position; Size = size; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = -1 }
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
-                        { Depth = transform.Depth
+                        { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = AssetTag.generalize dissolveImage
                           RenderDescriptor =

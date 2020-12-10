@@ -3,15 +3,8 @@
 
 namespace Nu
 open System
-open System.Collections
-open System.Collections.Generic
 open Prime
 open Nu
-
-type [<NoEquality; NoComparison>] ContentTracker<'v, 'k> =
-    | NoTracking
-    | AutoTracking
-    | ExplicitTracking of ('v -> 'k)
 
 /// Describes the behavior of a screen.
 type [<StructuralEquality; NoComparison>] ScreenBehavior =
@@ -22,7 +15,7 @@ type [<StructuralEquality; NoComparison>] ScreenBehavior =
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
-    | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> obj seq) * ContentTracker<obj, obj> * (int -> Lens<obj, World> -> World -> EntityContent)
+    | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> Map<IComparable, obj>) * (obj -> Lens<obj, World> -> World -> EntityContent)
     | EntityFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
@@ -30,8 +23,8 @@ type [<NoEquality; NoComparison>] EntityContent =
     /// Expand an entity content to its constituent parts.
     static member expand content (layer : Layer) (world : World) =
         match content with
-        | EntitiesFromStream (lens, sieve, unfold, indexOpt, mapper) ->
-            Choice1Of3 (lens, sieve, unfold, indexOpt, mapper)
+        | EntitiesFromStream (lens, sieve, unfold, mapper) ->
+            Choice1Of3 (lens, sieve, unfold, mapper)
         | EntityFromInitializers (dispatcherName, name, initializers, content) ->
             let (descriptor, handlersEntity, bindsEntity) = Describe.entity4 dispatcherName (Some name) initializers (layer / name) world
             Choice2Of3 (name, descriptor, handlersEntity, bindsEntity, (layer / name, content))
@@ -40,7 +33,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 
 /// Describes the content of a layer.
 type [<NoEquality; NoComparison>] LayerContent =
-    | LayersFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> obj seq) * ContentTracker<obj, obj> * (int -> Lens<obj, World> -> World -> LayerContent)
+    | LayersFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> Map<IComparable, obj>) * (obj -> Lens<obj, World> -> World -> LayerContent)
     | LayerFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | LayerFromFile of string * string
     interface SimulantContent
@@ -48,12 +41,12 @@ type [<NoEquality; NoComparison>] LayerContent =
     /// Expand a layer content to its constituent parts.
     static member expand content screen (world : World) =
         match content with
-        | LayersFromStream (lens, sieve, unfold, indexOpt, mapper) ->
-            Choice1Of3 (lens, sieve, unfold, indexOpt, mapper)
+        | LayersFromStream (lens, sieve, unfold, mapper) ->
+            Choice1Of3 (lens, sieve, unfold, mapper)
         | LayerFromInitializers (dispatcherName, name, initializers, content) ->
             let layer = screen / name
             let expansions = List.map (fun content -> EntityContent.expand content layer world) content
-            let streams = List.map (function Choice1Of3 (lens, sieve, unfold, indexOpt, mapper) -> Some (layer, lens, sieve, unfold, indexOpt, mapper) | _ -> None) expansions |> List.definitize
+            let streams = List.map (function Choice1Of3 (lens, sieve, unfold, mapper) -> Some (layer, lens, sieve, unfold, mapper) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (_, descriptor, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
             let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
             let binds = List.map (function Choice2Of3 (_, _, _, binds, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
@@ -77,7 +70,7 @@ type [<NoEquality; NoComparison>] ScreenContent =
         | ScreenFromInitializers (dispatcherName, name, behavior, initializers, content) ->
             let screen = Screen name
             let expansions = List.map (fun content -> LayerContent.expand content screen world) content
-            let streams = List.map (function Choice1Of3 (lens, sieve, unfold, indexOpt, mapper) -> Some (screen, lens, sieve, unfold, indexOpt, mapper) | _ -> None) expansions |> List.definitize
+            let streams = List.map (function Choice1Of3 (lens, sieve, unfold, mapper) -> Some (screen, lens, sieve, unfold, mapper) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (_, descriptor, _, _, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
             let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
             let binds = List.map (function Choice2Of3 (_, _, _, binds, _, _, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
@@ -169,96 +162,91 @@ module WorldDeclarative =
 
     type World with
 
-        static member internal removeSynchronizedSimulants removed world =
-            Seq.fold (fun world guidAndContent ->
-                let (guid, _) = PartialComparable.unmake guidAndContent
-                match World.tryGetKeyedValue guid world with
-                | Some simulant ->
-                    let world = World.removeKeyedValue guid world
-                    WorldModule.destroy simulant world
+        static member internal removeSynchronizedSimulants simulantMapId removed world =
+            Seq.fold (fun world keyAndLens ->
+                let (key, _) = PartialComparable.unmake keyAndLens
+                match World.tryGetKeyedValue simulantMapId world with
+                | Some simulantMap ->
+                    match Map.tryFind key simulantMap with
+                    | Some simulant ->
+                        let simulantMap = Map.remove key simulantMap
+                        let world =
+                            if Map.isEmpty simulantMap
+                            then World.removeKeyedValue simulantMapId world
+                            else World.addKeyedValue simulantMapId simulantMap world
+                        WorldModule.destroy simulant world
+                    | None -> world
                 | None -> world)
                 world removed
-                
-        static member internal addSynchronizedSimulants mapper monitorMapper added origin owner parent world =
-            Seq.fold (fun world guidAndContent ->
-                let (guid, (index, lens)) = PartialComparable.unmake guidAndContent
+
+        static member internal addSynchronizedSimulants mapper monitorMapper simulantMapId added origin owner parent world =
+            Seq.fold (fun world keyAndLens ->
+                let (key, lens) = PartialComparable.unmake keyAndLens
                 let payloadOpt = ((Gen.id, monitorMapper) : Payload) :> obj |> Some
                 let lens = { lens with PayloadOpt = payloadOpt }
-                let content = mapper index lens world
-                match World.tryGetKeyedValue guid world with
+                let content = mapper key lens world
+                let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin owner parent world
+                match World.tryGetKeyedValue simulantMapId world with
                 | None ->
-                    let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin owner parent world
                     match simulantOpt with
-                    | Some simulant -> World.addKeyedValue guid simulant world
-                    | None -> world
-                | Some _ -> world)
+                    | Some simulant -> World.addKeyedValue simulantMapId (Map.singleton key simulant) world
+                    | None -> Log.debug "Expected entity to be created from expandContent, but none was created."; world
+                | Some simulantMap ->
+                    match simulantOpt with
+                    | Some simulant -> World.addKeyedValue simulantMapId (Map.add key simulant simulantMap) world
+                    | None -> Log.debug "Expected entity to be created from expandContent, but none was created."; world)
                 world added
 
-        static member internal synchronizeSimulants mapper monitorMapper tracking previous current origin owner parent world =
-            let added = if tracking then USet.differenceFast current previous else HashSet (USet.toSeq current, HashIdentity.Structural) // TODO: use USet.toHashSet once PRime is upgraded.
-            let removed = if tracking then USet.differenceFast previous current else HashSet (USet.toSeq previous, HashIdentity.Structural) // TODO: use USet.toHashSet once PRime is upgraded.
+        static member internal synchronizeSimulants mapper monitorMapper simulantMapId previous current origin owner parent world =
+            let added = USet.differenceFast current previous
+            let removed = USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
             if changed then
-                let world = World.removeSynchronizedSimulants removed world
-                let world = World.addSynchronizedSimulants mapper monitorMapper added origin owner parent world
+                let world = World.removeSynchronizedSimulants simulantMapId removed world
+                let world = World.addSynchronizedSimulants mapper monitorMapper simulantMapId added origin owner parent world
                 world
             else world
 
-        /// Turn an entity lens into a series of live simulants.
+        /// Turn a lens into a series of live simulants.
         /// OPTIMIZATION: lots of optimizations going on in here including inlining and mutation!
         static member expandSimulants
             (lens : Lens<obj, World>)
             (sieve : obj -> obj)
-            (unfold : obj -> World -> obj seq)
-            (tracker : ContentTracker<obj, obj>)
-            (mapper : int -> Lens<obj, World> -> World -> SimulantContent)
+            (unfold : obj -> World -> Map<IComparable, obj>)
+            (mapper : IComparable -> Lens<obj, World> -> World -> SimulantContent)
             (origin : ContentOrigin)
             (owner : Simulant)
             (parent : Simulant)
             world =
-            let mutable indexCurrent = 0
-            let mutable indexes = dictPlus<obj, int> []
-            let indexer (index : obj) =
-                match indexes.TryGetValue index with
-                | (false, _) ->
-                    let index' = indexCurrent
-                    indexes.Add (index, index')
-                    indexCurrent <- inc indexCurrent
-                    index'
-                | (true, index') -> index'
+            let previousSetKey = Gen.id
+            let simulantMapKey = Gen.id
             let mutable monitorResult = Unchecked.defaultof<obj>
             let mutable lensResult = Unchecked.defaultof<obj>
             let mutable sieveResultOpt = None
             let mutable unfoldResultOpt = None
-            let lensSeq =
+            let lensMap =
                 Lens.mapWorld (fun a world ->
                     let (b, c) =
-                        if a = lensResult then
+                        if refEq a lensResult || genEq a lensResult then
                             match (sieveResultOpt, unfoldResultOpt) with
                             | (Some b, Some c) -> (b, c)
                             | (Some b, None) -> let c = unfold b world in (b, c)
                             | (None, Some _) -> failwithumf ()
                             | (None, None) -> let b = sieve a in let c = unfold b world in (b, c)
-                        else let b = sieve a in let c = unfold b world in (b, c)
+                        else
+                            let b = sieve a
+                            let c = unfold b world
+                            (b, c)
                     lensResult <- a
                     sieveResultOpt <- Some b
                     unfoldResultOpt <- Some c
                     c)
                     lens
-            let (tracking, lenses) =
-                match tracker with
-                | NoTracking -> (false, Lens.explodeIndexedOpt None lensSeq)
-                | AutoTracking -> (true, Lens.explodeIndexedOpt None lensSeq)
-                | ExplicitTracking fn -> (true, Lens.explodeIndexedOpt (Some (fun index -> (indexer (fn index)))) lensSeq)
-            let expansionId = Gen.id
-            let previousSetKey = Gen.id
             let monitorMapper =
                 fun a _ world ->
                     let b =
-                        if a.Value = monitorResult then
-                            match sieveResultOpt with
-                            | Some b -> b
-                            | None -> sieve (lens.Get world)
+                        if refEq a.Value monitorResult || genEq a.Value monitorResult
+                        then match sieveResultOpt with Some b -> b | None -> sieve (lens.Get world)
                         else sieve (lens.Get world)
                     monitorResult <- a.Value
                     sieveResultOpt <- Some b
@@ -266,30 +254,28 @@ module WorldDeclarative =
             let monitorFilter =
                 fun a a2Opt _ ->
                     match a2Opt with
-                    | Some a2 -> a <> a2
+                    | Some a2 -> not (refEq a a2 || genEq a a2)
                     | None -> true
             let subscription = fun _ world ->
-                let items = Lens.get lensSeq world
+                let map = Lens.get lensMap world
                 let mutable current = USet.makeEmpty Functional
-                let mutable count = Seq.length items
-                let mutable enr = lenses.GetEnumerator ()
-                while count <> 0 && enr.MoveNext () do
-                    let lens' = enr.Current
+                let mutable enr = (map :> _ seq).GetEnumerator ()
+                while enr.MoveNext () do
+                    let key = let ec = enr.Current in ec.Key
+                    let lens' = Lens.map (fun map -> Map.tryFind key map) lensMap
                     match lens'.Get world with
-                    | Some (index, _) ->
-                        let guid = Gen.idDeterministic index expansionId
-                        let lens'' = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) } --> snd
-                        let item = PartialComparable.make guid (index, lens'')
+                    | Some _ ->
+                        let lens'' = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) }
+                        let item = PartialComparable.make key lens''
                         current <- USet.add item current
-                        count <- dec count
                     | None -> ()
                 let previous =
-                    match World.tryGetKeyedValue<PartialComparable<Guid, int * Lens<obj, World>> USet> previousSetKey world with
+                    match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> previousSetKey world with
                     | Some previous -> previous
                     | None -> USet.makeEmpty Functional
-                let world = World.synchronizeSimulants mapper monitorMapper tracking previous current origin owner parent world
+                let world = World.synchronizeSimulants mapper monitorMapper simulantMapKey previous current origin owner parent world
                 let world = World.addKeyedValue previousSetKey current world
                 (Cascade, world)
-            let (_, world) = subscription (Unchecked.defaultof<_>) world // expand simulants immediately rather than waiting for parent registration
+            let (_, world) = subscription Unchecked.defaultof<_> world // expand simulants immediately rather than waiting for parent registration
             let (_, world) = World.monitorCompressed Gen.id (Some monitorMapper) (Some monitorFilter) None (Left subscription) lens.ChangeEvent parent world
             world

@@ -33,7 +33,7 @@ and LayerPropertyDescriptor (propertyDescriptor, attributes) =
         // \r character as here - https://bytes.com/topic/c-sharp/answers/214456-q-ordering-sorting-category-text-propertygrid
         if propertyName.EndsWith "Script" then "Scripts"
         elif propertyName = "Name" then "\rAmbient Properties"
-        elif propertyName = "Persistent" || propertyName = "Script" || propertyName = "ScriptOpt" || propertyName = "Depth" || propertyName = "Visible" then "\rScene Properties"
+        elif propertyName = "Persistent" || propertyName = "Script" || propertyName = "ScriptOpt" || propertyName = "Elevation" || propertyName = "Visible" then "\rScene Properties"
         else "\rXtension Properties"
 
     override this.Description =

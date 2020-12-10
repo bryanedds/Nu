@@ -18,6 +18,10 @@
 #r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
 
+let workingDirPath = __SOURCE_DIRECTORY__ + "/bin/Debug"
+if not (System.IO.Directory.Exists workingDirPath) then failwith "You must build the project in Debug mode at least once before running in interactive."
+System.IO.Directory.SetCurrentDirectory workingDirPath
+
 #load "BlazeAssets.fs"
 #load "BlazeSimulants.fs"
 #load "BlazeDispatchers.fs"
@@ -30,18 +34,13 @@ open System.IO
 open Prime
 open Nu
 
-// ensure project has been built at least once before proceeding
-let workingDirPath = __SOURCE_DIRECTORY__ + "/bin/Debug"
-if not (Directory.Exists workingDirPath) then failwith "You must build the project at least once before running in interactive."
-Directory.SetCurrentDirectory workingDirPath
-
 // copy over required project files
 File.Copy ("../../AssetGraph.nuag", "AssetGraph.nuag", true)
 File.Copy ("../../Overlayer.nuol", "Overlayer.nuol", true)
 File.Copy ("../../Prelude.nuscript", "Prelude.nuscript", true)
 
 // build assets
-match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
+match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
 | Right assetGraph -> AssetGraph.buildAssets "../.." "." "../../refinement" false assetGraph
 | Left _ -> ()
 

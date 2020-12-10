@@ -13,7 +13,7 @@
     [Text "After a five day trek into the mountains..."]]]
   [StaticSpriteDispatcher
    [[Color [0 0 0 255]]
-    [Depth -10]
+    [Elevation -10]
     [Optimized True]
     [Position [-480 -270]]
     [Size [960 540]]
