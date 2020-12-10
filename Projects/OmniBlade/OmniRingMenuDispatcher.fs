@@ -12,7 +12,7 @@ open OmniBlade
 module RingMenuDispatcher =
 
     type [<StructuralEquality; NoComparison>] RingMenu =
-        { Items : Map<string, int * bool>
+        { Items : Map<int, string * bool>
           ItemCancelOpt : string option }
 
     type RingMenuCommand =
@@ -56,17 +56,17 @@ module RingMenuDispatcher =
             [Content.entities ringMenu
                 (fun ringMenu -> ringMenu.Items)
                 (fun items _ -> items)
-                (fun key indexAndEnabled world ->
-                    let index = indexAndEnabled.Get world |> fst
-                    let buttonName = menu.Name + "+" + key
+                (fun index itemNameAndEnabled world ->
+                    let itemName = Lens.get itemNameAndEnabled world |> fst
+                    let buttonName = menu.Name + "+" + scstring index
                     let button = menu.Parent / buttonName
                     Content.button button.Name
-                        [Entity.EnabledLocal <== indexAndEnabled --> snd
+                        [Entity.EnabledLocal <== itemNameAndEnabled --> snd
                          Entity.Size == v2 48.0f 48.0f
                          Entity.Elevation <== menu.Elevation
-                         Entity.UpImage == asset Assets.Battle.PackageName (key + "Up")
-                         Entity.DownImage == asset Assets.Battle.PackageName (key + "Down")
-                         Entity.ClickEvent ==> cmd (ItemSelect key)
+                         Entity.UpImage == asset Assets.Battle.PackageName (itemName + "Up")
+                         Entity.DownImage == asset Assets.Battle.PackageName (itemName + "Down")
+                         Entity.ClickEvent ==> cmd (ItemSelect itemName)
                          Entity.UpdateEvent ==> cmd (ArrangeItemButton (button, index))])
              Content.entityOpt ringMenu (fun ringMenu -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
