@@ -14,7 +14,7 @@
     [Size [288 48]]
     [Text Back]]]
   [LabelDispatcher
-   [[Depth -1]
+   [[Elevation -1]
     [LabelImage [Gui CreditsLabel]]
     [Name Credits]
     [Position [-384 32]]

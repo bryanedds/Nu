@@ -3,7 +3,7 @@
  <tileset firstgid="1" source="Colloseum.tsx"/>
  <layer id="2" name="Floor" width="32" height="16">
   <properties>
-   <property name="D" value="0"/>
+   <property name="E" value="0"/>
   </properties>
   <data encoding="base64" compression="zlib">
    eJxjYCAfTGWC4IECo/YPD/t5gGbw0hnzIblbB8jWpTPWG+T2NwJxExJuprP9C4F4ERJeTKS56O5Gx800th9dHzpeTKT9B4H4EBI+TKT96PrQ8WEi7adn+vMBsn3pjP2Q7IeVY/TGgwEAALeyXqY=
@@ -11,7 +11,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="16">
   <properties>
-   <property name="D" value="10"/>
+   <property name="E" value="10"/>
   </properties>
   <data encoding="base64" compression="zlib">
    eJzVlW1Kw0AQhmdNVeotQkHQH/UOFor2j3ewarGteAf74Q/1ErbqPbTqPbTYa/gMSXGz3ZUgNMWBhxnenZ13SAKJRSROqcNpykmOXLPu+M5Dd2IHnXEGLRhAZETKsGWSWrW+ZLPqVfJeWrvnfc8c1Y6h6exxAEO4hgeo0LsDuyapVRtLNqs+D63d87FnjmpX0IN9x/8RnuBVd6P3EBomqVWbSDbXLH+t3fOJZ45q9zDy+L/BO0z1+dB7Dm2T1FNZpGn5/9bjznmGF4//F8zSeT1rtl3b8deeD/j0+Bcdef2PotX6X0bL2SOPf4d31oUL87NHkf43+N7CXeD7CkU1sKut/5fvrwh/ZQM2C/Bdg0gW/0HKNqxDaUlZqQS8V8U3DylZvg==

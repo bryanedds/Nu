@@ -76,7 +76,7 @@ module FieldDispatcher =
                             else sprites)
                         tiles [] |>
                     Array.ofList
-                [Render (fieldTransform.Depth, fieldTransform.Position.Y, AssetTag.generalize image, SpritesDescriptor sprites)]
+                [Render (fieldTransform.Elevation, fieldTransform.Position.Y, AssetTag.generalize image, SpritesDescriptor sprites)]
             else []
 
         override this.GetQuickSize (entity, world) =

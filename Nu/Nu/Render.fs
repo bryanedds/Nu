@@ -82,7 +82,7 @@ type [<StructuralEquality; NoComparison>] RenderDescriptor =
 
 /// Describes how to render a layered thing to the rendering system.
 type [<StructuralEquality; NoComparison>] LayeredDescriptor =
-    { Depth : single
+    { Elevation : single
       PositionY : single
       AssetTag : obj AssetTag
       RenderDescriptor : RenderDescriptor }
@@ -139,8 +139,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
           LayeredDescriptors : LayeredDescriptor List }
 
     static member private compareDescriptors (left : LayeredDescriptor) (right : LayeredDescriptor) =
-        let depthCompare = left.Depth.CompareTo right.Depth
-        if depthCompare <> 0 then depthCompare else
+        let elevationCompare = left.Elevation.CompareTo right.Elevation
+        if elevationCompare <> 0 then elevationCompare else
         let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
         if positionYCompare <> 0 then positionYCompare else
         let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName

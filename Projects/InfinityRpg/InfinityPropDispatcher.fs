@@ -26,7 +26,7 @@ module PropDispatcher =
             Some spriteInset
         
         static member Properties =
-            [define Entity.Depth Constants.Layout.PropDepth
+            [define Entity.Elevation Constants.Layout.PropElevation
              define Entity.PublishChanges true
              define Entity.Omnipresent true]
         
@@ -36,7 +36,7 @@ module PropDispatcher =
         override this.View (prop, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize prop.PropImage,
+                [Render (transform.Elevation, transform.Position.Y, AssetTag.generalize prop.PropImage,
                      SpriteDescriptor
                        { Transform = transform
                          Offset = v2Zero
