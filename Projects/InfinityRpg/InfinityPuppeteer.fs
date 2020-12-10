@@ -32,14 +32,31 @@ type [<ReferenceEquality; NoComparison>] TurnStatus =
         | TurnTicking tickCount -> TurnTicking (inc tickCount)
         | _ -> turnStatus
 
+type [<ReferenceEquality; NoComparison>] Reactor =
+    | ReactingCharacter of CharacterIndex
+    | ReactingProp of Vector2i
+
 type [<ReferenceEquality; NoComparison>] Turn =
     { TurnType : TurnType
       TurnStatus : TurnStatus
       Actor : CharacterIndex
-      ReactorOpt : CharacterIndex option
+      ReactorOpt : Reactor option
       OriginCoordinates : Vector2i
       Direction : Direction
       StartTick : int64 }
+    
+    member this.GetReactor =
+        match this.ReactorOpt with
+        | Some reactor -> reactor
+        | None -> failwithumf ()
+    
+    static member hasParticularReactor reactorIndex turn =
+        match turn.ReactorOpt with
+        | Some reactor ->
+            match reactor with
+            | ReactingCharacter index -> index = reactorIndex
+            | _ -> false
+        | None -> false
     
     member this.IsFirstTick =
         match this.TurnStatus with
@@ -87,11 +104,11 @@ type [<ReferenceEquality; NoComparison>] Turn =
           Direction = direction
           StartTick = 0L }
 
-    static member makeAttack index targetIndex originC direction =
+    static member makeAttack index reactor originC direction =
         { TurnType = AttackTurn
           TurnStatus = TurnBeginning
           Actor = index
-          ReactorOpt = Some targetIndex
+          ReactorOpt = Some reactor
           OriginCoordinates = originC
           Direction = direction
           StartTick = 0L }
@@ -108,7 +125,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
         List.tryFind (fun x -> x.Actor = index) puppeteer.CharacterTurns
 
     static member tryGetOpponentTurn index puppeteer =
-        List.tryFind (fun x -> x.ReactorOpt = Some index) puppeteer.CharacterTurns
+        List.tryFind (Turn.hasParticularReactor index) puppeteer.CharacterTurns
     
     static member tryGetAttackingEnemyTurn puppeteer =
         List.tryFind (fun x -> x.Actor.IsEnemy && x.TurnType = AttackTurn) puppeteer.CharacterTurns
