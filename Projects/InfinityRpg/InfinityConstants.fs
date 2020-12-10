@@ -13,8 +13,10 @@ module Constants =
         let TileSheetSizeI = Vector2i.Multiply (TileSheetSizeC, TileSizeI)
         let TileSheetSize = let t = TileSheetSizeI in t.Vector2
         let FieldMapSizeC = v2iDup 20
-        let CharacterDepth = 1.0f
-        let PickupDepth = 0.5f
+        let CharacterElevation = 1.0f
+        let PropElevation = 1.0f
+        let PickupElevation = 0.5f
+        let EffectElevation = 2.0f
 
     [<RequireQualifiedAccess>]
     module InfinityRpg =
@@ -23,13 +25,13 @@ module Constants =
         let DissolveDescriptor =
             { IncomingTime = 20L
               OutgoingTime = 30L
-              DissolveImage = asset<Image> Assets.GuiPackageName "Dissolve" }
+              DissolveImage = asset<Image> Assets.Gui.PackageName "Dissolve" }
 
         // splash constants
         let SplashData =
             { DissolveDescriptor = DissolveDescriptor
               IdlingTime = 60L
-              SplashImageOpt = Some (asset<Image> Assets.GuiPackageName "Nu") }
+              SplashImageOpt = Some (asset<Image> Assets.Gui.PackageName "Nu") }
 
         // general data
         let AttackName = "Attack"

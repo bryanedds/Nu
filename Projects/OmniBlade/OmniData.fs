@@ -428,7 +428,7 @@ type [<NoComparison>] PropData =
 
 type [<NoComparison>] PropDescriptor =
     { PropBounds : Vector4
-      PropDepth : single
+      PropElevation : single
       PropData : PropData
       PropId : int }
 
@@ -455,14 +455,14 @@ module FieldData =
         let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
         let propSize = v2 (single object.Width) (single object.Height)
         let propBounds = v4Bounds propPosition propSize
-        let propDepth =
-            match group.Properties.TryGetValue Constants.TileMap.DepthPropertyName with
-            | (true, depthStr) -> Constants.Field.ForegroundDepth + scvalue depthStr
-            | (false, _) -> Constants.Field.ForegroundDepth
+        let propElevation =
+            match group.Properties.TryGetValue Constants.TileMap.ElevationPropertyName with
+            | (true, elevationStr) -> Constants.Field.ForegroundElevation + scvalue elevationStr
+            | (false, _) -> Constants.Field.ForegroundElevation
         match object.Properties.TryGetValue Constants.TileMap.InfoPropertyName with
         | (true, propDataStr) ->
             let propData = scvalue propDataStr
-            Some { PropBounds = propBounds; PropDepth = propDepth; PropData = propData; PropId = object.Id }
+            Some { PropBounds = propBounds; PropElevation = propElevation; PropData = propData; PropId = object.Id }
         | (false, _) -> None
 
     let inflateProp prop (treasures : ItemType FStack) rand =
@@ -531,10 +531,10 @@ module FieldData =
             let (props, _, _) =
                 List.foldBack (fun prop (props, treasures, rand) ->
                     let (prop, treasures, rand) = inflateProp prop treasures rand
-                    let treasures = if FStack.isEmpty treasures then FStack.fromSeq fieldData.Treasures else treasures
+                    let treasures = if FStack.isEmpty treasures then FStack.ofSeq fieldData.Treasures else treasures
                     (prop :: props, treasures, rand))
                     propsUninflated
-                    ([], FStack.fromSeq fieldData.Treasures, Rand.makeFromSeedState rotatedSeedState)
+                    ([], FStack.ofSeq fieldData.Treasures, Rand.makeFromSeedState rotatedSeedState)
             propsMemoized <- Map.add memoKey props propsMemoized
             props
         | Some props -> props
@@ -630,25 +630,26 @@ module Data =
           CharacterAnimations : Map<CharacterAnimationCycle, CharacterAnimationData> }
 
     let private readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
+        Math.init () // HACK: initializing Math type converters for required type converters fsx script.
         let text = File.ReadAllText filePath
-        let symbol = flip (Symbol.fromStringCsv true) (Some filePath) text
+        let symbol = flip (Symbol.ofStringCsv true) (Some filePath) text
         let value = symbolToValue<'d list> symbol
         Map.ofListBy (fun data -> getKey data, data) value
 
     let private readFromFiles () =
-        { Weapons = readSheet Assets.WeaponDataFilePath (fun data -> data.WeaponType)
-          Armors = readSheet Assets.ArmorDataFilePath (fun data -> data.ArmorType)
-          Accessories = readSheet Assets.AccessoryDataFilePath (fun data -> data.AccessoryType)
-          Consumables = readSheet Assets.ConsumableDataFilePath (fun data -> data.ConsumableType)
-          Techs = readSheet Assets.TechDataFilePath (fun data -> data.TechType)
-          Archetypes = readSheet Assets.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
-          Characters = readSheet Assets.CharacterDataFilePath (fun data -> data.CharacterType)
-          Shops = readSheet Assets.ShopDataFilePath (fun data -> data.ShopType)
-          Fields = readSheet Assets.FieldDataFilePath (fun data -> data.FieldType)
-          Battles = readSheet Assets.BattleDataFilePath (fun data -> data.BattleType)
-          Encounters = readSheet Assets.EncounterDataFilePath (fun data -> data.EncounterType)
-          TechAnimations = readSheet Assets.TechAnimationDataFilePath (fun data -> data.TechType)
-          CharacterAnimations = readSheet Assets.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
+        { Weapons = readSheet Assets.Field.WeaponDataFilePath (fun data -> data.WeaponType)
+          Armors = readSheet Assets.Field.ArmorDataFilePath (fun data -> data.ArmorType)
+          Accessories = readSheet Assets.Field.AccessoryDataFilePath (fun data -> data.AccessoryType)
+          Consumables = readSheet Assets.Field.ConsumableDataFilePath (fun data -> data.ConsumableType)
+          Techs = readSheet Assets.Field.TechDataFilePath (fun data -> data.TechType)
+          Archetypes = readSheet Assets.Field.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
+          Characters = readSheet Assets.Field.CharacterDataFilePath (fun data -> data.CharacterType)
+          Shops = readSheet Assets.Field.ShopDataFilePath (fun data -> data.ShopType)
+          Fields = readSheet Assets.Field.FieldDataFilePath (fun data -> data.FieldType)
+          Battles = readSheet Assets.Field.BattleDataFilePath (fun data -> data.BattleType)
+          Encounters = readSheet Assets.Field.EncounterDataFilePath (fun data -> data.EncounterType)
+          TechAnimations = readSheet Assets.Field.TechAnimationDataFilePath (fun data -> data.TechType)
+          CharacterAnimations = readSheet Assets.Field.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
 
     let Value =
         readFromFiles ()

@@ -1,37 +1,38 @@
 [LayerDispatcher
- [[Depth 0]
+ [[Model
+   ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Layer]
   [Persistent True]
   [Visible True]]
  [[EnemyDispatcher
-   [[Depth 1]
+   [[Elevation 1]
     [Position [-159.8438 -175.68]]]]
   [EnemyDispatcher
-   [[Depth 1]
+   [[Elevation 1]
     [Position [96 -79.68001]]]]
   [EnemyDispatcher
-   [[Depth 1]
+   [[Elevation 1]
     [Position [1328 -175.68]]]]
   [EnemyDispatcher
-   [[Depth 1]
+   [[Elevation 1]
     [Position [416 -79.68001]]]]
   [TileMapDispatcher
-   [[Depth -8]
+   [[Elevation -8]
     [Parallax 0.1]
     [Position [-480 -304]]
     [TileMap
      [Gameplay BackgroundA]]]]
   [TileMapDispatcher
-   [[Depth -4]
+   [[Elevation -4]
     [Parallax 0.1]
     [Position [-480 -304]]
     [TileMap
      [Gameplay BackgroundB]]]]
   [EnemyDispatcher
-   [[Depth 1]
+   [[Elevation 1]
     [Position [1472 -175.68]]]]
   [EnemyDispatcher
-   [[Depth 1]
+   [[Elevation 1]
     [Position [1114.274 -207.68]]]]
   [TileMapDispatcher
    [[Position [-480 -304]]

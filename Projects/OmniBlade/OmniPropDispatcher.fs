@@ -84,40 +84,40 @@ module PropDispatcher =
                             match chestType with
                             | WoodenChest ->
                                 if Set.contains (Opened chestId) prop.Advents
-                                then Assets.WoodenChestOpenedImage
-                                else Assets.WoodenChestClosedImage
+                                then Assets.Field.WoodenChestOpenedImage
+                                else Assets.Field.WoodenChestClosedImage
                             | BrassChest ->
                                 if Set.contains (Opened chestId) prop.Advents
-                                then Assets.BrassChestOpenedImage
-                                else Assets.BrassChestClosedImage
+                                then Assets.Field.BrassChestOpenedImage
+                                else Assets.Field.BrassChestClosedImage
                         (false, None, image)
                     | Door (doorType, _, _) ->
                         let image =
                             match doorType with
                             | WoodenDoor ->
                                 match prop.PropState with
-                                | DoorState opened -> if opened then Assets.WoodenDoorOpenedImage else Assets.WoodenDoorClosedImage
+                                | DoorState opened -> if opened then Assets.Field.WoodenDoorOpenedImage else Assets.Field.WoodenDoorClosedImage
                                 | _ -> failwithumf ()
                         (false, None, image)
                     | Portal (_, _, _, _, _) ->
-                        (false, None, Assets.EmptyImage)
+                        (false, None, Assets.Default.EmptyImage)
                     | Switch (switchType, _, _) ->
                         let image =
                             match switchType with
                             | ThrowSwitch ->
                                 match prop.PropState with
-                                | SwitchState on -> if on then Assets.ThrowSwitchOnImage else Assets.ThrowSwitchOffImage
+                                | SwitchState on -> if on then Assets.Field.ThrowSwitchOnImage else Assets.Field.ThrowSwitchOffImage
                                 | _ -> failwithumf ()
                         (false, None, image)
                     | Sensor (sensorType, _, _, _) ->
                         match sensorType with
-                        | AirSensor -> (true, None, Assets.EmptyImage)
-                        | HiddenSensor -> (true, None, Assets.EmptyImage)
-                        | StepPlateSensor -> (true, None, Assets.StepPlateImage)
+                        | AirSensor -> (true, None, Assets.Default.EmptyImage)
+                        | HiddenSensor -> (true, None, Assets.Default.EmptyImage)
+                        | StepPlateSensor -> (true, None, Assets.Field.StepPlateImage)
                     | Npc (npcType, _, direction, _, _) ->
                         match prop.PropState with
                         | NpcState true ->
-                            let image = Assets.NpcAnimationSheet
+                            let image = Assets.Field.NpcAnimationSheet
                             let (row, column) =
                                 match npcType with
                                 | VillageMan -> (0, 0)
@@ -129,30 +129,30 @@ module PropDispatcher =
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
                             (false, Some inset, image)
-                        | _ -> (false, None, Assets.EmptyImage)
+                        | _ -> (false, None, Assets.Default.EmptyImage)
                     | Shopkeep (shopkeepType, direction, _, _) ->
                         match prop.PropState with
                         | ShopkeepState true ->
-                            let image = Assets.ShopkeepAnimationSheet
+                            let image = Assets.Field.ShopkeepAnimationSheet
                             let row = match shopkeepType with ShopkeepMan -> 0
                             let column = CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
                             (false, Some inset, image)
-                        | _ -> (false, None, Assets.EmptyImage)
+                        | _ -> (false, None, Assets.Default.EmptyImage)
                     | SavePoint ->
                         let time = World.getTickTime world
-                        let image = Assets.SavePointImage
+                        let image = Assets.Field.SavePointImage
                         let column = (int time / 15) % 4
                         let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileSize
                         let inset = v4Bounds insetPosition Constants.Gameplay.TileSize
                         (false, Some inset, image)
                     | ChestSpawn | EmptyProp ->
-                        (false, None, Assets.EmptyImage)
-                let depth = if background then Constants.Field.BackgroundDepth else Constants.Field.ForegroundDepth
+                        (false, None, Assets.Default.EmptyImage)
+                let elevation = if background then Constants.Field.BackgroundElevation else Constants.Field.ForegroundElevation
                 let positionY = transform.Position.Y
                 let assetTag = AssetTag.generalize image
-                [Render (depth, positionY, assetTag,
+                [Render (elevation, positionY, assetTag,
                     SpriteDescriptor
                         { Transform = transform
                           Offset = Vector2.Zero

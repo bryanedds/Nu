@@ -74,7 +74,9 @@
     <Compile Include="InfinityConstants.fs" />
     <Compile Include="InfinitySimulants.fs" />
     <Compile Include="InfinityMath.fs" />
+    <Compile Include="InfinityEffects.fs" />
     <Compile Include="InfinityPickup.fs" />
+    <Compile Include="InfinityProp.fs" />
     <Compile Include="InfinityCharacter.fs" />
     <Compile Include="InfinityCharacterAnimationState.fs" />
     <Compile Include="InfinityMetaMap.fs" />
@@ -85,6 +87,7 @@
     <Compile Include="InfinityChessboard.fs" />
     <Compile Include="InfinityGameplay.fs" />
     <Compile Include="InfinityPickupDispatcher.fs" />
+    <Compile Include="InfinityPropDispatcher.fs" />
     <Compile Include="InfinityFieldDispatcher.fs" />
     <Compile Include="InfinityCharacterDispatcher.fs" />
     <Compile Include="InfinityGameplayDispatcher.fs" />
@@ -151,7 +154,7 @@
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.6.2.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.6.3.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
       <HintPath>..\..\packages\Prime.Scripting.6.1.0\lib\net472\Prime.Scripting.exe</HintPath>
@@ -163,6 +166,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Xml.Linq" />
     <ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj">
       <Name>Nu.Math</Name>
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>

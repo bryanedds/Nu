@@ -1,17 +1,35 @@
 ﻿namespace InfinityRpg
 open Nu
+
+[<RequireQualifiedAccess>]
 module Assets =
 
-    let GuiPackageName = "Gui"
-    let GameplayPackageName = "Gameplay"
-    let PickupSheetImage = asset<Image> GameplayPackageName "PickupItems"
-    let PlayerImage = asset<Image> GameplayPackageName "Player"
-    let GoopyImage = asset<Image> GameplayPackageName "Goopy"
-    let BatsyImage = asset<Image> GameplayPackageName "Batsy"
-    let ZommieImage = asset<Image> GameplayPackageName "Zommie"
-    let FieldTileSheetImage = asset<Image> GameplayPackageName "FieldTileSheet"
-    let HerosVengeanceSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> GameplayPackageName "Hero'sVengeance" }
-    let ButterflyGirlSong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> GuiPackageName "ButterflyGirl" }
-    let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
-    let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
-    let SaveFilePath = "InfinityRpg.sav"
+    [<RequireQualifiedAccess>]
+    module Global =
+
+        let SaveFilePath = "InfinityRpg.sav"
+
+    [<RequireQualifiedAccess>]
+    module Gui =
+
+        let PackageName = "Gui"
+        let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
+        let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
+        let ButterflyGirlSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "ButterflyGirl" }
+
+    [<RequireQualifiedAccess>]
+    module Gameplay =
+
+        let PackageName = "Gameplay"
+        let PickupSheetImage = asset<Image> PackageName "PickupItems"
+        let LongGrassImage = asset<Image> PackageName "LongGrass"
+        let PlayerImage = asset<Image> PackageName "Player"
+        let GoopyImage = asset<Image> PackageName "Goopy"
+        let BatsyImage = asset<Image> PackageName "Batsy"
+        let ZommieImage = asset<Image> PackageName "Zommie"
+        let OakSwordStrikeUp = asset<Image> PackageName "OakSwordStrikeUp"
+        let OakSwordStrikeRight = asset<Image> PackageName "OakSwordStrikeRight"
+        let OakSwordStrikeDown = asset<Image> PackageName "OakSwordStrikeDown"
+        let OakSwordStrikeLeft = asset<Image> PackageName "OakSwordStrikeLeft"
+        let FieldTileSheetImage = asset<Image> PackageName "FieldTileSheet"
+        let HerosVengeanceSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Hero'sVengeance" }

@@ -125,7 +125,7 @@
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.6.2.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.6.3.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
       <HintPath>..\..\packages\Prime.Scripting.6.1.0\lib\net472\Prime.Scripting.exe</HintPath>
@@ -138,6 +138,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Xml.Linq" />
     <ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj">
       <Name>Nu.Math</Name>
       <Project>{f184a111-8c28-40b4-8cde-7bf2a64b3ca7}</Project>
@@ -148,9 +149,6 @@
       <Project>{a7a6f758-e122-4c2c-9525-1f29802d007c}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <Reference Include="System.Xml.Linq">
-      <Private>True</Private>
-    </Reference>
     <Reference Include="TiledSharp">
       <HintPath>..\..\packages\TiledSharp.1.0.1\lib\netstandard2.0\TiledSharp.dll</HintPath>
     </Reference>

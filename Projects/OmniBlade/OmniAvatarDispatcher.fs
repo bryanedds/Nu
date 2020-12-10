@@ -32,7 +32,7 @@ module AvatarDispatcher =
 
     type AvatarDispatcher () =
         inherit EntityDispatcher<Avatar, AvatarMessage, AvatarCommand>
-            (Avatar.make (v4Bounds v2Zero Constants.Gameplay.CharacterSize) Assets.FinnAnimationSheet Downward)
+            (Avatar.make (v4Bounds v2Zero Constants.Gameplay.CharacterSize) Assets.Field.FinnAnimationSheet Downward)
 
         static let coreShapeId = Gen.id
         static let sensorShapeId = Gen.id
@@ -187,7 +187,7 @@ module AvatarDispatcher =
         override this.View (avatar, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Depth, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
+                [Render (transform.Elevation, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
                      SpriteDescriptor
                         { Transform = transform
                           Offset = Vector2.Zero

@@ -371,7 +371,7 @@ module WorldScripting =
             let oldScriptContext = World.getScriptContext world
             let globalFrame = World.getGlobalFrame world
             World.setLocalFrame globalFrame world
-            match World.tryEvalScript Assets.PreludeFilePath world with
+            match World.tryEvalScript Assets.Global.PreludeFilePath world with
             | Right struct (scriptStr, _, world) ->
                 World.setLocalFrame oldLocalFrame world
                 let world = World.setScriptContext oldScriptContext world

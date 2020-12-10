@@ -40,7 +40,7 @@ module Effects =
         { Position : Vector2
           Size : Vector2
           Rotation : single
-          Depth : single
+          Elevation : single
           Offset : Vector2
           InsetOpt : Vector4 option
           Color : Color
@@ -126,7 +126,7 @@ module Effects =
         | Offset of Vector2
         | Size of Vector2
         | Rotation of single
-        | Depth of single
+        | Elevation of single
         | Inset of Vector4
         | Color of Color
         | Glow of Color
@@ -137,7 +137,7 @@ module Effects =
         | Offsets of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
         | Sizes of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
         | Rotations of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
-        | Depths of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Elevations of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
         | Insets of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
         | Colors of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
         | Glows of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
@@ -179,8 +179,8 @@ module Effects =
             "Rate " +
             "Shift " +
             "Expand Resource " +
-            "Expand Enabled PositionAbsolute PositionRelative Translation Offset Inset Size Rotation Depth Color Glow Volume " +
-            "Expand Enableds Positions Translations Offsets Insets Sizes Rotations Depths Colors Glows Volumes Aspects " +
+            "Expand Enabled PositionAbsolute PositionRelative Translation Offset Inset Size Rotation Elevation Color Glow Volume " +
+            "Expand Enableds Positions Translations Offsets Insets Sizes Rotations Elevations Colors Glows Volumes Aspects " +
             "Expand StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
             "View",
             "", "", "", "",
@@ -197,7 +197,7 @@ module Effect =
 
     /// The empty effect.
     let empty =
-        { EffectName = Constants.Engine.DefaultEffectName
+        { EffectName = Constants.Engine.EffectNameDefault
           LifetimeOpt = None
           Definitions = Map.empty
           Content = Effects.Contents (Effects.Shift 0.0f, [||]) }
@@ -363,10 +363,10 @@ module EffectSystem =
                 | SymbolicCompressionA resource -> evalResource resource effectSystem
                 | _ ->
                     Log.info ("Expected Resource for definition '" + definitionName + ".")
-                    AssetTag.generalize Assets.DefaultImage
+                    AssetTag.generalize Assets.Default.Image
             | None ->
                 Log.info ("Could not find definition with name '" + definitionName + "'.")
-                AssetTag.generalize Assets.DefaultImage
+                AssetTag.generalize Assets.Default.Image
 
     let rec private iterateViews incrementAspects content slice effectSystem =
         let effectSystem = { effectSystem with ProgressOffset = 0.0f }
@@ -393,7 +393,7 @@ module EffectSystem =
             { slice with Position = translated }
         | Size size -> { slice with Size = size }
         | Rotation rotation -> { slice with Rotation = rotation }
-        | Depth depth -> { slice with Depth = depth }
+        | Elevation elevation -> { slice with Elevation = elevation }
         | Offset offset -> { slice with Offset = offset }
         | Inset inset -> { slice with InsetOpt = Some inset }
         | Color color -> { slice with Color = color }
@@ -438,13 +438,13 @@ module EffectSystem =
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
                 { slice with Rotation = applied }
             else slice
-        | Depths (applicator, algorithm, playback, keyFrames) ->
+        | Elevations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
-                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Depth tweened applicator
-                { slice with Depth = applied }
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Elevation tweened applicator
+                { slice with Elevation = applied }
             else slice
         | Offsets (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -533,11 +533,11 @@ module EffectSystem =
                     { Position = slice.Position
                       Size = slice.Size
                       Rotation = slice.Rotation
-                      Depth = slice.Depth
+                      Elevation = slice.Elevation
                       Flags = 0 }
                 transform.Absolute <- effectSystem.Absolute
                 let spriteView =
-                    Render (transform.Depth, transform.Position.Y, AssetTag.generalize image,
+                    Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                         SpriteDescriptor 
                             { Transform = transform
                               Offset = slice.Offset
@@ -577,11 +577,11 @@ module EffectSystem =
                         { Position = slice.Position
                           Size = slice.Size
                           Rotation = slice.Rotation
-                          Depth = slice.Depth
+                          Elevation = slice.Elevation
                           Flags = 0 }
                     transform.Absolute <- effectSystem.Absolute
                     let animatedSpriteView =
-                        Render (transform.Depth, transform.Position.Y, AssetTag.generalize image,
+                        Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
                                { Transform = transform
                                  Offset = slice.Offset
@@ -614,11 +614,11 @@ module EffectSystem =
                     { Position = slice.Position - slice.Size * 0.5f
                       Size = slice.Size
                       Rotation = slice.Rotation
-                      Depth = slice.Depth
+                      Elevation = slice.Elevation
                       Flags = 0 }
                 transform.Absolute <- effectSystem.Absolute
                 let spriteView =
-                    Render (transform.Depth, transform.Position.Y, font,
+                    Render (transform.Elevation, transform.Position.Y, font,
                         TextDescriptor 
                             { Transform = transform
                               Text = text
@@ -649,14 +649,14 @@ module EffectSystem =
         evalContent content slice effectSystem
 
     and private evalMount shift aspects content (slice : Slice) effectSystem =
-        let slice = { slice with Depth = slice.Depth + shift }
+        let slice = { slice with Elevation = slice.Elevation + shift }
         let slice = evalAspects aspects slice effectSystem
         evalContent content slice effectSystem
 
     and private evalRepeat shift repetition incrementAspects content (slice : Slice) effectSystem =
     
         // eval repeat either as iterative or cycling
-        let slice = { slice with Depth = slice.Depth + shift }
+        let slice = { slice with Elevation = slice.Elevation + shift }
         match repetition with
     
         // eval iterative repeat
@@ -700,7 +700,7 @@ module EffectSystem =
                     let oldHistory = effectSystem.History
                     let oldEffectTime = effectSystem.EffectTime
                     let timePassed = int64 i
-                    let slice = { slice with Depth = slice.Depth + shift }
+                    let slice = { slice with Elevation = slice.Elevation + shift }
                     let slice = evalAspects emitterAspects slice { effectSystem with EffectTime = effectSystem.EffectTime - timePassed }
                     let emitCountLastFrame = single (effectSystem.EffectTime - timePassed - 1L) * rate
                     let emitCountThisFrame = single (effectSystem.EffectTime - timePassed) * rate
@@ -730,7 +730,7 @@ module EffectSystem =
         else effectSystem
 
     and private evalContents shift contents slice effectSystem =
-        let slice = { slice with Slice.Depth = slice.Depth + shift }
+        let slice = { slice with Slice.Elevation = slice.Elevation + shift }
         evalContents3 contents slice effectSystem
 
     and private evalContent content slice effectSystem =

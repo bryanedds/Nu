@@ -51,7 +51,7 @@ module BulletModule =
              define Entity.GravityScale 0.0f
              define Entity.IsBullet true
              define Entity.BodyShape (BodyCircle { Radius = 0.5f; Center = Vector2.Zero; PropertiesOpt = None })
-             define Entity.StaticImage Assets.PlayerBulletImage
+             define Entity.StaticImage Assets.Gameplay.PlayerBulletImage
              define Entity.Age 0L]
 
         override this.Register (bullet, world) =
@@ -79,7 +79,7 @@ module EnemyModule =
 
         static let die (enemy : Entity) world =
             let world = World.destroyEntity enemy world
-            World.playSound Constants.Audio.DefaultSoundVolume Assets.ExplosionSound world
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
 
         static let handleUpdate evt world =
             let enemy = evt.Subscriber : Entity
@@ -95,7 +95,7 @@ module EnemyModule =
                     let isBullet = collidee.Is<BulletDispatcher> world
                     if isBullet then
                         let world = enemy.SetHealth (enemy.GetHealth world - 1) world
-                        let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.HitSound world
+                        let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
                         world
                     else world
                 else world
@@ -117,7 +117,7 @@ module EnemyModule =
              define Entity.CelRun 4
              define Entity.CelSize (Vector2 (48.0f, 96.0f))
              define Entity.AnimationDelay 8L
-             define Entity.AnimationSheet Assets.EnemyImage
+             define Entity.AnimationSheet Assets.Gameplay.EnemyImage
              define Entity.Health 7]
 
         override this.Register (enemy, world) =
@@ -148,12 +148,12 @@ module PlayerModule =
             let (bullet, world) = World.createEntity<BulletDispatcher> None DefaultOverlay player.Parent world
             let bulletPosition = playerTransform.Position + Vector2 (playerTransform.Size.X * 0.9f, playerTransform.Size.Y * 0.4f)
             let world = bullet.SetPosition bulletPosition world
-            let world = bullet.SetDepth playerTransform.Depth world
+            let world = bullet.SetElevation playerTransform.Elevation world
             (bullet, world)
 
         static let propelBullet (bullet : Entity) world =
             let world = World.applyBodyLinearImpulse (Vector2 (15.0f, 0.0f)) (bullet.GetPhysicsId world) world
-            World.playSound Constants.Audio.DefaultSoundVolume Assets.ShotSound world
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
 
         static let shootBullet (player : Entity) world =
             let playerTransform = player.GetTransform world
@@ -199,7 +199,7 @@ module PlayerModule =
                 tickTime <= player.GetLastTimeOnGroundNp world + 10L then
                 let world = player.SetLastTimeJumpNp tickTime world
                 let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 2000.0f)) (player.GetPhysicsId world) world
-                let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.JumpSound world
+                let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 (Cascade, world)
             else (Cascade, world)
 
@@ -226,7 +226,7 @@ module PlayerModule =
              define Entity.CelRun 4
              define Entity.CelSize (Vector2 (48.0f, 96.0f))
              define Entity.AnimationDelay 3L
-             define Entity.AnimationSheet Assets.PlayerImage
+             define Entity.AnimationSheet Assets.Gameplay.PlayerImage
              define Entity.LastTimeOnGroundNp Int64.MinValue
              define Entity.LastTimeJumpNp Int64.MinValue]
 
@@ -265,7 +265,7 @@ module SceneModule =
                     else world
                 | PlayerFall ->
                     if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
-                        let world = World.playSound Constants.Audio.DefaultSoundVolume Assets.DeathSound world
+                        let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                         if Simulants.Title.Exists world
                         then World.transitionScreen Simulants.Title world
                         else world
@@ -298,7 +298,7 @@ module GameplayModule =
 
         static let createSectionLayers gameplay world =
             let random = System.Random ()
-            let sectionFilePaths = List.toArray Assets.SectionFilePaths
+            let sectionFilePaths = List.toArray Assets.Gameplay.SectionFilePaths
             List.fold
                 (fun world i ->
                     let sectionFilePathIndex = if i = 0 then 0 else random.Next () % sectionFilePaths.Length
@@ -310,7 +310,7 @@ module GameplayModule =
                 [0 .. SectionCount - 1]
 
         static let createScene gameplay world =
-            World.readLayerFromFile Assets.SceneLayerFilePath (Some Simulants.Scene.Name) gameplay world |> snd
+            World.readLayerFromFile Assets.Gameplay.SceneLayerFilePath (Some Simulants.Scene.Name) gameplay world |> snd
 
         override this.Channel (_, gameplay) =
             [gameplay.SelectEvent => cmd StartPlay

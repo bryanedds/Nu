@@ -303,7 +303,7 @@ module Field =
         | Some _ -> (None, field)
 
     let synchronizeTeamFromAllies allies field =
-        List.foldi (fun i field (ally : Character) ->
+        Map.foldi (fun i field _ (ally : Character) ->
             updateTeam (fun team ->
                 match Map.tryFind i team with
                 | Some teammate ->
@@ -315,7 +315,8 @@ module Field =
                     Map.add i teammate team
                 | None -> team)
                 field)
-            field allies
+            field
+            allies
 
     let synchronizeFromBattle consequents battle field =
         let allies = Battle.getAllies battle
@@ -375,10 +376,10 @@ module Field =
     let save field =
         let fieldSymbolizable = toSymbolizable field
         let fileStr = scstring fieldSymbolizable
-        try File.WriteAllText (Assets.SaveFilePath, fileStr) with _ -> ()
+        try File.WriteAllText (Assets.Global.SaveFilePath, fileStr) with _ -> ()
 
     let loadOrInitial randSeedState =
-        try let fieldStr = File.ReadAllText Assets.SaveFilePath
+        try let fieldStr = File.ReadAllText Assets.Global.SaveFilePath
             scvalue<Field> fieldStr
         with _ -> initial randSeedState
 

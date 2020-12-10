@@ -15,12 +15,12 @@ module Constants =
         let Dissolve =
             { IncomingTime = 40L
               OutgoingTime = 60L
-              DissolveImage = Assets.DefaultImage8 }
+              DissolveImage = Assets.Default.Image8 }
 
         let Splash =
             { DissolveDescriptor = Constants.Dissolve.Default
               IdlingTime = 60L
-              SplashImageOpt = Some Assets.DefaultImage5 }
+              SplashImageOpt = Some Assets.Default.Image5 }
 
     [<RequireQualifiedAccess>]
     module Intro =
@@ -28,7 +28,7 @@ module Constants =
         let Dissolve =
             { IncomingTime = 40L
               OutgoingTime = 60L
-              DissolveImage = Assets.DefaultImage8 }
+              DissolveImage = Assets.Default.Image8 }
 
         let Splash =
             { DissolveDescriptor = Constants.Dissolve.Default
@@ -52,11 +52,11 @@ module Constants =
         let WalkForce = 12000.0f
 #endif
         let LinearDamping = 19.0f
-        let BackgroundDepth = -10.0f
-        let ForegroundDepth = 0.0f
-        let EffectDepth = 10.0f
-        let GuiDepth = 20.0f
-        let GuiEffectDepth = 30.0f
+        let BackgroundElevation = -10.0f
+        let ForegroundElevation = 0.0f
+        let EffectElevation = 10.0f
+        let GuiElevation = 20.0f
+        let GuiEffectElevation = 30.0f
         let PropsLayerName = "Props"
         let TransitionTime = 60L
         let MapRandSize = v2iDup 7
@@ -85,8 +85,8 @@ module Constants =
         let CharacterBottomOffset2 = v2 0.0f -24.0f
         let CharacterBottomOffset3 = v2 0.0f -48.0f
         let CharacterPulseLength = 60L
-        let BackgroundDepth = -10.0f
-        let ForgroundDepth = 0.0f
-        let EffectDepth = 10.0f
-        let GuiDepth = 20.0f
-        let GuiEffectDepth = 30.0f
+        let BackgroundElevation = -10.0f
+        let ForgroundElevation = 0.0f
+        let EffectElevation = 10.0f
+        let GuiElevation = 20.0f
+        let GuiEffectElevation = 30.0f

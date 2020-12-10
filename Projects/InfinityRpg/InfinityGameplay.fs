@@ -31,7 +31,7 @@ type [<ReferenceEquality; NoComparison>] PlayerContinuity =
 
 type [<NoComparison>] Move =
     | Step of Direction
-    | Attack of CharacterIndex
+    | Attack of Reactor
     | Travel of NavigationNode list
 
     member this.TruncatePath =
@@ -216,6 +216,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member clearEnemies gameplay =
         Gameplay.updateChessboard Chessboard.clearEnemies gameplay
 
+    static member removeLongGrass coordinates gameplay =
+        let gameplay = Gameplay.updateChessboard (Chessboard.removeProp coordinates) gameplay
+        if Gen.random1 10 = 0
+        then Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
+        else gameplay
+    
     static member clearPickups gameplay =
         Gameplay.updateChessboard Chessboard.clearPickups gameplay
 
@@ -244,24 +250,28 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             else gameplay
         Gameplay.relocateCharacter index coordinates gameplay
     
-    static member applyAttack index reactorIndex gameplay =
-        let reactorDamage = 4 // NOTE: just hard-coding damage for now
-        let coordinates = Gameplay.getCoordinates index gameplay
-        let reactorCoordinates = Gameplay.getCoordinates reactorIndex gameplay
-        let direction = Math.directionToTarget coordinates reactorCoordinates
-        let gameplay = Gameplay.updateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
-        Gameplay.updateCharacter reactorIndex (Character.updateHitPoints (fun x -> x - reactorDamage)) gameplay
-    
     static member stopTravelingPlayer reactorIndex gameplay =
         if reactorIndex = PlayerIndex && gameplay.Round.IsPlayerTraveling then Gameplay.truncatePlayerPath gameplay else gameplay
+    
+    static member applyAttack index reactor gameplay =
+        let coordinates = Gameplay.getCoordinates index gameplay
+        match reactor with
+        | ReactingCharacter reactorIndex ->
+            let reactorDamage = 4 // NOTE: just hard-coding damage for now
+            let reactorCoordinates = Gameplay.getCoordinates reactorIndex gameplay
+            let direction = Math.directionToTarget coordinates reactorCoordinates
+            let gameplay = Gameplay.updateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
+            let gameplay = Gameplay.updateCharacter reactorIndex (Character.updateHitPoints (fun x -> x - reactorDamage)) gameplay
+            Gameplay.stopTravelingPlayer reactorIndex gameplay
+        | ReactingProp reactorCoordinates ->
+            let direction = Math.directionToTarget coordinates reactorCoordinates
+            Gameplay.updateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
     
     static member applyMove index gameplay =
         let move = Gameplay.getCharacterMove index gameplay
         match move with
         | Step direction -> Gameplay.applyStep index direction gameplay
-        | Attack reactorIndex ->
-            let gameplay = Gameplay.applyAttack index reactorIndex gameplay
-            Gameplay.stopTravelingPlayer reactorIndex gameplay
+        | Attack reactor -> Gameplay.applyAttack index reactor gameplay
         | Travel path ->
             match path with
             | head :: _ ->
@@ -276,9 +286,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let turn =
             match move with
             | Step direction -> Turn.makeWalk index false coordinates direction
-            | Attack reactorIndex ->
-                let direction = Gameplay.getCoordinates reactorIndex gameplay |> Math.directionToTarget coordinates
-                Turn.makeAttack index reactorIndex coordinates direction
+            | Attack reactor ->
+                let direction =
+                    match reactor with
+                    | ReactingCharacter reactorIndex -> Gameplay.getCoordinates reactorIndex gameplay |> Math.directionToTarget coordinates
+                    | ReactingProp reactorCoordinates -> Math.directionToTarget coordinates reactorCoordinates
+                Turn.makeAttack index reactor coordinates direction
             | Travel path ->
                 let direction = Math.directionToTarget coordinates path.Head.Coordinates
                 Turn.makeWalk index true coordinates direction
@@ -333,6 +346,18 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | Leftward -> gameplay.MetaMap.Current.PathEnd
         Gameplay.updateChessboard (Chessboard.addCharacter player newCoordinates) gameplay
 
+    static member makeLongGrass gameplay =
+        let mapBounds = MapBounds.make v2iZero Constants.Layout.FieldMapSizeC
+        let predicate1 coordinates = FieldMap.tileIs coordinates FieldMap.GrassTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
+        let predicate2 coordinates = FieldMap.atLeastNAdjacentTilesAre 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
+        let rec recursion (spaces : Vector2i list) gameplay =
+            if spaces.Length = 0 then gameplay
+            else
+                let coordinates = spaces.Head
+                let gameplay = if predicate1 coordinates && predicate2 coordinates then Gameplay.updateChessboard (Chessboard.addProp LongGrass coordinates) gameplay else gameplay
+                recursion spaces.Tail gameplay
+        recursion gameplay.Chessboard.UnoccupiedSpaces gameplay
+    
     static member makeEnemy index gameplay =
         let availableCoordinates = gameplay.Chessboard.UnoccupiedSpaces
         let coordinates = availableCoordinates.Item(Gen.random1 availableCoordinates.Length)
@@ -345,6 +370,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         recursion 0 gameplay
     
     static member populateFieldMap gameplay =
+        let gameplay = Gameplay.makeLongGrass gameplay
         let enemyCount = 1 + Gen.random1 5
         Gameplay.makeEnemies enemyCount gameplay
     

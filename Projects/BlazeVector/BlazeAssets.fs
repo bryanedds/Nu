@@ -4,31 +4,33 @@ open Nu
 [<RequireQualifiedAccess>]
 module Assets =
 
-    // the packages as named in the project's 'AssetGraph.nuag' file
-    let GuiPackageName = "Gui"
-    let GameplayPackageName = "Gameplay"
+    [<RequireQualifiedAccess>]
+    module Gui =
 
-    // the various assets described by the project's 'AssetGraph.nuag' file
-    let EnemyBulletImage = asset<Image> GameplayPackageName "EnemyBullet"
-    let PlayerBulletImage = asset<Image> GameplayPackageName "PlayerBullet"
-    let EnemyImage = asset<Image> GameplayPackageName "Enemy"
-    let PlayerImage = asset<Image> GameplayPackageName "Player"
-    let SplashSound = asset<Sound> GuiPackageName "Splash"
-    let HitSound = asset<Sound> GameplayPackageName "Hit"
-    let ExplosionSound = asset<Sound> GameplayPackageName "Explosion"
-    let ShotSound = asset<Sound> GameplayPackageName "Shot"
-    let JumpSound = asset<Sound> GameplayPackageName "Jump"
-    let DeathSound = asset<Sound> GameplayPackageName "Death"
-    let MachinerySong = { Volume = Constants.Audio.DefaultSongVolume; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> GuiPackageName "Machinery" }
-    let DeadBlazeSong = { Volume = Constants.Audio.DefaultSongVolume * 2.0f; FadeOutMs = Constants.Audio.DefaultFadeOutMs; Song = asset<Song> GameplayPackageName "DeadBlaze" }
+        let PackageName = "Gui"
+        let SplashSound = asset<Sound> PackageName "Splash"
+        let MachinerySong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Machinery" }
+        let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
+        let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
+        let GameplayLayerFilePath = "Assets/Gui/Gameplay.nulyr" // TODO: move this to gameplay?
 
-    // the file paths from which various simulants are loaded
-    let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
-    let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
-    let GameplayLayerFilePath = "Assets/Gui/Gameplay.nulyr"
-    let SceneLayerFilePath = "Assets/Gameplay/Scene.nulyr"
-    let Section0FilePath = "Assets/Gameplay/Section0.nulyr"
-    let Section1FilePath = "Assets/Gameplay/Section1.nulyr"
-    let Section2FilePath = "Assets/Gameplay/Section2.nulyr"
-    let Section3FilePath = "Assets/Gameplay/Section3.nulyr"
-    let SectionFilePaths = [Section0FilePath; Section1FilePath; Section2FilePath; Section3FilePath]
+    [<RequireQualifiedAccess>]
+    module Gameplay =
+        
+        let PackageName = "Gameplay"
+        let EnemyBulletImage = asset<Image> PackageName "EnemyBullet"
+        let PlayerBulletImage = asset<Image> PackageName "PlayerBullet"
+        let EnemyImage = asset<Image> PackageName "Enemy"
+        let PlayerImage = asset<Image> PackageName "Player"
+        let HitSound = asset<Sound> PackageName "Hit"
+        let ExplosionSound = asset<Sound> PackageName "Explosion"
+        let ShotSound = asset<Sound> PackageName "Shot"
+        let JumpSound = asset<Sound> PackageName "Jump"
+        let DeathSound = asset<Sound> PackageName "Death"
+        let DeadBlazeSong = { Volume = Constants.Audio.SongVolumeDefault * 2.0f; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "DeadBlaze" }
+        let SceneLayerFilePath = "Assets/Gameplay/Scene.nulyr"
+        let Section0FilePath = "Assets/Gameplay/Section0.nulyr"
+        let Section1FilePath = "Assets/Gameplay/Section1.nulyr"
+        let Section2FilePath = "Assets/Gameplay/Section2.nulyr"
+        let Section3FilePath = "Assets/Gameplay/Section3.nulyr"
+        let SectionFilePaths = [Section0FilePath; Section1FilePath; Section2FilePath; Section3FilePath]

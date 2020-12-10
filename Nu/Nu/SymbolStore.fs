@@ -25,7 +25,7 @@ module SymbolStore =
         try let text = File.ReadAllText asset.FilePath
             match Path.GetExtension asset.FilePath with
             | ".csv" ->
-                try let symbol = Symbol.fromStringCsv metadata.StripCsvHeader text (Some asset.FilePath)
+                try let symbol = Symbol.ofStringCsv metadata.StripCsvHeader text (Some asset.FilePath)
                     Some (asset.AssetTag.AssetName, (metadata, symbol))
                 with exn ->
                     Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
@@ -35,7 +35,7 @@ module SymbolStore =
                     if metadata.ImplicitDelimiters
                     then Symbol.OpenSymbolsStr + text + Symbol.CloseSymbolsStr
                     else text
-                try let symbol = Symbol.fromString text (Some asset.FilePath)
+                try let symbol = Symbol.ofString text (Some asset.FilePath)
                     Some (asset.AssetTag.AssetName, (metadata, symbol))
                 with exn ->
                     Log.info ("Failed to convert text in file '" + asset.FilePath + "' for package '" + packageName + "' to symbol due to: " + scstring exn)
@@ -46,7 +46,7 @@ module SymbolStore =
 
     /// Try to load a symbol store package with the given name.
     let tryLoadSymbolPackage packageName metadata symbolStore =
-        match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
+        match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
             match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Symbol) packageName assetGraph with
             | Right assets ->

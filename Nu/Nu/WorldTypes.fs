@@ -177,23 +177,23 @@ module WorldTypes =
     /// Describes the information needed to sort simulants.
     /// OPTIMIZATION: carries related simulant to avoid GC pressure.
     and [<CustomEquality; CustomComparison>] SortPriority =
-        { SortDepth : single
+        { SortElevation : single
           SortPositionY : single
           SortTarget : Simulant }
 
         static member equals left right =
-            left.SortDepth = right.SortDepth &&
+            left.SortElevation = right.SortElevation &&
             left.SortTarget = right.SortTarget
 
         static member compare left right =
-            if left.SortDepth < right.SortDepth then 1
-            elif left.SortDepth > right.SortDepth then -1
+            if left.SortElevation < right.SortElevation then 1
+            elif left.SortElevation > right.SortElevation then -1
             elif left.SortPositionY < right.SortPositionY then -1
             elif left.SortPositionY > right.SortPositionY then 1
             else 0
 
         override this.GetHashCode () =
-            this.SortDepth.GetHashCode ()
+            this.SortElevation.GetHashCode ()
 
         override this.Equals that =
             match that with
@@ -306,9 +306,9 @@ module WorldTypes =
 
         static member Properties =
             [Define? Position Vector2.Zero
-             Define? Size Constants.Engine.DefaultEntitySize
+             Define? Size Constants.Engine.EntitySizeDefault
              Define? Rotation 0.0f
-             Define? Depth 0.0f
+             Define? Elevation 0.0f
              Define? Omnipresent false
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
@@ -346,7 +346,7 @@ module WorldTypes =
 
         /// Get the quick size of an entity (the appropriate user-defined size for an entity).
         abstract GetQuickSize : Entity * World -> Vector2
-        default this.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
+        default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
 
         /// Try to send a signal to an entity's facet.
         abstract TrySignalFacet : obj * string * Entity * World -> World
@@ -391,7 +391,7 @@ module WorldTypes =
 
         /// Participate in getting the priority with which an entity is picked in the editor.
         abstract GetQuickSize : Entity * World -> Vector2
-        default this.GetQuickSize (_, _) = Constants.Engine.DefaultEntitySize
+        default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
 
         /// Try to send a signal to a facet.
         abstract TrySignal : obj * Entity * World -> World
@@ -622,9 +622,9 @@ module WorldTypes =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Transform =
                 { Position = Vector2.Zero
-                  Size = Constants.Engine.DefaultEntitySize
+                  Size = Constants.Engine.EntitySizeDefault
                   Rotation = 0.0f
-                  Depth = 0.0f
+                  Elevation = 0.0f
                   Flags = 0b0001000110000001 }
               Dispatcher = dispatcher
               Facets = [||]
@@ -689,7 +689,7 @@ module WorldTypes =
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
-        member this.Depth with get () = this.Transform.Depth and set value = this.Transform.Depth <- value
+        member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
         member internal this.Dirty with get () = this.Transform.Dirty and set value = this.Transform.Dirty <- value
         member internal this.Invalidated with get () = this.Transform.Invalidated and set value = this.Transform.Invalidated <- value
         member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value

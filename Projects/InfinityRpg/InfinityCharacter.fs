@@ -98,17 +98,12 @@ type ActionType =
     | Interact // general interaction such as talking to NPCs
 
 type WeaponType =
-    | BentSword
-    | WindCutter
-    | BFS
+    | Body
+    | OakSword
 
 type WeaponSubtype =
     | Melee
     | Sword
-    | Axe
-    | Bow
-    | Staff
-    | Rod
 
 type WeaponData =
     { WeaponType : WeaponType // key

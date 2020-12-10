@@ -256,16 +256,16 @@ module Nu =
             WorldModule.isSelected <- 
                 World.isSelected
 
-            // init sortSubscriptionByDepth F# reach-around
-            WorldModule.sortSubscriptionsByDepth <- fun subscriptions worldObj ->
+            // init sortSubscriptionByElevation F# reach-around
+            WorldModule.sortSubscriptionsByElevation <- fun subscriptions worldObj ->
                 let world = worldObj :?> World
                 sortSubscriptionsBy
                     (fun (simulant : Simulant) _ ->
                         match simulant with
-                        | :? Entity as entity -> { SortDepth = entity.GetDepth world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
-                        | :? Layer as layer -> { SortDepth = Constants.Engine.LayerSortPriority; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
-                        | :? Screen as screen -> { SortDepth = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
-                        | :? Game | :? GlobalSimulantGeneralized -> { SortDepth = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
+                        | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
+                        | :? Layer as layer -> { SortElevation = Constants.Engine.LayerSortPriority; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
+                        | :? Screen as screen -> { SortElevation = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
+                        | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
                         | _ -> failwithumf ())
                     subscriptions
                     world
@@ -515,7 +515,7 @@ module WorldModule3 =
             Nu.init config.NuConfig
 
             // attempt to create asset graph
-            match AssetGraph.tryMakeFromFile Assets.AssetGraphFilePath with
+            match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
             | Right assetGraph ->
 
                 // make the world's event system
@@ -559,19 +559,19 @@ module WorldModule3 =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
                         | None -> MockRenderer.make () :> Renderer
-                    renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.DefaultPackageName) // enqueue default package hint
+                    renderer.EnqueueMessage (HintRenderPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
                     let audioPlayer =
                         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                         then SdlAudioPlayer.make () :> AudioPlayer
                         else MockAudioPlayer.make () :> AudioPlayer
-                    audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.DefaultPackageName) // enqueue default package hint
+                    audioPlayer.EnqueueMessage (HintAudioPackageUseMessage Assets.Default.PackageName) // enqueue default package hint
                     { PhysicsEngine = physicsEngine
                       Renderer = renderer
                       AudioPlayer = audioPlayer }
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
-                match Overlayer.tryMakeFromFile intrinsicOverlays Assets.OverlayerFilePath with
+                match Overlayer.tryMakeFromFile intrinsicOverlays Assets.Global.OverlayerFilePath with
                 | Right overlayer ->
 
                     // make the world's scripting environment
