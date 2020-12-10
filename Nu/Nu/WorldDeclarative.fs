@@ -3,8 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections
-open System.Collections.Generic
 open Prime
 open Nu
 
@@ -180,7 +178,7 @@ module WorldDeclarative =
                     | None -> world
                 | None -> world)
                 world removed
-                
+
         static member internal addSynchronizedSimulants mapper monitorMapper simulantMapId added origin owner parent world =
             Seq.fold (fun world keyAndLens ->
                 let (key, lens) = PartialComparable.unmake keyAndLens
@@ -247,10 +245,8 @@ module WorldDeclarative =
             let monitorMapper =
                 fun a _ world ->
                     let b =
-                        if refEq a.Value monitorResult || genEq a.Value monitorResult then
-                            match sieveResultOpt with
-                            | Some b -> b
-                            | None -> sieve (lens.Get world)
+                        if refEq a.Value monitorResult || genEq a.Value monitorResult
+                        then match sieveResultOpt with Some b -> b | None -> sieve (lens.Get world)
                         else sieve (lens.Get world)
                     monitorResult <- a.Value
                     sieveResultOpt <- Some b
