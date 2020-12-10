@@ -185,8 +185,8 @@ module BattleDispatcher =
                 let (sigs, battle) =
                     match battle.CurrentCommandOpt with
                     | None ->
-                        let allies = Battle.getAllies battle
-                        let enemies = Battle.getEnemies battle
+                        let allies = battle |> Battle.getAllies |> Map.toValueList
+                        let enemies = battle |> Battle.getEnemies |> Map.toValueList
                         if List.forall (fun (character : Character) -> character.IsWounded) allies then
                             // lost battle
                             let battle = Battle.updateBattleState (constant (BattleCease (false, Set.empty, time))) battle
@@ -241,20 +241,19 @@ module BattleDispatcher =
 
         and tickNoNextCommand (_ : int64) (battle : Battle) =
             let (allySignalsRev, battle) =
-                List.fold (fun (signals, battle) (ally : Character) ->
+                Map.fold (fun (signals, battle) allyIndex (ally : Character) ->
                     if  ally.ActionTime >= Constants.Battle.ActionTime &&
                         ally.InputState = NoInput then
-                        let battle = Battle.updateCharacter (Character.updateInputState (constant RegularMenu)) ally.CharacterIndex battle
+                        let battle = Battle.updateCharacter (Character.updateInputState (constant RegularMenu)) allyIndex battle
                         let playActionTimeSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)
                         (Command playActionTimeSound :: signals, battle)
                     else (signals, battle))
                     ([], battle)
                     (Battle.getAllies battle)
             let (enemySignalsRev, battle) =
-                List.fold (fun (signals, battle) (enemy : Character) ->
+                Map.fold (fun (signals, battle) enemyIndex (enemy : Character) ->
                     if  enemy.ActionTime >= Constants.Battle.ActionTime &&
-                        not (Battle.characterAppendedActionCommand enemy.CharacterIndex battle) then
-                        let enemyIndex = enemy.CharacterIndex
+                        not (Battle.characterAppendedActionCommand enemyIndex battle) then
                         match enemy.AutoBattleOpt with
                         | Some autoBattle ->
                             let actionCommand =
@@ -301,8 +300,7 @@ module BattleDispatcher =
             let localTime = time - timeStart
             if localTime = 0L then
                 let alliesLevelingUp =
-                    battle |>
-                    Battle.getAllies |>
+                    battle |> Battle.getAllies |> Map.toValueList |>
                     List.filter (fun ally -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
                 let textA =
                     match alliesLevelingUp with
@@ -609,7 +607,7 @@ module BattleDispatcher =
                     let characters = Battle.getCharacters battle
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, cmds) =
-                        List.fold (fun (battle, cmds) (cancelled, hitPointsChange, characterIndex) ->
+                        Map.fold (fun (battle, cmds) characterIndex (cancelled, hitPointsChange) ->
                             let character = Battle.getCharacter characterIndex battle
                             if hitPointsChange < 0 && character.IsHealthy then
                                 let battle = Battle.updateCharacter (Character.animate time DamageCycle) characterIndex battle
@@ -629,7 +627,7 @@ module BattleDispatcher =
                     let characters = Battle.getCharacters battle
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, sigs) =
-                        List.fold (fun (battle, sigs) (_, _, _) ->
+                        Map.fold (fun (battle, sigs) _ (_, _) ->
                             // TODO: glow effect
                             (battle, sigs))
                             (battle, [])
@@ -656,7 +654,7 @@ module BattleDispatcher =
                     let characters = Battle.getCharacters battle
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, sigs) =
-                        List.fold (fun (battle, sigs) (cancelled, hitPointsChange, characterIndex) ->
+                        Map.fold (fun (battle, sigs) characterIndex (cancelled, hitPointsChange) ->
                             let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) characterIndex battle
                             let wounded = (Battle.getCharacter characterIndex battle).IsWounded
                             let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
@@ -871,22 +869,19 @@ module BattleDispatcher =
                      Entity.ClickEvent ==> msg InteractDialog]
 
                  // allies
-                 Content.entitiesTracked battle
+                 Content.entities battle
                     (fun battle -> Battle.getAllies battle) constant
-                    (fun battle -> battle.PartyIndex)
                     (fun index battle _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.Character <== battle])
 
                  // enemies
-                 Content.entitiesTracked battle
+                 Content.entities battle
                     (fun battle -> Battle.getEnemies battle) constant
-                    (fun battle -> battle.PartyIndex)
                     (fun index battle _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.Character <== battle])]
 
              // input layers
              Content.layers battle (fun battle -> Battle.getAllies battle) constant $ fun index ally _ ->
 
                 // input layer
-                let allyIndex = AllyIndex index
                 let input = screen / ("Input" + "+" + scstring index)
                 Content.layer input.Name []
 
@@ -904,15 +899,15 @@ module BattleDispatcher =
                          Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> ally.InputState = RegularMenu
                          Entity.Enabled <== battle --> fun battle ->
-                            let allies = Battle.getAllies battle
+                            let allies = battle |> Battle.getAllies |> Map.toValueList
                             let alliesPastRegularMenu =
-                                List.notExists (fun (ally : Character) ->
+                                Seq.notExists (fun (ally : Character) ->
                                     match ally.InputState with NoInput | RegularMenu -> false | _ -> true)
                                     allies
                             alliesPastRegularMenu
-                         Entity.RingMenu == { Items = [(0, (true, "Attack")); (1, (true, "Defend")); (2, (true, "Consumable")); (3, (true, "Tech"))]; ItemCancelOpt = None }
-                         Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (allyIndex, evt.Data))
-                         Entity.CancelEvent ==> msg (RegularItemCancel allyIndex)]
+                         Entity.RingMenu == { Items = Map.ofList [(0, ("Attack", true)); (1, ("Defend", true)); (2, ("Consumable", true)); (3, ("Tech", true))]; ItemCancelOpt = None }
+                         Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (index, evt.Data))
+                         Entity.CancelEvent ==> msg (RegularItemCancel index)]
 
                      // consumable menu
                      Content.entity<RingMenuDispatcher> "ConsumableMenu"
@@ -920,12 +915,16 @@ module BattleDispatcher =
                          Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> ally.InputState = ItemMenu
                          Entity.RingMenu <== battle --> fun battle ->
-                            let consumables = Inventory.getConsumables battle.Inventory
-                            let consumables = Map.toKeyList consumables
-                            let consumables = List.map (fun consumable -> (getTag consumable, (true, scstring consumable))) consumables
+                            let consumables =
+                                battle.Inventory |>
+                                Inventory.getConsumables |>
+                                Map.toKeyList |>
+                                Map.ofListBy (fun consumable -> (getTag consumable, (scstring consumable, true))) |>
+                                Map.toValueList |>
+                                Map.indexed
                             { Items = consumables; ItemCancelOpt = Some "Cancel" }
-                         Entity.ItemSelectEvent ==|> fun evt -> msg (ConsumableItemSelect (allyIndex, evt.Data))
-                         Entity.CancelEvent ==> msg (ConsumableItemCancel allyIndex)]
+                         Entity.ItemSelectEvent ==|> fun evt -> msg (ConsumableItemSelect (index, evt.Data))
+                         Entity.CancelEvent ==> msg (ConsumableItemCancel index)]
 
                      // tech menu
                      Content.entity<RingMenuDispatcher> "TechMenu"
@@ -933,20 +932,20 @@ module BattleDispatcher =
                          Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> ally.InputState = TechMenu
                          Entity.RingMenu <== ally --> fun ally ->
-                            let techs = List.ofSeq ally.Techs
                             let techs =
-                                List.map (fun tech ->
-                                    let techTag = getTag tech
+                                ally.Techs |>
+                                Map.ofSeqBy (fun tech ->
+                                    let techName = scstring tech
                                     let techUsable =
                                         match Map.tryFind tech Data.Value.Techs with
                                         | Some techData -> techData.TechCost <= ally.TechPoints
                                         | None -> false
-                                    let techName = scstring tech
-                                    (techTag, (techUsable, techName)))
-                                    techs
+                                    (getTag tech, (techName, techUsable))) |>
+                                Map.toValueList |>
+                                Map.indexed
                             { Items = techs; ItemCancelOpt = Some "Cancel" }
-                         Entity.ItemSelectEvent ==|> fun evt -> msg (TechItemSelect (allyIndex, evt.Data))
-                         Entity.CancelEvent ==> msg (TechItemCancel allyIndex)]
+                         Entity.ItemSelectEvent ==|> fun evt -> msg (TechItemSelect (index, evt.Data))
+                         Entity.CancelEvent ==> msg (TechItemCancel index)]
 
                      // reticles
                      Content.entity<ReticlesDispatcher> "Reticles"
@@ -955,9 +954,9 @@ module BattleDispatcher =
                          Entity.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
                          Entity.Reticles <== battle --> fun battle ->
                             let aimType =
-                                match Battle.tryGetCharacter allyIndex battle with
+                                match Battle.tryGetCharacter index battle with
                                 | Some character -> character.InputState.AimType
                                 | None -> NoAim
                             { Battle = battle; AimType = aimType }
-                         Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, allyIndex))
-                         Entity.CancelEvent ==> msg (ReticlesCancel allyIndex)]]]
+                         Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, index))
+                         Entity.CancelEvent ==> msg (ReticlesCancel index)]]]

@@ -108,38 +108,38 @@ module Character =
             | _ -> None
         { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
 
-    let evaluateAimType aimType (target : Character) (characters : Character list) =
+    let evaluateAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
         match aimType with
         | AnyAim healthy ->
             characters |>
-            List.filter (fun target -> target.IsHealthy = healthy)
+            Map.filter (fun _ c -> c.IsHealthy = healthy)
         | EnemyAim healthy | AllyAim healthy ->
             characters |>
-            List.filter (isFriendly target) |>
-            List.filter (fun target -> target.IsHealthy = healthy)
+            Map.filter (fun _ c -> isFriendly target c) |>
+            Map.filter (fun _ c -> c.IsHealthy = healthy)
         | NoAim ->
-            []
+            Map.empty
 
-    let evaluateTargetType targetType (source : Character) target characters =
+    let evaluateTargetType targetType (source : Character) (target : Character) characters =
         match targetType with
         | SingleTarget _ ->
-            [target]
+            Map.singleton target.CharacterIndex target
         | ProximityTarget (aimType, radius) ->
             characters |>
             evaluateAimType aimType target |>
-            List.filter (fun character ->
+            Map.filter (fun _ character ->
                 let v = character.Bottom - source.Bottom
                 v.Length () <= radius)
         | RadialTarget (aimType, radius) ->
             characters |>
             evaluateAimType aimType target |>
-            List.filter (fun character ->
+            Map.filter (fun _ character ->
                 let v = character.Bottom - target.Bottom
                 v.Length () <= radius)
         | LineTarget (aimType, width) ->
             characters |>
             evaluateAimType aimType target |>
-            List.filter (fun character ->
+            Map.filter (fun _ character ->
                 let a = source.Bottom
                 let b = target.Bottom
                 let c = character.Bottom
@@ -161,23 +161,21 @@ module Character =
         let power = source.CharacterState_.Power
         if techData.Curative then
             let healing = single power * techData.Scalar |> int |> max 1
-            (false, healing, target.CharacterIndex)
+            (target.CharacterIndex, false, healing)
         else
             let cancelled = techData.Cancels && isAutoBattling target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
             let damage = single (power - shield) * techData.Scalar * defendingScalar |> int |> max 1
-            (cancelled, -damage, target.CharacterIndex)
+            (target.CharacterIndex, cancelled, -damage)
 
     let evaluateTechMove techData source target characters =
-        let targets =
-            evaluateTargetType techData.TargetType source target characters
-        let resultsRev =
-            List.fold (fun results target ->
-                let result = evaluateTech techData source target
-                result :: results)
-                [] targets
-        List.rev resultsRev
+        let targets = evaluateTargetType techData.TargetType source target characters
+        Map.fold (fun results _ target ->
+            let (index, cancelled, delta) = evaluateTech techData source target
+            Map.add index (cancelled, delta) results)
+            Map.empty
+            targets
 
     let getPoiseType character =
         CharacterState.getPoiseType character.CharacterState_
