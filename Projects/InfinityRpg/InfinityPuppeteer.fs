@@ -32,14 +32,31 @@ type [<ReferenceEquality; NoComparison>] TurnStatus =
         | TurnTicking tickCount -> TurnTicking (inc tickCount)
         | _ -> turnStatus
 
+type [<ReferenceEquality; NoComparison>] Reactor =
+    | ReactingCharacter of CharacterIndex
+    | ReactingProp of Vector2i
+
 type [<ReferenceEquality; NoComparison>] Turn =
     { TurnType : TurnType
       TurnStatus : TurnStatus
       Actor : CharacterIndex
-      ReactorOpt : CharacterIndex option
+      ReactorOpt : Reactor option
       OriginCoordinates : Vector2i
       Direction : Direction
       StartTick : int64 }
+    
+    member this.GetReactor =
+        match this.ReactorOpt with
+        | Some reactor -> reactor
+        | None -> failwithumf ()
+    
+    static member hasParticularReactor reactorIndex turn =
+        match turn.ReactorOpt with
+        | Some reactor ->
+            match reactor with
+            | ReactingCharacter index -> index = reactorIndex
+            | _ -> false
+        | None -> false
     
     member this.IsFirstTick =
         match this.TurnStatus with
@@ -87,11 +104,11 @@ type [<ReferenceEquality; NoComparison>] Turn =
           Direction = direction
           StartTick = 0L }
 
-    static member makeAttack index targetIndex originC direction =
+    static member makeAttack index reactor originC direction =
         { TurnType = AttackTurn
           TurnStatus = TurnBeginning
           Actor = index
-          ReactorOpt = Some targetIndex
+          ReactorOpt = Some reactor
           OriginCoordinates = originC
           Direction = direction
           StartTick = 0L }
@@ -100,15 +117,14 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     { CharacterTurns : Turn list
       PlayerPuppetState : PuppetState }
 
-    static member init (player : Character) =
-        { CharacterTurns = []
-          PlayerPuppetState = PuppetState.makeFromCharacter player }
+    member this.AnyTurnsInProgress = 
+        List.notEmpty this.CharacterTurns
 
     static member tryGetCharacterTurn index puppeteer =
         List.tryFind (fun x -> x.Actor = index) puppeteer.CharacterTurns
 
     static member tryGetOpponentTurn index puppeteer =
-        List.tryFind (fun x -> x.ReactorOpt = Some index) puppeteer.CharacterTurns
+        List.tryFind (Turn.hasParticularReactor index) puppeteer.CharacterTurns
     
     static member tryGetAttackingEnemyTurn puppeteer =
         List.tryFind (fun x -> x.Actor.IsEnemy && x.TurnType = AttackTurn) puppeteer.CharacterTurns
@@ -119,11 +135,8 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member turnInProgress index puppeteer =
         List.exists (fun x -> x.Actor = index) puppeteer.CharacterTurns
 
-    member this.GetActingCharacters =
-        List.map (fun x -> x.Actor) this.CharacterTurns
-
-    member this.AnyTurnsInProgress = 
-        List.notEmpty this.CharacterTurns
+    static member getActingCharacters puppeteer =
+        List.map (fun x -> x.Actor) puppeteer.CharacterTurns
     
     static member updateCharacterTurns updater puppeteer =
         { puppeteer with CharacterTurns = updater puppeteer.CharacterTurns }
@@ -143,7 +156,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member updatePlayerPuppetHitPoints updater puppeteer =
         Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
 
-    static member generatePositionsAndAnimationStates characters puppeteer =
+    static member getPositionsAndAnimationStates characters puppeteer =
         let generator coordinates character =
             let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
             let turnOpt = Puppeteer.tryGetCharacterTurn character.CharacterIndex puppeteer
@@ -168,4 +181,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                 | Some turn -> Turn.toCharacterAnimationState turn
             (index, (position, characterAnimationState))
         Map.toListBy generator characters
-                
+
+    static member init (player : Character) =
+        { CharacterTurns = []
+          PlayerPuppetState = PuppetState.makeFromCharacter player }

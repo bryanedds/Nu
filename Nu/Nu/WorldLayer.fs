@@ -243,16 +243,16 @@ module WorldLayerModule =
             World.readLayer layerDescriptor nameOpt screen world
 
         /// Turn a layers lens into a series of live layers.
-        static member expandLayers (lens : Lens<obj, World>) sieve spread indexOpt mapper origin screen world =
+        static member expandLayers (lens : Lens<obj, World>) sieve unfold mapper origin screen world =
             let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
-            World.expandSimulants lens sieve spread indexOpt mapperGeneralized origin screen screen world
+            World.expandSimulants lens sieve unfold mapperGeneralized origin screen screen world
 
         /// Turn layer content into a live layer.
         static member expandLayerContent content origin screen world =
             if World.getScreenExists screen world then
                 match LayerContent.expand content screen world with
-                | Choice1Of3 (lens, sieve, spread, indexOpt, mapper) ->
-                    let world = World.expandLayers lens sieve spread indexOpt mapper origin screen world
+                | Choice1Of3 (lens, sieve, unfold, mapper) ->
+                    let world = World.expandLayers lens sieve unfold mapper origin screen world
                     (None, world)
                 | Choice2Of3 (_, descriptor, handlers, binds, streams, entityFilePaths, entityContents) ->
                     let (layer, world) =
@@ -275,8 +275,8 @@ module WorldLayerModule =
                                 address simulant world)
                             world handlers
                     let world =
-                        List.fold (fun world (layer, lens, sieve, spread, indexOpt, mapper) ->
-                            World.expandEntities lens sieve spread indexOpt mapper origin layer layer world)
+                        List.fold (fun world (layer, lens, sieve, unfold, mapper) ->
+                            World.expandEntities lens sieve unfold mapper origin layer layer world)
                             world streams
                     let world =
                         List.fold (fun world (owner, entityContents) ->

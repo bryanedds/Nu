@@ -303,7 +303,7 @@ module Field =
         | Some _ -> (None, field)
 
     let synchronizeTeamFromAllies allies field =
-        List.foldi (fun i field (ally : Character) ->
+        Map.foldi (fun i field _ (ally : Character) ->
             updateTeam (fun team ->
                 match Map.tryFind i team with
                 | Some teammate ->
@@ -315,7 +315,8 @@ module Field =
                     Map.add i teammate team
                 | None -> team)
                 field)
-            field allies
+            field
+            allies
 
     let synchronizeFromBattle consequents battle field =
         let allies = Battle.getAllies battle
