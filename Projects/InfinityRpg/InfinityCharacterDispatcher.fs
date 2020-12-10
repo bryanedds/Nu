@@ -21,6 +21,10 @@ module CharacterDispatcherModule =
         inherit EntityDispatcher ()
 
         static let getSpriteInsetOpt animationState world =
+            let referenceTime =
+                match animationState.AnimationType with
+                | CharacterAnimationFacing -> 0L
+                | _ -> animationState.StartTime
             let animationFrames =
                 match animationState.AnimationType with
                 | CharacterAnimationFacing -> 2
@@ -49,7 +53,7 @@ module CharacterDispatcherModule =
                 | Downward -> v2i 0 1
                 | Leftward -> v2i animationFrames 1
             let animatedXOffsetC =
-                abs (World.getTickTime world - animationState.StartTime) /
+                abs (World.getTickTime world - referenceTime) /
                 animationDelay % int64 animationFrames |>
                 int
             let animatedOffsetC = v2i animatedXOffsetC 0

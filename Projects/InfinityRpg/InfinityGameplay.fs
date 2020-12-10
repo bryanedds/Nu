@@ -280,27 +280,27 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 Gameplay.applyStep index direction gameplay
             | [] -> failwithumf ()
     
-    static member activateCharacter index gameplay =
+    static member activateCharacter time index gameplay =
         let move = Gameplay.getCharacterMove index gameplay
         let coordinates = Gameplay.getCoordinates index gameplay
         let turn =
             match move with
-            | Step direction -> Turn.makeWalk index false coordinates direction
+            | Step direction -> Turn.makeWalk time index false coordinates direction
             | Attack reactor ->
                 let direction =
                     match reactor with
                     | ReactingCharacter reactorIndex -> Gameplay.getCoordinates reactorIndex gameplay |> Math.directionToTarget coordinates
                     | ReactingProp reactorCoordinates -> Math.directionToTarget coordinates reactorCoordinates
-                Turn.makeAttack index reactor coordinates direction
+                Turn.makeAttack time index reactor coordinates direction
             | Travel path ->
                 let direction = Math.directionToTarget coordinates path.Head.Coordinates
-                Turn.makeWalk index true coordinates direction
+                Turn.makeWalk time index true coordinates direction
         Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay
 
-    static member makeMove index move gameplay =
+    static member makeMove time index move gameplay =
         if (Gameplay.getCharacter index gameplay).IsAlive then
             let gameplay = Gameplay.addMove index move gameplay
-            let gameplay = Gameplay.activateCharacter index gameplay
+            let gameplay = Gameplay.activateCharacter time index gameplay
             let gameplay = Gameplay.applyMove index gameplay
             let gameplay =
                 if index = PlayerIndex then

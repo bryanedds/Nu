@@ -63,12 +63,13 @@ type [<ReferenceEquality; NoComparison>] Turn =
         | TurnTicking tickCount -> tickCount = 0L
         | _ -> false
     
-    static member calculatePosition turn =
+    static member calculatePosition time turn =
         match turn.TurnType with
         | WalkTurn _ ->
             match turn.TurnStatus with
             | TurnBeginning -> vctovf turn.OriginCoordinates
-            | TurnTicking tickCount ->
+            | TurnTicking _ ->
+                let tickCount = int (time - turn.StartTick + 1L)
                 let offset = Constants.InfinityRpg.CharacterWalkStep * int tickCount
                 let offsetVector = dtovfScaled turn.Direction (single offset)
                 vctovf turn.OriginCoordinates + offsetVector
@@ -95,23 +96,23 @@ type [<ReferenceEquality; NoComparison>] Turn =
     static member incTickCount turn =
         Turn.updateTurnStatus TurnStatus.incTickCount turn
 
-    static member makeWalk index multiRoundContext originC direction =
+    static member makeWalk time index multiRoundContext originC direction =
         { TurnType = WalkTurn multiRoundContext
           TurnStatus = TurnBeginning
           Actor = index
           ReactorOpt = None
           OriginCoordinates = originC
           Direction = direction
-          StartTick = 0L }
+          StartTick = time }
 
-    static member makeAttack index reactor originC direction =
+    static member makeAttack time index reactor originC direction =
         { TurnType = AttackTurn
           TurnStatus = TurnBeginning
           Actor = index
           ReactorOpt = Some reactor
           OriginCoordinates = originC
           Direction = direction
-          StartTick = 0L }
+          StartTick = time }
 
 type [<ReferenceEquality; NoComparison>] Puppeteer =
     { CharacterTurns : Turn list
@@ -156,11 +157,11 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member updatePlayerPuppetHitPoints updater puppeteer =
         Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
 
-    static member getPositionsAndAnimationStates characters puppeteer =
+    static member getPositionsAndAnimationStates time characters puppeteer =
         let generator coordinates character =
             let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
             let turnOpt = Puppeteer.tryGetCharacterTurn character.CharacterIndex puppeteer
-            let position = match turnOpt with Some turn -> Turn.calculatePosition turn | None -> vctovf coordinates
+            let position = match turnOpt with Some turn -> Turn.calculatePosition time turn | None -> vctovf coordinates
             let characterAnimationState =
                 match turnOpt with
                 | None ->
@@ -170,8 +171,8 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                             | Some attackerTurn ->
                                 match attackerTurn.TurnStatus with
                                 | TurnBeginning -> CharacterAnimationFacing
-                                | TurnTicking tickCount ->
-                                    if tickCount < Constants.InfinityRpg.ReactionTick
+                                | TurnTicking _ ->
+                                    if (time - attackerTurn.StartTick + 1L) < Constants.InfinityRpg.ReactionTick
                                     then CharacterAnimationFacing
                                     else CharacterAnimationSlain
                                 | TurnFinishing -> CharacterAnimationSlain
