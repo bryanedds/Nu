@@ -24,13 +24,8 @@ type [<ReferenceEquality; NoComparison>] TurnType =
 
 type [<ReferenceEquality; NoComparison>] TurnStatus =
     | TurnBeginning
-    | TurnTicking of int64
+    | TurnTicking
     | TurnFinishing
-
-    static member incTickCount turnStatus =
-        match turnStatus with
-        | TurnTicking tickCount -> TurnTicking (inc tickCount)
-        | _ -> turnStatus
 
 type [<ReferenceEquality; NoComparison>] Reactor =
     | ReactingCharacter of CharacterIndex
@@ -58,17 +53,12 @@ type [<ReferenceEquality; NoComparison>] Turn =
             | _ -> false
         | None -> false
     
-    member this.IsFirstTick =
-        match this.TurnStatus with
-        | TurnTicking tickCount -> tickCount = 0L
-        | _ -> false
-    
     static member calculatePosition time turn =
         match turn.TurnType with
         | WalkTurn _ ->
             match turn.TurnStatus with
             | TurnBeginning -> vctovf turn.OriginCoordinates
-            | TurnTicking _ ->
+            | TurnTicking ->
                 let tickCount = int (time - turn.StartTick + 1L)
                 let offset = Constants.InfinityRpg.CharacterWalkStep * int tickCount
                 let offsetVector = dtovfScaled turn.Direction (single offset)
@@ -92,9 +82,6 @@ type [<ReferenceEquality; NoComparison>] Turn =
 
     static member updateStartTick updater turn =
         { turn with StartTick = updater turn.StartTick }
-
-    static member incTickCount turn =
-        Turn.updateTurnStatus TurnStatus.incTickCount turn
 
     static member makeWalk time index multiRoundContext originC direction =
         { TurnType = WalkTurn multiRoundContext
