@@ -20,7 +20,7 @@ module CharacterDispatcherModule =
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
 
-        static let getSpriteInsetOpt animationState world =
+        static let getSpriteInsetOpt animationState time =
             let referenceTime =
                 match animationState.AnimationType with
                 | CharacterAnimationFacing -> 0L
@@ -53,7 +53,7 @@ module CharacterDispatcherModule =
                 | Downward -> v2i 0 1
                 | Leftward -> v2i animationFrames 1
             let animatedXOffsetC =
-                abs (World.getTickTime world - referenceTime) /
+                abs (time - referenceTime) /
                 animationDelay % int64 animationFrames |>
                 int
             let animatedOffsetC = v2i animatedXOffsetC 0
@@ -75,6 +75,7 @@ module CharacterDispatcherModule =
         
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then
+                let time = World.getTickTime world
                 let transform = entity.GetTransform world
                 let animationState = entity.GetCharacterAnimationState world
                 let animationSheet = entity.GetCharacterAnimationSheet world
@@ -87,7 +88,7 @@ module CharacterDispatcherModule =
                             SpriteDescriptor
                               { Transform = transform
                                 Offset = v2Zero
-                                InsetOpt = getSpriteInsetOpt animationState world
+                                InsetOpt = getSpriteInsetOpt animationState time
                                 Image = animationSheet
                                 Color = Color.White
                                 Glow = Color.Zero

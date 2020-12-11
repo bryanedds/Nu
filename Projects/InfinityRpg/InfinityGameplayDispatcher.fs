@@ -28,16 +28,15 @@ module GameplayDispatcher =
         | HaltPlayer
         | TransitionMap of Direction
         | HandleMapChange of PlayerInput
-        | StartGameplay
-        | UpdateTickTime
+        | Initialize
+        | Update
 
     type [<NoEquality; NoComparison>] GameplayCommand =
         | DisplayTurnEffects of CharacterIndex list
         | HandlePlayerInput of PlayerInput
-        | SaveGame
         | ListenKeyboard
-        | Update
-        | PostUpdate
+        | TrackPlayer
+        | Save
         | Nop
 
     type Screen with
@@ -67,9 +66,9 @@ module GameplayDispatcher =
             | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
 
         override this.Channel (_, _) =
-            [Simulants.Gameplay.SelectEvent => msg StartGameplay
-             Simulants.Gameplay.UpdateEvent => cmd Update
-             Simulants.Gameplay.PostUpdateEvent => cmd PostUpdate]
+            [Simulants.Gameplay.SelectEvent => msg Initialize
+             Simulants.Gameplay.UpdateEvent => msg Update
+             Simulants.Gameplay.PostUpdateEvent => cmd TrackPlayer]
 
         override this.Message (gameplay, message, _, world) =
             
@@ -105,7 +104,7 @@ module GameplayDispatcher =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
                     | TurnTicking _ ->
-                        let tickCount = (World.getTickTime world) - characterTurn.StartTick
+                        let tickCount = gameplay.Time - characterTurn.StartTick
                         let gameplay =
                             match characterTurn.TurnType with
                             | AttackTurn ->
@@ -136,7 +135,7 @@ module GameplayDispatcher =
             | MakeEnemyAttack ->
                 let gameplay =
                     let index = gameplay.Round.AttackingEnemyGroup.Head
-                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove (World.getTickTime world) index (Attack (ReactingCharacter PlayerIndex)) gameplay else gameplay
+                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove gameplay.Time index (Attack (ReactingCharacter PlayerIndex)) gameplay else gameplay
                     Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
 
@@ -149,7 +148,7 @@ module GameplayDispatcher =
                             let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
                             let direction = Gen.random1 4 |> Direction.ofInt
                             if List.exists (fun x -> x = direction) openDirections
-                            then Gameplay.makeMove (World.getTickTime world) index (Step direction) gameplay
+                            then Gameplay.makeMove gameplay.Time index (Step direction) gameplay
                             else gameplay
                         | _ -> gameplay)
                         
@@ -179,7 +178,7 @@ module GameplayDispatcher =
                         | _ :: navigationPath ->
                             let targetCoordinates = (List.head navigationPath).Coordinates
                             if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
-                            then Gameplay.makeMove (World.getTickTime world) PlayerIndex (Travel navigationPath) gameplay
+                            then Gameplay.makeMove gameplay.Time PlayerIndex (Travel navigationPath) gameplay
                             else gameplay
                         | [] -> failwithumf ()
                     | _ -> gameplay
@@ -191,7 +190,7 @@ module GameplayDispatcher =
                     withCmd ListenKeyboard gameplay
             
             | TryMakePlayerMove playerInput ->
-                let time = World.getTickTime world
+                let time = gameplay.Time
                 let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
                 let targetCoordinatesOpt =
                     match playerInput with
@@ -257,21 +256,25 @@ module GameplayDispatcher =
                     | _ -> TryMakePlayerMove playerInput
                 withMsg msg gameplay
             
-            | StartGameplay ->
+            | Initialize ->
                 if gameplay.ShallLoadGame && File.Exists Assets.Global.SaveFilePath then
                     let gameplayStr = File.ReadAllText Assets.Global.SaveFilePath
                     let gameplay = scvalue<Gameplay> gameplayStr
                     just gameplay
                 else
                     let gameplay = Gameplay.initial
-                    let gameplay = Gameplay.updateTickTime (constant (World.getTickTime world)) gameplay
                     let gameplay = Gameplay.resetFieldMapWithPlayer (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
                     let gameplay = Gameplay.populateFieldMap gameplay
                     just gameplay
 
-            | UpdateTickTime ->
-                let gameplay = Gameplay.updateTickTime inc gameplay
-                just gameplay
+            | Update ->
+                let gameplay = Gameplay.advanceTime gameplay
+                match gameplay.Round.RoundStatus with
+                | RunningCharacterMoves -> withMsg TickTurns gameplay
+                | MakingEnemyAttack -> withMsg MakeEnemyAttack gameplay
+                | MakingEnemiesWalk -> withMsg MakeEnemiesWalk gameplay
+                | FinishingRound -> withMsg TryTransitionRound gameplay
+                | NoRound -> withCmd ListenKeyboard gameplay
 
         override this.Command (gameplay, command, _, world) =
 
@@ -282,7 +285,7 @@ module GameplayDispatcher =
                     | Some turn ->
                         match turn.TurnType with
                         | AttackTurn ->
-                            if turn.StartTick = (World.getTickTime world) then
+                            if turn.StartTick = gameplay.Time then
                                 let effect = Effects.makeSwordStrikeEffect turn.Direction
                                 let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Scene world
                                 let world = entity.SetEffect effect world
@@ -303,7 +306,7 @@ module GameplayDispatcher =
                     | _ -> just world
                 else just world
 
-            | SaveGame ->
+            | Save ->
                 let gameplayStr = scstring gameplay
                 File.WriteAllText (Assets.Global.SaveFilePath, gameplayStr)
                 just world
@@ -315,16 +318,8 @@ module GameplayDispatcher =
                 elif KeyboardState.isKeyDown KeyboardKey.Left then withCmd (HandlePlayerInput (DetailInput Leftward)) world
                 elif KeyboardState.isKeyDown KeyboardKey.Space then withMsg SkipPlayerTurn world
                 else just world
-            
-            | Update ->
-                match gameplay.Round.RoundStatus with
-                | RunningCharacterMoves -> withMsg TickTurns world
-                | MakingEnemyAttack -> withMsg MakeEnemyAttack world
-                | MakingEnemiesWalk -> withMsg MakeEnemiesWalk world
-                | FinishingRound -> withMsg TryTransitionRound world
-                | NoRound -> withCmd ListenKeyboard world
 
-            | PostUpdate ->
+            | TrackPlayer ->
                 let playerCenter = Simulants.Player.GetCenter world
                 let eyeCenter =
                     if Simulants.Field.Exists world then
@@ -346,7 +341,7 @@ module GameplayDispatcher =
                         v2 eyeCenterX eyeCenterY
                     else playerCenter
                 let world = World.setEyeCenter eyeCenter world
-                withMsg UpdateTickTime world
+                just world
 
             | Nop ->
                 just world
@@ -375,8 +370,8 @@ module GameplayDispatcher =
 
                      // characters
                      Content.entities gameplay
-                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer))
-                        (fun (characters, puppeteer) world -> puppeteer |> Puppeteer.getPositionsAndAnimationStates (World.getTickTime world) characters |> Map.ofSeq)
+                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer, gameplay.Time))
+                        (fun (characters, puppeteer, time) _ -> puppeteer |> Puppeteer.getPositionsAndAnimationStates time characters |> Map.ofSeq)
                         (fun index characterData _ ->
                             let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
@@ -397,7 +392,7 @@ module GameplayDispatcher =
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Save Game"
                      Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress then false else true
-                     Entity.ClickEvent ==> cmd SaveGame]
+                     Entity.ClickEvent ==> cmd Save]
 
                  Content.button Simulants.HudBack.Name
                     [Entity.Position == v2 184.0f -256.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
