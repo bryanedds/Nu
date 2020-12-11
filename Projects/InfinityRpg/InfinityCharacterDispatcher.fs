@@ -16,6 +16,9 @@ module CharacterDispatcherModule =
         member this.GetCharacterAnimationSheet = this.Get Property? CharacterAnimationSheet
         member this.SetCharacterAnimationSheet = this.Set Property? CharacterAnimationSheet
         member this.CharacterAnimationSheet = lens<Image AssetTag> Property? CharacterAnimationSheet this.GetCharacterAnimationSheet this.SetCharacterAnimationSheet this
+        member this.GetCharacterAnimationTime = this.Get Property? CharacterAnimationTime
+        member this.SetCharacterAnimationTime = this.Set Property? CharacterAnimationTime
+        member this.CharacterAnimationTime = lens<int64> Property? CharacterAnimationTime this.GetCharacterAnimationTime this.SetCharacterAnimationTime this
     
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
@@ -71,11 +74,12 @@ module CharacterDispatcherModule =
              define Entity.PublishChanges true
              define Entity.Omnipresent true
              define Entity.CharacterAnimationState CharacterAnimationState.initial
-             define Entity.CharacterAnimationSheet Assets.Gameplay.PlayerImage]
-        
+             define Entity.CharacterAnimationSheet Assets.Gameplay.PlayerImage
+             define Entity.CharacterAnimationTime 0L]
+
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then
-                let time = World.getTickTime world
+                let time = entity.GetCharacterAnimationTime world
                 let transform = entity.GetTransform world
                 let animationState = entity.GetCharacterAnimationState world
                 let animationSheet = entity.GetCharacterAnimationSheet world

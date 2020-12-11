@@ -103,7 +103,7 @@ module GameplayDispatcher =
                 let updater index gameplay =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
-                    | TurnTicking _ ->
+                    | TurnTicking ->
                         let tickCount = gameplay.Time - characterTurn.StartTick
                         let gameplay =
                             match characterTurn.TurnType with
@@ -374,13 +374,17 @@ module GameplayDispatcher =
                      // characters
                      Content.entities gameplay
                         (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer, gameplay.Time))
-                        (fun (characters, puppeteer, time) _ -> puppeteer |> Puppeteer.getPositionsAndAnimationStates time characters |> Map.ofSeq)
-                        (fun index characterData _ ->
-                            let name = match index with 0 -> Simulants.Player.Name | _ -> "Enemy+" + scstring index
+                        (fun (characters, puppeteer, time) _ -> Puppeteer.getCharacterMap characters puppeteer time)
+                        (fun index character _ ->
+                            let name =
+                                match index with
+                                | 0 -> Simulants.Player.Name
+                                | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.CharacterAnimationSheet <== characterData --> fun (_, _) -> match index with 0 -> Assets.Gameplay.PlayerImage | _ -> Assets.Gameplay.GoopyImage // TODO: pull this from data
-                                 Entity.CharacterAnimationState <== characterData --> fun (_, characterAnimationState) -> characterAnimationState
-                                 Entity.Position <== characterData --> fun (position, _) -> position])])
+                                [Entity.CharacterAnimationTime <== character --> fun (_, _, time) -> time
+                                 Entity.CharacterAnimationSheet <== character --> fun (_, _, _) -> match index with 0 -> Assets.Gameplay.PlayerImage | _ -> Assets.Gameplay.GoopyImage // TODO: pull this from data
+                                 Entity.CharacterAnimationState <== character --> fun (_, characterAnimationState, _) -> characterAnimationState
+                                 Entity.Position <== character --> fun (position, _, _) -> position])])
 
              // hud layer
              Content.layer Simulants.Hud.Name []
