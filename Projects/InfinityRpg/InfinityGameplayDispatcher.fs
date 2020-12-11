@@ -381,9 +381,9 @@ module GameplayDispatcher =
                                 | 0 -> Simulants.Player.Name
                                 | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
-                                [Entity.CharacterAnimationTime <== character --> fun (_, _, time) -> time
-                                 Entity.CharacterAnimationSheet <== character --> fun (_, _, _) -> match index with 0 -> Assets.Gameplay.PlayerImage | _ -> Assets.Gameplay.GoopyImage // TODO: pull this from data
+                                [Entity.CharacterAnimationSheet <== character --> fun (_, _, _) -> match index with 0 -> Assets.Gameplay.PlayerImage | _ -> Assets.Gameplay.GoopyImage // TODO: pull this from data
                                  Entity.CharacterAnimationState <== character --> fun (_, characterAnimationState, _) -> characterAnimationState
+                                 Entity.CharacterAnimationTime <== character --> fun (_, _, time) -> time
                                  Entity.Position <== character --> fun (position, _, _) -> position])])
 
              // hud layer
