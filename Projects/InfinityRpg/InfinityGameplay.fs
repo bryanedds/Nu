@@ -105,7 +105,8 @@ type [<ReferenceEquality; NoComparison>] Round =
           AttackingEnemyGroup = [] }
 
 type [<ReferenceEquality; NoComparison>] Gameplay =
-    { ShallLoadGame : bool
+    { Time : int64
+      ShallLoadGame : bool
       MetaMap : MetaMap
       Field : Field
       Chessboard : Chessboard
@@ -115,7 +116,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member initial =
         let field = Field.initial
         let chessboard = Chessboard.init field.FieldMapNp
-        { ShallLoadGame = false
+        { Time = 0L
+          ShallLoadGame = false
           MetaMap = MetaMap.make
           Field = field
           Chessboard = chessboard
@@ -296,6 +298,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 let direction = Math.directionToTarget coordinates path.Head.Coordinates
                 Turn.makeWalk time index true coordinates direction
         Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay
+
+    static member advanceTime gameplay =
+        { gameplay with Time = inc gameplay.Time }
 
     static member makeMove time index move gameplay =
         if (Gameplay.getCharacter index gameplay).IsAlive then
