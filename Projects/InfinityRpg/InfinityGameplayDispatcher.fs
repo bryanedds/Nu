@@ -85,8 +85,8 @@ module GameplayDispatcher =
                             | ReactingCharacter reactorIndex ->
                                 let reactorState = Gameplay.getCharacter reactorIndex gameplay
                                 let gameplay =
-                                    if reactorIndex = PlayerIndex then
-                                        Gameplay.refreshPlayerPuppetHitPoints gameplay
+                                    if reactorIndex = PlayerIndex
+                                    then Gameplay.refreshPlayerPuppetHitPoints gameplay
                                     else gameplay
                                 if reactorState.HitPoints <= 0 then
                                     match reactorIndex with
@@ -115,27 +115,30 @@ module GameplayDispatcher =
                                 if tickCount = dec (int64 Constants.InfinityRpg.CharacterWalkSteps)
                                 then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                                 else gameplay
-                        Gameplay.updateCharacterTurn index Turn.incTickCount gameplay
+                        gameplay
                     | _ -> gameplay
                 let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnFinishing) indices
                 withMsg (FinishTurns indices) gameplay
-            
+
             | BeginTurns ->
                 let updater index gameplay =
                     let characterTurn = Gameplay.getCharacterTurn index gameplay
                     match characterTurn.TurnStatus with
-                    | TurnBeginning -> Gameplay.setCharacterTurnStatus index (TurnTicking 0L) gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
+                    | TurnBeginning -> Gameplay.setCharacterTurnStatus index TurnTicking gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
                 let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
                 withCmd (DisplayTurnEffects indices) gameplay
-            
+
             | MakeEnemyAttack ->
                 let gameplay =
                     let index = gameplay.Round.AttackingEnemyGroup.Head
-                    let gameplay = if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive then Gameplay.makeMove gameplay.Time index (Attack (ReactingCharacter PlayerIndex)) gameplay else gameplay
+                    let gameplay =
+                        if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive // TODO: create Gameplay.isPlayerAlive function.
+                        then Gameplay.makeMove gameplay.Time index (Attack (ReactingCharacter PlayerIndex)) gameplay
+                        else gameplay
                     Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
 
