@@ -24,13 +24,8 @@ type [<ReferenceEquality; NoComparison>] TurnType =
 
 type [<ReferenceEquality; NoComparison>] TurnStatus =
     | TurnBeginning
-    | TurnTicking of int64
+    | TurnTicking
     | TurnFinishing
-
-    static member incTickCount turnStatus =
-        match turnStatus with
-        | TurnTicking tickCount -> TurnTicking (inc tickCount)
-        | _ -> turnStatus
 
 type [<ReferenceEquality; NoComparison>] Reactor =
     | ReactingCharacter of CharacterIndex
@@ -58,17 +53,12 @@ type [<ReferenceEquality; NoComparison>] Turn =
             | _ -> false
         | None -> false
     
-    member this.IsFirstTick =
-        match this.TurnStatus with
-        | TurnTicking tickCount -> tickCount = 0L
-        | _ -> false
-    
     static member calculatePosition time turn =
         match turn.TurnType with
         | WalkTurn _ ->
             match turn.TurnStatus with
             | TurnBeginning -> vctovf turn.OriginCoordinates
-            | TurnTicking _ ->
+            | TurnTicking ->
                 let tickCount = int (time - turn.StartTick + 1L)
                 let offset = Constants.InfinityRpg.CharacterWalkStep * int tickCount
                 let offsetVector = dtovfScaled turn.Direction (single offset)
@@ -82,7 +72,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
             | AttackTurn ->
                 match turn.TurnStatus with
                 | TurnBeginning
-                | TurnTicking _ -> CharacterAnimationActing
+                | TurnTicking -> CharacterAnimationActing
                 | _ -> CharacterAnimationFacing
             | WalkTurn _ -> CharacterAnimationFacing
         CharacterAnimationState.make turn.StartTick animationType turn.Direction
@@ -92,9 +82,6 @@ type [<ReferenceEquality; NoComparison>] Turn =
 
     static member updateStartTick updater turn =
         { turn with StartTick = updater turn.StartTick }
-
-    static member incTickCount turn =
-        Turn.updateTurnStatus TurnStatus.incTickCount turn
 
     static member makeWalk time index multiRoundContext originC direction =
         { TurnType = WalkTurn multiRoundContext
@@ -157,7 +144,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member updatePlayerPuppetHitPoints updater puppeteer =
         Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
 
-    static member getPositionsAndAnimationStates time characters puppeteer =
+    static member getCharacterMap characters puppeteer time =
         let generator coordinates character =
             let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
             let turnOpt = Puppeteer.tryGetCharacterTurn character.CharacterIndex puppeteer
@@ -171,17 +158,19 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                             | Some attackerTurn ->
                                 match attackerTurn.TurnStatus with
                                 | TurnBeginning -> CharacterAnimationFacing
-                                | TurnTicking _ ->
-                                    if (time - attackerTurn.StartTick + 1L) < Constants.InfinityRpg.ReactionTick
+                                | TurnTicking ->
+                                    if time - attackerTurn.StartTick + 1L < Constants.InfinityRpg.ReactionTick
                                     then CharacterAnimationFacing
                                     else CharacterAnimationSlain
                                 | TurnFinishing -> CharacterAnimationSlain
                             | None -> CharacterAnimationSlain
                         else CharacterAnimationFacing
-                    CharacterAnimationState.make 0L animationType character.FacingDirection
+                    CharacterAnimationState.make time animationType character.FacingDirection
                 | Some turn -> Turn.toCharacterAnimationState turn
-            (index, (position, characterAnimationState))
-        Map.toListBy generator characters
+            (index, (position, characterAnimationState, time))
+        characters |>
+        Map.toListBy generator |>
+        Map.ofSeq
 
     static member init (player : Character) =
         { CharacterTurns = []
