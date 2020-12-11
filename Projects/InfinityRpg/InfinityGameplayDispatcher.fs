@@ -29,6 +29,7 @@ module GameplayDispatcher =
         | TransitionMap of Direction
         | HandleMapChange of PlayerInput
         | StartGameplay
+        | UpdateTickTime
 
     type [<NoEquality; NoComparison>] GameplayCommand =
         | DisplayTurnEffects of CharacterIndex list
@@ -263,9 +264,14 @@ module GameplayDispatcher =
                     just gameplay
                 else
                     let gameplay = Gameplay.initial
+                    let gameplay = Gameplay.updateTickTime (constant (World.getTickTime world)) gameplay
                     let gameplay = Gameplay.resetFieldMapWithPlayer (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
                     let gameplay = Gameplay.populateFieldMap gameplay
                     just gameplay
+
+            | UpdateTickTime ->
+                let gameplay = Gameplay.updateTickTime inc gameplay
+                just gameplay
 
         override this.Command (gameplay, command, _, world) =
 
@@ -340,7 +346,7 @@ module GameplayDispatcher =
                         v2 eyeCenterX eyeCenterY
                     else playerCenter
                 let world = World.setEyeCenter eyeCenter world
-                just world
+                withMsg UpdateTickTime world
 
             | Nop ->
                 just world
