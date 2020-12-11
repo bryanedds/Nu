@@ -72,7 +72,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
             | AttackTurn ->
                 match turn.TurnStatus with
                 | TurnBeginning
-                | TurnTicking _ -> CharacterAnimationActing
+                | TurnTicking -> CharacterAnimationActing
                 | _ -> CharacterAnimationFacing
             | WalkTurn _ -> CharacterAnimationFacing
         CharacterAnimationState.make turn.StartTick animationType turn.Direction
@@ -144,7 +144,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member updatePlayerPuppetHitPoints updater puppeteer =
         Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
 
-    static member getPositionsAndAnimationStates time characters puppeteer =
+    static member getCharacterMap characters puppeteer time =
         let generator coordinates character =
             let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
             let turnOpt = Puppeteer.tryGetCharacterTurn character.CharacterIndex puppeteer
@@ -158,17 +158,19 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                             | Some attackerTurn ->
                                 match attackerTurn.TurnStatus with
                                 | TurnBeginning -> CharacterAnimationFacing
-                                | TurnTicking _ ->
-                                    if (time - attackerTurn.StartTick + 1L) < Constants.InfinityRpg.ReactionTick
+                                | TurnTicking ->
+                                    if time - attackerTurn.StartTick + 1L < Constants.InfinityRpg.ReactionTick
                                     then CharacterAnimationFacing
                                     else CharacterAnimationSlain
                                 | TurnFinishing -> CharacterAnimationSlain
                             | None -> CharacterAnimationSlain
                         else CharacterAnimationFacing
-                    CharacterAnimationState.make 0L animationType character.FacingDirection
+                    CharacterAnimationState.make time animationType character.FacingDirection
                 | Some turn -> Turn.toCharacterAnimationState turn
-            (index, (position, characterAnimationState))
-        Map.toListBy generator characters
+            (index, (position, characterAnimationState, time))
+        characters |>
+        Map.toListBy generator |>
+        Map.ofSeq
 
     static member init (player : Character) =
         { CharacterTurns = []
