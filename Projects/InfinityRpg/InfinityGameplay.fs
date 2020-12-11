@@ -105,7 +105,8 @@ type [<ReferenceEquality; NoComparison>] Round =
           AttackingEnemyGroup = [] }
 
 type [<ReferenceEquality; NoComparison>] Gameplay =
-    { ShallLoadGame : bool
+    { TickTime : int64
+      ShallLoadGame : bool
       MetaMap : MetaMap
       Field : Field
       Chessboard : Chessboard
@@ -115,7 +116,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member initial =
         let field = Field.initial
         let chessboard = Chessboard.init field.FieldMapNp
-        { ShallLoadGame = false
+        { TickTime = 0L
+          ShallLoadGame = false
           MetaMap = MetaMap.make
           Field = field
           Chessboard = chessboard
@@ -157,6 +159,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member areCharactersAdjacent index1 index2 gameplay =
         Math.areCoordinatesAdjacent (Gameplay.getCoordinates index1 gameplay) (Gameplay.getCoordinates index2 gameplay)
+    
+    static member updateTickTime updater gameplay =
+        { gameplay with TickTime = updater gameplay.TickTime }
     
     static member updateMetaMap updater gameplay =
         { gameplay with MetaMap = updater gameplay.MetaMap }
