@@ -105,17 +105,15 @@ module GameplayDispatcher =
                     match characterTurn.TurnStatus with
                     | TurnTicking ->
                         let tickCount = gameplay.Time - characterTurn.StartTick
-                        let gameplay =
-                            match characterTurn.TurnType with
-                            | AttackTurn ->
-                                if tickCount = Constants.InfinityRpg.ActionTicksMax
-                                then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
-                                else gameplay
-                            | WalkTurn _ ->
-                                if tickCount = dec (int64 Constants.InfinityRpg.CharacterWalkSteps)
-                                then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
-                                else gameplay
-                        gameplay
+                        match characterTurn.TurnType with
+                        | AttackTurn ->
+                            if tickCount = Constants.InfinityRpg.ActionTicksMax
+                            then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
+                            else gameplay
+                        | WalkTurn _ ->
+                            if tickCount = dec (int64 Constants.InfinityRpg.CharacterWalkSteps)
+                            then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
+                            else gameplay
                     | _ -> gameplay
                 let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
