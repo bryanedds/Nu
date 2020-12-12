@@ -299,7 +299,6 @@ module GameplayDispatcher =
                             else world
                         | _ -> world
                     | None -> world
-
                 withMsg TickTurns world
             
             | HandlePlayerInput playerInput ->
