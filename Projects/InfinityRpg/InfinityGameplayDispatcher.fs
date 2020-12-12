@@ -299,7 +299,6 @@ module GameplayDispatcher =
                             else world
                         | _ -> world
                     | None -> world
-
                 withMsg TickTurns world
             
             | HandlePlayerInput playerInput ->
@@ -367,8 +366,8 @@ module GameplayDispatcher =
 
                      // props
                      Content.entities gameplay
-                        (fun gameplay -> (gameplay.Chessboard.PropSpaces, gameplay.Puppeteer))
-                        (fun (props, puppeteer) _ -> props |> Map.toSeqBy (fun positionM _ -> Prop.makeLongGrass positionM) |> Map.indexed)
+                        (fun gameplay -> (gameplay.Chessboard.PropSpaces, gameplay.Puppeteer, gameplay.Time))
+                        (fun (props, puppeteer, time) _ -> Puppeteer.getPropMap props puppeteer time)
                         (fun index prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Prop <== prop])
 
                      // characters

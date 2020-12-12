@@ -40,7 +40,6 @@ module FieldDispatcher =
 
     type [<NoComparison>] FieldCommand =
         | UpdateEye
-        | MoveAvatar of Vector2
         | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
         | PlaySong of int * single * Song AssetTag
@@ -330,9 +329,9 @@ module FieldDispatcher =
                                 Field.updateAvatar (fun avatar ->
                                     let avatar = Avatar.updateDirection (constant fieldTransition.FieldDirection) avatar
                                     let avatar = Avatar.updateIntersectedBodyShapes (constant []) avatar
+                                    let avatar = Avatar.updateBottom (constant fieldTransition.FieldDestination) avatar
                                     avatar)
                                     field
-                            let moveCmd = MoveAvatar fieldTransition.FieldDestination
                             let songCmd =
                                 match Field.getFieldSongOpt field with
                                 | Some fieldSong ->
@@ -340,7 +339,7 @@ module FieldDispatcher =
                                     then PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)
                                     else Nop
                                 | None -> Nop
-                            withCmds [moveCmd; songCmd] field
+                            withCmd songCmd field
 
                         // finish transition
                         elif tickTime = fieldTransition.FieldTransitionTime then
@@ -547,11 +546,6 @@ module FieldDispatcher =
                 let eyeBounds = tileMapBounds.WithPosition (tileMapBounds.Position + v2Dup 48.0f)
                 let eyeBounds = eyeBounds.WithSize (tileMapBounds.Size - v2Dup 96.0f)
                 let world = World.constrainEyeBounds eyeBounds world
-                just world
-
-            | MoveAvatar position ->
-                let positionOffset = position - Constants.Field.AvatarBottomInset
-                let world = Simulants.FieldAvatar.SetBottom positionOffset world
                 just world
 
             | PlayFieldSong ->
