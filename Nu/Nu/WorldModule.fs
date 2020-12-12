@@ -484,8 +484,8 @@ module WorldModule =
         /// Make vanilla overlay routes from dispatchers.
         static member internal dispatchersToOverlayRoutes entityDispatchers =
             entityDispatchers |>
-            Map.toValueListBy getTypeName |>
-            List.map (fun typeName -> (typeName, None))
+            Map.toValueList |>
+            List.map (fun dispatcher -> (getTypeName dispatcher, None))
 
     type World with // Subsystems
 
