@@ -18,9 +18,13 @@ module PropDispatcher =
         inherit EntityDispatcher<Prop, unit, unit> (Prop.initial)
 
         static let getSpriteInsetOpt prop =
+            let xOffset =
+                match prop.PropAnimationType with
+                | PropAnimationStanding -> single 0
+                | PropAnimationDestroyed -> single 1
             let spriteOffset =
                 v2
-                    (Constants.Layout.TileSize.X * single 0)
+                    (Constants.Layout.TileSize.X * xOffset)
                     (Constants.Layout.TileSize.Y * single 0)
             let spriteInset = v4Bounds spriteOffset Constants.Layout.TileSize
             Some spriteInset

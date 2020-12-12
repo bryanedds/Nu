@@ -144,6 +144,32 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member updatePlayerPuppetHitPoints updater puppeteer =
         Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
 
+    static member getPropMap props puppeteer time =
+        let generator coordinates _ =
+            let animationType =
+                match Puppeteer.tryGetCharacterTurn PlayerIndex puppeteer with
+                | Some turn ->
+                    match turn.ReactorOpt with
+                    | Some reactor ->
+                        match reactor with
+                        | ReactingProp propCoords ->
+                            if propCoords = coordinates then
+                                match turn.TurnStatus with
+                                | TurnBeginning -> PropAnimationStanding
+                                | TurnTicking ->
+                                    if time - turn.StartTick + 1L < Constants.InfinityRpg.ReactionTick
+                                    then PropAnimationStanding
+                                    else PropAnimationDestroyed
+                                | TurnFinishing -> PropAnimationDestroyed
+                            else PropAnimationStanding
+                        | _ -> PropAnimationStanding
+                    | None -> PropAnimationStanding
+                | None -> PropAnimationStanding
+            Prop.makeLongGrass coordinates animationType
+        props |>
+        Map.toSeqBy generator |>
+        Map.indexed
+    
     static member getCharacterMap characters puppeteer time =
         let generator coordinates character =
             let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
