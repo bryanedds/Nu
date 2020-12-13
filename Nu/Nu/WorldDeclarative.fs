@@ -9,11 +9,11 @@ open Nu
 
 /// Efficiently emulates root type casting of a Map.
 type [<NoEquality; NoComparison>] MapGeneralized =
-    { SeqGeneralized : (IComparable * obj) seq
+    { ToSeq : (IComparable * obj) seq
       TryGetValue : IComparable -> obj option }
 
     static member make (map : Map<'k, 'v>) =
-        { SeqGeneralized =
+        { ToSeq =
             Seq.map (fun (kvp : KeyValuePair<'k, 'v>) ->
                 (kvp.Key :> IComparable, kvp.Value :> obj))
                 map
@@ -275,7 +275,7 @@ module WorldDeclarative =
             let subscription = fun _ world ->
                 let mapGeneralized = Lens.get lensGeneralized world
                 let mutable current = USet.makeEmpty Functional
-                let mutable enr = mapGeneralized.SeqGeneralized.GetEnumerator ()
+                let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
                 while enr.MoveNext () do
                     let key = fst enr.Current
                     let lens' = Lens.map (fun keyed -> keyed.TryGetValue key) lensGeneralized
