@@ -7,13 +7,20 @@ open System.Collections.Generic
 open Prime
 open Nu
 
-/// Efficiently emulates root type casting of a dictionary or map.
-type [<NoEquality; NoComparison>] Keyed =
-    { Seq : (IComparable * obj) seq
-      TryFind : IComparable -> obj option }
-    static member make (map : IDictionary<'k, 'v>) =
-        { Seq = Seq.map (fun (kvp : KeyValuePair<'k, 'v>) -> (kvp.Key :> IComparable, kvp.Value :> obj)) map
-          TryFind = fun (key : IComparable) -> match map.TryGetValue (key :?> 'k) with (true, value) -> Some (value :> obj) | (false, _) -> None }
+/// Efficiently emulates root type casting of a Map.
+type [<NoEquality; NoComparison>] MapGeneralized =
+    { SeqGeneralized : (IComparable * obj) seq
+      TryGetValue : IComparable -> obj option }
+
+    static member make (map : Map<'k, 'v>) =
+        { SeqGeneralized =
+            Seq.map (fun (kvp : KeyValuePair<'k, 'v>) ->
+                (kvp.Key :> IComparable, kvp.Value :> obj))
+                map
+          TryGetValue = fun (key : IComparable) ->
+            match Map.tryFind (key :?> 'k) map with
+            | Some value -> Some (value :> obj)
+            | None -> None }
 
 /// Describes the behavior of a screen.
 type [<StructuralEquality; NoComparison>] ScreenBehavior =
@@ -24,7 +31,7 @@ type [<StructuralEquality; NoComparison>] ScreenBehavior =
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
-    | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> Keyed) * (obj -> Lens<obj, World> -> World -> EntityContent)
+    | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> MapGeneralized) * (obj -> Lens<obj, World> -> World -> EntityContent)
     | EntityFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
@@ -42,7 +49,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 
 /// Describes the content of a layer.
 type [<NoEquality; NoComparison>] LayerContent =
-    | LayersFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> Keyed) * (obj -> Lens<obj, World> -> World -> LayerContent)
+    | LayersFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> MapGeneralized) * (obj -> Lens<obj, World> -> World -> LayerContent)
     | LayerFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | LayerFromFile of string * string
     interface SimulantContent
@@ -221,7 +228,7 @@ module WorldDeclarative =
         static member expandSimulants
             (lens : Lens<obj, World>)
             (sieve : obj -> obj)
-            (unfold : obj -> World -> Keyed)
+            (unfold : obj -> World -> MapGeneralized)
             (mapper : IComparable -> Lens<obj, World> -> World -> SimulantContent)
             (origin : ContentOrigin)
             (owner : Simulant)
@@ -233,7 +240,7 @@ module WorldDeclarative =
             let mutable lensResult = Unchecked.defaultof<obj>
             let mutable sieveResultOpt = None
             let mutable unfoldResultOpt = None
-            let lensKeyed =
+            let lensGeneralized =
                 Lens.mapWorld (fun a world ->
                     let (b, c) =
                         if refEq a lensResult || genEq a lensResult then
@@ -266,18 +273,16 @@ module WorldDeclarative =
                     | Some a2 -> not (refEq a a2 || genEq a a2)
                     | None -> true
             let subscription = fun _ world ->
-                let keyed = Lens.get lensKeyed world
+                let mapGeneralized = Lens.get lensGeneralized world
                 let mutable current = USet.makeEmpty Functional
-                let mutable enr = keyed.Seq.GetEnumerator ()
+                let mutable enr = mapGeneralized.SeqGeneralized.GetEnumerator ()
                 while enr.MoveNext () do
                     let key = fst enr.Current
-                    let lens' = Lens.map (fun keyed -> keyed.TryFind key) lensKeyed
-                    match lens'.Get world with
-                    | Some _ ->
+                    let lens' = Lens.map (fun keyed -> keyed.TryGetValue key) lensGeneralized
+                    if Option.isSome (lens'.Get world) then
                         let lens'' = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) }
                         let item = PartialComparable.make key lens''
                         current <- USet.add item current
-                    | None -> ()
                 let previous =
                     match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> previousSetKey world with
                     | Some previous -> previous
