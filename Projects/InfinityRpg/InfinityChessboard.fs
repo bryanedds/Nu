@@ -158,6 +158,14 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member tryGetOccupantAtCoordinates coordinates chessboard =
         chessboard.FieldSpaces.[coordinates].TryGetOccupant
     
+    // ignores non-adjacent enemies
+    static member getNavigationMap currentCoordinates chessboard =
+        let predicate k (v : FieldSpace) = not (v.ContainsCharacter && (k = currentCoordinates + (dtovc Upward) || k = currentCoordinates + (dtovc Rightward) || k = currentCoordinates + (dtovc Downward) || k = currentCoordinates + (dtovc Leftward)))
+        chessboard.FieldSpaces |>
+        Map.filter (fun _ (v : FieldSpace) -> not v.ContainsProp) |>
+        Map.filter predicate |>
+        Map.map absurdity2
+
     static member spaceExists coordinates chessboard =
         Map.exists (fun k _ -> k = coordinates) chessboard.FieldSpaces
     
