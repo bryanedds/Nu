@@ -37,7 +37,7 @@ module Content =
         (mapper : 'k -> Lens<'c, World> -> World -> LayerContent) =
         let lens = lens.Map box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
-        let unfold = fun (b : obj) w -> Keyed.make (unfold (b :?> 'b) w)
+        let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> --> cast<'c>) world
         LayersFromStream (lens, sieve, unfold, mapper)
 
@@ -72,7 +72,7 @@ module Content =
         (mapper : 'k -> Lens<'c, World> -> World -> EntityContent) =
         let lens = lens.Map box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
-        let unfold = fun (b : obj) w -> Keyed.make (unfold (b :?> 'b) w)
+        let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> --> cast<'c>) world
         EntitiesFromStream (lens, sieve, unfold, mapper)
 
