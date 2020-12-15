@@ -133,6 +133,23 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
           TickRate = 1L
           StandAlone = true }
 
+/// Extensions for EventTrace.
+module EventTrace =
+
+    /// Record event only in debug mode.
+    let debug moduleName functionName eventTrace =
+#if DEBUG
+        EventTrace.record moduleName functionName eventTrace
+#else
+        ignore moduleName
+        ignore functionName
+        eventTrace
+#endif
+
+    /// Record event only in all modes.
+    let trace moduleName functionName eventTrace =
+        EventTrace.record moduleName functionName eventTrace
+
 [<AutoOpen>]
 module WorldTypes =
 
