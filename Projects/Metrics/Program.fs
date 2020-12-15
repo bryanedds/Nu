@@ -215,8 +215,6 @@ type ElmishGameDispatcher () =
                         Content.staticSprite (string j)
                             (List.ofSeq
                                 (seq {
-                                    yield Entity.Imperative == true
-                                    yield Entity.Omnipresent == true
                                     yield Entity.Position == v2 (single i * 16.0f - 480.0f) (single j * 16.0f - 272.0f)
                                     for _ in 0 .. 9 do yield Entity.Size <== int --> fun int -> v2 (single (int % 16)) (single (int % 16)) })))])
              Content.layer "Layer" []
