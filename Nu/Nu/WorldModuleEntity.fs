@@ -272,7 +272,7 @@ module WorldModuleEntity =
         static member internal setEntityModelProperty (value : DesignerProperty) entity world =
             World.updateEntityState
                 (fun entityState ->
-                    if value.DesignerValue <> entityState.Model.DesignerValue then
+                    if value.DesignerValue =/= entityState.Model.DesignerValue then
                         if entityState.Imperative then
                             entityState.Model.DesignerValue <- value.DesignerValue
                             Some entityState
@@ -284,7 +284,7 @@ module WorldModuleEntity =
             World.updateEntityState
                 (fun entityState ->
                     let valueObj = value :> obj
-                    if valueObj <> entityState.Model.DesignerValue then
+                    if valueObj =/= entityState.Model.DesignerValue then
                         if entityState.Imperative then
                             entityState.Model.DesignerValue <- valueObj
                             Some entityState
@@ -318,8 +318,8 @@ module WorldModuleEntity =
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
-        static member internal setEntityPosition value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Position then World.setEntityTransform { transform with Transform.Position = value } entity world else world
-        static member internal setEntitySize value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Size then World.setEntityTransform { transform with Size = value } entity world else world
+        static member internal setEntityPosition value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if v2Neq value transform.Position then World.setEntityTransform { transform with Transform.Position = value } entity world else world
+        static member internal setEntitySize value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if v2Neq value transform.Size then World.setEntityTransform { transform with Size = value } entity world else world
         static member internal setEntityRotation value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Rotation then World.setEntityTransform { transform with Rotation = value } entity world else world
         static member internal setEntityElevation value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Elevation then World.setEntityTransform { transform with Elevation = value } entity world else world
         static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then Some (if entityState.Imperative then entityState.Omnipresent <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Omnipresent <- value; entityState)) else None) false Property? Omnipresent value entity world
@@ -331,7 +331,7 @@ module WorldModuleEntity =
         static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then Some (if entityState.Imperative then entityState.PublishUpdates <- value; entityState else (let entityState = EntityState.copy entityState in entityState.PublishUpdates <- value; entityState)) else None) false Property? PublishUpdates value entity world
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then Some (if entityState.Imperative then entityState.PublishPostUpdates <- value; entityState else (let entityState = EntityState.copy entityState in entityState.PublishPostUpdates <- value; entityState)) else None) false Property? PublishPostUpdates value entity world
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then Some (if entityState.Imperative then entityState.Persistent <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Persistent <- value; entityState)) else None) false Property? Persistent value entity world
-        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Overflow then Some (if entityState.Imperative then entityState.Overflow <- value; entityState else { entityState with Overflow = value }) else None) false Property? Overflow value entity world
+        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then Some (if entityState.Imperative then entityState.Overflow <- value; entityState else { entityState with Overflow = value }) else None) false Property? Overflow value entity world
         static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> if value <> entityState.ScriptFrame then Some (if entityState.Imperative then entityState.ScriptFrame <- value; entityState else { entityState with ScriptFrame = value }) else None) false Property? ScriptFrame value entity world
 
         static member internal setEntityTransformWithoutEvent value entity world =
@@ -372,8 +372,8 @@ module WorldModuleEntity =
 #endif
                 let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 if World.getEntityPublishChanges entity world then
-                    let positionChanged = value.Position <> oldTransform.Position
-                    let sizeChanged = value.Size <> oldTransform.Size
+                    let positionChanged = v2Neq value.Position oldTransform.Position
+                    let sizeChanged = v2Neq value.Size oldTransform.Size
                     let rotationChanged = value.Rotation <> oldTransform.Rotation
                     let elevationChanged = value.Elevation <> oldTransform.Elevation
                     let world = World.publishEntityChange Property? Transform value entity world
@@ -396,7 +396,7 @@ module WorldModuleEntity =
             let mutable transform = &(World.getEntityState entity world).Transform
             let position = value.Position
             let size = value.Size
-            if transform.Position <> position || transform.Size <> size
+            if v2Neq transform.Position position || v2Neq transform.Size size
             then World.setEntityTransform { transform with Position = position; Size = size } entity world
             else world
 
@@ -407,7 +407,7 @@ module WorldModuleEntity =
         static member internal setEntityCenter value entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
             let position = value - transform.Size * 0.5f
-            if transform.Position <> position
+            if v2Neq transform.Position position
             then World.setEntityTransform { transform with Position = position } entity world
             else world
 
@@ -418,7 +418,7 @@ module WorldModuleEntity =
         static member internal setEntityBottom value entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
             let position = value - transform.Size.WithY 0.0f * 0.5f
-            if transform.Position <> position
+            if v2Neq transform.Position position
             then World.setEntityTransform { transform with Position = position } entity world
             else world
 
@@ -655,19 +655,19 @@ module WorldModuleEntity =
                             | :? ComputedProperty as cp ->
                                 match cp.ComputedSetOpt with
                                 | Some computedSet ->
-                                    if property.PropertyValue <> cp.ComputedGet (box entity) (box world)
+                                    if property.PropertyValue =/= cp.ComputedGet (box entity) (box world)
                                     then (true, true, computedSet property.PropertyValue entity world :?> World)
                                     else (true, false, world)
                                 | None -> (false, false, world)
                             | :? DesignerProperty as dp ->
-                                if property.PropertyValue <> dp.DesignerValue then
+                                if property.PropertyValue =/= dp.DesignerValue then
                                     let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
                                     match EntityState.trySetProperty propertyName property entityState with
                                     | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
                                     | (false, _) -> (false, false, world)
                                 else (true, false, world)
                             | _ ->
-                                if property.PropertyValue <> propertyOld.PropertyValue then
+                                if property.PropertyValue =/= propertyOld.PropertyValue then
                                     match EntityState.trySetProperty propertyName property entityState with
                                     | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
                                     | (false, _) -> (false, false, world)

@@ -125,7 +125,7 @@ module WorldModuleLayer =
         static member internal setLayerModelProperty (value : DesignerProperty) layer world =
             World.updateLayerState
                 (fun layerState ->
-                    if value.DesignerValue <> layerState.Model.DesignerValue
+                    if value.DesignerValue =/= layerState.Model.DesignerValue
                     then Some { layerState with Model = { layerState.Model with DesignerValue = value.DesignerValue }}
                     else None)
                 Property? Model value.DesignerValue layer world
@@ -134,7 +134,7 @@ module WorldModuleLayer =
             World.updateLayerState
                 (fun layerState ->
                     let valueObj = value :> obj
-                    if valueObj <> layerState.Model.DesignerValue
+                    if valueObj =/= layerState.Model.DesignerValue
                     then Some { layerState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     else None)
                 Property? Model value layer world
@@ -165,7 +165,7 @@ module WorldModuleLayer =
                             (fun layerState ->
                                 match LayerState.tryGetProperty propertyName layerState with
                                 | Some propertyOld ->
-                                    if property.PropertyValue <> propertyOld.PropertyValue then
+                                    if property.PropertyValue =/= propertyOld.PropertyValue then
                                         let (successInner, gameState) = LayerState.trySetProperty propertyName property layerState
                                         success <- successInner
                                         Some gameState
@@ -186,7 +186,7 @@ module WorldModuleLayer =
                     World.updateLayerState
                         (fun layerState ->
                             let propertyOld = LayerState.getProperty propertyName layerState
-                            if property.PropertyValue <> propertyOld.PropertyValue
+                            if property.PropertyValue =/= propertyOld.PropertyValue
                             then Some (LayerState.setProperty propertyName property layerState)
                             else None)
                         propertyName property.PropertyValue layer world

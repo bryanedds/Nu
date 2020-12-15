@@ -753,7 +753,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Game as that -> this.GameAddress = that.GameAddress
+            | :? Game as that -> this.GameAddress === that.GameAddress
             | _ -> false
 
         override this.GetHashCode () =
@@ -815,7 +815,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Screen as that -> this.ScreenAddress = that.ScreenAddress
+            | :? Screen as that -> this.ScreenAddress === that.ScreenAddress
             | _ -> false
 
         override this.GetHashCode () =
@@ -885,7 +885,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Layer as that -> this.LayerAddress = that.LayerAddress
+            | :? Layer as that -> this.LayerAddress === that.LayerAddress
             | _ -> false
 
         override this.GetHashCode () =
@@ -982,7 +982,7 @@ module WorldTypes =
 
         override this.Equals that =
             match that with
-            | :? Entity as that -> this.EntityAddress = that.EntityAddress
+            | :? Entity as that -> this.EntityAddress === that.EntityAddress
             | _ -> false
 
         override this.GetHashCode () =

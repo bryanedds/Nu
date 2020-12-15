@@ -280,7 +280,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
                 let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
                 if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
-                if glow <> Color.Zero then
+                if glow.A <> byte 0 then
                     SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
                     SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
                     SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore

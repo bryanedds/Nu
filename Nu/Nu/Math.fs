@@ -100,6 +100,17 @@ type [<CustomEquality; NoComparison; Struct>] Transform =
         member this.Disjunction _ _ _ = ()
 
 [<AutoOpen>]
+module TransformOperators =
+
+    /// Check two transforms for equality.
+    let inline trEq (left : Transform) (right : Transform) =
+        Transform.equals left right
+
+    /// Check two transforms for inequality.
+    let inline trNeq (left : Transform) (right : Transform) =
+        not (Transform.equals left right)
+
+[<AutoOpen>]
 module Vector2 =
 
     type Vector2 with
@@ -109,7 +120,9 @@ module Vector2 =
         member this.WithY y = Vector2 (this.X, y)
 
     let inline v2 x y = Vector2 (x, y)
-    let inline v2Dup a = v2 a a
+    let inline v2Eq (x : Vector2) (y : Vector2) = x.X = y.X && x.Y = y.Y
+    let inline v2Neq (x : Vector2) (y : Vector2) = x.X <> y.X || x.Y <> y.Y
+    let inline v2Dup (a : single) = v2 a a
     let v2One = Vector2.One
     let v2Zero = Vector2.Zero
     let v2UnitX = Vector2.UnitX
@@ -124,7 +137,7 @@ type [<CustomEquality; CustomComparison>] Vector2Pluggable =
     { Vector2 : Vector2 }
 
     static member equals left right =
-        left.Vector2 = right.Vector2
+        v2Eq left.Vector2 right.Vector2
 
     static member compare left right =
         compare (left.Vector2.X, left.Vector2.Y) (right.Vector2.X, right.Vector2.Y)
@@ -172,7 +185,9 @@ module Vector3 =
         member this.WithZ z = Vector3 (this.X, this.Y, z)
 
     let inline v3 x y z = Vector3 (x, y, z)
-    let inline v3Dup a = v3 a a a
+    let inline v3Eq (x : Vector3) (y : Vector3) = x.X = y.X && x.Y = y.Y && x.Z = y.Z
+    let inline v3Neq (x : Vector3) (y : Vector3) = x.X <> y.X || x.Y <> y.Y || x.Z <> y.Z
+    let inline v3Dup (a : single) = v3 a a a
     let v3One = Vector3.One
     let v3Zero = Vector3.Zero
     let v3UnitX = Vector3.UnitX
@@ -275,7 +290,9 @@ module Vector4 =
         member this.WithSize (size : Vector2) = Vector4 (this.X, this.Y, size.X, size.Y)
 
     let inline v4 x y z w = Vector4 (x, y, z, w)
-    let inline v4Dup a = v4 a a a a
+    let inline v4Eq (x : Vector4) (y : Vector4) = x.X = y.X && x.Y = y.Y && x.Z = y.Z && x.W = y.W
+    let inline v4Neq (x : Vector4) (y : Vector4) = x.X <> y.X || x.Y <> y.Y || x.Z <> y.Z || x.W <> y.W
+    let inline v4Dup (a : single) = v4 a a a a
     let v4One = Vector4.One
     let v4Zero = Vector4.Zero
     let v4UnitX = Vector4.UnitX
@@ -294,7 +311,7 @@ type [<CustomEquality; CustomComparison>] Vector4Pluggable =
     { Vector4 : Vector4 }
 
     static member equals left right =
-        left.Vector4 = right.Vector4
+        v4Eq left.Vector4 right.Vector4
 
     static member compare left right =
         compare (left.Vector4.X, left.Vector4.Y) (right.Vector4.X, right.Vector4.Y)
@@ -376,7 +393,9 @@ module Vector2i =
         member this.WithY y = Vector2i (this.X, y)
 
     let inline v2i x y = Vector2i (x, y)
-    let inline v2iDup a = v2i a a
+    let inline v2iEq (x : Vector2i) (y : Vector2i) = x.X = y.X && x.Y = y.Y
+    let inline v2iNeq (x : Vector2i) (y : Vector2i) = x.X <> y.X || x.Y <> y.Y
+    let inline v2iDup (a : int) = v2i a a
     let v2iOne = Vector2i.One
     let v2iZero = Vector2i.Zero
     let v2iUnitX = Vector2i.UnitX
@@ -391,7 +410,7 @@ type [<CustomEquality; CustomComparison>] Vector2iPluggable =
     { Vector2i : Vector2i }
 
     static member equals left right =
-        left.Vector2i = right.Vector2i
+        v2iEq left.Vector2i right.Vector2i
 
     static member compare left right =
         compare (left.Vector2i.X, left.Vector2i.Y) (right.Vector2i.X, right.Vector2i.Y)
@@ -467,7 +486,9 @@ module Vector3i =
         member this.WithZ z = Vector3i (this.X, this.Y, z)
 
     let inline v3i x y z = Vector3i (x, y, z)
-    let inline v3iDup a = v3i a a a
+    let inline v3iEq (x : Vector3i) (y : Vector3i) = x.X = y.X && x.Y = y.Y && x.Z = y.Z
+    let inline v3iNeq (x : Vector3i) (y : Vector3i) = x.X <> y.X || x.Y <> y.Y || x.Z <> y.Z
+    let inline v3iDup (a : int) = v3i a a a
     let v3iOne = Vector3i.One
     let v3iZero = Vector3i.Zero
     let v3iUnitX = Vector3i.UnitX
@@ -529,7 +550,9 @@ module Vector4i =
         member this.WithSize (size : Vector2i) = Vector4i (this.X, this.Y, size.X, size.Y)
 
     let inline v4i x y z w = Vector4i (x, y, z, w)
-    let inline v4iDup a = v4 a a a a
+    let inline v4iEq (x : Vector4i) (y : Vector4i) = x.X = y.X && x.Y = y.Y && x.Z = y.Z && x.W = y.W
+    let inline v4iNeq (x : Vector4i) (y : Vector4i) = x.X <> y.X || x.Y <> y.Y || x.Z <> y.Z || x.W <> y.W
+    let inline v4iDup (a : int) = v4i a a a a
     let v4iOne = Vector4i.One
     let v4iZero = Vector4i.Zero
     let v4iUnitX = Vector4i.UnitX
@@ -543,7 +566,7 @@ type [<CustomEquality; CustomComparison>] Vector4iPluggable =
     { Vector4i : Vector4i }
 
     static member equals left right =
-        left.Vector4i = right.Vector4i
+        v4iEq left.Vector4i right.Vector4i
 
     static member compare left right =
         compare (left.Vector4i.X, left.Vector4i.Y) (right.Vector4i.X, right.Vector4i.Y)
@@ -629,7 +652,9 @@ module Color =
         member this.WithA a = Color (this.R, this.G, this.B, a)
 
     let inline col r g b a = Color (r, g, b, a)
-    let inline colDup a = col a a a a
+    let inline colEq (x : Color) (y : Color) = x.R = y.R && x.G = y.G && x.B = y.B && x.A = y.A
+    let inline colNeq (x : Color) (y : Color) = x.R <> y.R || x.G <> y.G || x.B <> y.B || x.A <> y.A
+    let inline colDup (a : byte) = col a a a a
     let colZero = Color.Zero
     let colWhite = Color.White
     let colBlack = Color.Black
@@ -639,7 +664,7 @@ type [<CustomEquality; CustomComparison>] ColorPluggable =
     { Color : Color }
 
     static member equals left right =
-        left.Color = right.Color
+        colEq left.Color right.Color
 
     static member compare left right =
         compare (left.Color.R, left.Color.G) (right.Color.B, right.Color.A)
@@ -728,6 +753,8 @@ module Matrix3x3 =
             m
 
     let inline m3 r0 r1 r2 = Matrix3x3 (r0, r1, r2)
+    let inline m3Eq (x : Matrix3x3) (y : Matrix3x3) = x = y // NOTE: didn't optimize away allocation here...
+    let inline m3Neq (x : Matrix3x3) (y : Matrix3x3) = x <> y // NOTE: didn't optimize away allocation here...
     let m3Identity = Matrix3x3.Identity
     let m3Zero = Matrix3x3.Zero
 

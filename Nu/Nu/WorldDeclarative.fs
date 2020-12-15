@@ -10,7 +10,7 @@ open Nu
 /// Efficiently emulates root type casting of a Map.
 type [<NoEquality; NoComparison>] MapGeneralized =
     { ToSeq : (IComparable * obj) seq
-      TryGetValue : IComparable -> obj option }
+      TryGetValue : IComparable -> bool * obj }
 
     static member make (map : Map<'k, 'v>) =
         { ToSeq =
@@ -18,9 +18,9 @@ type [<NoEquality; NoComparison>] MapGeneralized =
                 (kvp.Key :> IComparable, kvp.Value :> obj))
                 map
           TryGetValue = fun (key : IComparable) ->
-            match Map.tryFind (key :?> 'k) map with
-            | Some value -> Some (value :> obj)
-            | None -> None }
+            match Map.tryGetValue (key :?> 'k) map with
+            | (true, value) -> (true, value :> obj)
+            | (false, _) -> (false, null) }
 
 /// Describes the behavior of a screen.
 type [<StructuralEquality; NoComparison>] ScreenBehavior =
@@ -279,10 +279,12 @@ module WorldDeclarative =
                 while enr.MoveNext () do
                     let key = fst enr.Current
                     let lens' = Lens.map (fun keyed -> keyed.TryGetValue key) lensGeneralized
-                    if Option.isSome (lens'.Get world) then
-                        let lens'' = { Lens.dereference lens' with Validate = fun world -> Option.isSome (lens'.Get world) }
+                    match Lens.get lens' world with
+                    | (true, _) ->
+                        let lens'' = { Lens.map snd lens' with Validate = fun world -> match Lens.get lens' world with (exists, _) -> exists }
                         let item = PartialComparable.make key lens''
                         current <- USet.add item current
+                    | (false, _) -> ()
                 let previous =
                     match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> previousSetKey world with
                     | Some previous -> previous

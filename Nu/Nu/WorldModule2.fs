@@ -663,7 +663,7 @@ module WorldModule2 =
                     let world =
                         if bodyTransformMessage.BodySource.BodyId = Gen.idEmpty then
                             let transform2 = { transform with Position = position; Rotation = rotation }
-                            if transform <> transform2
+                            if trNeq transform transform2
                             then entity.SetTransformWithoutEvent transform2 world
                             else world
                         else world

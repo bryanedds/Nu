@@ -566,7 +566,8 @@ module WorldModule =
                 let mutable enr = subscriptionsOpt.GetEnumerator ()
                 while going && enr.MoveNext () do
                     let (_, subscription) = enr.Current
-                    if fst result = Cascade && World.getLiveness (snd result) = Running then
+                    if  (match fst result with Cascade -> true | Resolve -> false) &&
+                        (match World.getLiveness (snd result) with Running -> true | Exiting -> false) then
                         let mapped =
                             match subscription.MapperOpt with
                             | Some mapper -> mapper eventDataObj subscription.PreviousDataOpt (snd result)
@@ -579,7 +580,7 @@ module WorldModule =
                         if filtered then
                             // OPTIMIZATION: inlined fold for speed.
                             let mutable enr2 = (subscription.Callbacks :> seq<Guid * Simulant * Callback>).GetEnumerator ()
-                            while fst result = Cascade && enr2.MoveNext () do
+                            while (match fst result with Cascade -> true | Resolve -> false) && enr2.MoveNext () do
                                 let (_, subscriber, callback) = enr2.Current
                                 match callback with
                                 | UserDefinedCallback callback ->

@@ -118,7 +118,7 @@ module WorldModuleScreen =
         static member internal setScreenModelProperty (value : DesignerProperty) screen world =
             World.updateScreenState
                 (fun screenState ->
-                    if value.DesignerValue <> screenState.Model.DesignerValue
+                    if value.DesignerValue =/= screenState.Model.DesignerValue
                     then Some { screenState with Model = { screenState.Model with DesignerValue = value.DesignerValue }}
                     else None)
                 Property? Model value.DesignerValue screen world
@@ -127,7 +127,7 @@ module WorldModuleScreen =
             World.updateScreenState
                 (fun screenState ->
                     let valueObj = value :> obj
-                    if valueObj <> screenState.Model.DesignerValue
+                    if valueObj =/= screenState.Model.DesignerValue
                     then Some { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     else None)
                 Property? Model value screen world
@@ -158,7 +158,7 @@ module WorldModuleScreen =
                             (fun screenState ->
                                 match ScreenState.tryGetProperty propertyName screenState with
                                 | Some propertyOld ->
-                                    if property.PropertyValue <> propertyOld.PropertyValue then
+                                    if property.PropertyValue =/= propertyOld.PropertyValue then
                                         let (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
                                         success <- successInner
                                         Some gameState
@@ -179,7 +179,7 @@ module WorldModuleScreen =
                     World.updateScreenState
                         (fun screenState ->
                             let propertyOld = ScreenState.getProperty propertyName screenState
-                            if property.PropertyValue <> propertyOld.PropertyValue
+                            if property.PropertyValue =/= propertyOld.PropertyValue
                             then Some (ScreenState.setProperty propertyName property screenState)
                             else None)
                         propertyName property.PropertyValue screen world

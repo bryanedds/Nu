@@ -30,7 +30,7 @@ module Nu =
             let value = right.GetWithoutValidation world
             match World.tryGetProperty leftName simulant world with
             | Some property ->
-                if property.PropertyValue <> value then // OPTIMIZATION: avoid reflection when value doesn't change
+                if property.PropertyValue =/= value then // OPTIMIZATION: avoid reflection when value doesn't change
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
                     let property = { property with PropertyValue = value }
                     let world = World.trySetProperty leftName alwaysPublish property simulant world |> snd
@@ -348,7 +348,7 @@ module Nu =
                     World.monitorCompressed
                         compressionId
                         monitorMapperOpt
-                        (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a <> a2 | None -> true))
+                        (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a =/= a2 | None -> true))
                         None
                         (Right (box (simulant, left, right)))
                         (Events.Change right.Name --> right.This.SimulantAddress)
