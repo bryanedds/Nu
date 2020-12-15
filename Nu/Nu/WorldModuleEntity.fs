@@ -38,9 +38,11 @@ module WorldModuleEntity =
     // OPTIMIZATION: avoids closure allocation in tight-loop.
     let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
     let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
-    let private getFreshKeyAndValue _ =
+    let private getFreshKeyAndValue () =
         let entityStateOpt = UMap.tryFind getFreshKeyAndValueEntity.EntityAddress getFreshKeyAndValueWorld.EntityStates
         KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity.EntityAddress, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
+    let private getFreshKeyAndValueCached =
+        getFreshKeyAndValue
 
     type World with
 
@@ -55,7 +57,7 @@ module WorldModuleEntity =
                 let entityStateOpt =
                     KeyedCache.getValueFast
                         keyEquality
-                        getFreshKeyAndValue
+                        getFreshKeyAndValueCached
                         (KeyValuePair (entity.EntityAddress, world.EntityStates))
                         (World.getEntityCachedOpt world)
                 getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
