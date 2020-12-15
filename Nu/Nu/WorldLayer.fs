@@ -99,7 +99,7 @@ module WorldLayerModule =
             let world = dispatcher.Update (layer, world)
 
             // publish update event
-            let eventTrace = EventTrace.record "World" "updateLayer" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "updateLayer" EventTrace.empty
             World.publishPlus () (Events.Update --> layer) eventTrace Simulants.Game false world
 
         static member internal postUpdateLayer (layer : Layer) world =
@@ -109,7 +109,7 @@ module WorldLayerModule =
             let world = dispatcher.PostUpdate (layer, world)
 
             // publish post-update event
-            let eventTrace = EventTrace.record "World" "postUpdateLayer" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "postUpdateLayer" EventTrace.empty
             World.publishPlus () (Events.PostUpdate --> layer) eventTrace Simulants.Game false world
 
         static member internal actualizeLayer (layer : Layer) world =
