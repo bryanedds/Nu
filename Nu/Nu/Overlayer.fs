@@ -136,7 +136,7 @@ module Overlayer =
                         let converter = SymbolicConverter (false, None, propertyType)
                         if converter.CanConvertFrom typeof<Symbol> then
                             let overlayValue = converter.ConvertFrom propertySymbol
-                            if overlayValue = propertyValue then Overlaid else Altered
+                            if overlayValue =/= propertyValue then Altered else Overlaid
                         else Bare
                 | None -> Bare
             | None -> Bare

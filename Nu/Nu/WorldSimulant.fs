@@ -254,7 +254,7 @@ module WorldSimulantOperators =
     let bind<'a> (left : Lens<'a, World>) right world = World.bind left right world
 
     /// Bind one property to the value of another.
-    let inline (===) left right = bind left right
+    let inline (<=<) left right = bind left right
 
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =

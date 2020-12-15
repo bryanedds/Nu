@@ -57,7 +57,7 @@ module WorldModuleGame =
         static member internal setGameModelProperty (value : DesignerProperty) world =
             World.updateGameState
                 (fun gameState ->
-                    if value.DesignerValue <> gameState.Model.DesignerValue
+                    if value.DesignerValue =/= gameState.Model.DesignerValue
                     then Some { gameState with Model = { gameState.Model with DesignerValue = value.DesignerValue }}
                     else None)
                 Property? Model value.DesignerValue world
@@ -66,7 +66,7 @@ module WorldModuleGame =
             World.updateGameState
                 (fun gameState ->
                     let valueObj = value :> obj
-                    if valueObj <> gameState.Model.DesignerValue
+                    if valueObj =/= gameState.Model.DesignerValue
                     then Some { gameState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
                     else None)
                 Property? Model value world
@@ -79,7 +79,7 @@ module WorldModuleGame =
         /// Set the current eye center.
         [<FunctionBinding>]
         static member setEyeCenter value world =
-            World.updateGameState (fun gameState -> if value <> gameState.EyeCenter then Some { gameState with EyeCenter = value } else None) Property? EyeCenter value world
+            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeCenter then Some { gameState with EyeCenter = value } else None) Property? EyeCenter value world
 
         /// Get the current eye size.
         [<FunctionBinding>]
@@ -89,7 +89,7 @@ module WorldModuleGame =
         /// Set the current eye size.
         [<FunctionBinding>]
         static member setEyeSize value world =
-            World.updateGameState (fun gameState -> if value <> gameState.EyeSize then Some { gameState with EyeSize = value } else None) Property? EyeSize value world
+            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeSize then Some { gameState with EyeSize = value } else None) Property? EyeSize value world
 
         /// Get the current eye bounds
         [<FunctionBinding>]
@@ -327,7 +327,7 @@ module WorldModuleGame =
                         (fun gameState ->
                             match GameState.tryGetProperty propertyName gameState with
                             | Some propertyOld ->
-                                if property.PropertyValue <> propertyOld.PropertyValue then
+                                if property.PropertyValue =/= propertyOld.PropertyValue then
                                     let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
                                     success <- successInner
                                     Some gameState
@@ -346,7 +346,7 @@ module WorldModuleGame =
                 World.updateGameState
                     (fun gameState ->
                         let propertyOld = GameState.getProperty propertyName gameState
-                        if property.PropertyValue <> propertyOld.PropertyValue
+                        if property.PropertyValue =/= propertyOld.PropertyValue
                         then Some (GameState.setProperty propertyName property gameState)
                         else None)
                     propertyName property.PropertyValue world

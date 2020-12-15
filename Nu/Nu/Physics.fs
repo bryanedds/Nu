@@ -508,7 +508,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         let (_, body) = physicsEngine.Bodies.[physicsId]
         let contacts = List<Contact> ()
         let mutable current = body.ContactList
-        while current <> null do
+        while notNull current do
             contacts.Add current.Contact
             current <- current.Next
         Array.ofSeq contacts

@@ -75,7 +75,7 @@ module WorldScreenModule =
         member this.Set<'a> propertyName (value : 'a) world = World.setScreenProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
-        member this.IsIdling world = this.GetTransitionState world = IdlingState
+        member this.IsIdling world = match this.GetTransitionState world with IdlingState -> true | _ -> false
 
         /// Check that a screen is selected.
         member this.GetSelected world =
