@@ -197,7 +197,7 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, Ints.inc kvp.Value)) |> Map.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 20)
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 33)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
@@ -218,7 +218,7 @@ type ElmishGameDispatcher () =
                                     yield Entity.Imperative == true
                                     yield Entity.Omnipresent == true
                                     yield Entity.Position == v2 (single i * 16.0f - 480.0f) (single j * 16.0f - 272.0f)
-                                    for _ in 0 .. 50 do yield Entity.Size <== int --> fun int -> v2 (single (int % 16)) (single (int % 16)) })))])
+                                    for _ in 0 .. 9 do yield Entity.Size <== int --> fun int -> v2 (single (int % 16)) (single (int % 16)) })))])
              Content.layer "Layer" []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
 #endif
