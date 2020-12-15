@@ -24,7 +24,7 @@ module WorldModuleGame =
             let world =
                 let changeData = { Name = propertyName; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
-                let eventTrace = EventTrace.record "World" "publishGameChange" EventTrace.empty
+                let eventTrace = EventTrace.debug "World" "publishGameChange" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace game false world
             world
 

@@ -44,14 +44,16 @@ module WorldModuleEntity =
     let private getFreshKeyAndValueCached =
         getFreshKeyAndValue
 
+    // OPTIMIZATION: cache one entity change address
+    let mutable changeEventNamesFree = true
+    let changeEventNamesCached = [|"Change"; ""; "Event"; ""; ""; ""|]
+
     type World with
 
+        // OPTIMIZATION: a ton of optimization has gone down in here...!
         static member private entityStateFinder (entity : Entity) world =
-            // OPTIMIZATION: a ton of optimization has gone down in here...!
             let entityStateOpt = entity.EntityStateOpt
-            if notNull (entityStateOpt :> obj) && not entityStateOpt.Invalidated
-            then entityStateOpt
-            else
+            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated then
                 getFreshKeyAndValueEntity <- entity
                 getFreshKeyAndValueWorld <- world
                 let entityStateOpt =
@@ -67,6 +69,7 @@ module WorldModuleEntity =
                     if entityState.Imperative then entity.EntityStateOpt <- entityState
                     entityState
                 | None -> Unchecked.defaultof<EntityState>
+            else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =
             let screenDirectory =
@@ -120,13 +123,21 @@ module WorldModuleEntity =
             alwaysPublish || entityState.PublishChanges
 
         static member private publishEntityChange propertyName (propertyValue : obj) (entity : Entity) world =
-            let world =
-                let changeData = { Name = propertyName; Value = propertyValue }
-                let entityNames = Address.getNames entity.EntityAddress
-                let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-                let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-                let sorted = propertyName = "ParentNodeOpt"
-                World.publishPlus changeData changeEventAddress eventTrace entity sorted world
+            let changeData = { Name = propertyName; Value = propertyValue }
+            let entityNames = Address.getNames entity.EntityAddress
+            let (changeEventAddress, changeEventNamesUtilized) =
+                if changeEventNamesFree then
+                    changeEventNamesFree <- false
+                    changeEventNamesCached.[1] <- propertyName
+                    changeEventNamesCached.[3] <- entityNames.[0]
+                    changeEventNamesCached.[4] <- entityNames.[1]
+                    changeEventNamesCached.[5] <- entityNames.[2]
+                    (rtoa<ChangeData> changeEventNamesCached, true)
+                else (rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|], false)
+            let eventTrace = EventTrace.debug "World" "publishEntityChange" EventTrace.empty
+            let sorted = propertyName = "ParentNodeOpt"
+            let world = World.publishPlus changeData changeEventAddress eventTrace entity sorted world
+            if changeEventNamesUtilized then changeEventNamesFree <- true
             world
 
         static member private getEntityStateOpt entity world =
@@ -756,13 +767,13 @@ module WorldModuleEntity =
                     else world)
                     world facets
             let world = World.updateEntityPublishFlags entity world
-            let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "registerEntity" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Register"; "Event"|] --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             world
 
         static member internal unregisterEntity (entity : Entity) world =
-            let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "unregisteringEntity" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Unregistering"; "Event"|] --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher

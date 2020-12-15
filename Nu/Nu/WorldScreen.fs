@@ -123,7 +123,7 @@ module WorldScreenModule =
             let world = dispatcher.Update (screen, world)
 
             // publish update event
-            let eventTrace = EventTrace.record "World" "updateScreen" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "updateScreen" EventTrace.empty
             World.publishPlus () (Events.Update --> screen) eventTrace Simulants.Game false world
 
         static member internal postUpdateScreen (screen : Screen) world =
@@ -137,7 +137,7 @@ module WorldScreenModule =
             let world = dispatcher.PostUpdate (screen, world)
 
             // publish post-update event
-            let eventTrace = EventTrace.record "World" "postUpdateScreen" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "postUpdateScreen" EventTrace.empty
             World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false world
 
         static member internal actualizeScreen (screen : Screen) world =
