@@ -547,20 +547,23 @@ module WorldModule =
 #endif
 
             // get subscriptions the fastest way possible
-            let subscriptions =
+            // OPTIMIZATION: subscriptions nullable to elide allocation via Seq.empty.
+            let subscriptionsOpt =
                 if sorted then
                     EventSystemDelegate.getSubscriptionsSorted
                         sortSubscriptionsByElevation eventAddressObj world.EventSystemDelegate world
                 else
                     let subscriptions = EventSystemDelegate.getSubscriptions world.EventSystemDelegate
-                    match UMap.tryFind eventAddressObj subscriptions with Some subscriptions -> OMap.toSeq subscriptions | None -> Seq.empty
+                    match UMap.tryFind eventAddressObj subscriptions with
+                    | Some subscriptions -> OMap.toSeq subscriptions
+                    | None -> null
 
             // publish to each subscription
             // OPTIMIZATION: inlined foldWhile here in order to compact the call stack.
-            let (_, world) =
+            if notNull subscriptionsOpt then
                 let mutable result = (Cascade, world)
                 let mutable going = true
-                let mutable enr = (subscriptions :> _ seq).GetEnumerator ()
+                let mutable enr = subscriptionsOpt.GetEnumerator ()
                 while going && enr.MoveNext () do
                     let (_, subscription) = enr.Current
                     if fst result = Cascade && World.getLiveness (snd result) = Running then
@@ -595,8 +598,8 @@ module WorldModule =
                                         | _ -> failwithumf ()
                                     result |> snd |> World.choose |> ignore
                     else going <- false
-                result
-            world
+                snd result
+            else world
 
         /// Publish an event with no subscription sorting.
         static member publish<'a, 'p when 'p :> Simulant>
