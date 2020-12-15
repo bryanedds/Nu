@@ -481,7 +481,7 @@ module WorldModule2 =
                     let metadata = Metadata.make assetGraph
                     let world = World.setMetadata metadata world
                     let world = World.reloadExistingAssets world
-                    let world = World.publish () Events.AssetsReload (EventTrace.record "World" "publishAssetsReload" EventTrace.empty) Simulants.Game world
+                    let world = World.publish () Events.AssetsReload (EventTrace.debug "World" "publishAssetsReload" EventTrace.empty) Simulants.Game world
                     (Right assetGraph, world)
         
                 // propagate errors
@@ -639,7 +639,7 @@ module WorldModule2 =
                               Collidee = BodyShapeSource.fromInternal bodyCollisionMessage.BodyShapeSource2
                               Normal = bodyCollisionMessage.Normal
                               Speed = bodyCollisionMessage.Speed }
-                        let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
+                        let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" EventTrace.empty
                         World.publish collisionData collisionAddress eventTrace Simulants.Game world
                     else world
                 | BodySeparationMessage bodySeparationMessage ->
@@ -649,7 +649,7 @@ module WorldModule2 =
                         let separationData =
                             { Separator = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource
                               Separatee = BodyShapeSource.fromInternal bodySeparationMessage.BodyShapeSource2  }
-                        let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
+                        let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" EventTrace.empty
                         World.publish separationData separationAddress eventTrace Simulants.Game world
                     else world
                 | BodyTransformMessage bodyTransformMessage ->
@@ -671,7 +671,7 @@ module WorldModule2 =
                     let world = entity.SetWithoutEvent Entity.Lens.LinearVelocity.Name linearVelocity world
                     let transformAddress = Events.Transform --> entity.EntityAddress
                     let transformData = { BodySource = BodySource.fromInternal bodySource; Position = position; Rotation = rotation }
-                    let eventTrace = EventTrace.record "World" "handleIntegrationMessage" EventTrace.empty
+                    let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" EventTrace.empty
                     World.publish transformData transformAddress eventTrace Simulants.Game world
             | Exiting -> world
 

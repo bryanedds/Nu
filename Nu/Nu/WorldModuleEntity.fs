@@ -38,24 +38,28 @@ module WorldModuleEntity =
     // OPTIMIZATION: avoids closure allocation in tight-loop.
     let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
     let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
-    let private getFreshKeyAndValue _ =
+    let private getFreshKeyAndValue () =
         let entityStateOpt = UMap.tryFind getFreshKeyAndValueEntity.EntityAddress getFreshKeyAndValueWorld.EntityStates
         KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity.EntityAddress, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
+    let private getFreshKeyAndValueCached =
+        getFreshKeyAndValue
+
+    // OPTIMIZATION: cache one entity change address
+    let mutable changeEventNamesFree = true
+    let changeEventNamesCached = [|"Change"; ""; "Event"; ""; ""; ""|]
 
     type World with
 
+        // OPTIMIZATION: a ton of optimization has gone down in here...!
         static member private entityStateFinder (entity : Entity) world =
-            // OPTIMIZATION: a ton of optimization has gone down in here...!
             let entityStateOpt = entity.EntityStateOpt
-            if notNull (entityStateOpt :> obj) && not entityStateOpt.Invalidated
-            then entityStateOpt
-            else
+            if isNull (entityStateOpt :> obj) || entityStateOpt.Invalidated then
                 getFreshKeyAndValueEntity <- entity
                 getFreshKeyAndValueWorld <- world
                 let entityStateOpt =
                     KeyedCache.getValueFast
                         keyEquality
-                        getFreshKeyAndValue
+                        getFreshKeyAndValueCached
                         (KeyValuePair (entity.EntityAddress, world.EntityStates))
                         (World.getEntityCachedOpt world)
                 getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
@@ -65,6 +69,7 @@ module WorldModuleEntity =
                     if entityState.Imperative then entity.EntityStateOpt <- entityState
                     entityState
                 | None -> Unchecked.defaultof<EntityState>
+            else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =
             let screenDirectory =
@@ -118,13 +123,23 @@ module WorldModuleEntity =
             alwaysPublish || entityState.PublishChanges
 
         static member private publishEntityChange propertyName (propertyValue : obj) (entity : Entity) world =
-            let world =
-                let changeData = { Name = propertyName; Value = propertyValue }
-                let entityNames = Address.getNames entity.EntityAddress
-                let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-                let eventTrace = EventTrace.record "World" "publishEntityChange" EventTrace.empty
-                let sorted = propertyName = "ParentNodeOpt"
-                World.publishPlus changeData changeEventAddress eventTrace entity sorted world
+            let changeData = { Name = propertyName; Value = propertyValue }
+            let entityNames = Address.getNames entity.EntityAddress
+            let mutable changeEventNamesUtilized = false
+            let changeEventAddress =
+                if changeEventNamesFree then
+                    changeEventNamesFree <- false
+                    changeEventNamesUtilized <- true
+                    changeEventNamesCached.[1] <- propertyName
+                    changeEventNamesCached.[3] <- entityNames.[0]
+                    changeEventNamesCached.[4] <- entityNames.[1]
+                    changeEventNamesCached.[5] <- entityNames.[2]
+                    rtoa<ChangeData> changeEventNamesCached
+                else rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+            let eventTrace = EventTrace.debug "World" "publishEntityChange" EventTrace.empty
+            let sorted = propertyName = "ParentNodeOpt"
+            let world = World.publishPlus changeData changeEventAddress eventTrace entity sorted world
+            if changeEventNamesUtilized then changeEventNamesFree <- true
             world
 
         static member private getEntityStateOpt entity world =
@@ -328,7 +343,7 @@ module WorldModuleEntity =
             let (changed, world) =
                 World.updateEntityStateWithoutEvent
                     (fun entityState ->
-                        if value <> entityState.Transform
+                        if not (Transform.equals value entityState.Transform)
                         then Some (EntityState.setTransform value entityState)
                         else None)
                     entity world
@@ -343,10 +358,11 @@ module WorldModuleEntity =
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldAbsolute = oldEntityState.Absolute
             let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+            let oldTransform = { oldEntityState.Transform with Position = oldEntityState.Transform.Position }
             let (changed, world) =
                 World.updateEntityStateWithoutEvent
                     (fun entityState ->
-                        if value <> entityState.Transform
+                        if not (Transform.equals value entityState.Transform)
                         then Some (EntityState.setTransform value entityState)
                         else None)
                     entity world
@@ -356,14 +372,18 @@ module WorldModuleEntity =
 #endif
                 let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 if World.getEntityPublishChanges entity world then
+                    let positionChanged = value.Position <> oldTransform.Position
+                    let sizeChanged = value.Size <> oldTransform.Size
+                    let rotationChanged = value.Rotation <> oldTransform.Rotation
+                    let elevationChanged = value.Elevation <> oldTransform.Elevation
                     let world = World.publishEntityChange Property? Transform value entity world
-                    let world = World.publishEntityChange Property? Bounds (v4Bounds value.Position value.Size) entity world
-                    let world = World.publishEntityChange Property? Position value.Position entity world
-                    let world = World.publishEntityChange Property? Center (value.Position + value.Size * 0.5f) entity world
-                    let world = World.publishEntityChange Property? Bottom (value.Position + value.Size.WithY 0.0f * 0.5f) entity world
-                    let world = World.publishEntityChange Property? Size value.Size entity world
-                    let world = World.publishEntityChange Property? Rotation value.Rotation entity world
-                    let world = World.publishEntityChange Property? Elevation value.Elevation entity world
+                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bounds (v4Bounds value.Position value.Size) entity world else world
+                    let world = if positionChanged then World.publishEntityChange Property? Position value.Position entity world else world
+                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Center (value.Position + value.Size * 0.5f) entity world else world
+                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bottom (value.Position + value.Size.WithY 0.0f * 0.5f) entity world else world
+                    let world = if sizeChanged then World.publishEntityChange Property? Size value.Size entity world else world
+                    let world = if rotationChanged then World.publishEntityChange Property? Rotation value.Rotation entity world else world
+                    let world = if elevationChanged then World.publishEntityChange Property? Elevation value.Elevation entity world else world
                     world
                 else world
             else world
@@ -754,13 +774,13 @@ module WorldModuleEntity =
                     else world)
                     world facets
             let world = World.updateEntityPublishFlags entity world
-            let eventTrace = EventTrace.record "World" "registerEntity" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "registerEntity" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Register"; "Event"|] --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             world
 
         static member internal unregisterEntity (entity : Entity) world =
-            let eventTrace = EventTrace.record "World" "unregisteringEntity" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "unregisteringEntity" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Unregistering"; "Event"|] --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher

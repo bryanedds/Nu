@@ -47,24 +47,6 @@ module GameplayDispatcher =
     type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.initial)
 
-        static let tryGetNavigationPath coordinates gameplay =
-            let fieldTiles = gameplay.Field.FieldMapNp.FieldTiles
-            let characterPositions = gameplay.Chessboard.OccupiedSpaces |> List.map (fun coordinates -> vctovf coordinates)
-            let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
-            let navigationMap = NavigationMap.makeFromFieldTilesAndAdjacentCharacters currentCoordinates fieldTiles characterPositions
-            let nodes = NavigationMap.makeNavigationNodes navigationMap
-            let goalNode = Map.find coordinates nodes
-            let currentNode = Map.find currentCoordinates nodes
-            let navigationPathOpt =
-                AStar.FindPath
-                    (currentNode,
-                     goalNode,
-                     (fun n n2 -> if n2.Coordinates.Y <> n.Coordinates.Y then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
-                     (fun _ -> 0.0f))
-            match navigationPathOpt with
-            | null -> None
-            | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
-
         override this.Channel (_, _) =
             [Simulants.Gameplay.SelectEvent => msg Initialize
              Simulants.Gameplay.UpdateEvent => msg Update
@@ -105,17 +87,15 @@ module GameplayDispatcher =
                     match characterTurn.TurnStatus with
                     | TurnTicking ->
                         let tickCount = gameplay.Time - characterTurn.StartTick
-                        let gameplay =
-                            match characterTurn.TurnType with
-                            | AttackTurn ->
-                                if tickCount = Constants.InfinityRpg.ActionTicksMax
-                                then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
-                                else gameplay
-                            | WalkTurn _ ->
-                                if tickCount = dec (int64 Constants.InfinityRpg.CharacterWalkSteps)
-                                then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
-                                else gameplay
-                        gameplay
+                        match characterTurn.TurnType with
+                        | AttackTurn ->
+                            if tickCount = Constants.InfinityRpg.ActionTicksMax
+                            then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
+                            else gameplay
+                        | WalkTurn _ ->
+                            if tickCount = dec (int64 Constants.InfinityRpg.CharacterWalkSteps)
+                            then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
+                            else gameplay
                     | _ -> gameplay
                 let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
@@ -215,7 +195,12 @@ module GameplayDispatcher =
                                     Gameplay.makeMove time PlayerIndex (Step direction) gameplay
                             else gameplay
                         else
-                            match tryGetNavigationPath coordinates gameplay with
+                            let navigationPathOpt =
+                                let navigationMap = Chessboard.getNavigationMap currentCoordinates gameplay.Chessboard
+                                if Map.exists (fun k _ -> k = coordinates) navigationMap then
+                                    NavigationMap.tryMakeNavigationPath currentCoordinates coordinates navigationMap
+                                else None
+                            match navigationPathOpt with
                             | Some navigationPath ->
                                 match navigationPath with
                                 | _ :: _ -> Gameplay.makeMove time PlayerIndex (Travel navigationPath) gameplay

@@ -45,48 +45,6 @@ module NavigationMap =
         let openDirections = getOpenDirectionsAtCoordinates coordinates navigationMap
         Set.map (fun direction -> coordinates + dtovc direction) openDirections
 
-    let occupyByCharacter characterPosition (navigationMap : NavigationMap) =
-        let characterCoordinates = vftovc characterPosition
-        Map.add characterCoordinates true navigationMap
-
-    let occupyByCharacters characterPositions navigationMap =
-        Seq.fold (flip occupyByCharacter) navigationMap characterPositions
-
-    let occupyByAdjacentCharacter coordinates characterPosition (navigationMap : NavigationMap) =
-        let characterCoordinates = vftovc characterPosition
-        if Math.areCoordinatesAdjacent characterCoordinates coordinates
-        then Map.add characterCoordinates true navigationMap
-        else navigationMap
-
-    let occupyByAdjacentCharacters coordinates characterPositions navigationMap =
-        Seq.fold (flip (occupyByAdjacentCharacter coordinates)) navigationMap characterPositions
-
-    let unoccupyByCharacter characterPosition (navigationMap : NavigationMap) =
-        let characterCoordinates = vftovc characterPosition
-        Map.add characterCoordinates false navigationMap
-
-    let unoccupyByCharacters characterPositions navigationMap =
-        Seq.fold (flip unoccupyByCharacter) navigationMap characterPositions
-
-    // NOTE: the function 'makeFromFieldTiles' makes an FSharp.Map from every single tile, creating a performance
-    // bottleneck for larger maps. solution is to simply leave the entry empty when the tile is passable, only adding entries for tiles that are not passable.
-    let makeFromFieldTiles fieldTiles =
-        Map.fold
-            (fun navigationMap fieldTileCoordinates fieldTile ->
-                match fieldTile.TileType with
-                | Impassable -> Map.add fieldTileCoordinates true navigationMap
-                | Passable -> Map.add fieldTileCoordinates false navigationMap)
-            Map.empty
-            fieldTiles
-
-    let makeFromFieldTilesAndCharacters fieldTiles characterPositions =
-        let navigationMap = makeFromFieldTiles fieldTiles
-        occupyByCharacters characterPositions navigationMap
-
-    let makeFromFieldTilesAndAdjacentCharacters coordinates fieldTiles characterPositions =
-        let navigationMap = makeFromFieldTiles fieldTiles
-        occupyByAdjacentCharacters coordinates characterPositions navigationMap
-
     let makeNavigationNodes navigationMap =
         
         // make the nodes without neighbors
@@ -107,5 +65,19 @@ module NavigationMap =
                 node.Neighbors <- neighbors)
             nodes
 
-        // teh nodes
+        // the nodes
         nodes
+    
+    let tryMakeNavigationPath currentCoordinates targetCoordinates navigationMap =
+        let nodes = makeNavigationNodes navigationMap
+        let goalNode = Map.find targetCoordinates nodes
+        let currentNode = Map.find currentCoordinates nodes
+        let navigationPathOpt =
+            AStar.FindPath
+                (currentNode,
+                goalNode,
+                (fun n n2 -> if n2.Coordinates.Y <> n.Coordinates.Y then 2.0f else 1.0f), // prefer horizontal walk to vertical for predictability
+                (fun _ -> 0.0f))
+        match navigationPathOpt with
+        | null -> None
+        | navigationPath -> Some (navigationPath |> List.ofSeq |> List.rev |> List.tail)
