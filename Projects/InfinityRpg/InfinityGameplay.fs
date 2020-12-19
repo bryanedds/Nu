@@ -238,7 +238,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member tryPickupHealth index coordinates gameplay =
         match index with
         | PlayerIndex ->
-            let gameplay = Gameplay.updateCharacter index (Character.updateHitPoints (constant 30)) gameplay
+            let gameplay = Gameplay.updateCharacter index (Character.updateHitPoints (fun x -> x + 15)) gameplay
             let gameplay = Gameplay.refreshPlayerPuppetHitPoints gameplay
             Gameplay.updateChessboard (Chessboard.removePickup coordinates) gameplay
         | _ -> gameplay
