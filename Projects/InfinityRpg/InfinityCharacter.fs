@@ -27,6 +27,9 @@ type [<ReferenceEquality; NoComparison>] Character =
     member this.IsAlive =
         this.HitPoints > 0
     
+    member this.HitPointsMax =
+        match this.CharacterType with Ally _ -> 30 | Enemy _ -> 10
+    
     static member updateControlType updater character =
         { character with ControlType = updater character.ControlType }
     
@@ -34,7 +37,7 @@ type [<ReferenceEquality; NoComparison>] Character =
         { character with FacingDirection = updater character.FacingDirection }
     
     static member updateHitPoints updater character =
-        { character with HitPoints = updater character.HitPoints }
+        { character with HitPoints = updater character.HitPoints |> max 0 |> min character.HitPointsMax }
 
     static member empty =
         { CharacterIndex = PlayerIndex
@@ -53,9 +56,13 @@ type [<ReferenceEquality; NoComparison>] Character =
           ArmorOpt = Option<ArmorType>.None
           Accessories = [] } // level is calculated from base experience + added experience
 
-    static member makePlayer = { Character.empty with HitPoints = 30; ControlType = PlayerControlled }
+    static member makePlayer =
+        let character = { Character.empty with ControlType = PlayerControlled }
+        Character.updateHitPoints (constant character.HitPointsMax) character
 
-    static member makeEnemy index = { Character.empty with CharacterIndex = index; CharacterType = Enemy Goopy; HitPoints = 10; ControlType = Chaos }
+    static member makeEnemy index =
+        let character = { Character.empty with CharacterIndex = index; CharacterType = Enemy Goopy; ControlType = Chaos }
+        Character.updateHitPoints (constant character.HitPointsMax) character
 
 type CharacterAnimationType =
     | CharacterAnimationFacing
