@@ -6,6 +6,10 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
+type InputMode =
+    | NormalInputMode
+    | DisabledInputMode
+
 type RoundStatus =
     | RunningCharacterMoves
     | MakingEnemyAttack
@@ -106,6 +110,7 @@ type [<ReferenceEquality; NoComparison>] Round =
 
 type [<ReferenceEquality; NoComparison>] Gameplay =
     { Time : int64
+      InputMode : InputMode
       ShallLoadGame : bool
       MetaMap : MetaMap
       Field : Field
@@ -117,6 +122,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let field = Field.initial
         let chessboard = Chessboard.init field.FieldMapNp
         { Time = 0L
+          InputMode = NormalInputMode
           ShallLoadGame = false
           MetaMap = MetaMap.make
           Field = field
@@ -159,6 +165,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member areCharactersAdjacent index1 index2 gameplay =
         Math.areCoordinatesAdjacent (Gameplay.getCoordinates index1 gameplay) (Gameplay.getCoordinates index2 gameplay)
+    
+    static member updateInputMode updater gameplay =
+        { gameplay with InputMode = updater gameplay.InputMode }
     
     static member updateMetaMap updater gameplay =
         { gameplay with MetaMap = updater gameplay.MetaMap }

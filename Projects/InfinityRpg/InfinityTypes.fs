@@ -24,11 +24,6 @@ type CharacterType =
     | Ally of AllyType
     | Enemy of EnemyType
 
-type ControlType =
-    | PlayerControlled
-    | Chaos
-    | Uncontrolled
-
 type ElementType =
     | Fire // beats nothing; strongest
     | Water // beats fire, lightning; weakest
