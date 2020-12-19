@@ -73,12 +73,12 @@
     <Compile Include="InfinityAssets.fs" />
     <Compile Include="InfinityConstants.fs" />
     <Compile Include="InfinitySimulants.fs" />
+    <Compile Include="InfinityTypes.fs" />
     <Compile Include="InfinityMath.fs" />
     <Compile Include="InfinityEffects.fs" />
     <Compile Include="InfinityPickup.fs" />
     <Compile Include="InfinityProp.fs" />
     <Compile Include="InfinityCharacter.fs" />
-    <Compile Include="InfinityCharacterAnimationState.fs" />
     <Compile Include="InfinityMetaMap.fs" />
     <Compile Include="InfinityFieldMap.fs" />
     <Compile Include="InfinityField.fs" />
