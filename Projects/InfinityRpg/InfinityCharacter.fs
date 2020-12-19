@@ -4,7 +4,6 @@ open Prime
 type [<ReferenceEquality; NoComparison>] Character =
     { CharacterIndex : CharacterIndex
       CharacterType : CharacterType
-      ControlType : ControlType
       FacingDirection : Direction
       ExpPoints : int
       HitPoints : int
@@ -30,9 +29,6 @@ type [<ReferenceEquality; NoComparison>] Character =
     member this.HitPointsMax =
         match this.CharacterType with Ally _ -> 30 | Enemy _ -> 10
     
-    static member updateControlType updater character =
-        { character with ControlType = updater character.ControlType }
-    
     static member updateFacingDirection updater character =
         { character with FacingDirection = updater character.FacingDirection }
     
@@ -42,7 +38,6 @@ type [<ReferenceEquality; NoComparison>] Character =
     static member empty =
         { CharacterIndex = PlayerIndex
           CharacterType = Ally Player
-          ControlType = Uncontrolled
           FacingDirection = Upward
           ExpPoints = 0
           HitPoints = 10 // note this is an arbitrary number as hp max is calculated
@@ -57,11 +52,10 @@ type [<ReferenceEquality; NoComparison>] Character =
           Accessories = [] } // level is calculated from base experience + added experience
 
     static member makePlayer =
-        let character = { Character.empty with ControlType = PlayerControlled }
-        Character.updateHitPoints (constant character.HitPointsMax) character
+        Character.updateHitPoints (constant Character.empty.HitPointsMax) Character.empty
 
     static member makeEnemy index =
-        let character = { Character.empty with CharacterIndex = index; CharacterType = Enemy Goopy; ControlType = Chaos }
+        let character = { Character.empty with CharacterIndex = index; CharacterType = Enemy Goopy }
         Character.updateHitPoints (constant character.HitPointsMax) character
 
 type CharacterAnimationType =

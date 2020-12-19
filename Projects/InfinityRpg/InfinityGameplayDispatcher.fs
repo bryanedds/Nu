@@ -72,7 +72,7 @@ module GameplayDispatcher =
                                     else gameplay
                                 if reactorState.HitPoints <= 0 then
                                     match reactorIndex with
-                                    | PlayerIndex -> Gameplay.updateCharacter reactorIndex (Character.updateControlType (constant Uncontrolled)) gameplay // TODO: reimplement screen transition
+                                    | PlayerIndex -> Gameplay.updateInputMode (constant DisabledInputMode) gameplay // TODO: reimplement screen transition
                                     | EnemyIndex _ -> Gameplay.removeCharacter reactorIndex gameplay
                                 else gameplay
                             | ReactingProp coordinates -> Gameplay.removeLongGrass coordinates gameplay
@@ -125,15 +125,11 @@ module GameplayDispatcher =
             | MakeEnemiesWalk ->
                 let updater =
                     (fun index gameplay ->
-                        let character = Gameplay.getCharacter index gameplay
-                        match character.ControlType with
-                        | Chaos ->
-                            let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
-                            let direction = Gen.random1 4 |> Direction.ofInt
-                            if List.exists (fun x -> x = direction) openDirections
-                            then Gameplay.makeMove gameplay.Time index (Step direction) gameplay
-                            else gameplay
-                        | _ -> gameplay)
+                        let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
+                        let direction = Gen.random1 4 |> Direction.ofInt
+                        if List.exists (fun x -> x = direction) openDirections
+                        then Gameplay.makeMove gameplay.Time index (Step direction) gameplay
+                        else gameplay)
                         
                 let gameplay = Gameplay.forEachIndex updater gameplay.Round.WalkingEnemyGroup gameplay
                 let gameplay = Gameplay.removeWalkingEnemyGroup gameplay
@@ -288,9 +284,9 @@ module GameplayDispatcher =
             
             | HandlePlayerInput playerInput ->
                 if not gameplay.Round.InProgress then
-                    match (Gameplay.getCharacter PlayerIndex gameplay).ControlType with
-                    | PlayerControlled -> withMsg (HandleMapChange playerInput) world
-                    | _ -> just world
+                    match gameplay.InputMode with
+                    | NormalInputMode -> withMsg (HandleMapChange playerInput) world
+                    | DisabledInputMode -> just world
                 else just world
 
             | Save ->
