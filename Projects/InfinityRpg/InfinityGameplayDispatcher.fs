@@ -12,7 +12,8 @@ module GameplayDispatcher =
 
     type [<StructuralEquality; NoComparison>] PlayerInput =
         | TouchInput of Vector2
-        | DetailInput of Direction
+        | DirectionInput of Direction
+        | TurnSkipInput
         | NoInput
 
     type [<StructuralEquality; NoComparison>] GameplayMessage =
@@ -174,8 +175,8 @@ module GameplayDispatcher =
                 let targetCoordinatesOpt =
                     match playerInput with
                     | TouchInput touchPosition -> Some (World.mouseToWorld false touchPosition world |> vftovc)
-                    | DetailInput direction -> Some (currentCoordinates + dtovc direction)
-                    | NoInput -> None
+                    | DirectionInput direction -> Some (currentCoordinates + dtovc direction)
+                    | _ -> None
                 let gameplay =
                     match targetCoordinatesOpt with
                     | Some coordinates ->
@@ -226,7 +227,7 @@ module GameplayDispatcher =
             | HandleMapChange playerInput ->
                 let msg =
                     match playerInput with
-                    | DetailInput direction ->
+                    | DirectionInput direction ->
                         let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
                         let targetOutside =
                             match direction with
@@ -285,7 +286,12 @@ module GameplayDispatcher =
             | HandlePlayerInput playerInput ->
                 if not gameplay.Round.InProgress then
                     match gameplay.InputMode with
-                    | NormalInputMode -> withMsg (HandleMapChange playerInput) world
+                    | NormalInputMode ->
+                        let msg =
+                            match playerInput with
+                            | TurnSkipInput -> SkipPlayerTurn
+                            | _ -> HandleMapChange playerInput
+                        withMsg msg world
                     | DisabledInputMode -> just world
                 else just world
 
@@ -295,11 +301,11 @@ module GameplayDispatcher =
                 just world
 
             | ListenKeyboard ->
-                if KeyboardState.isKeyDown KeyboardKey.Up then withCmd (HandlePlayerInput (DetailInput Upward)) world
-                elif KeyboardState.isKeyDown KeyboardKey.Right then withCmd (HandlePlayerInput (DetailInput Rightward)) world
-                elif KeyboardState.isKeyDown KeyboardKey.Down then withCmd (HandlePlayerInput (DetailInput Downward)) world
-                elif KeyboardState.isKeyDown KeyboardKey.Left then withCmd (HandlePlayerInput (DetailInput Leftward)) world
-                elif KeyboardState.isKeyDown KeyboardKey.Space then withMsg SkipPlayerTurn world
+                if KeyboardState.isKeyDown KeyboardKey.Up then withCmd (HandlePlayerInput (DirectionInput Upward)) world
+                elif KeyboardState.isKeyDown KeyboardKey.Right then withCmd (HandlePlayerInput (DirectionInput Rightward)) world
+                elif KeyboardState.isKeyDown KeyboardKey.Down then withCmd (HandlePlayerInput (DirectionInput Downward)) world
+                elif KeyboardState.isKeyDown KeyboardKey.Left then withCmd (HandlePlayerInput (DirectionInput Leftward)) world
+                elif KeyboardState.isKeyDown KeyboardKey.Space then withCmd (HandlePlayerInput TurnSkipInput) world
                 else just world
 
             | TrackPlayer ->
@@ -378,7 +384,7 @@ module GameplayDispatcher =
                  Content.button Simulants.HudSaveGame.Name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Save Game"
-                     Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress then false else true
+                     Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress || gameplay.InputMode.NotNormalInput then false else true
                      Entity.ClickEvent ==> cmd Save]
 
                  Content.button Simulants.HudBack.Name
@@ -398,31 +404,31 @@ module GameplayDispatcher =
                     [Entity.Position == v2 -387.0f -126.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailUpwardUp"; Entity.DownImage == asset "Gui" "DetailUpwardDown"
                      Entity.ClickSoundOpt == None
-                     Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Upward))]
+                     Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Upward))]
 
                  Content.button Simulants.HudDetailRightward.Name
                     [Entity.Position == v2 -336.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailRightwardUp"; Entity.DownImage == asset "Gui" "DetailRightwardDown"
                      Entity.ClickSoundOpt == None
-                     Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Rightward))]
+                     Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Rightward))]
 
                  Content.button Simulants.HudDetailDownward.Name
                     [Entity.Position == v2 -387.0f -234.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailDownwardUp"; Entity.DownImage == asset "Gui" "DetailDownwardDown"
                      Entity.ClickSoundOpt == None
-                     Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Downward))]
+                     Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Downward))]
 
                  Content.button Simulants.HudDetailLeftward.Name
                     [Entity.Position == v2 -438.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailLeftwardUp"; Entity.DownImage == asset "Gui" "DetailLeftwardDown"
                      Entity.ClickSoundOpt == None
-                     Entity.ClickEvent ==> cmd (HandlePlayerInput (DetailInput Leftward))]
+                     Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Leftward))]
 
                  Content.button Simulants.HudWait.Name
                     [Entity.Position == v2 -387.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "W"
                      Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress then false else true
-                     Entity.ClickEvent ==> msg SkipPlayerTurn]
+                     Entity.ClickEvent ==> cmd (HandlePlayerInput TurnSkipInput)]
                  
                  Content.feeler Simulants.HudFeeler.Name
                     [Entity.Position == v2 -480.0f -270.0f; Entity.Size == v2 960.0f 540.0f; Entity.Elevation == 9.0f
