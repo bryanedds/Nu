@@ -121,7 +121,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       Field : Field
       Chessboard : Chessboard
       Puppeteer : Puppeteer
-      Round : Round }
+      Round : Round
+      Inventory : Inventory }
 
     static member initial =
         let field = Field.initial
@@ -133,7 +134,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
           Field = field
           Chessboard = chessboard
           Puppeteer = Puppeteer.init <| Chessboard.getCharacter PlayerIndex chessboard
-          Round = Round.empty }
+          Round = Round.empty
+          Inventory = Inventory.initial }
 
     static member getEnemyIndices gameplay =
         gameplay.Chessboard.EnemyIndices
@@ -188,6 +190,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member updateRound updater gameplay =
         { gameplay with Round = updater gameplay.Round }
+    
+    static member updateInventory updater gameplay =
+        { gameplay with Inventory = updater gameplay.Inventory }
     
     static member addMove index (move : Move) gameplay =
         Gameplay.updateRound (Round.addMove index move) gameplay
