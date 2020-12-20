@@ -43,31 +43,8 @@ type EquipmentType =
 type ConsumableType =
     | Herb
 
-type KeyItemType =
-    | Feather // jump
-    | Gills // swim in shallow water
-    | Hammer // smash obstacles
-    | SteelSoles // walk over spikes
-    | Wings // fly in overworld
-    | Raft // navigate over deep water
-
-type ItemType =
-    | Equipment of EquipmentType
-    | Consumable of ConsumableType
-    | KeyItem of KeyItemType
-
-type TargetType =
-    | SingleTarget of Distance : int * SelfOnly : bool
-    | RangeTarget of Distance : int * SelfOnly : bool * Range : int
-    | LineTarget of Distance : int
-    | QuarterScreenTarget // in one of four cardinal directions like <, >, ^, or v
-    | FullScreenTarget
-
-type EffectType =
-    | Physical
-    | Magical
-
 type SpecialType =
+    | MagicMissile
     | Spark
     | Bomb
     | DragonBreath
@@ -85,12 +62,30 @@ type SpecialType =
     | Poison
     | Immunity // immunizes against status changes
 
-type ActionType =
-    | Attack
-    | Defend // auto counters at rate of counter stat
-    | Consume of ConsumableType
+type KeyItemType =
+    | Feather // jump
+    | Gills // swim in shallow water
+    | Hammer // smash obstacles
+    | SteelSoles // walk over spikes
+    | Wings // fly in overworld
+    | Raft // navigate over deep water
+
+type ItemType =
+    | Equipment of EquipmentType
+    | Consumable of ConsumableType
     | Special of SpecialType
-    | Interact // general interaction such as talking to NPCs
+    | KeyItem of KeyItemType
+
+type TargetType =
+    | SingleTarget of Distance : int * SelfOnly : bool
+    | RangeTarget of Distance : int * SelfOnly : bool * Range : int
+    | LineTarget of Distance : int
+    | QuarterScreenTarget // in one of four cardinal directions like <, >, ^, or v
+    | FullScreenTarget
+
+type EffectType =
+    | Physical
+    | Magical
 
 type WeaponType =
     | Body
@@ -131,37 +126,3 @@ type AccessoryData =
     { AccessoryType : AccessoryType // key
       ShieldBase : int
       CounterBase : int }
-
-type DrainData =
-    { EffectType : EffectType
-      Percentage : single }
-
-type ActionData =
-    { ActionType : ActionType
-      EffectType : EffectType
-      SpecialPointCost : int
-      SuccessRate : single
-      Curative : bool
-      ElementType : ElementType
-      AddStatusType : StatusType Set
-      RemoveStatusType : StatusType Set
-      TargetType : TargetType }
-
-type ConsumableData =
-    { ConsumableData : unit }
-
-type KeyItemData =
-    { KeyItemData : unit }
-
-type ItemData =
-    { ItemType : ItemType // key
-      Description : string }
-
-type RewardData =
-    { Gold : int }
-
-type CharacterData =
-    { CharacterType : CharacterType // key
-      CharacterName : string
-      BaseActions : ActionData list // base actions for all instances of character
-      Reward : RewardData }

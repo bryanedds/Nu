@@ -1,6 +1,13 @@
 ﻿namespace InfinityRpg
 open Prime
 
+type [<ReferenceEquality; NoComparison>] Inventory =
+    { Items : Map<ItemType, int>
+      Gold : int }
+
+    static member initial =
+        { Items = Map.empty; Gold = 0 }
+
 type [<ReferenceEquality; NoComparison>] Character =
     { CharacterIndex : CharacterIndex
       CharacterType : CharacterType
