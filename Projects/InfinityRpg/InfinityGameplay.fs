@@ -10,6 +10,11 @@ type InputMode =
     | NormalInputMode
     | DisabledInputMode
 
+    member this.NotNormalInput =
+        match this with
+        | NormalInputMode -> false
+        | _ -> true
+
 type RoundStatus =
     | RunningCharacterMoves
     | MakingEnemyAttack
