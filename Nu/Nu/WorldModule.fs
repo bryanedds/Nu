@@ -682,10 +682,10 @@ module WorldModule =
 
     type World with // Destruction
 
-        static member addSimulantToDestruction simulant world =
+        static member internal addSimulantToDestruction simulant world =
             { world with DestructionListRev = simulant :: world.DestructionListRev }
 
-        static member tryRemoveSimulantFromDestruction simulant world =
+        static member internal tryRemoveSimulantFromDestruction simulant world =
             { world with DestructionListRev = List.remove ((=) simulant) world.DestructionListRev }
 
     type World with // Plugin
