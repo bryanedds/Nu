@@ -213,7 +213,6 @@ module EffectSystem =
         private
             { Absolute : bool
               Views : View List
-              History : Slice seq
               ProgressOffset : single
               EffectTime : int64
               EffectEnv : Definitions
@@ -368,14 +367,14 @@ module EffectSystem =
                 Log.info ("Could not find definition with name '" + definitionName + "'.")
                 AssetTag.generalize Assets.Default.Image
 
-    let rec private iterateViews incrementAspects content slice effectSystem =
+    let rec private iterateViews incrementAspects content slice history effectSystem =
         let effectSystem = { effectSystem with ProgressOffset = 0.0f }
         let slice = evalAspects incrementAspects slice effectSystem
-        (slice, evalContent content slice effectSystem)
+        (slice, evalContent content slice history effectSystem)
 
-    and private cycleViews incrementAspects content slice effectSystem =
+    and private cycleViews incrementAspects content slice history effectSystem =
         let slice = evalAspects incrementAspects slice effectSystem
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
     and private evalProgress keyFrameTime keyFrameLength effectSystem =
         let progress = if keyFrameLength = 0L then 1.0f else single keyFrameTime / single keyFrameLength
@@ -504,7 +503,7 @@ module EffectSystem =
     and private evalAspects aspects slice effectSystem =
         Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
 
-    and private evalExpand definitionName arguments slice effectSystem =
+    and private evalExpand definitionName arguments slice history effectSystem =
         match Map.tryFind definitionName effectSystem.EffectEnv with
         | Some definition ->
             match definition.DefinitionBody with
@@ -513,12 +512,12 @@ module EffectSystem =
                 match (try Array.zip definition.DefinitionParams localDefinitions |> Some with _ -> None) with
                 | Some localDefinitionEntries ->
                     let effectSystem = { effectSystem with EffectEnv = Map.addMany localDefinitionEntries effectSystem.EffectEnv }
-                    evalContent content slice effectSystem
+                    evalContent content slice history effectSystem
                 | None -> Log.info "Wrong number of arguments provided to ExpandContent."; effectSystem
             | _ -> Log.info ("Expected Content for definition '" + definitionName + "'."); effectSystem
         | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); effectSystem
 
-    and private evalStaticSprite resource flip aspects content slice effectSystem =
+    and private evalStaticSprite resource flip aspects content slice history effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -550,9 +549,9 @@ module EffectSystem =
             else effectSystem
 
         // build implicitly mounted content
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
-    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount stutter playback flip aspects content slice effectSystem =
+    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount stutter playback flip aspects content slice history effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -594,12 +593,12 @@ module EffectSystem =
                 else effectSystem
 
             // build implicitly mounted content
-            evalContent content slice effectSystem
+            evalContent content slice history effectSystem
 
         // abandon evaL
         else effectSystem
 
-    and private evalTextSprite resource text aspects content slice effectSystem =
+    and private evalTextSprite resource text aspects content slice history effectSystem =
 
         // pull font from resource
         let font = evalResource resource effectSystem
@@ -629,9 +628,9 @@ module EffectSystem =
             else effectSystem
 
         // build implicitly mounted content
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
-    and private evalSoundEffect resource aspects content slice effectSystem =
+    and private evalSoundEffect resource aspects content slice history effectSystem =
 
         // pull sound from resource
         let sound = evalResource resource effectSystem
@@ -646,14 +645,14 @@ module EffectSystem =
             else effectSystem
 
         // build implicitly mounted content
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
-    and private evalMount shift aspects content (slice : Slice) effectSystem =
+    and private evalMount shift aspects content (slice : Slice) history effectSystem =
         let slice = { slice with Elevation = slice.Elevation + shift }
         let slice = evalAspects aspects slice effectSystem
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
-    and private evalRepeat shift repetition incrementAspects content (slice : Slice) effectSystem =
+    and private evalRepeat shift repetition incrementAspects content (slice : Slice) history effectSystem =
     
         // eval repeat either as iterative or cycling
         let slice = { slice with Elevation = slice.Elevation + shift }
@@ -663,7 +662,7 @@ module EffectSystem =
         | Iterate count ->
             Array.fold
                 (fun (slice, effectSystem) _ ->
-                    let (slice, effectSystem) = iterateViews incrementAspects content slice effectSystem
+                    let (slice, effectSystem) = iterateViews incrementAspects content slice history effectSystem
                     (slice, effectSystem))
                 (slice, effectSystem)
                 [|0 .. count - 1|] |>
@@ -674,11 +673,11 @@ module EffectSystem =
             Array.fold
                 (fun effectSystem i ->
                     let effectSystem = { effectSystem with ProgressOffset = 1.0f / single count * single i }
-                    cycleViews incrementAspects content slice effectSystem)
+                    cycleViews incrementAspects content slice history effectSystem)
                 effectSystem
                 [|0 .. count - 1|]
 
-    and private evalTag name aspects content (slice : Slice) effectSystem =
+    and private evalTag name aspects content (slice : Slice) history effectSystem =
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -691,13 +690,12 @@ module EffectSystem =
             else effectSystem
 
         // build implicitly mounted content
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
-    and private evalEmit shift rate emitterAspects aspects content effectSystem =
+    and private evalEmit shift rate emitterAspects aspects content history effectSystem =
         let effectSystem =
             Seq.foldi
                 (fun i effectSystem (slice : Slice) ->
-                    let oldHistory = effectSystem.History
                     let oldEffectTime = effectSystem.EffectTime
                     let timePassed = int64 i
                     let slice = { slice with Elevation = slice.Elevation + shift }
@@ -711,60 +709,60 @@ module EffectSystem =
                             (fun effectSystem _ ->
                                 let slice = evalAspects aspects slice effectSystem
                                 if slice.Enabled
-                                then evalContent content slice effectSystem
+                                then evalContent content slice history effectSystem
                                 else effectSystem)
                             effectSystem
                             [|0 .. emitCount - 1|]
-                    { effectSystem with History = oldHistory; EffectTime = oldEffectTime })
+                    { effectSystem with EffectTime = oldEffectTime })
                 effectSystem
-                effectSystem.History
+                history
         effectSystem
 
-    and private evalSegment start stop content slice effectSystem =
+    and private evalSegment start stop content slice history effectSystem =
         if  effectSystem.EffectTime >= start &&
             effectSystem.EffectTime < stop then
             let effectSystem = { effectSystem with EffectTime = effectSystem.EffectTime - start }
-            let effectSystem = evalContent content slice effectSystem
+            let effectSystem = evalContent content slice history effectSystem
             let effectSystem = { effectSystem with EffectTime = effectSystem.EffectTime + start }
             effectSystem
         else effectSystem
 
-    and private evalContents shift contents slice effectSystem =
+    and private evalContents shift contents slice history effectSystem =
         let slice = { slice with Slice.Elevation = slice.Elevation + shift }
-        evalContents3 contents slice effectSystem
+        evalContents3 contents slice history effectSystem
 
-    and private evalContent content slice effectSystem =
+    and private evalContent content slice history effectSystem =
         match content with
         | Nil ->
             effectSystem
         | StaticSprite (resource, flip, aspects, content) ->
-            evalStaticSprite resource flip aspects content slice effectSystem
+            evalStaticSprite resource flip aspects content slice history effectSystem
         | AnimatedSprite (resource, celSize, celRun, celCount, stutter, playback, flip, aspects, content) ->
-            evalAnimatedSprite resource celSize celRun celCount stutter playback flip aspects content slice effectSystem
+            evalAnimatedSprite resource celSize celRun celCount stutter playback flip aspects content slice history effectSystem
         | TextSprite (resource, text, aspects, content) ->
-            evalTextSprite resource text aspects content slice effectSystem
+            evalTextSprite resource text aspects content slice history effectSystem
         | SoundEffect (resource, aspects, content) ->
-            evalSoundEffect resource aspects content slice effectSystem
+            evalSoundEffect resource aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->
-            evalMount shift aspects content slice effectSystem
+            evalMount shift aspects content slice history effectSystem
         | Repeat (Shift shift, repetition, incrementAspects, content) ->
-            evalRepeat shift repetition incrementAspects content slice effectSystem
+            evalRepeat shift repetition incrementAspects content slice history effectSystem
         | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) ->
-            evalEmit shift rate emitterAspects aspects content effectSystem
+            evalEmit shift rate emitterAspects aspects content history effectSystem
         | Tag (name, aspects, content) ->
-            evalTag name aspects content slice effectSystem
+            evalTag name aspects content slice history effectSystem
         | Delay (delay, content) ->
-            evalSegment delay Int64.MaxValue content slice effectSystem
+            evalSegment delay Int64.MaxValue content slice history effectSystem
         | Segment (start, stop, content) ->
-            evalSegment start stop content slice effectSystem
+            evalSegment start stop content slice history effectSystem
         | Contents (Shift shift, contents) ->
-            evalContents shift contents slice effectSystem
+            evalContents shift contents slice history effectSystem
         | Expand (definitionName, arguments) ->
-            evalExpand definitionName arguments slice effectSystem
+            evalExpand definitionName arguments slice history effectSystem
 
-    and private evalContents3 contents slice effectSystem =
+    and private evalContents3 contents slice history effectSystem =
         Array.fold
-            (fun effectSystem content -> evalContent content slice effectSystem)
+            (fun effectSystem content -> evalContent content slice history effectSystem)
             effectSystem
             contents
 
@@ -773,14 +771,14 @@ module EffectSystem =
         let effectSystem = { effectSystem with Views = List<View> () }
         (views, effectSystem)
 
-    let eval effect slice effectSystem =
+    let eval effect slice history effectSystem =
         let alive =
             match effect.LifetimeOpt with
             | Some lifetime -> lifetime <= 0L || effectSystem.EffectTime <= lifetime
             | None -> true
         if alive then
             let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }
-            try let effectSystem = evalContent effect.Content slice effectSystem
+            try let effectSystem = evalContent effect.Content slice history effectSystem
                 release effectSystem
             with exn ->
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrinter
@@ -797,10 +795,9 @@ module EffectSystem =
               Content = Contents (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
         effectCombined
 
-    let make absolute history effectTime globalEnv = 
+    let make absolute effectTime globalEnv = 
         { Absolute = absolute
           Views = List<View> ()
-          History = history
           ProgressOffset = 0.0f
           EffectTime = effectTime
           EffectEnv = globalEnv
