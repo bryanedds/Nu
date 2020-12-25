@@ -241,9 +241,9 @@ module WorldModule2 =
                             let world =
                                 match (selectedScreen.GetIncoming world).SongOpt with
                                 | Some playSong ->
-                                    if World.getCurrentSongOpt world <> Some playSong
-                                    then World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world
-                                    else world
+                                    match World.getCurrentSongOpt world with
+                                    | Some song when assEq song.Song playSong.Song -> world // do nothing when song is the same
+                                    | _ -> World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world // play song when song is different
                                 | None -> world
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
                             World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
@@ -266,9 +266,9 @@ module WorldModule2 =
                             | Some playSong ->
                                 match World.getScreenTransitionDestinationOpt world with
                                 | Some destination ->
-                                    if (selectedScreen.GetIncoming world).SongOpt <> (destination.GetIncoming world).SongOpt
-                                    then World.fadeOutSong playSong.FadeOutMs world
-                                    else world
+                                    match ((selectedScreen.GetIncoming world).SongOpt, (destination.GetIncoming world).SongOpt) with
+                                    | (Some song, Some song2) when assEq song.Song song2.Song -> world // do nothing when song is the same
+                                    | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
                                 | None ->
                                     match World.getCurrentSongOpt world with
                                     | Some currentSong -> World.fadeOutSong currentSong.FadeOutMs world

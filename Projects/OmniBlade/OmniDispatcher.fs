@@ -16,7 +16,7 @@ module GameDispatcher =
         | Title
         | Credits
 
-    type [<NoComparison>] Omni =
+    type [<StructuralEquality; NoComparison>] Omni =
         | Gui of Gui
         | Field of Field
 

@@ -84,7 +84,7 @@ type [<ReferenceEquality; NoComparison>] SubmenuTeam =
 type [<ReferenceEquality; NoComparison>] SubmenuItem =
     { ItemPage : int }
 
-type [<NoComparison>] SubmenuState =
+type [<StructuralEquality; NoComparison>] SubmenuState =
     | SubmenuTeam of SubmenuTeam
     | SubmenuItem of SubmenuItem
     | SubmenuClosed

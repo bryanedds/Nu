@@ -58,7 +58,7 @@ type TransitionState =
     | IdlingState
 
 /// Describes one of a screen's transition processes.
-type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
+type [<NoEquality; NoComparison; CLIMutable>] Transition =
     { TransitionType : TransitionType
       TransitionLifetime : int64
       DissolveImageOpt : Image AssetTag option
@@ -72,13 +72,13 @@ type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
           SongOpt = None }
 
 /// Describes the behavior of the screen dissolving algorithm.
-type [<StructuralEquality; NoComparison>] DissolveDescriptor =
+type [<NoEquality; NoComparison>] DissolveDescriptor =
     { IncomingTime : int64
       OutgoingTime : int64
       DissolveImage : Image AssetTag }
 
 /// Describes the behavior of the screen splash algorithm.
-type [<StructuralEquality; NoComparison>] SplashDescriptor =
+type [<NoEquality; NoComparison>] SplashDescriptor =
     { DissolveDescriptor : DissolveDescriptor
       IdlingTime : int64
       SplashImageOpt : Image AssetTag option }

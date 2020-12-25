@@ -13,7 +13,7 @@ open OmniBlade
 [<AutoOpen>]
 module FieldDispatcher =
 
-    type [<NoComparison; NoEquality>] FieldMessage =
+    type [<NoEquality; NoComparison>] FieldMessage =
         | UpdateAvatar of Avatar
         | UpdateDialog
         | UpdatePortal
@@ -38,7 +38,7 @@ module FieldDispatcher =
         | Traverse of Vector2
         | Interact
 
-    type [<NoComparison>] FieldCommand =
+    type [<NoEquality; NoComparison>] FieldCommand =
         | UpdateEye
         | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
@@ -317,9 +317,9 @@ module FieldDispatcher =
                         if time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
                             match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
                             | (true, fieldData) ->
-                                if currentSongOpt <> fieldData.FieldSongOpt
-                                then withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
-                                else just field
+                                match (currentSongOpt, fieldData.FieldSongOpt) with
+                                | (Some song, Some song2) when assEq song song2 -> just field
+                                | (_, _) -> withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
                             | (false, _) -> just field
                         
                         // half-way point of transition
@@ -335,9 +335,9 @@ module FieldDispatcher =
                             let songCmd =
                                 match Field.getFieldSongOpt field with
                                 | Some fieldSong ->
-                                    if currentSongOpt <> Some fieldSong
-                                    then PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)
-                                    else Nop
+                                    match currentSongOpt with
+                                    | Some song when assEq song fieldSong -> Nop
+                                    | _ -> PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)
                                 | None -> Nop
                             withCmd songCmd field
 

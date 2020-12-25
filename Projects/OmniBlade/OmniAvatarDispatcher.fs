@@ -12,7 +12,7 @@ open OmniBlade
 [<AutoOpen>]
 module AvatarDispatcher =
 
-    type [<NoComparison>] AvatarMessage =
+    type [<StructuralEquality; NoComparison>] AvatarMessage =
         | Update
         | PostUpdate
         | SynchronizeBounds
@@ -21,7 +21,7 @@ module AvatarDispatcher =
         | Face of Direction
         | Nil
 
-    type [<NoComparison>] AvatarCommand =
+    type [<StructuralEquality; NoComparison>] AvatarCommand =
         | TryTravel of Vector2
 
     type Entity with
