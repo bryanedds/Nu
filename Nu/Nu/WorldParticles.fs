@@ -195,8 +195,7 @@ module Particles =
                 Map.fold (fun (emitters, output) emitterId (emitter : Emitter) ->
                     let (liveness, emitter, output2) = emitter.Run time constrain
                     let emitters = match liveness with Running -> Map.add emitterId emitter emitters | Exiting -> emitters
-                    let output3 = output + output2
-                    (emitters, output3))
+                    (emitters, output + output2))
                     (Map.empty, NoOutput)
                     particleSystem.Emitters
             let particleSystem = { Emitters = emitters }

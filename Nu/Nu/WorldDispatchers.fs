@@ -268,10 +268,10 @@ module EffectFacetModule =
                       Effects.Volume = Constants.Audio.SoundVolumeDefault }
                 let effectHistory = entity.GetEffectHistory world
                 let effectEnv = entity.GetEffectDefinitions world
-                let effectSystem = EffectSystem.make effectAbsolute effectHistory effectTime effectEnv
+                let effectSystem = EffectSystem.make effectAbsolute effectTime effectEnv
 
                 // evaluate effect with effect system
-                let (artifacts, _) = EffectSystem.eval effect effectSlice effectSystem
+                let (artifacts, _) = EffectSystem.eval effect effectSlice effectHistory effectSystem
 
                 // actualize effect views
                 let world = World.actualizeViews artifacts world
