@@ -23,7 +23,7 @@ type [<NoEquality; NoComparison>] MapGeneralized =
             | (false, _) -> (false, null) }
 
 /// Describes the behavior of a screen.
-type [<StructuralEquality; NoComparison>] ScreenBehavior =
+type [<NoEquality; NoComparison>] ScreenBehavior =
     | Vanilla
     | Dissolve of DissolveDescriptor * SongDescriptor option
     | Splash of DissolveDescriptor * SplashDescriptor * SongDescriptor option * Screen option

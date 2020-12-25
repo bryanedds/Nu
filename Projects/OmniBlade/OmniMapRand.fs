@@ -39,7 +39,7 @@ type SegmentRand =
     | SegmentBN = 0b010001
     | SegmentBS = 0b010100
 
-type [<NoComparison>] SegmentsRand =
+type [<StructuralEquality; NoComparison>] SegmentsRand =
     { Segment1N : TmxMap
       Segment1E : TmxMap
       Segment1S : TmxMap

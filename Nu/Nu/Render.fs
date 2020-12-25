@@ -47,7 +47,7 @@ type [<StructuralEquality; StructuralComparison>] Flip =
         | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
 
 /// Describes how to render a sprite to the rendering system.
-type [<StructuralEquality; NoComparison>] SpriteDescriptor =
+type [<NoEquality; NoComparison>] SpriteDescriptor =
     { Transform : Transform
       Offset : Vector2
       InsetOpt : Vector4 option
@@ -57,7 +57,7 @@ type [<StructuralEquality; NoComparison>] SpriteDescriptor =
       Flip : Flip }
 
 /// Describes how to render a tile map layer to the rendering system.
-type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
+type [<NoEquality; NoComparison>] TileLayerDescriptor =
     { Transform : Transform
       MapSize : Vector2i
       Tiles : TmxLayerTile array
@@ -66,7 +66,7 @@ type [<StructuralEquality; NoComparison>] TileLayerDescriptor =
       TileImageAssets : (TmxTileset * Image AssetTag) array }
 
 /// Describes how to render text to the rendering system.
-type [<StructuralEquality; NoComparison>] TextDescriptor =
+type [<NoEquality; NoComparison>] TextDescriptor =
     { Transform : Transform
       Text : string
       Font : Font AssetTag
@@ -74,21 +74,21 @@ type [<StructuralEquality; NoComparison>] TextDescriptor =
       Justification : Justification }
 
 /// Describes how to render something to the rendering system.
-type [<StructuralEquality; NoComparison>] RenderDescriptor =
+type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor : SpriteDescriptor
     | SpritesDescriptor of SpriteDescriptors : SpriteDescriptor array
     | TileLayerDescriptor of TileLayerDescriptor : TileLayerDescriptor
     | TextDescriptor of TextDescriptor : TextDescriptor
 
 /// Describes how to render a layered thing to the rendering system.
-type [<StructuralEquality; NoComparison>] LayeredDescriptor =
+type [<NoEquality; NoComparison>] LayeredDescriptor =
     { Elevation : single
       PositionY : single
       AssetTag : obj AssetTag
       RenderDescriptor : RenderDescriptor }
 
 /// A message to the rendering system.
-type [<StructuralEquality; NoComparison>] RenderMessage =
+type [<NoEquality; NoComparison>] RenderMessage =
     | LayeredDescriptorMessage of LayeredDescriptor
     | LayeredDescriptorsMessage of LayeredDescriptor array
     | HintRenderPackageUseMessage of string
@@ -98,7 +98,7 @@ type [<StructuralEquality; NoComparison>] RenderMessage =
     //| ScreenShakeMessage of ...
 
 /// An asset that is used for rendering.
-type [<StructuralEquality; NoComparison>] RenderAsset =
+type [<NoEquality; NoComparison>] RenderAsset =
     | TextureAsset of nativeint
     | FontAsset of nativeint * int
 

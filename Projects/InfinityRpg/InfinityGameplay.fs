@@ -29,7 +29,7 @@ type [<ReferenceEquality; NoComparison>] PlayerContinuity =
         | AutomaticNavigation (head :: _) -> AutomaticNavigation [head]
         | _ -> failwithumf ()
 
-type [<NoComparison>] Move =
+type [<StructuralEquality; NoComparison>]  Move =
     | Step of Direction
     | Attack of Reactor
     | Travel of NavigationNode list

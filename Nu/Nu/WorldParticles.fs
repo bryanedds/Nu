@@ -7,7 +7,7 @@ open System.Numerics
 open Prime
 module Particles =
 
-    type [<StructuralEquality; NoComparison; Struct>] Life =
+    type [<NoEquality; NoComparison; Struct>] Life =
         { LifeTime : int64
           StartTime : int64 }
         static member getProgress (time : int64) life =
@@ -21,7 +21,7 @@ module Particles =
     type Particle =
         abstract Life : Life with get, set
 
-    type [<StructuralEquality; NoComparison; Struct>] Body =
+    type [<NoEquality; NoComparison; Struct>] Body =
         { Position : Vector2
           Velocity : Vector2
           Gravity : Vector2 }
@@ -202,7 +202,7 @@ module Particles =
             (particleSystem, output)
 
     /// An example particle.
-    type [<StructuralEquality; NoComparison; Struct>] Pex =
+    type [<NoEquality; NoComparison; Struct>] Pex =
         { mutable Life : Life
           Bod : Body
           Col : Color
