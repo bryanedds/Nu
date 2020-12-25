@@ -194,10 +194,10 @@ module PlayerModule =
 
         static let handleJump evt world =
             let player = evt.Subscriber : Entity
-            let tickTime = World.getTickTime world
-            if  tickTime >= player.GetLastTimeJumpNp world + 12L &&
-                tickTime <= player.GetLastTimeOnGroundNp world + 10L then
-                let world = player.SetLastTimeJumpNp tickTime world
+            let time = World.getTickTime world
+            if  time >= player.GetLastTimeJumpNp world + 12L &&
+                time <= player.GetLastTimeOnGroundNp world + 10L then
+                let world = player.SetLastTimeJumpNp time world
                 let world = World.applyBodyLinearImpulse (Vector2 (0.0f, 2000.0f)) (player.GetPhysicsId world) world
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 (Cascade, world)

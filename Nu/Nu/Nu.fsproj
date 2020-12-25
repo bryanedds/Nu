@@ -109,8 +109,8 @@
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
-    <Compile Include="WorldEffects.fs" />
     <Compile Include="WorldParticles.fs" />
+    <Compile Include="WorldEffects.fs" />
     <Compile Include="WorldTmxMap.fs" />
     <Compile Include="WorldDispatchers.fs" />
     <Compile Include="WorldContent.fs" />
