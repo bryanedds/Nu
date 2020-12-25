@@ -309,12 +309,12 @@ module FieldDispatcher =
                 | Some fieldTransition ->
 
                     // handle field transition
-                    let tickTime = World.getTickTime world
+                    let time = World.getTickTime world
                     let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
                     let (signals, field) =
 
                         // start transition
-                        if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
+                        if time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
                             match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
                             | (true, fieldData) ->
                                 if currentSongOpt <> fieldData.FieldSongOpt
@@ -323,7 +323,7 @@ module FieldDispatcher =
                             | (false, _) -> just field
                         
                         // half-way point of transition
-                        elif tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                        elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
                             let field = Field.updateFieldType (constant fieldTransition.FieldType) field
                             let field =
                                 Field.updateAvatar (fun avatar ->
@@ -342,7 +342,7 @@ module FieldDispatcher =
                             withCmd songCmd field
 
                         // finish transition
-                        elif tickTime = fieldTransition.FieldTransitionTime then
+                        elif time = fieldTransition.FieldTransitionTime then
                             let field = Field.updateFieldTransitionOpt (constant None) field
                             just field
 
@@ -586,14 +586,14 @@ module FieldDispatcher =
 
                  // transition fade sprite
                  Content.staticSprite Simulants.FieldTransitionFade.Name
-                   [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
-                    Entity.StaticImage == Assets.Default.Image9
-                    Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
-                    Entity.Color <== field --|> fun field world ->
+                    [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
+                     Entity.StaticImage == Assets.Default.Image9
+                     Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
+                     Entity.Color <== field --|> fun field world ->
                         match field.FieldTransitionOpt with
                         | Some transition ->
-                            let tickTime = World.getTickTime world
-                            let deltaTime = single transition.FieldTransitionTime - single tickTime
+                            let time = World.getTickTime world
+                            let deltaTime = single transition.FieldTransitionTime - single time
                             let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
                             let progress =
                                 if deltaTime < halfTransitionTime

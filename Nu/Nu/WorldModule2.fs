@@ -525,12 +525,12 @@ module WorldModule2 =
             world
 
         static member private processTasklet (taskletsNotRun, world) tasklet =
-            let tickTime = World.getTickTime world
-            if tickTime = tasklet.ScheduledTime then
+            let time = World.getTickTime world
+            if time = tasklet.ScheduledTime then
                 let world = tasklet.Command.Execute world
                 (taskletsNotRun, world)
-            elif tickTime > tasklet.ScheduledTime then
-                Log.debug ("Tasklet leak found for time '" + scstring tickTime + "'.")
+            elif time > tasklet.ScheduledTime then
+                Log.debug ("Tasklet leak found for time '" + scstring time + "'.")
                 (taskletsNotRun, world)
             else (UList.add tasklet taskletsNotRun, world)
 

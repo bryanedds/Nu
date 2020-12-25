@@ -202,9 +202,9 @@ module EffectFacetModule =
 
         /// The time relative to the start of the effect.
         member this.GetEffectTime world =
-            let effectStartTime = this.GetEffectStartTime world
-            let tickTime = World.getTickTime world
-            tickTime - effectStartTime
+            let startTime = this.GetEffectStartTime world
+            let time = World.getTickTime world
+            time - startTime
 
     type EffectFacet () =
         inherit Facet ()
@@ -1713,8 +1713,8 @@ module FpsDispatcherModule =
             let startDateTime = entity.GetStartDateTime world
             let currentDateTime = DateTime.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
-            let tickTime = double (World.getTickTime world - entity.GetStartTickTime world)
-            let frames = tickTime / elapsedDateTime.TotalSeconds
+            let time = double (World.getTickTime world - entity.GetStartTickTime world)
+            let frames = time / elapsedDateTime.TotalSeconds
             if not (Double.IsNaN frames) then 
                 let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
                 entity.SetText framesStr world
@@ -1949,7 +1949,7 @@ module CharacterDispatcherModule =
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then
-                let tickTime = World.getTickTime world
+                let time = World.getTickTime world
                 let physicsId = entity.GetPhysicsId world
                 let facingLeft = entity.GetCharacterFacingLeft world
                 let velocity = World.getBodyLinearVelocity physicsId world
@@ -1966,7 +1966,7 @@ module CharacterDispatcherModule =
                         (None, image)
                     else
                         let image = entity.GetCharacterWalkSheet world
-                        (Some (computeWalkCelInset celSize celRun animationDelay tickTime), image)
+                        (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Elevation = transform.Elevation
