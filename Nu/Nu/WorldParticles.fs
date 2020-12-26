@@ -266,6 +266,12 @@ module Particles =
           mutable Flip : Flip }
         interface Particle with member this.Life with get () = this.Life and set value = this.Life <- value
         static member inline body = Scope.make (fun p -> p.Body) (fun v p -> { p with Body = v })
+        static member inline size = Scope.make (fun p -> p.Size) (fun v p -> { p with Size = v })
+        static member inline offset = Scope.make (fun p -> p.Offset) (fun v p -> { p with Offset = v })
+        static member inline inset = Scope.make (fun p -> p.Inset) (fun v p -> { p with Inset = v })
+        static member inline color = Scope.make (fun p -> p.Color) (fun v p -> { p with Color = v })
+        static member inline glow = Scope.make (fun p -> p.Glow) (fun v p -> { p with Glow = v })
+        static member inline flip = Scope.make (fun p -> p.Flip) (fun v p -> { p with Flip = v })
 
     /// A basic particle emitter.
     type BasicEmitter =
