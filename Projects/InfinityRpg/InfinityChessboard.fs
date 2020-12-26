@@ -172,6 +172,9 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member characterExists index chessboard =
         Map.exists (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.FieldSpaces
     
+    static member enemyAtCoordinates coordinates chessboard =
+        chessboard.FieldSpaces.[coordinates].ContainsEnemy
+    
     static member pickupAtCoordinates coordinates chessboard =
         chessboard.FieldSpaces.[coordinates].ContainsPickup
     

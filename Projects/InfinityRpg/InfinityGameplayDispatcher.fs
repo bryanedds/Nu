@@ -246,7 +246,11 @@ module GameplayDispatcher =
                 match playerInput with
                 | TouchInput touchPosition ->
                     let targetCoordinates = World.mouseToWorld false touchPosition world |> vftovc
-                    just gameplay
+                    if Chessboard.spaceExists targetCoordinates gameplay.Chessboard then
+                        if Chessboard.enemyAtCoordinates targetCoordinates gameplay.Chessboard then
+                            just gameplay
+                        else just <| Gameplay.updateInputMode (constant NormalInputMode) gameplay
+                    else just <| Gameplay.updateInputMode (constant NormalInputMode) gameplay 
                 | _ -> just gameplay
             
             | Initialize ->
