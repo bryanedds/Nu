@@ -24,3 +24,15 @@ module Effects =
           LifetimeOpt = Some (Constants.InfinityRpg.CharacterAnimationActingDelay * 2L)
           Definitions = Map.empty
           Content = animationSprite }
+
+    let makeMagicMissileImpactEffect =
+
+        let animationSprite =
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Gameplay.MagicMissileImpact),
+                 v2iDup 48, 2, 2, Constants.InfinityRpg.CharacterAnimationActingDelay, Once, FlipNone, [||], Nil)
+
+        { EffectName = "MagicMissileImpact"
+          LifetimeOpt = Some (Constants.InfinityRpg.CharacterAnimationActingDelay * 2L)
+          Definitions = Map.empty
+          Content = animationSprite }

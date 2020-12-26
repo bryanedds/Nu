@@ -302,7 +302,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 Gameplay.applyStep index direction gameplay
             | [] -> failwithumf ()
         | Attack reactor -> Gameplay.applyAttack index reactor gameplay
-        | Shoot reactor -> failwithumf ()
+        | Shoot reactor -> Gameplay.applyAttack index reactor gameplay
     
     static member activateCharacter time index gameplay =
         let move = Gameplay.getCharacterMove index gameplay
@@ -318,8 +318,13 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                     match reactor with
                     | ReactingCharacter reactorIndex -> Gameplay.getCoordinates reactorIndex gameplay |> Math.directionToTarget coordinates
                     | ReactingProp reactorCoordinates -> Math.directionToTarget coordinates reactorCoordinates
-                Turn.makeAttack time index reactor coordinates direction
-            | Shoot reactor -> failwithumf ()
+                Turn.makeAttack time index false reactor coordinates direction
+            | Shoot reactor ->
+                let direction =
+                    match reactor with
+                    | ReactingCharacter reactorIndex -> Gameplay.getCoordinates reactorIndex gameplay |> Math.directionToTarget coordinates
+                    | ReactingProp reactorCoordinates -> failwithumf ()
+                Turn.makeAttack time index true reactor coordinates direction
             
         Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay
 
