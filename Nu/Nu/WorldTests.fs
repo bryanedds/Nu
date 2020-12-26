@@ -17,7 +17,7 @@ module WorldTests =
     let [<Fact>] runOneFrameThenCleanUp () =
         let worldConfig = WorldConfig.defaultConfig
         let world = World.makeEmpty worldConfig
-        World.run4 (fun world -> World.getTickTime world < 1L) SdlDeps.empty Running world
+        World.run4 (fun world -> World.getTickTime world < 1L) SdlDeps.empty Live world
 
     let [<Fact>] entitySubscribeWorks () =
         let world = World.makeDefault ()

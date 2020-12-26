@@ -1442,7 +1442,7 @@ module Gaia =
                 runWhile
                 (fun world -> let world = updateEditorWorld form world in (Globals.World <- world; world))
                 (fun world -> form.displayPanel.Invalidate (); world)
-                sdlDeps Running None None Globals.World |>
+                sdlDeps Live None None Globals.World |>
                 ignore
         with exn ->
             match MessageBox.Show

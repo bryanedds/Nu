@@ -102,7 +102,7 @@ module AmbientState =
 
     /// Place the engine into a state such that the app will exit at the end of the current update.
     let exit state =
-        { state with Liveness = Exiting }
+        { state with Liveness = Dead }
 
     /// Get the metadata.
     let getMetadata state =
@@ -205,7 +205,7 @@ module AmbientState =
 
     /// Make an ambient state value.
     let make tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
-        { Liveness = Running
+        { Liveness = Live
           TickRate = tickRate
           TickTime = 0L
           ClockDelta = 1.0f
