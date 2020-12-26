@@ -41,17 +41,17 @@ module Particles =
         abstract Life : Life with get, set
 
     /// A particle constraint.
-    type [<StructuralEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Constraint =
+    type [<NoEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Constraint =
         | Rectangle of Vector4
         | Circle of single * Vector2
         | Constraints of Constraint array
-        | Unconstrained // OPTIMIZATION: elide Option indirection
+        | NoConstraint // OPTIMIZATION: elide Option indirection
 
         static member (+) (constrain, constrain2) =
             match (constrain, constrain2) with
-            | (Unconstrained, Unconstrained) -> constrain // OPTIMIZATION: elide Constraint ctor
-            | (_, Unconstrained) -> constrain
-            | (Unconstrained, _) -> constrain2
+            | (NoConstraint, NoConstraint) -> constrain // OPTIMIZATION: elide Constraint ctor
+            | (_, NoConstraint) -> constrain
+            | (NoConstraint, _) -> constrain2
             | (_, _) -> Constraints [|constrain; constrain2|]
 
     /// The output of a particle behavior.
@@ -82,16 +82,16 @@ module Particles =
 
     /// Transforms a particle value.
     type 'a Transformer =
-        single -> 'a -> struct ('a * Output)
+        single -> Constraint -> 'a -> struct ('a * Output)
 
     [<AutoOpen>]
     module Transformer =
 
         /// Pipe two transformers.
         let pipe (transformer : 'a Transformer) (transformer2 : 'a Transformer) : 'a Transformer =
-            fun progress a ->
-                let struct (a, output) = transformer progress a
-                let struct (a, output2) = transformer2 progress a
+            fun progress constrain a ->
+                let struct (a, output) = transformer progress constrain a
+                let struct (a, output2) = transformer2 progress constrain a
                 struct (a, output + output2)
 
         /// Pipe multiple transformers.
@@ -115,7 +115,7 @@ module Particles =
     type Behavior =
 
         /// Run the behavior.
-        abstract Run : int64 -> obj -> (obj * Output)
+        abstract Run : int64 -> Constraint -> obj -> (obj * Output)
 
     /// Defines a particle behavior.
     type [<NoEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
@@ -123,9 +123,9 @@ module Particles =
           Transformer : 'b Transformer }
 
         /// Run the behavior over an array of particles.
-        static member run time (behavior : Behavior<'a, 'b>) (particles : 'a array) =
+        static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (particles : 'a array) =
             let particles2 = Array.map (behavior.Scope.In time) particles
-            let particles3 = Array.map (fun struct (progress, field) -> behavior.Transformer progress field) particles2
+            let particles3 = Array.map (fun struct (progress, field) -> behavior.Transformer progress constrain field) particles2
             let particles4 = Array.map2 behavior.Scope.Out particles3 particles
             let particles5 = Array.map fst' particles4
             let outputs = particles4 |> Array.filter (function struct (_, NoOutput) -> false | struct (_, _) -> true) |> Array.map snd'
@@ -133,8 +133,8 @@ module Particles =
             (particles5, output)
 
         interface Behavior with
-            member this.Run time particlesObj =
-                let (particles, outputs) = Behavior<'a, 'b>.run time this (particlesObj :?> 'a array)
+            member this.Run time constrain particlesObj =
+                let (particles, outputs) = Behavior<'a, 'b>.run time constrain this (particlesObj :?> 'a array)
                 (particles :> obj, outputs)
 
     /// A composition of behaviors.
@@ -158,10 +158,10 @@ module Particles =
             CompositionalBehaviors.addMany seq CompositionalBehaviors.empty
 
         /// Run the compositional behaviors over an array.
-        static member run time behaviors (particles : 'a array) =
+        static member run time behaviors constrain (particles : 'a array) =
             let (particles, outputs) =
                 FStack.fold (fun (particles, output) (behavior : Behavior) ->
-                    let (particles2, output2) = behavior.Run time particles
+                    let (particles2, output2) = behavior.Run time constrain particles
                     (particles2, output + output2))
                     (particles :> obj, NoOutput)
                     behaviors.Behaviors
@@ -177,11 +177,11 @@ module Particles =
           mutable ParticleIndex : int // operates as a ring-buffer
           mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
           Particles : 'a array // operates as a ring-buffer
+          Constraint : Constraint
           Initializer : int64 -> Constraint -> 'a Emitter -> 'a
           InPlaceBehavior : int64 -> Constraint -> 'a Emitter -> Output
           CompositionalBehaviors : CompositionalBehaviors
           ToParticlesDescriptor : int64 -> 'a Emitter -> ParticlesDescriptor
-          Constraint : Constraint
           Body : Body
           Image : Image AssetTag
           Rate : single
@@ -221,7 +221,7 @@ module Particles =
             let outputInPlace = emitter.InPlaceBehavior time constrain emitter
 
             // update existing particles compositionally
-            let (particles, outputCompositional) = CompositionalBehaviors.run time emitter.CompositionalBehaviors emitter.Particles
+            let (particles, outputCompositional) = CompositionalBehaviors.run time emitter.CompositionalBehaviors constrain emitter.Particles
             let emitter = { emitter with Particles = particles }
 
             // compose output
@@ -306,11 +306,11 @@ module Particles =
               ParticleIndex = 0
               ParticleWatermark = 0
               Particles = Array.zeroCreate particleMax
+              Constraint = constrain
               Initializer = initializer
               InPlaceBehavior = inPlaceBehavior
               CompositionalBehaviors = behaviors
               ToParticlesDescriptor = toParticlesDescriptor
-              Constraint = constrain
               Body = { Position = v2Zero; LinearVelocity = v2Zero; Rotation = 0.0f; AngularVelocity = 0.0f; Gravity = v2 0.0f -9.81f }
               Image = image
               Rate = rate
