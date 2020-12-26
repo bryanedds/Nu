@@ -29,7 +29,9 @@ module Particles =
     /// Describes the body of an instance value.
     type [<NoEquality; NoComparison; Struct>] Body =
         { Position : Vector2
-          Velocity : Vector2
+          Rotation : single
+          LinearVelocity : single
+          AngularVelocity : single
           Gravity : Vector2 }
 
     /// The base particle type.
@@ -233,13 +235,20 @@ module Particles =
             let particleSystem = { Emitters = emitters }
             (particleSystem, output)
 
-    /// An example particle.
-    type [<NoEquality; NoComparison; Struct>] Pex =
+    /// A basic particle.
+    type [<NoEquality; NoComparison; Struct>] BasicParticle =
         { mutable Life : Life
           Bod : Body
+          Siz : Vector2
+          Off : Vector2
+          Ins : Vector4
           Col : Color
-          Ins : Vector4 }
+          Glo : Color
+          Flp : Flip }
         interface Particle with member this.Life with get () = this.Life and set value = this.Life <- value
         static member inline bod = Scope.make (fun pex -> pex.Bod) (fun bod pex -> { pex with Bod = bod })
         static member inline col = Scope.make (fun pex -> pex.Col) (fun col pex -> { pex with Col = col })
         static member inline ins = Scope.make (fun pex -> pex.Ins) (fun ins pex -> { pex with Ins = ins })
+
+    /// A basic particle emitter.
+    type BasicEmitter = Emitter<BasicParticle>
