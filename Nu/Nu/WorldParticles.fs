@@ -7,25 +7,33 @@ open System.Numerics
 open Prime
 module Particles =
 
+    /// Describes the life of an instance value.
     type [<NoEquality; NoComparison; Struct>] Life =
         { LifeTime : int64
           StartTime : int64 }
+
+        /// The progress made through the instance's life.
         static member getProgress (time : int64) life =
             (single time - single life.StartTime) / single life.LifeTime
+
+        /// The liveness of the instance.
         static member getLiveness (time : int64) life =
             let localTime = time - life.StartTime
-            if life.LifeTime < localTime
-            then Running
-            else Exiting
+            if life.LifeTime < localTime then Live else Dead
 
-    type Particle =
-        abstract Life : Life with get, set
-
+    /// Describes the body of an instance value.
     type [<NoEquality; NoComparison; Struct>] Body =
         { Position : Vector2
           Velocity : Vector2
           Gravity : Vector2 }
 
+    /// The base particle type.
+    type Particle =
+
+        /// The life of the particle.
+        abstract Life : Life with get, set
+
+    /// A particle constraint.
     type [<StructuralEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Constraint =
         | Rectangle of Vector4
         | Circle of single * Vector2
@@ -39,6 +47,7 @@ module Particles =
             | (Unconstrained, _) -> constrain2
             | (_, _) -> Constraints [|constrain; constrain2|]
 
+    /// The output of a particle behavior.
     type [<NoEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Output =
         | EmitterOutput of Emitter
         | SoundOutput of single * Sound AssetTag
@@ -52,41 +61,55 @@ module Particles =
             | (NoOutput, _) -> output2
             | (_, _) -> Outputs [|output; output2|]
 
+    /// The base particle emitter type.
     and Emitter =
+
+        /// Run the emitter.
         abstract Run : int64 -> Constraint -> Liveness * Emitter * Output
 
+    /// Transforms a particle value.
     type 'a Transformer =
         single -> 'a -> struct ('a * Output)
 
     [<AutoOpen>]
     module Transformer =
 
+        /// Pipe two transformers.
         let pipe (transformer : 'a Transformer) (transformer2 : 'a Transformer) : 'a Transformer =
             fun progress a ->
                 let struct (a, output) = transformer progress a
                 let struct (a, output2) = transformer2 progress a
                 struct (a, output + output2)
 
+        /// Pipe multiple transformers.
         let pipeMany transformers =
             Seq.reduce pipe transformers
 
+    /// Scopes transformable values.
     type [<NoEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
         { In : int64 -> 'a -> struct (single * 'b)
           Out : struct ('b * Output) -> 'a -> struct ('a * Output) }
 
+    [<RequireQualifiedAccess>]
     module Scope =
 
+        /// Make a scope value.
         let inline make< ^p, ^q when ^p : struct and ^p : (member Life : Life)> (getField : ^p -> ^q) (setField : ^q -> ^p -> ^p) : Scope< ^p, ^q> =
             { In = fun time (particle : 'p) -> struct (Life.getProgress time (^p : (member Life : Life) particle), getField particle)
               Out = fun struct (field, output) (particle : 'p) -> struct (setField field particle, output) : struct ('p * Output) }
 
+    /// The base particle behavior type.
     type Behavior =
+
+        /// Run the behavior.
         abstract Run : int64 -> obj -> (obj * Output)
 
+    /// Defines a particle behavior.
     type [<NoEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
         { Scope : Scope<'a, 'b>
           Transformer : 'b Transformer }
 
+        /// Run the behavior over an array of particles.
         static member run time (behavior : Behavior<'a, 'b>) (particles : 'a array) =
             let particles2 = Array.map (behavior.Scope.In time) particles
             let particles3 = Array.map (fun struct (progress, field) -> behavior.Transformer progress field) particles2
@@ -101,21 +124,27 @@ module Particles =
                 let (particles, outputs) = Behavior<'a, 'b>.run time this (particlesObj :?> 'a array)
                 (particles :> obj, outputs)
 
+    /// A collection of behaviors.
     type [<NoEquality; NoComparison>] Behaviors =
         { Behaviors : Behavior FStack }
 
+        /// The empty behavior.
         static member empty =
             { Behaviors = FStack.empty }
 
+        /// Combine two behaviors.
         static member add behavior behaviors =
             { Behaviors = FStack.conj behavior behaviors.Behaviors }
 
+        /// Combine multiple behaviors.
         static member addMany behaviorsMany behaviors =
             { Behaviors = Seq.fold (fun behaviors behavior -> FStack.conj behavior behaviors) behaviors.Behaviors behaviorsMany }
 
+        /// Make a collection of behaviors from a sequence of behaviors.
         static member ofSeq seq =
             Behaviors.addMany seq Behaviors.empty
 
+        /// Run the behaviors over an array.
         static member run time behaviors (particles : 'a array) =
             let (particles, outputs) =
                 FStack.fold (fun (particles, output) (behavior : Behavior) ->
@@ -125,6 +154,7 @@ module Particles =
                     behaviors.Behaviors
             (particles :?> 'a array, outputs)
 
+    /// The default particle emitter.
     type [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : struct> =
         { Life : Life
           Body : Body
@@ -136,24 +166,25 @@ module Particles =
           Rate : single
           Id : Guid }
 
-        static member computeLiveness time emitter =
+        static member private computeLiveness time emitter =
             let length = emitter.Particles.Length
             let mutable index = 0
-            let mutable result = Exiting
-            while (match result with Exiting -> true | Running -> false) && index < length do
+            let mutable result = Dead
+            while (match result with Live -> false | Dead -> true) && index < length do
                 let particle = &emitter.Particles.[index]
                 match Life.getLiveness time particle.Life with
-                | Running -> result <- Running
-                | Exiting -> index <- inc index
+                | Live -> result <- Live
+                | Dead -> index <- inc index
             result
 
-        static member emit time constrain emitter =
+        static member private emit time constrain emitter =
             let particleIndex = if emitter.ParticleIndex >= emitter.Particles.Length then 0 else inc emitter.ParticleIndex
             emitter.ParticleIndex <- particleIndex
             let particle = &emitter.Particles.[particleIndex]
             particle.Life <- { LifeTime = particle.Life.LifeTime; StartTime = time }
             particle <- emitter.Initializer time constrain emitter
 
+        /// Run the emitter.
         static member run time (constrain : Constraint) (emitter : 'a Emitter) =
 
             // combine constraints
@@ -161,16 +192,16 @@ module Particles =
             
             // determine liveness
             let localTime = time - emitter.Life.StartTime
-            let liveness = if localTime < emitter.Life.LifeTime then Running else Exiting
+            let liveness = if localTime < emitter.Life.LifeTime then Live else Dead
 
             // emit new particles
             match liveness with
-            | Running ->
+            | Live ->
                 let emitCountLastFrame = single (dec localTime) * emitter.Rate
                 let emitCountThisFrame = single localTime * emitter.Rate
                 let emitCount = int emitCountThisFrame - int emitCountLastFrame
                 for _ in 0 .. dec emitCount do Emitter<'a>.emit time constrain emitter
-            | Exiting -> ()
+            | Dead -> ()
 
             // update existing particles
             let (particles, output) = Behaviors.run time emitter.Behaviors emitter.Particles
@@ -178,8 +209,8 @@ module Particles =
 
             // compute result
             match liveness with
-            | Running -> (liveness, emitter, output)
-            | Exiting -> (Emitter<'a>.computeLiveness time emitter, emitter, output)
+            | Live -> (liveness, emitter, output)
+            | Dead -> (Emitter<'a>.computeLiveness time emitter, emitter, output)
 
         interface Emitter with
             member this.Run time constrain =
@@ -187,14 +218,16 @@ module Particles =
                 (liveness, emitter :> Emitter, output)
             end
 
+    /// A particle system.
     type [<NoEquality; NoComparison>] ParticleSystem =
         { Emitters : Map<Guid, Emitter> }
 
+        /// Run the particle system.
         static member run time constrain particleSystem =
             let (emitters, output) =
                 Map.fold (fun (emitters, output) emitterId (emitter : Emitter) ->
                     let (liveness, emitter, output2) = emitter.Run time constrain
-                    let emitters = match liveness with Running -> Map.add emitterId emitter emitters | Exiting -> emitters
+                    let emitters = match liveness with Live -> Map.add emitterId emitter emitters | Dead -> emitters
                     (emitters, output + output2))
                     (Map.empty, NoOutput)
                     particleSystem.Emitters

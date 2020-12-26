@@ -567,7 +567,7 @@ module WorldModule =
                 while going && enr.MoveNext () do
                     let (_, subscription) = enr.Current
                     if  (match fst result with Cascade -> true | Resolve -> false) &&
-                        (match World.getLiveness (snd result) with Running -> true | Exiting -> false) then
+                        (match World.getLiveness (snd result) with Live -> true | Dead -> false) then
                         let mapped =
                             match subscription.MapperOpt with
                             | Some mapper -> mapper eventDataObj subscription.PreviousDataOpt (snd result)

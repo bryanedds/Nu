@@ -235,7 +235,7 @@ module WorldModule2 =
             match selectedScreen.GetTransitionState world with
             | IncomingState ->
                 match World.getLiveness world with
-                | Running ->
+                | Live ->
                     let world =
                         if selectedScreen.GetTransitionTicks world = 0L then
                             let world =
@@ -249,15 +249,15 @@ module WorldModule2 =
                             World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
                         else world
                     match World.getLiveness world with
-                    | Running ->
+                    | Live ->
                         let (finished, world) = World.updateScreenTransition3 selectedScreen (selectedScreen.GetIncoming world) world
                         if finished then
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingFinish" EventTrace.empty
                             let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
                             World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
                         else world
-                    | Exiting -> world
-                | Exiting -> world
+                    | Dead -> world
+                | Dead -> world
             | OutgoingState ->
                 let world =
                     if selectedScreen.GetTransitionTicks world = 0L then
@@ -278,17 +278,17 @@ module WorldModule2 =
                         World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
                     else world
                 match World.getLiveness world with
-                | Running ->
+                | Live ->
                     let (finished, world) = World.updateScreenTransition3 selectedScreen (selectedScreen.GetOutgoing world) world
                     if finished then
                         let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
                         match World.getLiveness world with
-                        | Running ->
+                        | Live ->
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingFinish" EventTrace.empty
                             World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
-                        | Exiting -> world
+                        | Dead -> world
                     else world
-                | Exiting -> world
+                | Dead -> world
             | IdlingState -> world
 
         static member private handleSplashScreenIdleUpdate idlingTime ticks evt world =
@@ -628,7 +628,7 @@ module WorldModule2 =
 
         static member private processIntegrationMessage integrationMessage world =
             match World.getLiveness world with
-            | Running ->
+            | Live ->
                 match integrationMessage with
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.BodyShapeSource.Simulant :?> Entity
@@ -673,7 +673,7 @@ module WorldModule2 =
                     let transformData = { BodySource = BodySource.fromInternal bodySource; Position = position; Rotation = rotation }
                     let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" EventTrace.empty
                     World.publish transformData transformAddress eventTrace Simulants.Game world
-            | Exiting -> world
+            | Dead -> world
 
         static member private getEntities3 getElementsFromTree world =
             let entityTree = World.getEntityTree world
@@ -877,14 +877,14 @@ module WorldModule2 =
 
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
-                let mutable result = (Running, world)
+                let mutable result = (Live, world)
                 let polledEvent = ref (SDL.SDL_Event ())
                 while
                     SDL.SDL_PollEvent polledEvent <> 0 &&
-                    (match fst result with Running -> true | Exiting -> false) do
+                    (match fst result with Live -> true | Dead -> false) do
                     result <- World.processInput2 !polledEvent (snd result)
                 result
-            else (Exiting, world)
+            else (Dead, world)
 
         static member private processPhysics world =
             let physicsEngine = World.getPhysicsEngine world
@@ -919,50 +919,50 @@ module WorldModule2 =
                 let world = World.preFrame world
                 PreFrameTimer.Stop ()
                 match liveness with
-                | Running ->
+                | Live ->
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
-                    | Running ->
+                    | Live ->
                         InputTimer.Start ()
                         let (liveness, world) = World.processInput world
                         InputTimer.Stop ()
                         match liveness with
-                        | Running ->
+                        | Live ->
                             PhysicsTimer.Start ()
                             let world = World.processPhysics world
                             PhysicsTimer.Stop ()
                             match World.getLiveness world with
-                            | Running ->
+                            | Live ->
                                 UpdateTimer.Start ()
                                 let world = World.updateSimulants world
                                 UpdateTimer.Stop ()
                                 match World.getLiveness world with
-                                | Running ->
+                                | Live ->
                                     PostUpdateTimer.Start ()
                                     let world = World.postUpdateSimulants world
                                     PostUpdateTimer.Stop ()
                                     match World.getLiveness world with
-                                    | Running ->
+                                    | Live ->
                                         TaskletsTimer.Start ()
                                         let world = World.processTasklets world
                                         TaskletsTimer.Stop ()
                                         match World.getLiveness world with
-                                        | Running ->
+                                        | Live ->
                                             DestructionTimer.Start ()
                                             let world = World.destroySimulants world
                                             DestructionTimer.Stop ()
                                             match World.getLiveness world with
-                                            | Running ->
+                                            | Live ->
                                                 ActualizeTimer.Start ()
                                                 let world = World.actualizeSimulants world
                                                 ActualizeTimer.Stop ()
                                                 match World.getLiveness world with
-                                                | Running ->
+                                                | Live ->
                                                     PerFrameTimer.Start ()
                                                     let world = World.perFrame world
                                                     PerFrameTimer.Stop ()
                                                     match World.getLiveness world with
-                                                    | Running ->
+                                                    | Live ->
 #if MULTITHREAD
                                                         // attempt to finish renderer thread
                                                         let world =
@@ -1036,24 +1036,24 @@ module WorldModule2 =
                                                         let world = postProcess world
                                                         PostFrameTimer.Stop ()
                                                         match World.getLiveness world with
-                                                        | Running ->
+                                                        | Live ->
     
                                                             // update counters and recur
                                                             TotalTimer.Stop ()
                                                             let world = World.updateTime world
                                                             World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
     
-                                                        | Exiting -> world
-                                                    | Exiting -> world
-                                                | Exiting -> world
-                                            | Exiting -> world
-                                        | Exiting -> world
-                                    | Exiting -> world
-                                | Exiting -> world
-                            | Exiting -> world
-                        | Exiting -> world
-                    | Exiting -> world
-                | Exiting -> world
+                                                        | Dead -> world
+                                                    | Dead -> world
+                                                | Dead -> world
+                                            | Dead -> world
+                                        | Dead -> world
+                                    | Dead -> world
+                                | Dead -> world
+                            | Dead -> world
+                        | Dead -> world
+                    | Dead -> world
+                | Dead -> world
             else world
 
         /// Run the game engine with the given handlers.
