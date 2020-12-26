@@ -28,11 +28,11 @@ module Particles =
 
     /// Describes the body of an instance value.
     type [<NoEquality; NoComparison; Struct>] Body =
-        { Position : Vector2
-          Rotation : single
-          LinearVelocity : single
-          AngularVelocity : single
-          Gravity : Vector2 }
+        { mutable Position : Vector2
+          mutable Rotation : single
+          mutable LinearVelocity : single
+          mutable AngularVelocity : single
+          mutable Gravity : Vector2 }
 
     /// The base particle type.
     type Particle =
@@ -134,27 +134,27 @@ module Particles =
                 let (particles, outputs) = Behavior<'a, 'b>.run time this (particlesObj :?> 'a array)
                 (particles :> obj, outputs)
 
-    /// A collection of behaviors.
-    type [<NoEquality; NoComparison>] Behaviors =
+    /// A composition of behaviors.
+    type [<NoEquality; NoComparison>] CompositionalBehaviors =
         { Behaviors : Behavior FStack }
 
-        /// The empty behavior.
+        /// The empty compositional behavior.
         static member empty =
             { Behaviors = FStack.empty }
 
-        /// Combine two behaviors.
+        /// Add a behavior.
         static member add behavior behaviors =
             { Behaviors = FStack.conj behavior behaviors.Behaviors }
 
-        /// Combine multiple behaviors.
+        /// Add multiple behaviors.
         static member addMany behaviorsMany behaviors =
             { Behaviors = Seq.fold (fun behaviors behavior -> FStack.conj behavior behaviors) behaviors.Behaviors behaviorsMany }
 
-        /// Make a collection of behaviors from a sequence of behaviors.
+        /// Make a compositional behavior from a sequence of behaviors.
         static member ofSeq seq =
-            Behaviors.addMany seq Behaviors.empty
+            CompositionalBehaviors.addMany seq CompositionalBehaviors.empty
 
-        /// Run the behaviors over an array.
+        /// Run the compositional behaviors over an array.
         static member run time behaviors (particles : 'a array) =
             let (particles, outputs) =
                 FStack.fold (fun (particles, output) (behavior : Behavior) ->
@@ -171,7 +171,8 @@ module Particles =
           mutable ParticleIndex : int // operates as a ring-buffer
           Particles : 'a array // operates as a ring-buffer
           Initializer : int64 -> Constraint -> 'a Emitter -> 'a
-          Behaviors : Behaviors
+          InPlaceBehavior : int64 -> Constraint -> 'a Emitter -> Output
+          CompositionalBehaviors : CompositionalBehaviors
           Constraint : Constraint
           Rate : single
           Body : Body
@@ -206,9 +207,15 @@ module Particles =
                 let emitCount = int emitCountThisFrame - int emitCountLastFrame
                 for _ in 0 .. dec emitCount do Emitter<'a>.emit time constrain emitter
 
-            // update existing particles
-            let (particles, output) = Behaviors.run time emitter.Behaviors emitter.Particles
+            // update existing particles in-place
+            let outputInPlace = emitter.InPlaceBehavior time constrain emitter
+
+            // update existing particles compositionally
+            let (particles, outputCompositional) = CompositionalBehaviors.run time emitter.CompositionalBehaviors emitter.Particles
             let emitter = { emitter with Particles = particles }
+
+            // compose output
+            let output = outputCompositional + outputInPlace
             (emitter, output)
 
         interface Emitter with
@@ -238,17 +245,15 @@ module Particles =
     /// A basic particle.
     type [<NoEquality; NoComparison; Struct>] BasicParticle =
         { mutable Life : Life
-          Bod : Body
-          Siz : Vector2
-          Off : Vector2
-          Ins : Vector4
-          Col : Color
-          Glo : Color
-          Flp : Flip }
+          mutable Body : Body
+          mutable Size : Vector2
+          mutable Offset : Vector2
+          mutable Inset : Vector4
+          mutable Color : Color
+          mutable Glow : Color
+          mutable Flip : Flip }
         interface Particle with member this.Life with get () = this.Life and set value = this.Life <- value
-        static member inline bod = Scope.make (fun pex -> pex.Bod) (fun bod pex -> { pex with Bod = bod })
-        static member inline col = Scope.make (fun pex -> pex.Col) (fun col pex -> { pex with Col = col })
-        static member inline ins = Scope.make (fun pex -> pex.Ins) (fun ins pex -> { pex with Ins = ins })
+        static member inline body = Scope.make (fun p -> p.Body) (fun v p -> { p with Body = v })
 
     /// A basic particle emitter.
     type BasicEmitter = Emitter<BasicParticle>
