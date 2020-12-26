@@ -8,19 +8,23 @@ open Prime
 module Particles =
 
     /// Describes the life of an instance value.
+    /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
+    /// OPTIMIZATION: avoids use of Liveness type to avoid its constructor calls.
     type [<NoEquality; NoComparison; Struct>] Life =
-        { LifeTime : int64
-          StartTime : int64 }
+        { StartTime : int64
+          LifeTimeOpt : int64 }
 
         /// The progress made through the instance's life.
-        static member getProgress (time : int64) life =
-            (single time - single life.StartTime) / single life.LifeTime
+        static member getProgress time life =
+            match life.LifeTimeOpt with
+            | 0L -> 1.0f
+            | lifeTime -> (single time - single life.StartTime) / single lifeTime
 
-        /// The liveness of the instance.
-        /// OPTIMIZATION: avoiding use of Liveness type to avoid its constructor calls.
-        static member getLiveness (time : int64) life =
-            let localTime = time - life.StartTime
-            life.LifeTime < localTime
+        /// The liveness of the instance as a boolean.
+        static member getLiveness time life =
+            match life.LifeTimeOpt with
+            | 0L -> true
+            | lifeTime -> lifeTime < time - life.StartTime
 
     /// Describes the body of an instance value.
     type [<NoEquality; NoComparison; Struct>] Body =
@@ -160,9 +164,8 @@ module Particles =
 
     /// The default particle emitter.
     type [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : struct> =
-        { StartTime : int64
-          LifeTimeOpt : int64 option
-          ParticleLifeTimeMax : int64
+        { Life : Life
+          ParticleLifeTimeOpt : int64 // OPTIMIZATION: uses 0L to represent infinite life.
           mutable ParticleIndex : int // operates as a ring-buffer
           Particles : 'a array // operates as a ring-buffer
           Initializer : int64 -> Constraint -> 'a Emitter -> 'a
@@ -176,35 +179,26 @@ module Particles =
             let particleIndex = if emitter.ParticleIndex >= emitter.Particles.Length then 0 else inc emitter.ParticleIndex
             emitter.ParticleIndex <- particleIndex
             let particle = &emitter.Particles.[particleIndex]
-            particle.Life <- { LifeTime = particle.Life.LifeTime; StartTime = time }
+            particle.Life <- { LifeTimeOpt = particle.Life.LifeTimeOpt; StartTime = time }
             particle <- emitter.Initializer time constrain emitter
-
-        static member private getEmitting time emitter =
-            match emitter.LifeTimeOpt with
-            | Some lifeTime ->
-                let life = { StartTime = emitter.StartTime; LifeTime = lifeTime }
-                Life.getLiveness time life
-            | None -> true
 
         /// Determine emitter's liveness.
         static member getLiveness time emitter =
-            match emitter.LifeTimeOpt with
-            | Some lifeTime ->
-                let life = { StartTime = emitter.StartTime; LifeTime = lifeTime + emitter.ParticleLifeTimeMax }
-                if Life.getLiveness time life then Live else Dead
-            | None -> Live
+            match emitter.ParticleLifeTimeOpt with
+            | 0L -> Live
+            | lifeTime -> if Life.getLiveness (time - lifeTime) emitter.Life then Live else Dead
 
         /// Run the emitter.
         static member run time (constrain : Constraint) (emitter : 'a Emitter) =
 
             // determine local time
-            let localTime = time - emitter.StartTime
+            let localTime = time - emitter.Life.StartTime
 
             // combine constraints
             let constrain = constrain + emitter.Constraint
 
             // emit new particles if live
-            if Emitter<'a>.getEmitting time emitter then
+            if Life.getLiveness time emitter.Life then
                 let emitCountLastFrame = single (dec localTime) * emitter.Rate
                 let emitCountThisFrame = single localTime * emitter.Rate
                 let emitCount = int emitCountThisFrame - int emitCountLastFrame
