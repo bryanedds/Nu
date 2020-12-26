@@ -20,6 +20,19 @@ type Font = private { __ : unit }
 /// A tile map. Currently just used as a phantom type.
 type TileMap = private { __ : unit }
 
+type [<NoEquality; NoComparison; Struct>] Flip =
+    | FlipNone
+    | FlipH
+    | FlipV
+    | FlipHV
+
+    static member toSdlFlip flip =
+        match flip with
+        | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
+        | FlipH -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
+        | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+        | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+
 type [<StructuralEquality; StructuralComparison>] JustificationH =
     | JustifyLeft
     | JustifyCenter
@@ -33,18 +46,6 @@ type [<StructuralEquality; StructuralComparison>] JustificationV =
 type [<StructuralEquality; StructuralComparison>] Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
-
-type [<StructuralEquality; StructuralComparison>] Flip =
-    | FlipNone
-    | FlipH
-    | FlipV
-    | FlipHV
-    static member toSdlFlip flip =
-        match flip with
-        | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
-        | FlipH -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
-        | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-        | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
 
 /// Describes how to render a sprite to the rendering system.
 type [<NoEquality; NoComparison>] SpriteDescriptor =
@@ -72,6 +73,18 @@ type [<NoEquality; NoComparison>] TextDescriptor =
       Font : Font AssetTag
       Color : Color
       Justification : Justification }
+
+/// Describes a basic particle.
+type [<NoEquality; NoComparison>] ParticleDescriptor =
+    { Transform : Transform
+      Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection.
+      Color : Color
+      Glow : Color }
+
+/// Describes basic particles.
+type [<NoEquality; NoComparison>] ParticlesDescriptor =
+    { Particles : ParticleDescriptor array
+      Image : Image AssetTag }
 
 /// Describes how to render something to the rendering system.
 type [<NoEquality; NoComparison>] RenderDescriptor =

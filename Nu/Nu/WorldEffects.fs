@@ -114,11 +114,11 @@ module Effects =
     type [<StructuralEquality; StructuralComparison>] Shift =
         Shift of single
 
-    type [<StructuralEquality; NoComparison>] Resource =
+    type [<NoEquality; NoComparison>] Resource =
         | Resource of string * string
         | Expand of string * Argument array
 
-    and [<StructuralEquality; NoComparison>] Aspect =
+    and [<NoEquality; NoComparison>] Aspect =
         | Enabled of bool
         | PositionAbsolute of Vector2
         | PositionRelative of Vector2
@@ -145,7 +145,7 @@ module Effects =
         | Expand of string * Argument array
         | Aspects of Aspect array
 
-    and [<StructuralEquality; NoComparison>] Content =
+    and [<NoEquality; NoComparison>] Content =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Flip * Aspect array * Content
         | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Flip * Aspect array * Content
@@ -163,7 +163,7 @@ module Effects =
     and Argument =
         SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
 
-    type [<StructuralEquality; NoComparison>] Definition =
+    type [<NoEquality; NoComparison>] Definition =
         { DefinitionParams : string array
           DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
@@ -186,7 +186,7 @@ module Effects =
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
             Constants.PrettyPrinter.CompositionalThresholdMax)>]
-type [<StructuralEquality; NoComparison>] Effect =
+type [<NoEquality; NoComparison>] Effect =
     { EffectName : string
       LifeTimeOpt : int64 option
       Definitions : Effects.Definitions
@@ -209,7 +209,7 @@ module EffectSystem =
     open Effects
 
     /// An abstract data type for executing effects.
-    type [<StructuralEquality; NoComparison>] EffectSystem =
+    type [<NoEquality; NoComparison>] EffectSystem =
         private
             { Absolute : bool
               Views : View List
