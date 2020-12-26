@@ -29,8 +29,8 @@ module Particles =
     /// Describes the body of an instance value.
     type [<NoEquality; NoComparison; Struct>] Body =
         { mutable Position : Vector2
+          mutable LinearVelocity : Vector2
           mutable Rotation : single
-          mutable LinearVelocity : single
           mutable AngularVelocity : single
           mutable Gravity : Vector2 }
 
@@ -165,21 +165,28 @@ module Particles =
             (particles :?> 'a array, outputs)
 
     /// The default particle emitter.
+    /// NOTE: ideally, this would be an abstract data type, but I feel that would discourage users from making their
+    /// own emitters - it would looks like making an emitter would require a lot of additional boilerplate as well as
+    /// making it harder to use this existing emitter as an example.
     type [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : struct> =
         { Life : Life
           ParticleLifeTimeOpt : int64 // OPTIMIZATION: uses 0L to represent infinite life.
           mutable ParticleIndex : int // operates as a ring-buffer
+          mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
           Particles : 'a array // operates as a ring-buffer
           Initializer : int64 -> Constraint -> 'a Emitter -> 'a
           InPlaceBehavior : int64 -> Constraint -> 'a Emitter -> Output
           CompositionalBehaviors : CompositionalBehaviors
+          ToParticlesDescriptor : int64 -> 'a Emitter -> ParticlesDescriptor
           Constraint : Constraint
-          Rate : single
           Body : Body
+          Image : Image AssetTag
+          Rate : single
           Id : Guid }
 
         static member private emit time constrain emitter =
             let particleIndex = if emitter.ParticleIndex >= emitter.Particles.Length then 0 else inc emitter.ParticleIndex
+            if particleIndex > emitter.ParticleWatermark then emitter.ParticleWatermark <- particleIndex
             emitter.ParticleIndex <- particleIndex
             let particle = &emitter.Particles.[particleIndex]
             particle.Life <- { LifeTimeOpt = particle.Life.LifeTimeOpt; StartTime = time }
@@ -205,7 +212,7 @@ module Particles =
                 let emitCountLastFrame = single (dec localTime) * emitter.Rate
                 let emitCountThisFrame = single localTime * emitter.Rate
                 let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                for _ in 0 .. dec emitCount do Emitter<'a>.emit time constrain emitter
+                for _ in 0 .. emitCount - 1 do Emitter<'a>.emit time constrain emitter
 
             // update existing particles in-place
             let outputInPlace = emitter.InPlaceBehavior time constrain emitter
@@ -256,4 +263,44 @@ module Particles =
         static member inline body = Scope.make (fun p -> p.Body) (fun v p -> { p with Body = v })
 
     /// A basic particle emitter.
-    type BasicEmitter = Emitter<BasicParticle>
+    type BasicEmitter =
+        Emitter<BasicParticle>
+
+    [<RequireQualifiedAccess>]
+    module BasicEmitter =
+
+        let private toParticlesDescriptor (_ : int64) (emitter : BasicEmitter) =
+            let particles =
+                Array.append
+                    (if emitter.ParticleWatermark > emitter.ParticleIndex then Array.skip emitter.ParticleIndex emitter.Particles else [||])
+                    (Array.take emitter.ParticleIndex emitter.Particles)
+            let descriptors =
+                Array.zeroCreate<ParticleDescriptor> particles.Length
+            for index in 0 .. descriptors.Length - 1 do
+                let particle = &particles.[index]
+                let descriptor = &descriptors.[index]
+                descriptor.Transform.Position <- particle.Body.Position
+                descriptor.Transform.Rotation <- particle.Body.Rotation
+                descriptor.Transform.Size <- particle.Size
+                descriptor.Color <- particle.Color
+                descriptor.Glow <- particle.Glow
+                descriptor.Offset <- particle.Offset
+                descriptor.Inset <- particle.Inset
+                descriptor.Flip <- particle.Flip
+            { Particles = descriptors; Image = emitter.Image }
+
+        let make time lifeTimeOpt particleLifeTimeOpt particleMax initializer inPlaceBehavior behaviors constrain image rate =
+            { Life = { StartTime = time; LifeTimeOpt = lifeTimeOpt }
+              ParticleLifeTimeOpt = particleLifeTimeOpt
+              ParticleIndex = 0
+              ParticleWatermark = 0
+              Particles = Array.zeroCreate particleMax
+              Initializer = initializer
+              InPlaceBehavior = inPlaceBehavior
+              CompositionalBehaviors = behaviors
+              ToParticlesDescriptor = toParticlesDescriptor
+              Constraint = constrain
+              Body = { Position = v2Zero; LinearVelocity = v2Zero; Rotation = 0.0f; AngularVelocity = 0.0f; Gravity = v2 0.0f -9.81f }
+              Image = image
+              Rate = rate
+              Id = Gen.id }

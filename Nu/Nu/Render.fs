@@ -75,11 +75,14 @@ type [<NoEquality; NoComparison>] TextDescriptor =
       Justification : Justification }
 
 /// Describes a basic particle.
+/// OPTIMIZATION: mutable for speed.
 type [<NoEquality; NoComparison>] ParticleDescriptor =
-    { Transform : Transform
-      Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection.
-      Color : Color
-      Glow : Color }
+    { mutable Transform : Transform
+      mutable Offset : Vector2
+      mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection.
+      mutable Color : Color
+      mutable Glow : Color
+      mutable Flip : Flip }
 
 /// Describes basic particles.
 type [<NoEquality; NoComparison>] ParticlesDescriptor =
