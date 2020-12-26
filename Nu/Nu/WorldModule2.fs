@@ -224,10 +224,10 @@ module WorldModule2 =
 
         static member private updateScreenTransition3 (screen : Screen) transition world =
             let transitionTicks = screen.GetTransitionTicks world
-            if transitionTicks = transition.TransitionLifetime then
+            if transitionTicks = transition.TransitionLifeTime then
                 (true, screen.SetTransitionTicks 0L world)
-            elif transitionTicks > transition.TransitionLifetime then
-                Log.debug ("TransitionLifetime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
+            elif transitionTicks > transition.TransitionLifeTime then
+                Log.debug ("TransitionLifeTime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
                 (true, screen.SetTransitionTicks 0L world)
             else (false, screen.SetTransitionTicks (transitionTicks + World.getTickRate world) world)
 
@@ -814,7 +814,7 @@ module WorldModule2 =
         static member private actualizeScreenTransition5 (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
             match transition.DissolveImageOpt with
             | Some dissolveImage ->
-                let progress = single (screen.GetTransitionTicks world) / single transition.TransitionLifetime
+                let progress = single (screen.GetTransitionTicks world) / single transition.TransitionLifeTime
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Color.White.WithA (byte (alpha * 255.0f))
                 let position = -eyeSize * 0.5f // negation for right-handedness

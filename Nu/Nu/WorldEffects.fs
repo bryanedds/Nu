@@ -188,7 +188,7 @@ module Effects =
             Constants.PrettyPrinter.CompositionalThresholdMax)>]
 type [<StructuralEquality; NoComparison>] Effect =
     { EffectName : string
-      LifetimeOpt : int64 option
+      LifeTimeOpt : int64 option
       Definitions : Effects.Definitions
       Content : Effects.Content }
 
@@ -198,7 +198,7 @@ module Effect =
     /// The empty effect.
     let empty =
         { EffectName = Constants.Engine.EffectNameDefault
-          LifetimeOpt = None
+          LifeTimeOpt = None
           Definitions = Map.empty
           Content = Effects.Contents (Effects.Shift 0.0f, [||]) }
 
@@ -773,7 +773,7 @@ module EffectSystem =
 
     let eval effect slice history effectSystem =
         let alive =
-            match effect.LifetimeOpt with
+            match effect.LifeTimeOpt with
             | Some lifetime -> lifetime <= 0L || effectSystem.EffectTime <= lifetime
             | None -> true
         if alive then
@@ -790,7 +790,7 @@ module EffectSystem =
     let combineEffects effects =
         let effectCombined =
             { EffectName = String.concat "+" (List.map (fun effect -> effect.EffectName) effects)
-              LifetimeOpt = None
+              LifeTimeOpt = None
               Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
               Content = Contents (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
         effectCombined

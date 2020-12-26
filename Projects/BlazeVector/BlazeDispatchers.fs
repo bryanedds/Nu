@@ -17,14 +17,14 @@ module BulletModule =
     type BulletDispatcher () =
         inherit EntityDispatcher ()
 
-        static let [<Literal>] BulletLifetime =
+        static let [<Literal>] BulletLifeTime =
             27L
 
         static let handleUpdate evt world =
             let bullet = evt.Subscriber : Entity
             let world = bullet.SetAge (inc (bullet.GetAge world)) world
             let world =
-                if bullet.GetAge world > BulletLifetime
+                if bullet.GetAge world > BulletLifeTime
                 then World.destroyEntity bullet world
                 else world
             (Cascade, world)

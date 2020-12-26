@@ -168,8 +168,8 @@ module Particles =
           Initializer : int64 -> Constraint -> 'a Emitter -> 'a
           Behaviors : Behaviors
           Constraint : Constraint
-          Body : Body
           Rate : single
+          Body : Body
           Id : Guid }
 
         static member private emit time constrain emitter =
