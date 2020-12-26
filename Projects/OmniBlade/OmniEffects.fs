@@ -46,7 +46,7 @@ module Effects =
         let colorTransparent =
             colorOpaque.WithA (byte 0)
         { EffectName = "HitPointsChange"
-          LifetimeOpt = Some 80L
+          LifeTimeOpt = Some 80L
           Definitions = Map.empty
           Content =
             TextSprite
@@ -67,7 +67,7 @@ module Effects =
 
     let makeCancelEffect () =
         { EffectName = "Cancel"
-          LifetimeOpt = Some 40L
+          LifeTimeOpt = Some 40L
           Definitions = Map.empty
           Content =
             StaticSprite
@@ -120,7 +120,7 @@ module Effects =
                  [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
                  Nil)
         { EffectName = "Bolt"
-          LifetimeOpt = Some 80L
+          LifeTimeOpt = Some 80L
           Definitions = Map.empty
           Content =
             Contents
@@ -131,7 +131,7 @@ module Effects =
 
     let makeImpactSplashEffect () =
         { EffectName = "ImpactSplash"
-          LifetimeOpt = Some 24L
+          LifeTimeOpt = Some 24L
           Definitions = Map.empty
           Content =
             Contents
@@ -157,13 +157,13 @@ module Effects =
                  [|Size (v2 96.0f 96.0f)|],
                  spike)
         { EffectName = "SlashSpike"
-          LifetimeOpt = Some 75L
+          LifeTimeOpt = Some 75L
           Definitions = Map.empty
           Content = emit }
 
     let makeCycloneBlurEffect radius =
         { EffectName = "CycloneBlur"
-          LifetimeOpt = Some 100L
+          LifeTimeOpt = Some 100L
           Definitions = Map.empty
           Content =
               AnimatedSprite
@@ -174,12 +174,12 @@ module Effects =
 
     let makeHopEffect start stop =
         { EffectName = "Hop"
-          LifetimeOpt = Some 20L
+          LifeTimeOpt = Some 20L
           Definitions = Map.empty
           Content = Tag ("Tag", [|Hop (start, stop, 24.0f, 15L, 5L)|], Nil) }
 
     let makeCircleEffect radius =
         { EffectName = "Circle"
-          LifetimeOpt = Some 100L
+          LifeTimeOpt = Some 100L
           Definitions = Map.empty
           Content = Tag ("Tag", [|Circle (radius, 2.0f, 100L)|], Nil) }

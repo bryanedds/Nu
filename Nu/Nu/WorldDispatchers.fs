@@ -294,7 +294,7 @@ module EffectFacetModule =
 
         override this.Update (entity, world) =
             let effect = entity.GetEffect world
-            match (entity.GetSelfDestruct world, effect.LifetimeOpt) with
+            match (entity.GetSelfDestruct world, effect.LifeTimeOpt) with
             | (true, Some lifetime) ->
                 let effectTime = entity.GetEffectTime world
                 if effectTime >= dec lifetime // NOTE: dec keeps effect from actualizing past the last frame when it is created mid-frame

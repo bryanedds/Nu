@@ -60,14 +60,14 @@ type TransitionState =
 /// Describes one of a screen's transition processes.
 type [<NoEquality; NoComparison; CLIMutable>] Transition =
     { TransitionType : TransitionType
-      TransitionLifetime : int64
+      TransitionLifeTime : int64
       DissolveImageOpt : Image AssetTag option
       SongOpt : SongDescriptor option }
 
     /// Make a screen transition.
     static member make transitionType =
         { TransitionType = transitionType
-          TransitionLifetime = 0L
+          TransitionLifeTime = 0L
           DissolveImageOpt = None
           SongOpt = None }
 
