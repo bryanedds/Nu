@@ -41,8 +41,9 @@ type [<ReferenceEquality; NoComparison>] PlayerContinuity =
 
 type [<NoComparison>] Move =
     | Step of Direction
-    | Attack of Reactor
     | Travel of NavigationNode list
+    | Attack of Reactor
+    | Shoot of Reactor
 
     member this.TruncatePath =
         match this with
@@ -293,7 +294,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let move = Gameplay.getCharacterMove index gameplay
         match move with
         | Step direction -> Gameplay.applyStep index direction gameplay
-        | Attack reactor -> Gameplay.applyAttack index reactor gameplay
         | Travel path ->
             match path with
             | head :: _ ->
@@ -301,6 +301,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 let direction = Math.directionToTarget currentCoordinates head.Coordinates
                 Gameplay.applyStep index direction gameplay
             | [] -> failwithumf ()
+        | Attack reactor -> Gameplay.applyAttack index reactor gameplay
+        | Shoot reactor -> failwithumf ()
     
     static member activateCharacter time index gameplay =
         let move = Gameplay.getCharacterMove index gameplay
@@ -308,15 +310,17 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let turn =
             match move with
             | Step direction -> Turn.makeWalk time index false coordinates direction
+            | Travel path ->
+                let direction = Math.directionToTarget coordinates path.Head.Coordinates
+                Turn.makeWalk time index true coordinates direction
             | Attack reactor ->
                 let direction =
                     match reactor with
                     | ReactingCharacter reactorIndex -> Gameplay.getCoordinates reactorIndex gameplay |> Math.directionToTarget coordinates
                     | ReactingProp reactorCoordinates -> Math.directionToTarget coordinates reactorCoordinates
                 Turn.makeAttack time index reactor coordinates direction
-            | Travel path ->
-                let direction = Math.directionToTarget coordinates path.Head.Coordinates
-                Turn.makeWalk time index true coordinates direction
+            | Shoot reactor -> failwithumf ()
+            
         Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay
 
     static member advanceTime gameplay =
