@@ -8,6 +8,7 @@ open InfinityRpg
 
 type InputMode =
     | NormalInputMode
+    | SelectionInputMode
     | DisabledInputMode
 
     member this.NotNormalInput =
