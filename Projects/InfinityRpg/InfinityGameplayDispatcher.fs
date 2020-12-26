@@ -29,6 +29,7 @@ module GameplayDispatcher =
         | HaltPlayer
         | TransitionMap of Direction
         | HandleMapChange of PlayerInput
+        | HandleSelectionInput of PlayerInput
         | Initialize
         | Update
 
@@ -241,6 +242,13 @@ module GameplayDispatcher =
                     | _ -> TryMakePlayerMove playerInput
                 withMsg msg gameplay
             
+            | HandleSelectionInput playerInput ->
+                match playerInput with
+                | TouchInput touchPosition ->
+                    let targetCoordinates = World.mouseToWorld false touchPosition world |> vftovc
+                    just gameplay
+                | _ -> just gameplay
+            
             | Initialize ->
                 if gameplay.ShallLoadGame && File.Exists Assets.Global.SaveFilePath then
                     let gameplayStr = File.ReadAllText Assets.Global.SaveFilePath
@@ -292,6 +300,7 @@ module GameplayDispatcher =
                             | TurnSkipInput -> SkipPlayerTurn
                             | _ -> HandleMapChange playerInput
                         withMsg msg world
+                    | SelectionInputMode -> withMsg (HandleSelectionInput playerInput) world
                     | DisabledInputMode -> just world
                 else just world
 
