@@ -17,9 +17,10 @@ module Particles =
             (single time - single life.StartTime) / single life.LifeTime
 
         /// The liveness of the instance.
+        /// OPTIMIZATION: avoiding use of Liveness type to avoid its constructor calls.
         static member getLiveness (time : int64) life =
             let localTime = time - life.StartTime
-            if life.LifeTime < localTime then Live else Dead
+            life.LifeTime < localTime
 
     /// Describes the body of an instance value.
     type [<NoEquality; NoComparison; Struct>] Body =
@@ -42,7 +43,7 @@ module Particles =
 
         static member (+) (constrain, constrain2) =
             match (constrain, constrain2) with
-            | (Unconstrained, Unconstrained) -> Unconstrained
+            | (Unconstrained, Unconstrained) -> constrain // OPTIMIZATION: elide Constraint ctor
             | (_, Unconstrained) -> constrain
             | (Unconstrained, _) -> constrain2
             | (_, _) -> Constraints [|constrain; constrain2|]
@@ -56,7 +57,7 @@ module Particles =
 
         static member (+) (output, output2) =
             match (output, output2) with
-            | (NoOutput, NoOutput) -> NoOutput
+            | (NoOutput, NoOutput) -> output // OPTIMIZATION: elide Output ctor
             | (_, NoOutput) -> output
             | (NoOutput, _) -> output2
             | (_, _) -> Outputs [|output; output2|]
@@ -64,8 +65,11 @@ module Particles =
     /// The base particle emitter type.
     and Emitter =
 
+        /// Determine liveness of emitter.
+        abstract GetLiveness : int64 -> Liveness
+
         /// Run the emitter.
-        abstract Run : int64 -> Constraint -> Liveness * Emitter * Output
+        abstract Run : int64 -> Constraint -> Emitter * Output
 
     /// Transforms a particle value.
     type 'a Transformer =
@@ -93,7 +97,7 @@ module Particles =
     [<RequireQualifiedAccess>]
     module Scope =
 
-        /// Make a scope value.
+        /// Make a scope.
         let inline make< ^p, ^q when ^p : struct and ^p : (member Life : Life)> (getField : ^p -> ^q) (setField : ^q -> ^p -> ^p) : Scope< ^p, ^q> =
             { In = fun time (particle : 'p) -> struct (Life.getProgress time (^p : (member Life : Life) particle), getField particle)
               Out = fun struct (field, output) (particle : 'p) -> struct (setField field particle, output) : struct ('p * Output) }
@@ -156,26 +160,17 @@ module Particles =
 
     /// The default particle emitter.
     type [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : struct> =
-        { Life : Life
-          Body : Body
+        { StartTime : int64
+          LifeTimeOpt : int64 option
+          ParticleLifeTimeMax : int64
           mutable ParticleIndex : int // operates as a ring-buffer
           Particles : 'a array // operates as a ring-buffer
           Initializer : int64 -> Constraint -> 'a Emitter -> 'a
           Behaviors : Behaviors
           Constraint : Constraint
+          Body : Body
           Rate : single
           Id : Guid }
-
-        static member private computeLiveness time emitter =
-            let length = emitter.Particles.Length
-            let mutable index = 0
-            let mutable result = Dead
-            while (match result with Live -> false | Dead -> true) && index < length do
-                let particle = &emitter.Particles.[index]
-                match Life.getLiveness time particle.Life with
-                | Live -> result <- Live
-                | Dead -> index <- inc index
-            result
 
         static member private emit time constrain emitter =
             let particleIndex = if emitter.ParticleIndex >= emitter.Particles.Length then 0 else inc emitter.ParticleIndex
@@ -184,38 +179,48 @@ module Particles =
             particle.Life <- { LifeTime = particle.Life.LifeTime; StartTime = time }
             particle <- emitter.Initializer time constrain emitter
 
+        static member private getEmitting time emitter =
+            match emitter.LifeTimeOpt with
+            | Some lifeTime ->
+                let life = { StartTime = emitter.StartTime; LifeTime = lifeTime }
+                Life.getLiveness time life
+            | None -> true
+
+        /// Determine emitter's liveness.
+        static member getLiveness time emitter =
+            match emitter.LifeTimeOpt with
+            | Some lifeTime ->
+                let life = { StartTime = emitter.StartTime; LifeTime = lifeTime + emitter.ParticleLifeTimeMax }
+                if Life.getLiveness time life then Live else Dead
+            | None -> Live
+
         /// Run the emitter.
         static member run time (constrain : Constraint) (emitter : 'a Emitter) =
 
+            // determine local time
+            let localTime = time - emitter.StartTime
+
             // combine constraints
             let constrain = constrain + emitter.Constraint
-            
-            // determine liveness
-            let localTime = time - emitter.Life.StartTime
-            let liveness = if localTime < emitter.Life.LifeTime then Live else Dead
 
-            // emit new particles
-            match liveness with
-            | Live ->
+            // emit new particles if live
+            if Emitter<'a>.getEmitting time emitter then
                 let emitCountLastFrame = single (dec localTime) * emitter.Rate
                 let emitCountThisFrame = single localTime * emitter.Rate
                 let emitCount = int emitCountThisFrame - int emitCountLastFrame
                 for _ in 0 .. dec emitCount do Emitter<'a>.emit time constrain emitter
-            | Dead -> ()
 
             // update existing particles
             let (particles, output) = Behaviors.run time emitter.Behaviors emitter.Particles
             let emitter = { emitter with Particles = particles }
-
-            // compute result
-            match liveness with
-            | Live -> (liveness, emitter, output)
-            | Dead -> (Emitter<'a>.computeLiveness time emitter, emitter, output)
+            (emitter, output)
 
         interface Emitter with
+            member this.GetLiveness time =
+                Emitter<'a>.getLiveness time this
             member this.Run time constrain =
-                let (liveness, emitter, output) = Emitter<'a>.run time constrain this
-                (liveness, emitter :> Emitter, output)
+                let (emitter, output) = Emitter<'a>.run time constrain this
+                (emitter :> Emitter, output)
             end
 
     /// A particle system.
@@ -226,8 +231,8 @@ module Particles =
         static member run time constrain particleSystem =
             let (emitters, output) =
                 Map.fold (fun (emitters, output) emitterId (emitter : Emitter) ->
-                    let (liveness, emitter, output2) = emitter.Run time constrain
-                    let emitters = match liveness with Live -> Map.add emitterId emitter emitters | Dead -> emitters
+                    let (emitter, output2) = emitter.Run time constrain
+                    let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
                     (emitters, output + output2))
                     (Map.empty, NoOutput)
                     particleSystem.Emitters
