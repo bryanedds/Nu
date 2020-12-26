@@ -9,7 +9,7 @@ module Particles =
 
     /// Describes the life of an instance value.
     /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
-    /// OPTIMIZATION: avoids use of Liveness type to avoid its constructor calls.
+    /// OPTIMIZATION: doesn't use Liveness type to avoid its constructor calls.
     type [<NoEquality; NoComparison; Struct>] Life =
         { StartTime : int64
           LifeTimeOpt : int64 }
@@ -76,6 +76,9 @@ module Particles =
 
         /// Run the emitter.
         abstract Run : int64 -> Constraint -> Emitter * Output
+
+        /// Convert the emitted particles to a ParticlesDescriptor.
+        abstract ToParticlesDescriptor : int64 -> ParticlesDescriptor
 
     /// Transforms a particle value.
     type 'a Transformer =
@@ -170,7 +173,7 @@ module Particles =
     /// making it harder to use this existing emitter as an example.
     type [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : struct> =
         { Life : Life
-          ParticleLifeTimeOpt : int64 // OPTIMIZATION: uses 0L to represent infinite life.
+          ParticleLifeTimeOpt : int64 // OPTIMIZATION: uses 0L to represent infinite particle life.
           mutable ParticleIndex : int // operates as a ring-buffer
           mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
           Particles : 'a array // operates as a ring-buffer
@@ -231,6 +234,8 @@ module Particles =
             member this.Run time constrain =
                 let (emitter, output) = Emitter<'a>.run time constrain this
                 (emitter :> Emitter, output)
+            member this.ToParticlesDescriptor time =
+                this.ToParticlesDescriptor time this
             end
 
     /// A particle system.
