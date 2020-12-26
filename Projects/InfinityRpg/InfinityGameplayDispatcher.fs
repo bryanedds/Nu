@@ -63,7 +63,7 @@ module GameplayDispatcher =
                     match characterTurn.TurnStatus with
                     | TurnFinishing ->
                         match characterTurn.TurnType with
-                        | AttackTurn ->
+                        | AttackTurn _ ->
                             let gameplay = Gameplay.finishMove index gameplay
                             match characterTurn.GetReactor with
                             | ReactingCharacter reactorIndex ->
@@ -90,7 +90,7 @@ module GameplayDispatcher =
                     | TurnTicking ->
                         let tickCount = gameplay.Time - characterTurn.StartTick
                         match characterTurn.TurnType with
-                        | AttackTurn ->
+                        | AttackTurn _ ->
                             if tickCount = Constants.InfinityRpg.ActionTicksMax
                             then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                             else gameplay
@@ -245,12 +245,14 @@ module GameplayDispatcher =
             | HandleSelectionInput playerInput ->
                 match playerInput with
                 | TouchInput touchPosition ->
+                    let gameplay = Gameplay.updateInputMode (constant NormalInputMode) gameplay
                     let targetCoordinates = World.mouseToWorld false touchPosition world |> vftovc
                     if Chessboard.spaceExists targetCoordinates gameplay.Chessboard then
                         if Chessboard.enemyAtCoordinates targetCoordinates gameplay.Chessboard then
-                            just gameplay
-                        else just <| Gameplay.updateInputMode (constant NormalInputMode) gameplay
-                    else just <| Gameplay.updateInputMode (constant NormalInputMode) gameplay 
+                            let enemy = Chessboard.getCharacterAtCoordinates targetCoordinates gameplay.Chessboard
+                            withMsg MakeEnemyMoves <| Gameplay.makeMove gameplay.Time PlayerIndex (Shoot (ReactingCharacter enemy.CharacterIndex)) gameplay
+                        else just gameplay
+                    else just gameplay 
                 | _ -> just gameplay
             
             | Initialize ->
@@ -281,15 +283,24 @@ module GameplayDispatcher =
                     match Puppeteer.tryGetCharacterTurn PlayerIndex gameplay.Puppeteer with
                     | Some turn ->
                         match turn.TurnType with
-                        | AttackTurn ->
+                        | AttackTurn magicMissile ->
                             if turn.StartTick = gameplay.Time then
-                                let effect = Effects.makeSwordStrikeEffect turn.Direction
-                                let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Scene world
-                                let world = entity.SetEffect effect world
-                                let world = entity.SetSize (v2Dup 144.0f) world
-                                let world = entity.SetPosition ((vctovf turn.OriginCoordinates) - Constants.Layout.TileSize) world
-                                let world = entity.SetElevation Constants.Layout.EffectElevation world
-                                entity.SetSelfDestruct true world
+                                if magicMissile then
+                                    let effect = Effects.makeMagicMissileImpactEffect
+                                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Scene world
+                                    let world = entity.SetEffect effect world
+                                    let world = entity.SetSize Constants.Layout.TileSize world
+                                    let world = entity.SetPosition (vctovf (Chessboard.getCharacterCoordinates turn.GetReactingCharacterIndex gameplay.Chessboard)) world
+                                    let world = entity.SetElevation Constants.Layout.EffectElevation world
+                                    entity.SetSelfDestruct true world
+                                else
+                                    let effect = Effects.makeSwordStrikeEffect turn.Direction
+                                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Scene world
+                                    let world = entity.SetEffect effect world
+                                    let world = entity.SetSize (v2Dup 144.0f) world
+                                    let world = entity.SetPosition ((vctovf turn.OriginCoordinates) - Constants.Layout.TileSize) world
+                                    let world = entity.SetElevation Constants.Layout.EffectElevation world
+                                    entity.SetSelfDestruct true world
                             else world
                         | _ -> world
                     | None -> world

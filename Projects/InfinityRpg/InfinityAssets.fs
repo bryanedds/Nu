@@ -31,5 +31,6 @@ module Assets =
         let OakSwordStrikeRight = asset<Image> PackageName "OakSwordStrikeRight"
         let OakSwordStrikeDown = asset<Image> PackageName "OakSwordStrikeDown"
         let OakSwordStrikeLeft = asset<Image> PackageName "OakSwordStrikeLeft"
+        let MagicMissileImpact = asset<Image> PackageName "MagicMissileImpact"
         let FieldTileSheetImage = asset<Image> PackageName "FieldTileSheet"
         let HerosVengeanceSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Hero'sVengeance" }

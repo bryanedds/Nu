@@ -15,11 +15,16 @@ type [<ReferenceEquality; NoComparison>] PuppetState =
 
 type [<ReferenceEquality; NoComparison>] TurnType =
     | WalkTurn of bool
-    | AttackTurn
+    | AttackTurn of bool
 
     member this.IsWalking =
         match this with
         | WalkTurn _ -> true
+        | _ -> false
+
+    member this.IsAttacking =
+        match this with
+        | AttackTurn _ -> true
         | _ -> false
 
 type [<ReferenceEquality; NoComparison>] TurnStatus =
@@ -45,6 +50,11 @@ type [<ReferenceEquality; NoComparison>] Turn =
         | Some reactor -> reactor
         | None -> failwithumf ()
     
+    member this.GetReactingCharacterIndex =
+        match this.GetReactor with
+        | ReactingCharacter characterIndex -> characterIndex
+        | _ -> failwithumf ()
+    
     static member hasParticularReactor reactorIndex turn =
         match turn.ReactorOpt with
         | Some reactor ->
@@ -69,10 +79,10 @@ type [<ReferenceEquality; NoComparison>] Turn =
     static member toCharacterAnimationState turn =
         let animationType =
             match turn.TurnType with
-            | AttackTurn ->
+            | AttackTurn magicMissile ->
                 match turn.TurnStatus with
                 | TurnBeginning
-                | TurnTicking -> CharacterAnimationActing
+                | TurnTicking -> if magicMissile then CharacterAnimationSpecial else CharacterAnimationActing
                 | _ -> CharacterAnimationFacing
             | WalkTurn _ -> CharacterAnimationFacing
         CharacterAnimationState.make turn.StartTick animationType turn.Direction
@@ -92,8 +102,8 @@ type [<ReferenceEquality; NoComparison>] Turn =
           Direction = direction
           StartTick = time }
 
-    static member makeAttack time index reactor originC direction =
-        { TurnType = AttackTurn
+    static member makeAttack time index magicMissile reactor originC direction  =
+        { TurnType = AttackTurn magicMissile
           TurnStatus = TurnBeginning
           Actor = index
           ReactorOpt = Some reactor
@@ -115,7 +125,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
         List.tryFind (Turn.hasParticularReactor index) puppeteer.CharacterTurns
     
     static member tryGetAttackingEnemyTurn puppeteer =
-        List.tryFind (fun x -> x.Actor.IsEnemy && x.TurnType = AttackTurn) puppeteer.CharacterTurns
+        List.tryFind (fun x -> x.Actor.IsEnemy && x.TurnType.IsAttacking) puppeteer.CharacterTurns
     
     static member getCharacterTurn index puppeteer =
         List.find (fun x -> x.Actor = index) puppeteer.CharacterTurns
