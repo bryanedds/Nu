@@ -1204,6 +1204,14 @@ module WorldTypes =
         abstract MakeEcs : unit -> World Ecs
         default this.MakeEcs () = Ecs<World> ()
 
+        /// Attempt to make an emitter of the given name.
+        abstract TryMakeEmitter : int64 -> string -> Particles.Emitter option
+        default this.TryMakeEmitter time emitterName =
+            match emitterName with
+            | "BasicEmitter" -> time |> Particles.BasicEmitter.makeEmpty :> Particles.Emitter |> Some
+            // TODO: P1: more out-of-box emitters.
+            | _ -> None
+
         /// A call-back at the beginning of each frame.
         abstract PreFrame : World -> World
         default this.PreFrame world = world
