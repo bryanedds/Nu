@@ -180,6 +180,21 @@ module Particles =
     type InPlaceBehavior<'a when 'a :> Particle and 'a : struct> =
         int64 -> Constraint -> 'a Emitter -> Output
 
+    /// Defines an emitter.
+    and [<NoEquality; NoComparison>] EmitterDefinition<'a when 'a :> Particle and 'a : struct> =
+        { LifeTimeOpt : single
+          Body : Body
+          Image : Image AssetTag
+          ParticleRate : single
+          ParticleLifeTimeOpt : int64
+          ParticleMax : int
+          ParticleSeed : 'a
+          Constraint : Constraint }
+
+    /// Defines a map of basic emitters.
+    and EmitterDefinitions<'a when 'a :> Particle and 'a : struct> =
+        Map<string, 'a EmitterDefinition>
+
     /// The default particle emitter.
     /// NOTE: ideally, this would be an abstract data type, but I feel that would discourage users from making their
     /// own emitters - it would looks like making an emitter would require a lot of additional boilerplate as well as
@@ -189,21 +204,22 @@ module Particles =
           ParticleLifeTimeOpt : int64 // OPTIMIZATION: uses 0L to represent infinite particle life.
           Body : Body
           Image : Image AssetTag
-          EmissionRate : single
-          mutable ParticleIndex : int // operates as a ring-buffer
+          ParticleRate : single
+          mutable ParticleIndex : int // the current particle buffer insertion point
           mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
-          Particles : 'a array // operates as a ring-buffer
+          ParticleBuffer : 'a array // operates as a ring-buffer
+          ParticleSeed : 'a
+          Constraint : Constraint
           Initializer : int64 -> Constraint -> 'a Emitter -> 'a
           InPlaceBehavior : 'a InPlaceBehavior
           CompositionalBehaviors : Behaviors
-          ToParticlesDescriptor : int64 -> 'a Emitter -> ParticlesDescriptor
-          Constraint : Constraint }
+          ToParticlesDescriptor : int64 -> 'a Emitter -> ParticlesDescriptor }
 
         static member private emit time constrain emitter =
-            let particleIndex = if emitter.ParticleIndex >= emitter.Particles.Length then 0 else inc emitter.ParticleIndex
+            let particleIndex = if emitter.ParticleIndex >= emitter.ParticleBuffer.Length then 0 else inc emitter.ParticleIndex
             if particleIndex > emitter.ParticleWatermark then emitter.ParticleWatermark <- particleIndex
             emitter.ParticleIndex <- particleIndex
-            let particle = &emitter.Particles.[particleIndex]
+            let particle = &emitter.ParticleBuffer.[particleIndex]
             particle.Life <- { LifeTimeOpt = particle.Life.LifeTimeOpt; StartTime = time }
             particle <- emitter.Initializer time constrain emitter
 
@@ -224,8 +240,8 @@ module Particles =
 
             // emit new particles if live
             if Life.getLiveness time emitter.Life then
-                let emitCountLastFrame = single (dec localTime) * emitter.EmissionRate
-                let emitCountThisFrame = single localTime * emitter.EmissionRate
+                let emitCountLastFrame = single (dec localTime) * emitter.ParticleRate
+                let emitCountThisFrame = single localTime * emitter.ParticleRate
                 let emitCount = int emitCountThisFrame - int emitCountLastFrame
                 for _ in 0 .. emitCount - 1 do Emitter<'a>.emit time constrain emitter
 
@@ -233,8 +249,8 @@ module Particles =
             let outputInPlace = emitter.InPlaceBehavior time constrain emitter
 
             // update existing particles compositionally
-            let (particles, outputCompositional) = Behaviors.run time emitter.CompositionalBehaviors constrain emitter.Particles
-            let emitter = { emitter with Particles = particles }
+            let (particleBuffer, outputCompositional) = Behaviors.run time emitter.CompositionalBehaviors constrain emitter.ParticleBuffer
+            let emitter = { emitter with ParticleBuffer = particleBuffer }
 
             // compose output
             let output = outputCompositional + outputInPlace
@@ -252,7 +268,7 @@ module Particles =
 
     /// A particle system.
     type [<NoEquality; NoComparison>] ParticleSystem =
-        { Emitters : Map<Guid, Emitter> }
+        { Emitters : Map<string, Emitter> }
 
         /// Run the particle system.
         static member run time constrain particleSystem =
@@ -285,6 +301,14 @@ module Particles =
         static member inline glow = Scope.make (fun p -> p.Glow) (fun v p -> { p with Glow = v })
         static member inline flip = Scope.make (fun p -> p.Flip) (fun v p -> { p with Flip = v })
 
+    /// Defines a basic emitter.
+    type BasicEmitterDefinition =
+        BasicParticle EmitterDefinition
+
+    /// Defines a map of basic emitters.
+    type BasicEmitterDefinitions =
+        BasicParticle EmitterDefinitions
+
     /// A basic particle emitter.
     type BasicEmitter =
         Emitter<BasicParticle>
@@ -295,8 +319,8 @@ module Particles =
         let private toParticlesDescriptor (_ : int64) (emitter : BasicEmitter) =
             let particles =
                 Array.append
-                    (if emitter.ParticleWatermark > emitter.ParticleIndex then Array.skip emitter.ParticleIndex emitter.Particles else [||])
-                    (Array.take emitter.ParticleIndex emitter.Particles)
+                    (if emitter.ParticleWatermark > emitter.ParticleIndex then Array.skip emitter.ParticleIndex emitter.ParticleBuffer else [||])
+                    (Array.take emitter.ParticleIndex emitter.ParticleBuffer)
             let descriptors =
                 Array.zeroCreate<ParticleDescriptor> particles.Length
             for index in 0 .. descriptors.Length - 1 do
@@ -313,17 +337,18 @@ module Particles =
             { Particles = descriptors; Image = emitter.Image }
 
         /// Make a basic particle emitter.
-        let make time lifeTimeOpt body image emissionRate particleLifeTimeOpt particleMax initializer inPlaceBehavior behaviors constrain =
+        let make time lifeTimeOpt body image particleRate particleLifeTimeOpt particleMax particleSeed constrain initializer inPlaceBehavior behaviors =
             { Life = { StartTime = time; LifeTimeOpt = lifeTimeOpt }
               ParticleLifeTimeOpt = particleLifeTimeOpt
               Body = body
               Image = image
-              EmissionRate = emissionRate
+              ParticleRate = particleRate
               ParticleIndex = 0
               ParticleWatermark = 0
-              Particles = Array.zeroCreate particleMax
+              ParticleBuffer = Array.zeroCreate particleMax
+              ParticleSeed = particleSeed
+              Constraint = constrain
               Initializer = initializer
               InPlaceBehavior = inPlaceBehavior
               CompositionalBehaviors = behaviors
-              ToParticlesDescriptor = toParticlesDescriptor
-              Constraint = constrain }
+              ToParticlesDescriptor = toParticlesDescriptor }

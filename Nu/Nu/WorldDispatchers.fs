@@ -153,6 +153,48 @@ module FacetModule =
         default this.View (_, _, _) = []
 
 [<AutoOpen>]
+module BasicEmitterFacetModule =
+
+    type Entity with
+
+        member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
+        member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false value world
+        member this.SelfDestruct = lens Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct this
+        member this.GetEmitterGravity world : Vector2 = this.Get Property? EmitterGravity world
+        member this.SetEmitterGravity (value : Vector2) world = this.SetFast Property? EmitterGravity true value world
+        member this.EmitterGravity = lens Property? EmitterGravity this.GetEmitterGravity this.SetEmitterGravity this
+        member this.GetParticleImage world : Image AssetTag = this.Get Property? ParticleImage world
+        member this.SetParticleImage (value : Image AssetTag) world = this.SetFast Property? ParticleImage true value world
+        member this.ParticleImage = lens Property? ParticleImage this.GetParticleImage this.SetParticleImage this
+        member this.GetParticleRate world : single = this.Get Property? ParticleRate world
+        member this.SetParticleRate (value : single) world = this.SetFast Property? ParticleRate true value world
+        member this.ParticleRate = lens Property? ParticleRate this.GetParticleRate this.SetParticleRate this
+        member this.GetParticleLifeTimeOpt world : int64 = this.Get Property? ParticleLifeTimeOpt world
+        member this.SetParticleLifeTimeOpt (value : int64) world = this.SetFast Property? ParticleLifeTimeOpt true value world
+        member this.ParticleLifeTimeOpt = lens Property? ParticleLifeTimeOpt this.GetParticleLifeTimeOpt this.SetParticleLifeTimeOpt this
+        member this.GetParticleMax world : int64 option = this.Get Property? ParticleMax world
+        member this.SetParticleMax (value : int64 option) world = this.SetFast Property? ParticleMax true value world
+        member this.ParticleMax = lens Property? ParticleMax this.GetParticleMax this.SetParticleMax this
+        member this.GetBasicParticleSeed world : Particles.BasicParticle = this.Get Property? BasicParticleSeed world
+        member this.SetBasicParticleSeed (value : Particles.BasicParticle) world = this.SetFast Property? BasicParticleSeed true value world
+        member this.BasicParticleSeed = lens Property? BasicParticleSeed this.GetBasicParticleSeed this.SetBasicParticleSeed this
+        member this.GetConstraint world : Particles.Constraint = this.Get Property? Constraint world
+        member this.SetConstraint (value : Particles.Constraint) world = this.SetFast Property? Constraint true value world
+        member this.Constraint = lens Property? Constraint this.GetConstraint this.SetConstraint this
+        member this.GetParticleSystem world : Particles.ParticleSystem = this.Get Property? ParticleSystem world
+        member private this.SetParticleSystem (value : Particles.ParticleSystem) world = this.SetFast Property? ParticleSystem false value world
+        member this.ParticleSystem = lensReadOnly Property? ParticleSystem this.GetParticleSystem this
+
+[<AutoOpen>]
+module BasicEmittersFacetModule =
+
+    type Entity with
+
+        member this.GetBasicEmitterDefinitions world : Particles.BasicEmitterDefinitions = this.Get Property? BasicEmitterDefinitions world
+        member this.SetBasicEmitterDefinitions (value : Particles.BasicEmitterDefinitions) world = this.SetFast Property? BasicEmitterDefinitions true value world
+        member this.BasicEmitterDefinitions = lens Property? BasicEmitterDefinitions this.GetBasicEmitterDefinitions this.SetBasicEmitterDefinitions this
+
+[<AutoOpen>]
 module EffectFacetModule =
 
     type EffectTags =
@@ -160,9 +202,6 @@ module EffectFacetModule =
 
     type Entity with
 
-        member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
-        member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false value world
-        member this.SelfDestruct = lens Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct this
         member this.GetEffects world : Symbol AssetTag list = this.Get Property? Effects world
         member this.SetEffects (value : Symbol AssetTag list) world = this.SetFast Property? Effects true value world
         member this.Effects = lens Property? Effects this.GetEffects this.SetEffects this
