@@ -41,3 +41,4 @@ module Constants =
         let CharacterAnimationActingDelay = 12L // original value is 24L
         let ReactionTick = CharacterAnimationActingDelay * 2L
         let ActionTicksMax = CharacterAnimationActingDelay * 3L
+        let ItemLimit = 9
