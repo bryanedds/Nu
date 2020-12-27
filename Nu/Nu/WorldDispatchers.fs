@@ -193,6 +193,9 @@ module BasicEmittersFacetModule =
 
     type Entity with
 
+        member this.GetBasicEmitters world : Symbol AssetTag list = this.Get Property? BasicEmitters world
+        member this.SetBasicEmitters (value : Symbol AssetTag list) world = this.SetFast Property? BasicEmitters true value world
+        member this.BasicEmitters = lens Property? BasicEmitters this.GetBasicEmitters this.SetBasicEmitters this
         member this.GetBasicEmitterDefinitions world : Particles.BasicEmitterDefinitions = this.Get Property? BasicEmitterDefinitions world
         member this.SetBasicEmitterDefinitions (value : Particles.BasicEmitterDefinitions) world = this.SetFast Property? BasicEmitterDefinitions true value world
         member this.BasicEmitterDefinitions = lens Property? BasicEmitterDefinitions this.GetBasicEmitterDefinitions this.SetBasicEmitterDefinitions this
