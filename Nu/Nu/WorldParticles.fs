@@ -34,6 +34,14 @@ module Particles =
           mutable AngularVelocity : single
           mutable Gravity : Vector2 }
 
+        /// The default body.
+        static member defaultBody =
+            { Position = v2Zero
+              LinearVelocity = v2Zero
+              Rotation = 0.0f
+              AngularVelocity = 0.0f
+              Gravity = Constants.Engine.Gravity }
+
     /// The base particle type.
     type Particle =
 
@@ -138,10 +146,10 @@ module Particles =
                 (particles :> obj, outputs)
 
     /// A composition of behaviors.
-    type [<NoEquality; NoComparison>] CompositionalBehaviors =
+    type [<NoEquality; NoComparison>] Behaviors =
         { Behaviors : Behavior FStack }
 
-        /// The empty compositional behavior.
+        /// The empty behaviors.
         static member empty =
             { Behaviors = FStack.empty }
 
@@ -153,11 +161,11 @@ module Particles =
         static member addMany behaviorsMany behaviors =
             { Behaviors = Seq.fold (fun behaviors behavior -> FStack.conj behavior behaviors) behaviors.Behaviors behaviorsMany }
 
-        /// Make a compositional behavior from a sequence of behaviors.
+        /// Make a behavior from a sequence of behaviors.
         static member ofSeq seq =
-            CompositionalBehaviors.addMany seq CompositionalBehaviors.empty
+            Behaviors.addMany seq Behaviors.empty
 
-        /// Run the compositional behaviors over an array.
+        /// Run the behaviors over an array.
         static member run time behaviors constrain (particles : 'a array) =
             let (particles, outputs) =
                 FStack.fold (fun (particles, output) (behavior : Behavior) ->
@@ -167,25 +175,29 @@ module Particles =
                     behaviors.Behaviors
             (particles :?> 'a array, outputs)
 
+    /// An optimized in-place particle behavior.
+    /// Faster than normal behaviors, but not compositional.
+    type InPlaceBehavior<'a when 'a :> Particle and 'a : struct> =
+        int64 -> Constraint -> 'a Emitter -> Output
+
     /// The default particle emitter.
     /// NOTE: ideally, this would be an abstract data type, but I feel that would discourage users from making their
     /// own emitters - it would looks like making an emitter would require a lot of additional boilerplate as well as
     /// making it harder to use this existing emitter as an example.
-    type [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : struct> =
+    and [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : struct> =
         { Life : Life
           ParticleLifeTimeOpt : int64 // OPTIMIZATION: uses 0L to represent infinite particle life.
+          Body : Body
+          Image : Image AssetTag
+          EmissionRate : single
           mutable ParticleIndex : int // operates as a ring-buffer
           mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
           Particles : 'a array // operates as a ring-buffer
-          Constraint : Constraint
           Initializer : int64 -> Constraint -> 'a Emitter -> 'a
-          InPlaceBehavior : int64 -> Constraint -> 'a Emitter -> Output
-          CompositionalBehaviors : CompositionalBehaviors
+          InPlaceBehavior : 'a InPlaceBehavior
+          CompositionalBehaviors : Behaviors
           ToParticlesDescriptor : int64 -> 'a Emitter -> ParticlesDescriptor
-          Body : Body
-          Image : Image AssetTag
-          Rate : single
-          Id : Guid }
+          Constraint : Constraint }
 
         static member private emit time constrain emitter =
             let particleIndex = if emitter.ParticleIndex >= emitter.Particles.Length then 0 else inc emitter.ParticleIndex
@@ -212,8 +224,8 @@ module Particles =
 
             // emit new particles if live
             if Life.getLiveness time emitter.Life then
-                let emitCountLastFrame = single (dec localTime) * emitter.Rate
-                let emitCountThisFrame = single localTime * emitter.Rate
+                let emitCountLastFrame = single (dec localTime) * emitter.EmissionRate
+                let emitCountThisFrame = single localTime * emitter.EmissionRate
                 let emitCount = int emitCountThisFrame - int emitCountLastFrame
                 for _ in 0 .. emitCount - 1 do Emitter<'a>.emit time constrain emitter
 
@@ -221,7 +233,7 @@ module Particles =
             let outputInPlace = emitter.InPlaceBehavior time constrain emitter
 
             // update existing particles compositionally
-            let (particles, outputCompositional) = CompositionalBehaviors.run time emitter.CompositionalBehaviors constrain emitter.Particles
+            let (particles, outputCompositional) = Behaviors.run time emitter.CompositionalBehaviors constrain emitter.Particles
             let emitter = { emitter with Particles = particles }
 
             // compose output
@@ -300,18 +312,18 @@ module Particles =
                 descriptor.Flip <- particle.Flip
             { Particles = descriptors; Image = emitter.Image }
 
-        let make time lifeTimeOpt particleLifeTimeOpt particleMax initializer inPlaceBehavior behaviors constrain image rate =
+        /// Make a basic particle emitter.
+        let make time lifeTimeOpt body image emissionRate particleLifeTimeOpt particleMax initializer inPlaceBehavior behaviors constrain =
             { Life = { StartTime = time; LifeTimeOpt = lifeTimeOpt }
               ParticleLifeTimeOpt = particleLifeTimeOpt
+              Body = body
+              Image = image
+              EmissionRate = emissionRate
               ParticleIndex = 0
               ParticleWatermark = 0
               Particles = Array.zeroCreate particleMax
-              Constraint = constrain
               Initializer = initializer
               InPlaceBehavior = inPlaceBehavior
               CompositionalBehaviors = behaviors
               ToParticlesDescriptor = toParticlesDescriptor
-              Body = { Position = v2Zero; LinearVelocity = v2Zero; Rotation = 0.0f; AngularVelocity = 0.0f; Gravity = v2 0.0f -9.81f }
-              Image = image
-              Rate = rate
-              Id = Gen.id }
+              Constraint = constrain }

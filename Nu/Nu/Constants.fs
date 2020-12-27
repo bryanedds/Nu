@@ -33,6 +33,7 @@ module Engine =
     let (*Literal*) TaskletListConfig = Functional
     let (*Literal*) SimulantMapConfig = Functional
     let (*Literal*) KeyValueMapConfig = Functional
+    let (*Literal*) Gravity = Vector2 (0.0f, -9.80665f)
 
 [<RequireQualifiedAccess>]
 module Associations =
@@ -76,7 +77,7 @@ module Physics =
     let [<Literal>] PhysicsToPixelRatio = 64.0f
     let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
     let [<Literal>] NormalDensity = 1.0f
-    let (*Literal*) Gravity = Vector2 (0.0f, -9.80665f) * PhysicsToPixelRatio
+    let (*Literal*) Gravity = Engine.Gravity * PhysicsToPixelRatio
     let (*Literal*) MessageListConfig = Functional
 
 [<RequireQualifiedAccess>]
