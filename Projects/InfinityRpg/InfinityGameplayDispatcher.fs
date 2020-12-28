@@ -460,10 +460,14 @@ module GameplayDispatcher =
                  
                  Content.panel "ItemBar"
                     [Entity.Position == v2 400.0f 200.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f]
-                        [Content.button "MagicMissileButton"
-                           [Entity.PositionLocal == v2Zero; Entity.Size == v2 48.0f 48.0f; Entity.ElevationLocal == 1.0f
-                            Entity.UpImage == asset "Gameplay" "MagicMissile"; Entity.DownImage == asset "Gameplay" "MagicMissile"
-                            Entity.ClickEvent ==> msg EnterSelectionMode]]
+                        [Content.entities gameplay
+                           (fun gameplay -> gameplay.Inventory)
+                           (fun inventory _ -> if Inventory.containsItem (Special MagicMissile) inventory then Map.singleton 0 () else Map.empty )
+                           (fun _ _ _ ->
+                               Content.button "MagicMissileButton"
+                                   [Entity.PositionLocal == v2Zero; Entity.Size == v2 48.0f 48.0f; Entity.ElevationLocal == 1.0f
+                                    Entity.UpImage == asset "Gameplay" "MagicMissile"; Entity.DownImage == asset "Gameplay" "MagicMissile"
+                                    Entity.ClickEvent ==> msg EnterSelectionMode])]
 
                  Content.feeler Simulants.HudFeeler.Name
                     [Entity.Position == v2 -480.0f -270.0f; Entity.Size == v2 960.0f 540.0f; Entity.Elevation == 9.0f
