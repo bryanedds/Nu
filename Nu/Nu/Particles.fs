@@ -88,7 +88,10 @@ module Particles =
         abstract Run : int64 -> Constraint -> Emitter * Output
 
         /// Convert the emitted particles to a ParticlesDescriptor.
-        abstract ToParticlesDescriptor : int64 -> ParticlesDescriptor
+        abstract ToParticlesDescriptor : unit -> ParticlesDescriptor
+
+        /// Change the maximum number of allowable particles.
+        abstract Resize : int -> Emitter
 
     /// Transforms a particle value.
     type 'a Transformer =
@@ -181,7 +184,7 @@ module Particles =
     and [<NoEquality; NoComparison>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
         { Body : Body
           Image : Image AssetTag
-          LifeTimeOpt : single
+          LifeTimeOpt : int64
           ParticleLifeTimeOpt : int64
           ParticleRate : single
           ParticleMax : int
@@ -211,7 +214,7 @@ module Particles =
           Initializer : int64 -> Constraint -> 'a Emitter -> 'a
           InPlaceBehavior : int64 -> Constraint -> 'a Emitter -> Output
           CompositionalBehaviors : Behaviors
-          ToParticlesDescriptor : int64 -> 'a Emitter -> ParticlesDescriptor }
+          ToParticlesDescriptor : 'a Emitter -> ParticlesDescriptor }
 
         static member private emit time constrain emitter =
             let particleIndex = if emitter.ParticleIndex >= emitter.ParticleBuffer.Length then 0 else inc emitter.ParticleIndex
@@ -277,8 +280,14 @@ module Particles =
             member this.Run time constrain =
                 let (emitter, output) = Emitter<'a>.run time constrain this
                 (emitter :> Emitter, output)
-            member this.ToParticlesDescriptor time =
-                this.ToParticlesDescriptor time this
+            member this.ToParticlesDescriptor () =
+                this.ToParticlesDescriptor this
+            member this.Resize particleMax =
+                if  this.ParticleBuffer.Length <> particleMax then
+                    this.ParticleIndex <- 0
+                    this.ParticleWatermark <- 0
+                    { this with ParticleBuffer = Array.zeroCreate<'a> particleMax } :> Emitter
+                else this :> Emitter
             end
 
     /// A particle system.
@@ -296,6 +305,18 @@ module Particles =
                     particleSystem.Emitters
             let particleSystem = { Emitters = emitters }
             (particleSystem, output)
+
+        /// Convert the emitted particles to ParticlesDescriptors.
+        static member toParticleDescriptors particleSystem =
+            let descriptorsRev =
+                Map.fold (fun descriptors _ (emitter : Emitter) ->
+                    (emitter.ToParticlesDescriptor () :: descriptors))
+                    [] particleSystem.Emitters
+            List.rev descriptorsRev
+
+        /// The empty particle system.
+        static member empty =
+            { Emitters = Map.empty }
 
     /// A basic particle.
     type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
@@ -331,7 +352,7 @@ module Particles =
     [<RequireQualifiedAccess>]
     module BasicEmitter =
 
-        let private toParticlesDescriptor (_ : int64) (emitter : BasicEmitter) =
+        let private toParticlesDescriptor (emitter : BasicEmitter) =
             let particles =
                 Array.append
                     (if emitter.ParticleWatermark > emitter.ParticleIndex then Array.skip emitter.ParticleIndex emitter.ParticleBuffer else [||])
@@ -350,6 +371,10 @@ module Particles =
                 descriptor.Inset <- particle.Inset
                 descriptor.Flip <- particle.Flip
             { Particles = descriptors; Image = emitter.Image }
+
+        /// Resize the emitter.
+        let resize particleMax (emitter : BasicEmitter) =
+            (emitter :> Emitter).Resize particleMax :?> BasicEmitter
 
         /// Make a basic particle emitter.
         let make time body image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors =
