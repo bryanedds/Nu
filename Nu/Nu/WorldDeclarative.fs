@@ -125,15 +125,6 @@ type [<NoEquality; NoComparison>] GameContent =
             Left (descriptor, handlers @ handlersGame, binds @ bindsGame, screenBehaviors, layerStreams, entityStreams, screenFilePaths, layerFilePaths, entityFilePaths, entityContents)
         | GameFromFile filePath -> Right filePath
 
-/// The passive side-effects of a simulant.
-type [<NoEquality; NoComparison>] View =
-    | Render of single * single * obj AssetTag * RenderDescriptor
-    | PlaySound of single * Sound AssetTag
-    | PlaySong of int * single * Song AssetTag
-    | FadeOutSong of int
-    | StopSong
-    | Tag of string * obj
-
 /// Opens up some functions to make simulant lenses more accessible.
 module Declarative =
 
