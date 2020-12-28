@@ -283,7 +283,7 @@ let generateBindingFunction' binding =
         binding.FunctionParameters |>
         Array.filter (function (_, WorldParameter) -> false | _ -> true) |>
         Array.map fst
-
+    
     let argsStr =
         if args.Length <> 0 then String.Join (" ", args) + " " else ""
     
@@ -320,6 +320,7 @@ let generateInitBindings bindings =
             let nameCap = String.capitalize name
             "             (\"" + name + "\", { Fn = eval" + nameCap + "Binding; Pars = [|" + pars + "|]; DocOpt = None })\n") |>
         fun dispatchers -> String.Join ("", dispatchers)
+
     "    let initBindings () =\n" +
     "        let bindings =\n" +
     "            [\n" +
