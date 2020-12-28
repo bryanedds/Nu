@@ -22,7 +22,7 @@ module Reflection =
              ("ScriptOpt", true)
              ("Script", true)
              ("TmxMap", true)
-             ("EffectsOpt", true)]
+             ("EffectSymbolOpt", true)]
 
     let private NonPersistentPropertyNames =
         dictPlus
