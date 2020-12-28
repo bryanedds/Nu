@@ -302,7 +302,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 Gameplay.applyStep index direction gameplay
             | [] -> failwithumf ()
         | Attack reactor -> Gameplay.applyAttack index reactor gameplay
-        | Shoot reactor -> Gameplay.applyAttack index reactor gameplay
+        | Shoot reactor ->
+            let gameplay = Gameplay.updateInventory (Inventory.removeItem (Special MagicMissile)) gameplay
+            Gameplay.applyAttack index reactor gameplay
     
     static member activateCharacter time index gameplay =
         let move = Gameplay.getCharacterMove index gameplay
