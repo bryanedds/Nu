@@ -178,7 +178,7 @@ module BasicEmittersFacetModule =
         member this.GetBasicEmitterSymbols world : Symbol AssetTag list = this.Get Property? BasicEmitterSymbols world
         member this.SetBasicEmitterSymbols (value : Symbol AssetTag list) world = this.SetFast Property? BasicEmitterSymbols true value world
         member this.BasicEmitterSymbols = lens Property? BasicEmitterSymbols this.GetBasicEmitterSymbols this.SetBasicEmitterSymbols this
-        member this.GetBasicEmitters world : Particles.BasicEmitterDescriptors = this.Get Property? BasicEmitters world
+        member this.GetBasicEmitters world : Particles.BasicEmitterDescriptors = this.Get Property? BasicEmitters world // NOTE: Body.Position and Rotation will act as offsets.
         member this.SetBasicEmitters (value : Particles.BasicEmitterDescriptors) world = this.SetFast Property? BasicEmitters true value world
         member this.BasicEmitters = lens Property? BasicEmitters this.GetBasicEmitters this.SetBasicEmitters this
 
