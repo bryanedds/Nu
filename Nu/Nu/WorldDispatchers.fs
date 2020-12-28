@@ -251,7 +251,7 @@ module BasicEmitterFacetModule =
              define Entity.EmitterOffset v2Zero
              define Entity.EmitterTwist 0.0f
              define Entity.EmitterGravity Constants.Engine.Gravity
-             define Entity.EmitterBlend Additive
+             define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
              define Entity.EmitterLifeTimeOpt 60L
              define Entity.ParticleLifeTimeOpt 60L
