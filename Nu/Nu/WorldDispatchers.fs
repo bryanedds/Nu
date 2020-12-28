@@ -491,8 +491,8 @@ module EffectFacetModule =
 //        member this.GetEffectSymbols world : Symbol AssetTag list = this.Get Property? EffectSymbols world
 //        member this.SetEffectSymbols (value : Symbol AssetTag list) world = this.SetFast Property? EffectSymbols true value world
 //        member this.EffectSymbols = lens Property? EffectSymbols this.GetEffectSymbols this.SetEffectSymbols this
-//        member this.GetEffectDescriptors world : EffectDescriptors.EffectDescriptors = this.Get Property? EffectDescriptors world
-//        member this.SetEffectDescriptors (value : EffectDescriptors.EffectDescriptors) world = this.SetFast Property? EffectDescriptors true value world
+//        member this.GetEffectDescriptors world : Effects.EffectDescriptors = this.Get Property? EffectDescriptors world
+//        member this.SetEffectDescriptors (value : Effects.EffectDescriptors) world = this.SetFast Property? EffectDescriptors true value world
 //        member this.EffectDescriptors = lens Property? EffectDescriptors this.GetEffectDescriptors this.SetEffectDescriptors this
 
 [<AutoOpen>]
