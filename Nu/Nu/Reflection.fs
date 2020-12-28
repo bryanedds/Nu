@@ -22,6 +22,10 @@ module Reflection =
              ("ScriptOpt", true)
              ("Script", true)
              ("TmxMap", true)
+             ("BasicEmitterSymbolOpt", true)
+             ("BasicEmitter", true)
+             ("BasicEmitterSymbols", true)
+             ("BasicEmitters", true)
              ("EffectSymbolOpt", true)]
 
     let private NonPersistentPropertyNames =
@@ -40,6 +44,7 @@ module Reflection =
              ("Optimized", true)
              ("NodeUnsubscribe", true)
              ("TmxMap", true)
+             ("ParticleSystem", true)
              ("EffectPhysicsShapes", true)
              ("EffectTags", true)
              ("EffectHistory", true)]
