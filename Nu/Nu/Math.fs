@@ -8,8 +8,8 @@ open System.Numerics
 open Prime
 open Nu
 
-[<AutoOpen>]
-module internal TransformMasks =
+/// Masks for Transform flags.
+module TransformMasks =
 
     // OPTIMIZATION: Transform flag bit-masks for performance.
     let [<Literal>] ActiveMask =               0b0000000000000001
@@ -25,6 +25,9 @@ module internal TransformMasks =
     let [<Literal>] PublishUpdatesMask =       0b0000010000000000
     let [<Literal>] PublishPostUpdatesMask =   0b0000100000000000
     let [<Literal>] PersistentMask =           0b0001000000000000
+
+// NOTE: opening this in order to make the Transform property implementations reasonably succinct.
+open TransformMasks
 
 /// Carries transformation data specific to an Entity.
 type [<NoEquality; NoComparison; Struct>] Transform =

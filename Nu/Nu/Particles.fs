@@ -183,6 +183,7 @@ module Particles =
     /// Describes an emitter.
     and [<NoEquality; NoComparison>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
         { Body : Body
+          Blend : Blend
           Image : Image AssetTag
           LifeTimeOpt : int64
           ParticleLifeTimeOpt : int64
@@ -202,6 +203,9 @@ module Particles =
     /// making it harder to use this existing emitter as an example.
     and [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
         { Body : Body
+          Elevation : single
+          Absolute : bool
+          Blend : Blend
           Image : Image AssetTag
           Life : Life
           ParticleLifeTimeOpt : int64 // OPTIMIZATION: uses 0L to represent infinite particle life.
@@ -258,8 +262,11 @@ module Particles =
             (emitter, output)
 
         /// Make a basic particle emitter.
-        static member make<'a> time body image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors toParticlesDescriptor : 'a Emitter =
+        static member make<'a> time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors toParticlesDescriptor : 'a Emitter =
             { Body = body
+              Elevation = elevation
+              Absolute = absolute
+              Blend = blend
               Image = image
               Life = { StartTime = time; LifeTimeOpt = lifeTimeOpt }
               ParticleLifeTimeOpt = particleLifeTimeOpt
@@ -370,15 +377,20 @@ module Particles =
                 descriptor.Offset <- particle.Offset
                 descriptor.Inset <- particle.Inset
                 descriptor.Flip <- particle.Flip
-            { Particles = descriptors; Image = emitter.Image }
+            { Elevation = emitter.Elevation
+              PositionY = emitter.Body.Position.Y
+              Absolute = emitter.Absolute
+              Blend = emitter.Blend
+              Image = emitter.Image
+              Particles = descriptors }
 
         /// Resize the emitter.
         let resize particleMax (emitter : BasicEmitter) =
             (emitter :> Emitter).Resize particleMax :?> BasicEmitter
 
         /// Make a basic particle emitter.
-        let make time body image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors =
-            BasicEmitter.make time body image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors toParticlesDescriptor
+        let make time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors =
+            BasicEmitter.make time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors toParticlesDescriptor
 
         /// Make an empty basic particle emitter.
         let makeEmpty time =
@@ -387,4 +399,4 @@ module Particles =
             let initializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
             let inPlaceBehavior = fun _ _ _ -> NoOutput
             let behaviors = Behaviors.empty
-            make time Body.defaultBody image 60L 60L 1.0f 60 particleSeed NoConstraint initializer inPlaceBehavior behaviors
+            make time Body.defaultBody 0.0f false Transparent image 60L 60L 1.0f 60 particleSeed NoConstraint initializer inPlaceBehavior behaviors
