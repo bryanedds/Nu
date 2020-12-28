@@ -34,7 +34,7 @@ module Reflection =
              ("ParticleLifeTimeOpt", true)
              ("ParticleMax", true)
              ("BasicParticleSeed", true)
-             ("Constraint", true)
+             ("EmitterConstraint", true)
              ("EmitterName", true)
              ("BasicEmitterSymbols", true)
              ("BasicEmitterDescriptors", true)
