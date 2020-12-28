@@ -160,12 +160,36 @@ module BasicEmitterFacetModule =
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false value world
         member this.SelfDestruct = lens Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct this
-        member this.GetBasicEmitterSymbolOpt world : Symbol AssetTag option = this.Get Property? BasicEmitterSymbolOpt world
-        member this.SetBasicEmitterSymbolOpt (value : Symbol AssetTag option) world = this.SetFast Property? BasicEmitterSymbolOpt true value world
-        member this.BasicEmitterSymbolOpt = lens Property? BasicEmitterSymbolOpt this.GetBasicEmitterSymbolOpt this.SetBasicEmitterSymbolOpt this
-        member this.GetBasicEmitter world : Particles.BasicEmitterDescriptor = this.Get Property? BasicEmitter world
-        member this.SetBasicEmitter (value : Particles.BasicEmitterDescriptor) world = this.SetFast Property? BasicEmitter true value world
-        member this.BasicEmitter = lens Property? BasicEmitter this.GetBasicEmitter this.SetBasicEmitter this
+        member this.GetEmitterOffset world : Vector2 = this.Get Property? EmitterOffset world
+        member this.SetEmitterOffset (value : Vector2) world = this.SetFast Property? EmitterOffset true value world
+        member this.EmitterOffset = lens Property? EmitterOffset this.GetEmitterOffset this.SetEmitterOffset this
+        member this.GetEmitterTwist world : single = this.Get Property? EmitterTwist world
+        member this.SetEmitterTwist (value : single) world = this.SetFast Property? EmitterTwist true value world
+        member this.EmitterTwist = lens Property? EmitterTwist this.GetEmitterTwist this.SetEmitterTwist this
+        member this.GetEmitterGravity world : Vector2 = this.Get Property? EmitterGravity world
+        member this.SetEmitterGravity (value : Vector2) world = this.SetFast Property? EmitterGravity true value world
+        member this.EmitterGravity = lens Property? EmitterGravity this.GetEmitterGravity this.SetEmitterGravity this
+        member this.GetParticleImage world : Image AssetTag = this.Get Property? ParticleImage world
+        member this.SetParticleImage (value : Image AssetTag) world = this.SetFast Property? ParticleImage true value world
+        member this.ParticleImage = lens Property? ParticleImage this.GetParticleImage this.SetParticleImage this
+        member this.GetParticleRate world : single = this.Get Property? ParticleRate world
+        member this.SetParticleRate (value : single) world = this.SetFast Property? ParticleRate true value world
+        member this.ParticleRate = lens Property? ParticleRate this.GetParticleRate this.SetParticleRate this
+        member this.GetParticleLifeTimeOpt world : int64 = this.Get Property? ParticleLifeTimeOpt world
+        member this.SetParticleLifeTimeOpt (value : int64) world = this.SetFast Property? ParticleLifeTimeOpt true value world
+        member this.ParticleLifeTimeOpt = lens Property? ParticleLifeTimeOpt this.GetParticleLifeTimeOpt this.SetParticleLifeTimeOpt this
+        member this.GetParticleMax world : int64 option = this.Get Property? ParticleMax world
+        member this.SetParticleMax (value : int64 option) world = this.SetFast Property? ParticleMax true value world
+        member this.ParticleMax = lens Property? ParticleMax this.GetParticleMax this.SetParticleMax this
+        member this.GetBasicParticleSeed world : Particles.BasicParticle = this.Get Property? BasicParticleSeed world
+        member this.SetBasicParticleSeed (value : Particles.BasicParticle) world = this.SetFast Property? BasicParticleSeed true value world
+        member this.BasicParticleSeed = lens Property? BasicParticleSeed this.GetBasicParticleSeed this.SetBasicParticleSeed this
+        member this.GetConstraint world : Particles.Constraint = this.Get Property? Constraint world
+        member this.SetConstraint (value : Particles.Constraint) world = this.SetFast Property? Constraint true value world
+        member this.Constraint = lens Property? Constraint this.GetConstraint this.SetConstraint this
+        member this.GetEmitterName world : string = this.Get Property? EmitterName world
+        member this.SetEmitterName (value : string) world = this.SetFast Property? EmitterName true value world
+        member this.EmitterName = lens Property? EmitterName this.GetEmitterName this.SetEmitterName this
         member this.GetParticleSystem world : Particles.ParticleSystem = this.Get Property? ParticleSystem world
         member this.SetParticleSystem (value : Particles.ParticleSystem) world = this.SetFast Property? ParticleSystem false value world
         member this.ParticleSystem = lens Property? ParticleSystem this.GetParticleSystem this.SetParticleSystem this
@@ -178,9 +202,9 @@ module BasicEmittersFacetModule =
         member this.GetBasicEmitterSymbols world : Symbol AssetTag list = this.Get Property? BasicEmitterSymbols world
         member this.SetBasicEmitterSymbols (value : Symbol AssetTag list) world = this.SetFast Property? BasicEmitterSymbols true value world
         member this.BasicEmitterSymbols = lens Property? BasicEmitterSymbols this.GetBasicEmitterSymbols this.SetBasicEmitterSymbols this
-        member this.GetBasicEmitters world : Particles.BasicEmitterDescriptors = this.Get Property? BasicEmitters world // NOTE: Body.Position and Rotation will act as offsets.
-        member this.SetBasicEmitters (value : Particles.BasicEmitterDescriptors) world = this.SetFast Property? BasicEmitters true value world
-        member this.BasicEmitters = lens Property? BasicEmitters this.GetBasicEmitters this.SetBasicEmitters this
+        member this.GetBasicEmitterDescriptors world : Particles.BasicEmitterDescriptors = this.Get Property? BasicEmitterDescriptors world // NOTE: Body.Position and Rotation will act as offsets.
+        member this.SetBasicEmitterDescriptors (value : Particles.BasicEmitterDescriptors) world = this.SetFast Property? BasicEmitterDescriptors true value world
+        member this.BasicEmitterDescriptors = lens Property? BasicEmitterDescriptors this.GetBasicEmitterDescriptors this.SetBasicEmitterDescriptors this
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -217,7 +241,7 @@ module EffectFacetModule =
         member this.GetEffectHistory world : Effects.Slice Deque = this.Get Property? EffectHistory world
         member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.SetFast Property? EffectHistory false value world
         member this.EffectHistory = lensReadOnly Property? EffectHistory this.GetEffectHistory this
-        
+
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
             match this.GetEffectStartTimeOpt world with
@@ -326,12 +350,19 @@ module EffectFacetModule =
             let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent Property? Effects) entity world
-            World.monitor handleAssetsReload Events.AssetsReload entity world`
+            World.monitor handleAssetsReload Events.AssetsReload entity world
 
 //[<AutoOpen>]
 //module EffectsFacetModule =
-//  type EffectDescriptor = ... includes Effect as well as StartTimeOpt, Definitions, the Offsets, and the like.
-//TODO.
+//
+//    type Entity with
+//
+//        member this.GetEffectSymbols world : Symbol AssetTag list = this.Get Property? EffectSymbols world
+//        member this.SetEffectSymbols (value : Symbol AssetTag list) world = this.SetFast Property? EffectSymbols true value world
+//        member this.EffectSymbols = lens Property? EffectSymbols this.GetEffectSymbols this.SetEffectSymbols this
+//        member this.GetEffectDescriptors world : EffectDescriptors.EffectDescriptors = this.Get Property? EffectDescriptors world
+//        member this.SetEffectDescriptors (value : EffectDescriptors.EffectDescriptors) world = this.SetFast Property? EffectDescriptors true value world
+//        member this.EffectDescriptors = lens Property? EffectDescriptors this.GetEffectDescriptors this.SetEffectDescriptors this
 
 [<AutoOpen>]
 module ScriptFacetModule =
