@@ -29,7 +29,7 @@ module Reflection =
              ("EmitterOffset", true)
              ("EmitterTwist", true)
              ("EmitterGravity", true)
-             ("ParticleImage", true)
+             ("EmitterImage", true)
              ("ParticleRate", true)
              ("ParticleLifeTimeOpt", true)
              ("ParticleMax", true)
