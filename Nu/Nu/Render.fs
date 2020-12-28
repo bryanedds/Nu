@@ -20,7 +20,7 @@ type Font = private { __ : unit }
 /// A tile map. Currently just used as a phantom type.
 type TileMap = private { __ : unit }
 
-type [<NoEquality; NoComparison; Struct>] Flip =
+type [<StructuralEquality; NoComparison; Struct>] Flip =
     | FlipNone
     | FlipH
     | FlipV

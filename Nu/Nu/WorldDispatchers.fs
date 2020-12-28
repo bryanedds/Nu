@@ -172,6 +172,9 @@ module BasicEmitterFacetModule =
         member this.GetEmitterImage world : Image AssetTag = this.Get Property? EmitterImage world
         member this.SetEmitterImage (value : Image AssetTag) world = this.SetFast Property? EmitterImage true value world
         member this.EmitterImage = lens Property? EmitterImage this.GetEmitterImage this.SetEmitterImage this
+        member this.GetEmitterLifeTimeOpt world : int64 = this.Get Property? EmitterLifeTimeOpt world
+        member this.SetEmitterLifeTimeOpt (value : int64) world = this.SetFast Property? EmitterLifeTimeOpt true value world
+        member this.EmitterLifeTimeOpt = lens Property? EmitterLifeTimeOpt this.GetEmitterLifeTimeOpt this.SetEmitterLifeTimeOpt this
         member this.GetParticleLifeTimeOpt world : int64 = this.Get Property? ParticleLifeTimeOpt world
         member this.SetParticleLifeTimeOpt (value : int64) world = this.SetFast Property? ParticleLifeTimeOpt true value world
         member this.ParticleLifeTimeOpt = lens Property? ParticleLifeTimeOpt this.GetParticleLifeTimeOpt this.SetParticleLifeTimeOpt this
@@ -193,6 +196,42 @@ module BasicEmitterFacetModule =
         member this.GetParticleSystem world : Particles.ParticleSystem = this.Get Property? ParticleSystem world
         member this.SetParticleSystem (value : Particles.ParticleSystem) world = this.SetFast Property? ParticleSystem false value world
         member this.ParticleSystem = lens Property? ParticleSystem this.GetParticleSystem this.SetParticleSystem this
+
+    type BasicEmitterFacet () =
+        inherit Facet ()
+
+        static let updateEmitter emitterDescriptor (entity : Entity) world =
+            let particleSystem = entity.GetParticleSystem world
+            let emitter = Map.find typeof<Particles.BasicEmitter>.Name particleSystem.Emitters :?> Particles.BasicEmitter
+            let emitter =
+                let emitterPosition = entity.GetPosition world + entity.GetEmitterOffset world
+                if v2Neq emitter.Body.Position emitterPosition then { emitter with Body = { emitter.Body with Position = emitterPosition }} else emitter
+            let emitter =
+                let emitterRotation = entity.GetRotation world + entity.GetEmitterTwist world
+                if emitter.Body.Rotation <> emitterRotation then { emitter with Body = { emitter.Body with Rotation = emitterRotation }} else emitter
+            let emitter =
+                let emitterGravity = entity.GetEmitterGravity world
+                if v2Neq emitter.Body.Gravity emitterGravity then { emitter with Body = { emitter.Body with Gravity = emitterGravity }} else emitter
+            let emitter =
+                let emitterImage = entity.GetEmitterImage world
+                if assNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter
+            let emitter =
+                let emitterLifeTimeOpt = entity.GetEmitterLifeTimeOpt world
+                if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter
+            let emitter =
+                let emitterParticleLifeTimeOpt = entity.GetParticleLifeTimeOpt world
+                if emitter.ParticleLifeTimeOpt <> emitterParticleLifeTimeOpt then { emitter with ParticleLifeTimeOpt = emitterParticleLifeTimeOpt } else emitter
+            let emitter =
+                let emitterParticleRate = entity.GetParticleRate world
+                if emitter.ParticleRate <> emitterParticleRate then { emitter with ParticleRate = emitterParticleRate } else emitter
+            let emitter =
+                let emitterParticleSeed = entity.GetBasicParticleSeed world
+                if emitter.ParticleSeed <> emitterParticleSeed then { emitter with ParticleSeed = emitterParticleSeed } else emitter
+            let emitter =
+                let emitterConstraint = entity.GetEmitterConstraint world
+                if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter
+            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+            entity.SetParticleSystem particleSystem world
 
 [<AutoOpen>]
 module BasicEmittersFacetModule =
