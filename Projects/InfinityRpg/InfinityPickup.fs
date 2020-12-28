@@ -27,3 +27,8 @@ type [<ReferenceEquality; NoComparison>] Pickup =
         { PickupType = Item (Special MagicMissile)
           PickupImage = Assets.Gameplay.MagicMissile
           Position = vctovf coordinates }
+
+    static member ofPickupType pickupType coordinates =
+        match pickupType with
+        | Health -> Pickup.makeHealth coordinates
+        | Item _ -> Pickup.makeMagicMissile coordinates

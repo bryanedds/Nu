@@ -242,7 +242,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member removeLongGrass coordinates gameplay =
         let gameplay = Gameplay.updateChessboard (Chessboard.removeProp coordinates) gameplay
         if Gen.random1 10 = 0
-        then Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
+        then Gameplay.updateChessboard (Chessboard.addRandomPickup coordinates) gameplay
         else gameplay
     
     static member clearPickups gameplay =
@@ -259,8 +259,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member tryPickupHealth index coordinates gameplay =
         match index with
         | PlayerIndex ->
-            let gameplay = Gameplay.updateCharacter index (Character.updateHitPoints (fun x -> x + 15)) gameplay
-            let gameplay = Gameplay.refreshPlayerPuppetHitPoints gameplay
+            let gameplay =
+                match Chessboard.getPickup coordinates gameplay.Chessboard with
+                | Health ->
+                    let gameplay = Gameplay.updateCharacter index (Character.updateHitPoints (fun x -> x + 15)) gameplay
+                    Gameplay.refreshPlayerPuppetHitPoints gameplay
+                | Item item -> Gameplay.updateInventory (Inventory.tryAddItem item) gameplay
             Gameplay.updateChessboard (Chessboard.removePickup coordinates) gameplay
         | _ -> gameplay
     
