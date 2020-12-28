@@ -17,14 +17,6 @@ module PickupDispatcher =
     type PickupDispatcher () =
         inherit EntityDispatcher<Pickup, unit, unit> (Pickup.initial)
 
-        static let getSpriteInsetOpt pickup =
-            let spriteOffset =
-                v2
-                    (Constants.Layout.TileSize.X * single pickup.PickupSheetCoordinates.X)
-                    (Constants.Layout.TileSize.Y * single pickup.PickupSheetCoordinates.Y)
-            let spriteInset = v4Bounds spriteOffset Constants.Layout.TileSize
-            Some spriteInset
-        
         static member Properties =
             [define Entity.Elevation Constants.Layout.PickupElevation
              define Entity.PublishChanges true
@@ -36,12 +28,12 @@ module PickupDispatcher =
         override this.View (pickup, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Elevation, transform.Position.Y, AssetTag.generalize pickup.PickupSheet,
+                [Render (transform.Elevation, transform.Position.Y, AssetTag.generalize pickup.PickupImage,
                      SpriteDescriptor
                        { Transform = transform
                          Offset = v2Zero
-                         InsetOpt = getSpriteInsetOpt pickup
-                         Image = pickup.PickupSheet
+                         InsetOpt = None
+                         Image = pickup.PickupImage
                          Color = Color.White
                          Glow = Color.Zero
                          Flip = FlipNone })]
