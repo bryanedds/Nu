@@ -1205,10 +1205,10 @@ module WorldTypes =
         default this.MakeEcs () = Ecs<World> ()
 
         /// Attempt to make an emitter of the given name.
-        abstract TryMakeEmitter : int64 -> string -> Particles.Emitter option
-        default this.TryMakeEmitter time emitterName =
+        abstract TryMakeEmitter : int64 -> int64 -> int64 -> single -> int -> string -> Particles.Emitter option
+        default this.TryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName =
             match emitterName with
-            | "BasicEmitter" -> time |> Particles.BasicEmitter.makeEmpty :> Particles.Emitter |> Some
+            | "BasicEmitter" -> Particles.BasicEmitter.makeEmpty time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
             // TODO: P1: more out-of-box emitters.
             | _ -> None
 

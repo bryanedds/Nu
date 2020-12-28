@@ -393,10 +393,10 @@ module Particles =
             BasicEmitter.make time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors toParticlesDescriptor
 
         /// Make an empty basic particle emitter.
-        let makeEmpty time =
+        let makeEmpty time lifeTimeOpt particleLifeTimeOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed = Unchecked.defaultof<BasicParticle>
             let initializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
             let inPlaceBehavior = fun _ _ _ -> NoOutput
             let behaviors = Behaviors.empty
-            make time Body.defaultBody 0.0f false Transparent image 60L 60L 1.0f 60 particleSeed NoConstraint initializer inPlaceBehavior behaviors
+            make time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed NoConstraint initializer inPlaceBehavior behaviors
