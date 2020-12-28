@@ -13,7 +13,7 @@ type Occupant =
 type [<ReferenceEquality; NoComparison>] FieldSpace =
     { CharacterOpt : Character Option
       PropOpt : PropType Option
-      PickupItemOpt : PickupType Option }
+      PickupOpt : PickupType Option }
 
     member this.GetCharacter =
         match this.CharacterOpt with Some character -> character | None -> failwithumf ()
@@ -29,8 +29,8 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
             | Some prop -> Some (OccupyingProp prop)
             | None -> None
     
-    member this.GetPickupItem =
-        match this.PickupItemOpt with Some pickup -> pickup | None -> failwithumf ()
+    member this.GetPickup =
+        match this.PickupOpt with Some pickup -> pickup | None -> failwithumf ()
     
     member this.ContainsCharacter =
         match this.CharacterOpt with Some _ -> true | None -> false
@@ -55,7 +55,7 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
         fieldSpace.ContainsProp
     
     member this.ContainsPickup =
-        match this.PickupItemOpt with Some _ -> true | None -> false
+        match this.PickupOpt with Some _ -> true | None -> false
     
     static member containsPickup (fieldSpace : FieldSpace) =
         fieldSpace.ContainsPickup
@@ -74,8 +74,8 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
     static member updatePropOpt updater fieldSpace =
         { fieldSpace with PropOpt = updater fieldSpace.PropOpt }
     
-    static member updatePickupItemOpt updater fieldSpace =
-        { fieldSpace with PickupItemOpt = updater fieldSpace.PickupItemOpt }
+    static member updatePickupOpt updater fieldSpace =
+        { fieldSpace with PickupOpt = updater fieldSpace.PickupOpt }
     
     static member updateCharacterInternal updater characterOpt =
         match characterOpt with
@@ -100,15 +100,15 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
         FieldSpace.updatePropOpt (constant None) fieldSpace
     
     static member addPickup pickup fieldSpace =
-        FieldSpace.updatePickupItemOpt (constant (Some pickup)) fieldSpace
+        FieldSpace.updatePickupOpt (constant (Some pickup)) fieldSpace
     
     static member removePickup fieldSpace =
-        FieldSpace.updatePickupItemOpt (constant None) fieldSpace
+        FieldSpace.updatePickupOpt (constant None) fieldSpace
     
     static member empty =
         { CharacterOpt = None
           PropOpt = None
-          PickupItemOpt = None }
+          PickupOpt = None }
 
 type [<ReferenceEquality; NoComparison>] Chessboard =
     { FieldSpaces : Map<Vector2i, FieldSpace> }
@@ -143,7 +143,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Map.toListBy (fun _ (v : FieldSpace) -> v.GetCharacterIndex) this.EnemySpaces
     
     member this.Pickups =
-        Map.map (fun _ (v : FieldSpace) -> v.GetPickupItem) this.PickupSpaces
+        Map.map (fun _ (v : FieldSpace) -> v.GetPickup) this.PickupSpaces
     
     member this.EnemyCount =
         this.EnemySpaces.Count
@@ -165,7 +165,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         chessboard.FieldSpaces.[coordinates].TryGetOccupant
     
     static member getPickup coordinates chessboard =
-        chessboard.FieldSpaces.[coordinates].GetPickupItem
+        chessboard.FieldSpaces.[coordinates].GetPickup
     
     // ignores non-adjacent enemies
     static member getNavigationMap currentCoordinates chessboard =
