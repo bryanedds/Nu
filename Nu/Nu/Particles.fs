@@ -10,7 +10,7 @@ module Particles =
     /// Describes the life of an instance value.
     /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
     /// OPTIMIZATION: doesn't use Liveness type to avoid its constructor calls.
-    type [<NoEquality; NoComparison; Struct>] Life =
+    type [<StructuralEquality; NoComparison; Struct>] Life =
         { StartTime : int64
           LifeTimeOpt : int64 }
 
@@ -27,7 +27,7 @@ module Particles =
             | lifeTime -> lifeTime < time - life.StartTime
 
     /// Describes the body of an instance value.
-    type [<NoEquality; NoComparison; Struct>] Body =
+    type [<StructuralEquality; NoComparison; Struct>] Body =
         { mutable Position : Vector2
           mutable LinearVelocity : Vector2
           mutable Rotation : single
@@ -49,7 +49,7 @@ module Particles =
         abstract Life : Life with get, set
 
     /// A particle constraint.
-    type [<NoEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Constraint =
+    type [<StructuralEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Constraint =
         | Rectangle of Vector4
         | Circle of single * Vector2
         | Constraints of Constraint array
@@ -197,7 +197,7 @@ module Particles =
     /// NOTE: ideally, this would be an abstract data type, but I feel that would discourage users from making their
     /// own emitters - it would looks like making an emitter would require a lot of additional boilerplate as well as
     /// making it harder to use this existing emitter as an example.
-    and [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : struct> =
+    and [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
         { Body : Body
           Image : Image AssetTag
           Life : Life
@@ -298,7 +298,7 @@ module Particles =
             (particleSystem, output)
 
     /// A basic particle.
-    type [<NoEquality; NoComparison; Struct>] BasicParticle =
+    type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
         { mutable Life : Life
           mutable Body : Body
           mutable Size : Vector2
