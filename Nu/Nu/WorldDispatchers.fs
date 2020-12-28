@@ -23,18 +23,18 @@ module DeclarativeOperators2 =
                 World.attachProperty modelName true property simulant world
             | Some _ -> world
 
-        static member internal actualizeViews views world =
-            Seq.fold (fun world view ->
-                match view with
-                | Render (elevation, positionY, assetTag, descriptor) ->
-                    let layeredDescriptor = { Elevation = elevation; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
-                    World.enqueueRenderMessage (LayeredDescriptorMessage layeredDescriptor) world
-                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
-                | FadeOutSong fade -> World.fadeOutSong fade world
-                | StopSong -> World.stopSong world
-                | Tag _ -> world)
-                world views
+        static member internal actualizeView view world =
+            match view with
+            | Render (elevation, positionY, assetTag, descriptor) ->
+                let layeredDescriptor = { Elevation = elevation; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
+                World.enqueueRenderMessage (LayeredDescriptorMessage layeredDescriptor) world
+            | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
+            | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
+            | FadeOutSong fade -> World.fadeOutSong fade world
+            | StopSong -> World.stopSong world
+            | Tag _ -> world
+            | Views views ->
+                Array.fold (fun world view -> World.actualizeView view world) world views
 
 [<AutoOpen>]
 module FacetModule =
@@ -125,8 +125,8 @@ module FacetModule =
                 world initializers
 
         override this.Actualize (entity, world) =
-            let views = this.View (this.GetModel entity world, entity, world)
-            World.actualizeViews views world
+            let view = this.View (this.GetModel entity world, entity, world)
+            World.actualizeView view world
 
         override this.TrySignal (signalObj, entity, world) =
             match signalObj with
@@ -149,8 +149,8 @@ module FacetModule =
         abstract member Content : Lens<'model, World> * Entity -> EntityContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Entity * World -> View list
-        default this.View (_, _, _) = []
+        abstract member View : 'model * Entity * World -> View
+        default this.View (_, _, _) = View.empty
 
 [<AutoOpen>]
 module BasicEmitterFacetModule =
@@ -208,9 +208,6 @@ module EffectFacetModule =
         member this.GetEffectSliceOffset world : Vector2 = this.Get Property? EffectSliceOffset world
         member this.SetEffectSliceOffset (value : Vector2) world = this.SetFast Property? EffectSliceOffset false value world
         member this.EffectSliceOffset = lens Property? EffectSliceOffset this.GetEffectSliceOffset this.SetEffectSliceOffset this
-        member this.GetEffectPhysicsShapes world : unit = this.Get Property? EffectPhysicsShapes world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
-        member private this.SetEffectPhysicsShapes (value : unit) world = this.SetFast Property? EffectPhysicsShapes false value world
-        member this.EffectPhysicsShapes = lensReadOnly Property? EffectPhysicsShapes this.GetEffectPhysicsShapes this
         member this.GetEffectTags world : EffectTags = this.Get Property? EffectTags world
         member private this.SetEffectTags (value : EffectTags) world = this.SetFast Property? EffectTags false value world
         member this.EffectTags = lensReadOnly Property? EffectTags this.GetEffectTags this
@@ -264,7 +261,6 @@ module EffectFacetModule =
              define Entity.Effect Effect.empty
              define Entity.EffectOffset (Vector2 0.5f)
              define Entity.EffectSliceOffset (Vector2 0.5f)
-             define Entity.EffectPhysicsShapes ()
              define Entity.EffectTags Map.empty
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))]
@@ -295,15 +291,15 @@ module EffectFacetModule =
                 let effectSystem = EffectSystem.make effectAbsolute effectTime effectDefinitions
 
                 // evaluate effect with effect system
-                let (artifacts, _) = EffectSystem.eval effect effectSlice effectHistory effectSystem
+                let (view, _) = EffectSystem.eval effect effectSlice effectHistory effectSystem
 
-                // actualize effect views
-                let world = World.actualizeViews artifacts world
+                // actualize effect view
+                let world = World.actualizeView view world
 
                 // store tags
                 let tags =
-                    artifacts |>
-                    Seq.toArray |>
+                    view |>
+                    View.toArray |>
                     Array.map (function Tag (name, value) -> Some (name, value :?> Effects.Slice) | _ -> None) |>
                     Array.definitize |> Map.ofArray
                 let world = entity.SetEffectTags tags world
@@ -1213,8 +1209,8 @@ module EntityDispatcherModule =
                 world initializers
 
         override this.Actualize (entity, world) =
-            let views = this.View (this.GetModel entity world, entity, world)
-            World.actualizeViews views world
+            let view = this.View (this.GetModel entity world, entity, world)
+            World.actualizeView view world
 
         override this.TrySignalFacet (signalObj : obj, facetName : string, entity : Entity, world : World) : World =
             entity.TrySignalFacet signalObj facetName world
@@ -1240,8 +1236,8 @@ module EntityDispatcherModule =
         abstract member Content : Lens<'model, World> * Entity -> EntityContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Entity * World -> View list
-        default this.View (_, _, _) = []
+        abstract member View : 'model * Entity * World -> View
+        default this.View (_, _, _) = View.empty
 
 [<AutoOpen>]
 module EffectDispatcherModule =
@@ -2115,8 +2111,8 @@ module LayerDispatcherModule =
                 world initializers
 
         override this.Actualize (layer, world) =
-            let views = this.View (this.GetModel layer world, layer, world)
-            World.actualizeViews views world
+            let view = this.View (this.GetModel layer world, layer, world)
+            World.actualizeView view world
 
         override this.TrySignal (signalObj, layer, world) =
             match signalObj with
@@ -2139,8 +2135,8 @@ module LayerDispatcherModule =
         abstract member Content : Lens<'model, World> * Layer -> EntityContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Layer * World -> View list
-        default this.View (_, _, _) = []
+        abstract member View : 'model * Layer * World -> View
+        default this.View (_, _, _) = View.empty
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
@@ -2207,8 +2203,8 @@ module ScreenDispatcherModule =
                 world initializers
 
         override this.Actualize (screen, world) =
-            let views = this.View (this.GetModel screen world, screen, world)
-            World.actualizeViews views world
+            let view = this.View (this.GetModel screen world, screen, world)
+            World.actualizeView view world
 
         override this.TrySignal (signalObj, screen, world) =
             match signalObj with
@@ -2231,5 +2227,5 @@ module ScreenDispatcherModule =
         abstract member Content : Lens<'model, World> * Screen -> LayerContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Screen * World -> View list
-        default this.View (_, _, _) = []
+        abstract member View : 'model * Screen * World -> View
+        default this.View (_, _, _) = View.empty

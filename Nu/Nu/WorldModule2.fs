@@ -1146,8 +1146,8 @@ module GameDispatcherModule =
                 world initializers
 
         override this.Actualize (game, world) =
-            let views = this.View (this.GetModel game world, game, world)
-            World.actualizeViews views world
+            let view = this.View (this.GetModel game world, game, world)
+            World.actualizeView view world
 
         override this.TrySignal (signalObj, game, world) =
             match signalObj with
@@ -1170,8 +1170,8 @@ module GameDispatcherModule =
         abstract member Content : Lens<'model, World> * Game -> ScreenContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Game * World -> View list
-        default this.View (_, _, _) = []
+        abstract member View : 'model * Game * World -> View
+        default this.View (_, _, _) = View.empty
 
 [<AutoOpen>]
 module WorldModule2' =

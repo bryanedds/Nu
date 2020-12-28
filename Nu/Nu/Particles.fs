@@ -55,6 +55,7 @@ module Particles =
         | Constraints of Constraint array
         | NoConstraint // OPTIMIZATION: elide Option indirection
 
+        /// Combine two constraints.
         static member (+) (constrain, constrain2) =
             match (constrain, constrain2) with
             | (NoConstraint, NoConstraint) -> constrain // OPTIMIZATION: elide Constraint ctor
@@ -65,10 +66,11 @@ module Particles =
     /// The output of a particle behavior.
     type [<NoEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Output =
         | EmitterOutput of Emitter
-        | SoundOutput of single * Sound AssetTag
+        | PlaySoundOutput of single * Sound AssetTag
         | Outputs of Output array
         | NoOutput // OPTIMIZATION: elide Option indirection
 
+        /// Combine two outputs.
         static member (+) (output, output2) =
             match (output, output2) with
             | (NoOutput, NoOutput) -> output // OPTIMIZATION: elide Output ctor

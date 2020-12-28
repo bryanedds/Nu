@@ -76,8 +76,8 @@ module FieldDispatcher =
                             else sprites)
                         tiles [] |>
                     Array.ofList
-                [Render (fieldTransform.Elevation, fieldTransform.Position.Y, AssetTag.generalize image, SpritesDescriptor sprites)]
-            else []
+                Render (fieldTransform.Elevation, fieldTransform.Position.Y, AssetTag.generalize image, SpritesDescriptor sprites)
+            else View.empty
 
         override this.GetQuickSize (entity, world) =
             vctovf ((entity.GetField world).FieldMapNp).FieldSizeC

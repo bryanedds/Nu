@@ -84,7 +84,9 @@
     <Compile Include="Render.fs" />
     <Compile Include="Audio.fs" />
     <Compile Include="SymbolStore.fs" />
+    <Compile Include="View.fs" />
     <Compile Include="Particles.fs" />
+    <Compile Include="Effects.fs" />
     <Compile Include="Metadata.fs" />
     <Compile Include="InputBindings.fs" />
     <Compile Include="Input.fs" />
@@ -110,7 +112,6 @@
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
-    <Compile Include="WorldEffects.fs" />
     <Compile Include="WorldTmxMap.fs" />
     <Compile Include="WorldDispatchers.fs" />
     <Compile Include="WorldContent.fs" />

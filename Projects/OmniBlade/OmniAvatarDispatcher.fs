@@ -187,13 +187,13 @@ module AvatarDispatcher =
         override this.View (avatar, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Elevation, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
-                     SpriteDescriptor
+                Render (transform.Elevation, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
+                    SpriteDescriptor
                         { Transform = transform
                           Offset = Vector2.Zero
                           InsetOpt = Some (getSpriteInset entity world)
                           Image = avatar.AnimationSheet
                           Color = Color.White
                           Glow = Color.Zero
-                          Flip = FlipNone })]
-            else []
+                          Flip = FlipNone })
+            else View.empty

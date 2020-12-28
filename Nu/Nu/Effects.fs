@@ -362,10 +362,10 @@ module EffectSystem =
                 | SymbolicCompressionA resource -> evalResource resource effectSystem
                 | _ ->
                     Log.info ("Expected Resource for definition '" + definitionName + ".")
-                    AssetTag.generalize Assets.Default.Image
+                    asset Assets.Default.PackageName Assets.Default.ImageName
             | None ->
                 Log.info ("Could not find definition with name '" + definitionName + "'.")
-                AssetTag.generalize Assets.Default.Image
+                asset Assets.Default.PackageName Assets.Default.ImageName
 
     let rec private iterateViews incrementAspects content slice history effectSystem =
         let effectSystem = { effectSystem with ProgressOffset = 0.0f }
@@ -767,7 +767,7 @@ module EffectSystem =
             contents
 
     let private release effectSystem =
-        let views = effectSystem.Views
+        let views = Views (effectSystem.Views.ToArray ())
         let effectSystem = { effectSystem with Views = List<View> () }
         (views, effectSystem)
 
