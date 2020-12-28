@@ -704,6 +704,9 @@ module WorldModule =
 
     type World with // Plugin
 
+        static member tryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName world =
+            world.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName
+
         static member internal preFrame world =
             world.Plugin.PreFrame world
 

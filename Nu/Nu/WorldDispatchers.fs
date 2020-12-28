@@ -262,8 +262,49 @@ module BasicEmitterFacetModule =
              define Entity.ParticleSystem Particles.ParticleSystem.empty]
 
         override this.Register (entity, world) =
-            // TODO: implement.
-            world
+            let emitterOpt =
+                World.tryMakeEmitter
+                    (World.getTickTime world)
+                    (entity.GetEmitterLifeTimeOpt world)
+                    (entity.GetParticleLifeTimeOpt world)
+                    (entity.GetParticleRate world)
+                    (entity.GetParticleMax world)
+                    (entity.GetEmitterName world)
+                    world |>
+                Option.map cast<Particles.BasicEmitter>
+            let emitter =
+                match emitterOpt with
+                | Some emitter ->
+                    let emitter =
+                        { emitter with
+                            Body =
+                                { Position = entity.GetPosition world + entity.GetEmitterOffset world
+                                  LinearVelocity = v2Zero
+                                  Rotation = entity.GetRotation world + entity.GetEmitterTwist world
+                                  AngularVelocity = 0.0f
+                                  Gravity = entity.GetEmitterGravity world }
+                            Elevation = entity.GetElevation world
+                            Absolute = entity.GetAbsolute world
+                            Blend = entity.GetEmitterBlend world
+                            Image = entity.GetEmitterImage world
+                            ParticleSeed = entity.GetBasicParticleSeed world
+                            Constraint = entity.GetEmitterConstraint world }
+                    emitter
+                | None ->
+                    Particles.BasicEmitter.makeEmpty
+                        (World.getTickTime world)
+                        (entity.GetEmitterLifeTimeOpt world)
+                        (entity.GetParticleLifeTimeOpt world)
+                        (entity.GetParticleRate world)
+                        (entity.GetParticleMax world)
+            let particleSystem = entity.GetParticleSystem world
+            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+            entity.SetParticleSystem particleSystem world
+
+        override this.Unregister (entity, world) =
+            let particleSystem = entity.GetParticleSystem world
+            let particleSystem = { particleSystem with Emitters = Map.remove typeof<Particles.BasicEmitter>.Name particleSystem.Emitters }
+            entity.SetParticleSystem particleSystem world
 
         override this.Update (entity, world) =
             let time = World.getTickTime world
