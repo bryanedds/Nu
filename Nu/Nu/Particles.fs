@@ -175,8 +175,8 @@ module Particles =
                     behaviors.Behaviors
             (particles :?> 'a array, outputs)
 
-    /// Defines an emitter.
-    and [<NoEquality; NoComparison>] EmitterDefinition<'a when 'a :> Particle and 'a : struct> =
+    /// Describes an emitter.
+    and [<NoEquality; NoComparison>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
         { Body : Body
           Image : Image AssetTag
           LifeTimeOpt : single
@@ -187,9 +187,9 @@ module Particles =
           Constraint : Constraint
           EmitterName : string }
 
-    /// Defines a map of basic emitters.
-    and EmitterDefinitions<'a when 'a :> Particle and 'a : struct> =
-        Map<string, 'a EmitterDefinition>
+    /// Describes a map of basic emitters.
+    and EmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
+        Map<string, 'a EmitterDescriptor>
 
     /// The default particle emitter.
     /// NOTE: ideally, this would be an abstract data type, but I feel that would discourage users from making their
@@ -314,13 +314,13 @@ module Particles =
         static member inline glow = Scope.make (fun p -> p.Glow) (fun v p -> { p with Glow = v })
         static member inline flip = Scope.make (fun p -> p.Flip) (fun v p -> { p with Flip = v })
 
-    /// Defines a basic emitter.
-    type BasicEmitterDefinition =
-        BasicParticle EmitterDefinition
+    /// Describes a basic emitter.
+    type BasicEmitterDescriptor =
+        BasicParticle EmitterDescriptor
 
-    /// Defines a map of basic emitters.
-    type BasicEmitterDefinitions =
-        BasicParticle EmitterDefinitions
+    /// Describes a map of basic emitters.
+    type BasicEmitterDescriptors =
+        BasicParticle EmitterDescriptors
 
     /// A basic particle emitter.
     type BasicEmitter =
