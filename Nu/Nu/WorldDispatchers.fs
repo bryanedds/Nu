@@ -172,6 +172,9 @@ module BasicEmitterFacetModule =
         member this.GetEmitterImage world : Image AssetTag = this.Get Property? EmitterImage world
         member this.SetEmitterImage (value : Image AssetTag) world = this.SetFast Property? EmitterImage true value world
         member this.EmitterImage = lens Property? EmitterImage this.GetEmitterImage this.SetEmitterImage this
+        member this.GetEmitterBlend world : Blend = this.Get Property? EmitterBlend world
+        member this.SetEmitterBlend (value : Blend) world = this.SetFast Property? EmitterBlend true value world
+        member this.EmitterBlend = lens Property? EmitterBlend this.GetEmitterBlend this.SetEmitterBlend this
         member this.GetEmitterLifeTimeOpt world : int64 = this.Get Property? EmitterLifeTimeOpt world
         member this.SetEmitterLifeTimeOpt (value : int64) world = this.SetFast Property? EmitterLifeTimeOpt true value world
         member this.EmitterLifeTimeOpt = lens Property? EmitterLifeTimeOpt this.GetEmitterLifeTimeOpt this.SetEmitterLifeTimeOpt this
@@ -215,6 +218,7 @@ module BasicEmitterFacetModule =
                 else emitter
             let emitter = if v2Neq emitter.Body.Gravity descriptor.Body.Gravity then { emitter with Body = { emitter.Body with Gravity = descriptor.Body.Gravity }} else emitter
             let emitter = if assNeq emitter.Image descriptor.Image then { emitter with Image = descriptor.Image } else emitter
+            let emitter = if emitter.Blend <> descriptor.Blend then { emitter with Blend = descriptor.Blend } else emitter
             let emitter = if emitter.Life.LifeTimeOpt <> descriptor.LifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = descriptor.LifeTimeOpt }} else emitter
             let emitter = if emitter.ParticleLifeTimeOpt <> descriptor.ParticleLifeTimeOpt then { emitter with ParticleLifeTimeOpt = descriptor.ParticleLifeTimeOpt } else emitter
             let emitter = if emitter.ParticleRate <> descriptor.ParticleRate then { emitter with ParticleRate = descriptor.ParticleRate } else emitter
@@ -248,6 +252,7 @@ module BasicEmitterFacetModule =
              define Entity.EmitterTwist 0.0f
              define Entity.EmitterGravity Constants.Engine.Gravity
              define Entity.EmitterImage Assets.Default.Image
+             define Entity.EmitterBlend Additive
              define Entity.EmitterLifeTimeOpt 60L
              define Entity.ParticleLifeTimeOpt 60L
              define Entity.ParticleRate 1.0f
@@ -268,8 +273,16 @@ module BasicEmitterFacetModule =
 
         override this.Actualize (entity, world) =
             let particleSystem = entity.GetParticleSystem world
-            let particleDescriptors = Particles.ParticleSystem.toParticleDescriptors particleSystem
-            world
+            let particlesDescriptors = Particles.ParticleSystem.toParticleDescriptors particleSystem
+            let particlesMessages =
+                List.map (fun (descriptor : ParticlesDescriptor) ->
+                    LayeredDescriptorMessage
+                        { Elevation = descriptor.Elevation
+                          PositionY = descriptor.PositionY
+                          AssetTag = AssetTag.generalize descriptor.Image
+                          RenderDescriptor = ParticlesDescriptor descriptor })
+                    particlesDescriptors
+            World.enqueueRenderMessages particlesMessages world
 
 [<AutoOpen>]
 module BasicEmittersFacetModule =

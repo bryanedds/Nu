@@ -33,6 +33,19 @@ type [<StructuralEquality; NoComparison; Struct>] Flip =
         | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
         | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
 
+type [<StructuralEquality; NoComparison; Struct>] Blend =
+    | Transparent
+    | Additive
+    | Modulate
+    | Overwrite
+
+    static member toSdlBlendMode flip =
+        match flip with
+        | Transparent -> SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND
+        | Additive -> SDL.SDL_BlendMode.SDL_BLENDMODE_ADD
+        | Modulate -> SDL.SDL_BlendMode.SDL_BLENDMODE_MOD
+        | Overwrite -> SDL.SDL_BlendMode.SDL_BLENDMODE_NONE
+
 type [<StructuralEquality; StructuralComparison>] JustificationH =
     | JustifyLeft
     | JustifyCenter
@@ -86,15 +99,20 @@ type [<NoEquality; NoComparison>] ParticleDescriptor =
 
 /// Describes basic particles.
 type [<NoEquality; NoComparison>] ParticlesDescriptor =
-    { Particles : ParticleDescriptor array
-      Image : Image AssetTag }
+    { Elevation : single
+      PositionY : single
+      Absolute : bool
+      Blend : Blend
+      Image : Image AssetTag
+      Particles : ParticleDescriptor array }
 
 /// Describes how to render something to the rendering system.
 type [<NoEquality; NoComparison>] RenderDescriptor =
-    | SpriteDescriptor of SpriteDescriptor : SpriteDescriptor
-    | SpritesDescriptor of SpriteDescriptors : SpriteDescriptor array
-    | TileLayerDescriptor of TileLayerDescriptor : TileLayerDescriptor
-    | TextDescriptor of TextDescriptor : TextDescriptor
+    | SpriteDescriptor of SpriteDescriptor
+    | SpritesDescriptor of SpriteDescriptor array
+    | TileLayerDescriptor of TileLayerDescriptor
+    | TextDescriptor of TextDescriptor
+    | ParticlesDescriptor of ParticlesDescriptor
 
 /// Describes how to render a layered thing to the rendering system.
 type [<NoEquality; NoComparison>] LayeredDescriptor =
@@ -256,8 +274,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         (eyeSize : Vector2)
         (descriptor : SpriteDescriptor)
         renderer =
-        let mutable transform = descriptor.Transform
-        let view = if transform.Absolute then viewAbsolute else viewRelative
+        let transform = &descriptor.Transform
+        let view = if transform.Flags &&& TransformMasks.AbsoluteMask <> 0 then viewAbsolute else viewRelative // OPTIMIZATION: using mask directly to avoid a transform copy.
         let position = transform.Position - Vector2.Multiply (descriptor.Offset, transform.Size)
         let positionView = position * view
         let sizeView = transform.Size * view.ExtractScaleMatrix ()
@@ -467,6 +485,66 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | _ -> Log.debug "Cannot render text with a non-font asset."
         | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
 
+    static member private renderParticles
+        (viewAbsolute : Matrix3x3)
+        (viewRelative : Matrix3x3)
+        (_ : Vector2)
+        (eyeSize : Vector2)
+        (descriptor : ParticlesDescriptor)
+        renderer =
+        let view = if descriptor.Absolute then viewAbsolute else viewRelative
+        let blend = Blend.toSdlBlendMode descriptor.Blend
+        let image = AssetTag.generalize descriptor.Image
+        match SdlRenderer.tryLoadRenderAsset image renderer with
+        | Some renderAsset ->
+            match renderAsset with
+            | TextureAsset texture ->
+                let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
+                let mutable sourceRect = SDL.SDL_Rect ()
+                let mutable destRect = SDL.SDL_Rect ()
+                let mutable index = 0
+                while index < descriptor.Particles.Length do
+                    let descriptor = &descriptor.Particles.[index]
+                    let transform = &descriptor.Transform
+                    let position = transform.Position - Vector2.Multiply (descriptor.Offset, transform.Size)
+                    let positionView = position * view // NOTE: computing positionView here would be significantly faster in a shader.
+                    let sizeView = transform.Size * view.ExtractScaleMatrix ()
+                    let color = descriptor.Color
+                    let glow = descriptor.Glow
+                    let flip = Flip.toSdlFlip descriptor.Flip
+                    let inset = descriptor.Inset
+                    if inset.X = 0.0f && inset.Y = 0.0f && inset.Z = 0.0f && inset.W = 0.0f then
+                        sourceRect.x <- int inset.X
+                        sourceRect.y <- int inset.Y
+                        sourceRect.w <- int inset.Z
+                        sourceRect.h <- int inset.W
+                    else
+                        sourceRect.x <- 0
+                        sourceRect.y <- 0
+                        sourceRect.w <- textureSizeX
+                        sourceRect.h <- textureSizeY
+                    destRect.x <- int (+positionView.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
+                    destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
+                    destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
+                    destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
+                    let rotation = double -transform.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
+                    let mutable rotationCenter = SDL.SDL_Point ()
+                    rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
+                    rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
+                    SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
+                    SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
+                    SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
+                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
+                    if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+                    if glow.A <> byte 0 then
+                        SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
+                        SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
+                        SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore
+                        let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
+                        if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+            | _ -> Log.trace "Cannot render particle with a non-texture asset."
+        | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
+
     static member private renderDescriptor
         (viewAbsolute : Matrix3x3)
         (viewRelative : Matrix3x3)
@@ -479,6 +557,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | SpritesDescriptor sprites -> SdlRenderer.renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
         | TileLayerDescriptor descriptor -> SdlRenderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
         | TextDescriptor descriptor -> SdlRenderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
+        | ParticlesDescriptor descriptor -> SdlRenderer.renderParticles viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
 
     static member private renderLayeredDescriptors eyeCenter eyeSize (descriptors : LayeredDescriptor List) renderer =
         let renderContext = renderer.RenderContext
