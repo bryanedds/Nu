@@ -326,10 +326,11 @@ module EffectFacetModule =
             let effectStartTime = Option.getOrDefault (World.getTickTime world) (entity.GetEffectStartTimeOpt world)
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent Property? Effects) entity world
-            World.monitor handleAssetsReload Events.AssetsReload entity world
+            World.monitor handleAssetsReload Events.AssetsReload entity world`
 
 //[<AutoOpen>]
 //module EffectsFacetModule =
+//  type EffectDescriptor = ... includes Effect as well as StartTimeOpt, Definitions, the Offsets, and the like.
 //TODO.
 
 [<AutoOpen>]
