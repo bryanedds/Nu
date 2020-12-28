@@ -29,6 +29,9 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
             | Some prop -> Some (OccupyingProp prop)
             | None -> None
     
+    member this.GetPickupItem =
+        match this.PickupItemOpt with Some pickup -> pickup | None -> failwithumf ()
+    
     member this.ContainsCharacter =
         match this.CharacterOpt with Some _ -> true | None -> false
 
@@ -139,6 +142,9 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     member this.EnemyIndices =
         Map.toListBy (fun _ (v : FieldSpace) -> v.GetCharacterIndex) this.EnemySpaces
     
+    member this.Pickups =
+        Map.map (fun _ (v : FieldSpace) -> v.GetPickupItem) this.PickupSpaces
+    
     member this.EnemyCount =
         this.EnemySpaces.Count
 
@@ -157,6 +163,9 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     
     static member tryGetOccupantAtCoordinates coordinates chessboard =
         chessboard.FieldSpaces.[coordinates].TryGetOccupant
+    
+    static member getPickup coordinates chessboard =
+        chessboard.FieldSpaces.[coordinates].GetPickupItem
     
     // ignores non-adjacent enemies
     static member getNavigationMap currentCoordinates chessboard =
@@ -229,6 +238,10 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member addPickup pickup coordinates chessboard =
         Chessboard.updateByCoordinates coordinates (FieldSpace.addPickup pickup) chessboard
 
+    static member addRandomPickup coordinates chessboard =
+        let pickup = if Gen.random1 2 = 0 then Health else (Item (Special MagicMissile))
+        Chessboard.addPickup pickup coordinates chessboard
+    
     static member removePickup coordinates chessboard =
         Chessboard.updateByCoordinates coordinates FieldSpace.removePickup chessboard
     
