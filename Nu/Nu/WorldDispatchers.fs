@@ -160,45 +160,27 @@ module BasicEmitterFacetModule =
         member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
         member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false value world
         member this.SelfDestruct = lens Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct this
-        member this.GetEmitterGravity world : Vector2 = this.Get Property? EmitterGravity world
-        member this.SetEmitterGravity (value : Vector2) world = this.SetFast Property? EmitterGravity true value world
-        member this.EmitterGravity = lens Property? EmitterGravity this.GetEmitterGravity this.SetEmitterGravity this
-        member this.GetParticleImage world : Image AssetTag = this.Get Property? ParticleImage world
-        member this.SetParticleImage (value : Image AssetTag) world = this.SetFast Property? ParticleImage true value world
-        member this.ParticleImage = lens Property? ParticleImage this.GetParticleImage this.SetParticleImage this
-        member this.GetParticleRate world : single = this.Get Property? ParticleRate world
-        member this.SetParticleRate (value : single) world = this.SetFast Property? ParticleRate true value world
-        member this.ParticleRate = lens Property? ParticleRate this.GetParticleRate this.SetParticleRate this
-        member this.GetParticleLifeTimeOpt world : int64 = this.Get Property? ParticleLifeTimeOpt world
-        member this.SetParticleLifeTimeOpt (value : int64) world = this.SetFast Property? ParticleLifeTimeOpt true value world
-        member this.ParticleLifeTimeOpt = lens Property? ParticleLifeTimeOpt this.GetParticleLifeTimeOpt this.SetParticleLifeTimeOpt this
-        member this.GetParticleMax world : int64 option = this.Get Property? ParticleMax world
-        member this.SetParticleMax (value : int64 option) world = this.SetFast Property? ParticleMax true value world
-        member this.ParticleMax = lens Property? ParticleMax this.GetParticleMax this.SetParticleMax this
-        member this.GetBasicParticleSeed world : Particles.BasicParticle = this.Get Property? BasicParticleSeed world
-        member this.SetBasicParticleSeed (value : Particles.BasicParticle) world = this.SetFast Property? BasicParticleSeed true value world
-        member this.BasicParticleSeed = lens Property? BasicParticleSeed this.GetBasicParticleSeed this.SetBasicParticleSeed this
-        member this.GetConstraint world : Particles.Constraint = this.Get Property? Constraint world
-        member this.SetConstraint (value : Particles.Constraint) world = this.SetFast Property? Constraint true value world
-        member this.Constraint = lens Property? Constraint this.GetConstraint this.SetConstraint this
-        member this.GetEmitterName world : string = this.Get Property? EmitterName world
-        member this.SetEmitterName (value : string) world = this.SetFast Property? EmitterName true value world
-        member this.EmitterName = lens Property? EmitterName this.GetEmitterName this.SetEmitterName this
+        member this.GetBasicEmitterSymbolOpt world : Symbol AssetTag option = this.Get Property? BasicEmitterSymbolOpt world
+        member this.SetBasicEmitterSymbolOpt (value : Symbol AssetTag option) world = this.SetFast Property? BasicEmitterSymbolOpt true value world
+        member this.BasicEmitterSymbolOpt = lens Property? BasicEmitterSymbolOpt this.GetBasicEmitterSymbolOpt this.SetBasicEmitterSymbolOpt this
+        member this.GetBasicEmitter world : Particles.BasicEmitterDescriptor = this.Get Property? BasicEmitter world
+        member this.SetBasicEmitter (value : Particles.BasicEmitterDescriptor) world = this.SetFast Property? BasicEmitter true value world
+        member this.BasicEmitter = lens Property? BasicEmitter this.GetBasicEmitter this.SetBasicEmitter this
         member this.GetParticleSystem world : Particles.ParticleSystem = this.Get Property? ParticleSystem world
-        member private this.SetParticleSystem (value : Particles.ParticleSystem) world = this.SetFast Property? ParticleSystem false value world
-        member this.ParticleSystem = lensReadOnly Property? ParticleSystem this.GetParticleSystem this
+        member this.SetParticleSystem (value : Particles.ParticleSystem) world = this.SetFast Property? ParticleSystem false value world
+        member this.ParticleSystem = lens Property? ParticleSystem this.GetParticleSystem this.SetParticleSystem this
 
 [<AutoOpen>]
 module BasicEmittersFacetModule =
 
     type Entity with
 
-        member this.GetBasicEmitters world : Symbol AssetTag list = this.Get Property? BasicEmitters world
-        member this.SetBasicEmitters (value : Symbol AssetTag list) world = this.SetFast Property? BasicEmitters true value world
+        member this.GetBasicEmitterSymbols world : Symbol AssetTag list = this.Get Property? BasicEmitterSymbols world
+        member this.SetBasicEmitterSymbols (value : Symbol AssetTag list) world = this.SetFast Property? BasicEmitterSymbols true value world
+        member this.BasicEmitterSymbols = lens Property? BasicEmitterSymbols this.GetBasicEmitterSymbols this.SetBasicEmitterSymbols this
+        member this.GetBasicEmitters world : Particles.BasicEmitterDescriptors = this.Get Property? BasicEmitters world
+        member this.SetBasicEmitters (value : Particles.BasicEmitterDescriptors) world = this.SetFast Property? BasicEmitters true value world
         member this.BasicEmitters = lens Property? BasicEmitters this.GetBasicEmitters this.SetBasicEmitters this
-        member this.GetBasicEmitterDefinitions world : Particles.BasicEmitterDefinitions = this.Get Property? BasicEmitterDefinitions world
-        member this.SetBasicEmitterDefinitions (value : Particles.BasicEmitterDefinitions) world = this.SetFast Property? BasicEmitterDefinitions true value world
-        member this.BasicEmitterDefinitions = lens Property? BasicEmitterDefinitions this.GetBasicEmitterDefinitions this.SetBasicEmitterDefinitions this
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -208,9 +190,9 @@ module EffectFacetModule =
 
     type Entity with
 
-        member this.GetEffects world : Symbol AssetTag list = this.Get Property? Effects world
-        member this.SetEffects (value : Symbol AssetTag list) world = this.SetFast Property? Effects true value world
-        member this.Effects = lens Property? Effects this.GetEffects this.SetEffects this
+        member this.GetEffectSymbolOpt world : Symbol AssetTag option = this.Get Property? EffectSymbolOpt world
+        member this.SetEffectSymbolOpt (value : Symbol AssetTag option) world = this.SetFast Property? EffectSymbolOpt true value world
+        member this.EffectSymbolOpt = lens Property? EffectSymbolOpt this.GetEffectSymbolOpt this.SetEffectSymbolOpt this
         member this.GetEffectStartTimeOpt world : int64 option = this.Get Property? EffectStartTimeOpt world
         member this.SetEffectStartTimeOpt (value : int64 option) world = this.SetFast Property? EffectStartTimeOpt false value world
         member this.EffectStartTimeOpt = lens Property? EffectStartTimeOpt this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt this
@@ -254,32 +236,29 @@ module EffectFacetModule =
     type EffectFacet () =
         inherit Facet ()
 
-        static let setEffect effects (entity : Entity) world =
-            match effects with
-            | [] -> world
-            | effectAssetTags ->
+        static let setEffect effectSymbolOpt (entity : Entity) world =
+            match effectSymbolOpt with
+            | Some effectSymbol ->
                 let symbolLoadMetadata = { ImplicitDelimiters = false; StripCsvHeader = false }
-                let effectOpts = World.assetTagsToValueOpts<Effect> effectAssetTags symbolLoadMetadata world
-                let effects = List.definitize effectOpts
-                let effectCombined = EffectSystem.combineEffects effects
-                entity.SetEffect effectCombined world
+                match World.assetTagToValueOpt<Effect> effectSymbol symbolLoadMetadata world with
+                | Some effect -> entity.SetEffect effect world
+                | None -> world
+            | None -> world
 
         static let handleEffectsChanged evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffects world
-            let world = setEffect effectsOpt entity world
+            let world = setEffect (entity.GetEffectSymbolOpt world) entity world
             (Cascade, world)
 
         static let handleAssetsReload evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffects world
-            let world = setEffect effectsOpt entity world
+            let world = setEffect (entity.GetEffectSymbolOpt world) entity world
             (Cascade, world)
 
         static member Properties =
             [define Entity.PublishChanges true
              define Entity.SelfDestruct false
-             define Entity.Effects []
+             define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
              define Entity.Effect Effect.empty
@@ -312,8 +291,8 @@ module EffectFacetModule =
                       Effects.Enabled = true
                       Effects.Volume = Constants.Audio.SoundVolumeDefault }
                 let effectHistory = entity.GetEffectHistory world
-                let effectEnv = entity.GetEffectDefinitions world
-                let effectSystem = EffectSystem.make effectAbsolute effectTime effectEnv
+                let effectDefinitions = entity.GetEffectDefinitions world
+                let effectSystem = EffectSystem.make effectAbsolute effectTime effectDefinitions
 
                 // evaluate effect with effect system
                 let (artifacts, _) = EffectSystem.eval effect effectSlice effectHistory effectSystem
@@ -352,6 +331,10 @@ module EffectFacetModule =
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent Property? Effects) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
+
+//[<AutoOpen>]
+//module EffectsFacetModule =
+//TODO.
 
 [<AutoOpen>]
 module ScriptFacetModule =
