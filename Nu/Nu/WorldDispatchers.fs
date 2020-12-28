@@ -304,21 +304,19 @@ module BasicEmitterFacetModule =
             let emitter =
                 match emitterOpt with
                 | Some emitter ->
-                    let emitter =
-                        { emitter with
-                            Body =
-                                { Position = entity.GetPosition world + entity.GetEmitterOffset world
-                                  LinearVelocity = v2Zero
-                                  Rotation = entity.GetRotation world + entity.GetEmitterTwist world
-                                  AngularVelocity = 0.0f
-                                  Gravity = entity.GetEmitterGravity world }
-                            Elevation = entity.GetElevation world
-                            Absolute = entity.GetAbsolute world
-                            Blend = entity.GetEmitterBlend world
-                            Image = entity.GetEmitterImage world
-                            ParticleSeed = entity.GetBasicParticleSeed world
-                            Constraint = entity.GetEmitterConstraint world }
-                    emitter
+                    { emitter with
+                        Body =
+                            { Position = entity.GetPosition world + entity.GetEmitterOffset world
+                              LinearVelocity = v2Zero
+                              Rotation = entity.GetRotation world + entity.GetEmitterTwist world
+                              AngularVelocity = 0.0f
+                              Gravity = entity.GetEmitterGravity world }
+                        Elevation = entity.GetElevation world
+                        Absolute = entity.GetAbsolute world
+                        Blend = entity.GetEmitterBlend world
+                        Image = entity.GetEmitterImage world
+                        ParticleSeed = entity.GetBasicParticleSeed world
+                        Constraint = entity.GetEmitterConstraint world }
                 | None ->
                     Particles.BasicEmitter.makeEmpty
                         (World.getTickTime world)
@@ -374,7 +372,7 @@ module BasicEmittersFacetModule =
         member this.GetBasicEmitterSymbols world : Symbol AssetTag list = this.Get Property? BasicEmitterSymbols world
         member this.SetBasicEmitterSymbols (value : Symbol AssetTag list) world = this.SetFast Property? BasicEmitterSymbols true value world
         member this.BasicEmitterSymbols = lens Property? BasicEmitterSymbols this.GetBasicEmitterSymbols this.SetBasicEmitterSymbols this
-        member this.GetBasicEmitterDescriptors world : Particles.BasicEmitterDescriptors = this.Get Property? BasicEmitterDescriptors world // NOTE: Body.Position and Rotation will act as offsets.
+        member this.GetBasicEmitterDescriptors world : Particles.BasicEmitterDescriptors = this.Get Property? BasicEmitterDescriptors world
         member this.SetBasicEmitterDescriptors (value : Particles.BasicEmitterDescriptors) world = this.SetFast Property? BasicEmitterDescriptors true value world
         member this.BasicEmitterDescriptors = lens Property? BasicEmitterDescriptors this.GetBasicEmitterDescriptors this.SetBasicEmitterDescriptors this
 
