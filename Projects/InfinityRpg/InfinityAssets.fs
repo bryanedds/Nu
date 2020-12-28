@@ -21,7 +21,7 @@ module Assets =
     module Gameplay =
 
         let PackageName = "Gameplay"
-        let PickupSheetImage = asset<Image> PackageName "PickupItems"
+        let HealthPickupImage = asset<Image> PackageName "HealthPickup"
         let MagicMissile = asset<Image> PackageName "MagicMissile"
         let LongGrassImage = asset<Image> PackageName "LongGrass"
         let PlayerImage = asset<Image> PackageName "Player"
