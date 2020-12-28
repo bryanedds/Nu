@@ -125,29 +125,17 @@ module WorldModule =
 
     type World with // Reflection
 
-        /// Make a property always publish its change events.
+        /// Initialize a property's dynamic attributes.
         /// Available as an alternative to using the AP, TP, and NP property name suffixes.
-        static member registerPropertyAsAlwaysPublish name =
-            Reflection.registerPropertyAsAlwaysPublish name
+        static member initPropertyAttributes alwaysPublish nonPersistent propertyName =
+            Reflection.initPropertyAttributes alwaysPublish nonPersistent propertyName
 
-        /// Make a property never serialize.
+        /// Initialize a property's dynamic attributes.
         /// Available as an alternative to using the AP, TP, and NP property name suffixes.
-        static member registerPropertyAsNonPersistent name =
-            Reflection.registerPropertyAsNonPersistent name
-
-        /// Make a property always publish its change events.
-        /// Available as an alternative to using the AP, TP, and NP property name suffixes.
-        [<FunctionBinding "registerPropertyAsAlwaysPublish">]
-        static member internal registerPropertyAsAlwaysPublishWorld name (world : World) =
+        [<FunctionBinding "initPropertyAttributes">]
+        static member initPropertyAttributesWorld alwaysPublish nonPersistent propertyName (world : World) =
             ignore world // for world parameter for scripting
-            Reflection.registerPropertyAsAlwaysPublish name
-
-        /// Make a property never serialize.
-        /// Available as an alternative to using the AP, TP, and NP property name suffixes.
-        [<FunctionBinding "registerPropertyAsNonPersistent">]
-        static member registerPropertyAsNonPersistentWorld name (world : World) =
-            ignore world // for world parameter for scripting
-            Reflection.registerPropertyAsNonPersistent name
+            Reflection.initPropertyAttributes alwaysPublish nonPersistent propertyName
 
     type World with // Construction
 

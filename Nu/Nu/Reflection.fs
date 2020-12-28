@@ -70,15 +70,11 @@ module Reflection =
              ("EffectTags", true)
              ("EffectHistory", true)]
 
-    /// Make a property always publish its change events.
+    /// Initialize a property's dynamic attributes.
     /// Available as an alternative to using the AP, TP, and NP property name suffixes.
-    let registerPropertyAsAlwaysPublish name =
-        AlwaysPublishPropertyNames.Add (name, true)
-
-    /// Make a property never serialize.
-    /// Available as an alternative to using the AP, TP, and NP property name suffixes.
-    let registerPropertyAsNonPersistent name =
-        NonPersistentPropertyNames.Add (name, true)
+    let initPropertyAttributes alwaysPublish nonPersistent propertyName =
+        AlwaysPublishPropertyNames.Add (propertyName, alwaysPublish)
+        NonPersistentPropertyNames.Add (propertyName, nonPersistent)
 
     /// Check if a property with the given name should always publish a change event.
     let isPropertyAlwaysPublishByName (propertyName : string) =

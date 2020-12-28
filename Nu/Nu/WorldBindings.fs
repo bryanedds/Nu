@@ -50,7 +50,7 @@ module WorldBindings =
         "setOmniScreen getSelectedScreenOpt constrainEyeBounds setSelectedScreenOpt " +
         "getSelectedScreen setSelectedScreen getScreenTransitionDestinationOpt getViewBoundsRelative " +
         "getViewBoundsAbsolute getViewBounds isBoundsInView mouseToScreen " +
-        "mouseToWorld mouseToEntity registerPropertyAsNonPersistent getLiveness " +
+        "mouseToWorld mouseToEntity initPropertyAttributes getLiveness " +
         "getTickRate getTickRateF setTickRate resetTickTime " +
         "incTickTime decTickTime getTickTime isTicking " +
         "getUpdateCount getClockDelta exit tryGetTextureSize " +
@@ -2375,19 +2375,27 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'mouseToEntity' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let registerPropertyAsNonPersistent name world =
+    let initPropertyAttributes alwaysPublish nonPersistent propertyName world =
         let oldWorld = world
         try
-            let name =
-                match ScriptingSystem.tryExport typeof<String> name world with
+            let alwaysPublish =
+                match ScriptingSystem.tryExport typeof<Boolean> alwaysPublish world with
+                | Some value -> value :?> Boolean
+                | None -> failwith "Invalid argument type for 'alwaysPublish'; expecting a value convertable to Boolean."
+            let nonPersistent =
+                match ScriptingSystem.tryExport typeof<Boolean> nonPersistent world with
+                | Some value -> value :?> Boolean
+                | None -> failwith "Invalid argument type for 'nonPersistent'; expecting a value convertable to Boolean."
+            let propertyName =
+                match ScriptingSystem.tryExport typeof<String> propertyName world with
                 | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'name'; expecting a value convertable to String."
-            let result = World.registerPropertyAsNonPersistentWorld name world
+                | None -> failwith "Invalid argument type for 'propertyName'; expecting a value convertable to String."
+            let result = World.initPropertyAttributesWorld alwaysPublish nonPersistent propertyName world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'registerPropertyAsNonPersistent' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'initPropertyAttributes' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let getLiveness world =
@@ -4017,12 +4025,12 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalRegisterPropertyAsNonPersistentBinding fnName exprs originOpt world =
+    let evalInitPropertyAttributesBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|name|] -> registerPropertyAsNonPersistent name world
+            | [|alwaysPublish; nonPersistent; propertyName|] -> initPropertyAttributes alwaysPublish nonPersistent propertyName world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4353,7 +4361,7 @@ module WorldBindings =
              ("mouseToScreen", { Fn = evalMouseToScreenBinding; Pars = [|"mousePosition"|]; DocOpt = None })
              ("mouseToWorld", { Fn = evalMouseToWorldBinding; Pars = [|"absolute"; "mousePosition"|]; DocOpt = None })
              ("mouseToEntity", { Fn = evalMouseToEntityBinding; Pars = [|"absolute"; "entityPosition"; "mousePosition"|]; DocOpt = None })
-             ("registerPropertyAsNonPersistent", { Fn = evalRegisterPropertyAsNonPersistentBinding; Pars = [|"name"|]; DocOpt = None })
+             ("initPropertyAttributes", { Fn = evalInitPropertyAttributesBinding; Pars = [|"alwaysPublish"; "nonPersistent"; "propertyName"|]; DocOpt = None })
              ("getLiveness", { Fn = evalGetLivenessBinding; Pars = [||]; DocOpt = None })
              ("getTickRate", { Fn = evalGetTickRateBinding; Pars = [||]; DocOpt = None })
              ("getTickRateF", { Fn = evalGetTickRateFBinding; Pars = [||]; DocOpt = None })
