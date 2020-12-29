@@ -203,13 +203,18 @@ module BasicEmitterFacetModule =
     type BasicEmitterFacet () =
         inherit Facet ()
 
-        static let updateEmitter updater (entity : Entity) world =
+        static let updateParticleSystem updater (entity : Entity) world =
             let particleSystem = entity.GetParticleSystem world
-            let emitter = Map.find typeof<Particles.BasicEmitter>.Name particleSystem.Emitters :?> Particles.BasicEmitter
-            let emitter = updater emitter
-            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+            let particleSystem = updater particleSystem
             let world = entity.SetParticleSystem particleSystem world
             world
+
+        static let updateEmitter updater (entity : Entity) world =
+            updateParticleSystem (fun particleSystem ->
+                let emitter = Map.find typeof<Particles.BasicEmitter>.Name particleSystem.Emitters :?> Particles.BasicEmitter
+                let emitter = updater emitter
+                { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters })
+                entity world
 
         static let handleEmitterGravityChanged evt world =
             let emitterGravity = evt.Data.Value :?> Vector2
@@ -273,6 +278,13 @@ module BasicEmitterFacetModule =
             let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             let world = entity.SetParticleSystem particleSystem world
             (Cascade, world)
+
+        static let rec processOutput output entity world =
+            match output with
+            | Particles.PlaySoundOutput (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
+            | Particles.EmitterOutput (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
+            | Particles.Outputs outputs -> Array.fold (fun world output -> processOutput output entity world) world outputs
+            | Particles.NoOutput -> world
 
         static member Properties =
             [define Entity.PublishChanges true
@@ -348,8 +360,8 @@ module BasicEmitterFacetModule =
             let time = World.getTickTime world
             let particleSystem = entity.GetParticleSystem world
             let (particleSystem, output) = Particles.ParticleSystem.run time Particles.NoConstraint particleSystem
-            // TODO: process output.
-            entity.SetParticleSystem particleSystem world
+            let world = entity.SetParticleSystem particleSystem world
+            processOutput output entity world
 
         override this.Actualize (entity, world) =
             let particleSystem = entity.GetParticleSystem world
