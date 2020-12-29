@@ -65,7 +65,7 @@ module Particles =
 
     /// The output of a particle behavior.
     type [<NoEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Output =
-        | EmitterOutput of Emitter
+        | EmitterOutput of string * Emitter
         | PlaySoundOutput of single * Sound AssetTag
         | Outputs of Output array
         | NoOutput // OPTIMIZATION: elide Option indirection
