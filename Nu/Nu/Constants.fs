@@ -29,11 +29,12 @@ module Engine =
     let (*Literal*) EntityTreeDepth = 3
     let (*Literal*) EntityTreeSize = Vector2 (single (Math.Pow (2.0, 16.0)))
     let (*Literal*) EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X, EntityTreeSize.Y)
+    let (*Literal*) ParticleSizeDefault = Vector2 12.0f
     let (*Literal*) InvalidId = Guid.Empty
     let (*Literal*) TaskletListConfig = Functional
     let (*Literal*) SimulantMapConfig = Functional
     let (*Literal*) KeyValueMapConfig = Functional
-    let (*Literal*) Gravity = Vector2 (0.0f, -9.80665f)
+    let (*Literal*) GravityDefault = Vector2 (0.0f, -9.80665f)
 
 [<RequireQualifiedAccess>]
 module Associations =
@@ -76,8 +77,8 @@ module Physics =
     let (*Literal*) PhysicsStepRate = 1.0f / single Engine.DesiredFps
     let [<Literal>] PhysicsToPixelRatio = 64.0f
     let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
-    let [<Literal>] NormalDensity = 1.0f
-    let (*Literal*) Gravity = Engine.Gravity * PhysicsToPixelRatio
+    let [<Literal>] DensityDefault = 1.0f
+    let (*Literal*) GravityDefault = Engine.GravityDefault * PhysicsToPixelRatio
     let (*Literal*) MessageListConfig = Functional
 
 [<RequireQualifiedAccess>]

@@ -28,10 +28,10 @@ type [<StructuralEquality; NoComparison; Struct>] Flip =
 
     static member toSdlFlip flip =
         match flip with
-        | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
+        | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
         | FlipH -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
         | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-        | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+        | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
 
 type [<StructuralEquality; NoComparison; Struct>] Blend =
     | Transparent
