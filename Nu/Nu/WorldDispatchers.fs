@@ -413,7 +413,6 @@ module BasicEmittersFacetModule =
 
         do ignore updateEmitter // silence warning for now
         
-
 [<AutoOpen>]
 module EffectFacetModule =
 
@@ -1478,6 +1477,18 @@ module EntityDispatcherModule =
 
         abstract member View : 'model * Entity * World -> View
         default this.View (_, _, _) = View.empty
+
+[<AutoOpen>]
+module BasicEmitterDispatcherModule =
+
+    type BasicEmitterDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<BasicEmitterFacet>]
+
+        static member Properties =
+            [define Entity.PublishChanges true]
 
 [<AutoOpen>]
 module EffectDispatcherModule =
