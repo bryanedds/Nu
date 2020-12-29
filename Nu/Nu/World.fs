@@ -402,7 +402,7 @@ module WorldModule3 =
             Map.ofList [World.pairWithName (LayerDispatcher ())]
 
         static member private makeDefaultEntityDispatchers () =
-            // TODO: consider if we shoud reflectively generate these
+            // TODO: consider if we should reflectively generate these
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher ()
                  StaticSpriteDispatcher () :> EntityDispatcher
@@ -556,7 +556,8 @@ module WorldModule3 =
 
                 // make the world's subsystems
                 let subsystems =
-                    let physicsEngine = AetherPhysicsEngine.make Constants.Physics.Gravity
+                    let physicsEngine =
+                        AetherPhysicsEngine.make Constants.Physics.GravityDefault
                     let renderer =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer

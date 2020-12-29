@@ -40,7 +40,7 @@ module Particles =
               LinearVelocity = v2Zero
               Rotation = 0.0f
               AngularVelocity = 0.0f
-              Gravity = Constants.Engine.Gravity }
+              Gravity = Constants.Engine.GravityDefault }
 
     /// The base particle type.
     type Particle =
@@ -49,34 +49,38 @@ module Particles =
         abstract Life : Life with get, set
 
     /// A particle constraint.
-    type [<StructuralEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Constraint =
+    type [<StructuralEquality; NoComparison>] Constraint =
         | Rectangle of Vector4
         | Circle of single * Vector2
         | Constraints of Constraint array
-        | NoConstraint // OPTIMIZATION: elide Option indirection
 
         /// Combine two constraints.
         static member (+) (constrain, constrain2) =
             match (constrain, constrain2) with
-            | (NoConstraint, NoConstraint) -> constrain // OPTIMIZATION: elide Constraint ctor
-            | (_, NoConstraint) -> constrain
-            | (NoConstraint, _) -> constrain2
+            | (Constraints [||], Constraints [||]) -> constrain // OPTIMIZATION: elide Constraint ctor
+            | (_, Constraints [||]) -> constrain
+            | (Constraints [||], _) -> constrain2
             | (_, _) -> Constraints [|constrain; constrain2|]
 
+        /// The empty constraint.
+        static member empty = Constraints [||]
+
     /// The output of a particle behavior.
-    type [<NoEquality; NoComparison; CompilationRepresentation (CompilationRepresentationFlags.UseNullAsTrueValue)>] Output =
-        | EmitterOutput of string * Emitter
-        | PlaySoundOutput of single * Sound AssetTag
+    type [<NoEquality; NoComparison>] Output =
+        | OutputEmitter of string * Emitter
+        | OutputSound of single * Sound AssetTag
         | Outputs of Output array
-        | NoOutput // OPTIMIZATION: elide Option indirection
 
         /// Combine two outputs.
         static member (+) (output, output2) =
             match (output, output2) with
-            | (NoOutput, NoOutput) -> output // OPTIMIZATION: elide Output ctor
-            | (_, NoOutput) -> output
-            | (NoOutput, _) -> output2
+            | (Outputs [||], Outputs [||]) -> output // OPTIMIZATION: elide Output ctor
+            | (_, Outputs [||]) -> output
+            | (Outputs [||], _) -> output2
             | (_, _) -> Outputs [|output; output2|]
+
+        /// The empty output.
+        static member empty = Outputs [||]
 
     /// The base particle emitter type.
     and Emitter =
@@ -141,8 +145,8 @@ module Particles =
             let particles3 = Array.map (fun struct (progress, field) -> behavior.Transformer progress constrain field) particles2
             let particles4 = Array.map2 behavior.Scope.Out particles3 particles
             let particles5 = Array.map fst' particles4
-            let outputs = particles4 |> Array.filter (function struct (_, NoOutput) -> false | struct (_, _) -> true) |> Array.map snd'
-            let output = match outputs with [||] -> NoOutput | [|output|] -> output | outputs -> Outputs outputs
+            let outputs = particles4 |> Array.filter (function struct (_, Outputs [||]) -> false | struct (_, _) -> true) |> Array.map snd'
+            let output = match outputs with [||] -> Outputs outputs | [|output|] -> output | outputs -> Outputs outputs
             (particles5, output)
 
         interface Behavior with
@@ -176,7 +180,7 @@ module Particles =
                 FStack.fold (fun (particles, output) (behavior : Behavior) ->
                     let (particles2, output2) = behavior.Run time constrain particles
                     (particles2, output + output2))
-                    (particles :> obj, NoOutput)
+                    (particles :> obj, Output.empty)
                     behaviors.Behaviors
             (particles :?> 'a array, outputs)
 
@@ -308,7 +312,7 @@ module Particles =
                     let (emitter, output2) = emitter.Run time constrain
                     let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
                     (emitters, output + output2))
-                    (Map.empty, NoOutput)
+                    (Map.empty, Output.empty)
                     particleSystem.Emitters
             let particleSystem = { Emitters = emitters }
             (particleSystem, output)
@@ -397,6 +401,23 @@ module Particles =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed = Unchecked.defaultof<BasicParticle>
             let initializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
-            let inPlaceBehavior = fun _ _ _ -> NoOutput
+            let inPlaceBehavior = fun _ _ _ -> Output.empty
             let behaviors = Behaviors.empty
-            make time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed NoConstraint initializer inPlaceBehavior behaviors
+            make time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed Constraint.empty initializer inPlaceBehavior behaviors
+
+        /// Make the default basic particle emitter.
+        let makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax =
+            let image = asset Assets.Default.PackageName Assets.Default.ImageName
+            let particleSeed =
+                { Life = { StartTime = 0L; LifeTimeOpt = 60L }
+                  Body = Body.defaultBody
+                  Size = Constants.Engine.ParticleSizeDefault
+                  Offset = v2Dup 0.5f
+                  Inset = v4Zero
+                  Color = Color.White
+                  Glow = Color.Zero
+                  Flip = FlipNone }
+            let initializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
+            let inPlaceBehavior = fun _ _ _ -> Output.empty
+            let behaviors = Behaviors.empty
+            make time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed Constraint.empty initializer inPlaceBehavior behaviors

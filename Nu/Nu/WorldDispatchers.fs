@@ -281,17 +281,16 @@ module BasicEmitterFacetModule =
 
         static let rec processOutput output entity world =
             match output with
-            | Particles.PlaySoundOutput (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
-            | Particles.EmitterOutput (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
+            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
+            | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> Array.fold (fun world output -> processOutput output entity world) world outputs
-            | Particles.NoOutput -> world
 
         static member Properties =
             [define Entity.PublishChanges true
              define Entity.SelfDestruct false
              define Entity.EmitterOffset v2Zero
              define Entity.EmitterTwist 0.0f
-             define Entity.EmitterGravity Constants.Engine.Gravity
+             define Entity.EmitterGravity Constants.Engine.GravityDefault
              define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
              define Entity.EmitterLifeTimeOpt 60L
@@ -299,7 +298,7 @@ module BasicEmitterFacetModule =
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
              define Entity.BasicParticleSeed Unchecked.defaultof<Particles.BasicParticle>
-             define Entity.EmitterConstraint Particles.NoConstraint
+             define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.ParticleSystem Particles.ParticleSystem.empty]
 
         override this.Register (entity, world) =
@@ -359,7 +358,7 @@ module BasicEmitterFacetModule =
         override this.Update (entity, world) =
             let time = World.getTickTime world
             let particleSystem = entity.GetParticleSystem world
-            let (particleSystem, output) = Particles.ParticleSystem.run time Particles.NoConstraint particleSystem
+            let (particleSystem, output) = Particles.ParticleSystem.run time Particles.Constraint.empty particleSystem
             let world = entity.SetParticleSystem particleSystem world
             processOutput output entity world
 
@@ -776,7 +775,7 @@ module RigidBodyFacetModule =
              define Entity.BodyEnabled true
              define Entity.BodyType Dynamic
              define Entity.Awake true
-             define Entity.Density Constants.Physics.NormalDensity
+             define Entity.Density Constants.Physics.DensityDefault
              define Entity.Friction 0.2f
              define Entity.Restitution 0.0f
              define Entity.FixedRotation false
