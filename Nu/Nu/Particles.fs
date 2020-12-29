@@ -48,7 +48,7 @@ module Particles =
         /// The life of the particle.
         abstract Life : Life with get, set
 
-    /// A particle constraint.
+    /// A behavioral constraint.
     type [<StructuralEquality; NoComparison>] Constraint =
         | Rectangle of Vector4
         | Circle of single * Vector2
@@ -65,7 +65,7 @@ module Particles =
         /// The empty constraint.
         static member empty = Constraints [||]
 
-    /// The output of a particle behavior.
+    /// The output of a behavior.
     type [<NoEquality; NoComparison>] Output =
         | OutputEmitter of string * Emitter
         | OutputSound of single * Sound AssetTag
@@ -97,7 +97,7 @@ module Particles =
         /// Change the maximum number of allowable particles.
         abstract Resize : int -> Emitter
 
-    /// Transforms a particle value.
+    /// Transforms a constrained value.
     type 'a Transformer =
         single -> Constraint -> 'a -> struct ('a * Output)
 
@@ -124,35 +124,49 @@ module Particles =
     module Scope =
 
         /// Make a scope.
-        let inline make< ^p, ^q when ^p : struct and ^p : (member Life : Life)> (getField : ^p -> ^q) (setField : ^q -> ^p -> ^p) : Scope< ^p, ^q> =
-            { In = fun time (particle : 'p) -> struct (Life.getProgress time (^p : (member Life : Life) particle), getField particle)
-              Out = fun struct (field, output) (particle : 'p) -> struct (setField field particle, output) : struct ('p * Output) }
+        let inline make< ^a, ^b when ^a : struct and ^a : (member Life : Life)> (getField : ^a -> ^b) (setField : ^b -> ^a -> ^a) : Scope< ^a, ^b> =
+            { In = fun time (target : ^a) -> struct (Life.getProgress time (^a : (member Life : Life) target), getField target)
+              Out = fun struct (field, output) (target : ^a) -> struct (setField field target, output) : struct (^a * Output) }
 
-    /// The base particle behavior type.
+    /// The base behavior type.
     type Behavior =
 
-        /// Run the behavior.
+        /// Run the behavior over a single target.
         abstract Run : int64 -> Constraint -> obj -> (obj * Output)
 
-    /// Defines a particle behavior.
+        /// Run the behavior over multiple targets.
+        abstract RunMany : int64 -> Constraint -> obj -> (obj * Output)
+
+    /// Defines a generic behavior.
     type [<NoEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
         { Scope : Scope<'a, 'b>
           Transformer : 'b Transformer }
 
-        /// Run the behavior over an array of particles.
-        static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (particles : 'a array) =
-            let particles2 = Array.map (behavior.Scope.In time) particles
-            let particles3 = Array.map (fun struct (progress, field) -> behavior.Transformer progress constrain field) particles2
-            let particles4 = Array.map2 behavior.Scope.Out particles3 particles
-            let particles5 = Array.map fst' particles4
-            let outputs = particles4 |> Array.filter (function struct (_, Outputs [||]) -> false | struct (_, _) -> true) |> Array.map snd'
+        /// Run the behavior over a single target.
+        static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
+            let struct (progress, target2) = behavior.Scope.In time target
+            let target3 = behavior.Transformer progress constrain target2
+            let struct (target4, output) = behavior.Scope.Out target3 target
+            (target4, output)
+
+        /// Run the behavior over an array of targets.
+        /// OPTIMIZATION: runs transformers in batches for better utilization of instruction cache.
+        static member runMany time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a array) =
+            let targets2 = Array.map (behavior.Scope.In time) targets
+            let targets3 = Array.map (fun struct (progress, field) -> behavior.Transformer progress constrain field) targets2
+            let targets4 = Array.map2 behavior.Scope.Out targets3 targets
+            let targets5 = Array.map fst' targets4
+            let outputs = targets4 |> Array.filter (function struct (_, Outputs [||]) -> false | struct (_, _) -> true) |> Array.map snd'
             let output = match outputs with [||] -> Outputs outputs | [|output|] -> output | outputs -> Outputs outputs
-            (particles5, output)
+            (targets5, output)
 
         interface Behavior with
-            member this.Run time constrain particlesObj =
-                let (particles, outputs) = Behavior<'a, 'b>.run time constrain this (particlesObj :?> 'a array)
-                (particles :> obj, outputs)
+            member this.Run time constrain targetObj =
+                let (target, outputs) = Behavior<'a, 'b>.run time constrain this (targetObj :?> 'a)
+                (target :> obj, outputs)
+            member this.RunMany time constrain targetsObj =
+                let (targets, outputs) = Behavior<'a, 'b>.runMany time constrain this (targetsObj :?> 'a array)
+                (targets :> obj, outputs)
 
     /// A composition of behaviors.
     type [<NoEquality; NoComparison>] Behaviors =
@@ -174,15 +188,25 @@ module Particles =
         static member ofSeq seq =
             Behaviors.addMany seq Behaviors.empty
 
-        /// Run the behaviors over an array.
-        static member run time behaviors constrain (particles : 'a array) =
-            let (particles, outputs) =
-                FStack.fold (fun (particles, output) (behavior : Behavior) ->
-                    let (particles2, output2) = behavior.Run time constrain particles
-                    (particles2, output + output2))
-                    (particles :> obj, Output.empty)
+        /// Run the behaviors over a single target.
+        static member run time behaviors constrain (target : 'a) =
+            let (targets, outputs) =
+                FStack.fold (fun (target, output) (behavior : Behavior) ->
+                    let (targets2, output2) = behavior.Run time constrain target
+                    (targets2, output + output2))
+                    (target :> obj, Output.empty)
                     behaviors.Behaviors
-            (particles :?> 'a array, outputs)
+            (targets :?> 'a, outputs)
+
+        /// Run the behaviors over an array of targets.
+        static member runMany time behaviors constrain (targets : 'a array) =
+            let (targets, outputs) =
+                FStack.fold (fun (targets, output) (behavior : Behavior) ->
+                    let (targets2, output2) = behavior.RunMany time constrain targets
+                    (targets2, output + output2))
+                    (targets :> obj, Output.empty)
+                    behaviors.Behaviors
+            (targets :?> 'a array, outputs)
 
     /// Describes an emitter.
     and [<NoEquality; NoComparison>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
@@ -219,9 +243,11 @@ module Particles =
           ParticleBuffer : 'a array // operates as a ring-buffer
           ParticleSeed : 'a
           Constraint : Constraint
-          Initializer : int64 -> Constraint -> 'a Emitter -> 'a
-          InPlaceBehavior : int64 -> Constraint -> 'a Emitter -> Output
-          CompositionalBehaviors : Behaviors
+          ParticleInitializer : int64 -> Constraint -> 'a Emitter -> 'a
+          ParticleBehavior : int64 -> Constraint -> 'a Emitter -> Output
+          ParticleBehaviors : Behaviors
+          EmitterBehavior : int64 -> Constraint -> 'a Emitter -> Output
+          EmitterBehaviors : Behaviors
           ToParticlesDescriptor : 'a Emitter -> ParticlesDescriptor }
 
         static member private emit time constrain emitter =
@@ -230,7 +256,7 @@ module Particles =
             emitter.ParticleIndex <- particleIndex
             let particle = &emitter.ParticleBuffer.[particleIndex]
             particle.Life <- { LifeTimeOpt = particle.Life.LifeTimeOpt; StartTime = time }
-            particle <- emitter.Initializer time constrain emitter
+            particle <- emitter.ParticleInitializer time constrain emitter
 
         /// Determine emitter's liveness.
         static member getLiveness time emitter =
@@ -254,19 +280,26 @@ module Particles =
                 let emitCount = int emitCountThisFrame - int emitCountLastFrame
                 for _ in 0 .. emitCount - 1 do Emitter<'a>.emit time constrain emitter
 
+            // update emitter in-place
+            let output = emitter.EmitterBehavior time constrain emitter
+
+            // update emitter compositionally
+            let (emitter, output2) = Behaviors.run time emitter.EmitterBehaviors constrain emitter
+
             // update existing particles in-place
-            let outputInPlace = emitter.InPlaceBehavior time constrain emitter
+            let output3 = emitter.ParticleBehavior time constrain emitter
 
             // update existing particles compositionally
-            let (particleBuffer, outputCompositional) = Behaviors.run time emitter.CompositionalBehaviors constrain emitter.ParticleBuffer
+            let (particleBuffer, output4) = Behaviors.runMany time emitter.ParticleBehaviors constrain emitter.ParticleBuffer
             let emitter = { emitter with ParticleBuffer = particleBuffer }
 
-            // compose output
-            let output = outputCompositional + outputInPlace
-            (emitter, output)
+            // fin
+            (emitter, output + output2 + output3 + output4)
 
         /// Make a basic particle emitter.
-        static member make<'a> time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors toParticlesDescriptor : 'a Emitter =
+        static member make<'a>
+            time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed
+            constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a Emitter =
             { Body = body
               Elevation = elevation
               Absolute = absolute
@@ -280,9 +313,11 @@ module Particles =
               ParticleBuffer = Array.zeroCreate particleMax
               ParticleSeed = particleSeed
               Constraint = constrain
-              Initializer = initializer
-              InPlaceBehavior = inPlaceBehavior
-              CompositionalBehaviors = behaviors
+              ParticleInitializer = particleInitializer
+              ParticleBehavior = particleBehavior
+              ParticleBehaviors = particleBehaviors
+              EmitterBehavior = emitterBehavior
+              EmitterBehaviors = emitterBehaviors
               ToParticlesDescriptor = toParticlesDescriptor }
 
         interface Emitter with
@@ -393,17 +428,25 @@ module Particles =
             (emitter :> Emitter).Resize particleMax :?> BasicEmitter
 
         /// Make a basic particle emitter.
-        let make time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors =
-            BasicEmitter.make time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed constrain initializer inPlaceBehavior behaviors toParticlesDescriptor
+        let make
+            time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed
+            constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
+            BasicEmitter.make
+                time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed
+                constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
         /// Make an empty basic particle emitter.
         let makeEmpty time lifeTimeOpt particleLifeTimeOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed = Unchecked.defaultof<BasicParticle>
-            let initializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
-            let inPlaceBehavior = fun _ _ _ -> Output.empty
-            let behaviors = Behaviors.empty
-            make time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed Constraint.empty initializer inPlaceBehavior behaviors
+            let particleInitializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
+            let particleBehavior = fun _ _ _ -> Output.empty
+            let particleBehaviors = Behaviors.empty
+            let emitterBehavior = fun _ _ _ -> Output.empty
+            let emitterBehaviors = Behaviors.empty
+            make
+                time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed
+                Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
         /// Make the default basic particle emitter.
         let makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax =
@@ -417,7 +460,11 @@ module Particles =
                   Color = Color.White
                   Glow = Color.Zero
                   Flip = FlipNone }
-            let initializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
-            let inPlaceBehavior = fun _ _ _ -> Output.empty
-            let behaviors = Behaviors.empty
-            make time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed Constraint.empty initializer inPlaceBehavior behaviors
+            let particleInitializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
+            let particleBehavior = fun _ _ _ -> Output.empty
+            let particleBehaviors = Behaviors.empty
+            let emitterBehavior = fun _ _ _ -> Output.empty
+            let emitterBehaviors = Behaviors.empty
+            make
+                time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed
+                Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
