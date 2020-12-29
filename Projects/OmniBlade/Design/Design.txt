@@ -114,7 +114,7 @@ lead character - sword / physical geometric attacks
 
 wizard - scythe / elemental geometric attacks
 
-brawler - heavesword / scalar single attack / provoke / counter
+brawler - heavesword / splash attacks / provoke / counter
 
 cleric - archer / healer / buffer / debuffer
 

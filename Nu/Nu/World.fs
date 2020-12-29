@@ -408,6 +408,7 @@ module WorldModule3 =
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  NodeDispatcher () :> EntityDispatcher
+                 BasicEmitterDispatcher () :> EntityDispatcher
                  EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
                  ButtonDispatcher () :> EntityDispatcher
@@ -424,9 +425,10 @@ module WorldModule3 =
                  TmxMapDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
-            // TODO: consider if we shoud reflectively generate these
+            // TODO: consider if we should reflectively generate these
             Map.ofList
                 [(typeof<NodeFacet>.Name, NodeFacet () :> Facet)
+                 (typeof<BasicEmitterFacet>.Name, BasicEmitterFacet () :> Facet)
                  (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
                  (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
                  (typeof<TextFacet>.Name, TextFacet () :> Facet)
