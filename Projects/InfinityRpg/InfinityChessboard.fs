@@ -18,31 +18,40 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
     member this.GetCharacter =
         match this.CharacterOpt with Some character -> character | None -> failwithumf ()
     
+    static member getCharacter (fieldSpace : FieldSpace) =
+        fieldSpace.GetCharacter
+    
     member this.GetCharacterIndex =
         this.GetCharacter.CharacterIndex
+
+    static member getCharacterIndex (fieldSpace : FieldSpace) =
+        fieldSpace.GetCharacterIndex
     
-    member this.TryGetOccupant =
-        match this.CharacterOpt with
+    static member tryGetOccupant fieldSpace =
+        match fieldSpace.CharacterOpt with
         | Some character -> Some (OccupyingCharacter character)
         | None ->
-            match this.PropOpt with
+            match fieldSpace.PropOpt with
             | Some prop -> Some (OccupyingProp prop)
             | None -> None
     
     member this.GetPickup =
         match this.PickupOpt with Some pickup -> pickup | None -> failwithumf ()
     
+    static member getPickup (fieldSpace : FieldSpace) =
+        fieldSpace.GetPickup
+
     member this.ContainsCharacter =
         match this.CharacterOpt with Some _ -> true | None -> false
 
-    member this.ContainsEnemy =
-        match this.CharacterOpt with
+    static member containsCharacter (fieldSpace : FieldSpace) =
+        fieldSpace.ContainsCharacter
+    
+    static member containsEnemy fieldSpace =
+        match fieldSpace.CharacterOpt with
         | None -> false // more efficient order
         | Some character -> character.IsEnemy
 
-    static member containsEnemy (fieldSpace : FieldSpace) =
-        fieldSpace.ContainsEnemy
-    
     static member containsSpecifiedCharacter index fieldSpace =
         match fieldSpace.CharacterOpt with
         | None -> false // more efficient order
@@ -65,6 +74,9 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
 
     static member isOccupied (fieldSpace : FieldSpace) =
         fieldSpace.IsOccupied
+
+    static member isUnoccupied (fieldSpace : FieldSpace) =
+        not fieldSpace.IsOccupied
 
     // internal updaters
     
@@ -113,37 +125,37 @@ type [<ReferenceEquality; NoComparison>] FieldSpace =
 type [<ReferenceEquality; NoComparison>] Chessboard =
     { FieldSpaces : Map<Vector2i, FieldSpace> }
 
-    // NOTE: the following subset data can be optimized on demand by converting them from filters to storage caches, without interfering with the interface.
+    // TODO: get rid of FieldSpace |> properly handle None cases |> convert any remaining heavy properties to functions.
     
     member this.CharacterSpaces =
-        Map.filter (fun _ (v : FieldSpace) -> v.ContainsCharacter) this.FieldSpaces
+        Map.filter (constant FieldSpace.containsCharacter) this.FieldSpaces
     
     member this.EnemySpaces =
-        Map.filter (fun _ (v : FieldSpace) -> v.ContainsEnemy) this.FieldSpaces
+        Map.filter (constant FieldSpace.containsEnemy) this.FieldSpaces
 
     member this.PropSpaces =
-        Map.filter (fun _ (v : FieldSpace) -> v.ContainsProp) this.FieldSpaces
+        Map.filter (constant FieldSpace.containsProp) this.FieldSpaces
     
     member this.PickupSpaces =
-        Map.filter (fun _ (v : FieldSpace) -> v.ContainsPickup) this.FieldSpaces
+        Map.filter (constant FieldSpace.containsPickup) this.FieldSpaces
 
     member this.OccupiedSpaces =
-        Map.filter (fun _ (v : FieldSpace) -> v.IsOccupied) this.FieldSpaces |> Map.toKeyList
+        Map.filter (constant FieldSpace.isOccupied) this.FieldSpaces |> Map.toKeyList
     
     member this.UnoccupiedSpaces =
-        Map.filter (fun _ (v : FieldSpace) -> not v.IsOccupied) this.FieldSpaces |> Map.toKeyList
+        Map.filter (constant FieldSpace.isUnoccupied) this.FieldSpaces |> Map.toKeyList
 
     member this.OpenDirections coordinates =
         List.filter (fun d -> List.exists (fun x -> x = (coordinates + (dtovc d))) this.UnoccupiedSpaces) [Upward; Rightward; Downward; Leftward]
 
     member this.Characters =
-        Map.map (fun _ (v : FieldSpace) -> v.GetCharacter) this.CharacterSpaces
+        Map.map (constant FieldSpace.getCharacter) this.CharacterSpaces
 
     member this.EnemyIndices =
-        Map.toListBy (fun _ (v : FieldSpace) -> v.GetCharacterIndex) this.EnemySpaces
+        Map.toListBy (constant FieldSpace.getCharacterIndex) this.EnemySpaces
     
     member this.Pickups =
-        Map.map (fun _ (v : FieldSpace) -> v.GetPickup) this.PickupSpaces
+        Map.map (constant FieldSpace.getPickup) this.PickupSpaces
     
     member this.EnemyCount =
         this.EnemySpaces.Count
@@ -162,7 +174,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Chessboard.getCharacterAtCoordinates coordinates chessboard
     
     static member tryGetOccupantAtCoordinates coordinates chessboard =
-        chessboard.FieldSpaces.[coordinates].TryGetOccupant
+        FieldSpace.tryGetOccupant chessboard.FieldSpaces.[coordinates]
     
     static member getPickup coordinates chessboard =
         chessboard.FieldSpaces.[coordinates].GetPickup
@@ -182,7 +194,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Map.exists (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.FieldSpaces
     
     static member enemyAtCoordinates coordinates chessboard =
-        chessboard.FieldSpaces.[coordinates].ContainsEnemy
+        FieldSpace.containsEnemy chessboard.FieldSpaces.[coordinates]
     
     static member pickupAtCoordinates coordinates chessboard =
         chessboard.FieldSpaces.[coordinates].ContainsPickup
