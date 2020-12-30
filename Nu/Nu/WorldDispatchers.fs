@@ -261,7 +261,7 @@ module BasicEmitterFacetModule =
             let particleSystem = entity.GetParticleSystem world
             let emitter = Map.find typeof<Particles.BasicEmitter>.Name particleSystem.Emitters :?> Particles.BasicEmitter
             let emitter =
-                let entityPosition = entity.GetPosition world + entity.GetEmitterOffset world
+                let entityPosition = entity.GetCenter world + entity.GetEmitterOffset world
                 if v2Neq emitter.Body.Position entityPosition
                 then { emitter with Body = { emitter.Body with Position = entityPosition }}
                 else emitter
@@ -311,7 +311,7 @@ module BasicEmitterFacetModule =
                 | Some emitter ->
                     { emitter with
                         Body =
-                            { Position = entity.GetPosition world + entity.GetEmitterOffset world
+                            { Position = entity.GetCenter world + entity.GetEmitterOffset world
                               LinearVelocity = v2Zero
                               Rotation = entity.GetRotation world + entity.GetEmitterTwist world
                               AngularVelocity = 0.0f }
