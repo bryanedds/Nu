@@ -33,6 +33,18 @@ module Particles =
     /// The forces that may operate on a target.
     type Forces = single array
 
+    [<RequireQualifiedAccess>]
+    module Forces =
+        
+        let makeAttractor (position : Vector2) force =
+            [|position.X; position.Y; force|]
+
+        let getAttractorPosition (forces : Forces) =
+            v2 forces.[0] forces.[1]
+
+        let getAttractorForce (forces : Forces) =
+            forces.[2]
+
     /// Describes the life of an instance value.
     /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
     /// OPTIMIZATION: doesn't use Liveness type to avoid its constructor calls.
@@ -125,17 +137,17 @@ module Particles =
 
     /// Transforms a constrained value.
     type 'a Transformer =
-        single -> Constraint -> 'a -> struct ('a * Output)
+        int64 -> Constraint -> 'a array -> ('a array * Output)
 
     [<AutoOpen>]
     module Transformer =
 
         /// Pipe two transformers.
         let pipe (transformer : 'a Transformer) (transformer2 : 'a Transformer) : 'a Transformer =
-            fun progress constrain a ->
-                let struct (a, output) = transformer progress constrain a
-                let struct (a, output2) = transformer2 progress constrain a
-                struct (a, output + output2)
+            fun time constrain targets ->
+                let (targets, output) = transformer time constrain targets
+                let (targets, output2) = transformer2 time constrain targets
+                (targets, output + output2)
 
         /// Pipe multiple transformers.
         let pipeMany transformers =
@@ -143,16 +155,16 @@ module Particles =
 
     /// Scopes transformable values.
     type [<NoEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
-        { In : int64 -> 'a -> struct (single * 'b)
-          Out : struct ('b * Output) -> 'a -> struct ('a * Output) }
+        { In : 'a array -> 'b array
+          Out : ('b array * Output) -> 'a array -> ('a array * Output) }
 
     [<RequireQualifiedAccess>]
     module Scope =
 
         /// Make a scope.
-        let inline make< ^a, ^b when ^a : struct and ^a : (member Life : Life)> (getField : ^a -> ^b) (setField : ^b -> ^a -> ^a) : Scope< ^a, ^b > =
-            { In = fun time (target : ^a) -> struct (Life.getProgress time (^a : (member Life : Life) target), getField target)
-              Out = fun struct (field, output) (target : ^a) -> struct (setField field target, output) : struct (^a * Output) }
+        let inline make<'a, 'b when 'a : struct> (getField : 'a -> 'b) (setField : 'b -> 'a -> 'a) : Scope<'a, 'b> =
+            { In = Array.map getField
+              Out = fun (fields, output) (targets : 'a array) -> (Array.map2 setField fields targets, output) }
 
     /// The base behavior type.
     type Behavior =
@@ -170,21 +182,17 @@ module Particles =
 
         /// Run the behavior over a single target.
         static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
-            let struct (progress, target2) = behavior.Scope.In time target
-            let target3 = behavior.Transformer progress constrain target2
-            let struct (target4, output) = behavior.Scope.Out target3 target
-            (target4, output)
+            let (targets, output) = Behavior<'a, 'b>.runMany time constrain behavior [|target|]
+            let target = Array.item 0 targets
+            (target, output)
 
         /// Run the behavior over an array of targets.
         /// OPTIMIZATION: runs transformers in batches for better utilization of instruction cache.
         static member runMany time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a array) =
-            let targets2 = Array.map (behavior.Scope.In time) targets
-            let targets3 = Array.map (fun struct (progress, field) -> behavior.Transformer progress constrain field) targets2
-            let targets4 = Array.map2 behavior.Scope.Out targets3 targets
-            let targets5 = Array.map fst' targets4
-            let outputs = targets4 |> Array.filter (function struct (_, Outputs [||]) -> false | struct (_, _) -> true) |> Array.map snd'
-            let output = match outputs with [||] -> Outputs outputs | [|output|] -> output | outputs -> Outputs outputs
-            (targets5, output)
+            let targets2 = behavior.Scope.In targets
+            let (targets3, output) = behavior.Transformer time constrain targets2
+            let (targets4, output) = behavior.Scope.Out (targets3, output) targets
+            (targets4, output)
 
         interface Behavior with
             member this.Run time constrain targetObj =
