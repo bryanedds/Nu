@@ -7,33 +7,54 @@ open System.Numerics
 open Prime
 module Particles =
 
+    /// How a logic is to be applied.
+    type [<StructuralEquality; StructuralComparison>] LogicApplicator =
+        | Or
+        | Nor
+        | Xor
+        | And
+        | Nand
+        | Equal
+
+    /// Describes logic of behavior over a section of a target's life time.
+    type [<StructuralEquality; NoComparison>] Logic =
+        { LogicApplicator : LogicApplicator
+          LogicBegin : single
+          LogicEnd : single }
+
     /// The type of range.
-    type [<StructuralEquality; StructuralComparison; Struct>] RangeType =
-        | Constant
-        | Linear
-        | Random
-        | Chaos
-        | Ease
-        | EaseIn
-        | EaseOut
-        | Sin
-        | SinScaled
-        | Cos
-        | CosScaled
+    type [<StructuralEquality; NoComparison>] 'a RangeType =
+        | Constant of 'a
+        | Linear of 'a * 'a
+        | Random of 'a * 'a
+        | Chaos of 'a * 'a
+        | Ease of 'a * 'a
+        | EaseIn of 'a * 'a
+        | EaseOut of 'a * 'a
+        | Sin of 'a * 'a
+        | SinScaled of single * 'a * 'a
+        | Cos of 'a * 'a
+        | CosScaled of single * 'a * 'a
+
+    /// How a range is to be applied.
+    type [<StructuralEquality; NoComparison>] RangeApplicator =
+        | Sum
+        | Delta
+        | Scale
+        | Ratio
+        | Set
 
     /// Describes range of behavior over a section of a target's life time.
-    type [<NoEquality; NoComparison; Struct>] 'a Range =
-        { RangeType : RangeType
-          RangeScalar : single
-          RangeBegin : 'a
-          RangeEnd : 'a
-          RangeProgressBegin : single
-          RangeProgressEnd : single }
+    type [<StructuralEquality; NoComparison>] 'a Range =
+        { RangeType : 'a RangeType
+          RangeApplicator : RangeApplicator
+          RangeBegin : single
+          RangeEnd : single }
 
     /// The forces that may operate on a target.
-    type [<NoEquality; NoComparison>] Force =
+    type [<StructuralEquality; NoComparison>] Force =
         | Gravity of Vector2
-        | Attractor of Vector2 * single
+        | Attractor of Vector2 * single * single
 
     /// Describes the life of an instance value.
     /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.

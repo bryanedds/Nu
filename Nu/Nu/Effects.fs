@@ -8,7 +8,15 @@ open System.Numerics
 open Prime
 module Effects =
 
-    type [<StructuralEquality; StructuralComparison>] Algorithm =
+    type [<StructuralEquality; StructuralComparison>] LogicApplicator =
+        | Or
+        | Nor
+        | Xor
+        | And
+        | Nand
+        | Equal
+
+    type [<StructuralEquality; StructuralComparison>] TweenAlgorithm =
         | Constant
         | Linear
         | Random
@@ -20,14 +28,6 @@ module Effects =
         | SinScaled of single
         | Cos
         | CosScaled of single
-
-    type [<StructuralEquality; StructuralComparison>] LogicApplicator =
-        | Or
-        | Nor
-        | Xor
-        | And
-        | Nand
-        | Equal
 
     type [<StructuralEquality; StructuralComparison>] TweenApplicator =
         | Sum
@@ -132,16 +132,16 @@ module Effects =
         | Glow of Color
         | Volume of single
         | Enableds of LogicApplicator * Playback * LogicKeyFrame array
-        | Positions of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Translations of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Offsets of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Sizes of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Rotations of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
-        | Elevations of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
-        | Insets of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
-        | Colors of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
-        | Glows of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
-        | Volumes of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
+        | Translations of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
+        | Offsets of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
+        | Sizes of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
+        | Rotations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
+        | Elevations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
+        | Insets of TweenApplicator * TweenAlgorithm * Playback * Tween4KeyFrame array
+        | Colors of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
+        | Glows of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
+        | Volumes of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
         | Expand of string * Argument array
         | Aspects of Aspect array
 
