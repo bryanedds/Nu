@@ -31,19 +31,9 @@ module Particles =
           RangeProgressEnd : single }
 
     /// The forces that may operate on a target.
-    type Forces = single array
-
-    [<RequireQualifiedAccess>]
-    module Forces =
-        
-        let makeAttractor (position : Vector2) force =
-            [|position.X; position.Y; force|]
-
-        let getAttractorPosition (forces : Forces) =
-            v2 forces.[0] forces.[1]
-
-        let getAttractorForce (forces : Forces) =
-            forces.[2]
+    type [<NoEquality; NoComparison>] Force =
+        | Gravity of Vector2
+        | Attractor of Vector2 * single
 
     /// Describes the life of an instance value.
     /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
@@ -69,16 +59,14 @@ module Particles =
         { mutable Position : Vector2
           mutable LinearVelocity : Vector2
           mutable Rotation : single
-          mutable AngularVelocity : single
-          mutable Gravity : Vector2 }
+          mutable AngularVelocity : single }
 
         /// The default body.
         static member defaultBody =
             { Position = v2Zero
               LinearVelocity = v2Zero
               Rotation = 0.0f
-              AngularVelocity = 0.0f
-              Gravity = Constants.Engine.GravityDefault }
+              AngularVelocity = 0.0f }
 
     /// The base particle type.
     type Particle =

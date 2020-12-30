@@ -28,7 +28,6 @@ module Reflection =
              // emitter properties
              ("EmitterOffset", true)
              ("EmitterTwist", true)
-             ("EmitterGravity", true)
              ("EmitterBlend", true)
              ("EmitterImage", true)
              ("EmitterLifeTimeOpt", true)

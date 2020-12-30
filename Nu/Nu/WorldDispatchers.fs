@@ -216,11 +216,6 @@ module BasicEmitterFacetModule =
                 { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters })
                 entity world
 
-        static let handleEmitterGravityChanged evt world =
-            let emitterGravity = evt.Data.Value :?> Vector2
-            let world = updateEmitter (fun emitter -> if v2Neq emitter.Body.Gravity emitterGravity then { emitter with Body = { emitter.Body with Gravity = emitterGravity }} else emitter) evt.Subscriber world
-            (Cascade, world)
-
         static let handleEmitterBlendChanged evt world =
             let emitterBlend = evt.Data.Value :?> Blend
             let world = updateEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
@@ -290,7 +285,6 @@ module BasicEmitterFacetModule =
              define Entity.SelfDestruct false
              define Entity.EmitterOffset v2Zero
              define Entity.EmitterTwist 0.0f
-             define Entity.EmitterGravity Constants.Engine.GravityDefault
              define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
              define Entity.EmitterLifeTimeOpt 60L
@@ -320,8 +314,7 @@ module BasicEmitterFacetModule =
                             { Position = entity.GetPosition world + entity.GetEmitterOffset world
                               LinearVelocity = v2Zero
                               Rotation = entity.GetRotation world + entity.GetEmitterTwist world
-                              AngularVelocity = 0.0f
-                              Gravity = entity.GetEmitterGravity world }
+                              AngularVelocity = 0.0f }
                         Elevation = entity.GetElevation world
                         Absolute = entity.GetAbsolute world
                         Blend = entity.GetEmitterBlend world
@@ -339,7 +332,6 @@ module BasicEmitterFacetModule =
             let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             let world = entity.SetParticleSystem particleSystem world
             let world = World.monitor handleBoundsChanged (entity.GetChangeEvent Property? Bounds) entity world
-            let world = World.monitor handleEmitterGravityChanged (entity.GetChangeEvent Property? EmitterGravity) entity world
             let world = World.monitor handleEmitterBlendChanged (entity.GetChangeEvent Property? EmitterBlend) entity world
             let world = World.monitor handleEmitterImageChanged (entity.GetChangeEvent Property? EmitterImage) entity world
             let world = World.monitor handleEmitterLifeTimeOptChanged (entity.GetChangeEvent Property? EmitterLifeTimeOpt) entity world
@@ -399,7 +391,6 @@ module BasicEmittersFacetModule =
                 if emitter.Body.Rotation <> rotation + descriptor.Body.Rotation
                 then { emitter with Body = { emitter.Body with Rotation = rotation + descriptor.Body.Rotation }}
                 else emitter
-            let emitter = if v2Neq emitter.Body.Gravity descriptor.Body.Gravity then { emitter with Body = { emitter.Body with Gravity = descriptor.Body.Gravity }} else emitter
             let emitter = if assNeq emitter.Image descriptor.Image then { emitter with Image = descriptor.Image } else emitter
             let emitter = if emitter.Blend <> descriptor.Blend then { emitter with Blend = descriptor.Blend } else emitter
             let emitter = if emitter.Life.LifeTimeOpt <> descriptor.LifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = descriptor.LifeTimeOpt }} else emitter
