@@ -59,21 +59,28 @@ module Particles =
     /// Describes the life of an instance value.
     /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
     /// OPTIMIZATION: doesn't use Liveness type to avoid its constructor calls.
+    /// OPTIMIZATION: pre-computes progress scalar to minimize number of divides.
     type [<StructuralEquality; NoComparison; Struct>] Life =
         { StartTime : int64
-          LifeTimeOpt : int64 }
+          LifeTimeOpt : int64
+          ProgressScalar : single }
 
         /// The progress made through the instance's life.
         static member getProgress time life =
             match life.LifeTimeOpt with
-            | 0L -> 1.0f
-            | lifeTime -> (single time - single life.StartTime) / single lifeTime
+            | 0L -> 0.0f
+            | _ -> single (time - life.StartTime) * life.ProgressScalar
 
         /// The liveness of the instance as a boolean.
         static member getLiveness time life =
             match life.LifeTimeOpt with
             | 0L -> true
             | lifeTime -> lifeTime < time - life.StartTime
+
+        static member make startTime lifeTimeOpt =
+            { StartTime = startTime
+              LifeTimeOpt = lifeTimeOpt
+              ProgressScalar = 1.0f / single lifeTimeOpt }
 
     /// Describes the body of an instance value.
     type [<StructuralEquality; NoComparison; Struct>] Body =
@@ -298,7 +305,7 @@ module Particles =
             if particleIndex > emitter.ParticleWatermark then emitter.ParticleWatermark <- particleIndex
             emitter.ParticleIndex <- particleIndex
             let particle = &emitter.ParticleBuffer.[particleIndex]
-            particle.Life <- { LifeTimeOpt = particle.Life.LifeTimeOpt; StartTime = time }
+            particle.Life <- Life.make time particle.Life.LifeTimeOpt
             particle <- emitter.ParticleInitializer time constrain emitter
 
         /// Determine emitter's liveness.
@@ -348,7 +355,7 @@ module Particles =
               Absolute = absolute
               Blend = blend
               Image = image
-              Life = { StartTime = time; LifeTimeOpt = lifeTimeOpt }
+              Life = Life.make time lifeTimeOpt
               ParticleLifeTimeOpt = particleLifeTimeOpt
               ParticleRate = particleRate
               ParticleIndex = 0
@@ -495,7 +502,7 @@ module Particles =
         let makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed =
-                { Life = { StartTime = 0L; LifeTimeOpt = 60L }
+                { Life = Life.make 0L 60L
                   Body = Body.defaultBody
                   Size = Constants.Engine.ParticleSizeDefault
                   Offset = v2Dup 0.5f
