@@ -7,6 +7,32 @@ open System.Numerics
 open Prime
 module Particles =
 
+    /// The type of range.
+    type [<StructuralEquality; StructuralComparison; Struct>] RangeType =
+        | Constant
+        | Linear
+        | Random
+        | Chaos
+        | Ease
+        | EaseIn
+        | EaseOut
+        | Sin
+        | SinScaled
+        | Cos
+        | CosScaled
+
+    /// Describes range of behavior over a section of a target's life time.
+    type [<NoEquality; NoComparison; Struct>] 'a Range =
+        { RangeType : RangeType
+          RangeScalar : single
+          RangeBegin : 'a
+          RangeEnd : 'a
+          RangeProgressBegin : single
+          RangeProgressEnd : single }
+
+    /// The forces that may operate on a target.
+    type Forces = single array
+
     /// Describes the life of an instance value.
     /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
     /// OPTIMIZATION: doesn't use Liveness type to avoid its constructor calls.
@@ -124,7 +150,7 @@ module Particles =
     module Scope =
 
         /// Make a scope.
-        let inline make< ^a, ^b when ^a : struct and ^a : (member Life : Life)> (getField : ^a -> ^b) (setField : ^b -> ^a -> ^a) : Scope< ^a, ^b> =
+        let inline make< ^a, ^b when ^a : struct and ^a : (member Life : Life)> (getField : ^a -> ^b) (setField : ^b -> ^a -> ^a) : Scope< ^a, ^b > =
             { In = fun time (target : ^a) -> struct (Life.getProgress time (^a : (member Life : Life) target), getField target)
               Out = fun struct (field, output) (target : ^a) -> struct (setField field target, output) : struct (^a * Output) }
 
