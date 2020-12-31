@@ -45,19 +45,14 @@ type [<NoComparison>] Move =
     | Attack of Reactor
     | Shoot of Reactor
 
-    member this.TruncatePath =
-        match this with
-        | Travel (head :: _) -> Travel [head]
-        | _ -> this
-
 type [<ReferenceEquality; NoComparison>] Round =
     { PlayerContinuity : PlayerContinuity
       CharacterMoves : Map<CharacterIndex, Move>
       WalkingEnemyGroup : CharacterIndex list
       AttackingEnemyGroup : CharacterIndex list }
 
-    member this.TryGetPlayerMove =
-        Map.tryFind PlayerIndex this.CharacterMoves
+    static member tryGetPlayerMove (round : Round) =
+        Map.tryFind PlayerIndex round.CharacterMoves
     
     member this.IsPlayerContinuity =
         match this.PlayerContinuity with
@@ -69,14 +64,17 @@ type [<ReferenceEquality; NoComparison>] Round =
         | AutomaticNavigation _ -> true
         | _ -> false
     
-    member this.InProgress =
-        Map.notEmpty this.CharacterMoves || List.notEmpty this.WalkingEnemyGroup || List.notEmpty this.AttackingEnemyGroup || this.IsPlayerContinuity
+    static member inProgress (round : Round) =
+        Map.notEmpty round.CharacterMoves || List.notEmpty round.WalkingEnemyGroup || List.notEmpty round.AttackingEnemyGroup || round.IsPlayerContinuity
     
-    member this.RoundStatus =
-        if Map.notEmpty this.CharacterMoves then RunningCharacterMoves
-        elif List.notEmpty this.AttackingEnemyGroup then MakingEnemyAttack
-        elif List.notEmpty this.WalkingEnemyGroup then MakingEnemiesWalk
-        elif this.IsPlayerContinuity then FinishingRound
+    static member notInProgress round =
+        not $ Round.inProgress round
+    
+    static member getRoundStatus (round : Round) =
+        if Map.notEmpty round.CharacterMoves then RunningCharacterMoves
+        elif List.notEmpty round.AttackingEnemyGroup then MakingEnemyAttack
+        elif List.notEmpty round.WalkingEnemyGroup then MakingEnemiesWalk
+        elif round.IsPlayerContinuity then FinishingRound
         else NoRound
     
     static member updatePlayerContinuity updater round =
@@ -127,12 +125,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       Inventory : Inventory }
 
     static member initial =
-        let field = Field.initial
+        let field = Field.initial ()
         let chessboard = Chessboard.init field.FieldMapNp
         { Time = 0L
           InputMode = NormalInputMode
           ShallLoadGame = false
-          MetaMap = MetaMap.make
+          MetaMap = MetaMap.make ()
           Field = field
           Chessboard = chessboard
           Puppeteer = Puppeteer.init <| Chessboard.getCharacter PlayerIndex chessboard
@@ -239,10 +237,14 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member clearEnemies gameplay =
         Gameplay.updateChessboard Chessboard.clearEnemies gameplay
 
+    static member addRandomPickup coordinates gameplay =
+        let pickup = if Gen.random1 2 = 0 then Health else (Item (Special MagicMissile))
+        Gameplay.updateChessboard (Chessboard.addPickup pickup coordinates) gameplay
+    
     static member removeLongGrass coordinates gameplay =
         let gameplay = Gameplay.updateChessboard (Chessboard.removeProp coordinates) gameplay
         if Gen.random1 10 = 0
-        then Gameplay.updateChessboard (Chessboard.addRandomPickup coordinates) gameplay
+        then Gameplay.addRandomPickup coordinates gameplay
         else gameplay
     
     static member clearPickups gameplay =

@@ -128,7 +128,8 @@ module GameplayDispatcher =
             | MakeEnemiesWalk ->
                 let updater =
                     (fun index gameplay ->
-                        let openDirections = Gameplay.getCoordinates index gameplay |> gameplay.Chessboard.OpenDirections
+                        let coordinates = Gameplay.getCoordinates index gameplay
+                        let openDirections = Chessboard.openDirections coordinates gameplay.Chessboard
                         let direction = Gen.random1 4 |> Direction.ofInt
                         if List.exists (fun x -> x = direction) openDirections
                         then Gameplay.makeMove gameplay.Time index (Step direction) gameplay
@@ -143,7 +144,7 @@ module GameplayDispatcher =
                 let gameplay = Gameplay.addAttackingEnemyGroup adjacentEnemies gameplay
                 let gameplay = Gameplay.createWalkingEnemyGroup gameplay
                 
-                match gameplay.Round.TryGetPlayerMove with
+                match Round.tryGetPlayerMove gameplay.Round with
                 | Some move ->
                     match move with
                     | Step _
@@ -237,9 +238,9 @@ module GameplayDispatcher =
                             | Rightward -> currentCoordinates.X = Constants.Layout.FieldMapSizeC.X - 1
                             | Downward -> currentCoordinates.Y = 0
                             | Leftward -> currentCoordinates.X = 0
-                        if targetOutside && gameplay.MetaMap.PossibleInDirection direction && gameplay.MetaMap.OnPathBoundary currentCoordinates
-                        then TransitionMap direction
-                        else TryMakePlayerMove playerInput
+                        let possibleInDirection = MetaMap.possibleInDirection direction gameplay.MetaMap
+                        let onPathBoundary = MetaMap.onPathBoundary currentCoordinates gameplay.MetaMap
+                        if targetOutside && possibleInDirection && onPathBoundary then TransitionMap direction else TryMakePlayerMove playerInput
                     | _ -> TryMakePlayerMove playerInput
                 withMsg msg gameplay
             
@@ -272,7 +273,7 @@ module GameplayDispatcher =
 
             | Update ->
                 let gameplay = Gameplay.advanceTime gameplay
-                match gameplay.Round.RoundStatus with
+                match Round.getRoundStatus gameplay.Round with
                 | RunningCharacterMoves -> withMsg TickTurns gameplay
                 | MakingEnemyAttack -> withMsg MakeEnemyAttack gameplay
                 | MakingEnemiesWalk -> withMsg MakeEnemiesWalk gameplay
@@ -290,7 +291,7 @@ module GameplayDispatcher =
                         | AttackTurn magicMissile ->
                             if turn.StartTick = gameplay.Time then
                                 if magicMissile then
-                                    let effect = Effects.makeMagicMissileImpactEffect
+                                    let effect = Effects.makeMagicMissileImpactEffect ()
                                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Scene world
                                     let world = entity.SetEffect effect world
                                     let world = entity.SetSize Constants.Layout.TileSize world
@@ -311,7 +312,7 @@ module GameplayDispatcher =
                 withMsg TickTurns world
             
             | HandlePlayerInput playerInput ->
-                if not gameplay.Round.InProgress then
+                if Round.notInProgress gameplay.Round then
                     match gameplay.InputMode with
                     | NormalInputMode ->
                         let msg =
@@ -412,7 +413,7 @@ module GameplayDispatcher =
                  Content.button Simulants.HudSaveGame.Name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Save Game"
-                     Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress || gameplay.InputMode.NotNormalInput then false else true
+                     Entity.Enabled <== gameplay --> fun gameplay -> if Round.inProgress gameplay.Round || gameplay.InputMode.NotNormalInput then false else true
                      Entity.ClickEvent ==> cmd Save]
 
                  Content.button Simulants.HudBack.Name
@@ -455,7 +456,7 @@ module GameplayDispatcher =
                  Content.button Simulants.HudWait.Name
                     [Entity.Position == v2 -387.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "W"
-                     Entity.Enabled <== gameplay --> fun gameplay -> if gameplay.Round.InProgress then false else true
+                     Entity.Enabled <== gameplay --> fun gameplay -> if Round.inProgress gameplay.Round then false else true
                      Entity.ClickEvent ==> cmd (HandlePlayerInput TurnSkipInput)]
                  
                  Content.panel "ItemBar"

@@ -136,25 +136,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member getActingCharacters puppeteer =
         List.map (fun x -> x.Actor) puppeteer.CharacterTurns
     
-    static member updateCharacterTurns updater puppeteer =
-        { puppeteer with CharacterTurns = updater puppeteer.CharacterTurns }
-
-    static member updatePlayerPuppetState updater puppeteer =
-        { puppeteer with PlayerPuppetState = updater puppeteer.PlayerPuppetState }
-
-    static member addCharacterTurn turn puppeteer =
-        Puppeteer.updateCharacterTurns (fun x -> turn :: x) puppeteer
-
-    static member updateCharacterTurn index updater puppeteer =
-        Puppeteer.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) puppeteer
-
-    static member removeCharacterTurn index puppeteer =
-        Puppeteer.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) puppeteer
-
-    static member updatePlayerPuppetHitPoints updater puppeteer =
-        Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
-
-    static member getPropMap props puppeteer time =
+    static member getPropMap props puppeteer time = // TODO: try to crunch these down to shape
         let generator coordinates _ =
             let animationType =
                 match Puppeteer.tryGetCharacterTurn PlayerIndex puppeteer with
@@ -207,6 +189,24 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
         characters |>
         Map.toListBy generator |>
         Map.ofSeq
+    
+    static member updateCharacterTurns updater puppeteer =
+        { puppeteer with CharacterTurns = updater puppeteer.CharacterTurns }
+
+    static member updatePlayerPuppetState updater puppeteer =
+        { puppeteer with PlayerPuppetState = updater puppeteer.PlayerPuppetState }
+
+    static member addCharacterTurn turn puppeteer =
+        Puppeteer.updateCharacterTurns (fun x -> turn :: x) puppeteer
+
+    static member updateCharacterTurn index updater puppeteer =
+        Puppeteer.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) puppeteer
+
+    static member removeCharacterTurn index puppeteer =
+        Puppeteer.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) puppeteer
+
+    static member updatePlayerPuppetHitPoints updater puppeteer =
+        Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
 
     static member init (player : Character) =
         { CharacterTurns = []
