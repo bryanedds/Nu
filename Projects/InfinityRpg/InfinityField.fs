@@ -11,7 +11,7 @@ type [<ReferenceEquality; NoComparison>] Field =
     static member setFieldMap fieldMap field =
         { field with FieldMapNp = fieldMap }
     
-    static member initial =
+    static member initial () =
         let DefaultRand = Rand.make ()
         let DefaultSizeC = v2i 4 4
         let DefaultPathEdgesC = [(v2i 1 1, v2i 2 2)]

@@ -31,11 +31,11 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
     member this.Current =
         this.MetaTiles.[this.CurrentMetaCoordinates]
     
-    member this.MetaCoordinatesInDirection direction =
-        this.CurrentMetaCoordinates + dtovc direction
+    static member metaCoordinatesInDirection direction (metaMap : MetaMap) =
+        metaMap.CurrentMetaCoordinates + dtovc direction
     
-    member this.NextMetaCoordinates =
-        this.MetaCoordinatesInDirection this.Current.DirectionNext
+    static member nextMetaCoordinates (metaMap : MetaMap) =
+        MetaMap.metaCoordinatesInDirection metaMap.Current.DirectionNext metaMap
 
     member this.NextPathStart =
         match this.Current.DirectionNext with
@@ -43,17 +43,18 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
         | Rightward -> v2i 0 this.Current.PathEnd.Y
         | _ -> failwithumf ()
     
-    member this.ExistsInDirection direction =
-        Map.containsKey (this.MetaCoordinatesInDirection direction) this.MetaTiles
+    static member existsInDirection direction (metaMap : MetaMap) =
+        let key = MetaMap.metaCoordinatesInDirection direction metaMap
+        Map.containsKey key metaMap.MetaTiles
     
-    member this.NextMetaCoordinatesInDirection direction =
-        this.NextMetaCoordinates = this.MetaCoordinatesInDirection direction
+    static member nextMetaCoordinatesInDirection direction (metaMap : MetaMap) =
+        MetaMap.nextMetaCoordinates metaMap = MetaMap.metaCoordinatesInDirection direction metaMap
 
-    member this.PossibleInDirection direction =
-        this.ExistsInDirection direction || this.NextMetaCoordinatesInDirection direction
+    static member possibleInDirection direction (metaMap : MetaMap) =
+        MetaMap.existsInDirection direction metaMap || MetaMap.nextMetaCoordinatesInDirection direction metaMap
 
-    member this.OnPathBoundary coordinates =
-        this.Current.PathStart = coordinates || this.Current.PathEnd = coordinates
+    static member onPathBoundary coordinates (metaMap : MetaMap) =
+        metaMap.Current.PathStart = coordinates || metaMap.Current.PathEnd = coordinates
     
     static member updateMetaTiles updater metaMap =
         { metaMap with MetaTiles = updater metaMap.MetaTiles }
@@ -66,13 +67,14 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
         MetaMap.updateCurrentMetaCoordinates (constant metaCoordinates) metaMap
     
     static member moveCurrent direction (metaMap : MetaMap) =
-        MetaMap.updateCurrentMetaCoordinates (constant (metaMap.MetaCoordinatesInDirection direction)) metaMap
+        MetaMap.updateCurrentMetaCoordinates (constant (MetaMap.metaCoordinatesInDirection direction metaMap)) metaMap
     
     static member makeMetaTile (metaMap : MetaMap) =
-        MetaMap.addMetaTile metaMap.NextMetaCoordinates (MetaTile.make metaMap.NextPathStart) metaMap
+        let metaCoordinates = MetaMap.nextMetaCoordinates metaMap
+        MetaMap.addMetaTile metaCoordinates (MetaTile.make metaMap.NextPathStart) metaMap
     
     static member transition direction (metaMap : MetaMap) =
-        if metaMap.ExistsInDirection direction
+        if MetaMap.existsInDirection direction metaMap
         then MetaMap.moveCurrent direction metaMap
         else MetaMap.makeMetaTile metaMap
     
@@ -80,5 +82,5 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
         { MetaTiles = Map.empty
           CurrentMetaCoordinates = v2iZero }
     
-    static member make =
+    static member make () =
         MetaMap.addMetaTile v2iZero (MetaTile.make v2iZero) MetaMap.empty

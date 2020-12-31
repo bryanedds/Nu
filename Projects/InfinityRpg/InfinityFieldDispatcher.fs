@@ -15,7 +15,7 @@ module FieldDispatcher =
         member this.Field = this.Model<Field> ()
 
     type FieldDispatcher () =
-        inherit EntityDispatcher<Field, unit, unit> (Field.initial)
+        inherit EntityDispatcher<Field, unit, unit> (Field.initial ())
 
         static let getTileInsetOpt (tileSheetCoordinates : Vector2i) =
             let tileOffset = vctovf tileSheetCoordinates

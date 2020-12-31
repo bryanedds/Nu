@@ -25,7 +25,7 @@ module Effects =
           Definitions = Map.empty
           Content = animationSprite }
 
-    let makeMagicMissileImpactEffect =
+    let makeMagicMissileImpactEffect () =
 
         let animationSprite =
             AnimatedSprite

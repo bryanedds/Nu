@@ -78,7 +78,7 @@ type [<ReferenceEquality; NoComparison>] Character =
           ArmorOpt = Option<ArmorType>.None
           Accessories = [] } // level is calculated from base experience + added experience
 
-    static member makePlayer =
+    static member makePlayer () =
         Character.updateHitPoints (constant Character.empty.HitPointsMax) Character.empty
 
     static member makeEnemy index =

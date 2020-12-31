@@ -145,8 +145,8 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     member this.UnoccupiedSpaces =
         Map.filter (constant FieldSpace.isUnoccupied) this.FieldSpaces |> Map.toKeyList
 
-    member this.OpenDirections coordinates =
-        List.filter (fun d -> List.exists (fun x -> x = (coordinates + (dtovc d))) this.UnoccupiedSpaces) [Upward; Rightward; Downward; Leftward]
+    static member openDirections coordinates (chessboard : Chessboard) =
+        List.filter (fun d -> List.exists (fun x -> x = (coordinates + (dtovc d))) chessboard.UnoccupiedSpaces) [Upward; Rightward; Downward; Leftward]
 
     member this.Characters =
         Map.map (constant FieldSpace.getCharacter) this.CharacterSpaces
@@ -250,10 +250,6 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
     static member addPickup pickup coordinates chessboard =
         Chessboard.updateByCoordinates coordinates (FieldSpace.addPickup pickup) chessboard
 
-    static member addRandomPickup coordinates chessboard =
-        let pickup = if Gen.random1 2 = 0 then Health else (Item (Special MagicMissile))
-        Chessboard.addPickup pickup coordinates chessboard
-    
     static member removePickup coordinates chessboard =
         Chessboard.updateByCoordinates coordinates FieldSpace.removePickup chessboard
     
@@ -272,4 +268,4 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
 
     static member init fieldMap =
         let chessboard = Chessboard.setFieldSpaces fieldMap { FieldSpaces = Map.empty }
-        Chessboard.addCharacter Character.makePlayer v2iZero chessboard
+        Chessboard.addCharacter (Character.makePlayer ()) v2iZero chessboard
