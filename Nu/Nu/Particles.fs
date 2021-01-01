@@ -639,15 +639,19 @@ module Particles =
           mutable Glow : Color
           mutable Flip : Flip }
         interface Particle with member this.Life with get () = this.Life and set value = this.Life <- value
-        static member inline body = Scope.make (fun p -> p.Body) (fun v p -> { p with Body = v })
-        static member inline position = Scope.make (fun p -> struct (p.Life, p.Body.Position)) (fun struct (_, v) p -> { p with Body = { p.Body with Position = v }})
-        static member inline rotation = Scope.make (fun p -> struct (p.Life, p.Body.Rotation)) (fun struct (_, v) p -> { p with Body = { p.Body with Rotation = v }})
-        static member inline size = Scope.make (fun p -> struct (p.Life, p.Size)) (fun struct (_, v) p -> { p with Size = v })
-        static member inline offset = Scope.make (fun p -> struct (p.Life, p.Offset)) (fun struct (_, v) p -> { p with Offset = v })
-        static member inline inset = Scope.make (fun p -> struct (p.Life, p.Inset)) (fun struct (_, v) p -> { p with Inset = v })
-        static member inline color = Scope.make (fun p -> struct (p.Life, p.Color)) (fun struct (_, v) p -> { p with Color = v })
-        static member inline glow = Scope.make (fun p -> struct (p.Life, p.Glow)) (fun struct (_, v) p -> { p with Glow = v })
-        static member inline flipH =
+
+    [<RequireQualifiedAccess>]
+    module BasicParticle =
+
+        let body = Scope.make (fun p -> p.Body) (fun v p -> { p with Body = v })
+        let position = Scope.make (fun p -> struct (p.Life, p.Body.Position)) (fun struct (_, v) p -> { p with Body = { p.Body with Position = v }})
+        let rotation = Scope.make (fun p -> struct (p.Life, p.Body.Rotation)) (fun struct (_, v) p -> { p with Body = { p.Body with Rotation = v }})
+        let size = Scope.make (fun p -> struct (p.Life, p.Size)) (fun struct (_, v) p -> { p with Size = v })
+        let offset = Scope.make (fun p -> struct (p.Life, p.Offset)) (fun struct (_, v) p -> { p with Offset = v })
+        let inset = Scope.make (fun p -> struct (p.Life, p.Inset)) (fun struct (_, v) p -> { p with Inset = v })
+        let color = Scope.make (fun p -> struct (p.Life, p.Color)) (fun struct (_, v) p -> { p with Color = v })
+        let glow = Scope.make (fun p -> struct (p.Life, p.Glow)) (fun struct (_, v) p -> { p with Glow = v })
+        let flipH =
             Scope.make
                 (fun p ->
                     let flipH = match p.Flip with FlipNone -> false | FlipH -> true | FlipV -> false | FlipHV -> true
@@ -664,7 +668,7 @@ module Particles =
                         | (FlipV, false) -> FlipV
                         | (FlipHV, false) -> FlipV
                     { p with Flip = flip })
-        static member inline flipV =
+        let flipV =
             Scope.make
                 (fun p ->
                     let flipV = match p.Flip with FlipNone -> false | FlipH -> false | FlipV -> true | FlipHV -> true
