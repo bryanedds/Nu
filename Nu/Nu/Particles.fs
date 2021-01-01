@@ -647,8 +647,40 @@ module Particles =
         static member inline inset = Scope.make (fun p -> struct (p.Life, p.Inset)) (fun struct (_, v) p -> { p with Inset = v })
         static member inline color = Scope.make (fun p -> struct (p.Life, p.Color)) (fun struct (_, v) p -> { p with Color = v })
         static member inline glow = Scope.make (fun p -> struct (p.Life, p.Glow)) (fun struct (_, v) p -> { p with Glow = v })
-        //static member inline flipH = Scope.make (fun p -> struct (p.Life, p.Flip)) (fun struct (_, v) p -> { p with Flip = v })
-        //static member inline flipV = Scope.make (fun p -> struct (p.Life, p.Flip)) (fun struct (_, v) p -> { p with Flip = v })
+        static member inline flipH =
+            Scope.make
+                (fun p ->
+                    let flipH = match p.Flip with FlipNone -> false | FlipH -> true | FlipV -> false | FlipHV -> true
+                    struct (p.Life, flipH))
+                (fun struct (_, v) p ->
+                    let flip =
+                        match (p.Flip, v) with
+                        | (FlipNone, true) -> FlipH
+                        | (FlipH, true) -> FlipH
+                        | (FlipV, true) -> FlipHV
+                        | (FlipHV, true) -> FlipHV
+                        | (FlipNone, false) -> FlipNone
+                        | (FlipH, false) -> FlipNone
+                        | (FlipV, false) -> FlipV
+                        | (FlipHV, false) -> FlipV
+                    { p with Flip = flip })
+        static member inline flipV =
+            Scope.make
+                (fun p ->
+                    let flipV = match p.Flip with FlipNone -> false | FlipH -> false | FlipV -> true | FlipHV -> true
+                    struct (p.Life, flipV))
+                (fun struct (_, v) p ->
+                    let flip =
+                        match (p.Flip, v) with
+                        | (FlipNone, true) -> FlipV
+                        | (FlipH, true) -> FlipHV
+                        | (FlipV, true) -> FlipV
+                        | (FlipHV, true) -> FlipHV
+                        | (FlipNone, false) -> FlipNone
+                        | (FlipH, false) -> FlipH
+                        | (FlipV, false) -> FlipNone
+                        | (FlipHV, false) -> FlipH
+                    { p with Flip = flip })
 
     /// Describes a basic emitter.
     type BasicEmitterDescriptor =
