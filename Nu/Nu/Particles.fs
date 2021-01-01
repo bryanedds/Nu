@@ -202,6 +202,79 @@ module Particles =
                             bodies
                     (bodies, Output.empty)
 
+        let applyLogic value value2 applicator =
+            match applicator with
+            | Or -> value || value2
+            | Nor -> not value && not value2
+            | Xor -> value <> value2
+            | And -> value && value2
+            | Nand -> not (value && value2)
+            | Equal -> value2
+
+        let inline logic _ =
+            failwithnie ()
+
+        let inline applyRange mul div (value : ^a) (value2 : ^a) applicator =
+            match applicator with
+            | Sum -> value + value2
+            | Delta -> value - value2
+            | Scale -> mul (value, value2)
+            | Ratio -> div (value, value2)
+            | Set -> value2
+
+        let inline range mul div (scale : (^a * single) -> ^a) time (range : ^a Range) : struct (Life * ^a) Transformer =
+            match range.RangeType with
+            | Constant value ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let result = applyRange mul div targetValue value range.RangeApplicator
+                            struct (targetLife, result)) targets
+                    (targets, Output.empty)
+            | Linear (value, value2) ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, Life.getProgress time targetLife)) range.RangeApplicator
+                            struct (targetLife, result))
+                            targets
+                    (targets, Output.empty)
+            //| Random (value, value2) ->
+            //    let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
+            //    let randValue = fst (Rand.nextSingle rand)
+            //    value + scale (value2 - value, randValue)
+            //| Chaos (value, value2) ->
+            //    let chaosValue = single (effectSystem.Chaos.NextDouble ())
+            //    value + scale (value2 - value, chaosValue)
+            //| Ease (value, value2) ->
+            //    let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
+            //    value + scale (value2 - value, progressEase)
+            //| EaseIn (value, value2) ->
+            //    let progressScaled = float progress * Math.PI * 0.5
+            //    let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
+            //    value + scale (value2 - value, single progressEaseIn)
+            //| EaseOut (value, value2) ->
+            //    let progressScaled = float progress * Math.PI * 0.5
+            //    let progressEaseOut = Math.Sin progressScaled
+            //    value + scale (value2 - value, single progressEaseOut)
+            //| Sin (value, value2) ->
+            //    let progressScaled = float progress * Math.PI * 2.0
+            //    let progressSin = Math.Sin progressScaled
+            //    value + scale (value2 - value, single progressSin)
+            //| SinScaled (scalar, value, value2) ->
+            //    let progressScaled = float progress * Math.PI * 2.0 * float scalar
+            //    let progressSin = Math.Sin progressScaled
+            //    value + scale (value2 - value, single progressSin)
+            //| Cos (value, value2) ->
+            //    let progressScaled = float progress * Math.PI * 2.0
+            //    let progressCos = Math.Cos progressScaled
+            //    value + scale (value2 - value, single progressCos)
+            //| CosScaled (scalar, value, value2) ->
+            //    let progressScaled = float progress * Math.PI * 2.0 * float scalar
+            //    let progressCos = Math.Cos progressScaled
+            //    let result = value + scale (value2 - value, single progressCos)
+            //    result
+
     /// Scopes transformable values.
     type [<NoEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
         { In : 'a array -> 'b array
