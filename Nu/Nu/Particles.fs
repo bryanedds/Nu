@@ -231,23 +231,21 @@ module Particles =
                     let targets = Array.map (fun struct (targetLife, _) -> struct (targetLife, value)) targets
                     (targets, Output.empty)
 
-        /// Apply a transformed range value.
-        let inline applyRange mul div (value : ^a) (value2 : ^a) applicator =
-            match applicator with
-            | Sum -> value + value2
-            | Delta -> value - value2
-            | Scale -> mul (value, value2)
-            | Ratio -> div (value, value2)
-            | Set -> value2
-
         /// Make a generic range transformer.
         let inline rangeSrtp mul div (scale : (^a * single) -> ^a) time (range : ^a Range) : struct (Life * ^a) Transformer =
+            let applyRange =
+                match range.RangeApplicator with
+                | Sum -> fun value value2 -> value + value2
+                | Delta -> fun value value2 -> value - value2
+                | Scale -> fun value value2 -> mul (value, value2)
+                | Ratio -> fun value value2 -> div (value, value2)
+                | Set -> fun _ value2 -> value2
             match range.RangeType with
             | Constant value ->
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let result = applyRange mul div targetValue value range.RangeApplicator
+                            let result = applyRange targetValue value
                             struct (targetLife, result)) targets
                     (targets, Output.empty)
             | Linear (value, value2) ->
@@ -255,7 +253,7 @@ module Particles =
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress time targetLife
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, progress)) range.RangeApplicator
+                            let result = applyRange targetValue (value + scale (value2 - value, progress))
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
@@ -266,7 +264,7 @@ module Particles =
                             let progress = Life.getProgress time targetLife
                             let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
                             let randValue = fst (Rand.nextSingle rand)
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, randValue)) range.RangeApplicator
+                            let result = applyRange targetValue (value + scale (value2 - value, randValue))
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
@@ -275,7 +273,7 @@ module Particles =
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
                             let chaosValue = Gen.randomf
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, chaosValue)) range.RangeApplicator
+                            let result = applyRange targetValue (value + scale (value2 - value, chaosValue))
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
@@ -285,7 +283,7 @@ module Particles =
                         Array.map (fun struct (targetLife, targetValue) ->
                             let progress = Life.getProgress time targetLife
                             let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, progressEase)) range.RangeApplicator
+                            let result = applyRange targetValue (value + scale (value2 - value, progressEase))
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
@@ -296,7 +294,7 @@ module Particles =
                             let progress = Life.getProgress time targetLife
                             let progressScaled = float progress * Math.PI * 0.5
                             let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressEaseIn)) range.RangeApplicator
+                            let result = applyRange targetValue (value + scale (value2 - value, single progressEaseIn))
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
@@ -307,7 +305,7 @@ module Particles =
                             let progress = Life.getProgress time targetLife
                             let progressScaled = float progress * Math.PI * 0.5
                             let progressEaseOut = Math.Sin progressScaled
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressEaseOut)) range.RangeApplicator
+                            let result = applyRange targetValue (value + scale (value2 - value, single progressEaseOut))
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
@@ -318,7 +316,7 @@ module Particles =
                             let progress = Life.getProgress time targetLife
                             let progressScaled = float progress * Math.PI * 2.0
                             let progressSin = Math.Sin progressScaled
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressSin)) range.RangeApplicator
+                            let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
@@ -329,7 +327,7 @@ module Particles =
                             let progress = Life.getProgress time targetLife
                             let progressScaled = float progress * Math.PI * 2.0 * float scalar
                             let progressSin = Math.Sin progressScaled
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressSin)) range.RangeApplicator
+                            let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
@@ -340,7 +338,7 @@ module Particles =
                             let progress = Life.getProgress time targetLife
                             let progressScaled = float progress * Math.PI * 2.0
                             let progressCos = Math.Cos progressScaled
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressCos)) range.RangeApplicator
+                            let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
@@ -351,7 +349,7 @@ module Particles =
                             let progress = Life.getProgress time targetLife
                             let progressScaled = float progress * Math.PI * 2.0 * float scalar
                             let progressCos = Math.Cos progressScaled
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressCos)) range.RangeApplicator
+                            let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
