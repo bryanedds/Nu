@@ -157,20 +157,6 @@ module Particles =
     type 'a Transformer =
         int64 -> Constraint -> 'a array -> ('a array * Output)
 
-    [<AutoOpen>]
-    module TransformerOperators =
-
-        /// Pipe two transformers.
-        let pipe (transformer : 'a Transformer) (transformer2 : 'a Transformer) : 'a Transformer =
-            fun time constrain targets ->
-                let (targets, output) = transformer time constrain targets
-                let (targets, output2) = transformer2 time constrain targets
-                (targets, output + output2)
-
-        /// Pipe multiple transformers.
-        let pipeMany transformers =
-            Seq.reduce pipe transformers
-
     [<RequireQualifiedAccess>]
     module Transformer =
 
