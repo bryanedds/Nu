@@ -133,45 +133,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
           MetaMap = MetaMap.make ()
           Field = field
           Chessboard = chessboard
-          Puppeteer = Puppeteer.init <| Chessboard.getCharacter PlayerIndex chessboard
+          Puppeteer = Chessboard.getCharacter PlayerIndex chessboard |> Puppeteer.init
           Round = Round.empty
           Inventory = Inventory.initial }
 
-    static member getEnemyIndices gameplay =
-        gameplay.Chessboard.EnemyIndices
-
-    static member getCharacterIndices gameplay =
-        PlayerIndex :: gameplay.Chessboard.EnemyIndices
-    
-    static member getOpponentIndices index gameplay =
-        match index with
-        | PlayerIndex -> Gameplay.getEnemyIndices gameplay
-        | _ -> [PlayerIndex]
-    
-    static member getCoordinates index gameplay =
-        Chessboard.getCharacterCoordinates index gameplay.Chessboard
-
-    static member getCharacter index gameplay =
-        Chessboard.getCharacter index gameplay.Chessboard
-    
-    static member getIndexByCoordinates coordinates gameplay =
-        let character = Chessboard.getCharacterAtCoordinates coordinates gameplay.Chessboard
-        character.CharacterIndex
-    
-    static member getCharacterMove index gameplay =
-        gameplay.Round.CharacterMoves.[index]
-    
-    static member tryGetCharacterTurn index gameplay =
-        Puppeteer.tryGetCharacterTurn index gameplay.Puppeteer
-    
-    static member getCharacterTurn index gameplay =
-        Puppeteer.getCharacterTurn index gameplay.Puppeteer
-    
-    static member turnInProgress index gameplay =
-        Puppeteer.turnInProgress index gameplay.Puppeteer
-    
     static member areCharactersAdjacent index1 index2 gameplay =
-        Math.areCoordinatesAdjacent (Gameplay.getCoordinates index1 gameplay) (Gameplay.getCoordinates index2 gameplay)
+        Math.areCoordinatesAdjacent (Chessboard.getCharacterCoordinates index1 gameplay.Chessboard) (Chessboard.getCharacterCoordinates index2 gameplay.Chessboard)
     
     static member updateInputMode updater gameplay =
         { gameplay with InputMode = updater gameplay.InputMode }
@@ -222,7 +189,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
     
     static member removeCharacter index gameplay =
-        let coordinates = Gameplay.getCoordinates index gameplay
+        let coordinates = Chessboard.getCharacterCoordinates index gameplay.Chessboard
         let gameplay = Gameplay.updateChessboard (Chessboard.removeCharacter index) gameplay
         match index with
         | EnemyIndex _ ->
@@ -251,7 +218,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboard Chessboard.clearPickups gameplay
 
     static member refreshPlayerPuppetHitPoints gameplay =
-        let player = Gameplay.getCharacter PlayerIndex gameplay
+        let player = Chessboard.getCharacter PlayerIndex gameplay.Chessboard
         Gameplay.updatePuppeteer (Puppeteer.updatePlayerPuppetHitPoints (constant player.HitPoints)) gameplay
     
     static member finishMove index gameplay =
@@ -271,7 +238,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         | _ -> gameplay
     
     static member applyStep index direction gameplay =
-        let coordinates = (Gameplay.getCoordinates index gameplay) + dtovc direction
+        let coordinates = (Chessboard.getCharacterCoordinates index gameplay.Chessboard) + dtovc direction
         let gameplay = Gameplay.updateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
         let gameplay =
             if Chessboard.pickupAtCoordinates coordinates gameplay.Chessboard then
@@ -283,11 +250,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         if reactorIndex = PlayerIndex && gameplay.Round.IsPlayerTraveling then Gameplay.truncatePlayerPath gameplay else gameplay
     
     static member applyAttack index reactor gameplay =
-        let coordinates = Gameplay.getCoordinates index gameplay
+        let coordinates = Chessboard.getCharacterCoordinates index gameplay.Chessboard
         match reactor with
         | ReactingCharacter reactorIndex ->
             let reactorDamage = 4 // NOTE: just hard-coding damage for now
-            let reactorCoordinates = Gameplay.getCoordinates reactorIndex gameplay
+            let reactorCoordinates = Chessboard.getCharacterCoordinates reactorIndex gameplay.Chessboard
             let direction = Math.directionToTarget coordinates reactorCoordinates
             let gameplay = Gameplay.updateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
             let gameplay = Gameplay.updateCharacter reactorIndex (Character.updateHitPoints (fun x -> x - reactorDamage)) gameplay
@@ -297,13 +264,13 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             Gameplay.updateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
     
     static member applyMove index gameplay =
-        let move = Gameplay.getCharacterMove index gameplay
+        let move = gameplay.Round.CharacterMoves.[index]
         match move with
         | Step direction -> Gameplay.applyStep index direction gameplay
         | Travel path ->
             match path with
             | head :: _ ->
-                let currentCoordinates = Gameplay.getCoordinates index gameplay
+                let currentCoordinates = Chessboard.getCharacterCoordinates index gameplay.Chessboard
                 let direction = Math.directionToTarget currentCoordinates head.Coordinates
                 Gameplay.applyStep index direction gameplay
             | [] -> failwithumf ()
@@ -313,8 +280,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             Gameplay.applyAttack index reactor gameplay
     
     static member activateCharacter time index gameplay =
-        let move = Gameplay.getCharacterMove index gameplay
-        let coordinates = Gameplay.getCoordinates index gameplay
+        let move = gameplay.Round.CharacterMoves.[index]
+        let coordinates = Chessboard.getCharacterCoordinates index gameplay.Chessboard
         let turn =
             match move with
             | Step direction -> Turn.makeWalk time index false coordinates direction
@@ -324,13 +291,13 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | Attack reactor ->
                 let direction =
                     match reactor with
-                    | ReactingCharacter reactorIndex -> Gameplay.getCoordinates reactorIndex gameplay |> Math.directionToTarget coordinates
+                    | ReactingCharacter reactorIndex -> Chessboard.getCharacterCoordinates reactorIndex gameplay.Chessboard |> Math.directionToTarget coordinates
                     | ReactingProp reactorCoordinates -> Math.directionToTarget coordinates reactorCoordinates
                 Turn.makeAttack time index false reactor coordinates direction
             | Shoot reactor ->
                 let direction =
                     match reactor with
-                    | ReactingCharacter reactorIndex -> Gameplay.getCoordinates reactorIndex gameplay |> Math.directionToTarget coordinates
+                    | ReactingCharacter reactorIndex -> Chessboard.getCharacterCoordinates reactorIndex gameplay.Chessboard |> Math.directionToTarget coordinates
                     | ReactingProp reactorCoordinates -> failwithumf ()
                 Turn.makeAttack time index true reactor coordinates direction
             
@@ -340,7 +307,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         { gameplay with Time = inc gameplay.Time }
 
     static member makeMove time index move gameplay =
-        if (Gameplay.getCharacter index gameplay).IsAlive then
+        if (Chessboard.getCharacter index gameplay.Chessboard).IsAlive then
             let gameplay = Gameplay.addMove index move gameplay
             let gameplay = Gameplay.activateCharacter time index gameplay
             let gameplay = Gameplay.applyMove index gameplay
@@ -361,7 +328,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateRound Round.removeHeadFromAttackingEnemyGroup gameplay
 
     static member createWalkingEnemyGroup gameplay =
-        let group = Gameplay.getEnemyIndices gameplay |> List.except gameplay.Round.AttackingEnemyGroup
+        let group = List.except gameplay.Round.AttackingEnemyGroup gameplay.Chessboard.EnemyIndices
         Gameplay.updateRound (Round.addWalkingEnemyGroup group) gameplay
 
     static member removeWalkingEnemyGroup gameplay =
@@ -376,7 +343,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
     
     static member transitionMap direction gameplay =
-        let player = Gameplay.getCharacter PlayerIndex gameplay
+        let player = Chessboard.getCharacter PlayerIndex gameplay.Chessboard
         let gameplay = Gameplay.removeCharacter PlayerIndex gameplay
         let gameplay = Gameplay.updateMetaMap (MetaMap.transition direction) gameplay
         let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
