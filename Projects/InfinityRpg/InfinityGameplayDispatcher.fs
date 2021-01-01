@@ -60,7 +60,7 @@ module GameplayDispatcher =
             match message with
             | FinishTurns indices ->
                 let updater index gameplay =
-                    let characterTurn = Gameplay.getCharacterTurn index gameplay
+                    let characterTurn = Puppeteer.getCharacterTurn index gameplay.Puppeteer
                     match characterTurn.TurnStatus with
                     | TurnFinishing ->
                         match characterTurn.TurnType with
@@ -68,7 +68,7 @@ module GameplayDispatcher =
                             let gameplay = Gameplay.finishMove index gameplay
                             match characterTurn.GetReactor with
                             | ReactingCharacter reactorIndex ->
-                                let reactorState = Gameplay.getCharacter reactorIndex gameplay
+                                let reactorState = Chessboard.getCharacter reactorIndex gameplay.Chessboard
                                 let gameplay =
                                     if reactorIndex = PlayerIndex
                                     then Gameplay.refreshPlayerPuppetHitPoints gameplay
@@ -86,7 +86,7 @@ module GameplayDispatcher =
             
             | TickTurns ->
                 let updater index gameplay =
-                    let characterTurn = Gameplay.getCharacterTurn index gameplay
+                    let characterTurn = Puppeteer.getCharacterTurn index gameplay.Puppeteer
                     match characterTurn.TurnStatus with
                     | TurnTicking ->
                         let tickCount = gameplay.Time - characterTurn.StartTick
@@ -102,12 +102,12 @@ module GameplayDispatcher =
                     | _ -> gameplay
                 let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
-                let indices = List.filter (fun x -> (Gameplay.getCharacterTurn x gameplay).TurnStatus = TurnFinishing) indices
+                let indices = List.filter (fun x -> (Puppeteer.getCharacterTurn x gameplay.Puppeteer).TurnStatus = TurnFinishing) indices
                 withMsg (FinishTurns indices) gameplay
 
             | BeginTurns ->
                 let updater index gameplay =
-                    let characterTurn = Gameplay.getCharacterTurn index gameplay
+                    let characterTurn = Puppeteer.getCharacterTurn index gameplay.Puppeteer
                     match characterTurn.TurnStatus with
                     | TurnBeginning -> Gameplay.setCharacterTurnStatus index TurnTicking gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
                     | _ -> gameplay
@@ -119,7 +119,7 @@ module GameplayDispatcher =
                 let gameplay =
                     let index = gameplay.Round.AttackingEnemyGroup.Head
                     let gameplay =
-                        if (Gameplay.getCharacter PlayerIndex gameplay).IsAlive // TODO: create Gameplay.isPlayerAlive function.
+                        if (Chessboard.getCharacter PlayerIndex gameplay.Chessboard).IsAlive // TODO: create Gameplay.isPlayerAlive function.
                         then Gameplay.makeMove gameplay.Time index (Attack (ReactingCharacter PlayerIndex)) gameplay
                         else gameplay
                     Gameplay.removeHeadFromAttackingEnemyGroup gameplay
@@ -128,7 +128,7 @@ module GameplayDispatcher =
             | MakeEnemiesWalk ->
                 let updater =
                     (fun index gameplay ->
-                        let coordinates = Gameplay.getCoordinates index gameplay
+                        let coordinates = Chessboard.getCharacterCoordinates index gameplay.Chessboard
                         let openDirections = Chessboard.openDirections coordinates gameplay.Chessboard
                         let direction = Gen.random1 4 |> Direction.ofInt
                         if List.exists (fun x -> x = direction) openDirections
@@ -140,7 +140,7 @@ module GameplayDispatcher =
                 withMsg BeginTurns gameplay
             
             | MakeEnemyMoves ->
-                let adjacentEnemies = Gameplay.getEnemyIndices gameplay |> List.filter (fun x -> Gameplay.areCharactersAdjacent x PlayerIndex gameplay)
+                let adjacentEnemies = List.filter (fun x -> Gameplay.areCharactersAdjacent x PlayerIndex gameplay) gameplay.Chessboard.EnemyIndices
                 let gameplay = Gameplay.addAttackingEnemyGroup adjacentEnemies gameplay
                 let gameplay = Gameplay.createWalkingEnemyGroup gameplay
                 
@@ -174,7 +174,7 @@ module GameplayDispatcher =
             
             | TryMakePlayerMove playerInput ->
                 let time = gameplay.Time
-                let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
+                let currentCoordinates = Chessboard.getCharacterCoordinates PlayerIndex gameplay.Chessboard
                 let targetCoordinatesOpt =
                     match playerInput with
                     | TouchInput touchPosition -> Some (World.mouseToWorld false touchPosition world |> vftovc)
@@ -231,7 +231,7 @@ module GameplayDispatcher =
                 let msg =
                     match playerInput with
                     | DirectionInput direction ->
-                        let currentCoordinates = Gameplay.getCoordinates PlayerIndex gameplay
+                        let currentCoordinates = Chessboard.getCharacterCoordinates PlayerIndex gameplay.Chessboard
                         let targetOutside =
                             match direction with
                             | Upward -> currentCoordinates.Y = Constants.Layout.FieldMapSizeC.Y - 1
