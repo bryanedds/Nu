@@ -62,11 +62,12 @@ module Particles =
         | Set
 
     /// Describes range of behavior over a section of a target's life time.
+    /// TODO: consider implementing range slicing with RangeBegin and RangeEnd.
     type [<StructuralEquality; NoComparison>] 'a Range =
         { RangeType : 'a RangeType
           RangeApplicator : RangeApplicator
-          RangeBegin : single
-          RangeEnd : single }
+          (*RangeBegin : single*)
+          (*RangeEnd : single*) }
 
     /// The forces that may operate on a target.
     type [<StructuralEquality; NoComparison>] Force =
@@ -202,6 +203,7 @@ module Particles =
                             bodies
                     (bodies, Output.empty)
 
+        /// Apply a transformed logic value.
         let applyLogic value value2 applicator =
             match applicator with
             | Or -> value || value2
@@ -211,9 +213,11 @@ module Particles =
             | Nand -> not (value && value2)
             | Equal -> value2
 
-        let inline logic _ =
+        /// Make a generic logic transformer.
+        let inline logicSrtp _ =
             failwithnie ()
 
+        /// Apply a transformed range value.
         let inline applyRange mul div (value : ^a) (value2 : ^a) applicator =
             match applicator with
             | Sum -> value + value2
@@ -222,7 +226,8 @@ module Particles =
             | Ratio -> div (value, value2)
             | Set -> value2
 
-        let inline range mul div (scale : (^a * single) -> ^a) time (range : ^a Range) : struct (Life * ^a) Transformer =
+        /// Make a generic range transformer.
+        let inline rangeSrtp mul div (scale : (^a * single) -> ^a) time (range : ^a Range) : struct (Life * ^a) Transformer =
             match range.RangeType with
             | Constant value ->
                 fun _ _ targets ->
@@ -235,45 +240,131 @@ module Particles =
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let result = applyRange mul div targetValue (value + scale (value2 - value, Life.getProgress time targetLife)) range.RangeApplicator
+                            let progress = Life.getProgress time targetLife
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, progress)) range.RangeApplicator
                             struct (targetLife, result))
                             targets
                     (targets, Output.empty)
-            //| Random (value, value2) ->
-            //    let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
-            //    let randValue = fst (Rand.nextSingle rand)
-            //    value + scale (value2 - value, randValue)
-            //| Chaos (value, value2) ->
-            //    let chaosValue = single (effectSystem.Chaos.NextDouble ())
-            //    value + scale (value2 - value, chaosValue)
-            //| Ease (value, value2) ->
-            //    let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
-            //    value + scale (value2 - value, progressEase)
-            //| EaseIn (value, value2) ->
-            //    let progressScaled = float progress * Math.PI * 0.5
-            //    let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
-            //    value + scale (value2 - value, single progressEaseIn)
-            //| EaseOut (value, value2) ->
-            //    let progressScaled = float progress * Math.PI * 0.5
-            //    let progressEaseOut = Math.Sin progressScaled
-            //    value + scale (value2 - value, single progressEaseOut)
-            //| Sin (value, value2) ->
-            //    let progressScaled = float progress * Math.PI * 2.0
-            //    let progressSin = Math.Sin progressScaled
-            //    value + scale (value2 - value, single progressSin)
-            //| SinScaled (scalar, value, value2) ->
-            //    let progressScaled = float progress * Math.PI * 2.0 * float scalar
-            //    let progressSin = Math.Sin progressScaled
-            //    value + scale (value2 - value, single progressSin)
-            //| Cos (value, value2) ->
-            //    let progressScaled = float progress * Math.PI * 2.0
-            //    let progressCos = Math.Cos progressScaled
-            //    value + scale (value2 - value, single progressCos)
-            //| CosScaled (scalar, value, value2) ->
-            //    let progressScaled = float progress * Math.PI * 2.0 * float scalar
-            //    let progressCos = Math.Cos progressScaled
-            //    let result = value + scale (value2 - value, single progressCos)
-            //    result
+            | Random (value, value2) ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let progress = Life.getProgress time targetLife
+                            let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
+                            let randValue = fst (Rand.nextSingle rand)
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, randValue)) range.RangeApplicator
+                            struct (targetLife, result))
+                            targets
+                    (targets, Output.empty)
+            | Chaos (value, value2) ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let chaosValue = Gen.randomf
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, chaosValue)) range.RangeApplicator
+                            struct (targetLife, result))
+                            targets
+                    (targets, Output.empty)
+            | Ease (value, value2) ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let progress = Life.getProgress time targetLife
+                            let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, progressEase)) range.RangeApplicator
+                            struct (targetLife, result))
+                            targets
+                    (targets, Output.empty)
+            | EaseIn (value, value2) ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let progress = Life.getProgress time targetLife
+                            let progressScaled = float progress * Math.PI * 0.5
+                            let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressEaseIn)) range.RangeApplicator
+                            struct (targetLife, result))
+                            targets
+                    (targets, Output.empty)
+            | EaseOut (value, value2) ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let progress = Life.getProgress time targetLife
+                            let progressScaled = float progress * Math.PI * 0.5
+                            let progressEaseOut = Math.Sin progressScaled
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressEaseOut)) range.RangeApplicator
+                            struct (targetLife, result))
+                            targets
+                    (targets, Output.empty)
+            | Sin (value, value2) ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let progress = Life.getProgress time targetLife
+                            let progressScaled = float progress * Math.PI * 2.0
+                            let progressSin = Math.Sin progressScaled
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressSin)) range.RangeApplicator
+                            struct (targetLife, result))
+                            targets
+                    (targets, Output.empty)
+            | SinScaled (scalar, value, value2) ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let progress = Life.getProgress time targetLife
+                            let progressScaled = float progress * Math.PI * 2.0 * float scalar
+                            let progressSin = Math.Sin progressScaled
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressSin)) range.RangeApplicator
+                            struct (targetLife, result))
+                            targets
+                    (targets, Output.empty)
+            | Cos (value, value2) ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let progress = Life.getProgress time targetLife
+                            let progressScaled = float progress * Math.PI * 2.0
+                            let progressCos = Math.Cos progressScaled
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressCos)) range.RangeApplicator
+                            struct (targetLife, result))
+                            targets
+                    (targets, Output.empty)
+            | CosScaled (scalar, value, value2) ->
+                fun _ _ targets ->
+                    let targets =
+                        Array.map (fun struct (targetLife, targetValue) ->
+                            let progress = Life.getProgress time targetLife
+                            let progressScaled = float progress * Math.PI * 2.0 * float scalar
+                            let progressCos = Math.Cos progressScaled
+                            let result = applyRange mul div targetValue (value + scale (value2 - value, single progressCos)) range.RangeApplicator
+                            struct (targetLife, result))
+                            targets
+                    (targets, Output.empty)
+
+        /// Make an int range transformer.
+        let rangeInt time range = rangeSrtp (fun (x : int, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> int (single x * y)) time range
+
+        /// Make an int64 range transformer.
+        let rangeInt64 time range = rangeSrtp (fun (x : int64, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> int64 (single x * y)) time range
+
+        /// Make a single range transformer.
+        let rangeSingle time range = rangeSrtp (fun (x : single, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> x * y) time range
+
+        /// Make a double range transformer.
+        let rangeDouble time range = rangeSrtp (fun (x : double, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> double (single x * y)) time range
+
+        /// Make a Vector2 range transformer.
+        let rangeVector2 time range = rangeSrtp Vector2.Multiply Vector2.Divide Vector2.op_Multiply time range
+
+        /// Make a Vector3 range transformer.
+        let rangeVector3 time range = rangeSrtp Vector3.Multiply Vector3.Divide Vector3.op_Multiply time range
+
+        /// Make a Vector4 range transformer.
+        let rangeVector4 time range = rangeSrtp Vector4.Multiply Vector4.Divide Vector4.op_Multiply time range
+
+        /// Make a Color range transformer.
+        let rangeColor time range = rangeSrtp Color.Multiply Color.Divide Color.op_Multiply time range
 
     /// Scopes transformable values.
     type [<NoEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
@@ -537,12 +628,15 @@ module Particles =
           mutable Flip : Flip }
         interface Particle with member this.Life with get () = this.Life and set value = this.Life <- value
         static member inline body = Scope.make (fun p -> p.Body) (fun v p -> { p with Body = v })
-        static member inline size = Scope.make (fun p -> p.Size) (fun v p -> { p with Size = v })
-        static member inline offset = Scope.make (fun p -> p.Offset) (fun v p -> { p with Offset = v })
-        static member inline inset = Scope.make (fun p -> p.Inset) (fun v p -> { p with Inset = v })
-        static member inline color = Scope.make (fun p -> p.Color) (fun v p -> { p with Color = v })
-        static member inline glow = Scope.make (fun p -> p.Glow) (fun v p -> { p with Glow = v })
-        static member inline flip = Scope.make (fun p -> p.Flip) (fun v p -> { p with Flip = v })
+        static member inline position = Scope.make (fun p -> struct (p.Life, p.Body.Position)) (fun struct (_, v) p -> { p with Body = { p.Body with Position = v }})
+        static member inline rotation = Scope.make (fun p -> struct (p.Life, p.Body.Rotation)) (fun struct (_, v) p -> { p with Body = { p.Body with Rotation = v }})
+        static member inline size = Scope.make (fun p -> struct (p.Life, p.Size)) (fun struct (_, v) p -> { p with Size = v })
+        static member inline offset = Scope.make (fun p -> struct (p.Life, p.Offset)) (fun struct (_, v) p -> { p with Offset = v })
+        static member inline inset = Scope.make (fun p -> struct (p.Life, p.Inset)) (fun struct (_, v) p -> { p with Inset = v })
+        static member inline color = Scope.make (fun p -> struct (p.Life, p.Color)) (fun struct (_, v) p -> { p with Color = v })
+        static member inline glow = Scope.make (fun p -> struct (p.Life, p.Glow)) (fun struct (_, v) p -> { p with Glow = v })
+        //static member inline flipH = Scope.make (fun p -> struct (p.Life, p.Flip)) (fun struct (_, v) p -> { p with Flip = v })
+        //static member inline flipV = Scope.make (fun p -> struct (p.Life, p.Flip)) (fun struct (_, v) p -> { p with Flip = v })
 
     /// Describes a basic emitter.
     type BasicEmitterDescriptor =
