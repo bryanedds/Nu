@@ -25,19 +25,19 @@ module Particles =
         static member empty = Constraints [||]
 
     /// How a logic is to be applied.
-    type [<StructuralEquality; StructuralComparison>] LogicApplicator =
-        | Or
-        | Nor
-        | Xor
-        | And
-        | Nand
-        | Equal
+    type [<StructuralEquality; StructuralComparison>] LogicType =
+        | Or of bool
+        | Nor of bool
+        | Xor of bool
+        | And of bool
+        | Nand of bool
+        | Equal of bool
 
     /// Describes logic of behavior over a section of a target's life time.
     type [<StructuralEquality; NoComparison>] Logic =
-        { LogicApplicator : LogicApplicator
-          LogicBegin : single
-          LogicEnd : single }
+        { LogicType : LogicType
+          (*LogicBegin : single*)
+          (*LogicEnd : single*) }
 
     /// The type of range.
     type [<StructuralEquality; NoComparison>] 'a RangeType =
@@ -203,19 +203,33 @@ module Particles =
                             bodies
                     (bodies, Output.empty)
 
-        /// Apply a transformed logic value.
-        let applyLogic value value2 applicator =
-            match applicator with
-            | Or -> value || value2
-            | Nor -> not value && not value2
-            | Xor -> value <> value2
-            | And -> value && value2
-            | Nand -> not (value && value2)
-            | Equal -> value2
-
-        /// Make a generic logic transformer.
-        let inline logicSrtp _ =
-            failwithnie ()
+        /// Make a logic transformer.
+        let logic (logic : Logic) : struct (Life * bool) Transformer =
+            match logic.LogicType with
+            | Or value ->
+                fun _ _ targets ->
+                    let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue || value)) targets
+                    (targets, Output.empty)
+            | Nor value ->
+                fun _ _ targets ->
+                    let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, not targetValue && not value)) targets
+                    (targets, Output.empty)
+            | Xor value ->
+                fun _ _ targets ->
+                    let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue <> value)) targets
+                    (targets, Output.empty)
+            | And value ->
+                fun _ _ targets ->
+                    let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue && value)) targets
+                    (targets, Output.empty)
+            | Nand value ->
+                fun _ _ targets ->
+                    let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, not (targetValue && value))) targets
+                    (targets, Output.empty)
+            | Equal value ->
+                fun _ _ targets ->
+                    let targets = Array.map (fun struct (targetLife, _) -> struct (targetLife, value)) targets
+                    (targets, Output.empty)
 
         /// Apply a transformed range value.
         let inline applyRange mul div (value : ^a) (value2 : ^a) applicator =
