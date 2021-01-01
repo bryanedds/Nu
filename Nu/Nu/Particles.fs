@@ -7,6 +7,23 @@ open System.Numerics
 open Prime
 module Particles =
 
+    /// A spatial constraint.
+    type [<StructuralEquality; NoComparison>] Constraint =
+        | Rectangle of Vector4
+        | Circle of single * Vector2
+        | Constraints of Constraint array
+
+        /// Combine two constraints.
+        static member (+) (constrain, constrain2) =
+            match (constrain, constrain2) with
+            | (Constraints [||], Constraints [||]) -> constrain // OPTIMIZATION: elide Constraint ctor
+            | (_, Constraints [||]) -> constrain
+            | (Constraints [||], _) -> constrain2
+            | (_, _) -> Constraints [|constrain; constrain2|]
+
+        /// The empty constraint.
+        static member empty = Constraints [||]
+
     /// How a logic is to be applied.
     type [<StructuralEquality; StructuralComparison>] LogicApplicator =
         | Or
@@ -55,6 +72,7 @@ module Particles =
     type [<StructuralEquality; NoComparison>] Force =
         | Gravity of Vector2
         | Attractor of Vector2 * single * single
+        | Velocity
 
     /// Describes the life of an instance value.
     /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
@@ -102,23 +120,6 @@ module Particles =
         /// The life of the particle.
         abstract Life : Life with get, set
 
-    /// A behavioral constraint.
-    type [<StructuralEquality; NoComparison>] Constraint =
-        | Rectangle of Vector4
-        | Circle of single * Vector2
-        | Constraints of Constraint array
-
-        /// Combine two constraints.
-        static member (+) (constrain, constrain2) =
-            match (constrain, constrain2) with
-            | (Constraints [||], Constraints [||]) -> constrain // OPTIMIZATION: elide Constraint ctor
-            | (_, Constraints [||]) -> constrain
-            | (Constraints [||], _) -> constrain2
-            | (_, _) -> Constraints [|constrain; constrain2|]
-
-        /// The empty constraint.
-        static member empty = Constraints [||]
-
     /// The output of a behavior.
     type [<NoEquality; NoComparison>] Output =
         | OutputEmitter of string * Emitter
@@ -156,7 +157,7 @@ module Particles =
         int64 -> Constraint -> 'a array -> ('a array * Output)
 
     [<AutoOpen>]
-    module Transformer =
+    module TransformerOperators =
 
         /// Pipe two transformers.
         let pipe (transformer : 'a Transformer) (transformer2 : 'a Transformer) : 'a Transformer =
@@ -168,6 +169,38 @@ module Particles =
         /// Pipe multiple transformers.
         let pipeMany transformers =
             Seq.reduce pipe transformers
+
+    [<RequireQualifiedAccess>]
+    module Transformer =
+
+        /// Make a force transformer.
+        let force force : Body Transformer =
+            fun _ constrain bodies ->
+                match force with
+                | Gravity gravity ->
+                    let bodies = Array.map (fun (body : Body) -> { body with LinearVelocity = body.LinearVelocity + gravity }) bodies
+                    (bodies, Output.empty)
+                | Attractor (position, radius, force) ->
+                    let bodies =
+                        Array.map (fun (body : Body) ->
+                            let direction = position - body.Position
+                            let distance = direction.Length ()
+                            let normal = direction / distance
+                            if distance < radius then
+                                let pull = (radius - distance) / radius
+                                let pullForce = pull * force
+                                { body with LinearVelocity = body.LinearVelocity + pullForce * normal }
+                            else body)
+                            bodies
+                    (bodies, Output.empty)
+                | Velocity ->
+                    let bodies =
+                        Array.map (fun (body : Body) ->
+                            { body with
+                                Position = body.Position + body.LinearVelocity // TODO: apply constraints
+                                Rotation = body.Rotation + body.AngularVelocity })
+                            bodies
+                    (bodies, Output.empty)
 
     /// Scopes transformable values.
     type [<NoEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
@@ -194,7 +227,7 @@ module Particles =
     /// Defines a generic behavior.
     type [<NoEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
         { Scope : Scope<'a, 'b>
-          Transformer : 'b Transformer }
+          Transformers : 'b Transformer FStack }
 
         /// Run the behavior over a single target.
         static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
@@ -206,7 +239,12 @@ module Particles =
         /// OPTIMIZATION: runs transformers in batches for better utilization of instruction cache.
         static member runMany time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a array) =
             let targets2 = behavior.Scope.In targets
-            let (targets3, output) = behavior.Transformer time constrain targets2
+            let (targets3, output) =
+                FStack.fold (fun (targets, output) transformer ->
+                    let (targets, output2) = transformer time constrain targets
+                    (targets, output + output2))
+                    (targets2, Output.empty)
+                    behavior.Transformers
             let (targets4, output) = behavior.Scope.Out (targets3, output) targets
             (targets4, output)
 
