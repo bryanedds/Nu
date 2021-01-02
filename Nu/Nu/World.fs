@@ -408,7 +408,7 @@ module WorldModule3 =
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  NodeDispatcher () :> EntityDispatcher
-                 BasicEmitterDispatcher () :> EntityDispatcher
+                 //BasicEmitterDispatcher () :> EntityDispatcher TODO: re-enable when particles are tested properly.
                  EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
                  ButtonDispatcher () :> EntityDispatcher
@@ -428,7 +428,7 @@ module WorldModule3 =
             // TODO: consider if we should reflectively generate these
             Map.ofList
                 [(typeof<NodeFacet>.Name, NodeFacet () :> Facet)
-                 (typeof<BasicEmitterFacet>.Name, BasicEmitterFacet () :> Facet)
+                 //(typeof<BasicEmitterFacet>.Name, BasicEmitterFacet () :> Facet) TODO: re-enable when particles are tested properly.
                  (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
                  (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
                  (typeof<TextFacet>.Name, TextFacet () :> Facet)
