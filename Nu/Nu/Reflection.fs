@@ -31,7 +31,7 @@ module Reflection =
              ("EmitterBlend", true)
              ("EmitterImage", true)
              ("EmitterLifeTimeOpt", true)
-             ("ParticleLifeTimeOpt", true)
+             ("ParticleLifeTimeMaxOpt", true)
              ("ParticleRate", true)
              ("ParticleMax", true)
              ("BasicParticleSeed", true)
