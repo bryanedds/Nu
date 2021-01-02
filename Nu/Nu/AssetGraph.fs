@@ -22,12 +22,16 @@ type Refinement =
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a means for looking up an asset.
-type[<StructuralEquality; NoComparison; Struct>] 'a AssetTag =
+type[<NoEquality; NoComparison; Struct>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
 
 [<RequireQualifiedAccess>]
 module AssetTag =
+
+    let inline equals left right =
+        left.PackageName = right.PackageName &&
+        left.AssetName = right.AssetName
 
     let make<'a> packageName assetName : AssetTag<'a> =
         { PackageName = packageName; AssetName = assetName }
@@ -50,11 +54,17 @@ module AssetTag =
 [<AutoOpen>]
 module AssetTagOperators =
 
+    let inline assEq left right =
+        AssetTag.equals left right
+
+    let inline assNeq left right =
+        not (AssetTag.equals left right)
+
     let asset<'a> packageName assetName : 'a AssetTag =
         AssetTag.make packageName assetName
 
 /// Describes a game asset, such as a texture, sound, or model in detail.
-type [<StructuralEquality; NoComparison>] 'a Asset =
+type [<NoEquality; NoComparison>] 'a Asset =
     { AssetTag : 'a AssetTag
       FilePath : string
       Refinements : Refinement list

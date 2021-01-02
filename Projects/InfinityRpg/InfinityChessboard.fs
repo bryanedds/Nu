@@ -6,7 +6,7 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
-type Occupant =
+type [<NoComparison>] Occupant =
     | OccupyingCharacter of Character
     | OccupyingProp of PropType
 

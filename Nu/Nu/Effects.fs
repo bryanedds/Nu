@@ -8,7 +8,15 @@ open System.Numerics
 open Prime
 module Effects =
 
-    type [<StructuralEquality; StructuralComparison>] Algorithm =
+    type [<StructuralEquality; StructuralComparison>] LogicApplicator =
+        | Or
+        | Nor
+        | Xor
+        | And
+        | Nand
+        | Equal
+
+    type [<StructuralEquality; StructuralComparison>] TweenAlgorithm =
         | Constant
         | Linear
         | Random
@@ -20,14 +28,6 @@ module Effects =
         | SinScaled of single
         | Cos
         | CosScaled of single
-
-    type [<StructuralEquality; StructuralComparison>] LogicApplicator =
-        | Or
-        | Nor
-        | Xor
-        | And
-        | Nand
-        | Equal
 
     type [<StructuralEquality; StructuralComparison>] TweenApplicator =
         | Sum
@@ -114,11 +114,11 @@ module Effects =
     type [<StructuralEquality; StructuralComparison>] Shift =
         Shift of single
 
-    type [<StructuralEquality; NoComparison>] Resource =
+    type [<NoEquality; NoComparison>] Resource =
         | Resource of string * string
         | Expand of string * Argument array
 
-    and [<StructuralEquality; NoComparison>] Aspect =
+    and [<NoEquality; NoComparison>] Aspect =
         | Enabled of bool
         | PositionAbsolute of Vector2
         | PositionRelative of Vector2
@@ -132,20 +132,20 @@ module Effects =
         | Glow of Color
         | Volume of single
         | Enableds of LogicApplicator * Playback * LogicKeyFrame array
-        | Positions of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Translations of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Offsets of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Sizes of TweenApplicator * Algorithm * Playback * Tween2KeyFrame array
-        | Rotations of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
-        | Elevations of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
-        | Insets of TweenApplicator * Algorithm * Playback * Tween4KeyFrame array
-        | Colors of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
-        | Glows of TweenApplicator * Algorithm * Playback * TweenCKeyFrame array
-        | Volumes of TweenApplicator * Algorithm * Playback * TweenKeyFrame array
+        | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
+        | Translations of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
+        | Offsets of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
+        | Sizes of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
+        | Rotations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
+        | Elevations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
+        | Insets of TweenApplicator * TweenAlgorithm * Playback * Tween4KeyFrame array
+        | Colors of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
+        | Glows of TweenApplicator * TweenAlgorithm * Playback * TweenCKeyFrame array
+        | Volumes of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
         | Expand of string * Argument array
         | Aspects of Aspect array
 
-    and [<StructuralEquality; NoComparison>] Content =
+    and [<NoEquality; NoComparison>] Content =
         | Nil // first to make default value when missing
         | StaticSprite of Resource * Flip * Aspect array * Content
         | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Flip * Aspect array * Content
@@ -163,7 +163,7 @@ module Effects =
     and Argument =
         SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>>
 
-    type [<StructuralEquality; NoComparison>] Definition =
+    type [<NoEquality; NoComparison>] Definition =
         { DefinitionParams : string array
           DefinitionBody : SymbolicCompression<Resource, SymbolicCompression<Aspect, Content>> }
 
@@ -186,9 +186,9 @@ module Effects =
             "", "", "", "",
             Constants.PrettyPrinter.DefaultThresholdMin,
             Constants.PrettyPrinter.CompositionalThresholdMax)>]
-type [<StructuralEquality; NoComparison>] Effect =
+type [<NoEquality; NoComparison>] Effect =
     { EffectName : string
-      LifetimeOpt : int64 option
+      LifeTimeOpt : int64 option
       Definitions : Effects.Definitions
       Content : Effects.Content }
 
@@ -198,7 +198,7 @@ module Effect =
     /// The empty effect.
     let empty =
         { EffectName = Constants.Engine.EffectNameDefault
-          LifetimeOpt = None
+          LifeTimeOpt = None
           Definitions = Map.empty
           Content = Effects.Contents (Effects.Shift 0.0f, [||]) }
 
@@ -209,11 +209,10 @@ module EffectSystem =
     open Effects
 
     /// An abstract data type for executing effects.
-    type [<StructuralEquality; NoComparison>] EffectSystem =
+    type [<NoEquality; NoComparison>] EffectSystem =
         private
             { Absolute : bool
               Views : View List
-              History : Slice seq
               ProgressOffset : single
               EffectTime : int64
               EffectEnv : Definitions
@@ -256,7 +255,7 @@ module EffectSystem =
         selectKeyFrames2 localTime playback |>
         fun (fst, snd, thd) -> (fst, snd, thd)
 
-    let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm effectSystem =
+    let inline private tween (scale : (^a * single) -> ^a) (value : ^a) (value2 : ^a) progress algorithm =
         match algorithm with
         | Constant ->
             value
@@ -267,7 +266,7 @@ module EffectSystem =
             let randValue = fst (Rand.nextSingle rand)
             value + scale (value2 - value, randValue)
         | Chaos ->
-            let chaosValue = single (effectSystem.Chaos.NextDouble ())
+            let chaosValue = Gen.randomf
             value + scale (value2 - value, chaosValue)
         | Ease ->
             let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
@@ -295,8 +294,7 @@ module EffectSystem =
         | CosScaled scalar ->
             let progressScaled = float progress * Math.PI * 2.0 * float scalar
             let progressCos = Math.Cos progressScaled
-            let result = value + scale (value2 - value, single progressCos)
-            result
+            value + scale (value2 - value, single progressCos)
 
     let private applyLogic value value2 applicator =
         match applicator with
@@ -363,19 +361,19 @@ module EffectSystem =
                 | SymbolicCompressionA resource -> evalResource resource effectSystem
                 | _ ->
                     Log.info ("Expected Resource for definition '" + definitionName + ".")
-                    AssetTag.generalize Assets.Default.Image
+                    asset Assets.Default.PackageName Assets.Default.ImageName
             | None ->
                 Log.info ("Could not find definition with name '" + definitionName + "'.")
-                AssetTag.generalize Assets.Default.Image
+                asset Assets.Default.PackageName Assets.Default.ImageName
 
-    let rec private iterateViews incrementAspects content slice effectSystem =
+    let rec private iterateViews incrementAspects content slice history effectSystem =
         let effectSystem = { effectSystem with ProgressOffset = 0.0f }
         let slice = evalAspects incrementAspects slice effectSystem
-        (slice, evalContent content slice effectSystem)
+        (slice, evalContent content slice history effectSystem)
 
-    and private cycleViews incrementAspects content slice effectSystem =
+    and private cycleViews incrementAspects content slice history effectSystem =
         let slice = evalAspects incrementAspects slice effectSystem
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
     and private evalProgress keyFrameTime keyFrameLength effectSystem =
         let progress = if keyFrameLength = 0L then 1.0f else single keyFrameTime / single keyFrameLength
@@ -409,7 +407,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position tweened applicator
                 { slice with Position = applied }
             else slice
@@ -417,7 +415,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let oriented = Vector2.Transform (tweened, Quaternion.CreateFromAxisAngle (Vector3.UnitZ, slice.Rotation))
                 let applied = applyTween Vector2.Multiply Vector2.Divide slice.Position oriented applicator
                 { slice with Position = applied }
@@ -426,7 +424,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
                 { slice with Size = applied }
             else slice
@@ -434,7 +432,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Rotation tweened applicator
                 { slice with Rotation = applied }
             else slice
@@ -442,7 +440,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Elevation tweened applicator
                 { slice with Elevation = applied }
             else slice
@@ -450,7 +448,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
                 { slice with Offset = applied }
             else slice
@@ -458,7 +456,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                let tweened = tween Vector4.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let inset = match slice.InsetOpt with Some inset -> inset | None -> Vector4 (0.0f, 0.0f, 1.0f, 1.0f)
                 let applied = applyTween Vector4.Multiply Vector4.Divide inset tweened applicator
                 { slice with InsetOpt = Some applied }
@@ -467,7 +465,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.ToVector4 ()) (keyFrame2.TweenValue.ToVector4 ()) progress algorithm effectSystem
+                let tweened = tween Vector4.op_Multiply (keyFrame.TweenValue.ToVector4 ()) (keyFrame2.TweenValue.ToVector4 ()) progress algorithm
                 let applied = applyTween Color.Multiply Color.Divide slice.Color (Nu.Color tweened) applicator
                 { slice with Color = applied }
             else slice
@@ -475,7 +473,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween Color.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                let tweened = tween Color.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Color.Multiply Color.Divide slice.Color tweened applicator
                 { slice with Color = applied }
             else slice
@@ -483,7 +481,7 @@ module EffectSystem =
             if Array.notEmpty keyFrames then
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
-                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm effectSystem
+                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) slice.Volume tweened applicator
                 { slice with Volume = applied }
             else slice
@@ -504,7 +502,7 @@ module EffectSystem =
     and private evalAspects aspects slice effectSystem =
         Array.fold (fun slice aspect -> evalAspect aspect slice effectSystem) slice aspects
 
-    and private evalExpand definitionName arguments slice effectSystem =
+    and private evalExpand definitionName arguments slice history effectSystem =
         match Map.tryFind definitionName effectSystem.EffectEnv with
         | Some definition ->
             match definition.DefinitionBody with
@@ -513,12 +511,12 @@ module EffectSystem =
                 match (try Array.zip definition.DefinitionParams localDefinitions |> Some with _ -> None) with
                 | Some localDefinitionEntries ->
                     let effectSystem = { effectSystem with EffectEnv = Map.addMany localDefinitionEntries effectSystem.EffectEnv }
-                    evalContent content slice effectSystem
+                    evalContent content slice history effectSystem
                 | None -> Log.info "Wrong number of arguments provided to ExpandContent."; effectSystem
             | _ -> Log.info ("Expected Content for definition '" + definitionName + "'."); effectSystem
         | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); effectSystem
 
-    and private evalStaticSprite resource flip aspects content slice effectSystem =
+    and private evalStaticSprite resource flip aspects content slice history effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -550,9 +548,9 @@ module EffectSystem =
             else effectSystem
 
         // build implicitly mounted content
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
-    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount stutter playback flip aspects content slice effectSystem =
+    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount stutter playback flip aspects content slice history effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -594,12 +592,12 @@ module EffectSystem =
                 else effectSystem
 
             // build implicitly mounted content
-            evalContent content slice effectSystem
+            evalContent content slice history effectSystem
 
         // abandon evaL
         else effectSystem
 
-    and private evalTextSprite resource text aspects content slice effectSystem =
+    and private evalTextSprite resource text aspects content slice history effectSystem =
 
         // pull font from resource
         let font = evalResource resource effectSystem
@@ -629,9 +627,9 @@ module EffectSystem =
             else effectSystem
 
         // build implicitly mounted content
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
-    and private evalSoundEffect resource aspects content slice effectSystem =
+    and private evalSoundEffect resource aspects content slice history effectSystem =
 
         // pull sound from resource
         let sound = evalResource resource effectSystem
@@ -646,14 +644,14 @@ module EffectSystem =
             else effectSystem
 
         // build implicitly mounted content
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
-    and private evalMount shift aspects content (slice : Slice) effectSystem =
+    and private evalMount shift aspects content (slice : Slice) history effectSystem =
         let slice = { slice with Elevation = slice.Elevation + shift }
         let slice = evalAspects aspects slice effectSystem
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
-    and private evalRepeat shift repetition incrementAspects content (slice : Slice) effectSystem =
+    and private evalRepeat shift repetition incrementAspects content (slice : Slice) history effectSystem =
     
         // eval repeat either as iterative or cycling
         let slice = { slice with Elevation = slice.Elevation + shift }
@@ -663,7 +661,7 @@ module EffectSystem =
         | Iterate count ->
             Array.fold
                 (fun (slice, effectSystem) _ ->
-                    let (slice, effectSystem) = iterateViews incrementAspects content slice effectSystem
+                    let (slice, effectSystem) = iterateViews incrementAspects content slice history effectSystem
                     (slice, effectSystem))
                 (slice, effectSystem)
                 [|0 .. count - 1|] |>
@@ -674,11 +672,11 @@ module EffectSystem =
             Array.fold
                 (fun effectSystem i ->
                     let effectSystem = { effectSystem with ProgressOffset = 1.0f / single count * single i }
-                    cycleViews incrementAspects content slice effectSystem)
+                    cycleViews incrementAspects content slice history effectSystem)
                 effectSystem
                 [|0 .. count - 1|]
 
-    and private evalTag name aspects content (slice : Slice) effectSystem =
+    and private evalTag name aspects content (slice : Slice) history effectSystem =
 
         // eval aspects
         let slice = evalAspects aspects slice effectSystem
@@ -691,13 +689,12 @@ module EffectSystem =
             else effectSystem
 
         // build implicitly mounted content
-        evalContent content slice effectSystem
+        evalContent content slice history effectSystem
 
-    and private evalEmit shift rate emitterAspects aspects content effectSystem =
+    and private evalEmit shift rate emitterAspects aspects content history effectSystem =
         let effectSystem =
             Seq.foldi
                 (fun i effectSystem (slice : Slice) ->
-                    let oldHistory = effectSystem.History
                     let oldEffectTime = effectSystem.EffectTime
                     let timePassed = int64 i
                     let slice = { slice with Elevation = slice.Elevation + shift }
@@ -711,76 +708,76 @@ module EffectSystem =
                             (fun effectSystem _ ->
                                 let slice = evalAspects aspects slice effectSystem
                                 if slice.Enabled
-                                then evalContent content slice effectSystem
+                                then evalContent content slice history effectSystem
                                 else effectSystem)
                             effectSystem
                             [|0 .. emitCount - 1|]
-                    { effectSystem with History = oldHistory; EffectTime = oldEffectTime })
+                    { effectSystem with EffectTime = oldEffectTime })
                 effectSystem
-                effectSystem.History
+                history
         effectSystem
 
-    and private evalSegment start stop content slice effectSystem =
+    and private evalSegment start stop content slice history effectSystem =
         if  effectSystem.EffectTime >= start &&
             effectSystem.EffectTime < stop then
             let effectSystem = { effectSystem with EffectTime = effectSystem.EffectTime - start }
-            let effectSystem = evalContent content slice effectSystem
+            let effectSystem = evalContent content slice history effectSystem
             let effectSystem = { effectSystem with EffectTime = effectSystem.EffectTime + start }
             effectSystem
         else effectSystem
 
-    and private evalContents shift contents slice effectSystem =
+    and private evalContents shift contents slice history effectSystem =
         let slice = { slice with Slice.Elevation = slice.Elevation + shift }
-        evalContents3 contents slice effectSystem
+        evalContents3 contents slice history effectSystem
 
-    and private evalContent content slice effectSystem =
+    and private evalContent content slice history effectSystem =
         match content with
         | Nil ->
             effectSystem
         | StaticSprite (resource, flip, aspects, content) ->
-            evalStaticSprite resource flip aspects content slice effectSystem
+            evalStaticSprite resource flip aspects content slice history effectSystem
         | AnimatedSprite (resource, celSize, celRun, celCount, stutter, playback, flip, aspects, content) ->
-            evalAnimatedSprite resource celSize celRun celCount stutter playback flip aspects content slice effectSystem
+            evalAnimatedSprite resource celSize celRun celCount stutter playback flip aspects content slice history effectSystem
         | TextSprite (resource, text, aspects, content) ->
-            evalTextSprite resource text aspects content slice effectSystem
+            evalTextSprite resource text aspects content slice history effectSystem
         | SoundEffect (resource, aspects, content) ->
-            evalSoundEffect resource aspects content slice effectSystem
+            evalSoundEffect resource aspects content slice history effectSystem
         | Mount (Shift shift, aspects, content) ->
-            evalMount shift aspects content slice effectSystem
+            evalMount shift aspects content slice history effectSystem
         | Repeat (Shift shift, repetition, incrementAspects, content) ->
-            evalRepeat shift repetition incrementAspects content slice effectSystem
+            evalRepeat shift repetition incrementAspects content slice history effectSystem
         | Emit (Shift shift, Rate rate, emitterAspects, aspects, content) ->
-            evalEmit shift rate emitterAspects aspects content effectSystem
+            evalEmit shift rate emitterAspects aspects content history effectSystem
         | Tag (name, aspects, content) ->
-            evalTag name aspects content slice effectSystem
+            evalTag name aspects content slice history effectSystem
         | Delay (delay, content) ->
-            evalSegment delay Int64.MaxValue content slice effectSystem
+            evalSegment delay Int64.MaxValue content slice history effectSystem
         | Segment (start, stop, content) ->
-            evalSegment start stop content slice effectSystem
+            evalSegment start stop content slice history effectSystem
         | Contents (Shift shift, contents) ->
-            evalContents shift contents slice effectSystem
+            evalContents shift contents slice history effectSystem
         | Expand (definitionName, arguments) ->
-            evalExpand definitionName arguments slice effectSystem
+            evalExpand definitionName arguments slice history effectSystem
 
-    and private evalContents3 contents slice effectSystem =
+    and private evalContents3 contents slice history effectSystem =
         Array.fold
-            (fun effectSystem content -> evalContent content slice effectSystem)
+            (fun effectSystem content -> evalContent content slice history effectSystem)
             effectSystem
             contents
 
     let private release effectSystem =
-        let views = effectSystem.Views
+        let views = Views (effectSystem.Views.ToArray ())
         let effectSystem = { effectSystem with Views = List<View> () }
         (views, effectSystem)
 
-    let eval effect slice effectSystem =
+    let eval effect slice history effectSystem =
         let alive =
-            match effect.LifetimeOpt with
+            match effect.LifeTimeOpt with
             | Some lifetime -> lifetime <= 0L || effectSystem.EffectTime <= lifetime
             | None -> true
         if alive then
             let effectSystem = { effectSystem with EffectEnv = Map.concat effectSystem.EffectEnv effect.Definitions }
-            try let effectSystem = evalContent effect.Content slice effectSystem
+            try let effectSystem = evalContent effect.Content slice history effectSystem
                 release effectSystem
             with exn ->
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Effect>).PrettyPrinter
@@ -792,15 +789,14 @@ module EffectSystem =
     let combineEffects effects =
         let effectCombined =
             { EffectName = String.concat "+" (List.map (fun effect -> effect.EffectName) effects)
-              LifetimeOpt = None
+              LifeTimeOpt = None
               Definitions = List.fold (fun definitions effect -> Map.concat definitions effect.Definitions) Map.empty effects
               Content = Contents (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
         effectCombined
 
-    let make absolute history effectTime globalEnv = 
+    let make absolute effectTime globalEnv = 
         { Absolute = absolute
           Views = List<View> ()
-          History = history
           ProgressOffset = 0.0f
           EffectTime = effectTime
           EffectEnv = globalEnv

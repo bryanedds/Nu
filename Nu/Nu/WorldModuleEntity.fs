@@ -39,7 +39,10 @@ module WorldModuleEntity =
     let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
     let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
     let private getFreshKeyAndValue () =
-        let entityStateOpt = UMap.tryFind getFreshKeyAndValueEntity.EntityAddress getFreshKeyAndValueWorld.EntityStates
+        let entityStateOpt =
+            match UMap.tryGetValue getFreshKeyAndValueEntity.EntityAddress getFreshKeyAndValueWorld.EntityStates with
+            | (true, entityStateOpt) -> entityStateOpt
+            | (false, _) -> Unchecked.defaultof<EntityState>
         KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity.EntityAddress, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
     let private getFreshKeyAndValueCached =
         getFreshKeyAndValue
@@ -64,11 +67,11 @@ module WorldModuleEntity =
                         (World.getEntityCachedOpt world)
                 getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
                 getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
-                match entityStateOpt with
-                | Some entityState ->
-                    if entityState.Imperative then entity.EntityStateOpt <- entityState
-                    entityState
-                | None -> Unchecked.defaultof<EntityState>
+                match entityStateOpt :> obj with
+                | null -> Unchecked.defaultof<EntityState>
+                | _ ->
+                    if entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
+                    entityStateOpt
             else entityStateOpt
 
         static member private entityStateAdder entityState (entity : Entity) world =

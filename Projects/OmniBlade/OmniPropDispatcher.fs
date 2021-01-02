@@ -152,7 +152,7 @@ module PropDispatcher =
                 let elevation = if background then Constants.Field.BackgroundElevation else Constants.Field.ForegroundElevation
                 let positionY = transform.Position.Y
                 let assetTag = AssetTag.generalize image
-                [Render (elevation, positionY, assetTag,
+                Render (elevation, positionY, assetTag,
                     SpriteDescriptor
                         { Transform = transform
                           Offset = Vector2.Zero
@@ -160,5 +160,5 @@ module PropDispatcher =
                           Image = image
                           Color = Color.White
                           Glow = Color.Zero
-                          Flip = FlipNone })]
-            else []
+                          Flip = FlipNone })
+            else View.empty

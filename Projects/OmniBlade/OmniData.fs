@@ -404,17 +404,17 @@ type TechAnimationData =
 type KeyItemData =
     { KeyItemData : unit }
 
-type [<NoComparison>] DoorData =
+type [<NoEquality; NoComparison>] DoorData =
     { DoorType : DoorType // key
       DoorKeyOpt : string option
       OpenImage : Image AssetTag
       ClosedImage : Image AssetTag }
 
-type ShopData =
+type [<NoEquality; NoComparison>] ShopData =
     { ShopType : ShopType // key
       ShopItems : ItemType list }
 
-type [<NoComparison>] PropData =
+type [<NoEquality; NoComparison>] PropData =
     | Chest of ChestType * ItemType * Guid * BattleType option * Advent Set * Advent Set
     | Door of DoorType * Advent Set * Advent Set // for simplicity, we'll just have north / south doors
     | Portal of PortalType * Direction * FieldType * PortalType * Advent Set // leads to a different portal
@@ -426,17 +426,17 @@ type [<NoComparison>] PropData =
     | ChestSpawn
     | EmptyProp
 
-type [<NoComparison>] PropDescriptor =
+type [<NoEquality; NoComparison>] PropDescriptor =
     { PropBounds : Vector4
       PropElevation : single
       PropData : PropData
       PropId : int }
 
-type [<NoComparison>] FieldTileMap =
+type [<NoEquality; NoComparison>] FieldTileMap =
     | FieldStatic of TileMap AssetTag
     | FieldRandom of int * single * OriginRand * string
 
-type [<NoComparison>] FieldData =
+type [<NoEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : FieldTileMap
       FieldBackgroundColor : Color
@@ -575,22 +575,22 @@ module FieldData =
             | FieldStatic _ -> Gen.randomItem battleTypes
         | None -> None
 
-type [<NoComparison>] EnemyData =
+type [<NoEquality; NoComparison>] EnemyData =
     { EnemyType : EnemyType // key
       EnemyPosition : Vector2 }
 
-type [<NoComparison>] BattleData =
+type [<NoEquality; NoComparison>] BattleData =
     { BattleType : BattleType // key
       BattleAllyPositions : Vector2 list
       BattleEnemies : EnemyData list
       BattleSongOpt : Song AssetTag option }
 
-type EncounterData =
+type [<NoEquality; NoComparison>] EncounterData =
     { EncounterType : EncounterType // key
       BattleTypes : BattleType list
       Threshold : single }
 
-type [<NoComparison>] CharacterData =
+type [<NoEquality; NoComparison>] CharacterData =
     { CharacterType : CharacterType // key
       ArchetypeType : ArchetypeType
       LevelBase : int
@@ -603,7 +603,7 @@ type [<NoComparison>] CharacterData =
       ExpScalar : single
       Description : string }
 
-type CharacterAnimationData =
+type [<NoEquality; NoComparison>] CharacterAnimationData =
     { CharacterAnimationCycle : CharacterAnimationCycle // key
       AnimationType : AnimationType
       LengthOpt : int64 option
@@ -614,7 +614,7 @@ type CharacterAnimationData =
 [<RequireQualifiedAccess>]
 module Data =
 
-    type [<NoComparison>] OmniData =
+    type [<NoEquality; NoComparison>] OmniData =
         { Weapons : Map<string, WeaponData>
           Armors : Map<string, ArmorData>
           Accessories : Map<string, AccessoryData>

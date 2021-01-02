@@ -28,7 +28,7 @@ module PickupDispatcher =
         override this.View (pickup, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Elevation, transform.Position.Y, AssetTag.generalize pickup.PickupImage,
+                Render (transform.Elevation, transform.Position.Y, AssetTag.generalize pickup.PickupImage,
                      SpriteDescriptor
                        { Transform = transform
                          Offset = v2Zero
@@ -36,5 +36,5 @@ module PickupDispatcher =
                          Image = pickup.PickupImage
                          Color = Color.White
                          Glow = Color.Zero
-                         Flip = FlipNone })]
-            else []
+                         Flip = FlipNone })
+            else View.empty

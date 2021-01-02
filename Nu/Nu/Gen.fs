@@ -32,6 +32,10 @@ module Gen =
         static member randomf =
             lock Lock (fun () -> single (Random.NextDouble ()))
 
+        /// Get the next random double >= 0.0 and < 1.0.
+        static member randomd =
+            lock Lock (fun () -> Random.NextDouble ())
+
         /// Get a random element from a sequence if there are any elements..
         static member randomItem seq =
             let arr = Seq.toArray seq

@@ -61,14 +61,17 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
         { ComponentIndex = index
           ComponentArrRef = arr }
 
+/// An ECS event.
 and [<NoEquality; NoComparison>] SystemEvent<'d, 'w when 'w :> Freezable> =
     { SystemEventData : 'd
       SystemPublisher : 'w System }
 
+/// An ECS event callback.
 and SystemCallback<'d, 'w when 'w :> Freezable> =
     SystemEvent<'d, 'w> -> 'w System -> 'w Ecs -> 'w -> 'w
 
-and SystemBoxedCallback<'w when 'w :> Freezable> =
+/// A boxed ECS event callback.
+and SystemCallbackBoxed<'w when 'w :> Freezable> =
     SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w -> 'w
 
 /// A base system type of an Ecs.
@@ -80,6 +83,10 @@ and System<'w when 'w :> Freezable> (name : string) =
     member this.Name with get () = name
 
 /// Nu's custom Entity-Component-System implementation.
+/// Nu's conception of an ECS is primarily as an abstraction over user-definable storage formats.
+/// The default formats include SoA-based formats for non-correlated, correlated, multiplexed, and hierarchichal value types.
+/// User can add formats of their own design by implementing the 'w System interface and providing related extension methods
+/// on this 'w Ecs type.
 and Ecs<'w when 'w :> Freezable> () as this =
 
     let arrayObjs = dictPlus<string, obj List> []

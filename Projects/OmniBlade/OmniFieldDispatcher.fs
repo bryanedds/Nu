@@ -13,7 +13,7 @@ open OmniBlade
 [<AutoOpen>]
 module FieldDispatcher =
 
-    type [<NoComparison; NoEquality>] FieldMessage =
+    type [<NoEquality; NoComparison>] FieldMessage =
         | UpdateAvatar of Avatar
         | UpdateDialog
         | UpdatePortal
@@ -38,7 +38,7 @@ module FieldDispatcher =
         | Traverse of Vector2
         | Interact
 
-    type [<NoComparison>] FieldCommand =
+    type [<NoEquality; NoComparison>] FieldCommand =
         | UpdateEye
         | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
@@ -309,21 +309,21 @@ module FieldDispatcher =
                 | Some fieldTransition ->
 
                     // handle field transition
-                    let tickTime = World.getTickTime world
+                    let time = World.getTickTime world
                     let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
                     let (signals, field) =
 
                         // start transition
-                        if tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
+                        if time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
                             match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
                             | (true, fieldData) ->
-                                if currentSongOpt <> fieldData.FieldSongOpt
-                                then withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
-                                else just field
+                                match (currentSongOpt, fieldData.FieldSongOpt) with
+                                | (Some song, Some song2) when assEq song song2 -> just field
+                                | (_, _) -> withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
                             | (false, _) -> just field
                         
                         // half-way point of transition
-                        elif tickTime = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                        elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
                             let field = Field.updateFieldType (constant fieldTransition.FieldType) field
                             let field =
                                 Field.updateAvatar (fun avatar ->
@@ -335,14 +335,14 @@ module FieldDispatcher =
                             let songCmd =
                                 match Field.getFieldSongOpt field with
                                 | Some fieldSong ->
-                                    if currentSongOpt <> Some fieldSong
-                                    then PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)
-                                    else Nop
+                                    match currentSongOpt with
+                                    | Some song when assEq song fieldSong -> Nop
+                                    | _ -> PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)
                                 | None -> Nop
                             withCmd songCmd field
 
                         // finish transition
-                        elif tickTime = fieldTransition.FieldTransitionTime then
+                        elif time = fieldTransition.FieldTransitionTime then
                             let field = Field.updateFieldTransitionOpt (constant None) field
                             just field
 
@@ -586,14 +586,14 @@ module FieldDispatcher =
 
                  // transition fade sprite
                  Content.staticSprite Simulants.FieldTransitionFade.Name
-                   [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
-                    Entity.StaticImage == Assets.Default.Image9
-                    Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
-                    Entity.Color <== field --|> fun field world ->
+                    [Entity.Bounds <== field --|> (fun _ world -> World.getViewBoundsAbsolute world); Entity.Elevation == Single.MaxValue; Entity.Absolute == true
+                     Entity.StaticImage == Assets.Default.Image9
+                     Entity.Visible <== field --> fun field -> Option.isSome field.FieldTransitionOpt
+                     Entity.Color <== field --|> fun field world ->
                         match field.FieldTransitionOpt with
                         | Some transition ->
-                            let tickTime = World.getTickTime world
-                            let deltaTime = single transition.FieldTransitionTime - single tickTime
+                            let time = World.getTickTime world
+                            let deltaTime = single transition.FieldTransitionTime - single time
                             let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
                             let progress =
                                 if deltaTime < halfTransitionTime

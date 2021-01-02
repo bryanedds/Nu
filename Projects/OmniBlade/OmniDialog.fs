@@ -7,7 +7,7 @@ open Prime
 open Nu
 open Nu.Declarative
 
-type [<NoComparison>] DialogForm =
+type [<StructuralEquality; NoComparison>] DialogForm =
     | DialogThin
     | DialogThick
 

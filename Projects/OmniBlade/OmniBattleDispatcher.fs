@@ -49,7 +49,7 @@ module BattleDispatcher =
         | ResetCharacter of CharacterIndex
         | DestroyCharacter of CharacterIndex
 
-    type [<NoComparison>] BattleCommand =
+    type [<NoEquality; NoComparison>] BattleCommand =
         | UpdateEye
         | DisplayCancel of CharacterIndex
         | DisplayHitPointsChange of CharacterIndex * int

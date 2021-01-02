@@ -58,27 +58,27 @@ type TransitionState =
     | IdlingState
 
 /// Describes one of a screen's transition processes.
-type [<StructuralEquality; NoComparison; CLIMutable>] Transition =
+type [<NoEquality; NoComparison; CLIMutable>] Transition =
     { TransitionType : TransitionType
-      TransitionLifetime : int64
+      TransitionLifeTime : int64
       DissolveImageOpt : Image AssetTag option
       SongOpt : SongDescriptor option }
 
     /// Make a screen transition.
     static member make transitionType =
         { TransitionType = transitionType
-          TransitionLifetime = 0L
+          TransitionLifeTime = 0L
           DissolveImageOpt = None
           SongOpt = None }
 
 /// Describes the behavior of the screen dissolving algorithm.
-type [<StructuralEquality; NoComparison>] DissolveDescriptor =
+type [<NoEquality; NoComparison>] DissolveDescriptor =
     { IncomingTime : int64
       OutgoingTime : int64
       DissolveImage : Image AssetTag }
 
 /// Describes the behavior of the screen splash algorithm.
-type [<StructuralEquality; NoComparison>] SplashDescriptor =
+type [<NoEquality; NoComparison>] SplashDescriptor =
     { DissolveDescriptor : DissolveDescriptor
       IdlingTime : int64
       SplashImageOpt : Image AssetTag option }
@@ -1037,7 +1037,7 @@ module WorldTypes =
         internal
             { // cache line begin
               EventSystemDelegate : World EventSystemDelegate
-              EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState option>
+              EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState>
               EntityTree : Entity SpatialTree MutantCache
               EntityStates : UMap<Entity Address, EntityState>
               LayerStates : UMap<Layer Address, LayerState>
@@ -1203,6 +1203,13 @@ module WorldTypes =
         /// Make the Ecs for each screen.
         abstract MakeEcs : unit -> World Ecs
         default this.MakeEcs () = Ecs<World> ()
+
+        /// Attempt to make an emitter of the given name.
+        abstract TryMakeEmitter : int64 -> int64 -> int64 -> single -> int -> string -> Particles.Emitter option
+        default this.TryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName =
+            match emitterName with
+            | "BasicEmitter" -> Particles.BasicEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
+            | _ -> None
 
         /// A call-back at the beginning of each frame.
         abstract PreFrame : World -> World

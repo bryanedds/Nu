@@ -224,10 +224,10 @@ module WorldModule2 =
 
         static member private updateScreenTransition3 (screen : Screen) transition world =
             let transitionTicks = screen.GetTransitionTicks world
-            if transitionTicks = transition.TransitionLifetime then
+            if transitionTicks = transition.TransitionLifeTime then
                 (true, screen.SetTransitionTicks 0L world)
-            elif transitionTicks > transition.TransitionLifetime then
-                Log.debug ("TransitionLifetime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
+            elif transitionTicks > transition.TransitionLifeTime then
+                Log.debug ("TransitionLifeTime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
                 (true, screen.SetTransitionTicks 0L world)
             else (false, screen.SetTransitionTicks (transitionTicks + World.getTickRate world) world)
 
@@ -235,29 +235,29 @@ module WorldModule2 =
             match selectedScreen.GetTransitionState world with
             | IncomingState ->
                 match World.getLiveness world with
-                | Running ->
+                | Live ->
                     let world =
                         if selectedScreen.GetTransitionTicks world = 0L then
                             let world =
                                 match (selectedScreen.GetIncoming world).SongOpt with
                                 | Some playSong ->
-                                    if World.getCurrentSongOpt world <> Some playSong
-                                    then World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world
-                                    else world
+                                    match World.getCurrentSongOpt world with
+                                    | Some song when assEq song.Song playSong.Song -> world // do nothing when song is the same
+                                    | _ -> World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world // play song when song is different
                                 | None -> world
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
                             World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world
                         else world
                     match World.getLiveness world with
-                    | Running ->
+                    | Live ->
                         let (finished, world) = World.updateScreenTransition3 selectedScreen (selectedScreen.GetIncoming world) world
                         if finished then
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingFinish" EventTrace.empty
                             let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
                             World.publish () (Events.IncomingFinish --> selectedScreen) eventTrace selectedScreen world
                         else world
-                    | Exiting -> world
-                | Exiting -> world
+                    | Dead -> world
+                | Dead -> world
             | OutgoingState ->
                 let world =
                     if selectedScreen.GetTransitionTicks world = 0L then
@@ -266,9 +266,9 @@ module WorldModule2 =
                             | Some playSong ->
                                 match World.getScreenTransitionDestinationOpt world with
                                 | Some destination ->
-                                    if (selectedScreen.GetIncoming world).SongOpt <> (destination.GetIncoming world).SongOpt
-                                    then World.fadeOutSong playSong.FadeOutMs world
-                                    else world
+                                    match ((selectedScreen.GetIncoming world).SongOpt, (destination.GetIncoming world).SongOpt) with
+                                    | (Some song, Some song2) when assEq song.Song song2.Song -> world // do nothing when song is the same
+                                    | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
                                 | None ->
                                     match World.getCurrentSongOpt world with
                                     | Some currentSong -> World.fadeOutSong currentSong.FadeOutMs world
@@ -278,17 +278,17 @@ module WorldModule2 =
                         World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
                     else world
                 match World.getLiveness world with
-                | Running ->
+                | Live ->
                     let (finished, world) = World.updateScreenTransition3 selectedScreen (selectedScreen.GetOutgoing world) world
                     if finished then
                         let world = World.setScreenTransitionStatePlus IdlingState selectedScreen world
                         match World.getLiveness world with
-                        | Running ->
+                        | Live ->
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingFinish" EventTrace.empty
                             World.publish () (Events.OutgoingFinish --> selectedScreen) eventTrace selectedScreen world
-                        | Exiting -> world
+                        | Dead -> world
                     else world
-                | Exiting -> world
+                | Dead -> world
             | IdlingState -> world
 
         static member private handleSplashScreenIdleUpdate idlingTime ticks evt world =
@@ -525,12 +525,12 @@ module WorldModule2 =
             world
 
         static member private processTasklet (taskletsNotRun, world) tasklet =
-            let tickTime = World.getTickTime world
-            if tickTime = tasklet.ScheduledTime then
+            let time = World.getTickTime world
+            if time = tasklet.ScheduledTime then
                 let world = tasklet.Command.Execute world
                 (taskletsNotRun, world)
-            elif tickTime > tasklet.ScheduledTime then
-                Log.debug ("Tasklet leak found for time '" + scstring tickTime + "'.")
+            elif time > tasklet.ScheduledTime then
+                Log.debug ("Tasklet leak found for time '" + scstring time + "'.")
                 (taskletsNotRun, world)
             else (UList.add tasklet taskletsNotRun, world)
 
@@ -628,7 +628,7 @@ module WorldModule2 =
 
         static member private processIntegrationMessage integrationMessage world =
             match World.getLiveness world with
-            | Running ->
+            | Live ->
                 match integrationMessage with
                 | BodyCollisionMessage bodyCollisionMessage ->
                     let entity = bodyCollisionMessage.BodyShapeSource.Simulant :?> Entity
@@ -673,7 +673,7 @@ module WorldModule2 =
                     let transformData = { BodySource = BodySource.fromInternal bodySource; Position = position; Rotation = rotation }
                     let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" EventTrace.empty
                     World.publish transformData transformAddress eventTrace Simulants.Game world
-            | Exiting -> world
+            | Dead -> world
 
         static member private getEntities3 getElementsFromTree world =
             let entityTree = World.getEntityTree world
@@ -814,7 +814,7 @@ module WorldModule2 =
         static member private actualizeScreenTransition5 (_ : Vector2) (eyeSize : Vector2) (screen : Screen) transition world =
             match transition.DissolveImageOpt with
             | Some dissolveImage ->
-                let progress = single (screen.GetTransitionTicks world) / single transition.TransitionLifetime
+                let progress = single (screen.GetTransitionTicks world) / single transition.TransitionLifeTime
                 let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                 let color = Color.White.WithA (byte (alpha * 255.0f))
                 let position = -eyeSize * 0.5f // negation for right-handedness
@@ -877,14 +877,14 @@ module WorldModule2 =
 
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
-                let mutable result = (Running, world)
+                let mutable result = (Live, world)
                 let polledEvent = ref (SDL.SDL_Event ())
                 while
                     SDL.SDL_PollEvent polledEvent <> 0 &&
-                    (match fst result with Running -> true | Exiting -> false) do
+                    (match fst result with Live -> true | Dead -> false) do
                     result <- World.processInput2 !polledEvent (snd result)
                 result
-            else (Exiting, world)
+            else (Dead, world)
 
         static member private processPhysics world =
             let physicsEngine = World.getPhysicsEngine world
@@ -919,50 +919,50 @@ module WorldModule2 =
                 let world = World.preFrame world
                 PreFrameTimer.Stop ()
                 match liveness with
-                | Running ->
+                | Live ->
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
-                    | Running ->
+                    | Live ->
                         InputTimer.Start ()
                         let (liveness, world) = World.processInput world
                         InputTimer.Stop ()
                         match liveness with
-                        | Running ->
+                        | Live ->
                             PhysicsTimer.Start ()
                             let world = World.processPhysics world
                             PhysicsTimer.Stop ()
                             match World.getLiveness world with
-                            | Running ->
+                            | Live ->
                                 UpdateTimer.Start ()
                                 let world = World.updateSimulants world
                                 UpdateTimer.Stop ()
                                 match World.getLiveness world with
-                                | Running ->
+                                | Live ->
                                     PostUpdateTimer.Start ()
                                     let world = World.postUpdateSimulants world
                                     PostUpdateTimer.Stop ()
                                     match World.getLiveness world with
-                                    | Running ->
+                                    | Live ->
                                         TaskletsTimer.Start ()
                                         let world = World.processTasklets world
                                         TaskletsTimer.Stop ()
                                         match World.getLiveness world with
-                                        | Running ->
+                                        | Live ->
                                             DestructionTimer.Start ()
                                             let world = World.destroySimulants world
                                             DestructionTimer.Stop ()
                                             match World.getLiveness world with
-                                            | Running ->
+                                            | Live ->
                                                 ActualizeTimer.Start ()
                                                 let world = World.actualizeSimulants world
                                                 ActualizeTimer.Stop ()
                                                 match World.getLiveness world with
-                                                | Running ->
+                                                | Live ->
                                                     PerFrameTimer.Start ()
                                                     let world = World.perFrame world
                                                     PerFrameTimer.Stop ()
                                                     match World.getLiveness world with
-                                                    | Running ->
+                                                    | Live ->
 #if MULTITHREAD
                                                         // attempt to finish renderer thread
                                                         let world =
@@ -1036,24 +1036,24 @@ module WorldModule2 =
                                                         let world = postProcess world
                                                         PostFrameTimer.Stop ()
                                                         match World.getLiveness world with
-                                                        | Running ->
+                                                        | Live ->
     
                                                             // update counters and recur
                                                             TotalTimer.Stop ()
                                                             let world = World.updateTime world
                                                             World.runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness rendererThreadOpt audioPlayerThreadOpt world
     
-                                                        | Exiting -> world
-                                                    | Exiting -> world
-                                                | Exiting -> world
-                                            | Exiting -> world
-                                        | Exiting -> world
-                                    | Exiting -> world
-                                | Exiting -> world
-                            | Exiting -> world
-                        | Exiting -> world
-                    | Exiting -> world
-                | Exiting -> world
+                                                        | Dead -> world
+                                                    | Dead -> world
+                                                | Dead -> world
+                                            | Dead -> world
+                                        | Dead -> world
+                                    | Dead -> world
+                                | Dead -> world
+                            | Dead -> world
+                        | Dead -> world
+                    | Dead -> world
+                | Dead -> world
             else world
 
         /// Run the game engine with the given handlers.
@@ -1146,8 +1146,8 @@ module GameDispatcherModule =
                 world initializers
 
         override this.Actualize (game, world) =
-            let views = this.View (this.GetModel game world, game, world)
-            World.actualizeViews views world
+            let view = this.View (this.GetModel game world, game, world)
+            World.actualizeView view world
 
         override this.TrySignal (signalObj, game, world) =
             match signalObj with
@@ -1170,8 +1170,8 @@ module GameDispatcherModule =
         abstract member Content : Lens<'model, World> * Game -> ScreenContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Game * World -> View list
-        default this.View (_, _, _) = []
+        abstract member View : 'model * Game * World -> View
+        default this.View (_, _, _) = View.empty
 
 [<AutoOpen>]
 module WorldModule2' =

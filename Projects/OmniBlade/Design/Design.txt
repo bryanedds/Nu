@@ -23,6 +23,31 @@ in practice, that means i need to go ahead and design the tomb entrance area.
 it will be an outside area with some tents propped up here and there containing traders as well as rival treasure hunters
 each level will be themed around its associated demon theme - fire, ice, water, earth, castle, jungle, and so on.
 
+"They became the rule makers by, ironically, breaking all the rules. They realized that - when all is said and done - only those who lie are believed, and only those who cheat, win. Those without power will always be regarded as contemptible. Those who reject power on principle, who speak truth to power, will be made the scapegoats of its worst evils. This is the world you live in, breathe in, swim in. It is an ocean of corruption."
+Michael (aganm)Today at 11:48 AM
+that quote sounds pretty darn accurate to me
+bryaneddsToday at 11:49 AM
+I'm thinking about putting it as a line the game.
+I still haven't figured out a back story, so I'm taking fragments of my own thoughts and see if they will build a narrative.
+This line explains how the 9 ancient demons came to power.
+What I haven't yet figured out is how they were defeated.
+Michael (aganm)Today at 11:55 AM
+do you have a summary of the back story that you want to write?
+bryaneddsToday at 11:56 AM
+not really - it's still kicking around
+the premise of the game is that you are a treasure hunter looting the recently-discovered tomb of 9 ancient demons
+i have just enough story to make the game mechanics fit together
+but I'm still working on the back story
+bryaneddsToday at 12:11 PM
+"It's not the light that you see, it's the light that you be."
+perhaps the heroes antithesis to the above.
+bryaneddsToday at 12:32 PM
+"And should your light shine to bright or too long? It is inevitable that a demon of darkness will come to throw shade upon you..."
+"Then remind that demon that, after his fleeting time in the world, he is hellbound. Tho time moves slow in the moment, as the season pass, we all reflect how the current year was shorter than that last."
+"Constantly, we all accelerate to our ultimate place in the cosmos. Faster and faster we move toward it. When the demons is stripped of all his worldly treasures in death, all he will be left with is Judgment."
+"Were you a light, or were you a shade upon lights?"
+"At the end of all things, what else could possibly matter?"
+
 Level Topologies
 
  /\
@@ -85,14 +110,26 @@ Degenerate Connected 5 Pentagon
 
 character types
 
-lead character - sword / physical geometric attacks
+lead character -
+	sword / physical geometric attacks
+	defending increases counter rate
 
-wizard - scythe / elemental geometric attacks
+wizard -
+	scythe / elemental geometric attacks
+	defending damage restore TP proportionately
 
-brawler - heavesword / scalar single attack / provoke / counter
+brawler -
+	heavesword / splash attacks / provoke / counter
+	defending increases counter rate
 
-cleric - archer / healer / buffer / debuffer
+cleric -
+	archer / healer / buffer / debuffer
+	defending damage restore TP proportionately
 
-dimensionalist - gunner / time magic / summon (expensive elemental all attacks)
+dimensionalist -
+	gunner / time magic / summon (expensive elemental all attacks)
+	defending damage restore TP proportionately
 
-assassin - physical attacker / steal / mixes two items, either doubles the power or produces a new effect (curative or offensive)
+assassin -
+	physical attacker / steal / mixes two items, either doubles the power or produces a new effect (curative or offensive)
+	defending increases counter rate

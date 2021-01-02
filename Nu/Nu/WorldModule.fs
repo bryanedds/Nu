@@ -123,6 +123,20 @@ module WorldModule =
     let mutable internal trySignal : obj -> Simulant -> World -> World =
         Unchecked.defaultof<_>
 
+    type World with // Reflection
+
+        /// Initialize a property's dynamic attributes.
+        /// Available as an alternative to using the AP, TP, and NP property name suffixes.
+        static member initPropertyAttributes alwaysPublish nonPersistent propertyName =
+            Reflection.initPropertyAttributes alwaysPublish nonPersistent propertyName
+
+        /// Initialize a property's dynamic attributes.
+        /// Available as an alternative to using the AP, TP, and NP property name suffixes.
+        [<FunctionBinding "initPropertyAttributes">]
+        static member initPropertyAttributesWorld alwaysPublish nonPersistent propertyName (world : World) =
+            ignore world // for world parameter for scripting
+            Reflection.initPropertyAttributes alwaysPublish nonPersistent propertyName
+
     type World with // Construction
 
         static member frozen (world : World) =
@@ -159,7 +173,7 @@ module WorldModule =
             let world =
                 World.choose
                     { EventSystemDelegate = eventDelegate
-                      EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) None
+                      EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                       EntityTree = MutantCache.make id spatialTree
                       EntityStates = entityStates
                       LayerStates = layerStates
@@ -567,7 +581,7 @@ module WorldModule =
                 while going && enr.MoveNext () do
                     let (_, subscription) = enr.Current
                     if  (match fst result with Cascade -> true | Resolve -> false) &&
-                        (match World.getLiveness (snd result) with Running -> true | Exiting -> false) then
+                        (match World.getLiveness (snd result) with Live -> true | Dead -> false) then
                         let mapped =
                             match subscription.MapperOpt with
                             | Some mapper -> mapper eventDataObj subscription.PreviousDataOpt (snd result)
@@ -682,13 +696,16 @@ module WorldModule =
 
     type World with // Destruction
 
-        static member addSimulantToDestruction simulant world =
+        static member internal addSimulantToDestruction simulant world =
             { world with DestructionListRev = simulant :: world.DestructionListRev }
 
-        static member tryRemoveSimulantFromDestruction simulant world =
+        static member internal tryRemoveSimulantFromDestruction simulant world =
             { world with DestructionListRev = List.remove ((=) simulant) world.DestructionListRev }
 
     type World with // Plugin
+
+        static member tryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName world =
+            world.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeOpt particleRate particleMax emitterName
 
         static member internal preFrame world =
             world.Plugin.PreFrame world
