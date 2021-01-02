@@ -74,7 +74,7 @@ module Particles =
         | Gravity of Vector2
         | Attractor of Vector2 * single * single
         | Drag of single * single
-        | Velocity
+        | Velocity of Constraint
 
     /// Describes the life of an instance value.
     /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
@@ -191,17 +191,19 @@ module Particles =
                                 AngularVelocity = body.AngularVelocity - angularDrag })
                             bodies
                     (bodies, Output.empty)
-                | Velocity ->
+                | Velocity constrain2 ->
+                    let constrain = constrain + constrain2
                     let bodies =
-                        Array.map (fun (body : Body) ->
-                            { body with
-                                Position = body.Position + body.LinearVelocity // TODO: apply constraints
-                                Rotation = body.Rotation + body.AngularVelocity })
-                            bodies
+                        match constrain with
+                        | Constraints [||] ->
+                            Array.map (fun (body : Body) ->
+                                { body with Position = body.Position + body.LinearVelocity; Rotation = body.Rotation + body.AngularVelocity })
+                                bodies
+                        | _ -> failwithnie () // TODO: implement constraint behavior.
                     (bodies, Output.empty)
 
         /// Make a logic transformer.
-        let logic (logic : Logic) : struct (Life * bool) Transformer =
+        let logic logic : struct (Life * bool) Transformer =
             match logic.LogicType with
             | Or value ->
                 fun _ _ targets ->
