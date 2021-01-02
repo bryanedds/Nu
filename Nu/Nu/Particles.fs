@@ -7,6 +7,40 @@ open System.Numerics
 open Prime
 module Particles =
 
+    /// Describes the life of an instance value.
+    /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
+    /// OPTIMIZATION: doesn't use Liveness type to avoid its constructor calls.
+    /// OPTIMIZATION: pre-computes progress scalar to minimize number of divides.
+    type [<StructuralEquality; NoComparison; Struct>] Life =
+        { StartTime : int64
+          LifeTimeOpt : int64
+          ProgressScalar : single }
+
+        /// The progress made through the instance's life.
+        static member getProgress time life =
+            match life.LifeTimeOpt with
+            | 0L -> 0.0f
+            | _ -> single (time - life.StartTime) * life.ProgressScalar
+
+        /// The progress made through the instance's life within a sub-range.
+        static member getProgress3 time sublife life =
+            match sublife.LifeTimeOpt with
+            | 0L -> Life.getProgress time life
+            | _ ->
+                let localTime = time - life.StartTime
+                Life.getProgress localTime sublife
+
+        /// The liveness of the instance as a boolean.
+        static member getLiveness time life =
+            match life.LifeTimeOpt with
+            | 0L -> true
+            | lifeTime -> lifeTime < time - life.StartTime
+
+        static member make startTime lifeTimeOpt =
+            { StartTime = startTime
+              LifeTimeOpt = lifeTimeOpt
+              ProgressScalar = 1.0f / single lifeTimeOpt }
+
     /// A spatial constraint.
     type [<StructuralEquality; NoComparison>] Constraint =
         | Rectangle of Vector4
@@ -35,9 +69,8 @@ module Particles =
 
     /// Describes logic of behavior over a section of a target's life time.
     type [<StructuralEquality; NoComparison>] Logic =
-        { LogicType : LogicType
-          (*LogicBegin : single*)
-          (*LogicEnd : single*) }
+        { LogicLife : Life
+          LogicType : LogicType }
 
     /// The type of range.
     type [<StructuralEquality; NoComparison>] 'a RangeType =
@@ -62,12 +95,10 @@ module Particles =
         | Set
 
     /// Describes range of behavior over a section of a target's life time.
-    /// TODO: consider implementing range slicing with RangeBegin and RangeEnd.
     type [<StructuralEquality; NoComparison>] 'a Range =
-        { RangeType : 'a RangeType
-          RangeApplicator : RangeApplicator
-          (*RangeBegin : single*)
-          (*RangeEnd : single*) }
+        { RangeLife : Life
+          RangeType : 'a RangeType
+          RangeApplicator : RangeApplicator }
 
     /// The forces that may operate on a target.
     type [<StructuralEquality; NoComparison>] Force =
@@ -75,32 +106,6 @@ module Particles =
         | Attractor of Vector2 * single * single
         | Drag of single * single
         | Velocity of Constraint
-
-    /// Describes the life of an instance value.
-    /// OPTIMIZATION: LifeTimeOpt uses 0L to represent infinite life.
-    /// OPTIMIZATION: doesn't use Liveness type to avoid its constructor calls.
-    /// OPTIMIZATION: pre-computes progress scalar to minimize number of divides.
-    type [<StructuralEquality; NoComparison; Struct>] Life =
-        { StartTime : int64
-          LifeTimeOpt : int64
-          ProgressScalar : single }
-
-        /// The progress made through the instance's life.
-        static member getProgress time life =
-            match life.LifeTimeOpt with
-            | 0L -> 0.0f
-            | _ -> single (time - life.StartTime) * life.ProgressScalar
-
-        /// The liveness of the instance as a boolean.
-        static member getLiveness time life =
-            match life.LifeTimeOpt with
-            | 0L -> true
-            | lifeTime -> lifeTime < time - life.StartTime
-
-        static member make startTime lifeTimeOpt =
-            { StartTime = startTime
-              LifeTimeOpt = lifeTimeOpt
-              ProgressScalar = 1.0f / single lifeTimeOpt }
 
     /// Describes the body of an instance value.
     type [<StructuralEquality; NoComparison; Struct>] Body =
@@ -251,7 +256,7 @@ module Particles =
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress time targetLife
+                            let progress = Life.getProgress3 time range.RangeLife targetLife
                             let result = applyRange targetValue (value + scale (value2 - value, progress))
                             struct (targetLife, result))
                             targets
@@ -260,7 +265,7 @@ module Particles =
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress time targetLife
+                            let progress = Life.getProgress3 time range.RangeLife targetLife
                             let rand = Rand.makeFromInt (int ((Math.Max (double progress, 0.000000001)) * double Int32.MaxValue))
                             let randValue = fst (Rand.nextSingle rand)
                             let result = applyRange targetValue (value + scale (value2 - value, randValue))
@@ -280,7 +285,7 @@ module Particles =
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress time targetLife
+                            let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressEase = single (Math.Pow (Math.Sin (Math.PI * double progress * 0.5), 2.0))
                             let result = applyRange targetValue (value + scale (value2 - value, progressEase))
                             struct (targetLife, result))
@@ -290,7 +295,7 @@ module Particles =
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress time targetLife
+                            let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 0.5
                             let progressEaseIn = 1.0 + Math.Sin (progressScaled + Math.PI * 1.5)
                             let result = applyRange targetValue (value + scale (value2 - value, single progressEaseIn))
@@ -301,7 +306,7 @@ module Particles =
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress time targetLife
+                            let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 0.5
                             let progressEaseOut = Math.Sin progressScaled
                             let result = applyRange targetValue (value + scale (value2 - value, single progressEaseOut))
@@ -312,7 +317,7 @@ module Particles =
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress time targetLife
+                            let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0
                             let progressSin = Math.Sin progressScaled
                             let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
@@ -323,7 +328,7 @@ module Particles =
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress time targetLife
+                            let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0 * float scalar
                             let progressSin = Math.Sin progressScaled
                             let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
@@ -334,7 +339,7 @@ module Particles =
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress time targetLife
+                            let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0
                             let progressCos = Math.Cos progressScaled
                             let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
@@ -345,7 +350,7 @@ module Particles =
                 fun _ _ targets ->
                     let targets =
                         Array.map (fun struct (targetLife, targetValue) ->
-                            let progress = Life.getProgress time targetLife
+                            let progress = Life.getProgress3 time range.RangeLife targetLife
                             let progressScaled = float progress * Math.PI * 2.0 * float scalar
                             let progressCos = Math.Cos progressScaled
                             let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
