@@ -464,7 +464,7 @@ module Particles =
           Blend : Blend
           Image : Image AssetTag
           LifeTimeOpt : int64
-          ParticleLifeTimeOpt : int64
+          ParticleLifeTimeMaxOpt : int64
           ParticleRate : single
           ParticleMax : int
           ParticleSeed : 'a
@@ -486,7 +486,7 @@ module Particles =
           Blend : Blend
           Image : Image AssetTag
           Life : Life
-          ParticleLifeTimeOpt : int64 // OPTIMIZATION: uses 0L to represent infinite particle life.
+          ParticleLifeTimeMaxOpt : int64 // OPTIMIZATION: uses 0L to represent infinite particle life.
           ParticleRate : single
           mutable ParticleIndex : int // the current particle buffer insertion point
           mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
@@ -510,7 +510,7 @@ module Particles =
 
         /// Determine emitter's liveness.
         static member getLiveness time emitter =
-            match emitter.ParticleLifeTimeOpt with
+            match emitter.ParticleLifeTimeMaxOpt with
             | 0L -> Live
             | lifeTime -> if Life.getLiveness (time - lifeTime) emitter.Life then Live else Dead
 
@@ -548,7 +548,7 @@ module Particles =
 
         /// Make a basic particle emitter.
         static member make<'a>
-            time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed
+            time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a Emitter =
             { Body = body
               Elevation = elevation
@@ -556,7 +556,7 @@ module Particles =
               Blend = blend
               Image = image
               Life = Life.make time lifeTimeOpt
-              ParticleLifeTimeOpt = particleLifeTimeOpt
+              ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt
               ParticleRate = particleRate
               ParticleIndex = 0
               ParticleWatermark = 0
@@ -628,7 +628,6 @@ module Particles =
 
     [<RequireQualifiedAccess>]
     module BasicParticle =
-
         let body = Scope.make (fun p -> p.Body) (fun v p -> { p with Body = v })
         let position = Scope.make (fun p -> struct (p.Life, p.Body.Position)) (fun struct (_, v) p -> { p with Body = { p.Body with Position = v }})
         let rotation = Scope.make (fun p -> struct (p.Life, p.Body.Rotation)) (fun struct (_, v) p -> { p with Body = { p.Body with Rotation = v }})
@@ -718,14 +717,14 @@ module Particles =
 
         /// Make a basic particle emitter.
         let make
-            time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed
+            time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
             BasicEmitter.make
-                time body elevation absolute blend image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed
+                time body elevation absolute blend image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
         /// Make an empty basic particle emitter.
-        let makeEmpty time lifeTimeOpt particleLifeTimeOpt particleRate particleMax =
+        let makeEmpty time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed = Unchecked.defaultof<BasicParticle>
             let particleInitializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
@@ -734,11 +733,11 @@ module Particles =
             let emitterBehavior = fun _ _ _ -> Output.empty
             let emitterBehaviors = Behaviors.empty
             make
-                time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed
+                time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
         /// Make the default basic particle emitter.
-        let makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax =
+        let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed =
                 { Life = Life.make 0L 60L
@@ -755,5 +754,5 @@ module Particles =
             let emitterBehavior = fun _ _ _ -> Output.empty
             let emitterBehaviors = Behaviors.empty
             make
-                time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeOpt particleRate particleMax particleSeed
+                time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
