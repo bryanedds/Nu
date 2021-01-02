@@ -350,7 +350,7 @@ module BasicEmitterFacetModule =
         override this.Update (entity, world) =
             let time = World.getTickTime world
             let particleSystem = entity.GetParticleSystem world
-            let (particleSystem, output) = Particles.ParticleSystem.run time Particles.Constraint.empty particleSystem
+            let (particleSystem, output) = Particles.ParticleSystem.run time particleSystem
             let world = entity.SetParticleSystem particleSystem world
             processOutput output entity world
 

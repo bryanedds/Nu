@@ -73,6 +73,7 @@ module Particles =
     type [<StructuralEquality; NoComparison>] Force =
         | Gravity of Vector2
         | Attractor of Vector2 * single * single
+        | Drag of single * single
         | Velocity
 
     /// Describes the life of an instance value.
@@ -145,7 +146,7 @@ module Particles =
         abstract GetLiveness : int64 -> Liveness
 
         /// Run the emitter.
-        abstract Run : int64 -> Constraint -> Emitter * Output
+        abstract Run : int64 -> Emitter * Output
 
         /// Convert the emitted particles to a ParticlesDescriptor.
         abstract ToParticlesDescriptor : unit -> ParticlesDescriptor
@@ -178,6 +179,16 @@ module Particles =
                                 let pullForce = pull * force
                                 { body with LinearVelocity = body.LinearVelocity + pullForce * normal }
                             else body)
+                            bodies
+                    (bodies, Output.empty)
+                | Drag (linearDrag, angularDrag) ->
+                    let bodies =
+                        Array.map (fun (body : Body) ->
+                            let linearDrag = body.LinearVelocity * linearDrag
+                            let angularDrag = body.AngularVelocity * angularDrag
+                            { body with
+                                LinearVelocity = body.LinearVelocity - linearDrag
+                                AngularVelocity = body.AngularVelocity - angularDrag })
                             bodies
                     (bodies, Output.empty)
                 | Velocity ->
@@ -493,20 +504,20 @@ module Particles =
           ParticleBuffer : 'a array // operates as a ring-buffer
           ParticleSeed : 'a
           Constraint : Constraint
-          ParticleInitializer : int64 -> Constraint -> 'a Emitter -> 'a
-          ParticleBehavior : int64 -> Constraint -> 'a Emitter -> Output
+          ParticleInitializer : int64 -> 'a Emitter -> 'a
+          ParticleBehavior : int64 -> 'a Emitter -> Output
           ParticleBehaviors : Behaviors
-          EmitterBehavior : int64 -> Constraint -> 'a Emitter -> Output
+          EmitterBehavior : int64 -> 'a Emitter -> Output
           EmitterBehaviors : Behaviors
           ToParticlesDescriptor : 'a Emitter -> ParticlesDescriptor }
 
-        static member private emit time constrain emitter =
+        static member private emit time emitter =
             let particleIndex = if emitter.ParticleIndex >= emitter.ParticleBuffer.Length then 0 else inc emitter.ParticleIndex
             if particleIndex > emitter.ParticleWatermark then emitter.ParticleWatermark <- particleIndex
             emitter.ParticleIndex <- particleIndex
             let particle = &emitter.ParticleBuffer.[particleIndex]
             particle.Life <- Life.make time particle.Life.LifeTimeOpt
-            particle <- emitter.ParticleInitializer time constrain emitter
+            particle <- emitter.ParticleInitializer time emitter
 
         /// Determine emitter's liveness.
         static member getLiveness time emitter =
@@ -515,32 +526,29 @@ module Particles =
             | lifeTime -> if Life.getLiveness (time - lifeTime) emitter.Life then Live else Dead
 
         /// Run the emitter.
-        static member run time (constrain : Constraint) (emitter : 'a Emitter) =
+        static member run time (emitter : 'a Emitter) =
 
             // determine local time
             let localTime = time - emitter.Life.StartTime
-
-            // combine constraints
-            let constrain = constrain + emitter.Constraint
 
             // emit new particles if live
             if Life.getLiveness time emitter.Life then
                 let emitCountLastFrame = single (dec localTime) * emitter.ParticleRate
                 let emitCountThisFrame = single localTime * emitter.ParticleRate
                 let emitCount = int emitCountThisFrame - int emitCountLastFrame
-                for _ in 0 .. emitCount - 1 do Emitter<'a>.emit time constrain emitter
+                for _ in 0 .. emitCount - 1 do Emitter<'a>.emit time emitter
 
             // update emitter in-place
-            let output = emitter.EmitterBehavior time constrain emitter
+            let output = emitter.EmitterBehavior time emitter
 
             // update emitter compositionally
-            let (emitter, output2) = Behaviors.run time emitter.EmitterBehaviors constrain emitter
+            let (emitter, output2) = Behaviors.run time emitter.EmitterBehaviors emitter.Constraint emitter
 
             // update existing particles in-place
-            let output3 = emitter.ParticleBehavior time constrain emitter
+            let output3 = emitter.ParticleBehavior time emitter
 
             // update existing particles compositionally
-            let (particleBuffer, output4) = Behaviors.runMany time emitter.ParticleBehaviors constrain emitter.ParticleBuffer
+            let (particleBuffer, output4) = Behaviors.runMany time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleBuffer
             let emitter = { emitter with ParticleBuffer = particleBuffer }
 
             // fin
@@ -573,8 +581,8 @@ module Particles =
         interface Emitter with
             member this.GetLiveness time =
                 Emitter<'a>.getLiveness time this
-            member this.Run time constrain =
-                let (emitter, output) = Emitter<'a>.run time constrain this
+            member this.Run time =
+                let (emitter, output) = Emitter<'a>.run time this
                 (emitter :> Emitter, output)
             member this.ToParticlesDescriptor () =
                 this.ToParticlesDescriptor this
@@ -591,10 +599,10 @@ module Particles =
         { Emitters : Map<string, Emitter> }
 
         /// Run the particle system.
-        static member run time constrain particleSystem =
+        static member run time particleSystem =
             let (emitters, output) =
                 Map.fold (fun (emitters, output) emitterId (emitter : Emitter) ->
-                    let (emitter, output2) = emitter.Run time constrain
+                    let (emitter, output2) = emitter.Run time
                     let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
                     (emitters, output + output2))
                     (Map.empty, Output.empty)
@@ -727,10 +735,10 @@ module Particles =
         let makeEmpty time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed = Unchecked.defaultof<BasicParticle>
-            let particleInitializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
-            let particleBehavior = fun _ _ _ -> Output.empty
+            let particleInitializer = fun _ (emitter : BasicEmitter) -> emitter.ParticleSeed
+            let particleBehavior = fun _ _ -> Output.empty
             let particleBehaviors = Behaviors.empty
-            let emitterBehavior = fun _ _ _ -> Output.empty
+            let emitterBehavior = fun _ _ -> Output.empty
             let emitterBehaviors = Behaviors.empty
             make
                 time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
@@ -748,10 +756,10 @@ module Particles =
                   Color = Color.White
                   Glow = Color.Zero
                   Flip = FlipNone }
-            let particleInitializer = fun _ _ (emitter : BasicEmitter) -> emitter.ParticleSeed
-            let particleBehavior = fun _ _ _ -> Output.empty
+            let particleInitializer = fun _ (emitter : BasicEmitter) -> emitter.ParticleSeed
+            let particleBehavior = fun _ _ -> Output.empty
             let particleBehaviors = Behaviors.empty
-            let emitterBehavior = fun _ _ _ -> Output.empty
+            let emitterBehavior = fun _ _ -> Output.empty
             let emitterBehaviors = Behaviors.empty
             make
                 time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
