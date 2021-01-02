@@ -60,13 +60,13 @@ module CharacterDispatcher =
         override this.View (character, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                [Render (transform.Elevation, transform.Position.Y, AssetTag.generalize character.AnimationSheet,
-                     SpriteDescriptor
-                       { Transform = transform
-                         Offset = Vector2.Zero
-                         InsetOpt = Some (getSpriteInset entity world)
-                         Image = character.AnimationSheet
-                         Color = getSpriteColor entity world
-                         Glow = getSpriteGlow entity world
-                         Flip = FlipNone })]
-            else []
+                Render (transform.Elevation, transform.Position.Y, AssetTag.generalize character.AnimationSheet,
+                    SpriteDescriptor
+                        { Transform = transform
+                          Offset = Vector2.Zero
+                          InsetOpt = Some (getSpriteInset entity world)
+                          Image = character.AnimationSheet
+                          Color = getSpriteColor entity world
+                          Glow = getSpriteGlow entity world
+                          Flip = FlipNone })
+            else View.empty

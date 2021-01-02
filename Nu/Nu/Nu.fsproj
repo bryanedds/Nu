@@ -84,6 +84,9 @@
     <Compile Include="Render.fs" />
     <Compile Include="Audio.fs" />
     <Compile Include="SymbolStore.fs" />
+    <Compile Include="View.fs" />
+    <Compile Include="Particles.fs" />
+    <Compile Include="Effects.fs" />
     <Compile Include="Metadata.fs" />
     <Compile Include="InputBindings.fs" />
     <Compile Include="Input.fs" />
@@ -109,8 +112,6 @@
     <Compile Include="WorldPhysics.fs" />
     <Compile Include="WorldRender.fs" />
     <Compile Include="WorldAudio.fs" />
-    <Compile Include="WorldEffects.fs" />
-    <Compile Include="WorldParticles.fs" />
     <Compile Include="WorldTmxMap.fs" />
     <Compile Include="WorldDispatchers.fs" />
     <Compile Include="WorldContent.fs" />
@@ -233,7 +234,7 @@
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.6.6.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.6.7.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
       <HintPath>..\..\packages\Prime.Scripting.6.1.0\lib\net472\Prime.Scripting.exe</HintPath>

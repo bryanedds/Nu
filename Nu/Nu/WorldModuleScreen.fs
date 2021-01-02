@@ -103,9 +103,9 @@ module WorldModuleScreen =
         static member internal getScreenTransitionTicks screen world = (World.getScreenState screen world).TransitionTicks
         static member internal setScreenTransitionTicks value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionTicks then Some { screenState with TransitionTicks = value } else None) Property? TransitionTicks value screen world
         static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
-        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Incoming then Some { screenState with Incoming = value } else None) Property? Incoming value screen world
+        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> Some { screenState with Incoming = value }) Property? Incoming value screen world
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
-        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Outgoing then Some { screenState with Outgoing = value } else None) Property? Outgoing value screen world
+        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> Some { screenState with Outgoing = value }) Property? Outgoing value screen world
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Persistent then Some { screenState with Persistent = value } else None) Property? Persistent value screen world
         static member internal getScreenDestroying (screen : Screen) world = List.exists ((=) (screen :> Simulant)) world.DestructionListRev

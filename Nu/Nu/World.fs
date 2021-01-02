@@ -402,12 +402,13 @@ module WorldModule3 =
             Map.ofList [World.pairWithName (LayerDispatcher ())]
 
         static member private makeDefaultEntityDispatchers () =
-            // TODO: consider if we shoud reflectively generate these
+            // TODO: consider if we should reflectively generate these
             Map.ofListBy World.pairWithName $
                 [EntityDispatcher ()
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  NodeDispatcher () :> EntityDispatcher
+                 //BasicEmitterDispatcher () :> EntityDispatcher TODO: re-enable when particles are tested properly.
                  EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
                  ButtonDispatcher () :> EntityDispatcher
@@ -424,9 +425,10 @@ module WorldModule3 =
                  TmxMapDispatcher () :> EntityDispatcher]
 
         static member private makeDefaultFacets () =
-            // TODO: consider if we shoud reflectively generate these
+            // TODO: consider if we should reflectively generate these
             Map.ofList
                 [(typeof<NodeFacet>.Name, NodeFacet () :> Facet)
+                 //(typeof<BasicEmitterFacet>.Name, BasicEmitterFacet () :> Facet) TODO: re-enable when particles are tested properly.
                  (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
                  (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
                  (typeof<TextFacet>.Name, TextFacet () :> Facet)
@@ -554,7 +556,8 @@ module WorldModule3 =
 
                 // make the world's subsystems
                 let subsystems =
-                    let physicsEngine = AetherPhysicsEngine.make Constants.Physics.Gravity
+                    let physicsEngine =
+                        AetherPhysicsEngine.make Constants.Physics.GravityDefault
                     let renderer =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
@@ -627,6 +630,6 @@ module WorldModule3 =
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 match World.tryMake sdlDeps worldConfig plugin with
-                | Right world -> World.run4 tautology sdlDeps Running world
+                | Right world -> World.run4 tautology sdlDeps Live world
                 | Left error -> Log.trace error; Constants.Engine.FailureExitCode
             | Left error -> Log.trace error; Constants.Engine.FailureExitCode

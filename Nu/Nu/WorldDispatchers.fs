@@ -23,18 +23,18 @@ module DeclarativeOperators2 =
                 World.attachProperty modelName true property simulant world
             | Some _ -> world
 
-        static member internal actualizeViews views world =
-            Seq.fold (fun world view ->
-                match view with
-                | Render (elevation, positionY, assetTag, descriptor) ->
-                    let layeredDescriptor = { Elevation = elevation; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
-                    World.enqueueRenderMessage (LayeredDescriptorMessage layeredDescriptor) world
-                | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-                | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
-                | FadeOutSong fade -> World.fadeOutSong fade world
-                | StopSong -> World.stopSong world
-                | Tag _ -> world)
-                world views
+        static member internal actualizeView view world =
+            match view with
+            | Render (elevation, positionY, assetTag, descriptor) ->
+                let layeredDescriptor = { Elevation = elevation; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
+                World.enqueueRenderMessage (LayeredDescriptorMessage layeredDescriptor) world
+            | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
+            | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
+            | FadeOutSong fade -> World.fadeOutSong fade world
+            | StopSong -> World.stopSong world
+            | Tag _ -> world
+            | Views views ->
+                Array.fold (fun world view -> World.actualizeView view world) world views
 
 [<AutoOpen>]
 module FacetModule =
@@ -125,8 +125,8 @@ module FacetModule =
                 world initializers
 
         override this.Actualize (entity, world) =
-            let views = this.View (this.GetModel entity world, entity, world)
-            World.actualizeViews views world
+            let view = this.View (this.GetModel entity world, entity, world)
+            World.actualizeView view world
 
         override this.TrySignal (signalObj, entity, world) =
             match signalObj with
@@ -149,9 +149,260 @@ module FacetModule =
         abstract member Content : Lens<'model, World> * Entity -> EntityContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Entity * World -> View list
-        default this.View (_, _, _) = []
+        abstract member View : 'model * Entity * World -> View
+        default this.View (_, _, _) = View.empty
 
+[<AutoOpen>]
+module BasicEmitterFacetModule =
+
+    type Entity with
+
+        member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
+        member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false value world
+        member this.SelfDestruct = lens Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct this
+        member this.GetEmitterOffset world : Vector2 = this.Get Property? EmitterOffset world
+        member this.SetEmitterOffset (value : Vector2) world = this.SetFast Property? EmitterOffset true value world
+        member this.EmitterOffset = lens Property? EmitterOffset this.GetEmitterOffset this.SetEmitterOffset this
+        member this.GetEmitterTwist world : single = this.Get Property? EmitterTwist world
+        member this.SetEmitterTwist (value : single) world = this.SetFast Property? EmitterTwist true value world
+        member this.EmitterTwist = lens Property? EmitterTwist this.GetEmitterTwist this.SetEmitterTwist this
+        member this.GetEmitterGravity world : Vector2 = this.Get Property? EmitterGravity world
+        member this.SetEmitterGravity (value : Vector2) world = this.SetFast Property? EmitterGravity true value world
+        member this.EmitterGravity = lens Property? EmitterGravity this.GetEmitterGravity this.SetEmitterGravity this
+        member this.GetEmitterImage world : Image AssetTag = this.Get Property? EmitterImage world
+        member this.SetEmitterImage (value : Image AssetTag) world = this.SetFast Property? EmitterImage true value world
+        member this.EmitterImage = lens Property? EmitterImage this.GetEmitterImage this.SetEmitterImage this
+        member this.GetEmitterBlend world : Blend = this.Get Property? EmitterBlend world
+        member this.SetEmitterBlend (value : Blend) world = this.SetFast Property? EmitterBlend true value world
+        member this.EmitterBlend = lens Property? EmitterBlend this.GetEmitterBlend this.SetEmitterBlend this
+        member this.GetEmitterLifeTimeOpt world : int64 = this.Get Property? EmitterLifeTimeOpt world
+        member this.SetEmitterLifeTimeOpt (value : int64) world = this.SetFast Property? EmitterLifeTimeOpt true value world
+        member this.EmitterLifeTimeOpt = lens Property? EmitterLifeTimeOpt this.GetEmitterLifeTimeOpt this.SetEmitterLifeTimeOpt this
+        member this.GetParticleLifeTimeMaxOpt world : int64 = this.Get Property? ParticleLifeTimeMaxOpt world
+        member this.SetParticleLifeTimeMaxOpt (value : int64) world = this.SetFast Property? ParticleLifeTimeMaxOpt true value world
+        member this.ParticleLifeTimeMaxOpt = lens Property? ParticleLifeTimeMaxOpt this.GetParticleLifeTimeMaxOpt this.SetParticleLifeTimeMaxOpt this
+        member this.GetParticleRate world : single = this.Get Property? ParticleRate world
+        member this.SetParticleRate (value : single) world = this.SetFast Property? ParticleRate true value world
+        member this.ParticleRate = lens Property? ParticleRate this.GetParticleRate this.SetParticleRate this
+        member this.GetParticleMax world : int = this.Get Property? ParticleMax world
+        member this.SetParticleMax (value : int) world = this.SetFast Property? ParticleMax true value world
+        member this.ParticleMax = lens Property? ParticleMax this.GetParticleMax this.SetParticleMax this
+        member this.GetBasicParticleSeed world : Particles.BasicParticle = this.Get Property? BasicParticleSeed world
+        member this.SetBasicParticleSeed (value : Particles.BasicParticle) world = this.SetFast Property? BasicParticleSeed true value world
+        member this.BasicParticleSeed = lens Property? BasicParticleSeed this.GetBasicParticleSeed this.SetBasicParticleSeed this
+        member this.GetEmitterConstraint world : Particles.Constraint = this.Get Property? EmitterConstraint world
+        member this.SetEmitterConstraint (value : Particles.Constraint) world = this.SetFast Property? EmitterConstraint true value world
+        member this.EmitterConstraint = lens Property? EmitterConstraint this.GetEmitterConstraint this.SetEmitterConstraint this
+        member this.GetEmitterName world : string = this.Get Property? EmitterName world
+        member this.SetEmitterName (value : string) world = this.SetFast Property? EmitterName true value world
+        member this.EmitterName = lens Property? EmitterName this.GetEmitterName this.SetEmitterName this
+        member this.GetParticleSystem world : Particles.ParticleSystem = this.Get Property? ParticleSystem world
+        member this.SetParticleSystem (value : Particles.ParticleSystem) world = this.SetFast Property? ParticleSystem false value world
+        member this.ParticleSystem = lens Property? ParticleSystem this.GetParticleSystem this.SetParticleSystem this
+
+    type BasicEmitterFacet () =
+        inherit Facet ()
+
+        static let updateParticleSystem updater (entity : Entity) world =
+            let particleSystem = entity.GetParticleSystem world
+            let particleSystem = updater particleSystem
+            let world = entity.SetParticleSystem particleSystem world
+            world
+
+        static let updateEmitter updater (entity : Entity) world =
+            updateParticleSystem (fun particleSystem ->
+                let emitter = Map.find typeof<Particles.BasicEmitter>.Name particleSystem.Emitters :?> Particles.BasicEmitter
+                let emitter = updater emitter
+                { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters })
+                entity world
+
+        static let handleEmitterBlendChanged evt world =
+            let emitterBlend = evt.Data.Value :?> Blend
+            let world = updateEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterImageChanged evt world =
+            let emitterImage = evt.Data.Value :?> Image AssetTag
+            let world = updateEmitter (fun emitter -> if assNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterLifeTimeOptChanged evt world =
+            let emitterLifeTimeOpt = evt.Data.Value :?> int64
+            let world = updateEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleParticleLifeTimeMaxOptChanged evt world =
+            let particleLifeTimeMaxOpt = evt.Data.Value :?> int64
+            let world = updateEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleParticleRateChanged evt world =
+            let particleRate = evt.Data.Value :?> single
+            let world = updateEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleParticleMaxChanged evt world =
+            let particleMax = evt.Data.Value :?> int
+            let world = updateEmitter (fun emitter -> if emitter.ParticleBuffer.Length <> particleMax then Particles.BasicEmitter.resize particleMax emitter else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleParticleSeedChanged evt world =
+            let particleSeed = evt.Data.Value :?> Particles.BasicParticle
+            let world = updateEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleEmitterConstraintChanged evt world =
+            let emitterConstraint = evt.Data.Value :?> Particles.Constraint
+            let world = updateEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
+            (Cascade, world)
+
+        static let handleBoundsChanged evt world =
+            let entity = evt.Subscriber : Entity
+            let particleSystem = entity.GetParticleSystem world
+            let emitter = Map.find typeof<Particles.BasicEmitter>.Name particleSystem.Emitters :?> Particles.BasicEmitter
+            let emitter =
+                let entityPosition = entity.GetCenter world + entity.GetEmitterOffset world
+                if v2Neq emitter.Body.Position entityPosition
+                then { emitter with Body = { emitter.Body with Position = entityPosition }}
+                else emitter
+            let emitter =
+                let entityRotation = entity.GetRotation world + entity.GetEmitterTwist world
+                if emitter.Body.Rotation <> entityRotation
+                then { emitter with Body = { emitter.Body with Rotation = entityRotation }}
+                else emitter
+            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+            let world = entity.SetParticleSystem particleSystem world
+            (Cascade, world)
+
+        static let rec processOutput output entity world =
+            match output with
+            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
+            | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
+            | Particles.Outputs outputs -> Array.fold (fun world output -> processOutput output entity world) world outputs
+
+        static member Properties =
+            [define Entity.PublishChanges true
+             define Entity.SelfDestruct false
+             define Entity.EmitterOffset v2Zero
+             define Entity.EmitterTwist 0.0f
+             define Entity.EmitterBlend Transparent
+             define Entity.EmitterImage Assets.Default.Image
+             define Entity.EmitterLifeTimeOpt 60L
+             define Entity.ParticleLifeTimeMaxOpt 60L
+             define Entity.ParticleRate 1.0f
+             define Entity.ParticleMax 60
+             define Entity.BasicParticleSeed Unchecked.defaultof<Particles.BasicParticle>
+             define Entity.EmitterConstraint Particles.Constraint.empty
+             define Entity.ParticleSystem Particles.ParticleSystem.empty]
+
+        override this.Register (entity, world) =
+            let emitterOpt =
+                World.tryMakeEmitter
+                    (World.getTickTime world)
+                    (entity.GetEmitterLifeTimeOpt world)
+                    (entity.GetParticleLifeTimeMaxOpt world)
+                    (entity.GetParticleRate world)
+                    (entity.GetParticleMax world)
+                    (entity.GetEmitterName world)
+                    world |>
+                Option.map cast<Particles.BasicEmitter>
+            let emitter =
+                match emitterOpt with
+                | Some emitter ->
+                    { emitter with
+                        Body =
+                            { Position = entity.GetCenter world + entity.GetEmitterOffset world
+                              LinearVelocity = v2Zero
+                              Rotation = entity.GetRotation world + entity.GetEmitterTwist world
+                              AngularVelocity = 0.0f }
+                        Elevation = entity.GetElevation world
+                        Absolute = entity.GetAbsolute world
+                        Blend = entity.GetEmitterBlend world
+                        Image = entity.GetEmitterImage world
+                        ParticleSeed = entity.GetBasicParticleSeed world
+                        Constraint = entity.GetEmitterConstraint world }
+                | None ->
+                    Particles.BasicEmitter.makeEmpty
+                        (World.getTickTime world)
+                        (entity.GetEmitterLifeTimeOpt world)
+                        (entity.GetParticleLifeTimeMaxOpt world)
+                        (entity.GetParticleRate world)
+                        (entity.GetParticleMax world)
+            let particleSystem = entity.GetParticleSystem world
+            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+            let world = entity.SetParticleSystem particleSystem world
+            let world = World.monitor handleBoundsChanged (entity.GetChangeEvent Property? Bounds) entity world
+            let world = World.monitor handleEmitterBlendChanged (entity.GetChangeEvent Property? EmitterBlend) entity world
+            let world = World.monitor handleEmitterImageChanged (entity.GetChangeEvent Property? EmitterImage) entity world
+            let world = World.monitor handleEmitterLifeTimeOptChanged (entity.GetChangeEvent Property? EmitterLifeTimeOpt) entity world
+            let world = World.monitor handleParticleLifeTimeMaxOptChanged (entity.GetChangeEvent Property? ParticleLifeTimeMaxOpt) entity world
+            let world = World.monitor handleParticleRateChanged (entity.GetChangeEvent Property? ParticleRate) entity world
+            let world = World.monitor handleParticleMaxChanged (entity.GetChangeEvent Property? ParticleMax) entity world
+            let world = World.monitor handleParticleSeedChanged (entity.GetChangeEvent Property? ParticleSeed) entity world
+            let world = World.monitor handleEmitterConstraintChanged (entity.GetChangeEvent Property? EmitterConstraint) entity world
+            world
+
+        override this.Unregister (entity, world) =
+            let particleSystem = entity.GetParticleSystem world
+            let particleSystem = { particleSystem with Emitters = Map.remove typeof<Particles.BasicEmitter>.Name particleSystem.Emitters }
+            entity.SetParticleSystem particleSystem world
+
+        override this.Update (entity, world) =
+            let time = World.getTickTime world
+            let particleSystem = entity.GetParticleSystem world
+            let (particleSystem, output) = Particles.ParticleSystem.run time particleSystem
+            let world = entity.SetParticleSystem particleSystem world
+            processOutput output entity world
+
+        override this.Actualize (entity, world) =
+            let particleSystem = entity.GetParticleSystem world
+            let particlesDescriptors = Particles.ParticleSystem.toParticleDescriptors particleSystem
+            let particlesMessages =
+                List.map (fun (descriptor : ParticlesDescriptor) ->
+                    LayeredDescriptorMessage
+                        { Elevation = descriptor.Elevation
+                          PositionY = descriptor.PositionY
+                          AssetTag = AssetTag.generalize descriptor.Image
+                          RenderDescriptor = ParticlesDescriptor descriptor })
+                    particlesDescriptors
+            World.enqueueRenderMessages particlesMessages world
+
+[<AutoOpen>]
+module BasicEmittersFacetModule =
+
+    type Entity with
+
+        member this.GetBasicEmitterSymbols world : Symbol AssetTag list = this.Get Property? BasicEmitterSymbols world
+        member this.SetBasicEmitterSymbols (value : Symbol AssetTag list) world = this.SetFast Property? BasicEmitterSymbols true value world
+        member this.BasicEmitterSymbols = lens Property? BasicEmitterSymbols this.GetBasicEmitterSymbols this.SetBasicEmitterSymbols this
+        member this.GetBasicEmitterDescriptors world : Particles.BasicEmitterDescriptors = this.Get Property? BasicEmitterDescriptors world
+        member this.SetBasicEmitterDescriptors (value : Particles.BasicEmitterDescriptors) world = this.SetFast Property? BasicEmitterDescriptors true value world
+        member this.BasicEmitterDescriptors = lens Property? BasicEmitterDescriptors this.GetBasicEmitterDescriptors this.SetBasicEmitterDescriptors this
+
+    type BasicEmittersFacet () =
+        inherit Facet ()
+
+        static let updateEmitter (descriptor : Particles.BasicEmitterDescriptor) (emitter : Particles.BasicEmitter) position rotation =
+            let emitter =
+                if v2Neq emitter.Body.Position (position + descriptor.Body.Position)
+                then { emitter with Body = { emitter.Body with Position = position + descriptor.Body.Position }}
+                else emitter
+            let emitter =
+                if emitter.Body.Rotation <> rotation + descriptor.Body.Rotation
+                then { emitter with Body = { emitter.Body with Rotation = rotation + descriptor.Body.Rotation }}
+                else emitter
+            let emitter = if assNeq emitter.Image descriptor.Image then { emitter with Image = descriptor.Image } else emitter
+            let emitter = if emitter.Blend <> descriptor.Blend then { emitter with Blend = descriptor.Blend } else emitter
+            let emitter = if emitter.Life.LifeTimeOpt <> descriptor.LifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = descriptor.LifeTimeOpt }} else emitter
+            let emitter = if emitter.ParticleLifeTimeMaxOpt <> descriptor.ParticleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = descriptor.ParticleLifeTimeMaxOpt } else emitter
+            let emitter = if emitter.ParticleRate <> descriptor.ParticleRate then { emitter with ParticleRate = descriptor.ParticleRate } else emitter
+            let emitter = if emitter.ParticleBuffer.Length <> descriptor.ParticleMax then Particles.BasicEmitter.resize descriptor.ParticleMax emitter else emitter
+            let emitter = if emitter.ParticleSeed <> descriptor.ParticleSeed then { emitter with ParticleSeed = descriptor.ParticleSeed } else emitter
+            let emitter = if emitter.Constraint <> descriptor.Constraint then { emitter with Constraint = descriptor.Constraint } else emitter
+            emitter
+
+        do ignore updateEmitter // silence warning for now
+        
 [<AutoOpen>]
 module EffectFacetModule =
 
@@ -160,12 +411,9 @@ module EffectFacetModule =
 
     type Entity with
 
-        member this.GetSelfDestruct world : bool = this.Get Property? SelfDestruct world
-        member this.SetSelfDestruct (value : bool) world = this.SetFast Property? SelfDestruct false value world
-        member this.SelfDestruct = lens Property? SelfDestruct this.GetSelfDestruct this.SetSelfDestruct this
-        member this.GetEffects world : Symbol AssetTag list = this.Get Property? Effects world
-        member this.SetEffects (value : Symbol AssetTag list) world = this.SetFast Property? Effects true value world
-        member this.Effects = lens Property? Effects this.GetEffects this.SetEffects this
+        member this.GetEffectSymbolOpt world : Symbol AssetTag option = this.Get Property? EffectSymbolOpt world
+        member this.SetEffectSymbolOpt (value : Symbol AssetTag option) world = this.SetFast Property? EffectSymbolOpt true value world
+        member this.EffectSymbolOpt = lens Property? EffectSymbolOpt this.GetEffectSymbolOpt this.SetEffectSymbolOpt this
         member this.GetEffectStartTimeOpt world : int64 option = this.Get Property? EffectStartTimeOpt world
         member this.SetEffectStartTimeOpt (value : int64 option) world = this.SetFast Property? EffectStartTimeOpt false value world
         member this.EffectStartTimeOpt = lens Property? EffectStartTimeOpt this.GetEffectStartTimeOpt this.SetEffectStartTimeOpt this
@@ -181,9 +429,6 @@ module EffectFacetModule =
         member this.GetEffectSliceOffset world : Vector2 = this.Get Property? EffectSliceOffset world
         member this.SetEffectSliceOffset (value : Vector2) world = this.SetFast Property? EffectSliceOffset false value world
         member this.EffectSliceOffset = lens Property? EffectSliceOffset this.GetEffectSliceOffset this.SetEffectSliceOffset this
-        member this.GetEffectPhysicsShapes world : unit = this.Get Property? EffectPhysicsShapes world // NOTE: the default EffectFacet leaves it up to the Dispatcher to do something with the effect's physics output
-        member private this.SetEffectPhysicsShapes (value : unit) world = this.SetFast Property? EffectPhysicsShapes false value world
-        member this.EffectPhysicsShapes = lensReadOnly Property? EffectPhysicsShapes this.GetEffectPhysicsShapes this
         member this.GetEffectTags world : EffectTags = this.Get Property? EffectTags world
         member private this.SetEffectTags (value : EffectTags) world = this.SetFast Property? EffectTags false value world
         member this.EffectTags = lensReadOnly Property? EffectTags this.GetEffectTags this
@@ -193,7 +438,7 @@ module EffectFacetModule =
         member this.GetEffectHistory world : Effects.Slice Deque = this.Get Property? EffectHistory world
         member private this.SetEffectHistory (value : Effects.Slice Deque) world = this.SetFast Property? EffectHistory false value world
         member this.EffectHistory = lensReadOnly Property? EffectHistory this.GetEffectHistory this
-        
+
         /// The start time of the effect, or zero if none.
         member this.GetEffectStartTime world =
             match this.GetEffectStartTimeOpt world with
@@ -202,45 +447,41 @@ module EffectFacetModule =
 
         /// The time relative to the start of the effect.
         member this.GetEffectTime world =
-            let effectStartTime = this.GetEffectStartTime world
-            let tickTime = World.getTickTime world
-            tickTime - effectStartTime
+            let startTime = this.GetEffectStartTime world
+            let time = World.getTickTime world
+            time - startTime
 
     type EffectFacet () =
         inherit Facet ()
 
-        static let setEffect effects (entity : Entity) world =
-            match effects with
-            | [] -> world
-            | effectAssetTags ->
+        static let setEffect effectSymbolOpt (entity : Entity) world =
+            match effectSymbolOpt with
+            | Some effectSymbol ->
                 let symbolLoadMetadata = { ImplicitDelimiters = false; StripCsvHeader = false }
-                let effectOpts = World.assetTagsToValueOpts<Effect> effectAssetTags symbolLoadMetadata world
-                let effects = List.definitize effectOpts
-                let effectCombined = EffectSystem.combineEffects effects
-                entity.SetEffect effectCombined world
+                match World.assetTagToValueOpt<Effect> effectSymbol symbolLoadMetadata world with
+                | Some effect -> entity.SetEffect effect world
+                | None -> world
+            | None -> world
 
         static let handleEffectsChanged evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffects world
-            let world = setEffect effectsOpt entity world
+            let world = setEffect (entity.GetEffectSymbolOpt world) entity world
             (Cascade, world)
 
         static let handleAssetsReload evt world =
             let entity = evt.Subscriber : Entity
-            let effectsOpt = entity.GetEffects world
-            let world = setEffect effectsOpt entity world
+            let world = setEffect (entity.GetEffectSymbolOpt world) entity world
             (Cascade, world)
 
         static member Properties =
             [define Entity.PublishChanges true
              define Entity.SelfDestruct false
-             define Entity.Effects []
+             define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
              define Entity.Effect Effect.empty
              define Entity.EffectOffset (Vector2 0.5f)
              define Entity.EffectSliceOffset (Vector2 0.5f)
-             define Entity.EffectPhysicsShapes ()
              define Entity.EffectTags Map.empty
              define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
              variable Entity.EffectHistory (fun _ -> Deque<Effects.Slice> (inc Constants.Effects.EffectHistoryMaxDefault))]
@@ -267,19 +508,19 @@ module EffectFacetModule =
                       Effects.Enabled = true
                       Effects.Volume = Constants.Audio.SoundVolumeDefault }
                 let effectHistory = entity.GetEffectHistory world
-                let effectEnv = entity.GetEffectDefinitions world
-                let effectSystem = EffectSystem.make effectAbsolute effectHistory effectTime effectEnv
+                let effectDefinitions = entity.GetEffectDefinitions world
+                let effectSystem = EffectSystem.make effectAbsolute effectTime effectDefinitions
 
                 // evaluate effect with effect system
-                let (artifacts, _) = EffectSystem.eval effect effectSlice effectSystem
+                let (view, _) = EffectSystem.eval effect effectSlice effectHistory effectSystem
 
-                // actualize effect views
-                let world = World.actualizeViews artifacts world
+                // actualize effect view
+                let world = World.actualizeView view world
 
                 // store tags
                 let tags =
-                    artifacts |>
-                    Seq.toArray |>
+                    view |>
+                    View.toArray |>
                     Array.map (function Tag (name, value) -> Some (name, value :?> Effects.Slice) | _ -> None) |>
                     Array.definitize |> Map.ofArray
                 let world = entity.SetEffectTags tags world
@@ -294,7 +535,7 @@ module EffectFacetModule =
 
         override this.Update (entity, world) =
             let effect = entity.GetEffect world
-            match (entity.GetSelfDestruct world, effect.LifetimeOpt) with
+            match (entity.GetSelfDestruct world, effect.LifeTimeOpt) with
             | (true, Some lifetime) ->
                 let effectTime = entity.GetEffectTime world
                 if effectTime >= dec lifetime // NOTE: dec keeps effect from actualizing past the last frame when it is created mid-frame
@@ -307,6 +548,18 @@ module EffectFacetModule =
             let world = entity.SetEffectStartTimeOpt (Some effectStartTime) world
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent Property? Effects) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
+
+//[<AutoOpen>]
+//module EffectsFacetModule =
+//
+//    type Entity with
+//
+//        member this.GetEffectSymbols world : Symbol AssetTag list = this.Get Property? EffectSymbols world
+//        member this.SetEffectSymbols (value : Symbol AssetTag list) world = this.SetFast Property? EffectSymbols true value world
+//        member this.EffectSymbols = lens Property? EffectSymbols this.GetEffectSymbols this.SetEffectSymbols this
+//        member this.GetEffectDescriptors world : Effects.EffectDescriptors = this.Get Property? EffectDescriptors world
+//        member this.SetEffectDescriptors (value : Effects.EffectDescriptors) world = this.SetFast Property? EffectDescriptors true value world
+//        member this.EffectDescriptors = lens Property? EffectDescriptors this.GetEffectDescriptors this.SetEffectDescriptors this
 
 [<AutoOpen>]
 module ScriptFacetModule =
@@ -513,7 +766,7 @@ module RigidBodyFacetModule =
              define Entity.BodyEnabled true
              define Entity.BodyType Dynamic
              define Entity.Awake true
-             define Entity.Density Constants.Physics.NormalDensity
+             define Entity.Density Constants.Physics.DensityDefault
              define Entity.Friction 0.2f
              define Entity.Restitution 0.0f
              define Entity.FixedRotation false
@@ -1185,8 +1438,8 @@ module EntityDispatcherModule =
                 world initializers
 
         override this.Actualize (entity, world) =
-            let views = this.View (this.GetModel entity world, entity, world)
-            World.actualizeViews views world
+            let view = this.View (this.GetModel entity world, entity, world)
+            World.actualizeView view world
 
         override this.TrySignalFacet (signalObj : obj, facetName : string, entity : Entity, world : World) : World =
             entity.TrySignalFacet signalObj facetName world
@@ -1212,8 +1465,20 @@ module EntityDispatcherModule =
         abstract member Content : Lens<'model, World> * Entity -> EntityContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Entity * World -> View list
-        default this.View (_, _, _) = []
+        abstract member View : 'model * Entity * World -> View
+        default this.View (_, _, _) = View.empty
+
+[<AutoOpen>]
+module BasicEmitterDispatcherModule =
+
+    type BasicEmitterDispatcher () =
+        inherit EntityDispatcher ()
+
+        static member Facets =
+            [typeof<BasicEmitterFacet>]
+
+        static member Properties =
+            [define Entity.PublishChanges true]
 
 [<AutoOpen>]
 module EffectDispatcherModule =
@@ -1713,8 +1978,8 @@ module FpsDispatcherModule =
             let startDateTime = entity.GetStartDateTime world
             let currentDateTime = DateTime.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
-            let tickTime = double (World.getTickTime world - entity.GetStartTickTime world)
-            let frames = tickTime / elapsedDateTime.TotalSeconds
+            let time = double (World.getTickTime world - entity.GetStartTickTime world)
+            let frames = time / elapsedDateTime.TotalSeconds
             if not (Double.IsNaN frames) then 
                 let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
                 entity.SetText framesStr world
@@ -1949,7 +2214,7 @@ module CharacterDispatcherModule =
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then
-                let tickTime = World.getTickTime world
+                let time = World.getTickTime world
                 let physicsId = entity.GetPhysicsId world
                 let facingLeft = entity.GetCharacterFacingLeft world
                 let velocity = World.getBodyLinearVelocity physicsId world
@@ -1966,7 +2231,7 @@ module CharacterDispatcherModule =
                         (None, image)
                     else
                         let image = entity.GetCharacterWalkSheet world
-                        (Some (computeWalkCelInset celSize celRun animationDelay tickTime), image)
+                        (Some (computeWalkCelInset celSize celRun animationDelay time), image)
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Elevation = transform.Elevation
@@ -2087,8 +2352,8 @@ module LayerDispatcherModule =
                 world initializers
 
         override this.Actualize (layer, world) =
-            let views = this.View (this.GetModel layer world, layer, world)
-            World.actualizeViews views world
+            let view = this.View (this.GetModel layer world, layer, world)
+            World.actualizeView view world
 
         override this.TrySignal (signalObj, layer, world) =
             match signalObj with
@@ -2111,8 +2376,8 @@ module LayerDispatcherModule =
         abstract member Content : Lens<'model, World> * Layer -> EntityContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Layer * World -> View list
-        default this.View (_, _, _) = []
+        abstract member View : 'model * Layer * World -> View
+        default this.View (_, _, _) = View.empty
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
@@ -2179,8 +2444,8 @@ module ScreenDispatcherModule =
                 world initializers
 
         override this.Actualize (screen, world) =
-            let views = this.View (this.GetModel screen world, screen, world)
-            World.actualizeViews views world
+            let view = this.View (this.GetModel screen world, screen, world)
+            World.actualizeView view world
 
         override this.TrySignal (signalObj, screen, world) =
             match signalObj with
@@ -2203,5 +2468,5 @@ module ScreenDispatcherModule =
         abstract member Content : Lens<'model, World> * Screen -> LayerContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Screen * World -> View list
-        default this.View (_, _, _) = []
+        abstract member View : 'model * Screen * World -> View
+        default this.View (_, _, _) = View.empty

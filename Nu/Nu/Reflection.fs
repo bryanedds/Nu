@@ -15,18 +15,41 @@ module Reflection =
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
+    /// A dictionary of properties that always have their changes published.
     let private AlwaysPublishPropertyNames =
         dictPlus
-            [("Model", true)
+            [// misc properties
+             ("Model", true)
              ("ParentNodeOpt", true)
              ("ScriptOpt", true)
              ("Script", true)
              ("TmxMap", true)
-             ("EffectsOpt", true)]
 
+             // emitter properties
+             ("EmitterOffset", true)
+             ("EmitterTwist", true)
+             ("EmitterBlend", true)
+             ("EmitterImage", true)
+             ("EmitterLifeTimeOpt", true)
+             ("ParticleLifeTimeMaxOpt", true)
+             ("ParticleRate", true)
+             ("ParticleMax", true)
+             ("BasicParticleSeed", true)
+             ("EmitterConstraint", true)
+             ("EmitterName", true)
+             ("BasicEmitterSymbols", true)
+             ("BasicEmitterDescriptors", true)
+
+             // effect properties
+             ("EffectSymbolOpt", true)
+             ("EffectSymbols", true)
+             ("EffectDescriptoris", true)]
+
+    /// A dictionary of properties that are never serialized.
     let private NonPersistentPropertyNames =
         dictPlus
-            [("Dispatcher", true)
+            [// misc properties
+             ("Dispatcher", true)
              ("Facets", true)
              ("Ecs", true)
              ("TransitionState", true)
@@ -34,15 +57,25 @@ module Reflection =
              ("EntityTree", true)
              ("PublishUpdates", true)
              ("PublishPostUpdates", true)
-             ("ScriptFrame", true)
-             ("ScriptUnsubscriptions", true)
              ("CreationTimeStamp", true)
              ("Optimized", true)
-             ("NodeUnsubscribe", true)
+             ("ScriptFrame", true)
+             ("ScriptUnsubscriptions", true)
              ("TmxMap", true)
-             ("EffectPhysicsShapes", true)
+             ("NodeUnsubscribe", true)
+
+             // emitter properties
+             ("ParticleSystem", true)
+
+             // effect properties
              ("EffectTags", true)
              ("EffectHistory", true)]
+
+    /// Initialize a property's dynamic attributes.
+    /// Available as an alternative to using the AP, TP, and NP property name suffixes.
+    let initPropertyAttributes alwaysPublish nonPersistent propertyName =
+        AlwaysPublishPropertyNames.Add (propertyName, alwaysPublish)
+        NonPersistentPropertyNames.Add (propertyName, nonPersistent)
 
     /// Check if a property with the given name should always publish a change event.
     let isPropertyAlwaysPublishByName (propertyName : string) =

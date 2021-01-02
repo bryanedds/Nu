@@ -8,8 +8,8 @@ open System.Numerics
 open Prime
 open Nu
 
-[<AutoOpen>]
-module internal TransformMasks =
+/// Masks for Transform flags.
+module TransformMasks =
 
     // OPTIMIZATION: Transform flag bit-masks for performance.
     let [<Literal>] ActiveMask =               0b0000000000000001
@@ -26,8 +26,11 @@ module internal TransformMasks =
     let [<Literal>] PublishPostUpdatesMask =   0b0000100000000000
     let [<Literal>] PersistentMask =           0b0001000000000000
 
+// NOTE: opening this in order to make the Transform property implementations reasonably succinct.
+open TransformMasks
+
 /// Carries transformation data specific to an Entity.
-type [<CustomEquality; NoComparison; Struct>] Transform =
+type [<NoEquality; NoComparison; Struct>] Transform =
     { // cache line begin
       mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
@@ -45,18 +48,6 @@ type [<CustomEquality; NoComparison; Struct>] Transform =
         left.Rotation = right.Rotation &&
         left.Elevation = right.Elevation &&
         left.Flags = right.Flags
-
-    override this.Equals that =
-        match box that with
-        | :? Transform as thatTransform -> (this :> IEquatable<Transform>).Equals thatTransform
-        | _ -> false
-
-    override this.GetHashCode () =
-        hash this.Position ^^^
-        hash this.Size ^^^
-        hash this.Rotation ^^^
-        hash this.Elevation ^^^
-        hash this.Flags
 
     member this.Dirty with get () = this.Flags &&& DirtyMask <> 0 and set value = this.Flags <- if value then this.Flags ||| DirtyMask else this.Flags &&& ~~~DirtyMask
     member this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
@@ -86,10 +77,6 @@ type [<CustomEquality; NoComparison; Struct>] Transform =
           Rotation = 0.0f
           Elevation = 0.0f
           Flags = 0 }
-
-    interface IEquatable<Transform> with
-        member this.Equals that =
-            Transform.equals this that
 
     interface Transform Component with
         member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask

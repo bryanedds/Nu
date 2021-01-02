@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Drawing
 open System.Drawing.Imaging
 open System.IO
-open System.Runtime.CompilerServices
 open TiledSharp
 open Prime
 open Nu
@@ -18,7 +17,7 @@ exception TileSetPropertyNotFoundException of string
 
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the
 /// full asset loaded into memory.
-type [<StructuralEquality; NoComparison>] AssetMetadata =
+type [<NoEquality; NoComparison>] AssetMetadata =
     | TextureMetadata of Vector2i * PixelFormat
     | TileMapMetadata of string * (TmxTileset * Image AssetTag) array * TmxMap
     | SoundMetadata

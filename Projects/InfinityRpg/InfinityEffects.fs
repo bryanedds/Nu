@@ -21,7 +21,7 @@ module Effects =
                  v2iDup 144, 2, 2, Constants.InfinityRpg.CharacterAnimationActingDelay, Once, FlipNone, [||], Nil)
 
         { EffectName = "SwordStrike"
-          LifetimeOpt = Some (Constants.InfinityRpg.CharacterAnimationActingDelay * 2L)
+          LifeTimeOpt = Some (Constants.InfinityRpg.CharacterAnimationActingDelay * 2L)
           Definitions = Map.empty
           Content = animationSprite }
 
@@ -33,6 +33,6 @@ module Effects =
                  v2iDup 48, 2, 2, Constants.InfinityRpg.CharacterAnimationActingDelay, Once, FlipNone, [||], Nil)
 
         { EffectName = "MagicMissileImpact"
-          LifetimeOpt = Some (Constants.InfinityRpg.CharacterAnimationActingDelay * 2L)
+          LifeTimeOpt = Some (Constants.InfinityRpg.CharacterAnimationActingDelay * 2L)
           Definitions = Map.empty
           Content = animationSprite }
