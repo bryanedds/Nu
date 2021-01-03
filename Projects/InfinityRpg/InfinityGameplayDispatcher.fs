@@ -135,7 +135,6 @@ module GameplayDispatcher =
                         if List.exists (fun x -> x = direction) openDirections
                         then Gameplay.makeMove gameplay.Time index (Step direction) gameplay
                         else gameplay)
-                        
                 let gameplay = Gameplay.forEachIndex updater gameplay.Round.WalkingEnemyGroup gameplay
                 let gameplay = Gameplay.removeWalkingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
@@ -145,7 +144,6 @@ module GameplayDispatcher =
                 let adjacentEnemies = List.filter (fun x -> Gameplay.areCharactersAdjacent x PlayerIndex gameplay) enemyIndices
                 let gameplay = Gameplay.addAttackingEnemyGroup adjacentEnemies gameplay
                 let gameplay = Gameplay.createWalkingEnemyGroup gameplay
-                
                 match Round.tryGetPlayerMove gameplay.Round with
                 | Some move ->
                     match move with
@@ -168,8 +166,7 @@ module GameplayDispatcher =
                             else gameplay
                         | [] -> failwithumf ()
                     | _ -> gameplay
-                
-                if Map.exists (fun k _ -> k = PlayerIndex) gameplay.Round.CharacterMoves then
+                if Map.containsKey PlayerIndex gameplay.Round.CharacterMoves then
                     withMsg MakeEnemyMoves gameplay
                 else
                     let gameplay = Gameplay.updateRound (Round.updatePlayerContinuity (constant NoContinuity)) gameplay
@@ -200,8 +197,8 @@ module GameplayDispatcher =
                         else
                             let navigationPathOpt =
                                 let navigationMap = Chessboard.getNavigationMap currentCoordinates gameplay.Chessboard
-                                if Map.exists (fun k _ -> k = coordinates) navigationMap then
-                                    NavigationMap.tryMakeNavigationPath currentCoordinates coordinates navigationMap
+                                if Map.containsKey coordinates navigationMap
+                                then NavigationMap.tryMakeNavigationPath currentCoordinates coordinates navigationMap
                                 else None
                             match navigationPathOpt with
                             | Some navigationPath ->
@@ -210,9 +207,8 @@ module GameplayDispatcher =
                                 | [] -> gameplay
                             | None -> gameplay
                     | None -> gameplay
-                
-                if Map.exists (fun k _ -> k = PlayerIndex) gameplay.Round.CharacterMoves then
-                    withMsg MakeEnemyMoves gameplay
+                if Map.containsKey PlayerIndex gameplay.Round.CharacterMoves
+                then withMsg MakeEnemyMoves gameplay
                 else just gameplay
 
             | SkipPlayerTurn ->
@@ -255,13 +251,15 @@ module GameplayDispatcher =
                     if Chessboard.doesSpaceExist targetCoordinates gameplay.Chessboard then
                         if Chessboard.isEnemyAtCoordinates targetCoordinates gameplay.Chessboard then
                             let enemy = Chessboard.getCharacterAtCoordinates targetCoordinates gameplay.Chessboard
-                            withMsg MakeEnemyMoves <| Gameplay.makeMove gameplay.Time PlayerIndex (Shoot (ReactingCharacter enemy.CharacterIndex)) gameplay
+                            let gameplay = Gameplay.makeMove gameplay.Time PlayerIndex (Shoot (ReactingCharacter enemy.CharacterIndex)) gameplay
+                            withMsg MakeEnemyMoves gameplay
                         else just gameplay
                     else just gameplay 
                 | _ -> just gameplay
             
             | EnterSelectionMode ->
-                just <| Gameplay.updateInputMode (constant SelectionInputMode) gameplay
+                let gameplay = Gameplay.updateInputMode (constant SelectionInputMode) gameplay
+                just gameplay
             
             | Initialize ->
                 if gameplay.ShallLoadGame && File.Exists Assets.Global.SaveFilePath then
@@ -286,7 +284,7 @@ module GameplayDispatcher =
         override this.Command (gameplay, command, _, world) =
 
             match command with
-            | DisplayTurnEffects indices ->
+            | DisplayTurnEffects _ ->
                 let world =
                     match Puppeteer.tryGetCharacterTurn PlayerIndex gameplay.Puppeteer with
                     | Some turn ->
@@ -425,8 +423,7 @@ module GameplayDispatcher =
 
                  Content.text Gen.name
                     [Entity.Position == v2 -440.0f 200.0f; Entity.Elevation == 9.0f
-                     Entity.Text <== gameplay --> fun gameplay ->
-                        "HP: " + scstring gameplay.Puppeteer.PlayerPuppetState.HitPoints]
+                     Entity.Text <== gameplay --> fun gameplay -> "HP: " + scstring gameplay.Puppeteer.PlayerPuppetState.HitPoints]
 
                  Content.label Gen.name
                     [Entity.Position == v2 -447.0f -240.0f; Entity.Size == v2 168.0f 168.0f; Entity.Elevation == 9.0f
@@ -461,7 +458,7 @@ module GameplayDispatcher =
                      Entity.Text == "W"
                      Entity.Enabled <== gameplay --> fun gameplay -> if Round.inProgress gameplay.Round then false else true
                      Entity.ClickEvent ==> cmd (HandlePlayerInput TurnSkipInput)]
-                 
+
                  Content.panel "ItemBar"
                     [Entity.Position == v2 400.0f 200.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f]
                         [Content.entities gameplay
