@@ -193,6 +193,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member clearPickups gameplay =
         Gameplay.updateChessboard Chessboard.clearPickups gameplay
+    
+    static member clearProps gameplay =
+        Gameplay.updateChessboard Chessboard.clearProps gameplay
 
     static member addRandomPickup coordinates gameplay =
         let pickup = if Gen.randomb then Health else (Item (Special MagicMissile))

@@ -228,6 +228,7 @@ module GameplayDispatcher =
             | TransitionMap direction ->
                 let gameplay = Gameplay.clearEnemies gameplay
                 let gameplay = Gameplay.clearPickups gameplay
+                let gameplay = Gameplay.clearProps gameplay
                 let gameplay = Gameplay.transitionMap direction gameplay
                 let gameplay = Gameplay.populateFieldMap gameplay
                 just gameplay
