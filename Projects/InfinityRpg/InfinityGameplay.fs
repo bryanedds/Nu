@@ -201,9 +201,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             Gameplay.refreshAttackingEnemyGroup gameplay
         | PlayerIndex -> gameplay
 
-    static member clearEnemies gameplay =
-        Gameplay.updateChessboard Chessboard.clearEnemies gameplay
-
     static member addRandomPickup coordinates gameplay =
         let pickup = if Gen.random1 2 = 0 then Health else (Item (Special MagicMissile))
         Gameplay.updateChessboard (Chessboard.addPickup pickup coordinates) gameplay
@@ -214,9 +211,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         then Gameplay.addRandomPickup coordinates gameplay
         else gameplay
     
-    static member clearPickups gameplay =
-        Gameplay.updateChessboard Chessboard.clearPickups gameplay
-
     static member refreshPlayerPuppetHitPoints gameplay =
         let player = Chessboard.getCharacter PlayerIndex gameplay.Chessboard
         Gameplay.updatePuppeteer (Puppeteer.updatePlayerPuppetHitPoints (constant player.HitPoints)) gameplay
@@ -343,10 +337,13 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
     
     static member transitionMap direction gameplay =
-        let player = Chessboard.getCharacter PlayerIndex gameplay.Chessboard
-        let gameplay = Gameplay.removeCharacter PlayerIndex gameplay
         let gameplay = Gameplay.updateMetaMap (MetaMap.transition direction) gameplay
         let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
+        let gameplay = Gameplay.updateChessboard Chessboard.clearEnemies gameplay
+        let gameplay = Gameplay.updateChessboard Chessboard.clearPickups gameplay
+        let gameplay = Gameplay.updateChessboard Chessboard.clearProps gameplay
+        let player = Chessboard.getCharacter PlayerIndex gameplay.Chessboard
+        let gameplay = Gameplay.removeCharacter PlayerIndex gameplay
         let newCoordinates =
             match direction with
             | Upward
