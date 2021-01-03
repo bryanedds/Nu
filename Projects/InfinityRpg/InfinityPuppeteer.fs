@@ -39,7 +39,7 @@ type [<ReferenceEquality; NoComparison>] Reactor =
 type [<ReferenceEquality; NoComparison>] Turn =
     { TurnType : TurnType
       TurnStatus : TurnStatus
-      Actor : CharacterIndex
+      CharacterIndex : CharacterIndex
       ReactorOpt : Reactor option
       OriginCoordinates : Vector2i
       Direction : Direction
@@ -94,7 +94,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
     static member makeWalk time index multiRoundContext originC direction =
         { TurnType = WalkTurn multiRoundContext
           TurnStatus = TurnBeginning
-          Actor = index
+          CharacterIndex = index
           ReactorOpt = None
           OriginCoordinates = originC
           Direction = direction
@@ -103,7 +103,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
     static member makeAttack time index magicMissile reactor originC direction  =
         { TurnType = AttackTurn magicMissile
           TurnStatus = TurnBeginning
-          Actor = index
+          CharacterIndex = index
           ReactorOpt = Some reactor
           OriginCoordinates = originC
           Direction = direction
@@ -113,29 +113,41 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     { CharacterTurns : Turn list
       PlayerPuppetState : PuppetState }
 
-    member this.AnyTurnsInProgress = 
+    member this.AnyTurnsInProgress =
         List.notEmpty this.CharacterTurns
 
     static member tryGetCharacterTurn index puppeteer =
-        List.tryFind (fun x -> x.Actor = index) puppeteer.CharacterTurns
+        List.tryFind (fun x -> x.CharacterIndex = index) puppeteer.CharacterTurns
 
     static member tryGetOpponentTurn index puppeteer =
         List.tryFind (Turn.hasParticularReactor index) puppeteer.CharacterTurns
     
     static member tryGetAttackingEnemyTurn puppeteer =
-        List.tryFind (fun x -> x.Actor.IsEnemy && x.TurnType.IsAttacking) puppeteer.CharacterTurns
+        List.tryFind (fun x -> x.CharacterIndex.IsEnemy && x.TurnType.IsAttacking) puppeteer.CharacterTurns
     
     static member getCharacterTurn index puppeteer =
-        List.find (fun x -> x.Actor = index) puppeteer.CharacterTurns
+        List.find (fun x -> x.CharacterIndex = index) puppeteer.CharacterTurns
     
-    static member turnInProgress index puppeteer =
-        List.exists (fun x -> x.Actor = index) puppeteer.CharacterTurns
+    static member getCharacterTurnIsInProgress index puppeteer =
+        List.exists (fun x -> x.CharacterIndex = index) puppeteer.CharacterTurns
 
-    static member getActingCharacters puppeteer =
-        List.map (fun x -> x.Actor) puppeteer.CharacterTurns
+    static member getActingCharacterIndices puppeteer =
+        List.map (fun x -> x.CharacterIndex) puppeteer.CharacterTurns
     
+    static member updateCharacterTurns updater puppeteer =
+        { puppeteer with CharacterTurns = updater puppeteer.CharacterTurns }
+
+    static member updatePlayerPuppetState updater puppeteer =
+        { puppeteer with PlayerPuppetState = updater puppeteer.PlayerPuppetState }
+
+    static member updateCharacterTurn index updater puppeteer =
+        Puppeteer.updateCharacterTurns (fun turns -> List.map (fun x -> if x.CharacterIndex = index then updater x else x) turns) puppeteer
+
+    static member updatePlayerPuppetHitPoints updater puppeteer =
+        Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
+
     static member getPropMap props puppeteer time =
-        let generator coordinates _ =
+        let getProp coordinates _ =
             let animationType =
                 match Puppeteer.tryGetCharacterTurn PlayerIndex puppeteer with
                 | Some turn ->
@@ -157,11 +169,11 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                 | None -> PropAnimationStanding
             Prop.makeLongGrass coordinates animationType
         props |>
-        Map.toSeqBy generator |>
+        Map.toSeqBy getProp |>
         Map.indexed
-    
+
     static member getCharacterMap characters puppeteer time =
-        let generator coordinates character =
+        let getCharacterEntry coordinates (character : Character) =
             let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
             let turnOpt = Puppeteer.tryGetCharacterTurn character.CharacterIndex puppeteer
             let position = match turnOpt with Some turn -> Turn.calculatePosition time turn | None -> vctovf coordinates
@@ -169,7 +181,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                 match turnOpt with
                 | None ->
                     let animationType =
-                        if not character.IsAlive then
+                        if character.IsDead then
                             match Puppeteer.tryGetOpponentTurn character.CharacterIndex puppeteer with
                             | Some attackerTurn ->
                                 match attackerTurn.TurnStatus with
@@ -185,26 +197,14 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                 | Some turn -> Turn.toCharacterAnimationState turn
             (index, (position, characterAnimationState, time))
         characters |>
-        Map.toListBy generator |>
+        Map.toSeqBy getCharacterEntry |>
         Map.ofSeq
-    
-    static member updateCharacterTurns updater puppeteer =
-        { puppeteer with CharacterTurns = updater puppeteer.CharacterTurns }
-
-    static member updatePlayerPuppetState updater puppeteer =
-        { puppeteer with PlayerPuppetState = updater puppeteer.PlayerPuppetState }
 
     static member addCharacterTurn turn puppeteer =
         Puppeteer.updateCharacterTurns (fun x -> turn :: x) puppeteer
 
-    static member updateCharacterTurn index updater puppeteer =
-        Puppeteer.updateCharacterTurns (fun turns -> List.map (fun x -> if x.Actor = index then updater x else x) turns) puppeteer
-
     static member removeCharacterTurn index puppeteer =
-        Puppeteer.updateCharacterTurns (fun turns -> List.filter (fun x -> x.Actor <> index) turns) puppeteer
-
-    static member updatePlayerPuppetHitPoints updater puppeteer =
-        Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
+        Puppeteer.updateCharacterTurns (fun turns -> List.filter (fun x -> x.CharacterIndex <> index) turns) puppeteer
 
     static member init (player : Character) =
         { CharacterTurns = []

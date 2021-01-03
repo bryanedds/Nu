@@ -39,7 +39,7 @@ type [<ReferenceEquality; NoComparison>] PlayerContinuity =
         | AutomaticNavigation (head :: _) -> AutomaticNavigation [head]
         | _ -> failwithumf ()
 
-type [<StructuralEquality; NoComparison>]  Move =
+type [<StructuralEquality; NoComparison>] Move =
     | Step of Direction
     | Travel of NavigationNode list
     | Attack of Reactor
@@ -124,19 +124,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       Round : Round
       Inventory : Inventory }
 
-    static member initial =
-        let field = Field.initial
-        let chessboard = Chessboard.make field.FieldMapNp
-        { Time = 0L
-          InputMode = NormalInputMode
-          ShallLoadGame = false
-          MetaMap = MetaMap.make ()
-          Field = field
-          Chessboard = chessboard
-          Puppeteer = Chessboard.getCharacter PlayerIndex chessboard |> Puppeteer.init
-          Round = Round.empty
-          Inventory = Inventory.initial }
-
     static member areCharactersAdjacent index1 index2 gameplay =
         Math.areCoordinatesAdjacent (Chessboard.getCharacterCoordinates index1 gameplay.Chessboard) (Chessboard.getCharacterCoordinates index2 gameplay.Chessboard)
     
@@ -183,10 +170,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboard (Chessboard.relocateCharacter index coordinates) gameplay
     
     static member refreshWalkingEnemyGroup gameplay =
-        Gameplay.updateRound (Round.updateWalkingEnemyGroup (List.filter (fun x -> Chessboard.doesCharacterExist x gameplay.Chessboard))) gameplay
+        Gameplay.updateRound (Round.updateWalkingEnemyGroup (List.filter (fun character -> Chessboard.doesCharacterExist character gameplay.Chessboard))) gameplay
     
     static member refreshAttackingEnemyGroup gameplay =
-        Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun x -> Chessboard.doesCharacterExist x gameplay.Chessboard))) gameplay
+        Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun character -> Chessboard.doesCharacterExist character gameplay.Chessboard))) gameplay
     
     static member removeCharacter index gameplay =
         let coordinates = Chessboard.getCharacterCoordinates index gameplay.Chessboard
@@ -203,6 +190,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     static member clearEnemies gameplay =
         Gameplay.updateChessboard Chessboard.clearEnemies gameplay
+    
+    static member clearPickups gameplay =
+        Gameplay.updateChessboard Chessboard.clearPickups gameplay
 
     static member addRandomPickup coordinates gameplay =
         let pickup = if Gen.randomb then Health else (Item (Special MagicMissile))
@@ -213,13 +203,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         if Gen.random1 10 = 0
         then Gameplay.addRandomPickup coordinates gameplay
         else gameplay
-    
-    static member clearPickups gameplay =
-        Gameplay.updateChessboard Chessboard.clearPickups gameplay
-
-    static member refreshPlayerPuppetHitPoints gameplay =
-        let player = Chessboard.getCharacter PlayerIndex gameplay.Chessboard
-        Gameplay.updatePuppeteer (Puppeteer.updatePlayerPuppetHitPoints (constant player.HitPoints)) gameplay
     
     static member finishMove index gameplay =
         let gameplay = Gameplay.updatePuppeteer (Puppeteer.removeCharacterTurn index) gameplay
@@ -355,8 +338,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     static member makeLongGrass gameplay =
         let mapBounds = MapBounds.make v2iZero Constants.Layout.FieldMapSizeC
-        let predicate1 coordinates = FieldMap.tileIs coordinates FieldMap.GrassTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
-        let predicate2 coordinates = FieldMap.atLeastNAdjacentTilesAre 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
+        let predicate1 coordinates = MapBounds.isPointInBounds coordinates mapBounds && Map.find coordinates gameplay.Field.FieldMapNp.FieldTiles = FieldMap.GrassTile
+        let predicate2 coordinates = FieldMap.hasAtLeastNAdjacentTiles 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
         let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
         Set.fold (fun gameplay space ->
             if predicate1 space && predicate2 space
@@ -380,12 +363,22 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let gameplay = Gameplay.makeLongGrass gameplay
         let enemyCount = 1 + Gen.random1 5
         Gameplay.makeEnemies enemyCount gameplay
-    
-    static member forEachIndex updater indices gameplay =
-        let rec recursion (indices : CharacterIndex list) gameplay =
-            if indices.Length = 0 then gameplay
-            else
-                let index = indices.Head
-                let gameplay = updater index gameplay
-                recursion indices.Tail gameplay
-        recursion indices gameplay
+
+    // NOTE: this function should never need to be exposed publicly. The Gameplay types should be responsible for any
+    // required syncing of its internal fields
+    static member refreshPlayerPuppetHitPoints gameplay =
+        let player = Chessboard.getCharacter PlayerIndex gameplay.Chessboard
+        Gameplay.updatePuppeteer (Puppeteer.updatePlayerPuppetHitPoints (constant player.HitPoints)) gameplay
+
+    static member initial =
+        let field = Field.initial
+        let chessboard = Chessboard.make field.FieldMapNp
+        { Time = 0L
+          InputMode = NormalInputMode
+          ShallLoadGame = false
+          MetaMap = MetaMap.make ()
+          Field = field
+          Chessboard = chessboard
+          Puppeteer = Chessboard.getCharacter PlayerIndex chessboard |> Puppeteer.init
+          Round = Round.empty
+          Inventory = Inventory.initial }
