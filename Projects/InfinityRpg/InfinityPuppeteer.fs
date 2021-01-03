@@ -206,6 +206,6 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member removeCharacterTurn index puppeteer =
         Puppeteer.updateCharacterTurns (fun turns -> List.filter (fun x -> x.CharacterIndex <> index) turns) puppeteer
 
-    static member init (player : Character) =
+    static member make player =
         { CharacterTurns = []
           PlayerPuppetState = PuppetState.makeFromCharacter player }

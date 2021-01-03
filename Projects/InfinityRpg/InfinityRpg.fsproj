@@ -80,9 +80,9 @@
     <Compile Include="InfinityPickup.fs" />
     <Compile Include="InfinityProp.fs" />
     <Compile Include="InfinityMetaMap.fs" />
+    <Compile Include="InfinityNavigationMap.fs" />
     <Compile Include="InfinityFieldMap.fs" />
     <Compile Include="InfinityField.fs" />
-    <Compile Include="InfinityNavigationMap.fs" />
     <Compile Include="InfinityPuppeteer.fs" />
     <Compile Include="InfinityChessboard.fs" />
     <Compile Include="InfinityGameplay.fs" />
