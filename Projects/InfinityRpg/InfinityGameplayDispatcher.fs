@@ -59,83 +59,90 @@ module GameplayDispatcher =
             
             match message with
             | FinishTurns indices ->
-                let updater index gameplay =
-                    let characterTurn = Puppeteer.getCharacterTurn index gameplay.Puppeteer
-                    match characterTurn.TurnStatus with
-                    | TurnFinishing ->
-                        match characterTurn.TurnType with
-                        | AttackTurn _ ->
-                            let gameplay = Gameplay.finishMove index gameplay
-                            match characterTurn.ReactorOpt with
-                            | Some (ReactingCharacter reactorIndex) ->
-                                let reactorState = Chessboard.getCharacter reactorIndex gameplay.Chessboard
-                                let gameplay =
-                                    if reactorIndex = PlayerIndex
-                                    then Gameplay.refreshPlayerPuppetHitPoints gameplay
+                let gameplay =
+                    List.fold (fun gameplay index ->
+                        let characterTurn = Puppeteer.getCharacterTurn index gameplay.Puppeteer
+                        match characterTurn.TurnStatus with
+                        | TurnFinishing ->
+                            match characterTurn.TurnType with
+                            | AttackTurn _ ->
+                                let gameplay = Gameplay.finishMove index gameplay
+                                match characterTurn.ReactorOpt with
+                                | Some (ReactingCharacter reactorIndex) ->
+                                    let reactorState = Chessboard.getCharacter reactorIndex gameplay.Chessboard
+                                    let gameplay =
+                                        if reactorIndex = PlayerIndex
+                                        then Gameplay.refreshPlayerPuppetHitPoints gameplay
+                                        else gameplay
+                                    if reactorState.HitPoints <= 0 then
+                                        match reactorIndex with
+                                        | PlayerIndex -> Gameplay.updateInputMode (constant DisabledInputMode) gameplay // TODO: reimplement screen transition
+                                        | EnemyIndex _ -> Gameplay.removeCharacter reactorIndex gameplay
                                     else gameplay
-                                if reactorState.HitPoints <= 0 then
-                                    match reactorIndex with
-                                    | PlayerIndex -> Gameplay.updateInputMode (constant DisabledInputMode) gameplay // TODO: reimplement screen transition
-                                    | EnemyIndex _ -> Gameplay.removeCharacter reactorIndex gameplay
-                                else gameplay
-                            | Some (ReactingProp coordinates) -> Gameplay.removeLongGrass coordinates gameplay
-                            | _ -> gameplay
-                        | WalkTurn _ -> Gameplay.finishMove index gameplay
-                    | _ -> failwith "non-finishing turns should be filtered out by this point"
-                let gameplay = Gameplay.forEachIndex updater indices gameplay
+                                | Some (ReactingProp coordinates) -> Gameplay.removeLongGrass coordinates gameplay
+                                | _ -> gameplay
+                            | WalkTurn _ -> Gameplay.finishMove index gameplay
+                        | _ -> failwith "non-finishing turns should be filtered out by this point")
+                        gameplay
+                        indices
                 just gameplay
             
             | TickTurns ->
-                let updater index gameplay =
-                    let characterTurn = Puppeteer.getCharacterTurn index gameplay.Puppeteer
-                    match characterTurn.TurnStatus with
-                    | TurnTicking ->
-                        let tickCount = gameplay.Time - characterTurn.StartTick
-                        match characterTurn.TurnType with
-                        | AttackTurn _ ->
-                            if tickCount = Constants.Gameplay.ActionTicksMax
-                            then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
-                            else gameplay
-                        | WalkTurn _ ->
-                            if tickCount = dec (int64 Constants.Gameplay.CharacterWalkSteps)
-                            then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
-                            else gameplay
-                    | _ -> gameplay
-                let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
-                let gameplay = Gameplay.forEachIndex updater indices gameplay
-                let indices = List.filter (fun x -> (Puppeteer.getCharacterTurn x gameplay.Puppeteer).TurnStatus = TurnFinishing) indices
-                withMsg (FinishTurns indices) gameplay
+                let actingCharacters = Puppeteer.getActingCharacterIndices gameplay.Puppeteer
+                let gameplay =
+                    List.fold (fun gameplay index ->
+                        let characterTurn = Puppeteer.getCharacterTurn index gameplay.Puppeteer
+                        match characterTurn.TurnStatus with
+                        | TurnTicking ->
+                            let tickCount = gameplay.Time - characterTurn.StartTick
+                            match characterTurn.TurnType with
+                            | AttackTurn _ ->
+                                if tickCount = Constants.Gameplay.ActionTicksMax
+                                then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
+                                else gameplay
+                            | WalkTurn _ ->
+                                if tickCount = dec (int64 Constants.Gameplay.CharacterWalkSteps)
+                                then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
+                                else gameplay
+                        | _ -> gameplay)
+                        gameplay
+                        actingCharacters
+                let finishingCharacters = List.filter (fun index -> (Puppeteer.getCharacterTurn index gameplay.Puppeteer).TurnStatus = TurnFinishing) actingCharacters
+                withMsg (FinishTurns finishingCharacters) gameplay
 
             | BeginTurns ->
-                let updater index gameplay =
-                    let characterTurn = Puppeteer.getCharacterTurn index gameplay.Puppeteer
-                    match characterTurn.TurnStatus with
-                    | TurnBeginning -> Gameplay.setCharacterTurnStatus index TurnTicking gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
-                    | _ -> gameplay
-                let indices = Puppeteer.getActingCharacters gameplay.Puppeteer
-                let gameplay = Gameplay.forEachIndex updater indices gameplay
-                withCmd (DisplayTurnEffects indices) gameplay
+                let characterIndices = Puppeteer.getActingCharacterIndices gameplay.Puppeteer
+                let gameplay =
+                    List.fold (fun gameplay index ->
+                        let characterTurn = Puppeteer.getCharacterTurn index gameplay.Puppeteer
+                        match characterTurn.TurnStatus with
+                        | TurnBeginning -> Gameplay.setCharacterTurnStatus index TurnTicking gameplay // "TurnTicking" for normal animation; "TurnFinishing" for roguelike mode
+                        | _ -> gameplay)
+                        gameplay
+                        characterIndices
+                withCmd (DisplayTurnEffects characterIndices) gameplay
 
             | MakeEnemyAttack ->
                 let gameplay =
                     let index = gameplay.Round.AttackingEnemyGroup.Head
                     let gameplay =
-                        if (Chessboard.getCharacter PlayerIndex gameplay.Chessboard).IsAlive // TODO: create Gameplay.isPlayerAlive function.
+                        if (Chessboard.getCharacter PlayerIndex gameplay.Chessboard).IsAlive // TODO: create Gameplay.IsPlayerAlive property.
                         then Gameplay.makeMove gameplay.Time index (Attack (ReactingCharacter PlayerIndex)) gameplay
                         else gameplay
                     Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
 
             | MakeEnemiesWalk ->
-                let updater =
-                    (fun index gameplay ->
+                let gameplay =
+                    List.fold (fun gameplay index ->
                         let coordinates = Chessboard.getCharacterCoordinates index gameplay.Chessboard
                         let openDirections = Chessboard.getOpenDirections coordinates gameplay.Chessboard
                         let direction = Gen.random1 4 |> Direction.ofInt
-                        if List.exists (fun x -> x = direction) openDirections
+                        if Set.contains direction openDirections
                         then Gameplay.makeMove gameplay.Time index (Step direction) gameplay
                         else gameplay)
-                let gameplay = Gameplay.forEachIndex updater gameplay.Round.WalkingEnemyGroup gameplay
+                        gameplay
+                        gameplay.Round.WalkingEnemyGroup
                 let gameplay = Gameplay.removeWalkingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
             
@@ -327,7 +334,8 @@ module GameplayDispatcher =
 
             | Save ->
                 let gameplayStr = scstring gameplay
-                File.WriteAllText (Assets.Global.SaveFilePath, gameplayStr)
+                try File.WriteAllText (Assets.Global.SaveFilePath, gameplayStr)
+                with exn -> Log.debug ("Failed to write save file at '" + Assets.Global.SaveFilePath + "' due to: " + scstring exn)
                 just world
 
             | ListenKeyboard ->
@@ -340,26 +348,9 @@ module GameplayDispatcher =
 
             | TrackPlayer ->
                 let playerCenter = Simulants.Player.GetCenter world
-                let eyeCenter =
-                    if Simulants.Field.Exists world then
-                        let eyeSize = World.getEyeSize world
-                        let eyeCornerNegative = playerCenter - eyeSize * 0.5f
-                        let eyeCornerPositive = playerCenter + eyeSize * 0.5f
-                        let fieldCornerNegative = Simulants.Field.GetPosition world
-                        let fieldCornerPositive = Simulants.Field.GetPosition world + Simulants.Field.GetSize world
-                        let fieldBoundsNegative = fieldCornerNegative + eyeSize * 0.5f
-                        let fieldBoundsPositive = fieldCornerPositive - eyeSize * 0.5f
-                        let eyeCenterX =
-                            if eyeCornerNegative.X < fieldCornerNegative.X then fieldBoundsNegative.X
-                            elif eyeCornerPositive.X > fieldCornerPositive.X then fieldBoundsPositive.X
-                            else playerCenter.X
-                        let eyeCenterY =
-                            if eyeCornerNegative.Y < fieldCornerNegative.Y then fieldBoundsNegative.Y
-                            elif eyeCornerPositive.Y > fieldCornerPositive.Y then fieldBoundsPositive.Y
-                            else playerCenter.Y
-                        v2 eyeCenterX eyeCenterY
-                    else playerCenter
-                let world = World.setEyeCenter eyeCenter world
+                let fieldBounds = Simulants.Field.GetBounds world
+                let world = World.setEyeCenter playerCenter world
+                let world = World.constrainEyeBounds fieldBounds world
                 just world
 
             | Nop ->
@@ -405,60 +396,71 @@ module GameplayDispatcher =
              // hud layer
              Content.layer Simulants.Hud.Name []
 
-                [Content.button Simulants.HudHalt.Name
+                [// halt button
+                 Content.button Simulants.HudHalt.Name
                     [Entity.Position == v2 184.0f -144.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Halt"
                      Entity.Enabled <== gameplay --> fun gameplay -> gameplay.Round.IsPlayerTraveling
                      Entity.ClickEvent ==> msg HaltPlayer]
 
+                 // save button
                  Content.button Simulants.HudSaveGame.Name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Save Game"
-                     Entity.Enabled <== gameplay --> fun gameplay -> if Round.inProgress gameplay.Round || gameplay.InputMode.NotNormalInput then false else true
+                     Entity.Enabled <== gameplay --> fun gameplay -> not (Round.inProgress gameplay.Round) && not (gameplay.InputMode.NotNormalInput)
                      Entity.ClickEvent ==> cmd Save]
 
+                 // back button
                  Content.button Simulants.HudBack.Name
                     [Entity.Position == v2 184.0f -256.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Back"]
 
+                 // HP
                  Content.text Gen.name
                     [Entity.Position == v2 -440.0f 200.0f; Entity.Elevation == 9.0f
                      Entity.Text <== gameplay --> fun gameplay -> "HP: " + scstring gameplay.Puppeteer.PlayerPuppetState.HitPoints]
 
+                 // detail backdrop
                  Content.label Gen.name
                     [Entity.Position == v2 -447.0f -240.0f; Entity.Size == v2 168.0f 168.0f; Entity.Elevation == 9.0f
-                     Entity.LabelImage == asset "Gui" "DetailBacking"]
+                     Entity.LabelImage == asset "Gui" "DetailBackdrop"]
 
+                 // detail up
                  Content.button Simulants.HudDetailUpward.Name
                     [Entity.Position == v2 -387.0f -126.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailUpwardUp"; Entity.DownImage == asset "Gui" "DetailUpwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Upward))]
 
+                 // detail right
                  Content.button Simulants.HudDetailRightward.Name
                     [Entity.Position == v2 -336.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailRightwardUp"; Entity.DownImage == asset "Gui" "DetailRightwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Rightward))]
 
+                 // detail down
                  Content.button Simulants.HudDetailDownward.Name
                     [Entity.Position == v2 -387.0f -234.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailDownwardUp"; Entity.DownImage == asset "Gui" "DetailDownwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Downward))]
 
+                 // detail left
                  Content.button Simulants.HudDetailLeftward.Name
                     [Entity.Position == v2 -438.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailLeftwardUp"; Entity.DownImage == asset "Gui" "DetailLeftwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Leftward))]
 
+                 // wait button
                  Content.button Simulants.HudWait.Name
                     [Entity.Position == v2 -387.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "W"
                      Entity.Enabled <== gameplay --> fun gameplay -> if Round.inProgress gameplay.Round then false else true
                      Entity.ClickEvent ==> cmd (HandlePlayerInput TurnSkipInput)]
 
+                 // item bar
                  Content.panel "ItemBar"
                     [Entity.Position == v2 400.0f 200.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f]
                         [Content.entities gameplay
@@ -470,6 +472,7 @@ module GameplayDispatcher =
                                     Entity.UpImage == asset "Gameplay" "MagicMissile"; Entity.DownImage == asset "Gameplay" "MagicMissile"
                                     Entity.ClickEvent ==> msg EnterSelectionMode])]
 
+                 // input feeler
                  Content.feeler Simulants.HudFeeler.Name
                     [Entity.Position == v2 -480.0f -270.0f; Entity.Size == v2 960.0f 540.0f; Entity.Elevation == 9.0f
                      Entity.TouchEvent ==|> fun evt -> cmd (HandlePlayerInput (TouchInput evt.Data))]]]

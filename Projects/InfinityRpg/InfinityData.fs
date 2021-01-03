@@ -4,12 +4,8 @@ open Prime
 type CharacterIndex =
     | EnemyIndex of int
     | PlayerIndex
-
-    member this.IsEnemy =
-        match this with EnemyIndex _ -> true | PlayerIndex -> false
-
-    member this.IsAlly =
-        not this.IsEnemy
+    member this.IsEnemy = match this with EnemyIndex _ -> true | PlayerIndex -> false
+    member this.IsAlly = not this.IsEnemy
 
 type AllyType =
     | Player

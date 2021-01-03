@@ -52,6 +52,9 @@ type [<ReferenceEquality; NoComparison>] Character =
 
     member this.IsAlive =
         this.HitPoints > 0
+
+    member this.IsDead =
+        not this.IsAlive
     
     member this.HitPointsMax =
         match this.CharacterType with Ally _ -> 30 | Enemy _ -> 10

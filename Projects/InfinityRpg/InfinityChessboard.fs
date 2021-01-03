@@ -27,11 +27,13 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
 
     static member getOpenDirections coordinates chessboard =
         let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces chessboard
-        List.filter (fun d -> Set.exists (fun x -> x = coordinates + dtovc d) unoccupiedSpaces) [Upward; Rightward; Downward; Leftward]
+        [Upward; Rightward; Downward; Leftward] |>
+        Set.ofList |>
+        Set.filter (fun direction -> Set.exists (fun coordinates2 -> coordinates2 = coordinates + dtovc direction) unoccupiedSpaces) 
 
     static member getEnemySpaces chessboard =
         Map.filter
-            (fun _ (v : Character) -> v.CharacterIndex.IsEnemy)
+            (fun _ (character : Character) -> character.CharacterIndex.IsEnemy)
             chessboard.Characters
 
     static member getEnemies chessboard =
@@ -40,10 +42,10 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         
     static member getEnemyIndices chessboard =
         let enemies = Chessboard.getEnemies chessboard
-        List.map (fun enemy -> enemy.CharacterIndex) enemies
+        List.map (fun (enemy : Character) -> enemy.CharacterIndex) enemies
 
     static member getCharacterCoordinates index chessboard =
-        Map.findKey (fun _ v -> v.CharacterIndex = index) chessboard.Characters
+        Map.findKey (fun _ (character : Character) -> character.CharacterIndex = index) chessboard.Characters
 
     static member getCharacterAtCoordinates coordinates chessboard =
         chessboard.Characters.[coordinates]
@@ -80,7 +82,9 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Set.contains coordinates chessboard.Spaces
     
     static member doesCharacterExist index chessboard =
-        Map.exists (fun _ v -> v.CharacterIndex = index) chessboard.Characters
+        Map.exists
+            (fun _ (character : Character) -> character.CharacterIndex = index)
+            chessboard.Characters
     
     static member isEnemyAtCoordinates coordinates chessboard =
         match Map.tryFind coordinates chessboard.Characters with
@@ -120,7 +124,7 @@ type [<ReferenceEquality; NoComparison>] Chessboard =
         Chessboard.addCharacter character coordinates chessboard
     
     static member clearEnemies (chessboard : Chessboard) =
-        Chessboard.updateCharacterSpaces (Map.filter (fun _ v -> not v.IsEnemy)) chessboard
+        Chessboard.updateCharacterSpaces (Map.filter (fun _ character -> character.IsAlly)) chessboard
     
     static member addProp prop coordinates chessboard =
         Chessboard.updatePropSpaces (Map.add coordinates prop) chessboard

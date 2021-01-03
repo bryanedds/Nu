@@ -33,17 +33,18 @@ module FieldMap =
         | Leftward -> coordinates + v2iLeft
 
     let getAdjacentTiles coordinates =
-        [coordinates + v2iUp; coordinates + v2iRight; coordinates + v2iDown; coordinates + v2iLeft]
+        [coordinates + v2iUp
+         coordinates + v2iRight
+         coordinates + v2iDown
+         coordinates + v2iLeft]
     
-    let tileIs coordinates tile buildBoundsC tileMap =
-        MapBounds.isPointInBounds coordinates buildBoundsC && Map.find coordinates tileMap = tile
-    
-    let tileInDirectionIs coordinates direction tile buildBoundsC tileMap =
-        let tileInDirection = getTileInDirection coordinates direction
-        tileIs tileInDirection tile buildBoundsC tileMap
-
-    let atLeastNAdjacentTilesAre n coordinates tile buildBoundsC tileMap =
-        let passingTiles = getAdjacentTiles coordinates |> List.filter (fun x -> tileIs x tile buildBoundsC tileMap)
+    let hasAtLeastNAdjacentTiles n coordinates tile buildBoundsC fieldTiles =
+        let passingTiles =
+            coordinates |>
+            getAdjacentTiles |>
+            List.filter (fun coordinates ->
+                MapBounds.isPointInBounds coordinates buildBoundsC &&
+                Map.find coordinates fieldTiles = tile)
         passingTiles.Length >= n
     
     let makeGrid boundsC =
@@ -52,14 +53,7 @@ module FieldMap =
                 for j in boundsC.CornerNegative.Y .. boundsC.CornerPositive.Y do
                     yield v2i i j }
 
-    let generateEmptyMap (offsetC : Vector2i) (sizeC : Vector2i) =
-        Map.ofList
-            [for i in offsetC.X .. offsetC.X + sizeC.X - 1 do
-                for j in offsetC.Y .. offsetC.Y + sizeC.Y - 1 do
-                    let tileCoordinatesC = v2i i j
-                    yield (tileCoordinatesC, GrassTile)]
-
-    let addPaths buildBoundsC pathEdgesC generatedMap rand =
+    let addPaths buildBoundsC pathEdgesC fieldTiles rand =
         let (paths, rand) =
             List.fold
                 (fun (paths, rand) (sourceM, destinationM) ->
@@ -67,22 +61,22 @@ module FieldMap =
                     (path :: paths, rand))
                 ([], rand)
                 pathEdgesC
-        let generatedMap =
+        let fieldTiles =
             Seq.fold
-                (fun generatedMap path ->
-                    let generatedMap' =
+                (fun fieldTiles path ->
+                    let fieldTiles' =
                         Seq.fold
-                            (fun generatedMap tileCoordinates -> Map.add tileCoordinates PathTile generatedMap)
-                            generatedMap
+                            (fun fieldTiles tileCoordinates -> Map.add tileCoordinates PathTile fieldTiles)
+                            fieldTiles
                             path
-                    generatedMap @@ generatedMap')
-                generatedMap
+                    fieldTiles @@ fieldTiles')
+                fieldTiles
                 paths
-        (generatedMap, rand)
+        (fieldTiles, rand)
 
-    let addTrees buildBoundsC generatedMap rand =
+    let addTrees buildBoundsC fieldTiles rand =
         let grid = makeGrid buildBoundsC
-        let pathTileCount = Map.filter (fun _ v -> v = PathTile) generatedMap |> Map.count
+        let pathTileCount = fieldTiles |> Map.filter (fun _ v -> v = PathTile) |> Map.count
         let treeDilution =
             if pathTileCount < 25 then 32
             elif pathTileCount < 50 then 16
@@ -92,93 +86,100 @@ module FieldMap =
             elif pathTileCount < 90 then 2
             else 1
         Seq.fold
-            (fun (generatedMap, rand) coordinates ->
+            (fun (fieldTiles, rand) coordinates ->
                 let (n, rand) = Rand.nextIntUnder treeDilution rand // original value is 16
-                if n = 0 && Map.find coordinates generatedMap <> PathTile
-                then (Map.add coordinates TreeTile generatedMap, rand)
-                else (generatedMap, Rand.advance rand))
-            (generatedMap, rand)
+                if n = 0 && Map.find coordinates fieldTiles <> PathTile
+                then (Map.add coordinates TreeTile fieldTiles, rand)
+                else (fieldTiles, Rand.advance rand))
+            (fieldTiles, rand)
             grid
 
-    let spreadTrees buildBoundsC generatedMap rand =
-        let originalMap = generatedMap
+    let spreadTrees buildBoundsC fieldTiles rand =
+        let originalMap = fieldTiles
         let grid = makeGrid buildBoundsC
         Seq.fold
-            (fun (generatedMap, rand) coordinates ->
+            (fun (fieldTiles, rand) coordinates ->
                 let (n, rand) = Rand.nextIntUnder 3 rand
-                if n = 0 && Map.find coordinates originalMap <> PathTile && atLeastNAdjacentTilesAre 1 coordinates TreeTile buildBoundsC originalMap && MapBounds.isPointInBounds coordinates buildBoundsC
-                then (Map.add coordinates TreeTile generatedMap, rand)
-                else (generatedMap, Rand.advance rand))
-            (generatedMap, rand)
+                if n = 0 && Map.find coordinates originalMap <> PathTile && hasAtLeastNAdjacentTiles 1 coordinates TreeTile buildBoundsC originalMap && MapBounds.isPointInBounds coordinates buildBoundsC
+                then (Map.add coordinates TreeTile fieldTiles, rand)
+                else (fieldTiles, Rand.advance rand))
+            (fieldTiles, rand)
             grid
 
-    let addWater buildBoundsC generatedMap rand =
-        let pathTileCount = Map.filter (fun _ v -> v = PathTile) generatedMap |> Map.count
+    let addWater buildBoundsC fieldTiles rand =
+        let pathTileCount = Map.filter (fun _ v -> v = PathTile) fieldTiles |> Map.count
         if pathTileCount < 25 then
             let grid = makeGrid buildBoundsC
             Seq.fold
-                (fun (generatedMap, rand) coordinates ->
+                (fun (fieldTiles, rand) coordinates ->
                     let (n, rand) = Rand.nextIntUnder 128 rand
-                    if n = 0 && Map.find coordinates generatedMap = GrassTile && atLeastNAdjacentTilesAre 4 coordinates GrassTile buildBoundsC generatedMap
-                    then (Map.add coordinates WaterTile generatedMap, rand)
-                    else (generatedMap, rand))
-                (generatedMap, rand)
+                    if n = 0 && Map.find coordinates fieldTiles = GrassTile && hasAtLeastNAdjacentTiles 4 coordinates GrassTile buildBoundsC fieldTiles
+                    then (Map.add coordinates WaterTile fieldTiles, rand)
+                    else (fieldTiles, rand))
+                (fieldTiles, rand)
                 grid
-        else (generatedMap, rand)
+        else (fieldTiles, rand)
 
-    let spreadWater1 buildBoundsC generatedMap rand =
-        let pathTileCount = Map.filter (fun _ v -> v = PathTile) generatedMap |> Map.count
+    let spreadWater1 buildBoundsC fieldTiles rand =
+        let pathTileCount = Map.filter (fun _ v -> v = PathTile) fieldTiles |> Map.count
         if pathTileCount < 25 then
             let grid = makeGrid buildBoundsC
             Seq.fold
-                (fun (generatedMap, rand) coordinates ->
+                (fun (fieldTiles, rand) coordinates ->
                     let (n, rand) = Rand.nextIntUnder 2 rand
-                    if n = 0 && Map.find coordinates generatedMap <> PathTile && atLeastNAdjacentTilesAre 1 coordinates WaterTile buildBoundsC generatedMap
-                    then (Map.add coordinates WaterTile generatedMap, rand)
-                    else (generatedMap, rand))
-                (generatedMap, rand)
+                    if n = 0 && Map.find coordinates fieldTiles <> PathTile && hasAtLeastNAdjacentTiles 1 coordinates WaterTile buildBoundsC fieldTiles
+                    then (Map.add coordinates WaterTile fieldTiles, rand)
+                    else (fieldTiles, rand))
+                (fieldTiles, rand)
                 grid
-        else (generatedMap, rand)
+        else (fieldTiles, rand)
 
-    let spreadWater2 buildBoundsC generatedMap rand =
-        let pathTileCount = Map.filter (fun _ v -> v = PathTile) generatedMap |> Map.count
+    let spreadWater2 buildBoundsC fieldTiles rand =
+        let pathTileCount = Map.filter (fun _ v -> v = PathTile) fieldTiles |> Map.count
         if pathTileCount < 25 then
             let grid = makeGrid buildBoundsC
-            let originalMap = generatedMap
+            let originalMap = fieldTiles
             Seq.fold
-                (fun (generatedMap, rand) coordinates ->
+                (fun (fieldTiles, rand) coordinates ->
                     let (n, rand) = Rand.nextIntUnder 1 rand
-                    if n = 0 && Map.find coordinates generatedMap <> PathTile && atLeastNAdjacentTilesAre 1 coordinates WaterTile buildBoundsC originalMap
-                    then (Map.add coordinates WaterTile generatedMap, rand)
-                    else (generatedMap, rand))
-                (generatedMap, rand)
+                    if n = 0 && Map.find coordinates fieldTiles <> PathTile && hasAtLeastNAdjacentTiles 1 coordinates WaterTile buildBoundsC originalMap
+                    then (Map.add coordinates WaterTile fieldTiles, rand)
+                    else (fieldTiles, rand))
+                (fieldTiles, rand)
                 grid
-        else (generatedMap, rand)
+        else (fieldTiles, rand)
     
-    let addStones buildBoundsC generatedMap rand =
+    let addStones buildBoundsC fieldTiles rand =
         let grid = makeGrid buildBoundsC
         Seq.fold
-            (fun (generatedMap, rand) coordinates ->
-                if Map.find coordinates generatedMap = GrassTile && atLeastNAdjacentTilesAre 4 coordinates PathTile buildBoundsC generatedMap
-                then (Map.add coordinates StoneTile generatedMap, Rand.advance rand)
-                else (generatedMap, Rand.advance rand))
-            (generatedMap, rand)
+            (fun (fieldTiles, rand) coordinates ->
+                if Map.find coordinates fieldTiles = GrassTile && hasAtLeastNAdjacentTiles 4 coordinates PathTile buildBoundsC fieldTiles
+                then (Map.add coordinates StoneTile fieldTiles, Rand.advance rand)
+                else (fieldTiles, Rand.advance rand))
+            (fieldTiles, rand)
             grid
+
+    let makeEmptyFieldTiles (offsetC : Vector2i) (sizeC : Vector2i) =
+        Map.ofList
+            [for i in offsetC.X .. offsetC.X + sizeC.X - 1 do
+                for j in offsetC.Y .. offsetC.Y + sizeC.Y - 1 do
+                    let tileCoordinatesC = v2i i j
+                    yield (tileCoordinatesC, GrassTile)]
     
     let make tileSheet (offsetC : Vector2i) sizeC pathEdgesC rand =
         let buildBoundsC = MapBounds.make offsetC sizeC
-        let generatedMap = generateEmptyMap offsetC sizeC
-        let (generatedMap, rand) = addPaths buildBoundsC pathEdgesC generatedMap rand
-        let (generatedMap, rand) = addTrees buildBoundsC generatedMap rand
-        let (generatedMap, rand) = spreadTrees buildBoundsC generatedMap rand
-        let (generatedMap, rand) = spreadTrees buildBoundsC generatedMap rand
-        let (generatedMap, rand) = spreadTrees buildBoundsC generatedMap rand
-        let (generatedMap, rand) = addWater buildBoundsC generatedMap rand
-        let (generatedMap, rand) = spreadWater1 buildBoundsC generatedMap rand
-        let (generatedMap, rand) = spreadWater1 buildBoundsC generatedMap rand
-        let (generatedMap, rand) = spreadWater2 buildBoundsC generatedMap rand
-        let (generatedMap, rand) = addStones buildBoundsC generatedMap rand
-        let fieldMap = { FieldSizeC = sizeC; FieldTiles = generatedMap; FieldTileSheet = tileSheet }
+        let fieldTiles = makeEmptyFieldTiles offsetC sizeC
+        let (fieldTiles, rand) = addPaths buildBoundsC pathEdgesC fieldTiles rand
+        let (fieldTiles, rand) = addTrees buildBoundsC fieldTiles rand
+        let (fieldTiles, rand) = spreadTrees buildBoundsC fieldTiles rand
+        let (fieldTiles, rand) = spreadTrees buildBoundsC fieldTiles rand
+        let (fieldTiles, rand) = spreadTrees buildBoundsC fieldTiles rand
+        let (fieldTiles, rand) = addWater buildBoundsC fieldTiles rand
+        let (fieldTiles, rand) = spreadWater1 buildBoundsC fieldTiles rand
+        let (fieldTiles, rand) = spreadWater1 buildBoundsC fieldTiles rand
+        let (fieldTiles, rand) = spreadWater2 buildBoundsC fieldTiles rand
+        let (fieldTiles, rand) = addStones buildBoundsC fieldTiles rand
+        let fieldMap = { FieldSizeC = sizeC; FieldTiles = fieldTiles; FieldTileSheet = tileSheet }
         (fieldMap, rand)
 
     let makeFromMetaTile (metaTile : MetaTile) =
