@@ -19,14 +19,14 @@ module Gen =
         /// Get the next random number integer.
         static member random =
             lock Lock (fun () -> Random.Next ())
-            
-        /// Get the next random number integer below maxValue.
-        static member random1 maxValue =
-            lock Lock (fun () -> Random.Next maxValue)
 
-        /// Get the next random number integer GTE minValue and LT maxValue.
-        static member random2 minValue maxValue =
-            lock Lock (fun () -> Random.Next (minValue, maxValue))
+        /// Get the next random boolean.
+        static member randomb =
+            lock Lock (fun () -> Random.Next () < Int32.MaxValue / 2)
+
+        /// Get the next random byte.
+        static member randomy =
+            lock Lock (fun () -> byte (Random.Next ()))
 
         /// Get the next random single >= 0.0f and < 1.0f.
         static member randomf =
@@ -35,6 +35,14 @@ module Gen =
         /// Get the next random double >= 0.0 and < 1.0.
         static member randomd =
             lock Lock (fun () -> Random.NextDouble ())
+            
+        /// Get the next random number integer below maxValue.
+        static member random1 maxValue =
+            lock Lock (fun () -> Random.Next maxValue)
+
+        /// Get the next random number integer GTE minValue and LT maxValue.
+        static member random2 minValue maxValue =
+            lock Lock (fun () -> Random.Next (minValue, maxValue))
 
         /// Get a random element from a sequence if there are any elements..
         static member randomItem seq =

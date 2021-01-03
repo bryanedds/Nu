@@ -12,7 +12,7 @@ type [<ReferenceEquality; NoComparison>] MetaTile =
     static member make pathStart =
         let sysrandom = System.Random ()
         let randSeed = uint64 (sysrandom.Next ())
-        let directionNext = if Gen.random1 2 = 0 then Upward else Rightward
+        let directionNext = if Gen.randomb then Upward else Rightward
         let randResult = Gen.random1 (Constants.Layout.FieldMapSizeC.X - 4) // assumes X and Y are equal
         let pathEnd =
             match directionNext with

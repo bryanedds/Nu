@@ -23,11 +23,11 @@ type RoundStatus =
     | FinishingRound
     | NoRound
 
-// continuity here is the player's ability to perform operations across multiple rounds without processing NoRound in between.
-// rounds are thus linked together preventing the game from alternating between "round on" and "round off" states.
-// in other words, PlayerContinuity effectively tells the game whether to advance the round cycle or turn it off.
-// this is what prevents things like a save button blinking on and off during player navigation and waiting.
-
+// NOTE: continuity here is the player's ability to perform operations across multiple rounds without processing
+// NoRound in between. rounds are thus linked together preventing the game from alternating between "round on" and
+// "round off" states. in other words, PlayerContinuity effectively tells the game whether to advance the round cycle
+// or turn it off. this is what prevents things like a save button blinking on and off during player navigation and
+// waiting.
 type [<ReferenceEquality; NoComparison>] PlayerContinuity =
     | ManualNavigation
     | AutomaticNavigation of NavigationNode list
@@ -194,7 +194,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         match index with
         | EnemyIndex _ ->
             let gameplay =
-                if Gen.random1 2 = 0
+                if Gen.randomb
                 then Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay
                 else gameplay
             let gameplay = Gameplay.refreshWalkingEnemyGroup gameplay
@@ -205,7 +205,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboard Chessboard.clearEnemies gameplay
 
     static member addRandomPickup coordinates gameplay =
-        let pickup = if Gen.random1 2 = 0 then Health else (Item (Special MagicMissile))
+        let pickup = if Gen.randomb then Health else (Item (Special MagicMissile))
         Gameplay.updateChessboard (Chessboard.addPickup pickup coordinates) gameplay
     
     static member removeLongGrass coordinates gameplay =
@@ -300,7 +300,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                     | ReactingCharacter reactorIndex -> Chessboard.getCharacterCoordinates reactorIndex gameplay.Chessboard |> Math.directionToTarget coordinates
                     | ReactingProp _ -> failwithumf ()
                 Turn.makeAttack time index true reactor coordinates direction
-            
         Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay
 
     static member advanceTime gameplay =
@@ -311,14 +310,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             let gameplay = Gameplay.addMove index move gameplay
             let gameplay = Gameplay.activateCharacter time index gameplay
             let gameplay = Gameplay.applyMove index gameplay
-            let gameplay =
-                if index = PlayerIndex then
-                    match move with
-                    | Step _ -> Gameplay.updateRound (Round.updatePlayerContinuity (constant ManualNavigation)) gameplay
-                    | Travel path -> Gameplay.updateRound (Round.updatePlayerContinuity (constant (AutomaticNavigation path))) gameplay
-                    | _ -> gameplay
-                else gameplay
-            gameplay
+            if index = PlayerIndex then
+                match move with
+                | Step _ -> Gameplay.updateRound (Round.updatePlayerContinuity (constant ManualNavigation)) gameplay
+                | Travel path -> Gameplay.updateRound (Round.updatePlayerContinuity (constant (AutomaticNavigation path))) gameplay
+                | _ -> gameplay
+            else gameplay
         else gameplay
     
     static member addAttackingEnemyGroup group gameplay =
@@ -335,7 +332,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member removeWalkingEnemyGroup gameplay =
         Gameplay.updateRound Round.removeWalkingEnemyGroup gameplay
     
-    static member resetFieldMap fieldMap gameplay = // TODO: clean up this mess
+    static member resetFieldMap fieldMap gameplay =
         let gameplay = Gameplay.updateChessboard (Chessboard.setFieldSpaces fieldMap) gameplay
         Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
     
@@ -374,7 +371,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboard (Chessboard.addCharacter (Character.makeEnemy index) coordinates) gameplay
 
     static member makeEnemies quantity gameplay =
-        Seq.fold (fun gameplay index -> Gameplay.makeEnemy (EnemyIndex index) gameplay) gameplay [0 .. dec quantity]
+        Seq.fold
+            (fun gameplay index -> Gameplay.makeEnemy (EnemyIndex index) gameplay)
+            gameplay
+            [0 .. dec quantity]
     
     static member populateFieldMap gameplay =
         let gameplay = Gameplay.makeLongGrass gameplay

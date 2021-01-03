@@ -134,7 +134,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member getActingCharacters puppeteer =
         List.map (fun x -> x.Actor) puppeteer.CharacterTurns
     
-    static member getPropMap props puppeteer time = // TODO: try to crunch these down to shape
+    static member getPropMap props puppeteer time =
         let generator coordinates _ =
             let animationType =
                 match Puppeteer.tryGetCharacterTurn PlayerIndex puppeteer with
