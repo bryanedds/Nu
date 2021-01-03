@@ -10,6 +10,7 @@ type Tracking =
     | NoBackTracking
     | NoAdjacentTracking
 
+/// TODO: get rid of this type and replace its use with with Vector4i.
 type MapBounds =
     { CornerNegative : Vector2i
       CornerPositive : Vector2i }
@@ -73,8 +74,7 @@ module Direction =
                 if Math.Abs goalDelta.X > Math.Abs goalDelta.Y
                 then (Vector2i (source.X + (if goalDelta.X > 0 then 1 else -1), source.Y), rand)
                 else (Vector2i (source.X, source.Y + (if goalDelta.Y > 0 then 1 else -1)), rand)
-            else
-            stumbleUnbiased source rand
+            else stumbleUnbiased source rand
         | None -> stumbleUnbiased source rand
 
     let stumbleCandidates tryLimit biasOpt source rand =

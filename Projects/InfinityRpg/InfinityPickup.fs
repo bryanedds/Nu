@@ -21,7 +21,9 @@ type [<ReferenceEquality; NoComparison>] Pickup =
           Position = v2Zero }
 
     static member makeHealth coordinates =
-        { Pickup.initial with Position = vctovf coordinates }
+        { PickupType = Health
+          PickupImage = Assets.Gameplay.HealthPickupImage
+          Position = vctovf coordinates }
 
     static member makeMagicMissile coordinates =
         { PickupType = Item (Special MagicMissile)

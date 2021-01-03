@@ -123,13 +123,12 @@ module GameplayDispatcher =
                 withCmd (DisplayTurnEffects characterIndices) gameplay
 
             | MakeEnemyAttack ->
+                let index = gameplay.Round.AttackingEnemyGroup.Head
                 let gameplay =
-                    let index = gameplay.Round.AttackingEnemyGroup.Head
-                    let gameplay =
-                        if (Chessboard.getCharacter PlayerIndex gameplay.Chessboard).IsAlive // TODO: create Gameplay.IsPlayerAlive property.
-                        then Gameplay.makeMove gameplay.Time index (Attack (ReactingCharacter PlayerIndex)) gameplay
-                        else gameplay
-                    Gameplay.removeHeadFromAttackingEnemyGroup gameplay
+                    if (Chessboard.getCharacter PlayerIndex gameplay.Chessboard).IsAlive // TODO: create Gameplay.IsPlayerAlive property.
+                    then Gameplay.makeMove gameplay.Time index (Attack (ReactingCharacter PlayerIndex)) gameplay
+                    else gameplay
+                let gameplay = Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
 
             | MakeEnemiesWalk ->

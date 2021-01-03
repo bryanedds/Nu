@@ -267,7 +267,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let coordinates = Chessboard.getCharacterCoordinates index gameplay.Chessboard
         let turn =
             match move with
-            | Step direction -> Turn.makeWalk time index false coordinates direction
+            | Step direction ->
+                Turn.makeWalk time index false coordinates direction
             | Travel path ->
                 let direction = Math.directionToTarget coordinates path.Head.Coordinates
                 Turn.makeWalk time index true coordinates direction
@@ -376,9 +377,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         { Time = 0L
           InputMode = NormalInputMode
           ShallLoadGame = false
-          MetaMap = MetaMap.make ()
+          MetaMap = MetaMap.initial
           Field = field
           Chessboard = chessboard
-          Puppeteer = Chessboard.getCharacter PlayerIndex chessboard |> Puppeteer.init
+          Puppeteer = chessboard |> Chessboard.getCharacter PlayerIndex |> Puppeteer.make
           Round = Round.empty
           Inventory = Inventory.initial }
