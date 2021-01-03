@@ -66,8 +66,8 @@ module GameplayDispatcher =
                         match characterTurn.TurnType with
                         | AttackTurn _ ->
                             let gameplay = Gameplay.finishMove index gameplay
-                            match characterTurn.GetReactor with
-                            | ReactingCharacter reactorIndex ->
+                            match characterTurn.ReactorOpt with
+                            | Some (ReactingCharacter reactorIndex) ->
                                 let reactorState = Chessboard.getCharacter reactorIndex gameplay.Chessboard
                                 let gameplay =
                                     if reactorIndex = PlayerIndex
@@ -78,7 +78,8 @@ module GameplayDispatcher =
                                     | PlayerIndex -> Gameplay.updateInputMode (constant DisabledInputMode) gameplay // TODO: reimplement screen transition
                                     | EnemyIndex _ -> Gameplay.removeCharacter reactorIndex gameplay
                                 else gameplay
-                            | ReactingProp coordinates -> Gameplay.removeLongGrass coordinates gameplay
+                            | Some (ReactingProp coordinates) -> Gameplay.removeLongGrass coordinates gameplay
+                            | _ -> gameplay
                         | WalkTurn _ -> Gameplay.finishMove index gameplay
                     | _ -> failwith "non-finishing turns should be filtered out by this point"
                 let gameplay = Gameplay.forEachIndex updater indices gameplay
@@ -92,11 +93,11 @@ module GameplayDispatcher =
                         let tickCount = gameplay.Time - characterTurn.StartTick
                         match characterTurn.TurnType with
                         | AttackTurn _ ->
-                            if tickCount = Constants.InfinityRpg.ActionTicksMax
+                            if tickCount = Constants.Gameplay.ActionTicksMax
                             then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                             else gameplay
                         | WalkTurn _ ->
-                            if tickCount = dec (int64 Constants.InfinityRpg.CharacterWalkSteps)
+                            if tickCount = dec (int64 Constants.Gameplay.CharacterWalkSteps)
                             then Gameplay.setCharacterTurnStatus index TurnFinishing gameplay
                             else gameplay
                     | _ -> gameplay
@@ -129,7 +130,7 @@ module GameplayDispatcher =
                 let updater =
                     (fun index gameplay ->
                         let coordinates = Chessboard.getCharacterCoordinates index gameplay.Chessboard
-                        let openDirections = Chessboard.openDirections coordinates gameplay.Chessboard
+                        let openDirections = Chessboard.getOpenDirections coordinates gameplay.Chessboard
                         let direction = Gen.random1 4 |> Direction.ofInt
                         if List.exists (fun x -> x = direction) openDirections
                         then Gameplay.makeMove gameplay.Time index (Step direction) gameplay
@@ -140,7 +141,8 @@ module GameplayDispatcher =
                 withMsg BeginTurns gameplay
             
             | MakeEnemyMoves ->
-                let adjacentEnemies = List.filter (fun x -> Gameplay.areCharactersAdjacent x PlayerIndex gameplay) gameplay.Chessboard.EnemyIndices
+                let enemyIndices = Chessboard.getEnemyIndices gameplay.Chessboard
+                let adjacentEnemies = List.filter (fun x -> Gameplay.areCharactersAdjacent x PlayerIndex gameplay) enemyIndices
                 let gameplay = Gameplay.addAttackingEnemyGroup adjacentEnemies gameplay
                 let gameplay = Gameplay.createWalkingEnemyGroup gameplay
                 
@@ -160,7 +162,8 @@ module GameplayDispatcher =
                         | _ :: [] -> gameplay
                         | _ :: navigationPath ->
                             let targetCoordinates = (List.head navigationPath).Coordinates
-                            if List.exists (fun x -> x = targetCoordinates) gameplay.Chessboard.UnoccupiedSpaces
+                            let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
+                            if Set.contains targetCoordinates unoccupiedSpaces
                             then Gameplay.makeMove gameplay.Time PlayerIndex (Travel navigationPath) gameplay
                             else gameplay
                         | [] -> failwithumf ()
@@ -184,7 +187,7 @@ module GameplayDispatcher =
                     match targetCoordinatesOpt with
                     | Some coordinates ->
                         if Math.areCoordinatesAdjacent coordinates currentCoordinates then
-                            if Chessboard.spaceExists coordinates gameplay.Chessboard then
+                            if Chessboard.doesSpaceExist coordinates gameplay.Chessboard then
                                 match Chessboard.tryGetOccupantAtCoordinates coordinates gameplay.Chessboard with
                                 | Some occupant ->
                                     match occupant with
@@ -221,6 +224,8 @@ module GameplayDispatcher =
                 just gameplay
 
             | TransitionMap direction ->
+                let gameplay = Gameplay.clearEnemies gameplay
+                let gameplay = Gameplay.clearPickups gameplay
                 let gameplay = Gameplay.transitionMap direction gameplay
                 let gameplay = Gameplay.populateFieldMap gameplay
                 just gameplay
@@ -247,8 +252,8 @@ module GameplayDispatcher =
                 | TouchInput touchPosition ->
                     let gameplay = Gameplay.updateInputMode (constant NormalInputMode) gameplay
                     let targetCoordinates = World.mouseToWorld false touchPosition world |> vftovc
-                    if Chessboard.spaceExists targetCoordinates gameplay.Chessboard then
-                        if Chessboard.enemyAtCoordinates targetCoordinates gameplay.Chessboard then
+                    if Chessboard.doesSpaceExist targetCoordinates gameplay.Chessboard then
+                        if Chessboard.isEnemyAtCoordinates targetCoordinates gameplay.Chessboard then
                             let enemy = Chessboard.getCharacterAtCoordinates targetCoordinates gameplay.Chessboard
                             withMsg MakeEnemyMoves <| Gameplay.makeMove gameplay.Time PlayerIndex (Shoot (ReactingCharacter enemy.CharacterIndex)) gameplay
                         else just gameplay
@@ -293,7 +298,7 @@ module GameplayDispatcher =
                                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Scene world
                                     let world = entity.SetEffect effect world
                                     let world = entity.SetSize Constants.Layout.TileSize world
-                                    let world = entity.SetPosition (vctovf (Chessboard.getCharacterCoordinates turn.GetReactingCharacterIndex gameplay.Chessboard)) world
+                                    let world = entity.SetPosition (vctovf (Chessboard.getCharacterCoordinates (Turn.getReactingCharacterIndex turn) gameplay.Chessboard)) world
                                     let world = entity.SetElevation Constants.Layout.EffectElevation world
                                     entity.SetSelfDestruct true world
                                 else
@@ -374,19 +379,19 @@ module GameplayDispatcher =
 
                      // pickups
                      Content.entities gameplay
-                        (fun gameplay -> gameplay.Chessboard.PickupSpaces)
+                        (fun gameplay -> gameplay.Chessboard.Pickups)
                         (fun pickups _ -> pickups |> Map.toSeqBy (fun positionM pickupType -> Pickup.ofPickupType pickupType positionM) |> Map.indexed)
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Pickup <== pickup])
 
                      // props
                      Content.entities gameplay
-                        (fun gameplay -> (gameplay.Chessboard.PropSpaces, gameplay.Puppeteer, gameplay.Time))
+                        (fun gameplay -> (gameplay.Chessboard.Props, gameplay.Puppeteer, gameplay.Time))
                         (fun (props, puppeteer, time) _ -> Puppeteer.getPropMap props puppeteer time)
                         (fun index prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Prop <== prop])
 
                      // characters
                      Content.entities gameplay
-                        (fun gameplay -> (gameplay.Chessboard.CharacterSpaces, gameplay.Puppeteer, gameplay.Time))
+                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer, gameplay.Time))
                         (fun (characters, puppeteer, time) _ -> Puppeteer.getCharacterMap characters puppeteer time)
                         (fun index character _ ->
                             let name =

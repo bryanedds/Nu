@@ -60,7 +60,6 @@ module FieldMap =
                     yield (tileCoordinatesC, GrassTile)]
 
     let addPaths buildBoundsC pathEdgesC generatedMap rand =
-        
         let (paths, rand) =
             List.fold
                 (fun (paths, rand) (sourceM, destinationM) ->
@@ -68,7 +67,6 @@ module FieldMap =
                     (path :: paths, rand))
                 ([], rand)
                 pathEdgesC
-
         let generatedMap =
             Seq.fold
                 (fun generatedMap path ->
@@ -80,7 +78,6 @@ module FieldMap =
                     generatedMap @@ generatedMap')
                 generatedMap
                 paths
-
         (generatedMap, rand)
 
     let addTrees buildBoundsC generatedMap rand =

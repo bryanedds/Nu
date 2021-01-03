@@ -45,15 +45,13 @@ type [<ReferenceEquality; NoComparison>] Turn =
       Direction : Direction
       StartTick : int64 }
     
-    member this.GetReactor =
-        match this.ReactorOpt with
-        | Some reactor -> reactor
-        | None -> failwithumf ()
-    
-    member this.GetReactingCharacterIndex =
-        match this.GetReactor with
-        | ReactingCharacter characterIndex -> characterIndex
-        | _ -> failwithumf ()
+    static member tryGetReactingCharacterIndex turn =
+        match turn.ReactorOpt with
+        | Some (ReactingCharacter characterIndex) -> Some characterIndex
+        | _ -> None
+
+    static member getReactingCharacterIndex turn =
+        Option.get (Turn.tryGetReactingCharacterIndex turn)
     
     static member hasParticularReactor reactorIndex turn =
         match turn.ReactorOpt with
@@ -70,7 +68,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
             | TurnBeginning -> vctovf turn.OriginCoordinates
             | TurnTicking ->
                 let tickCount = int (time - turn.StartTick + 1L)
-                let offset = Constants.InfinityRpg.CharacterWalkStep * int tickCount
+                let offset = Constants.Gameplay.CharacterWalkStep * int tickCount
                 let offsetVector = dtovfScaled turn.Direction (single offset)
                 vctovf turn.OriginCoordinates + offsetVector
             | TurnFinishing -> turn.OriginCoordinates + dtovc turn.Direction |> vctovf
@@ -149,7 +147,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                                 match turn.TurnStatus with
                                 | TurnBeginning -> PropAnimationStanding
                                 | TurnTicking ->
-                                    if time - turn.StartTick + 1L < Constants.InfinityRpg.ReactionTick
+                                    if time - turn.StartTick + 1L < Constants.Gameplay.ReactionTick
                                     then PropAnimationStanding
                                     else PropAnimationDestroyed
                                 | TurnFinishing -> PropAnimationDestroyed
@@ -177,7 +175,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                                 match attackerTurn.TurnStatus with
                                 | TurnBeginning -> CharacterAnimationFacing
                                 | TurnTicking ->
-                                    if time - attackerTurn.StartTick + 1L < Constants.InfinityRpg.ReactionTick
+                                    if time - attackerTurn.StartTick + 1L < Constants.Gameplay.ReactionTick
                                     then CharacterAnimationFacing
                                     else CharacterAnimationSlain
                                 | TurnFinishing -> CharacterAnimationSlain

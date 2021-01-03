@@ -30,18 +30,18 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
 
     member this.Current =
         this.MetaTiles.[this.CurrentMetaCoordinates]
-    
-    static member metaCoordinatesInDirection direction (metaMap : MetaMap) =
-        metaMap.CurrentMetaCoordinates + dtovc direction
-    
-    static member nextMetaCoordinates (metaMap : MetaMap) =
-        MetaMap.metaCoordinatesInDirection metaMap.Current.DirectionNext metaMap
 
     member this.NextPathStart =
         match this.Current.DirectionNext with
         | Upward -> v2i this.Current.PathEnd.X 0
         | Rightward -> v2i 0 this.Current.PathEnd.Y
         | _ -> failwithumf ()
+
+    static member metaCoordinatesInDirection direction (metaMap : MetaMap) =
+        metaMap.CurrentMetaCoordinates + dtovc direction
+    
+    static member nextMetaCoordinates (metaMap : MetaMap) =
+        MetaMap.metaCoordinatesInDirection metaMap.Current.DirectionNext metaMap
     
     static member existsInDirection direction (metaMap : MetaMap) =
         let key = MetaMap.metaCoordinatesInDirection direction metaMap
