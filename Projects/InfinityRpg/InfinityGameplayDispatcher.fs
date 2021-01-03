@@ -376,7 +376,7 @@ module GameplayDispatcher =
 
                      // pickups
                      Content.entities gameplay
-                        (fun gameplay -> gameplay.Chessboard.Pickups)
+                        (fun gameplay -> gameplay.Chessboard.PickupSpaces)
                         (fun pickups _ -> pickups |> Map.toSeqBy (fun positionM pickupType -> Pickup.ofPickupType pickupType positionM) |> Map.indexed)
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Pickup <== pickup])
 
@@ -388,7 +388,7 @@ module GameplayDispatcher =
 
                      // characters
                      Content.entities gameplay
-                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer, gameplay.Time))
+                        (fun gameplay -> (gameplay.Chessboard.CharacterSpaces, gameplay.Puppeteer, gameplay.Time))
                         (fun (characters, puppeteer, time) _ -> Puppeteer.getCharacterMap characters puppeteer time)
                         (fun index character _ ->
                             let name =
