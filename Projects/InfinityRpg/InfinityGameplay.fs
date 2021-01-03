@@ -50,19 +50,19 @@ type [<ReferenceEquality; NoComparison>] Round =
       CharacterMoves : Map<CharacterIndex, Move>
       WalkingEnemyGroup : CharacterIndex list
       AttackingEnemyGroup : CharacterIndex list }
+      
+      member this.IsPlayerContinuity =
+          match this.PlayerContinuity with
+          | NoContinuity -> false
+          | _ -> true
+      
+      member this.IsPlayerTraveling =
+          match this.PlayerContinuity with
+          | AutomaticNavigation _ -> true
+          | _ -> false
 
     static member tryGetPlayerMove (round : Round) =
         Map.tryFind PlayerIndex round.CharacterMoves
-    
-    member this.IsPlayerContinuity =
-        match this.PlayerContinuity with
-        | NoContinuity -> false
-        | _ -> true
-    
-    member this.IsPlayerTraveling =
-        match this.PlayerContinuity with
-        | AutomaticNavigation _ -> true
-        | _ -> false
     
     static member inProgress (round : Round) =
         Map.notEmpty round.CharacterMoves || List.notEmpty round.WalkingEnemyGroup || List.notEmpty round.AttackingEnemyGroup || round.IsPlayerContinuity
@@ -125,8 +125,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       Inventory : Inventory }
 
     static member initial =
-        let field = Field.initial ()
-        let chessboard = Chessboard.init field.FieldMapNp
+        let field = Field.initial
+        let chessboard = Chessboard.make field.FieldMapNp
         { Time = 0L
           InputMode = NormalInputMode
           ShallLoadGame = false
@@ -183,10 +183,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboard (Chessboard.relocateCharacter index coordinates) gameplay
     
     static member refreshWalkingEnemyGroup gameplay =
-        Gameplay.updateRound (Round.updateWalkingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
+        Gameplay.updateRound (Round.updateWalkingEnemyGroup (List.filter (fun x -> Chessboard.doesCharacterExist x gameplay.Chessboard))) gameplay
     
     static member refreshAttackingEnemyGroup gameplay =
-        Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun x -> Chessboard.characterExists x gameplay.Chessboard))) gameplay
+        Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun x -> Chessboard.doesCharacterExist x gameplay.Chessboard))) gameplay
     
     static member removeCharacter index gameplay =
         let coordinates = Chessboard.getCharacterCoordinates index gameplay.Chessboard
@@ -201,6 +201,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             Gameplay.refreshAttackingEnemyGroup gameplay
         | PlayerIndex -> gameplay
 
+    static member clearEnemies gameplay =
+        Gameplay.updateChessboard Chessboard.clearEnemies gameplay
+
     static member addRandomPickup coordinates gameplay =
         let pickup = if Gen.random1 2 = 0 then Health else (Item (Special MagicMissile))
         Gameplay.updateChessboard (Chessboard.addPickup pickup coordinates) gameplay
@@ -211,6 +214,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         then Gameplay.addRandomPickup coordinates gameplay
         else gameplay
     
+    static member clearPickups gameplay =
+        Gameplay.updateChessboard Chessboard.clearPickups gameplay
+
     static member refreshPlayerPuppetHitPoints gameplay =
         let player = Chessboard.getCharacter PlayerIndex gameplay.Chessboard
         Gameplay.updatePuppeteer (Puppeteer.updatePlayerPuppetHitPoints (constant player.HitPoints)) gameplay
@@ -235,7 +241,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let coordinates = (Chessboard.getCharacterCoordinates index gameplay.Chessboard) + dtovc direction
         let gameplay = Gameplay.updateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
         let gameplay =
-            if Chessboard.pickupAtCoordinates coordinates gameplay.Chessboard then
+            if Chessboard.isPickupAtCoordinates coordinates gameplay.Chessboard then
                 Gameplay.tryPickupHealth index coordinates gameplay
             else gameplay
         Gameplay.relocateCharacter index coordinates gameplay
@@ -292,7 +298,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 let direction =
                     match reactor with
                     | ReactingCharacter reactorIndex -> Chessboard.getCharacterCoordinates reactorIndex gameplay.Chessboard |> Math.directionToTarget coordinates
-                    | ReactingProp reactorCoordinates -> failwithumf ()
+                    | ReactingProp _ -> failwithumf ()
                 Turn.makeAttack time index true reactor coordinates direction
             
         Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay
@@ -322,7 +328,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateRound Round.removeHeadFromAttackingEnemyGroup gameplay
 
     static member createWalkingEnemyGroup gameplay =
-        let group = List.except gameplay.Round.AttackingEnemyGroup gameplay.Chessboard.EnemyIndices
+        let enemyIndices = Chessboard.getEnemyIndices gameplay.Chessboard
+        let group = List.except gameplay.Round.AttackingEnemyGroup enemyIndices
         Gameplay.updateRound (Round.addWalkingEnemyGroup group) gameplay
 
     static member removeWalkingEnemyGroup gameplay =
@@ -337,13 +344,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
     
     static member transitionMap direction gameplay =
-        let gameplay = Gameplay.updateMetaMap (MetaMap.transition direction) gameplay
-        let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
-        let gameplay = Gameplay.updateChessboard Chessboard.clearEnemies gameplay
-        let gameplay = Gameplay.updateChessboard Chessboard.clearPickups gameplay
-        let gameplay = Gameplay.updateChessboard Chessboard.clearProps gameplay
         let player = Chessboard.getCharacter PlayerIndex gameplay.Chessboard
         let gameplay = Gameplay.removeCharacter PlayerIndex gameplay
+        let gameplay = Gameplay.updateMetaMap (MetaMap.transition direction) gameplay
+        let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
         let newCoordinates =
             match direction with
             | Upward
@@ -356,24 +360,21 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let mapBounds = MapBounds.make v2iZero Constants.Layout.FieldMapSizeC
         let predicate1 coordinates = FieldMap.tileIs coordinates FieldMap.GrassTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
         let predicate2 coordinates = FieldMap.atLeastNAdjacentTilesAre 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
-        let rec recursion (spaces : Vector2i list) gameplay =
-            if spaces.Length = 0 then gameplay
-            else
-                let coordinates = spaces.Head
-                let gameplay = if predicate1 coordinates && predicate2 coordinates then Gameplay.updateChessboard (Chessboard.addProp LongGrass coordinates) gameplay else gameplay
-                recursion spaces.Tail gameplay
-        recursion gameplay.Chessboard.UnoccupiedSpaces gameplay
+        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
+        Set.fold (fun gameplay space ->
+            if predicate1 space && predicate2 space
+            then Gameplay.updateChessboard (Chessboard.addProp LongGrass space) gameplay
+            else gameplay)
+            gameplay
+            unoccupiedSpaces
     
     static member makeEnemy index gameplay =
-        let availableCoordinates = gameplay.Chessboard.UnoccupiedSpaces
-        let coordinates = availableCoordinates.Item(Gen.random1 availableCoordinates.Length)
+        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
+        let coordinates = Seq.item (Gen.random1 (Set.count unoccupiedSpaces)) unoccupiedSpaces
         Gameplay.updateChessboard (Chessboard.addCharacter (Character.makeEnemy index) coordinates) gameplay
 
     static member makeEnemies quantity gameplay =
-        let rec recursion count gameplay =
-            if count = quantity then gameplay
-            else Gameplay.makeEnemy (EnemyIndex count) gameplay |> recursion (count + 1)
-        recursion 0 gameplay
+        Seq.fold (fun gameplay index -> Gameplay.makeEnemy (EnemyIndex index) gameplay) gameplay [0 .. dec quantity]
     
     static member populateFieldMap gameplay =
         let gameplay = Gameplay.makeLongGrass gameplay

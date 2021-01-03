@@ -12,7 +12,7 @@ type [<ReferenceEquality; NoComparison>] Inventory =
     static member tryAddItem item inventory =
         match Map.tryFind item inventory.Items with
         | Some itemCount ->
-            if itemCount < Constants.InfinityRpg.ItemLimit then
+            if itemCount < Constants.Gameplay.ItemLimit then
                 { inventory with Items = Map.add item (inc itemCount) inventory.Items }
             else inventory
         | None -> { inventory with Items = Map.add item 1 inventory.Items }
