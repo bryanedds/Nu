@@ -231,9 +231,12 @@ module GameplayDispatcher =
                 just gameplay
 
             | TransitionMap direction ->
-                let gameplay = Gameplay.clearChessboard gameplay
+                let gameplay = Gameplay.clearProps gameplay
+                let gameplay = Gameplay.clearEnemies gameplay
+                let gameplay = Gameplay.clearPickups gameplay
                 let gameplay = Gameplay.transitionFieldMap direction gameplay
-                let gameplay = Gameplay.populateFieldMap gameplay
+                let gameplay = Gameplay.makeProps gameplay
+                let gameplay = Gameplay.makeEnemies (Gen.random2 1 6) gameplay
                 just gameplay
 
             | HandleMapChange playerInput ->
@@ -281,7 +284,8 @@ module GameplayDispatcher =
                 else
                     let gameplay = Gameplay.initial
                     let gameplay = Gameplay.resetFieldMapWithPlayer (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
-                    let gameplay = Gameplay.populateFieldMap gameplay
+                    let gameplay = Gameplay.makeProps gameplay
+                    let gameplay = Gameplay.makeEnemies (Gen.random2 1 6) gameplay
                     just gameplay
 
             | Update ->

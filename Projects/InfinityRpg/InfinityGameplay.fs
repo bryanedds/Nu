@@ -161,46 +161,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             (Chessboard.tryGetCharacterCoordinates index gameplay.Chessboard |> Option.get) // assume character exists
             (Chessboard.tryGetCharacterCoordinates index2 gameplay.Chessboard |> Option.get) // assume character exists
 
-    (* Creation Commands *)
-    
-    static member makeRandomPickup coordinates gameplay =
-        let pickup = if Gen.randomb then Health else (Item (Special MagicMissile))
-        Gameplay.updateChessboard (Chessboard.addPickup pickup coordinates) gameplay
-
-    static member makeLongGrass coordinates gameplay =
-        Gameplay.updateChessboard (Chessboard.addProp LongGrass coordinates) gameplay
-
-    static member makeLongGrasses gameplay =
-        let mapBounds = v4iBounds v2iZero (Constants.Layout.FieldMapSizeC - v2iOne)
-        let predicate1 coordinates = Math.isPointInBoundsI coordinates mapBounds && Map.find coordinates gameplay.Field.FieldMapNp.FieldTiles = FieldMap.GrassTile
-        let predicate2 coordinates = FieldMap.hasAtLeastNAdjacentTiles 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
-        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
-        Set.fold (fun gameplay coordinates ->
-            if predicate1 coordinates && predicate2 coordinates
-            then Gameplay.makeLongGrass coordinates gameplay
-            else gameplay)
-            gameplay
-            unoccupiedSpaces
-    
-    static member makeEnemy index gameplay =
-        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
-        let coordinates = Seq.item (Gen.random1 (Set.count unoccupiedSpaces)) unoccupiedSpaces
-        Gameplay.updateChessboard (Chessboard.addCharacter (Character.makeEnemy index) coordinates) gameplay
-
-    static member makeEnemies quantity gameplay =
-        Seq.fold
-            (fun gameplay index -> Gameplay.makeEnemy (EnemyIndex index) gameplay)
-            gameplay
-            [0 .. dec quantity]
-
-    (* Chessboard Commands *)
-
-    static member clearChessboard gameplay =
-        let gameplay = Gameplay.updateChessboard Chessboard.clearEnemies gameplay
-        let gameplay = Gameplay.updateChessboard Chessboard.clearPickups gameplay
-        let gameplay = Gameplay.updateChessboard Chessboard.clearProps gameplay
-        gameplay
-
     (* FieldMap Commands *)
     
     static member resetFieldMap fieldMap gameplay =
@@ -223,13 +183,46 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | Downward
             | Leftward -> gameplay.MetaMap.Current.PathEnd
         Gameplay.updateChessboard (Chessboard.addCharacter player newCoordinates) gameplay
-    
-    static member populateFieldMap gameplay =
-        let gameplay = Gameplay.makeLongGrasses gameplay
-        let enemyCount = 1 + Gen.random1 5
-        Gameplay.makeEnemies enemyCount gameplay
 
     (* Interaction Commands *)
+
+    static member createWalkingEnemyGroup gameplay =
+        let enemyIndices = Chessboard.getEnemyIndices gameplay.Chessboard
+        let group = List.except gameplay.Round.AttackingEnemyGroup enemyIndices
+        Gameplay.updateRound (Round.addWalkingEnemyGroup group) gameplay
+    
+    static member removeWalkingEnemyGroup gameplay =
+        Gameplay.updateRound Round.removeWalkingEnemyGroup gameplay
+    
+    static member addAttackingEnemyGroup group gameplay =
+        Gameplay.updateRound (Round.addAttackingEnemyGroup group) gameplay
+
+    static member removeHeadFromAttackingEnemyGroup gameplay =
+        Gameplay.updateRound Round.removeHeadFromAttackingEnemyGroup gameplay
+    
+    static member addMove index (move : Move) gameplay =
+        Gameplay.updateRound (Round.addMove index move) gameplay
+
+    static member removeMove index gameplay =
+        Gameplay.updateRound (Round.removeMove index) gameplay
+    
+    static member finishMove index gameplay =
+        let gameplay = Gameplay.updatePuppeteer (Puppeteer.removeCharacterTurn index) gameplay
+        Gameplay.removeMove index gameplay
+
+    static member tryAddMove time index move gameplay =
+        match Chessboard.tryGetCharacter index gameplay.Chessboard with
+        | Some character when character.IsAlive ->
+            let gameplay = Gameplay.addMove index move gameplay
+            let gameplay = Gameplay.tryActivateCharacter time index gameplay
+            let gameplay = Gameplay.tryApplyMove index gameplay
+            if index = PlayerIndex then
+                match move with
+                | Step _ -> Gameplay.updateRound (Round.updatePlayerContinuity (constant ManualNavigation)) gameplay
+                | Travel path -> Gameplay.updateRound (Round.updatePlayerContinuity (constant (AutomaticNavigation path))) gameplay
+                | _ -> gameplay
+            else gameplay
+        | Some _ | None -> gameplay
     
     static member tryInterruptPlayer gameplay =
         if gameplay.Round.IsPlayerTraveling then
@@ -262,47 +255,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | PlayerIndex -> gameplay
         | None -> gameplay
 
-    (* Move Commands *)
-    
-    static member addMove index (move : Move) gameplay =
-        Gameplay.updateRound (Round.addMove index move) gameplay
-
-    static member removeMove index gameplay =
-        Gameplay.updateRound (Round.removeMove index) gameplay
-    
-    static member finishMove index gameplay =
-        let gameplay = Gameplay.updatePuppeteer (Puppeteer.removeCharacterTurn index) gameplay
-        Gameplay.removeMove index gameplay
-
-    static member tryAddMove time index move gameplay =
-        match Chessboard.tryGetCharacter index gameplay.Chessboard with
-        | Some character when character.IsAlive ->
-            let gameplay = Gameplay.addMove index move gameplay
-            let gameplay = Gameplay.tryActivateCharacter time index gameplay
-            let gameplay = Gameplay.tryApplyMove index gameplay
-            if index = PlayerIndex then
-                match move with
-                | Step _ -> Gameplay.updateRound (Round.updatePlayerContinuity (constant ManualNavigation)) gameplay
-                | Travel path -> Gameplay.updateRound (Round.updatePlayerContinuity (constant (AutomaticNavigation path))) gameplay
-                | _ -> gameplay
-            else gameplay
-        | Some _ | None -> gameplay
-
     (* Advance Commands *)
-
-    static member createWalkingEnemyGroup gameplay =
-        let enemyIndices = Chessboard.getEnemyIndices gameplay.Chessboard
-        let group = List.except gameplay.Round.AttackingEnemyGroup enemyIndices
-        Gameplay.updateRound (Round.addWalkingEnemyGroup group) gameplay
-    
-    static member removeWalkingEnemyGroup gameplay =
-        Gameplay.updateRound Round.removeWalkingEnemyGroup gameplay
-    
-    static member addAttackingEnemyGroup group gameplay =
-        Gameplay.updateRound (Round.addAttackingEnemyGroup group) gameplay
-
-    static member removeHeadFromAttackingEnemyGroup gameplay =
-        Gameplay.updateRound Round.removeHeadFromAttackingEnemyGroup gameplay
     
     static member tryPickupHealth index coordinates gameplay =
         match index with
@@ -395,6 +348,50 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     static member advanceTime gameplay =
         { gameplay with Time = inc gameplay.Time }
+
+    (* Population Commands *)
+    
+    static member makeEnemy index gameplay =
+        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
+        let coordinates = Seq.item (Gen.random1 (Set.count unoccupiedSpaces)) unoccupiedSpaces
+        Gameplay.updateChessboard (Chessboard.addCharacter (Character.makeEnemy index) coordinates) gameplay
+    
+    static member makeRandomPickup coordinates gameplay =
+        let pickup = if Gen.randomb then Health else (Item (Special MagicMissile))
+        Gameplay.updateChessboard (Chessboard.addPickup pickup coordinates) gameplay
+
+    static member makeLongGrass coordinates gameplay =
+        Gameplay.updateChessboard (Chessboard.addProp LongGrass coordinates) gameplay
+
+    static member makeLongGrasses gameplay =
+        let mapBounds = v4iBounds v2iZero (Constants.Layout.FieldMapSizeC - v2iOne)
+        let predicate1 coordinates = Math.isPointInBoundsI coordinates mapBounds && Map.find coordinates gameplay.Field.FieldMapNp.FieldTiles = FieldMap.GrassTile
+        let predicate2 coordinates = FieldMap.hasAtLeastNAdjacentTiles 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
+        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
+        Set.fold (fun gameplay coordinates ->
+            if predicate1 coordinates && predicate2 coordinates
+            then Gameplay.makeLongGrass coordinates gameplay
+            else gameplay)
+            gameplay
+            unoccupiedSpaces
+    
+    static member makeProps gameplay =
+        Gameplay.makeLongGrasses gameplay
+    
+    static member makeEnemies enemyCount gameplay =
+        Seq.fold
+            (fun gameplay index -> Gameplay.makeEnemy (EnemyIndex index) gameplay)
+            gameplay
+            [0 .. dec enemyCount]
+
+    static member clearEnemies gameplay =
+        Gameplay.updateChessboard Chessboard.clearEnemies gameplay
+
+    static member clearPickups gameplay =
+        Gameplay.updateChessboard Chessboard.clearPickups gameplay
+
+    static member clearProps gameplay =
+        Gameplay.updateChessboard Chessboard.clearProps gameplay
 
     (* Constructors *)
 
