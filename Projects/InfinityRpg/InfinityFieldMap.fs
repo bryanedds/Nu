@@ -148,7 +148,7 @@ module FieldMap =
                 (fieldTiles, rand)
                 grid
         else (fieldTiles, rand)
-    
+
     let addStones buildBoundsC fieldTiles rand =
         let grid = makeGrid buildBoundsC
         Seq.fold
