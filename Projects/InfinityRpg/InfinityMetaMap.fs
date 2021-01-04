@@ -12,7 +12,7 @@ type [<ReferenceEquality; NoComparison>] MetaTile =
     static member make pathStart =
         let sysrandom = System.Random ()
         let randSeed = uint64 (sysrandom.Next ())
-        let directionNext = if Gen.random1 2 = 0 then Upward else Rightward
+        let directionNext = if Gen.randomb then Upward else Rightward
         let randResult = Gen.random1 (Constants.Layout.FieldMapSizeC.X - 4) // assumes X and Y are equal
         let pathEnd =
             match directionNext with
@@ -30,27 +30,27 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
 
     member this.Current =
         this.MetaTiles.[this.CurrentMetaCoordinates]
-    
-    static member metaCoordinatesInDirection direction (metaMap : MetaMap) =
-        metaMap.CurrentMetaCoordinates + dtovc direction
-    
-    static member nextMetaCoordinates (metaMap : MetaMap) =
-        MetaMap.metaCoordinatesInDirection metaMap.Current.DirectionNext metaMap
 
     member this.NextPathStart =
         match this.Current.DirectionNext with
         | Upward -> v2i this.Current.PathEnd.X 0
         | Rightward -> v2i 0 this.Current.PathEnd.Y
         | _ -> failwithumf ()
+
+    static member metaCoordinatesInDirection direction metaMap =
+        metaMap.CurrentMetaCoordinates + dtovc direction
     
-    static member existsInDirection direction (metaMap : MetaMap) =
+    static member nextMetaCoordinates (metaMap : MetaMap) =
+        MetaMap.metaCoordinatesInDirection metaMap.Current.DirectionNext metaMap
+    
+    static member existsInDirection direction metaMap =
         let key = MetaMap.metaCoordinatesInDirection direction metaMap
         Map.containsKey key metaMap.MetaTiles
     
-    static member nextMetaCoordinatesInDirection direction (metaMap : MetaMap) =
+    static member nextMetaCoordinatesInDirection direction metaMap =
         MetaMap.nextMetaCoordinates metaMap = MetaMap.metaCoordinatesInDirection direction metaMap
 
-    static member possibleInDirection direction (metaMap : MetaMap) =
+    static member possibleInDirection direction metaMap =
         MetaMap.existsInDirection direction metaMap || MetaMap.nextMetaCoordinatesInDirection direction metaMap
 
     static member onPathBoundary coordinates (metaMap : MetaMap) =
@@ -66,14 +66,14 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
         let metaMap = MetaMap.updateMetaTiles (Map.add metaCoordinates metaTile) metaMap
         MetaMap.updateCurrentMetaCoordinates (constant metaCoordinates) metaMap
     
-    static member moveCurrent direction (metaMap : MetaMap) =
+    static member moveCurrent direction metaMap =
         MetaMap.updateCurrentMetaCoordinates (constant (MetaMap.metaCoordinatesInDirection direction metaMap)) metaMap
     
-    static member makeMetaTile (metaMap : MetaMap) =
+    static member makeMetaTile metaMap =
         let metaCoordinates = MetaMap.nextMetaCoordinates metaMap
         MetaMap.addMetaTile metaCoordinates (MetaTile.make metaMap.NextPathStart) metaMap
     
-    static member transition direction (metaMap : MetaMap) =
+    static member transition direction metaMap =
         if MetaMap.existsInDirection direction metaMap
         then MetaMap.moveCurrent direction metaMap
         else MetaMap.makeMetaTile metaMap
@@ -82,5 +82,5 @@ type [<ReferenceEquality; NoComparison>] MetaMap =
         { MetaTiles = Map.empty
           CurrentMetaCoordinates = v2iZero }
     
-    static member make () =
+    static member initial =
         MetaMap.addMetaTile v2iZero (MetaTile.make v2iZero) MetaMap.empty
