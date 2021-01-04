@@ -341,6 +341,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | ReactingProp reactorCoordinates ->
                 let direction = Math.directionToTarget coordinates reactorCoordinates
                 Gameplay.tryUpdateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
+            | ReactingPickup _ ->
+                gameplay
         | None -> gameplay
     
     static member tryApplyMove index gameplay =
@@ -378,12 +380,14 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                     let direction =
                         match reactor with
                         | ReactingCharacter reactorIndex -> Chessboard.tryGetCharacterCoordinates reactorIndex gameplay.Chessboard |> Option.get |> Math.directionToTarget coordinates // assume reactor exists
+                        | ReactingPickup _ -> failwithumf ()
                         | ReactingProp reactorCoordinates -> Math.directionToTarget coordinates reactorCoordinates
                     Turn.makeAttack time index false reactor coordinates direction
                 | Shoot reactor ->
                     let direction =
                         match reactor with
                         | ReactingCharacter reactorIndex -> Chessboard.tryGetCharacterCoordinates reactorIndex gameplay.Chessboard |> Option.get |> Math.directionToTarget coordinates // assume reactor exists
+                        | ReactingPickup _ -> failwithumf ()
                         | ReactingProp _ -> failwithumf ()
                     Turn.makeAttack time index true reactor coordinates direction
             Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay

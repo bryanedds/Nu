@@ -78,9 +78,9 @@ module GameplayDispatcher =
                                             | EnemyIndex _ -> Gameplay.tryKillCharacter character.CharacterIndex gameplay
                                         else gameplay
                                     | None -> gameplay
-                                | Some (ReactingProp coordinates) ->
-                                    Gameplay.tryCutGrass coordinates gameplay
-                                | _ -> gameplay
+                                | Some (ReactingPickup _) -> gameplay
+                                | Some (ReactingProp coordinates) -> Gameplay.tryCutGrass coordinates gameplay
+                                | None -> gameplay
                             | WalkTurn _ -> Gameplay.finishMove index gameplay
                         | _ -> failwith "non-finishing turns should be filtered out by this point")
                         gameplay
