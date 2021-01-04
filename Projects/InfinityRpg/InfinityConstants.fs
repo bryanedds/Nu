@@ -37,7 +37,7 @@ module Constants =
     module Gameplay =
 
         // general data
-        let CharacterWalkStep = 6
+        let CharacterWalkStep = 4
         let CharacterWalkSteps = int Layout.TileSize.X / CharacterWalkStep
         let CharacterAnimationFacingDelay = 16L
         let CharacterAnimationActingDelay = 12L // original value is 24L
