@@ -43,14 +43,14 @@ module FieldMap =
             coordinates |>
             getAdjacentTiles |>
             List.filter (fun coordinates ->
-                MapBounds.isPointInBounds coordinates buildBoundsC &&
+                Math.isPointInBoundsI coordinates buildBoundsC &&
                 Map.find coordinates fieldTiles = tile)
         passingTiles.Length >= n
     
-    let makeGrid boundsC =
+    let makeGrid (boundsC : Vector4i) =
         seq {
-            for i in boundsC.CornerNegative.X .. boundsC.CornerPositive.X do
-                for j in boundsC.CornerNegative.Y .. boundsC.CornerPositive.Y do
+            for i in boundsC.BottomLeft.X .. boundsC.TopRight.X do
+                for j in boundsC.BottomLeft.Y .. boundsC.TopRight.Y do
                     yield v2i i j }
 
     let addPaths buildBoundsC pathEdgesC fieldTiles rand =
@@ -100,7 +100,7 @@ module FieldMap =
         Seq.fold
             (fun (fieldTiles, rand) coordinates ->
                 let (n, rand) = Rand.nextIntUnder 3 rand
-                if n = 0 && Map.find coordinates originalMap <> PathTile && hasAtLeastNAdjacentTiles 1 coordinates TreeTile buildBoundsC originalMap && MapBounds.isPointInBounds coordinates buildBoundsC
+                if n = 0 && Map.find coordinates originalMap <> PathTile && hasAtLeastNAdjacentTiles 1 coordinates TreeTile buildBoundsC originalMap && Math.isPointInBoundsI coordinates buildBoundsC
                 then (Map.add coordinates TreeTile fieldTiles, rand)
                 else (fieldTiles, Rand.advance rand))
             (fieldTiles, rand)
@@ -159,16 +159,16 @@ module FieldMap =
             (fieldTiles, rand)
             grid
 
-    let makeEmptyFieldTiles (offsetC : Vector2i) (sizeC : Vector2i) =
+    let makeEmptyFieldTiles (positionC : Vector2i) (sizeC : Vector2i) =
         Map.ofList
-            [for i in offsetC.X .. offsetC.X + sizeC.X - 1 do
-                for j in offsetC.Y .. offsetC.Y + sizeC.Y - 1 do
+            [for i in positionC.X .. dec sizeC.X do
+                for j in positionC.Y .. dec sizeC.Y do
                     let tileCoordinatesC = v2i i j
                     yield (tileCoordinatesC, GrassTile)]
     
-    let make tileSheet (offsetC : Vector2i) sizeC pathEdgesC rand =
-        let buildBoundsC = MapBounds.make offsetC sizeC
-        let fieldTiles = makeEmptyFieldTiles offsetC sizeC
+    let make tileSheet (positionC : Vector2i) sizeC pathEdgesC rand =
+        let buildBoundsC = v4iBounds positionC (sizeC - v2iOne)
+        let fieldTiles = makeEmptyFieldTiles positionC sizeC
         let (fieldTiles, rand) = addPaths buildBoundsC pathEdgesC fieldTiles rand
         let (fieldTiles, rand) = addTrees buildBoundsC fieldTiles rand
         let (fieldTiles, rand) = spreadTrees buildBoundsC fieldTiles rand
