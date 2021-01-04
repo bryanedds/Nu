@@ -407,7 +407,7 @@ module GameplayDispatcher =
                  Content.button Simulants.HudSaveGame.Name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Save Game"
-                     Entity.Enabled <== gameplay --> fun gameplay -> not (Round.inProgress gameplay.Round) && not (gameplay.InputMode.NotNormalInput)
+                     Entity.Enabled <== gameplay --> fun gameplay -> not (Round.inProgress gameplay.Round) && gameplay.InputMode = NormalInputMode
                      Entity.ClickEvent ==> cmd Save]
 
                  // back button
