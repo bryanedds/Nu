@@ -351,11 +351,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     (* Population Commands *)
     
-    static member makeEnemy index gameplay =
-        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
-        let coordinates = Seq.item (Gen.random1 (Set.count unoccupiedSpaces)) unoccupiedSpaces
-        Gameplay.updateChessboard (Chessboard.addCharacter (Character.makeEnemy index) coordinates) gameplay
-    
     static member makeRandomPickup coordinates gameplay =
         let pickup = if Gen.randomb then Health else (Item (Special MagicMissile))
         Gameplay.updateChessboard (Chessboard.addPickup pickup coordinates) gameplay
@@ -378,20 +373,25 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member makeProps gameplay =
         Gameplay.makeLongGrasses gameplay
     
+    static member makeEnemy index gameplay =
+        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
+        let coordinates = Seq.item (Gen.random1 (Set.count unoccupiedSpaces)) unoccupiedSpaces
+        Gameplay.updateChessboard (Chessboard.addCharacter (Character.makeEnemy index) coordinates) gameplay
+    
     static member makeEnemies enemyCount gameplay =
         Seq.fold
             (fun gameplay index -> Gameplay.makeEnemy (EnemyIndex index) gameplay)
             gameplay
             [0 .. dec enemyCount]
 
-    static member clearEnemies gameplay =
-        Gameplay.updateChessboard Chessboard.clearEnemies gameplay
-
     static member clearPickups gameplay =
         Gameplay.updateChessboard Chessboard.clearPickups gameplay
 
     static member clearProps gameplay =
         Gameplay.updateChessboard Chessboard.clearProps gameplay
+
+    static member clearEnemies gameplay =
+        Gameplay.updateChessboard Chessboard.clearEnemies gameplay
 
     (* Constructors *)
 
