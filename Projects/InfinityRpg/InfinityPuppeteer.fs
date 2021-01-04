@@ -4,6 +4,7 @@ open Prime
 open Nu
 open InfinityRpg
 
+// TODO: see if we can get rid of or generalize this type.
 type [<ReferenceEquality; NoComparison>] Reactor =
     | ReactingCharacter of CharacterIndex
     | ReactingPickup of Vector2i
