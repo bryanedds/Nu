@@ -4,6 +4,11 @@ open Prime
 open Nu
 open InfinityRpg
 
+type [<ReferenceEquality; NoComparison>] Reactor =
+    | ReactingCharacter of CharacterIndex
+    | ReactingPickup of Vector2i
+    | ReactingProp of Vector2i
+
 type [<ReferenceEquality; NoComparison>] TurnType =
     | WalkTurn of bool
     | AttackTurn of bool
@@ -14,10 +19,6 @@ type [<ReferenceEquality; NoComparison>] TurnStatus =
     | TurnBeginning
     | TurnTicking
     | TurnFinishing
-
-type [<ReferenceEquality; NoComparison>] Reactor =
-    | ReactingCharacter of CharacterIndex
-    | ReactingProp of Vector2i
 
 type [<ReferenceEquality; NoComparison>] Turn =
     { TurnType : TurnType
@@ -134,6 +135,8 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                     match turn.ReactorOpt with
                     | Some reactor ->
                         match reactor with
+                        | ReactingCharacter _ -> PropAnimationStanding
+                        | ReactingPickup _ -> PropAnimationStanding
                         | ReactingProp propCoords ->
                             if propCoords = coordinates then
                                 match turn.TurnStatus with
@@ -144,7 +147,6 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                                     else PropAnimationDestroyed
                                 | TurnFinishing -> PropAnimationDestroyed
                             else PropAnimationStanding
-                        | _ -> PropAnimationStanding
                     | None -> PropAnimationStanding
                 | None -> PropAnimationStanding
             Prop.makeLongGrass coordinates animationType
