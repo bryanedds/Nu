@@ -4,28 +4,11 @@ open Prime
 open Nu
 open InfinityRpg
 
-type [<ReferenceEquality; NoComparison>] PuppetState =
-    { HitPoints : int }
-
-    static member updateHitPoints updater (puppetState : PuppetState) =
-        { puppetState with HitPoints = updater puppetState.HitPoints }
-    
-    static member makeFromCharacter (character : Character) =
-        { HitPoints = character.HitPoints }
-
 type [<ReferenceEquality; NoComparison>] TurnType =
     | WalkTurn of bool
     | AttackTurn of bool
-
-    member this.IsWalking =
-        match this with
-        | WalkTurn _ -> true
-        | _ -> false
-
-    member this.IsAttacking =
-        match this with
-        | AttackTurn _ -> true
-        | _ -> false
+    member this.IsWalking = match this with WalkTurn _ -> true | _ -> false
+    member this.IsAttacking = match this with AttackTurn _ -> true | _ -> false
 
 type [<ReferenceEquality; NoComparison>] TurnStatus =
     | TurnBeginning
@@ -44,14 +27,17 @@ type [<ReferenceEquality; NoComparison>] Turn =
       OriginCoordinates : Vector2i
       Direction : Direction
       StartTick : int64 }
+
+    static member updateTurnStatus updater turn =
+        { turn with TurnStatus = updater turn.TurnStatus }
+
+    static member updateStartTick updater turn =
+        { turn with StartTick = updater turn.StartTick }
     
     static member tryGetReactingCharacterIndex turn =
         match turn.ReactorOpt with
         | Some (ReactingCharacter characterIndex) -> Some characterIndex
         | _ -> None
-
-    static member getReactingCharacterIndex turn =
-        Option.get (Turn.tryGetReactingCharacterIndex turn)
     
     static member hasParticularReactor reactorIndex turn =
         match turn.ReactorOpt with
@@ -85,12 +71,6 @@ type [<ReferenceEquality; NoComparison>] Turn =
             | WalkTurn _ -> CharacterAnimationFacing
         CharacterAnimationState.make turn.StartTick animationType turn.Direction
 
-    static member updateTurnStatus updater turn =
-        { turn with TurnStatus = updater turn.TurnStatus }
-
-    static member updateStartTick updater turn =
-        { turn with StartTick = updater turn.StartTick }
-
     static member makeWalk time index multiRoundContext originC direction =
         { TurnType = WalkTurn multiRoundContext
           TurnStatus = TurnBeginning
@@ -109,9 +89,9 @@ type [<ReferenceEquality; NoComparison>] Turn =
           Direction = direction
           StartTick = time }
 
+// TODO: consider folding this type into Chessboard.
 type [<ReferenceEquality; NoComparison>] Puppeteer =
-    { CharacterTurns : Turn list
-      PlayerPuppetState : PuppetState }
+    { CharacterTurns : Turn list }
 
     member this.AnyTurnsInProgress =
         List.notEmpty this.CharacterTurns
@@ -137,14 +117,14 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member updateCharacterTurns updater puppeteer =
         { puppeteer with CharacterTurns = updater puppeteer.CharacterTurns }
 
-    static member updatePlayerPuppetState updater puppeteer =
-        { puppeteer with PlayerPuppetState = updater puppeteer.PlayerPuppetState }
-
-    static member updateCharacterTurn index updater puppeteer =
-        Puppeteer.updateCharacterTurns (fun turns -> List.map (fun x -> if x.CharacterIndex = index then updater x else x) turns) puppeteer
-
-    static member updatePlayerPuppetHitPoints updater puppeteer =
-        Puppeteer.updatePlayerPuppetState (PuppetState.updateHitPoints updater) puppeteer
+    static member tryUpdateCharacterTurn index updater puppeteer =
+        Puppeteer.updateCharacterTurns (fun turns ->
+            List.map (fun character ->
+                if character.CharacterIndex = index
+                then updater character
+                else character)
+                turns)
+            puppeteer
 
     static member getPropMap props puppeteer time =
         let getProp coordinates _ =
@@ -206,6 +186,5 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
     static member removeCharacterTurn index puppeteer =
         Puppeteer.updateCharacterTurns (fun turns -> List.filter (fun x -> x.CharacterIndex <> index) turns) puppeteer
 
-    static member make player =
-        { CharacterTurns = []
-          PlayerPuppetState = PuppetState.makeFromCharacter player }
+    static member empty =
+        { CharacterTurns = [] }
