@@ -5,12 +5,13 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
+// TODO: turn this into an abstract data type.
 type [<ReferenceEquality; NoComparison>] Field =
     { FieldMapNp : FieldMap }
 
     static member setFieldMap fieldMap field =
         { field with FieldMapNp = fieldMap }
-    
+
     static member initial =
         let DefaultRand = Rand.make ()
         let DefaultSizeC = v2i 4 4
