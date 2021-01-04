@@ -6,266 +6,159 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
-type [<NoComparison>] Occupant =
-    | OccupyingCharacter of Character
-    | OccupyingProp of PropType
-
-type [<ReferenceEquality; NoComparison>] FieldSpace =
-    { CharacterOpt : Character Option
-      PropOpt : PropType Option
-      PickupOpt : PickupType Option }
-
-    member this.GetCharacter =
-        match this.CharacterOpt with Some character -> character | None -> failwithumf ()
-    
-    static member getCharacter (fieldSpace : FieldSpace) =
-        fieldSpace.GetCharacter
-    
-    member this.GetCharacterIndex =
-        this.GetCharacter.CharacterIndex
-
-    static member getCharacterIndex (fieldSpace : FieldSpace) =
-        fieldSpace.GetCharacterIndex
-    
-    static member tryGetOccupant fieldSpace =
-        match fieldSpace.CharacterOpt with
-        | Some character -> Some (OccupyingCharacter character)
-        | None ->
-            match fieldSpace.PropOpt with
-            | Some prop -> Some (OccupyingProp prop)
-            | None -> None
-    
-    member this.GetPickup =
-        match this.PickupOpt with Some pickup -> pickup | None -> failwithumf ()
-    
-    static member getPickup (fieldSpace : FieldSpace) =
-        fieldSpace.GetPickup
-
-    member this.ContainsCharacter =
-        match this.CharacterOpt with Some _ -> true | None -> false
-
-    static member containsCharacter (fieldSpace : FieldSpace) =
-        fieldSpace.ContainsCharacter
-    
-    static member containsEnemy fieldSpace =
-        match fieldSpace.CharacterOpt with
-        | None -> false // more efficient order
-        | Some character -> character.IsEnemy
-
-    static member containsSpecifiedCharacter index fieldSpace =
-        match fieldSpace.CharacterOpt with
-        | None -> false // more efficient order
-        | Some character -> character.CharacterIndex = index
-
-    member this.ContainsProp =
-        match this.PropOpt with Some _ -> true | None -> false
-
-    static member containsProp (fieldSpace : FieldSpace) =
-        fieldSpace.ContainsProp
-    
-    member this.ContainsPickup =
-        match this.PickupOpt with Some _ -> true | None -> false
-    
-    static member containsPickup (fieldSpace : FieldSpace) =
-        fieldSpace.ContainsPickup
-
-    member this.IsOccupied =
-        this.ContainsCharacter || this.ContainsProp
-
-    static member isOccupied (fieldSpace : FieldSpace) =
-        fieldSpace.IsOccupied
-
-    static member isUnoccupied (fieldSpace : FieldSpace) =
-        not fieldSpace.IsOccupied
-
-    // internal updaters
-    
-    static member updateCharacterOpt updater fieldSpace =
-        { fieldSpace with CharacterOpt = updater fieldSpace.CharacterOpt }
-
-    static member updatePropOpt updater fieldSpace =
-        { fieldSpace with PropOpt = updater fieldSpace.PropOpt }
-    
-    static member updatePickupOpt updater fieldSpace =
-        { fieldSpace with PickupOpt = updater fieldSpace.PickupOpt }
-    
-    static member updateCharacterInternal updater characterOpt =
-        match characterOpt with
-        | Some character -> Some (updater character)
-        | None -> failwithumf ()
-    
-    // interface
-    
-    static member addCharacter character fieldSpace =
-        FieldSpace.updateCharacterOpt (constant (Some character)) fieldSpace
-    
-    static member updateCharacter updater fieldSpace =
-        FieldSpace.updateCharacterOpt (FieldSpace.updateCharacterInternal updater) fieldSpace
-    
-    static member removeCharacter fieldSpace =
-        FieldSpace.updateCharacterOpt (constant None) fieldSpace
-    
-    static member addProp prop fieldSpace =
-        FieldSpace.updatePropOpt (constant (Some prop)) fieldSpace
-
-    static member removeProp fieldSpace =
-        FieldSpace.updatePropOpt (constant None) fieldSpace
-    
-    static member addPickup pickup fieldSpace =
-        FieldSpace.updatePickupOpt (constant (Some pickup)) fieldSpace
-    
-    static member removePickup fieldSpace =
-        FieldSpace.updatePickupOpt (constant None) fieldSpace
-    
-    static member empty =
-        { CharacterOpt = None
-          PropOpt = None
-          PickupOpt = None }
-
+// TODO: turn this into an abstract data type.
 type [<ReferenceEquality; NoComparison>] Chessboard =
-    { FieldSpaces : Map<Vector2i, FieldSpace> }
+    { Spaces : Vector2i Set
+      Characters : Map<Vector2i, Character>
+      Props : Map<Vector2i, PropType>
+      Pickups : Map<Vector2i, PickupType> }
+    
+    static member updateSpaces updater chessboard =
+        { chessboard with Spaces = updater chessboard.Spaces }
+    
+    static member updateCharacterSpaces updater chessboard =
+        { chessboard with Characters = updater chessboard.Characters }
 
-    // TODO: get rid of FieldSpace |> properly handle None cases |> convert any remaining heavy properties to functions.
-    
-    member this.CharacterSpaces =
-        Map.filter (constant FieldSpace.containsCharacter) this.FieldSpaces
-    
-    member this.EnemySpaces =
-        Map.filter (constant FieldSpace.containsEnemy) this.FieldSpaces
+    static member updatePropSpaces updater chessboard =
+        { chessboard with Props = updater chessboard.Props }
 
-    member this.PropSpaces =
-        Map.filter (constant FieldSpace.containsProp) this.FieldSpaces
-    
-    member this.PickupSpaces =
-        Map.filter (constant FieldSpace.containsPickup) this.FieldSpaces
+    static member updatePickupSpaces updater chessboard =
+        { chessboard with Pickups = updater chessboard.Pickups }
 
-    member this.OccupiedSpaces =
-        Map.filter (constant FieldSpace.isOccupied) this.FieldSpaces |> Map.toKeyList
-    
-    member this.UnoccupiedSpaces =
-        Map.filter (constant FieldSpace.isUnoccupied) this.FieldSpaces |> Map.toKeyList
+    static member getOccupiedSpaces chessboard =
+        let characterSpaces = chessboard.Characters |> Map.toKeySeq |> Set.ofSeq
+        let propSpaces = chessboard.Props |> Map.toKeySeq |> Set.ofSeq
+        Set.union characterSpaces propSpaces
 
-    static member openDirections coordinates (chessboard : Chessboard) =
-        List.filter (fun d -> List.exists (fun x -> x = (coordinates + (dtovc d))) chessboard.UnoccupiedSpaces) [Upward; Rightward; Downward; Leftward]
+    static member getUnoccupiedSpaces chessboard =
+        let occupiedSpaces = Chessboard.getOccupiedSpaces chessboard
+        Set.difference chessboard.Spaces occupiedSpaces
 
-    member this.Characters =
-        Map.map (constant FieldSpace.getCharacter) this.CharacterSpaces
+    static member getOpenDirections coordinates chessboard =
+        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces chessboard
+        [Upward; Rightward; Downward; Leftward] |>
+        Set.ofList |>
+        Set.filter (fun direction -> Set.exists (fun coordinates2 -> coordinates2 = coordinates + dtovc direction) unoccupiedSpaces) 
 
-    member this.EnemyIndices =
-        Map.toListBy (constant FieldSpace.getCharacterIndex) this.EnemySpaces
-    
-    member this.Pickups =
-        Map.map (constant FieldSpace.getPickup) this.PickupSpaces
-    
-    member this.EnemyCount =
-        this.EnemySpaces.Count
+    static member getEnemySpaces chessboard =
+        Map.filter
+            (fun _ (character : Character) -> character.CharacterIndex.IsEnemy)
+            chessboard.Characters
 
-    member this.PickupCount =
-        this.PickupSpaces.Count
-    
-    static member getCharacterCoordinates index chessboard =
-        Map.findKey (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.FieldSpaces
+    static member getEnemies chessboard =
+        let enemySpaces = Chessboard.getEnemySpaces chessboard
+        Map.toValueList enemySpaces
 
-    static member getCharacterAtCoordinates coordinates chessboard =
-        chessboard.FieldSpaces.[coordinates].GetCharacter
-    
-    static member getCharacter index chessboard =
-        let coordinates = Chessboard.getCharacterCoordinates index chessboard
-        Chessboard.getCharacterAtCoordinates coordinates chessboard
-    
-    static member tryGetOccupantAtCoordinates coordinates chessboard =
-        FieldSpace.tryGetOccupant chessboard.FieldSpaces.[coordinates]
-    
-    static member getPickup coordinates chessboard =
-        chessboard.FieldSpaces.[coordinates].GetPickup
-    
-    // ignores non-adjacent enemies
+    static member getEnemyIndices chessboard =
+        let enemies = Chessboard.getEnemies chessboard
+        List.map (fun (enemy : Character) -> enemy.CharacterIndex) enemies
+
+    static member tryGetCharacterCoordinates index chessboard =
+        Map.tryFindKey (fun _ (character : Character) -> character.CharacterIndex = index) chessboard.Characters
+
+    static member tryGetCharacterAtCoordinates coordinates chessboard =
+        Map.tryFind coordinates chessboard.Characters
+
+    static member tryGetCharacter index chessboard =
+        match Chessboard.tryGetCharacterCoordinates index chessboard with
+        | Some coordinates -> Chessboard.tryGetCharacterAtCoordinates coordinates chessboard
+        | None -> None
+        
+    static member tryGetPlayer (chessboard : Chessboard) =
+        Chessboard.tryGetCharacter PlayerIndex chessboard
+        
+    static member getPlayer (chessboard : Chessboard) =
+        match Chessboard.tryGetPlayer chessboard with
+        | Some player -> player
+        | None -> failwithumf ()
+
+    static member tryGetPickup coordinates chessboard =
+        Map.tryFind coordinates chessboard.Pickups
+
     static member getNavigationMap currentCoordinates chessboard =
-        let predicate k (v : FieldSpace) = not (v.ContainsCharacter && (k = currentCoordinates + (dtovc Upward) || k = currentCoordinates + (dtovc Rightward) || k = currentCoordinates + (dtovc Downward) || k = currentCoordinates + (dtovc Leftward)))
-        chessboard.FieldSpaces |>
-        Map.filter (fun _ (v : FieldSpace) -> not v.ContainsProp) |>
-        Map.filter predicate |>
-        Map.map absurdity2
+        let navigableSpaces coordinates =
+            not
+                (Map.containsKey coordinates chessboard.Characters &&
+                 (coordinates = currentCoordinates + dtovc Upward ||
+                  coordinates = currentCoordinates + dtovc Rightward ||
+                  coordinates = currentCoordinates + dtovc Downward ||
+                  coordinates = currentCoordinates + dtovc Leftward))
+        chessboard.Spaces |>
+        Set.removeMany (Map.toKeyList chessboard.Props) |>
+        Set.filter navigableSpaces |>
+        Map.ofSeqBy (fun space -> (space, false))
 
-    static member spaceExists coordinates chessboard =
-        Map.exists (fun k _ -> k = coordinates) chessboard.FieldSpaces
-    
-    static member characterExists index chessboard =
-        Map.exists (fun _ v -> FieldSpace.containsSpecifiedCharacter index v) chessboard.FieldSpaces
-    
-    static member enemyAtCoordinates coordinates chessboard =
-        FieldSpace.containsEnemy chessboard.FieldSpaces.[coordinates]
-    
-    static member pickupAtCoordinates coordinates chessboard =
-        chessboard.FieldSpaces.[coordinates].ContainsPickup
-    
-    // internal updaters
-    
-    static member updateFieldSpaces updater chessboard =
-        { chessboard with FieldSpaces = updater chessboard.FieldSpaces }
-    
-    static member updateByCoordinatesInternal coordinates updater (fieldSpaces : Map<Vector2i, FieldSpace>) =
-        Map.add coordinates (updater fieldSpaces.[coordinates]) fieldSpaces
+    static member doesCharacterExist index chessboard =
+        Map.exists
+            (fun _ (character : Character) -> character.CharacterIndex = index)
+            chessboard.Characters
 
-    static member updateByPredicateInternal predicate updater (fieldSpaces : Map<Vector2i, FieldSpace>) =
-        Map.map (fun _ v -> if predicate v then updater v else v) fieldSpaces
-    
-    static member updateByCoordinates coordinates updater chessboard =
-        Chessboard.updateFieldSpaces (Chessboard.updateByCoordinatesInternal coordinates updater) chessboard
-    
-    static member updateByPredicate predicate updater chessboard =
-        Chessboard.updateFieldSpaces (Chessboard.updateByPredicateInternal predicate updater) chessboard
-    
-    // interface
-    
     static member addCharacter character coordinates (chessboard : Chessboard) =
-        Chessboard.updateByCoordinates coordinates (FieldSpace.addCharacter character) chessboard
+        Chessboard.updateCharacterSpaces (Map.add coordinates character) chessboard
 
-    static member updateCharacter index updater chessboard =
-        let coordinates = Chessboard.getCharacterCoordinates index chessboard
-        Chessboard.updateByCoordinates coordinates (FieldSpace.updateCharacter updater) chessboard
-    
-    static member removeCharacter index chessboard =
-        let coordinates = Chessboard.getCharacterCoordinates index chessboard
-        Chessboard.updateByCoordinates coordinates FieldSpace.removeCharacter chessboard
-    
-    static member relocateCharacter index coordinates (chessboard : Chessboard) =
-        let oldCoordinates = Chessboard.getCharacterCoordinates index chessboard
-        let character = Chessboard.getCharacterAtCoordinates oldCoordinates chessboard
-        let chessboard = Chessboard.updateByCoordinates oldCoordinates FieldSpace.removeCharacter chessboard
-        Chessboard.addCharacter character coordinates chessboard
-    
+    static member tryUpdateCharacter index updater chessboard =
+        match Chessboard.tryGetCharacterCoordinates index chessboard with
+        | Some coordinates ->
+            let character = Chessboard.tryGetCharacterAtCoordinates coordinates chessboard |> Option.get // we know it's there - we just got it
+            Chessboard.updateCharacterSpaces (Map.add coordinates (updater character)) chessboard
+        | None -> chessboard
+
+    static member tryRemoveCharacter index chessboard =
+        match Chessboard.tryGetCharacterCoordinates index chessboard with
+        | Some coordinates -> Chessboard.updateCharacterSpaces (Map.remove coordinates) chessboard
+        | None -> chessboard
+
+    static member tryRelocateCharacter index coordinates (chessboard : Chessboard) =
+        match Chessboard.tryGetCharacterCoordinates index chessboard with
+        | Some oldCoordinates ->
+            let character = Chessboard.tryGetCharacterAtCoordinates oldCoordinates chessboard |> Option.get // we know it's there - we just got it
+            let chessboard = Chessboard.updateCharacterSpaces (Map.remove oldCoordinates) chessboard
+            Chessboard.addCharacter character coordinates chessboard
+        | None -> chessboard
+
     static member clearEnemies (chessboard : Chessboard) =
-        Chessboard.updateByPredicate FieldSpace.containsEnemy FieldSpace.removeCharacter chessboard
-    
+        Chessboard.updateCharacterSpaces (Map.filter (fun _ character -> character.IsAlly)) chessboard
+
     static member addProp prop coordinates chessboard =
-        Chessboard.updateByCoordinates coordinates (FieldSpace.addProp prop) chessboard
+        Chessboard.updatePropSpaces (Map.add coordinates prop) chessboard
 
     static member removeProp coordinates chessboard =
-        Chessboard.updateByCoordinates coordinates FieldSpace.removeProp chessboard
+        Chessboard.updatePropSpaces (Map.remove coordinates) chessboard
 
     static member clearProps chessboard =
-        Chessboard.updateByPredicate FieldSpace.containsProp FieldSpace.removeProp chessboard
-    
+        Chessboard.updatePropSpaces (constant Map.empty) chessboard
+
     static member addPickup pickup coordinates chessboard =
-        Chessboard.updateByCoordinates coordinates (FieldSpace.addPickup pickup) chessboard
+        Chessboard.updatePickupSpaces (Map.add coordinates pickup) chessboard
 
     static member removePickup coordinates chessboard =
-        Chessboard.updateByCoordinates coordinates FieldSpace.removePickup chessboard
-    
+        Chessboard.updatePickupSpaces (Map.remove coordinates) chessboard
+
     static member clearPickups chessboard =
-        Chessboard.updateByPredicate FieldSpace.containsPickup FieldSpace.removePickup chessboard
-    
+        Chessboard.updatePickupSpaces (constant Map.empty) chessboard
+
     static member setFieldSpaces fieldMap chessboard =
-        let fieldSpaces = fieldMap.FieldTiles |> Map.filter (fun _ fieldTile -> fieldTile.TileType = Passable) |> Map.map (fun _ _ -> FieldSpace.empty)
-        Chessboard.updateFieldSpaces (constant fieldSpaces) chessboard
+        let spaces =
+            fieldMap.FieldTiles |>
+            Map.filter (fun _ fieldTile -> fieldTile.TileType = Passable) |>
+            Map.toKeySeq |>
+            Set.ofSeq
+        Chessboard.updateSpaces (constant spaces) chessboard
 
     static member transitionMap fieldMap chessboard =
-        let playerCoordinates = Chessboard.getCharacterCoordinates PlayerIndex chessboard
-        let player = Chessboard.getCharacterAtCoordinates playerCoordinates chessboard
-        let chessboard = Chessboard.setFieldSpaces fieldMap chessboard
-        Chessboard.addCharacter player playerCoordinates chessboard
+        match Chessboard.tryGetCharacterCoordinates PlayerIndex chessboard with
+        | Some coordinates ->
+            let player = Chessboard.tryGetCharacterAtCoordinates coordinates chessboard |> Option.get // we know it's there - we just got it
+            let chessboard = Chessboard.setFieldSpaces fieldMap chessboard
+            Chessboard.addCharacter player coordinates chessboard
+        | None -> chessboard
 
-    static member init fieldMap =
-        let chessboard = Chessboard.setFieldSpaces fieldMap { FieldSpaces = Map.empty }
+    static member empty =
+        { Spaces = Set.empty
+          Characters = Map.empty
+          Props = Map.empty
+          Pickups = Map.empty }
+
+    static member make fieldMap =
+        let chessboard = Chessboard.setFieldSpaces fieldMap Chessboard.empty
         Chessboard.addCharacter (Character.makePlayer ()) v2iZero chessboard

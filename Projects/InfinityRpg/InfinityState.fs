@@ -12,8 +12,8 @@ type [<ReferenceEquality; NoComparison>] Inventory =
     static member tryAddItem item inventory =
         match Map.tryFind item inventory.Items with
         | Some itemCount ->
-            if itemCount < Constants.InfinityRpg.ItemLimit then
-                { inventory with Items = Map.add item (inc itemCount) inventory.Items }
+            if itemCount < Constants.Gameplay.ItemLimit
+            then { inventory with Items = Map.add item (inc itemCount) inventory.Items }
             else inventory
         | None -> { inventory with Items = Map.add item 1 inventory.Items }
     
@@ -52,6 +52,9 @@ type [<ReferenceEquality; NoComparison>] Character =
 
     member this.IsAlive =
         this.HitPoints > 0
+
+    member this.IsDead =
+        not this.IsAlive
     
     member this.HitPointsMax =
         match this.CharacterType with Ally _ -> 30 | Enemy _ -> 10

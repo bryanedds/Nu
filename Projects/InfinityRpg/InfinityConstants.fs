@@ -19,7 +19,7 @@ module Constants =
         let EffectElevation = 2.0f
 
     [<RequireQualifiedAccess>]
-    module InfinityRpg =
+    module Gui =
 
         // dissolve constants
         let DissolveDescriptor =
@@ -33,9 +33,11 @@ module Constants =
               IdlingTime = 60L
               SplashImageOpt = Some (asset<Image> Assets.Gui.PackageName "Nu") }
 
+    [<RequireQualifiedAccess>]
+    module Gameplay =
+
         // general data
-        let AttackName = "Attack"
-        let CharacterWalkStep = 6
+        let CharacterWalkStep = 4
         let CharacterWalkSteps = int Layout.TileSize.X / CharacterWalkStep
         let CharacterAnimationFacingDelay = 16L
         let CharacterAnimationActingDelay = 12L // original value is 24L

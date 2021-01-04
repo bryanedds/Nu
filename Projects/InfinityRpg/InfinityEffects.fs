@@ -8,6 +8,7 @@ open Nu.Effects
 module Effects =
 
     let makeSwordStrikeEffect direction =
+
         let resource =
             match direction with
             | Upward -> Assets.Gameplay.OakSwordStrikeUp
@@ -18,10 +19,10 @@ module Effects =
         let animationSprite =
             AnimatedSprite
                 (Resource (AssetTag.toPair resource),
-                 v2iDup 144, 2, 2, Constants.InfinityRpg.CharacterAnimationActingDelay, Once, FlipNone, [||], Nil)
+                 v2iDup 144, 2, 2, Constants.Gameplay.CharacterAnimationActingDelay, Once, FlipNone, [||], Nil)
 
         { EffectName = "SwordStrike"
-          LifeTimeOpt = Some (Constants.InfinityRpg.CharacterAnimationActingDelay * 2L)
+          LifeTimeOpt = Some (Constants.Gameplay.CharacterAnimationActingDelay * 2L)
           Definitions = Map.empty
           Content = animationSprite }
 
@@ -30,9 +31,9 @@ module Effects =
         let animationSprite =
             AnimatedSprite
                 (Resource (AssetTag.toPair Assets.Gameplay.MagicMissileImpact),
-                 v2iDup 48, 2, 2, Constants.InfinityRpg.CharacterAnimationActingDelay, Once, FlipNone, [||], Nil)
+                 v2iDup 48, 2, 2, Constants.Gameplay.CharacterAnimationActingDelay, Once, FlipNone, [||], Nil)
 
         { EffectName = "MagicMissileImpact"
-          LifeTimeOpt = Some (Constants.InfinityRpg.CharacterAnimationActingDelay * 2L)
+          LifeTimeOpt = Some (Constants.Gameplay.CharacterAnimationActingDelay * 2L)
           Definitions = Map.empty
           Content = animationSprite }

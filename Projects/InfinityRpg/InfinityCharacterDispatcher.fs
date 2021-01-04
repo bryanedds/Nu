@@ -44,8 +44,8 @@ module CharacterDispatcherModule =
                 | CharacterAnimationSlain -> v2i 4 2
             let animationDelay =
                 match animationState.AnimationType with
-                | CharacterAnimationFacing -> Constants.InfinityRpg.CharacterAnimationFacingDelay
-                | CharacterAnimationActing -> Constants.InfinityRpg.CharacterAnimationActingDelay
+                | CharacterAnimationFacing -> Constants.Gameplay.CharacterAnimationFacingDelay
+                | CharacterAnimationActing -> Constants.Gameplay.CharacterAnimationActingDelay
                 | CharacterAnimationDefending -> 1L // doesn't matter - no animation frames
                 | CharacterAnimationSpecial -> 1L // doesn't matter - no animation frames
                 | CharacterAnimationSlain -> 1L // doesn't matter - no animation frames

@@ -797,12 +797,33 @@ module Math =
         point.X <= bounds.X + bounds.Z &&
         point.Y <= bounds.Y + bounds.W
 
+    /// Check that a point is within the given bounds.
+    let isPointInBoundsI (point : Vector2i) (bounds : Vector4i) =
+        point.X >= bounds.X &&
+        point.Y >= bounds.Y &&
+        point.X <= bounds.X + bounds.Z &&
+        point.Y <= bounds.Y + bounds.W
+
     /// Check that a bounds is within the given bounds.
     let isBoundsInBounds (bounds : Vector4) (bounds2 : Vector4) =
         bounds.X >= bounds2.X &&
         bounds.Y >= bounds2.Y &&
         bounds.X + bounds.Z <= bounds2.X + bounds2.Z &&
         bounds.Y + bounds.W <= bounds2.Y + bounds2.W
+
+    /// Check that a bounds is within the given bounds.
+    let isBoundsInBoundsI (bounds : Vector4i) (bounds2 : Vector4i) =
+        bounds.X >= bounds2.X &&
+        bounds.Y >= bounds2.Y &&
+        bounds.X + bounds.Z <= bounds2.X + bounds2.Z &&
+        bounds.Y + bounds.W <= bounds2.Y + bounds2.W
+
+    /// Check that a bounds is intersecting the given bounds.
+    let isBoundsIntersectingBoundsI (bounds : Vector4i) (bounds2 : Vector4i) =
+        bounds.X < bounds2.X + bounds2.Z &&
+        bounds.Y < bounds2.Y + bounds2.W &&
+        bounds.X + bounds.Z > bounds2.X &&
+        bounds.Y + bounds.W > bounds2.Y
 
     /// Check that a bounds is intersecting the given bounds.
     let isBoundsIntersectingBounds (bounds : Vector4) (bounds2 : Vector4) =

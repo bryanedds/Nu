@@ -10,20 +10,6 @@ type Tracking =
     | NoBackTracking
     | NoAdjacentTracking
 
-type MapBounds =
-    { CornerNegative : Vector2i
-      CornerPositive : Vector2i }
-
-    static member isPointInBounds (point : Vector2i) bounds =
-        not
-            (point.X < bounds.CornerNegative.X ||
-             point.X > bounds.CornerPositive.X ||
-             point.Y < bounds.CornerNegative.Y ||
-             point.Y > bounds.CornerPositive.Y)
-
-    static member make (offsetC : Vector2i) sizeC =
-        { CornerNegative = offsetC; CornerPositive = offsetC + sizeC - v2iOne }
-
 type Direction =
     | Upward
     | Rightward
@@ -73,8 +59,7 @@ module Direction =
                 if Math.Abs goalDelta.X > Math.Abs goalDelta.Y
                 then (Vector2i (source.X + (if goalDelta.X > 0 then 1 else -1), source.Y), rand)
                 else (Vector2i (source.X, source.Y + (if goalDelta.Y > 0 then 1 else -1)), rand)
-            else
-            stumbleUnbiased source rand
+            else stumbleUnbiased source rand
         | None -> stumbleUnbiased source rand
 
     let stumbleCandidates tryLimit biasOpt source rand =
@@ -97,7 +82,7 @@ module Direction =
         GlobalWanderCounter <- GlobalWanderCounter + 1
         let stumblePredicate =
             fun (trail : Vector2i Set) (destination : Vector2i, _) ->
-                MapBounds.isPointInBounds destination stumbleBounds &&
+                Math.isPointInBoundsI destination stumbleBounds &&
                 (match tracking with
                  | BackTracking -> true
                  | NoBackTracking -> not (Set.contains destination trail)
@@ -168,9 +153,9 @@ module Direction =
         let path = concretizePathOpt maxLength pathOpt rand
         path
 
-    let wanderToDestination stumbleBounds source destination rand =
+    let wanderToDestination (stumbleBounds : Vector4i) source destination rand =
         let biasOpt = Some (destination, 6)
-        let maxPathLength = stumbleBounds.CornerPositive.X * stumbleBounds.CornerPositive.Y / 2 + 1
+        let maxPathLength = stumbleBounds.Z * stumbleBounds.W / 2 + 1
         let stumbleLimit = 16        
         let predicate = fun path ->
             let path = Seq.tryTake maxPathLength path
