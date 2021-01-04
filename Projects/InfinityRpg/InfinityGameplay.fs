@@ -341,8 +341,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateChessboard (Chessboard.addCharacter player newCoordinates) gameplay
 
     static member makeLongGrass gameplay =
-        let mapBounds = MapBounds.make v2iZero Constants.Layout.FieldMapSizeC
-        let predicate1 coordinates = MapBounds.isPointInBounds coordinates mapBounds && Map.find coordinates gameplay.Field.FieldMapNp.FieldTiles = FieldMap.GrassTile
+        let mapBounds = v4iBounds v2iZero (Constants.Layout.FieldMapSizeC - v2iOne)
+        let predicate1 coordinates = Math.isPointInBoundsI coordinates mapBounds && Map.find coordinates gameplay.Field.FieldMapNp.FieldTiles = FieldMap.GrassTile
         let predicate2 coordinates = FieldMap.hasAtLeastNAdjacentTiles 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
         let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
         Set.fold (fun gameplay space ->
