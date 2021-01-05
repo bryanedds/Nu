@@ -25,6 +25,7 @@ module GameDispatcher =
         | ChangeField of Field
         | ChangeBattle of Battle
         | Update
+        | Intro
 
     type [<NoEquality; NoComparison>] OmniCommand =
         | Show of Screen
@@ -56,8 +57,7 @@ module GameDispatcher =
 #if DEV
              Simulants.TitleNew.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
 #else
-             Simulants.TitleNew.ClickEvent => msg (Change (Gui Splashing))
-             Simulants.TitleNew.ClickEvent => cmd (Show Simulants.Intro1)
+             Simulants.TitleNew.ClickEvent => msg Intro
              Simulants.Intro5.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
 #endif
              Simulants.TitleLoad.ClickEvent =|> fun _ -> msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
@@ -101,6 +101,11 @@ module GameDispatcher =
                             else withCmd (Show Simulants.Battle) omni
                         | _ -> withCmd (Show Simulants.Battle) omni
                     | None -> withCmd (Show Simulants.Field) omni
+
+            | Intro ->
+                let splashing = msg (Change (Gui Splashing))
+                let intro1 = cmd (Show Simulants.Intro1)
+                withSigs [splashing; intro1] omni
 
         override this.Command (_, command, _, world) =
             match command with
