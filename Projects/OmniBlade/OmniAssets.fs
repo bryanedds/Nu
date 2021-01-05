@@ -31,7 +31,7 @@ module Assets =
         let TitleSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Title" }
         let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
         let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
-        let Intro1LayerFilePath = "Assets/Gui/Intro1.nulyr"
+        let IntroLayerFilePath = "Assets/Gui/Intro.nulyr"
         let Intro2LayerFilePath = "Assets/Gui/Intro2.nulyr"
         let Intro3LayerFilePath = "Assets/Gui/Intro3.nulyr"
         let Intro4LayerFilePath = "Assets/Gui/Intro4.nulyr"

@@ -25,7 +25,7 @@ module Simulants =
     let CreditsBack = CreditsGui / "Back"
 
     // intro
-    let Intro1 = Screen "Intro1"
+    let Intro = Screen "Intro"
     let Intro2 = Screen "Intro2"
     let Intro3 = Screen "Intro3"
     let Intro4 = Screen "Intro4"
