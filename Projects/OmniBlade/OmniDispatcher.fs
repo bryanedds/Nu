@@ -51,17 +51,17 @@ module GameDispatcher =
             [Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
              Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
              Simulants.Game.UpdateEvent => msg Update
-             Simulants.TitleCredits.ClickEvent => msg (Change (Gui Credits))
-             Simulants.CreditsBack.ClickEvent => msg (Change (Gui Title))
-             Simulants.FieldBack.ClickEvent => msg (Change (Gui Title))
 #if DEV
              Simulants.TitleNew.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
 #else
              Simulants.TitleNew.ClickEvent => msg Intro
-             Simulants.Intro5.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
 #endif
              Simulants.TitleLoad.ClickEvent =|> fun _ -> msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
-             Simulants.TitleExit.ClickEvent => cmd Exit]
+             Simulants.TitleCredits.ClickEvent => msg (Change (Gui Credits))
+             Simulants.TitleExit.ClickEvent => cmd Exit
+             Simulants.CreditsBack.ClickEvent => msg (Change (Gui Title))
+             Simulants.FieldBack.ClickEvent => msg (Change (Gui Title))
+             Simulants.Intro5.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))]
 
         override this.Message (omni, message, _, world) =
 
@@ -104,8 +104,8 @@ module GameDispatcher =
 
             | Intro ->
                 let splashing = msg (Change (Gui Splashing))
-                let intro1 = cmd (Show Simulants.Intro1)
-                withSigs [splashing; intro1] omni
+                let intro = cmd (Show Simulants.Intro)
+                withSigs [splashing; intro] omni
 
         override this.Command (_, command, _, world) =
             match command with
@@ -124,7 +124,7 @@ module GameDispatcher =
              Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsLayerFilePath
 
              // intros
-             Content.screenFromLayerFile Simulants.Intro1.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro2)) Assets.Gui.Intro1LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro2)) Assets.Gui.IntroLayerFilePath
              Content.screenFromLayerFile Simulants.Intro2.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro3)) Assets.Gui.Intro2LayerFilePath
              Content.screenFromLayerFile Simulants.Intro3.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro4)) Assets.Gui.Intro3LayerFilePath
              Content.screenFromLayerFile Simulants.Intro4.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro5)) Assets.Gui.Intro4LayerFilePath
