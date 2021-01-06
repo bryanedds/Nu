@@ -100,7 +100,7 @@ type [<ReferenceEquality; NoComparison>] Inventory =
         { inventory with Gold = updater inventory.Gold }
 
     static member initial =
-        { Items = Map.singleton (Consumable GreenHerb) 1; Gold = 0 }
+        { Items = Map.singleton (Consumable GreenHerb) 1; Gold = 10 }
 
 type [<ReferenceEquality; NoComparison>] Teammate =
     { TeamIndex : int // key
