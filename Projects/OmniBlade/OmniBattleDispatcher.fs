@@ -101,6 +101,21 @@ module BattleDispatcher =
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
 
+        static let tickDefend sourceIndex time timeLocal battle =
+            match timeLocal with
+            | 0L ->
+                let battle =
+                    Battle.updateCharacter
+                        (Character.updateActionTime (constant 0) >>
+                         Character.updateInputState (constant NoInput) >>
+                         Character.animate time (PoiseCycle Defending) >>
+                         Character.defend)
+                        sourceIndex
+                        battle
+                let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                just battle
+            | _ -> just battle
+
         static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal battle =
             match targetIndexOpt with
             | Some targetIndex ->
@@ -221,6 +236,9 @@ module BattleDispatcher =
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
                 tickAttack source targetOpt time timeLocal battle
+            | Defend ->
+                let source = currentCommand.ActionCommand.Source
+                tickDefend source time timeLocal battle
             | Tech techType ->
                 let source = currentCommand.ActionCommand.Source
                 let targetOpt = currentCommand.ActionCommand.TargetOpt
@@ -383,14 +401,14 @@ module BattleDispatcher =
                             characterIndex
                             battle
                     | "Defend" ->
-                        let time = World.getTickTime world
-                        Battle.updateCharacter
-                            (Character.updateActionTime (constant 0) >>
-                             Character.updateInputState (constant NoInput) >>
-                             Character.animate time (PoiseCycle Defending) >>
-                             Character.defend)
-                            characterIndex
-                            battle
+                        let battle =
+                            Battle.updateCharacter
+                                (Character.updateInputState (constant NoInput))
+                                characterIndex
+                                battle
+                        let command = ActionCommand.make Defend characterIndex None
+                        let battle = Battle.appendActionCommand command battle
+                        battle
                     | "Consumable" ->
                         Battle.updateCharacter
                             (Character.updateInputState (constant ItemMenu) >> Character.undefend)
@@ -466,6 +484,7 @@ module BattleDispatcher =
                             let inputState =
                                 match actionType with
                                 | Attack -> RegularMenu
+                                | Defend -> RegularMenu
                                 | Tech _ -> TechMenu
                                 | Consume _ -> ItemMenu
                                 | Wound -> failwithumf ()
