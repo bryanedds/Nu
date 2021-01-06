@@ -569,7 +569,7 @@ module FieldData =
                 let battleTypesLength = List.length battleTypes
                 let battleIndex = int (single battleTypesLength / distanceFromOriginMax * distanceFromOrigin)
                 let battleIndex =
-                    if Gen.randomf < Constants.Field.EasierRandomBattleProbability && battleIndex > 0
+                    if Gen.randomf < Constants.Field.EasierEncounterProbability && battleIndex > 0
                     then inc battleIndex
                     else battleIndex
                 if battleIndex >= 0 && battleIndex < battleTypesLength
