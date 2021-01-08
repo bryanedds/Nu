@@ -34,7 +34,7 @@ module Particles =
         static member getLiveness time life =
             match life.LifeTimeOpt with
             | 0L -> true
-            | lifeTime -> lifeTime < time - life.StartTime
+            | lifeTime -> time - life.StartTime < lifeTime
 
         static member make startTime lifeTimeOpt =
             { StartTime = startTime
@@ -519,12 +519,17 @@ module Particles =
           ToParticlesDescriptor : 'a Emitter -> ParticlesDescriptor }
 
         static member private emit time emitter =
-            let particleIndex = if emitter.ParticleIndex >= emitter.ParticleBuffer.Length then 0 else inc emitter.ParticleIndex
-            if particleIndex > emitter.ParticleWatermark then emitter.ParticleWatermark <- particleIndex
-            emitter.ParticleIndex <- particleIndex
-            let particle = &emitter.ParticleBuffer.[particleIndex]
-            particle.Life <- Life.make time particle.Life.LifeTimeOpt
+            let particle = &emitter.ParticleBuffer.[emitter.ParticleIndex]
             particle <- emitter.ParticleInitializer time emitter
+            particle.Life <- Life.make time particle.Life.LifeTimeOpt
+            emitter.ParticleIndex <-
+                if emitter.ParticleIndex < dec emitter.ParticleBuffer.Length
+                then inc emitter.ParticleIndex
+                else 0
+            emitter.ParticleWatermark <-
+                if emitter.ParticleIndex <= emitter.ParticleWatermark
+                then emitter.ParticleWatermark
+                else emitter.ParticleIndex
 
         /// Determine emitter's liveness.
         static member getLiveness time emitter =
