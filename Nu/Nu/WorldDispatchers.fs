@@ -285,7 +285,7 @@ module BasicEmitterFacetModule =
 
         static let handleParticleMaxChanged evt world =
             let particleMax = evt.Data.Value :?> int
-            let world = updateEmitter (fun emitter -> if emitter.ParticleBuffer.Length <> particleMax then Particles.BasicEmitter.resize particleMax emitter else emitter) evt.Subscriber world
+            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicEmitter.resize particleMax emitter else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleParticleSeedChanged evt world =
@@ -332,7 +332,7 @@ module BasicEmitterFacetModule =
              define Entity.EmitterTwist 0.0f
              define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
-             define Entity.EmitterLifeTimeOpt 60L
+             define Entity.EmitterLifeTimeOpt 0L
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
@@ -371,8 +371,9 @@ module BasicEmitterFacetModule =
             processOutput output entity world
 
         override this.Actualize (entity, world) =
+            let time = World.getTickTime world
             let particleSystem = entity.GetParticleSystem world
-            let particlesDescriptors = Particles.ParticleSystem.toParticleDescriptors particleSystem
+            let particlesDescriptors = Particles.ParticleSystem.toParticleDescriptors time particleSystem
             let particlesMessages =
                 List.map (fun (descriptor : ParticlesDescriptor) ->
                     LayeredDescriptorMessage
@@ -412,7 +413,7 @@ module BasicEmittersFacetModule =
             let emitter = if emitter.Life.LifeTimeOpt <> descriptor.LifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = descriptor.LifeTimeOpt }} else emitter
             let emitter = if emitter.ParticleLifeTimeMaxOpt <> descriptor.ParticleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = descriptor.ParticleLifeTimeMaxOpt } else emitter
             let emitter = if emitter.ParticleRate <> descriptor.ParticleRate then { emitter with ParticleRate = descriptor.ParticleRate } else emitter
-            let emitter = if emitter.ParticleBuffer.Length <> descriptor.ParticleMax then Particles.BasicEmitter.resize descriptor.ParticleMax emitter else emitter
+            let emitter = if emitter.ParticleRing.Length <> descriptor.ParticleMax then Particles.BasicEmitter.resize descriptor.ParticleMax emitter else emitter
             let emitter = if emitter.ParticleSeed <> descriptor.ParticleSeed then { emitter with ParticleSeed = descriptor.ParticleSeed } else emitter
             let emitter = if emitter.Constraint <> descriptor.Constraint then { emitter with Constraint = descriptor.Constraint } else emitter
             emitter
