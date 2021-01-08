@@ -203,6 +203,40 @@ module BasicEmitterFacetModule =
     type BasicEmitterFacet () =
         inherit Facet ()
 
+        static let tryMakeEmitter (entity : Entity) world =
+            World.tryMakeEmitter
+                (World.getTickTime world)
+                (entity.GetEmitterLifeTimeOpt world)
+                (entity.GetParticleLifeTimeMaxOpt world)
+                (entity.GetParticleRate world)
+                (entity.GetParticleMax world)
+                (entity.GetEmitterName world)
+                world |>
+            Option.map cast<Particles.BasicEmitter>
+
+        static let makeEmitter entity world =
+            match tryMakeEmitter entity world with
+            | Some emitter ->
+                { emitter with
+                    Body =
+                        { Position = entity.GetCenter world + entity.GetEmitterOffset world
+                          LinearVelocity = v2Zero
+                          Rotation = entity.GetRotation world + entity.GetEmitterTwist world
+                          AngularVelocity = 0.0f }
+                    Elevation = entity.GetElevation world
+                    Absolute = entity.GetAbsolute world
+                    Blend = entity.GetEmitterBlend world
+                    Image = entity.GetEmitterImage world
+                    ParticleSeed = entity.GetBasicParticleSeed world
+                    Constraint = entity.GetEmitterConstraint world }
+            | None ->
+                Particles.BasicEmitter.makeEmpty
+                    (World.getTickTime world)
+                    (entity.GetEmitterLifeTimeOpt world)
+                    (entity.GetParticleLifeTimeMaxOpt world)
+                    (entity.GetParticleRate world)
+                    (entity.GetParticleMax world)
+
         static let updateParticleSystem updater (entity : Entity) world =
             let particleSystem = entity.GetParticleSystem world
             let particleSystem = updater particleSystem
@@ -211,10 +245,18 @@ module BasicEmitterFacetModule =
 
         static let updateEmitter updater (entity : Entity) world =
             updateParticleSystem (fun particleSystem ->
-                let emitter = Map.find typeof<Particles.BasicEmitter>.Name particleSystem.Emitters :?> Particles.BasicEmitter
-                let emitter = updater emitter
-                { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters })
+                match Map.tryFind typeof<Particles.BasicEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicEmitter as emitter) ->
+                    let emitter = updater emitter
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                | _ -> particleSystem)
                 entity world
+
+        static let rec processOutput output entity world =
+            match output with
+            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
+            | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
+            | Particles.Outputs outputs -> Array.fold (fun world output -> processOutput output entity world) world outputs
 
         static let handleEmitterBlendChanged evt world =
             let emitterBlend = evt.Data.Value :?> Blend
@@ -243,7 +285,7 @@ module BasicEmitterFacetModule =
 
         static let handleParticleMaxChanged evt world =
             let particleMax = evt.Data.Value :?> int
-            let world = updateEmitter (fun emitter -> if emitter.ParticleBuffer.Length <> particleMax then Particles.BasicEmitter.resize particleMax emitter else emitter) evt.Subscriber world
+            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicEmitter.resize particleMax emitter else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleParticleSeedChanged evt world =
@@ -256,29 +298,32 @@ module BasicEmitterFacetModule =
             let world = updateEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
             (Cascade, world)
 
+        static let handleEmitterNameChanged evt world =
+            let entity = evt.Subscriber
+            let emitter = makeEmitter entity world
+            let world = updateEmitter (constant emitter) entity world
+            (Cascade, world)
+
         static let handleBoundsChanged evt world =
             let entity = evt.Subscriber : Entity
             let particleSystem = entity.GetParticleSystem world
-            let emitter = Map.find typeof<Particles.BasicEmitter>.Name particleSystem.Emitters :?> Particles.BasicEmitter
-            let emitter =
-                let entityPosition = entity.GetCenter world + entity.GetEmitterOffset world
-                if v2Neq emitter.Body.Position entityPosition
-                then { emitter with Body = { emitter.Body with Position = entityPosition }}
-                else emitter
-            let emitter =
-                let entityRotation = entity.GetRotation world + entity.GetEmitterTwist world
-                if emitter.Body.Rotation <> entityRotation
-                then { emitter with Body = { emitter.Body with Rotation = entityRotation }}
-                else emitter
-            let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+            let particleSystem =
+                match Map.tryFind typeof<Particles.BasicEmitter>.Name particleSystem.Emitters with
+                | Some (:? Particles.BasicEmitter as emitter) ->
+                    let emitter =
+                        let entityPosition = entity.GetCenter world + entity.GetEmitterOffset world
+                        if v2Neq emitter.Body.Position entityPosition
+                        then { emitter with Body = { emitter.Body with Position = entityPosition }}
+                        else emitter
+                    let emitter =
+                        let entityRotation = entity.GetRotation world + entity.GetEmitterTwist world
+                        if emitter.Body.Rotation <> entityRotation
+                        then { emitter with Body = { emitter.Body with Rotation = entityRotation }}
+                        else emitter
+                    { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
+                | _ -> particleSystem
             let world = entity.SetParticleSystem particleSystem world
             (Cascade, world)
-
-        static let rec processOutput output entity world =
-            match output with
-            | Particles.OutputSound (volume, sound) -> World.enqueueAudioMessage (PlaySoundMessage { Volume = volume; Sound = sound }) world
-            | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
-            | Particles.Outputs outputs -> Array.fold (fun world output -> processOutput output entity world) world outputs
 
         static member Properties =
             [define Entity.PublishChanges true
@@ -287,47 +332,17 @@ module BasicEmitterFacetModule =
              define Entity.EmitterTwist 0.0f
              define Entity.EmitterBlend Transparent
              define Entity.EmitterImage Assets.Default.Image
-             define Entity.EmitterLifeTimeOpt 60L
+             define Entity.EmitterLifeTimeOpt 0L
              define Entity.ParticleLifeTimeMaxOpt 60L
              define Entity.ParticleRate 1.0f
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed Unchecked.defaultof<Particles.BasicParticle>
+             define Entity.BasicParticleSeed { Life = Particles.Life.make 0L 60L; Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSizeDefault; Offset = v2Dup 0.5f; Inset = v4Zero; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
+             define Entity.EmitterName "BasicEmitter"
              define Entity.ParticleSystem Particles.ParticleSystem.empty]
 
         override this.Register (entity, world) =
-            let emitterOpt =
-                World.tryMakeEmitter
-                    (World.getTickTime world)
-                    (entity.GetEmitterLifeTimeOpt world)
-                    (entity.GetParticleLifeTimeMaxOpt world)
-                    (entity.GetParticleRate world)
-                    (entity.GetParticleMax world)
-                    (entity.GetEmitterName world)
-                    world |>
-                Option.map cast<Particles.BasicEmitter>
-            let emitter =
-                match emitterOpt with
-                | Some emitter ->
-                    { emitter with
-                        Body =
-                            { Position = entity.GetCenter world + entity.GetEmitterOffset world
-                              LinearVelocity = v2Zero
-                              Rotation = entity.GetRotation world + entity.GetEmitterTwist world
-                              AngularVelocity = 0.0f }
-                        Elevation = entity.GetElevation world
-                        Absolute = entity.GetAbsolute world
-                        Blend = entity.GetEmitterBlend world
-                        Image = entity.GetEmitterImage world
-                        ParticleSeed = entity.GetBasicParticleSeed world
-                        Constraint = entity.GetEmitterConstraint world }
-                | None ->
-                    Particles.BasicEmitter.makeEmpty
-                        (World.getTickTime world)
-                        (entity.GetEmitterLifeTimeOpt world)
-                        (entity.GetParticleLifeTimeMaxOpt world)
-                        (entity.GetParticleRate world)
-                        (entity.GetParticleMax world)
+            let emitter = makeEmitter entity world
             let particleSystem = entity.GetParticleSystem world
             let particleSystem = { particleSystem with Emitters = Map.add typeof<Particles.BasicEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
             let world = entity.SetParticleSystem particleSystem world
@@ -340,6 +355,7 @@ module BasicEmitterFacetModule =
             let world = World.monitor handleParticleMaxChanged (entity.GetChangeEvent Property? ParticleMax) entity world
             let world = World.monitor handleParticleSeedChanged (entity.GetChangeEvent Property? ParticleSeed) entity world
             let world = World.monitor handleEmitterConstraintChanged (entity.GetChangeEvent Property? EmitterConstraint) entity world
+            let world = World.monitor handleEmitterNameChanged (entity.GetChangeEvent Property? EmitterName) entity world
             world
 
         override this.Unregister (entity, world) =
@@ -355,8 +371,9 @@ module BasicEmitterFacetModule =
             processOutput output entity world
 
         override this.Actualize (entity, world) =
+            let time = World.getTickTime world
             let particleSystem = entity.GetParticleSystem world
-            let particlesDescriptors = Particles.ParticleSystem.toParticleDescriptors particleSystem
+            let particlesDescriptors = Particles.ParticleSystem.toParticleDescriptors time particleSystem
             let particlesMessages =
                 List.map (fun (descriptor : ParticlesDescriptor) ->
                     LayeredDescriptorMessage
@@ -396,7 +413,7 @@ module BasicEmittersFacetModule =
             let emitter = if emitter.Life.LifeTimeOpt <> descriptor.LifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = descriptor.LifeTimeOpt }} else emitter
             let emitter = if emitter.ParticleLifeTimeMaxOpt <> descriptor.ParticleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = descriptor.ParticleLifeTimeMaxOpt } else emitter
             let emitter = if emitter.ParticleRate <> descriptor.ParticleRate then { emitter with ParticleRate = descriptor.ParticleRate } else emitter
-            let emitter = if emitter.ParticleBuffer.Length <> descriptor.ParticleMax then Particles.BasicEmitter.resize descriptor.ParticleMax emitter else emitter
+            let emitter = if emitter.ParticleRing.Length <> descriptor.ParticleMax then Particles.BasicEmitter.resize descriptor.ParticleMax emitter else emitter
             let emitter = if emitter.ParticleSeed <> descriptor.ParticleSeed then { emitter with ParticleSeed = descriptor.ParticleSeed } else emitter
             let emitter = if emitter.Constraint <> descriptor.Constraint then { emitter with Constraint = descriptor.Constraint } else emitter
             emitter
@@ -1950,9 +1967,9 @@ module ToggleDispatcherModule =
 module FpsDispatcherModule =
 
     type Entity with
-        member this.GetStartTickTime world : int64 = this.Get Property? StartTickTime world
-        member this.SetStartTickTime (value : int64) world = this.SetFast Property? StartTickTime false value world
-        member this.StartTickTime = lens Property? StartTickTime this.GetStartTickTime this.SetStartTickTime this
+        member this.GetStartTime world : int64 = this.Get Property? StartTime world
+        member this.SetStartTime (value : int64) world = this.SetFast Property? StartTime false value world
+        member this.StartTime = lens Property? StartTime this.GetStartTime this.SetStartTime this
         member this.GetStartDateTime world : DateTime = this.Get Property? StartDateTime world
         member this.SetStartDateTime (value : DateTime) world = this.SetFast Property? StartDateTime false value world
         member this.StartDateTime = lens Property? StartDateTime this.GetStartDateTime this.SetStartDateTime this
@@ -1965,12 +1982,12 @@ module FpsDispatcherModule =
             let currentDateTime = DateTime.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
             if elapsedDateTime.TotalSeconds >= 4.0 then
-                let world = entity.SetStartTickTime (World.getTickTime world) world
+                let world = entity.SetStartTime (World.getTickTime world) world
                 entity.SetStartDateTime currentDateTime world
             else world
 
         static member Properties =
-            [define Entity.StartTickTime 0L
+            [define Entity.StartTime 0L
              define Entity.StartDateTime DateTime.UtcNow]
 
         override this.Update (entity, world) =
@@ -1978,7 +1995,7 @@ module FpsDispatcherModule =
             let startDateTime = entity.GetStartDateTime world
             let currentDateTime = DateTime.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
-            let time = double (World.getTickTime world - entity.GetStartTickTime world)
+            let time = double (World.getTickTime world - entity.GetStartTime world)
             let frames = time / elapsedDateTime.TotalSeconds
             if not (Double.IsNaN frames) then 
                 let framesStr = "FPS: " + String.Format ("{0:f2}", frames)

@@ -21,7 +21,7 @@ type [<StructuralEquality; StructuralComparison>] internal OverlayState =
     ("EntityDispatcher BasicEmitterDispatcher EffectDispatcher StaticSpriteDispatcher AnimatedSpriteDispatcher NodeDispatcher GuiDispatcher " +
      "ButtonDispatcher LabelDispatcher TextDispatcher ToggleDispatcher FeelerDispatcher FillBarDispatcher " +
      "BlockDispatcher BoxDispatcher CharacterDispatcher TileMapDispatcher",
-     "BasicEmitterEffect EffectFacet ScriptFacet TextFacet RigidBodyFacet RigidBodiesFacet JointFacet TileMapFacet NodeFacet StaticSpriteFacet AnimatedSpriteFacet",
+     "BasicEmitterFacet EffectFacet ScriptFacet TextFacet RigidBodyFacet RigidBodiesFacet JointFacet TileMapFacet NodeFacet StaticSpriteFacet AnimatedSpriteFacet",
      "", "", "",
      Constants.PrettyPrinter.StructuredThresholdMin,
      Constants.PrettyPrinter.DefaultThresholdMax);
