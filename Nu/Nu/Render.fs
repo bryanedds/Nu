@@ -89,7 +89,7 @@ type [<NoEquality; NoComparison>] TextDescriptor =
 
 /// Describes a basic particle.
 /// OPTIMIZATION: mutable for speed.
-type [<NoEquality; NoComparison>] ParticleDescriptor =
+type [<NoEquality; NoComparison; Struct>] ParticleDescriptor =
     { mutable Transform : Transform
       mutable Offset : Vector2
       mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection.
@@ -309,11 +309,12 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let mutable rotationCenter = SDL.SDL_Point ()
                 rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
                 rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
-                SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
-                SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
-                SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
-                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
-                if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+                if color.A <> byte 0 then
+                    SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
+                    SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
+                    SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
+                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
+                    if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
                 if glow.A <> byte 0 then
                     SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
                     SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
@@ -514,15 +515,15 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     let flip = Flip.toSdlFlip descriptor.Flip
                     let inset = descriptor.Inset
                     if inset.X = 0.0f && inset.Y = 0.0f && inset.Z = 0.0f && inset.W = 0.0f then
-                        sourceRect.x <- int inset.X
-                        sourceRect.y <- int inset.Y
-                        sourceRect.w <- int inset.Z
-                        sourceRect.h <- int inset.W
-                    else
                         sourceRect.x <- 0
                         sourceRect.y <- 0
                         sourceRect.w <- textureSizeX
                         sourceRect.h <- textureSizeY
+                    else
+                        sourceRect.x <- int inset.X
+                        sourceRect.y <- int inset.Y
+                        sourceRect.w <- int inset.Z
+                        sourceRect.h <- int inset.W
                     destRect.x <- int (+positionView.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
                     destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
                     destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
@@ -531,17 +532,19 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     let mutable rotationCenter = SDL.SDL_Point ()
                     rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
                     rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
-                    SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
-                    SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
-                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
-                    if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+                    if color.A <> byte 0 then
+                        SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
+                        SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
+                        SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
+                        let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
+                        if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
                     if glow.A <> byte 0 then
                         SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
                         SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
                         SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore
                         let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
                         if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+                    index <- inc index
             | _ -> Log.trace "Cannot render particle with a non-texture asset."
         | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
 
