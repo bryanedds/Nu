@@ -39,6 +39,18 @@ module Gen =
         /// Get the next random number integer below maxValue.
         static member random1 maxValue =
             lock Lock (fun () -> Random.Next maxValue)
+            
+        /// Get the next random number single below maxValue.
+        static member random1y (maxValue : byte) =
+            lock Lock (fun () -> byte (Random.Next (int maxValue)))
+            
+        /// Get the next random number single below maxValue.
+        static member random1f maxValue =
+            lock Lock (fun () -> single (Random.NextDouble ()) * single maxValue)
+            
+        /// Get the next random number single below maxValue.
+        static member random1d maxValue =
+            lock Lock (fun () -> Random.NextDouble () * maxValue)
 
         /// Get the next random number integer GTE minValue and LT maxValue.
         static member random2 minValue maxValue =

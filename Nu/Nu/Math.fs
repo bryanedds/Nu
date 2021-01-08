@@ -105,6 +105,7 @@ module Vector2 =
         member this.MapY mapper = Vector2 (this.X, mapper this.Y)
         member this.WithX x = Vector2 (x, this.Y)
         member this.WithY y = Vector2 (this.X, y)
+        member this.Rotate r = Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
 
     let inline v2 x y = Vector2 (x, y)
     let inline v2Eq (x : Vector2) (y : Vector2) = x.X = y.X && x.Y = y.Y
