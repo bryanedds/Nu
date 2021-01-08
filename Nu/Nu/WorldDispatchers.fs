@@ -1967,9 +1967,9 @@ module ToggleDispatcherModule =
 module FpsDispatcherModule =
 
     type Entity with
-        member this.GetStartTickTime world : int64 = this.Get Property? StartTickTime world
-        member this.SetStartTickTime (value : int64) world = this.SetFast Property? StartTickTime false value world
-        member this.StartTickTime = lens Property? StartTickTime this.GetStartTickTime this.SetStartTickTime this
+        member this.GetStartTime world : int64 = this.Get Property? StartTime world
+        member this.SetStartTime (value : int64) world = this.SetFast Property? StartTime false value world
+        member this.StartTime = lens Property? StartTime this.GetStartTime this.SetStartTime this
         member this.GetStartDateTime world : DateTime = this.Get Property? StartDateTime world
         member this.SetStartDateTime (value : DateTime) world = this.SetFast Property? StartDateTime false value world
         member this.StartDateTime = lens Property? StartDateTime this.GetStartDateTime this.SetStartDateTime this
@@ -1982,12 +1982,12 @@ module FpsDispatcherModule =
             let currentDateTime = DateTime.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
             if elapsedDateTime.TotalSeconds >= 4.0 then
-                let world = entity.SetStartTickTime (World.getTickTime world) world
+                let world = entity.SetStartTime (World.getTickTime world) world
                 entity.SetStartDateTime currentDateTime world
             else world
 
         static member Properties =
-            [define Entity.StartTickTime 0L
+            [define Entity.StartTime 0L
              define Entity.StartDateTime DateTime.UtcNow]
 
         override this.Update (entity, world) =
@@ -1995,7 +1995,7 @@ module FpsDispatcherModule =
             let startDateTime = entity.GetStartDateTime world
             let currentDateTime = DateTime.UtcNow
             let elapsedDateTime = currentDateTime - startDateTime
-            let time = double (World.getTickTime world - entity.GetStartTickTime world)
+            let time = double (World.getTickTime world - entity.GetStartTime world)
             let frames = time / elapsedDateTime.TotalSeconds
             if not (Double.IsNaN frames) then 
                 let framesStr = "FPS: " + String.Format ("{0:f2}", frames)
