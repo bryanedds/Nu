@@ -28,13 +28,13 @@ type [<ReferenceEquality; NoComparison>] Turn =
       ReactorOpt : Reactor option
       OriginCoordinates : Vector2i
       Direction : Direction
-      StartTick : int64 }
+      StartTime : int64 }
 
     static member updateTurnStatus updater turn =
         { turn with TurnStatus = updater turn.TurnStatus }
 
-    static member updateStartTick updater turn =
-        { turn with StartTick = updater turn.StartTick }
+    static member updateStartTime updater (turn : Turn) =
+        { turn with StartTime = updater turn.StartTime }
     
     static member tryGetReactingCharacterIndex turn =
         match turn.ReactorOpt with
@@ -55,7 +55,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
             match turn.TurnStatus with
             | TurnBeginning -> vctovf turn.OriginCoordinates
             | TurnTicking ->
-                let tickCount = int (time - turn.StartTick + 1L)
+                let tickCount = int (time - turn.StartTime + 1L)
                 let offset = Constants.Gameplay.CharacterWalkStep * int tickCount
                 let offsetVector = dtovfScaled turn.Direction (single offset)
                 vctovf turn.OriginCoordinates + offsetVector
@@ -71,7 +71,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
                 | TurnTicking -> if magicMissile then CharacterAnimationSpecial else CharacterAnimationActing
                 | _ -> CharacterAnimationFacing
             | WalkTurn _ -> CharacterAnimationFacing
-        CharacterAnimationState.make turn.StartTick animationType turn.Direction
+        CharacterAnimationState.make turn.StartTime animationType turn.Direction
 
     static member makeWalk time index multiRoundContext originC direction =
         { TurnType = WalkTurn multiRoundContext
@@ -80,7 +80,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
           ReactorOpt = None
           OriginCoordinates = originC
           Direction = direction
-          StartTick = time }
+          StartTime = time }
 
     static member makeAttack time index magicMissile reactor originC direction  =
         { TurnType = AttackTurn magicMissile
@@ -89,7 +89,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
           ReactorOpt = Some reactor
           OriginCoordinates = originC
           Direction = direction
-          StartTick = time }
+          StartTime = time }
 
 // TODO: consider folding this type into Chessboard.
 type [<ReferenceEquality; NoComparison>] Puppeteer =
@@ -143,7 +143,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                                 match turn.TurnStatus with
                                 | TurnBeginning -> PropAnimationStanding
                                 | TurnTicking ->
-                                    if time - turn.StartTick + 1L < Constants.Gameplay.ReactionTick
+                                    if time - turn.StartTime + 1L < Constants.Gameplay.ReactionTick
                                     then PropAnimationStanding
                                     else PropAnimationDestroyed
                                 | TurnFinishing -> PropAnimationDestroyed
@@ -170,7 +170,7 @@ type [<ReferenceEquality; NoComparison>] Puppeteer =
                                 match attackerTurn.TurnStatus with
                                 | TurnBeginning -> CharacterAnimationFacing
                                 | TurnTicking ->
-                                    if time - attackerTurn.StartTick + 1L < Constants.Gameplay.ReactionTick
+                                    if time - attackerTurn.StartTime + 1L < Constants.Gameplay.ReactionTick
                                     then CharacterAnimationFacing
                                     else CharacterAnimationSlain
                                 | TurnFinishing -> CharacterAnimationSlain

@@ -34,7 +34,7 @@ module Particles =
         static member getLiveness time life =
             match life.LifeTimeOpt with
             | 0L -> true
-            | lifeTime -> lifeTime < time - life.StartTime
+            | lifeTime -> time - life.StartTime < lifeTime
 
         static member make startTime lifeTimeOpt =
             { StartTime = startTime
@@ -154,7 +154,7 @@ module Particles =
         abstract Run : int64 -> Emitter * Output
 
         /// Convert the emitted particles to a ParticlesDescriptor.
-        abstract ToParticlesDescriptor : unit -> ParticlesDescriptor
+        abstract ToParticlesDescriptor : int64 -> ParticlesDescriptor
 
         /// Change the maximum number of allowable particles.
         abstract Resize : int -> Emitter
@@ -409,6 +409,10 @@ module Particles =
         { Scope : Scope<'a, 'b>
           Transformers : 'b Transformer FStack }
 
+        /// The singleton behavior.
+        static member singleton scope transformer =
+            { Scope = scope; Transformers = FStack.singleton transformer }
+
         /// Run the behavior over a single target.
         static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
             let (targets, output) = Behavior<'a, 'b>.runMany time constrain behavior [|target|]
@@ -443,6 +447,10 @@ module Particles =
         /// The empty behaviors.
         static member empty =
             { Behaviors = FStack.empty }
+
+        /// The singleton behaviors.
+        static member singleton behavior =
+            { Behaviors = FStack.singleton behavior }
 
         /// Add a behavior.
         static member add behavior behaviors =
@@ -498,7 +506,7 @@ module Particles =
     /// own emitters - it would looks like making an emitter would require a lot of additional boilerplate as well as
     /// making it harder to use this existing emitter as an example.
     and [<NoEquality; NoComparison>] Emitter<'a when 'a :> Particle and 'a : equality and 'a : struct> =
-        { Body : Body
+        { mutable Body : Body // mutable for animation
           Elevation : single
           Absolute : bool
           Blend : Blend
@@ -508,7 +516,7 @@ module Particles =
           ParticleRate : single
           mutable ParticleIndex : int // the current particle buffer insertion point
           mutable ParticleWatermark : int // tracks the highest active particle index; never decreases.
-          ParticleBuffer : 'a array // operates as a ring-buffer
+          ParticleRing : 'a array // operates as a ring-buffer
           ParticleSeed : 'a
           Constraint : Constraint
           ParticleInitializer : int64 -> 'a Emitter -> 'a
@@ -516,15 +524,20 @@ module Particles =
           ParticleBehaviors : Behaviors
           EmitterBehavior : int64 -> 'a Emitter -> Output
           EmitterBehaviors : Behaviors
-          ToParticlesDescriptor : 'a Emitter -> ParticlesDescriptor }
+          ToParticlesDescriptor : int64 -> 'a Emitter -> ParticlesDescriptor }
 
         static member private emit time emitter =
-            let particleIndex = if emitter.ParticleIndex >= emitter.ParticleBuffer.Length then 0 else inc emitter.ParticleIndex
-            if particleIndex > emitter.ParticleWatermark then emitter.ParticleWatermark <- particleIndex
-            emitter.ParticleIndex <- particleIndex
-            let particle = &emitter.ParticleBuffer.[particleIndex]
-            particle.Life <- Life.make time particle.Life.LifeTimeOpt
+            let particle = &emitter.ParticleRing.[emitter.ParticleIndex]
             particle <- emitter.ParticleInitializer time emitter
+            particle.Life <- Life.make time particle.Life.LifeTimeOpt
+            emitter.ParticleIndex <-
+                if emitter.ParticleIndex < dec emitter.ParticleRing.Length
+                then inc emitter.ParticleIndex
+                else 0
+            emitter.ParticleWatermark <-
+                if emitter.ParticleIndex <= emitter.ParticleWatermark
+                then emitter.ParticleWatermark
+                else emitter.ParticleIndex
 
         /// Determine emitter's liveness.
         static member getLiveness time emitter =
@@ -555,8 +568,8 @@ module Particles =
             let output3 = emitter.ParticleBehavior time emitter
 
             // update existing particles compositionally
-            let (particleBuffer, output4) = Behaviors.runMany time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleBuffer
-            let emitter = { emitter with ParticleBuffer = particleBuffer }
+            let (particleBuffer, output4) = Behaviors.runMany time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleRing
+            let emitter = { emitter with ParticleRing = particleBuffer }
 
             // fin
             (emitter, output + output2 + output3 + output4)
@@ -575,7 +588,7 @@ module Particles =
               ParticleRate = particleRate
               ParticleIndex = 0
               ParticleWatermark = 0
-              ParticleBuffer = Array.zeroCreate particleMax
+              ParticleRing = Array.zeroCreate particleMax
               ParticleSeed = particleSeed
               Constraint = constrain
               ParticleInitializer = particleInitializer
@@ -591,13 +604,13 @@ module Particles =
             member this.Run time =
                 let (emitter, output) = Emitter<'a>.run time this
                 (emitter :> Emitter, output)
-            member this.ToParticlesDescriptor () =
-                this.ToParticlesDescriptor this
+            member this.ToParticlesDescriptor time =
+                this.ToParticlesDescriptor time this
             member this.Resize particleMax =
-                if  this.ParticleBuffer.Length <> particleMax then
+                if  this.ParticleRing.Length <> particleMax then
                     this.ParticleIndex <- 0
                     this.ParticleWatermark <- 0
-                    { this with ParticleBuffer = Array.zeroCreate<'a> particleMax } :> Emitter
+                    { this with ParticleRing = Array.zeroCreate<'a> particleMax } :> Emitter
                 else this :> Emitter
             end
 
@@ -618,10 +631,10 @@ module Particles =
             (particleSystem, output)
 
         /// Convert the emitted particles to ParticlesDescriptors.
-        static member toParticleDescriptors particleSystem =
+        static member toParticleDescriptors time particleSystem =
             let descriptorsRev =
                 Map.fold (fun descriptors _ (emitter : Emitter) ->
-                    (emitter.ToParticlesDescriptor () :: descriptors))
+                    (emitter.ToParticlesDescriptor time :: descriptors))
                     [] particleSystem.Emitters
             List.rev descriptorsRev
 
@@ -701,24 +714,25 @@ module Particles =
     [<RequireQualifiedAccess>]
     module BasicEmitter =
 
-        let private toParticlesDescriptor (emitter : BasicEmitter) =
+        let private toParticlesDescriptor time (emitter : BasicEmitter) =
             let particles =
                 Array.append
-                    (if emitter.ParticleWatermark > emitter.ParticleIndex then Array.skip emitter.ParticleIndex emitter.ParticleBuffer else [||])
-                    (Array.take emitter.ParticleIndex emitter.ParticleBuffer)
+                    (if emitter.ParticleWatermark > emitter.ParticleIndex then Array.skip emitter.ParticleIndex emitter.ParticleRing else [||])
+                    (Array.take emitter.ParticleIndex emitter.ParticleRing)
             let descriptors =
                 Array.zeroCreate<ParticleDescriptor> particles.Length
             for index in 0 .. descriptors.Length - 1 do
                 let particle = &particles.[index]
-                let descriptor = &descriptors.[index]
-                descriptor.Transform.Position <- particle.Body.Position
-                descriptor.Transform.Rotation <- particle.Body.Rotation
-                descriptor.Transform.Size <- particle.Size
-                descriptor.Color <- particle.Color
-                descriptor.Glow <- particle.Glow
-                descriptor.Offset <- particle.Offset
-                descriptor.Inset <- particle.Inset
-                descriptor.Flip <- particle.Flip
+                if Life.getLiveness time particle.Life then
+                    let descriptor = &descriptors.[index]
+                    descriptor.Transform.Position <- particle.Body.Position
+                    descriptor.Transform.Rotation <- particle.Body.Rotation
+                    descriptor.Transform.Size <- particle.Size
+                    descriptor.Color <- particle.Color
+                    descriptor.Glow <- particle.Glow
+                    descriptor.Offset <- particle.Offset
+                    descriptor.Inset <- particle.Inset
+                    descriptor.Flip <- particle.Flip
             { Elevation = emitter.Elevation
               PositionY = emitter.Body.Position.Y
               Absolute = emitter.Absolute
@@ -763,11 +777,30 @@ module Particles =
                   Color = Color.White
                   Glow = Color.Zero
                   Flip = FlipNone }
-            let particleInitializer = fun _ (emitter : BasicEmitter) -> emitter.ParticleSeed
-            let particleBehavior = fun _ _ -> Output.empty
-            let particleBehaviors = Behaviors.empty
-            let emitterBehavior = fun _ _ -> Output.empty
-            let emitterBehaviors = Behaviors.empty
+            let particleInitializer = fun _ (emitter : BasicEmitter) ->
+                let particle = emitter.ParticleSeed
+                particle.Body.Position <- emitter.Body.Position
+                particle.Body.LinearVelocity <- (v2 Gen.randomf Gen.randomf * 3.0f).Rotate emitter.Body.Rotation
+                particle.Body.Rotation <- emitter.Body.Rotation
+                particle.Body.AngularVelocity <- Gen.randomf
+                particle
+            let particleBehavior = fun time emitter ->
+                let watermark = emitter.ParticleWatermark
+                let mutable index = 0
+                while index <= watermark do
+                    let particle = &emitter.ParticleRing.[index]
+                    let progress = Life.getProgress time particle.Life
+                    particle.Color.A <- byte ((1.0f - progress) * 255.0f)
+                    index <- inc index
+                Output.empty
+            let particleBehaviors =
+                let behavior = Behavior.singleton BasicParticle.body (Transformer.force (Velocity Constraint.empty))
+                Behaviors.singleton behavior
+            let emitterBehavior = fun _ (emitter : BasicEmitter) ->
+                emitter.Body.Rotation <- emitter.Body.Rotation + 0.05f
+                Output.empty
+            let emitterBehaviors =
+                Behaviors.empty
             make
                 time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors

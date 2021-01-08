@@ -408,7 +408,7 @@ module WorldModule3 =
                  StaticSpriteDispatcher () :> EntityDispatcher
                  AnimatedSpriteDispatcher () :> EntityDispatcher
                  NodeDispatcher () :> EntityDispatcher
-                 //BasicEmitterDispatcher () :> EntityDispatcher TODO: re-enable when particles are tested properly.
+                 BasicEmitterDispatcher () :> EntityDispatcher
                  EffectDispatcher () :> EntityDispatcher
                  GuiDispatcher () :> EntityDispatcher
                  ButtonDispatcher () :> EntityDispatcher
@@ -426,18 +426,18 @@ module WorldModule3 =
 
         static member private makeDefaultFacets () =
             // TODO: consider if we should reflectively generate these
-            Map.ofList
-                [(typeof<NodeFacet>.Name, NodeFacet () :> Facet)
-                 //(typeof<BasicEmitterFacet>.Name, BasicEmitterFacet () :> Facet) TODO: re-enable when particles are tested properly.
-                 (typeof<EffectFacet>.Name, EffectFacet () :> Facet)
-                 (typeof<ScriptFacet>.Name, ScriptFacet () :> Facet)
-                 (typeof<TextFacet>.Name, TextFacet () :> Facet)
-                 (typeof<RigidBodyFacet>.Name, RigidBodyFacet () :> Facet)
-                 (typeof<JointFacet>.Name, JointFacet () :> Facet)
-                 (typeof<TileMapFacet>.Name, TileMapFacet () :> Facet)
-                 (typeof<TmxMapFacet>.Name, TmxMapFacet () :> Facet)
-                 (typeof<StaticSpriteFacet>.Name, StaticSpriteFacet () :> Facet)
-                 (typeof<AnimatedSpriteFacet>.Name, AnimatedSpriteFacet () :> Facet)]
+            Map.ofListBy World.pairWithName $
+                [NodeFacet () :> Facet
+                 BasicEmitterFacet () :> Facet
+                 EffectFacet () :> Facet
+                 ScriptFacet () :> Facet
+                 TextFacet () :> Facet
+                 RigidBodyFacet () :> Facet
+                 JointFacet () :> Facet
+                 TileMapFacet () :> Facet
+                 TmxMapFacet () :> Facet
+                 StaticSpriteFacet () :> Facet
+                 AnimatedSpriteFacet () :> Facet]
 
         /// Make an empty world.
         static member makeEmpty (config : WorldConfig) =

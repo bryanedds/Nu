@@ -82,7 +82,7 @@ module GameplayDispatcher =
                                 | Some (ReactingProp coordinates) -> Gameplay.tryCutGrass coordinates gameplay
                                 | None -> gameplay
                             | WalkTurn _ -> Gameplay.finishMove index gameplay
-                        | _ -> failwith "non-finishing turns should be filtered out by this point")
+                        | _ -> failwith "Non-finishing turns should be filtered out by this point.")
                         gameplay
                         indices
                 just gameplay
@@ -94,7 +94,7 @@ module GameplayDispatcher =
                         let characterTurn = Puppeteer.getCharacterTurn index gameplay.Puppeteer
                         match characterTurn.TurnStatus with
                         | TurnTicking ->
-                            let tickCount = gameplay.Time - characterTurn.StartTick
+                            let tickCount = gameplay.Time - characterTurn.StartTime
                             match characterTurn.TurnType with
                             | AttackTurn _ ->
                                 if tickCount = Constants.Gameplay.ActionTicksMax
@@ -147,7 +147,7 @@ module GameplayDispatcher =
                         gameplay.Round.WalkingEnemyGroup
                 let gameplay = Gameplay.removeWalkingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
-            
+
             | MakeEnemyMoves ->
                 let enemyIndices = Chessboard.getEnemyIndices gameplay.Chessboard
                 let adjacentEnemies = List.filter (fun x -> Gameplay.areCharactersAdjacent x PlayerIndex gameplay) enemyIndices
@@ -309,7 +309,7 @@ module GameplayDispatcher =
                     | Some turn ->
                         match turn.TurnType with
                         | AttackTurn magicMissile ->
-                            if turn.StartTick = gameplay.Time then
+                            if turn.StartTime = gameplay.Time then
                                 if magicMissile then
                                     match Turn.tryGetReactingCharacterIndex turn with
                                     | Some reactorIndex ->
