@@ -36,6 +36,7 @@ module Particles =
             | 0L -> true
             | lifeTime -> time - life.StartTime < lifeTime
 
+        /// Make a life value.
         static member make startTime lifeTimeOpt =
             { StartTime = startTime
               LifeTimeOpt = lifeTimeOpt
@@ -495,7 +496,7 @@ module Particles =
           ParticleMax : int
           ParticleSeed : 'a
           Constraint : Constraint
-          EmitterName : string }
+          Style : string }
 
     /// Describes a map of basic emitters.
     and EmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
@@ -613,34 +614,6 @@ module Particles =
                     { this with ParticleRing = Array.zeroCreate<'a> particleMax } :> Emitter
                 else this :> Emitter
             end
-
-    /// A particle system.
-    type [<NoEquality; NoComparison>] ParticleSystem =
-        { Emitters : Map<string, Emitter> }
-
-        /// Run the particle system.
-        static member run time particleSystem =
-            let (emitters, output) =
-                Map.fold (fun (emitters, output) emitterId (emitter : Emitter) ->
-                    let (emitter, output2) = emitter.Run time
-                    let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
-                    (emitters, output + output2))
-                    (Map.empty, Output.empty)
-                    particleSystem.Emitters
-            let particleSystem = { Emitters = emitters }
-            (particleSystem, output)
-
-        /// Convert the emitted particles to ParticlesDescriptors.
-        static member toParticleDescriptors time particleSystem =
-            let descriptorsRev =
-                Map.fold (fun descriptors _ (emitter : Emitter) ->
-                    (emitter.ToParticlesDescriptor time :: descriptors))
-                    [] particleSystem.Emitters
-            List.rev descriptorsRev
-
-        /// The empty particle system.
-        static member empty =
-            { Emitters = Map.empty }
 
     /// A basic particle.
     type [<StructuralEquality; NoComparison; Struct>] BasicParticle =
@@ -769,7 +742,7 @@ module Particles =
         let makeDefault time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax =
             let image = asset Assets.Default.PackageName Assets.Default.ImageName
             let particleSeed =
-                { Life = Life.make 0L 60L
+                { Life = Life.make 0L 120L
                   Body = Body.defaultBody
                   Size = Constants.Engine.ParticleSizeDefault
                   Offset = v2Dup 0.5f
@@ -780,7 +753,7 @@ module Particles =
             let particleInitializer = fun _ (emitter : BasicEmitter) ->
                 let particle = emitter.ParticleSeed
                 particle.Body.Position <- emitter.Body.Position
-                particle.Body.LinearVelocity <- (v2 Gen.randomf Gen.randomf * 3.0f).Rotate emitter.Body.Rotation
+                particle.Body.LinearVelocity <- (v2 Gen.randomf Gen.randomf * 10.0f).Rotate emitter.Body.Rotation
                 particle.Body.Rotation <- emitter.Body.Rotation
                 particle.Body.AngularVelocity <- Gen.randomf
                 particle
@@ -804,3 +777,51 @@ module Particles =
             make
                 time Body.defaultBody 0.0f false Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
                 Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
+
+    /// A particle system.
+    /// TODO: consider making this an abstract data type?
+    type [<NoEquality; NoComparison>] ParticleSystem =
+        { Emitters : Map<string, Emitter> }
+    
+        /// Get the liveness of the particle system.
+        static member getLiveness time particleSystem =
+            let emittersLiveness =
+                Map.exists (fun _ (emitter : Emitter) ->
+                    match emitter.GetLiveness time with Live -> true | Dead -> false)
+                    particleSystem.Emitters
+            if emittersLiveness then Live else Dead
+
+        /// Add an emitter to the particle system.
+        static member add emitterId emitter particleSystem =
+            { particleSystem with Emitters = Map.add emitterId emitter particleSystem.Emitters }
+
+        /// Remove an emitter from the particle system.
+        static member remove emitterId particleSystem =
+            { particleSystem with Emitters = Map.remove emitterId particleSystem.Emitters }
+
+        /// Run the particle system.
+        static member run time particleSystem =
+            let (emitters, output) =
+                Map.fold (fun (emitters, output) emitterId (emitter : Emitter) ->
+                    let (emitter, output2) = emitter.Run time
+                    let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
+                    (emitters, output + output2))
+                    (Map.empty, Output.empty)
+                    particleSystem.Emitters
+            let particleSystem = { Emitters = emitters }
+            (particleSystem, output)
+    
+        /// Convert the emitted particles to ParticlesDescriptors.
+        static member toParticlesDescriptors time particleSystem =
+            let descriptorsRev =
+                Map.fold (fun descriptors _ (emitter : Emitter) ->
+                    (emitter.ToParticlesDescriptor time :: descriptors))
+                    [] particleSystem.Emitters
+            List.rev descriptorsRev
+    
+        /// The empty particle system.
+        static member empty =
+            { Emitters = Map.empty }
+
+/// A particle system.
+type ParticleSystem = Particles.ParticleSystem

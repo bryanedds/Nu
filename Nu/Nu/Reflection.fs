@@ -36,14 +36,14 @@ module Reflection =
              ("ParticleMax", true)
              ("BasicParticleSeed", true)
              ("EmitterConstraint", true)
-             ("EmitterName", true)
+             ("EmitterStyle", true)
              ("BasicEmitterSymbols", true)
              ("BasicEmitterDescriptors", true)
 
              // effect properties
              ("EffectSymbolOpt", true)
              ("EffectSymbols", true)
-             ("EffectDescriptoris", true)]
+             ("EffectDescriptors", true)]
 
     /// A dictionary of properties that are never serialized.
     let private NonPersistentPropertyNames =
