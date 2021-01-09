@@ -361,31 +361,31 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
     static member timeLocal time state =
         time - state.TimeStart
 
-    static member indexCel stutter time state =
+    static member indexCel delay time state =
         let timeLocal = CharacterAnimationState.timeLocal time state
-        int (timeLocal / stutter)
+        int (timeLocal / delay)
 
-    static member indexLooped run stutter time state =
-        CharacterAnimationState.indexCel stutter time state % run
+    static member indexLooped run delay time state =
+        CharacterAnimationState.indexCel delay time state % run
 
-    static member indexSaturated run stutter time state =
-        let cel = CharacterAnimationState.indexCel stutter time state
+    static member indexSaturated run delay time state =
+        let cel = CharacterAnimationState.indexCel delay time state
         if cel < dec run then cel else dec run
 
-    static member indexLoopedWithDirection run stutter offset time state =
+    static member indexLoopedWithDirection run delay offset time state =
         let position = CharacterAnimationState.directionToInt state.Direction * run
-        let position = Vector2i (CharacterAnimationState.indexLooped run stutter time state + position, 0)
+        let position = Vector2i (CharacterAnimationState.indexLooped run delay time state + position, 0)
         let position = position + offset
         position
 
-    static member indexLoopedWithoutDirection run stutter offset time state =
-        let position = CharacterAnimationState.indexLooped run stutter time state
+    static member indexLoopedWithoutDirection run delay offset time state =
+        let position = CharacterAnimationState.indexLooped run delay time state
         let position = v2i position 0 + offset
         position
 
-    static member indexSaturatedWithDirection run stutter offset time state =
+    static member indexSaturatedWithDirection run delay offset time state =
         let position = CharacterAnimationState.directionToInt state.Direction * run
-        let position = Vector2i (CharacterAnimationState.indexSaturated run stutter time state + position, 0)
+        let position = Vector2i (CharacterAnimationState.indexSaturated run delay time state + position, 0)
         let position = position + offset
         position
 
@@ -399,10 +399,10 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
         match Map.tryFind state.AnimationCycle Data.Value.CharacterAnimations with
         | Some animationData ->
             match animationData.AnimationType with
-            | LoopedWithDirection -> CharacterAnimationState.indexLoopedWithDirection animationData.Run animationData.Stutter animationData.Offset time state
-            | LoopedWithoutDirection -> CharacterAnimationState.indexLoopedWithoutDirection animationData.Run animationData.Stutter animationData.Offset time state
-            | SaturatedWithDirection -> CharacterAnimationState.indexSaturatedWithDirection animationData.Run animationData.Stutter animationData.Offset time state
-            | SaturatedWithoutDirection -> CharacterAnimationState.indexSaturatedWithoutDirection animationData.Run animationData.Stutter animationData.Offset time state
+            | LoopedWithDirection -> CharacterAnimationState.indexLoopedWithDirection animationData.Run animationData.Delay animationData.Offset time state
+            | LoopedWithoutDirection -> CharacterAnimationState.indexLoopedWithoutDirection animationData.Run animationData.Delay animationData.Offset time state
+            | SaturatedWithDirection -> CharacterAnimationState.indexSaturatedWithDirection animationData.Run animationData.Delay animationData.Offset time state
+            | SaturatedWithoutDirection -> CharacterAnimationState.indexSaturatedWithoutDirection animationData.Run animationData.Delay animationData.Offset time state
         | None -> v2iZero
 
     static member progressOpt time state =

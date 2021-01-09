@@ -1,4 +1,4 @@
-Type,AnimationType,LengthOpt,Run,Stutter,Offset
+Type,AnimationType,LengthOpt,Run,Delay,Offset
 WalkCycle,LoopedWithDirection,None,6,10,[0 0]
 CelebrateCycle,LoopedWithDirection,None,2,15,[0 1]
 ReadyCycle,SaturatedWithDirection,[Some 60],3,15,[0 2]
