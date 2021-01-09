@@ -313,11 +313,11 @@ module EffectSystem =
         | Ratio -> div (value, value2)
         | Set -> value2
 
-    let private evalInset (celSize : Vector2i) celRun celCount stutter playback flip effectSystem =
+    let private evalInset (celSize : Vector2i) celRun celCount delay playback flip effectSystem =
         // TODO: make sure Bounce playback works as intended!
         // TODO: stop assuming that animation sheets are fully and evenly populated when flipping!
         let celRuns = celCount % celRun
-        let celUnmodulated = int (effectSystem.EffectTime / stutter)
+        let celUnmodulated = int (effectSystem.EffectTime / delay)
         let cel = celUnmodulated % celCount
         let celI = cel % celRun
         let celJ = cel / celRun
@@ -550,7 +550,7 @@ module EffectSystem =
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount stutter playback flip aspects content slice history effectSystem =
+    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount delay playback flip aspects content slice history effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -559,13 +559,13 @@ module EffectSystem =
         let slice = evalAspects aspects slice effectSystem
 
         // ensure valid data
-        if stutter <> 0L && celRun <> 0 then
+        if delay <> 0L && celRun <> 0 then
 
             // compute cel
-            let cel = int (effectSystem.EffectTime / stutter)
+            let cel = int (effectSystem.EffectTime / delay)
 
             // eval inset
-            let inset = evalInset celSize celRun celCount stutter playback flip effectSystem
+            let inset = evalInset celSize celRun celCount delay playback flip effectSystem
 
             // build animated sprite views
             let effectSystem =
@@ -736,8 +736,8 @@ module EffectSystem =
             effectSystem
         | StaticSprite (resource, flip, aspects, content) ->
             evalStaticSprite resource flip aspects content slice history effectSystem
-        | AnimatedSprite (resource, celSize, celRun, celCount, stutter, playback, flip, aspects, content) ->
-            evalAnimatedSprite resource celSize celRun celCount stutter playback flip aspects content slice history effectSystem
+        | AnimatedSprite (resource, celSize, celRun, celCount, delay, playback, flip, aspects, content) ->
+            evalAnimatedSprite resource celSize celRun celCount delay playback flip aspects content slice history effectSystem
         | TextSprite (resource, text, aspects, content) ->
             evalTextSprite resource text aspects content slice history effectSystem
         | SoundEffect (resource, aspects, content) ->

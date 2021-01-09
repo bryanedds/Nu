@@ -612,7 +612,7 @@ type [<NoEquality; NoComparison>] CharacterAnimationData =
       AnimationType : AnimationType
       LengthOpt : int64 option
       Run : int
-      Stutter : int64
+      Delay : int64
       Offset : Vector2i }
 
 [<RequireQualifiedAccess>]

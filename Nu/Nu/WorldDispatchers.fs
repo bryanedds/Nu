@@ -632,6 +632,7 @@ module EffectFacetModule =
             let world = World.monitor handleEffectsChanged (entity.GetChangeEvent Property? Effects) entity world
             World.monitor handleAssetsReload Events.AssetsReload entity world
 
+// TODO: implement.
 //[<AutoOpen>]
 //module EffectsFacetModule =
 //
