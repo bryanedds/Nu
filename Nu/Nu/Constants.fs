@@ -84,6 +84,7 @@ module Physics =
 [<RequireQualifiedAccess>]
 module TileMap =
 
+    let [<Literal>] AnimationPropertyName = "A"
     let [<Literal>] CollisionPropertyName = "C"
     let [<Literal>] ElevationPropertyName = "E"
     let [<Literal>] InfoPropertyName = "I"

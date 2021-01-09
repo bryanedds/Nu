@@ -1003,19 +1003,17 @@ module TileMapFacetModule =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) world with
             | Some tileMap ->
                 let tileMapPosition = entity.GetPosition world
-                match TmxMap.tryGetDescriptor tileMapPosition tileMap with
-                | Some tileMapDescriptor ->
-                    let bodyProperties =
-                        TmxMap.getBodyProperties
-                            (entity.GetEnabled world)
-                            (entity.GetFriction world)
-                            (entity.GetRestitution world)
-                            (entity.GetCollisionCategories world)
-                            (entity.GetCollisionMask world)
-                            (entity.GetPhysicsId world).CorrelationId
-                            tileMapDescriptor
-                    World.createBody entity (entity.GetId world) bodyProperties world
-                | None -> world
+                let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
+                let bodyProperties =
+                    TmxMap.getBodyProperties
+                        (entity.GetEnabled world)
+                        (entity.GetFriction world)
+                        (entity.GetRestitution world)
+                        (entity.GetCollisionCategories world)
+                        (entity.GetCollisionMask world)
+                        (entity.GetPhysicsId world).CorrelationId
+                        tileMapDescriptor
+                World.createBody entity (entity.GetId world) bodyProperties world
             | None -> world
 
         override this.UnregisterPhysics (entity, world) =
@@ -1029,6 +1027,7 @@ module TileMapFacetModule =
                     let viewBounds = World.getViewBounds absolute world
                     let tileMapRenderMessages =
                         TmxMap.getRenderMessages
+                            (World.getTickTime world)
                             absolute
                             viewBounds
                             (entity.GetTileLayerClearance world)
@@ -1092,19 +1091,17 @@ module TmxMapFacetModule =
         override this.RegisterPhysics (entity, world) =
             let tileMapPosition = entity.GetPosition world
             let tileMap = entity.GetTmxMap world
-            match TmxMap.tryGetDescriptor tileMapPosition tileMap with
-            | Some tileMapDescriptor ->
-                let bodyProperties =
-                    TmxMap.getBodyProperties
-                        (entity.GetEnabled world)
-                        (entity.GetFriction world)
-                        (entity.GetRestitution world)
-                        (entity.GetCollisionCategories world)
-                        (entity.GetCollisionMask world)
-                        (entity.GetPhysicsId world).CorrelationId
-                        tileMapDescriptor
-                World.createBody entity (entity.GetId world) bodyProperties world
-            | None -> world
+            let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
+            let bodyProperties =
+                TmxMap.getBodyProperties
+                    (entity.GetEnabled world)
+                    (entity.GetFriction world)
+                    (entity.GetRestitution world)
+                    (entity.GetCollisionCategories world)
+                    (entity.GetCollisionMask world)
+                    (entity.GetPhysicsId world).CorrelationId
+                    tileMapDescriptor
+            World.createBody entity (entity.GetId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
             World.destroyBody (entity.GetPhysicsId world) world
@@ -1115,6 +1112,7 @@ module TmxMapFacetModule =
                 let viewBounds = World.getViewBounds absolute world
                 let tileMapRenderMessages =
                     TmxMap.getRenderMessages
+                        (World.getTickTime world)
                         absolute
                         viewBounds
                         (entity.GetTileLayerClearance world)
@@ -2264,8 +2262,8 @@ module CharacterDispatcherModule =
         inherit EntityDispatcher ()
 
         static let computeWalkCelInset (celSize : Vector2) (celRun : int) delay time =
-            let timeCompressed = time / delay
-            let frame = timeCompressed % int64 celRun
+            let compressedTime = time / delay
+            let frame = compressedTime % int64 celRun
             let i = single (frame % 3L)
             let j = single (frame / 3L)
             let offset = v2 (i * celSize.X) (j * celSize.Y) 

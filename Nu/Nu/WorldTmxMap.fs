@@ -12,6 +12,25 @@ open TiledSharp
 [<RequireQualifiedAccess>]
 module TmxMap =
 
+    let makeLayerTile gid x y hflip vflip dflip =
+        let tid =
+            gid |||
+            (if hflip then 0x80000000 else 0x0) |||
+            (if vflip then 0x40000000 else 0x0) |||
+            (if dflip then 0x20000000 else 0x0) |>
+            uint
+        TmxLayerTile (tid, x, y)
+
+    let makeObject (id : int) (gid : int) (x : float) (y : float) (width : float) (height : float) =
+        let xml = XElement (XName.op_Implicit "object")
+        xml.Add (XAttribute (XName.op_Implicit "id", id))
+        xml.Add (XAttribute (XName.op_Implicit "gid", gid))
+        xml.Add (XAttribute (XName.op_Implicit "x", x))
+        xml.Add (XAttribute (XName.op_Implicit "y", y))
+        xml.Add (XAttribute (XName.op_Implicit "width", width))
+        xml.Add (XAttribute (XName.op_Implicit "height", height))
+        TmxObject xml
+
     let rec importShape shape (tileSize : Vector2) (tileOffset : Vector2) =
         let tileExtent = tileSize * 0.5f
         match shape with
@@ -22,22 +41,21 @@ module TmxMap =
         | BodyPolygon polygon -> BodyPolygon { polygon with Vertices = Array.map (fun point -> point * tileSize) polygon.Vertices; Center = polygon.Center * tileSize + tileOffset }
         | BodyShapes shapes -> BodyShapes (List.map (fun shape -> importShape shape tileSize tileOffset) shapes)
 
-    let tryGetTileMap (tileMapAsset : TileMap AssetTag) world =
-        match World.tryGetTileMapMetadata tileMapAsset world with
-        | Some (_, _, tileMap) -> Some tileMap
-        | None -> None
-
-    let tryGetDescriptor tileMapPosition (tileMap : TmxMap) =
+    let getDescriptor tileMapPosition (tileMap : TmxMap) =
         let tileSizeI = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSizeF = v2 (single tileSizeI.X) (single tileSizeI.Y)
         let tileMapSizeM = v2i tileMap.Width tileMap.Height
         let tileMapSizeI = v2i (tileMapSizeM.X * tileSizeI.X) (tileMapSizeM.Y * tileSizeI.Y)
         let tileMapSizeF = v2 (single tileMapSizeI.X) (single tileMapSizeI.Y)
-        Some
-            { TileMap = tileMap
-              TileSizeI = tileSizeI; TileSizeF = tileSizeF
-              TileMapSizeM = tileMapSizeM; TileMapSizeI = tileMapSizeI; TileMapSizeF = tileMapSizeF
-              TileMapPosition = tileMapPosition }
+        { TileMap = tileMap
+          TileSizeI = tileSizeI; TileSizeF = tileSizeF
+          TileMapSizeM = tileMapSizeM; TileMapSizeI = tileMapSizeI; TileMapSizeF = tileMapSizeF
+          TileMapPosition = tileMapPosition }
+
+    let tryGetTileMap (tileMapAsset : TileMap AssetTag) world =
+        match World.tryGetTileMapMetadata tileMapAsset world with
+        | Some (_, _, tileMap) -> Some tileMap
+        | None -> None
 
     let tryGetTileDescriptor tileIndex (tl : TmxLayer) tmd =
         let tileMapRun = tmd.TileMapSizeM.X
@@ -71,6 +89,19 @@ module TmxMap =
                 | (false, _) -> None
             Some { Tile = tile; I = i; J = j; TilePositionI = tilePositionI; TilePositionF = tilePositionF; TileSetTileOpt = tileSetTileOpt }
         else None
+
+    let tryGetTileAnimationDescriptor tileIndex tileLayer tileMapDescriptor =
+        match tryGetTileDescriptor tileIndex tileLayer tileMapDescriptor with
+        | Some tileDescriptor ->
+            match tileDescriptor.TileSetTileOpt with
+            | Some tileSetTile ->
+                match tileSetTile.Properties.TryGetValue Constants.TileMap.AnimationPropertyName with
+                | (true, tileAnimationStr) ->
+                    try Some (scvaluem<TileAnimationDescriptor> tileAnimationStr)
+                    with _ -> None
+                | (false, _) -> None
+            | None -> None
+        | None -> None
 
     let tryGetTileLayerBodyShape ti (tl : TmxLayer) tmd =
         match tryGetTileDescriptor ti tl tmd with
@@ -139,11 +170,12 @@ module TmxMap =
               IsSensor = false }
         bodyProperties
 
-    let getRenderMessages absolute (viewBounds : Vector4) tileLayerClearance (tileMapPosition : Vector2) tileMapElevation tileMapParallax (tileMap : TmxMap) =
+    let getRenderMessages time absolute (viewBounds : Vector4) tileLayerClearance (tileMapPosition : Vector2) tileMapElevation tileMapParallax (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.Layers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
         let tileImageAssets = tileMap.ImageAssets
+        let tileMapDescriptor = getDescriptor tileMapPosition tileMap
         let messagess =
             List.foldi
                 (fun i messagess (layer : TmxLayer) ->
@@ -190,7 +222,15 @@ module TmxMap =
                                 let xI = int (xO / tileSize.X)
                                 if xO >= 0.0f && xI >= 0 then
                                     if xI < tileMap.Width then
-                                        let xTile = layer.Tiles.[xI + yI * tileMap.Width]
+                                        let xTileIndex = xI + yI * tileMap.Width
+                                        let xTile = layer.Tiles.[xTileIndex]
+                                        let xTile =
+                                            match tryGetTileAnimationDescriptor xTileIndex layer tileMapDescriptor with
+                                            | Some xTileAnimationDescriptor ->
+                                                let compressedTime = time / xTileAnimationDescriptor.TileAnimationDelay
+                                                let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun
+                                                makeLayerTile (xTile.Gid + xTileOffset) xTile.X xTile.Y xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
+                                            | None -> xTile
                                         tiles.Add xTile
                                 else xS <- xS + tileSize.X
                                 xO <- xO + tileSize.X
@@ -233,22 +273,3 @@ module TmxMap =
         v2
             (single (tileMap.Width * tileMap.TileWidth))
             (single (tileMap.Height * tileMap.TileHeight))
-
-    let makeLayerTile gid x y hflip vflip dflip =
-        let tid =
-            gid |||
-            (if hflip then 0x80000000 else 0x0) |||
-            (if vflip then 0x40000000 else 0x0) |||
-            (if dflip then 0x20000000 else 0x0) |>
-            uint
-        TmxLayerTile (tid, x, y)
-
-    let makeObject (id : int) (gid : int) (x : float) (y : float) (width : float) (height : float) =
-        let xml = XElement (XName.op_Implicit "object")
-        xml.Add (XAttribute (XName.op_Implicit "id", id))
-        xml.Add (XAttribute (XName.op_Implicit "gid", gid))
-        xml.Add (XAttribute (XName.op_Implicit "x", x))
-        xml.Add (XAttribute (XName.op_Implicit "y", y))
-        xml.Add (XAttribute (XName.op_Implicit "width", width))
-        xml.Add (XAttribute (XName.op_Implicit "height", height))
-        TmxObject xml
