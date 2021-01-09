@@ -35,6 +35,11 @@ type [<StructuralEquality; NoComparison>] TileDescriptor =
       TilePositionF : Vector2
       TileSetTileOpt : TmxTilesetTile option }
 
+/// Describes a Tiled tile animation.
+type [<StructuralEquality; NoComparison>] TileAnimationDescriptor =
+    { TileAnimationRun : int
+      TileAnimationDelay : int64 }
+
 /// Describes a Tiled tile map.
 type [<StructuralEquality; NoComparison>] TileMapDescriptor =
     { TileMap : TmxMap
