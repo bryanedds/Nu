@@ -794,7 +794,7 @@ module EffectSystem =
               Content = Contents (Shift 0.0f, effects |> List.map (fun effect -> effect.Content) |> Array.ofList) }
         effectCombined
 
-    let make absolute effectTime globalEnv = 
+    let make absolute effectTime globalEnv =
         { Absolute = absolute
           Views = List<View> ()
           ProgressOffset = 0.0f

@@ -11,6 +11,7 @@ type [<NoEquality; NoComparison>] View =
     | PlaySong of int * single * Song AssetTag
     | FadeOutSong of int
     | StopSong
+    | SpawnEmitter of string * Particles.BasicEmitterDescriptor
     | Tag of string * obj
     | Views of View array
 
