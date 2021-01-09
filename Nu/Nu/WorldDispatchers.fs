@@ -288,7 +288,7 @@ module BasicEmitterFacetModule =
             let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicEmitter.resize particleMax emitter else emitter) evt.Subscriber world
             (Cascade, world)
 
-        static let handleParticleSeedChanged evt world =
+        static let handleBasicParticleSeedChanged evt world =
             let particleSeed = evt.Data.Value :?> Particles.BasicParticle
             let world = updateEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
             (Cascade, world)
@@ -365,7 +365,7 @@ module BasicEmitterFacetModule =
             let world = World.monitor handleParticleLifeTimeMaxOptChanged (entity.GetChangeEvent Property? ParticleLifeTimeMaxOpt) entity world
             let world = World.monitor handleParticleRateChanged (entity.GetChangeEvent Property? ParticleRate) entity world
             let world = World.monitor handleParticleMaxChanged (entity.GetChangeEvent Property? ParticleMax) entity world
-            let world = World.monitor handleParticleSeedChanged (entity.GetChangeEvent Property? ParticleSeed) entity world
+            let world = World.monitor handleBasicParticleSeedChanged (entity.GetChangeEvent Property? BasicParticleSeed) entity world
             let world = World.monitor handleEmitterConstraintChanged (entity.GetChangeEvent Property? EmitterConstraint) entity world
             let world = World.monitor handleEmitterStyleChanged (entity.GetChangeEvent Property? EmitterStyle) entity world
             world
