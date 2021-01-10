@@ -152,7 +152,7 @@ module Particles =
         abstract GetLiveness : int64 -> Liveness
 
         /// Run the emitter.
-        abstract Run : int64 -> Emitter * Output
+        abstract Run : int64 -> Output * Emitter
 
         /// Convert the emitted particles to a ParticlesDescriptor.
         abstract ToParticlesDescriptor : int64 -> ParticlesDescriptor
@@ -162,7 +162,7 @@ module Particles =
 
     /// Transforms a constrained value.
     type 'a Transformer =
-        int64 -> Constraint -> 'a array -> ('a array * Output)
+        int64 -> Constraint -> 'a array -> (Output * 'a array)
 
     [<RequireQualifiedAccess>]
     module Transformer =
@@ -173,7 +173,7 @@ module Particles =
                 match force with
                 | Gravity gravity ->
                     let bodies = Array.map (fun (body : Body) -> { body with LinearVelocity = body.LinearVelocity + gravity }) bodies
-                    (bodies, Output.empty)
+                    (Output.empty, bodies)
                 | Attractor (position, radius, force) ->
                     let bodies =
                         Array.map (fun (body : Body) ->
@@ -186,7 +186,7 @@ module Particles =
                                 { body with LinearVelocity = body.LinearVelocity + pullForce * normal }
                             else body)
                             bodies
-                    (bodies, Output.empty)
+                    (Output.empty, bodies)
                 | Drag (linearDrag, angularDrag) ->
                     let bodies =
                         Array.map (fun (body : Body) ->
@@ -196,7 +196,7 @@ module Particles =
                                 LinearVelocity = body.LinearVelocity - linearDrag
                                 AngularVelocity = body.AngularVelocity - angularDrag })
                             bodies
-                    (bodies, Output.empty)
+                    (Output.empty, bodies)
                 | Velocity constrain2 ->
                     let constrain = constrain + constrain2
                     let bodies =
@@ -206,7 +206,7 @@ module Particles =
                                 { body with Position = body.Position + body.LinearVelocity; Rotation = body.Rotation + body.AngularVelocity })
                                 bodies
                         | _ -> failwithnie () // TODO: implement constraint behavior.
-                    (bodies, Output.empty)
+                    (Output.empty, bodies)
 
         /// Make a logic transformer.
         let logic logic : struct (Life * bool) Transformer =
@@ -214,27 +214,27 @@ module Particles =
             | Or value ->
                 fun _ _ targets ->
                     let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue || value)) targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | Nor value ->
                 fun _ _ targets ->
                     let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, not targetValue && not value)) targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | Xor value ->
                 fun _ _ targets ->
                     let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue <> value)) targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | And value ->
                 fun _ _ targets ->
                     let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, targetValue && value)) targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | Nand value ->
                 fun _ _ targets ->
                     let targets = Array.map (fun struct (targetLife, targetValue) -> struct (targetLife, not (targetValue && value))) targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | Equal value ->
                 fun _ _ targets ->
                     let targets = Array.map (fun struct (targetLife, _) -> struct (targetLife, value)) targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
 
         /// Make a generic range transformer.
         let inline rangeSrtp mul div (scale : (^a * single) -> ^a) time (range : ^a Range) : struct (Life * ^a) Transformer =
@@ -252,7 +252,7 @@ module Particles =
                         Array.map (fun struct (targetLife, targetValue) ->
                             let result = applyRange targetValue value
                             struct (targetLife, result)) targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | Linear (value, value2) ->
                 fun _ _ targets ->
                     let targets =
@@ -261,7 +261,7 @@ module Particles =
                             let result = applyRange targetValue (value + scale (value2 - value, progress))
                             struct (targetLife, result))
                             targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | Random (value, value2) ->
                 fun _ _ targets ->
                     let targets =
@@ -272,7 +272,7 @@ module Particles =
                             let result = applyRange targetValue (value + scale (value2 - value, randValue))
                             struct (targetLife, result))
                             targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | Chaos (value, value2) ->
                 fun _ _ targets ->
                     let targets =
@@ -281,7 +281,7 @@ module Particles =
                             let result = applyRange targetValue (value + scale (value2 - value, chaosValue))
                             struct (targetLife, result))
                             targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | Ease (value, value2) ->
                 fun _ _ targets ->
                     let targets =
@@ -291,7 +291,7 @@ module Particles =
                             let result = applyRange targetValue (value + scale (value2 - value, progressEase))
                             struct (targetLife, result))
                             targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | EaseIn (value, value2) ->
                 fun _ _ targets ->
                     let targets =
@@ -302,7 +302,7 @@ module Particles =
                             let result = applyRange targetValue (value + scale (value2 - value, single progressEaseIn))
                             struct (targetLife, result))
                             targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | EaseOut (value, value2) ->
                 fun _ _ targets ->
                     let targets =
@@ -313,7 +313,7 @@ module Particles =
                             let result = applyRange targetValue (value + scale (value2 - value, single progressEaseOut))
                             struct (targetLife, result))
                             targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | Sin (value, value2) ->
                 fun _ _ targets ->
                     let targets =
@@ -324,7 +324,7 @@ module Particles =
                             let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
                             struct (targetLife, result))
                             targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | SinScaled (scalar, value, value2) ->
                 fun _ _ targets ->
                     let targets =
@@ -335,7 +335,7 @@ module Particles =
                             let result = applyRange targetValue (value + scale (value2 - value, single progressSin))
                             struct (targetLife, result))
                             targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | Cos (value, value2) ->
                 fun _ _ targets ->
                     let targets =
@@ -346,7 +346,7 @@ module Particles =
                             let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
                             struct (targetLife, result))
                             targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
             | CosScaled (scalar, value, value2) ->
                 fun _ _ targets ->
                     let targets =
@@ -357,7 +357,7 @@ module Particles =
                             let result = applyRange targetValue (value + scale (value2 - value, single progressCos))
                             struct (targetLife, result))
                             targets
-                    (targets, Output.empty)
+                    (Output.empty, targets)
 
         /// Make an int range transformer.
         let rangeInt time range = rangeSrtp (fun (x : int, y) -> x * y) (fun (x, y) -> x / y) (fun (x, y) -> int (single x * y)) time range
@@ -386,7 +386,7 @@ module Particles =
     /// Scopes transformable values.
     type [<NoEquality; NoComparison>] Scope<'a, 'b when 'a : struct> =
         { In : 'a array -> 'b array
-          Out : ('b array * Output) -> 'a array -> ('a array * Output) }
+          Out : (Output * 'b array) -> 'a array -> (Output * 'a array) }
 
     [<RequireQualifiedAccess>]
     module Scope =
@@ -394,16 +394,16 @@ module Particles =
         /// Make a scope.
         let inline make<'a, 'b when 'a : struct> (getField : 'a -> 'b) (setField : 'b -> 'a -> 'a) : Scope<'a, 'b> =
             { In = Array.map getField
-              Out = fun (fields, output) (targets : 'a array) -> (Array.map2 setField fields targets, output) }
+              Out = fun (output, fields) (targets : 'a array) -> (output, Array.map2 setField fields targets) }
 
     /// The base behavior type.
     type Behavior =
 
         /// Run the behavior over a single target.
-        abstract Run : int64 -> Constraint -> obj -> (obj * Output)
+        abstract Run : int64 -> Constraint -> obj -> (Output * obj)
 
         /// Run the behavior over multiple targets.
-        abstract RunMany : int64 -> Constraint -> obj -> (obj * Output)
+        abstract RunMany : int64 -> Constraint -> obj -> (Output * obj)
 
     /// Defines a generic behavior.
     type [<NoEquality; NoComparison>] Behavior<'a, 'b when 'a : struct> =
@@ -414,32 +414,32 @@ module Particles =
         static member singleton scope transformer =
             { Scope = scope; Transformers = FStack.singleton transformer }
 
-        /// Run the behavior over a single target.
-        static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
-            let (targets, output) = Behavior<'a, 'b>.runMany time constrain behavior [|target|]
-            let target = Array.item 0 targets
-            (target, output)
-
         /// Run the behavior over an array of targets.
         /// OPTIMIZATION: runs transformers in batches for better utilization of instruction cache.
         static member runMany time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a array) =
             let targets2 = behavior.Scope.In targets
-            let (targets3, output) =
-                FStack.fold (fun (targets, output) transformer ->
-                    let (targets, output2) = transformer time constrain targets
-                    (targets, output + output2))
-                    (targets2, Output.empty)
+            let (output, targets3) =
+                FStack.fold (fun (output, targets) transformer ->
+                    let (output2, targets) = transformer time constrain targets
+                    (output + output2, targets))
+                    (Output.empty, targets2)
                     behavior.Transformers
-            let (targets4, output) = behavior.Scope.Out (targets3, output) targets
-            (targets4, output)
+            let (output, targets4) = behavior.Scope.Out (output, targets3) targets
+            (output, targets4)
+
+        /// Run the behavior over a single target.
+        static member run time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (target : 'a) =
+            let (output, targets) = Behavior<'a, 'b>.runMany time constrain behavior [|target|]
+            let target = Array.item 0 targets
+            (output, target)
 
         interface Behavior with
             member this.Run time constrain targetObj =
-                let (target, outputs) = Behavior<'a, 'b>.run time constrain this (targetObj :?> 'a)
-                (target :> obj, outputs)
+                let (outputs, target) = Behavior<'a, 'b>.run time constrain this (targetObj :?> 'a)
+                (outputs, target :> obj)
             member this.RunMany time constrain targetsObj =
-                let (targets, outputs) = Behavior<'a, 'b>.runMany time constrain this (targetsObj :?> 'a array)
-                (targets :> obj, outputs)
+                let (outputs, targets) = Behavior<'a, 'b>.runMany time constrain this (targetsObj :?> 'a array)
+                (outputs, targets :> obj)
 
     /// A composition of behaviors.
     type [<NoEquality; NoComparison>] Behaviors =
@@ -467,23 +467,23 @@ module Particles =
 
         /// Run the behaviors over a single target.
         static member run time behaviors constrain (target : 'a) =
-            let (targets, outputs) =
-                FStack.fold (fun (target, output) (behavior : Behavior) ->
-                    let (targets2, output2) = behavior.Run time constrain target
-                    (targets2, output + output2))
-                    (target :> obj, Output.empty)
+            let (outputs, targets) =
+                FStack.fold (fun (output, target) (behavior : Behavior) ->
+                    let (output2, targets2) = behavior.Run time constrain target
+                    (output + output2, targets2))
+                    (Output.empty, target :> obj)
                     behaviors.Behaviors
-            (targets :?> 'a, outputs)
+            (outputs, targets :?> 'a)
 
         /// Run the behaviors over an array of targets.
         static member runMany time behaviors constrain (targets : 'a array) =
-            let (targets, outputs) =
-                FStack.fold (fun (targets, output) (behavior : Behavior) ->
-                    let (targets2, output2) = behavior.RunMany time constrain targets
-                    (targets2, output + output2))
-                    (targets :> obj, Output.empty)
+            let (outputs, targets) =
+                FStack.fold (fun (output, targets) (behavior : Behavior) ->
+                    let (output2, targets2) = behavior.RunMany time constrain targets
+                    (output + output2, targets2))
+                    (Output.empty, targets :> obj)
                     behaviors.Behaviors
-            (targets :?> 'a array, outputs)
+            (outputs, targets :?> 'a array)
 
     /// Describes an emitter.
     and [<NoEquality; NoComparison>] EmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
@@ -563,17 +563,17 @@ module Particles =
             let output = emitter.EmitterBehavior time emitter
 
             // update emitter compositionally
-            let (emitter, output2) = Behaviors.run time emitter.EmitterBehaviors emitter.Constraint emitter
+            let (output2, emitter) = Behaviors.run time emitter.EmitterBehaviors emitter.Constraint emitter
 
             // update existing particles in-place
             let output3 = emitter.ParticleBehavior time emitter
 
             // update existing particles compositionally
-            let (particleBuffer, output4) = Behaviors.runMany time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleRing
+            let (output4, particleBuffer) = Behaviors.runMany time emitter.ParticleBehaviors emitter.Constraint emitter.ParticleRing
             let emitter = { emitter with ParticleRing = particleBuffer }
 
             // fin
-            (emitter, output + output2 + output3 + output4)
+            (output + output2 + output3 + output4, emitter)
 
         /// Make a basic particle emitter.
         static member make<'a>
@@ -603,8 +603,8 @@ module Particles =
             member this.GetLiveness time =
                 Emitter<'a>.getLiveness time this
             member this.Run time =
-                let (emitter, output) = Emitter<'a>.run time this
-                (emitter :> Emitter, output)
+                let (output, emitter) = Emitter<'a>.run time this
+                (output, emitter :> Emitter)
             member this.ToParticlesDescriptor time =
                 this.ToParticlesDescriptor time this
             member this.Resize particleMax =
@@ -801,12 +801,12 @@ module Particles =
 
         /// Run the particle system.
         static member run time particleSystem =
-            let (emitters, output) =
-                Map.fold (fun (emitters, output) emitterId (emitter : Emitter) ->
-                    let (emitter, output2) = emitter.Run time
+            let (output, emitters) =
+                Map.fold (fun (output, emitters) emitterId (emitter : Emitter) ->
+                    let (output2, emitter) = emitter.Run time
                     let emitters = match emitter.GetLiveness time with Live -> Map.add emitterId emitter emitters | Dead -> emitters
-                    (emitters, output + output2))
-                    (Map.empty, Output.empty)
+                    (output + output2, emitters))
+                    (Output.empty, Map.empty)
                     particleSystem.Emitters
             let particleSystem = { Emitters = emitters }
             (particleSystem, output)
