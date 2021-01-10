@@ -414,6 +414,10 @@ module Particles =
         static member singleton scope transformer =
             { Scope = scope; Transformers = FStack.singleton transformer }
 
+        /// Make from a scope and sequence of transformers.
+        static member ofSeq scope transformers =
+            { Scope = scope; Transformers = FStack.ofSeq transformers }
+
         /// Run the behavior over an array of targets.
         /// OPTIMIZATION: runs transformers in batches for better utilization of instruction cache.
         static member runMany time (constrain : Constraint) (behavior : Behavior<'a, 'b>) (targets : 'a array) =
@@ -453,6 +457,10 @@ module Particles =
         static member singleton behavior =
             { Behaviors = FStack.singleton behavior }
 
+        /// Make from a sequence of behaviors.
+        static member ofSeq behaviors =
+            { Behaviors = FStack.ofSeq behaviors }
+
         /// Add a behavior.
         static member add behavior behaviors =
             { Behaviors = FStack.conj behavior behaviors.Behaviors }
@@ -460,10 +468,6 @@ module Particles =
         /// Add multiple behaviors.
         static member addMany behaviorsMany behaviors =
             { Behaviors = Seq.fold (fun behaviors behavior -> FStack.conj behavior behaviors) behaviors.Behaviors behaviorsMany }
-
-        /// Make a behavior from a sequence of behaviors.
-        static member ofSeq seq =
-            Behaviors.addMany seq Behaviors.empty
 
         /// Run the behaviors over a single target.
         static member run time behaviors constrain (target : 'a) =
@@ -767,8 +771,10 @@ module Particles =
                     index <- inc index
                 Output.empty
             let particleBehaviors =
-                let behavior = Behavior.singleton BasicParticle.body (Transformer.force (Velocity Constraint.empty))
-                Behaviors.singleton behavior
+                Behaviors.singleton
+                    (Behavior.ofSeq BasicParticle.body
+                        [Transformer.force (Gravity (Constants.Engine.GravityDefault / single Constants.Engine.DesiredFps))
+                         Transformer.force (Velocity Constraint.empty)])
             let emitterBehavior = fun _ (emitter : BasicEmitter) ->
                 emitter.Body.Rotation <- emitter.Body.Rotation + 0.05f
                 Output.empty
