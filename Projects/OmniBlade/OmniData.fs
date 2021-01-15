@@ -599,7 +599,7 @@ type [<NoEquality; NoComparison>] CharacterData =
       ArchetypeType : ArchetypeType
       LevelBase : int
       AnimationSheet : Image AssetTag
-      MugOpt : Image AssetTag option // TODO: rename this to Portrait
+      PortraitOpt : Image AssetTag option
       WeaponOpt : string option
       ArmorOpt : string option
       Accessories : string list

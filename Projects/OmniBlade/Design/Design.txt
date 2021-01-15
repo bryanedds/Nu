@@ -107,29 +107,3 @@ ______
 Twisted Ring Topology
 
 Degenerate Connected 5 Pentagon
-
-character types
-
-lead character -
-	sword / physical geometric attacks
-	defending increases counter rate
-
-wizard -
-	scythe / elemental geometric attacks
-	defending damage restore TP proportionately
-
-brawler -
-	heavesword / splash attacks / provoke / counter
-	defending increases counter rate
-
-cleric -
-	archer / healer / buffer / debuffer
-	defending damage restore TP proportionately
-
-dimensionalist -
-	gunner / time magic / summon (expensive elemental all attacks)
-	defending damage restore TP proportionately
-
-assassin -
-	physical attacker / steal / mixes two items, either doubles the power or produces a new effect (curative or offensive)
-	defending increases counter rate

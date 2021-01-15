@@ -698,8 +698,8 @@ module FieldDispatcher =
                             | SubmenuTeam submenu ->
                                 match SubmenuTeam.tryGetTeamData field.Team submenu with
                                 | Some characterData ->
-                                    match characterData.MugOpt with
-                                    | Some mug -> mug
+                                    match characterData.PortraitOpt with
+                                    | Some portrait -> portrait
                                     | None -> Assets.Default.EmptyImage
                                 | None -> Assets.Default.EmptyImage
                             | _ -> Assets.Default.EmptyImage]
