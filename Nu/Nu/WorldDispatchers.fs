@@ -265,7 +265,7 @@ module BasicEmitterFacetModule =
 
         static let handleEmitterImageChanged evt world =
             let emitterImage = evt.Data.Value :?> Image AssetTag
-            let world = updateEmitter (fun emitter -> if assNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
+            let world = updateEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterLifeTimeOptChanged evt world =
@@ -420,7 +420,7 @@ module BasicEmittersFacetModule =
                 if emitter.Body.Rotation <> rotation + descriptor.Body.Rotation
                 then { emitter with Body = { emitter.Body with Rotation = rotation + descriptor.Body.Rotation }}
                 else emitter
-            let emitter = if assNeq emitter.Image descriptor.Image then { emitter with Image = descriptor.Image } else emitter
+            let emitter = if assetNeq emitter.Image descriptor.Image then { emitter with Image = descriptor.Image } else emitter
             let emitter = if emitter.Blend <> descriptor.Blend then { emitter with Blend = descriptor.Blend } else emitter
             let emitter = if emitter.Life.LifeTimeOpt <> descriptor.LifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = descriptor.LifeTimeOpt }} else emitter
             let emitter = if emitter.ParticleLifeTimeMaxOpt <> descriptor.ParticleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = descriptor.ParticleLifeTimeMaxOpt } else emitter

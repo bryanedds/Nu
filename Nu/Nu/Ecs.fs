@@ -667,7 +667,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 
     member this.RemoveNode nodeId =
         let nodeIdStr = scstring nodeId
-        let _ = systemTree |> ListTree.remove (fun system -> system.Name = nodeIdStr)
+        let _ = systemTree |> ListTree.removeFirst (fun system -> system.Name = nodeIdStr)
         systemDict.Remove nodeId
 
     member this.QualifyHierarchical nodeId entityId =

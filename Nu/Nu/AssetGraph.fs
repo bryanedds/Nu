@@ -29,37 +29,47 @@ type[<NoEquality; NoComparison; Struct>] 'a AssetTag =
 [<RequireQualifiedAccess>]
 module AssetTag =
 
+    /// Check two asset tags for equality.
     let inline equals left right =
         left.PackageName = right.PackageName &&
         left.AssetName = right.AssetName
 
+    /// Make an asset tag.
     let make<'a> packageName assetName : AssetTag<'a> =
         { PackageName = packageName; AssetName = assetName }
 
+    /// Convert an asset tag to a string pair.
     let toPair<'a> (assetTag : 'a AssetTag) =
         (assetTag.PackageName, assetTag.AssetName)
 
+    /// Make an asset tag from a string pair.
     let ofPair<'a> (packageName, assetName) =
         make<'a> packageName assetName
 
+    /// Convert an asset tag from one type to another.
     let convert<'a, 'b> (assetTag : 'a AssetTag) : 'b AssetTag =
         make<'b> assetTag.PackageName assetTag.AssetName
 
+    /// Convert an asset tag with a specific type to one of obj type.
     let generalize (assetTag : 'a AssetTag) : obj AssetTag =
         convert<'a, obj> assetTag
 
+    /// Convert an asset tag with an obj type to one of a specific type.
     let specialize<'a> (assetTag : obj AssetTag) : 'a AssetTag =
         convert<obj, 'a> assetTag
 
 [<AutoOpen>]
 module AssetTagOperators =
 
-    let inline assEq left right =
+    /// Check two asset tags for equality.
+    let inline assetEq left right =
         AssetTag.equals left right
 
-    let inline assNeq left right =
+    /// Check two asset tags for inequality.
+    let inline assetNeq left right =
         not (AssetTag.equals left right)
 
+    /// Make an asset tag.
     let asset<'a> packageName assetName : 'a AssetTag =
         AssetTag.make packageName assetName
 
@@ -73,18 +83,22 @@ type [<NoEquality; NoComparison>] 'a Asset =
 [<RequireQualifiedAccess>]
 module Asset =
 
+    /// Make an asset value.
     let make<'a> assetTag filePath refinements associations : Asset<'a> =
         { AssetTag = assetTag
           FilePath = filePath
           Refinements = refinements
           Associations = associations }
 
+    /// Convert an asset from one type to another.
     let convert<'a, 'b> (asset : 'a Asset) : 'b Asset =
         make<'b> (AssetTag.convert<'a, 'b> asset.AssetTag) asset.FilePath asset.Refinements asset.Associations
 
+    /// Convert an asset with a specific type to one of obj type.
     let generalize (asset : 'a Asset) : obj Asset =
         convert<'a, obj> asset
 
+    /// Convert an asset with an obj type to one of a specific type.
     let specialize<'a> (asset : obj Asset) : 'a Asset =
         convert<obj, 'a> asset
 

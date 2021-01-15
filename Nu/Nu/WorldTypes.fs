@@ -920,29 +920,32 @@ module WorldTypes =
         do if Address.length entityAddress <> 3 then
             failwith "Entity address must be length of 3."
 
+        /// The entity's update event.
         let updateEvent =
             let entityNames = Address.getNames entityAddress
             rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
 
 #if !DISABLE_ENTITY_POST_UPDATE
+        /// The entity's post update event.
         let postUpdateEvent =
             let entityNames = Address.getNames entityAddress
             rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
 #endif
 
+        /// The entity's cached state.
         let mutable entityStateOpt =
             Unchecked.defaultof<EntityState>
 
-        // Create an entity reference from an address string.
+        /// Create an entity reference from an address string.
         new (entityAddressStr : string) = Entity (stoa entityAddressStr)
 
-        // Create an entity reference from an array of names.
+        /// Create an entity reference from an array of names.
         new (entityNames : string array) = Entity (rtoa entityNames)
 
-        // Create an entity reference from a list of names.
+        /// Create an entity reference from a list of names.
         new (entityNames : string list) = Entity (ltoa entityNames)
 
-        // Create an entity reference from a the required names.
+        /// Create an entity reference from a the required names.
         new (screenName : string, layerName : string, entityName : string) = Entity [screenName; layerName; entityName]
 
         /// The address of the entity.

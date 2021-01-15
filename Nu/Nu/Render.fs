@@ -20,12 +20,14 @@ type Font = private { __ : unit }
 /// A tile map. Currently just used as a phantom type.
 type TileMap = private { __ : unit }
 
+/// The flipness of a sprite.
 type [<StructuralEquality; NoComparison; Struct>] Flip =
     | FlipNone
     | FlipH
     | FlipV
     | FlipHV
 
+    /// Convert to a flip value recognized by SDL.
     static member toSdlFlip flip =
         match flip with
         | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
@@ -33,12 +35,14 @@ type [<StructuralEquality; NoComparison; Struct>] Flip =
         | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
         | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
 
+/// The blend more of a sprite.
 type [<StructuralEquality; NoComparison; Struct>] Blend =
     | Transparent
     | Additive
     | Modulate
     | Overwrite
 
+    /// Convert to a blend mode value recognized by SDL.
     static member toSdlBlendMode flip =
         match flip with
         | Transparent -> SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND
@@ -46,16 +50,19 @@ type [<StructuralEquality; NoComparison; Struct>] Blend =
         | Modulate -> SDL.SDL_BlendMode.SDL_BLENDMODE_MOD
         | Overwrite -> SDL.SDL_BlendMode.SDL_BLENDMODE_NONE
 
+/// Horizontal justification.
 type [<StructuralEquality; StructuralComparison>] JustificationH =
     | JustifyLeft
     | JustifyCenter
     | JustifyRight
 
+/// Vertical justification.
 type [<StructuralEquality; StructuralComparison>] JustificationV =
     | JustifyTop
     | JustifyMiddle
     | JustifyBottom
 
+/// Justification (such as for text alignement).
 type [<StructuralEquality; StructuralComparison>] Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool

@@ -242,7 +242,7 @@ module WorldModule2 =
                                 match (selectedScreen.GetIncoming world).SongOpt with
                                 | Some playSong ->
                                     match World.getCurrentSongOpt world with
-                                    | Some song when assEq song.Song playSong.Song -> world // do nothing when song is the same
+                                    | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
                                     | _ -> World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world // play song when song is different
                                 | None -> world
                             let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
@@ -267,7 +267,7 @@ module WorldModule2 =
                                 match World.getScreenTransitionDestinationOpt world with
                                 | Some destination ->
                                     match ((selectedScreen.GetIncoming world).SongOpt, (destination.GetIncoming world).SongOpt) with
-                                    | (Some song, Some song2) when assEq song.Song song2.Song -> world // do nothing when song is the same
+                                    | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
                                     | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
                                 | None ->
                                     match World.getCurrentSongOpt world with
