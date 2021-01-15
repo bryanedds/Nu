@@ -318,7 +318,7 @@ module FieldDispatcher =
                             match Data.Value.Fields.TryGetValue fieldTransition.FieldType with
                             | (true, fieldData) ->
                                 match (currentSongOpt, fieldData.FieldSongOpt) with
-                                | (Some song, Some song2) when assEq song song2 -> just field
+                                | (Some song, Some song2) when assetEq song song2 -> just field
                                 | (_, _) -> withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
                             | (false, _) -> just field
                         
@@ -336,7 +336,7 @@ module FieldDispatcher =
                                 match Field.getFieldSongOpt field with
                                 | Some fieldSong ->
                                     match currentSongOpt with
-                                    | Some song when assEq song fieldSong -> Nop
+                                    | Some song when assetEq song fieldSong -> Nop
                                     | _ -> PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)
                                 | None -> Nop
                             withCmd songCmd field

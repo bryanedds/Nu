@@ -109,6 +109,7 @@ module GamepadState =
 
     let mutable private Joysticks = [||]
 
+    /// Check that an SDL gamepad button is supported.
     let isSdlButtonSupported button =
         button < 8
 

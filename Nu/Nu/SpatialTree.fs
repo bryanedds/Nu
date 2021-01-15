@@ -91,6 +91,7 @@ type internal SpatialNode<'e when 'e : equality> = SpatialNode.SpatialNode<'e>
 module SpatialTree =
 
     /// A spatial structure that organizes elements on a 2D plane.
+    /// TODO: document this.
     type [<NoEquality; NoComparison>] SpatialTree<'e when 'e : equality> =
         private
             { Node : 'e SpatialNode
