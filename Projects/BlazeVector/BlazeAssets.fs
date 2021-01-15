@@ -12,7 +12,7 @@ module Assets =
         let MachinerySong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Machinery" }
         let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
         let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
-        let GameplayLayerFilePath = "Assets/Gui/Gameplay.nulyr" // TODO: move this to gameplay?
+        let GameplayLayerFilePath = "Assets/Gui/Gameplay.nulyr"
 
     [<RequireQualifiedAccess>]
     module Gameplay =

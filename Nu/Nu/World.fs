@@ -44,14 +44,6 @@ module Nu =
         then tryPropagateByLens left right world
         else tryPropagateByName simulant left.Name right world
 
-    /// TODO: P1: remove this after updating Prime.
-    let private sortSubscriptionsBy by (subscriptions : (Guid * SubscriptionEntry) seq) (world : 'w) =
-        EventSystem.getSortableSubscriptions by subscriptions world |>
-        Array.ofSeq |>
-        Array.sortWith (fun (struct ((p : IComparable), _)) (struct ((p2 : IComparable), _)) -> p.CompareTo p2) |>
-        Array.map (fun (struct (_, subscription)) -> (subscription.CompressionId, subscription)) |>
-        Array.toSeq
-
     /// Initialize the Nu game engine.
     let init nuConfig =
 
@@ -259,7 +251,7 @@ module Nu =
             // init sortSubscriptionByElevation F# reach-around
             WorldModule.sortSubscriptionsByElevation <- fun subscriptions worldObj ->
                 let world = worldObj :?> World
-                sortSubscriptionsBy
+                EventSystem.sortSubscriptionsBy
                     (fun (simulant : Simulant) _ ->
                         match simulant with
                         | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable

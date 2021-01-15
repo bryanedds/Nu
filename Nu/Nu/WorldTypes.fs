@@ -1159,7 +1159,7 @@ module WorldTypes =
                 | ("Screen", Scripting.String str) | ("Screen", Scripting.Keyword str) -> str |> stoa |> Screen :> obj |> Some
                 | ("Layer", Scripting.String str) | ("Layer", Scripting.Keyword str) -> str |> stoa |> Layer :> obj |> Some
                 | ("Entity", Scripting.String str) | ("Entity", Scripting.Keyword str) -> str |> stoa |> Entity :> obj |> Some
-                | ("Simulant", Scripting.String _) | ("Simulant", Scripting.Keyword _) -> None // TODO: P1: see if this should be failwithumf or a violation instead.
+                | ("Simulant", Scripting.String _) | ("Simulant", Scripting.Keyword _) -> None // TODO: see if this should be failwithumf or a violation instead.
                 | (_, _) -> None
 
         interface Freezable with

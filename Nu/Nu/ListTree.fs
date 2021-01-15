@@ -5,7 +5,7 @@ namespace Nu
 open System.Collections.Generic
 
 /// An imperative tree data structure.
-/// TODO: P1: move this to Prime once it's tested.
+/// TODO: move this to Prime once it's tested.
 type [<NoEquality; NoComparison>] 'a ListTree =
     | ListRoot of 'a ListTree List
     | ListBranch of 'a * 'a ListTree List

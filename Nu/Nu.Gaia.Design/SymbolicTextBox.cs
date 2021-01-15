@@ -147,12 +147,12 @@ namespace Nu.Gaia.Design
             }
             else if (e.Alt && e.KeyCode == Keys.Up)
             {
-                // TODO: P1: SelectParentSymbols();
+                // TODO: SelectParentSymbols();
                 e.SuppressKeyPress = true;
             }
             else if (e.Alt && e.KeyCode == Keys.Down)
             {
-                // TODO: P1: SelectChildSymbols();
+                // TODO: SelectChildSymbols();
                 e.SuppressKeyPress = true;
             }
             else if (e.Alt)
