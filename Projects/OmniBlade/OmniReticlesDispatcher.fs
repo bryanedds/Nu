@@ -11,7 +11,7 @@ open OmniBlade
 module ReticlesDispatcher =
 
     type [<StructuralEquality; NoComparison>] Reticles =
-        { Battle : Battle // TODO: let's see if we can make this reference something smaller.
+        { Battle : Battle // TODO: P1: let's see if we can make this reference something smaller.
           AimType : AimType }
 
     type ReticlesCommand =
