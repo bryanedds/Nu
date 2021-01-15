@@ -741,7 +741,7 @@ module WorldModuleEntity =
 
         static member internal getEntitySortingPriority entity world =
             let entityState = World.getEntityState entity world
-            { SortElevation = entityState.Transform.Elevation // TODO: P1: see if this should be ElevationLayered
+            { SortElevation = entityState.Transform.Elevation
               SortPositionY = entityState.Transform.Position.Y
               SortTarget = entity }
 
