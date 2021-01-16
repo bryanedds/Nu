@@ -221,11 +221,80 @@ type ElmishGameDispatcher () =
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
 #endif
 
+#if PHANTOM
+type [<ReferenceEquality>] Phantom =
+    { mutable PhantomTransform : Transform
+      PhantomLinearVelocity : Vector2
+      PhantomAngularVelocity : single
+      PhantomImage : Image AssetTag }
+    static member init i =
+        { PhantomTransform =
+            { Transform.makeDefault () with
+                Position =
+                    v2
+                        (single i * 0.1f + Gen.randomf - (single Constants.Render.VirtualResolutionX * 0.5f))
+                        (Gen.randomf - (single Constants.Render.VirtualResolutionY * 0.5f))
+                Size = v2 6.0f 6.0f }
+          PhantomLinearVelocity = v2 0.0f (Gen.randomf * 0.5f)
+          PhantomAngularVelocity = Gen.randomf
+          PhantomImage =  Assets.Default.Image }
+    static member move phantom =
+        phantom.PhantomTransform.Position <- phantom.PhantomTransform.Position + phantom.PhantomLinearVelocity
+        phantom.PhantomTransform.Rotation <- phantom.PhantomTransform.Rotation + phantom.PhantomAngularVelocity
+
+type [<ReferenceEquality>] Phantoms =
+    { Phantoms : Map<Guid, Phantom> }
+    static member init n =
+        let phantoms = seq { for i in 0 .. n - 1 do yield Phantom.init i }
+        let phantomMap = Map.ofSeqBy (fun phantom -> (Gen.id, phantom)) phantoms
+        { Phantoms = phantomMap }
+    static member move phantoms =
+        for phantomEntry in phantoms.Phantoms do
+            Phantom.move phantomEntry.Value
+
+type PhantomGameDispatcher () =
+    inherit GameDispatcher<Phantoms, unit, unit> (Phantoms.init 10000)
+
+    override this.Channel (_, game) =
+        [game.UpdateEvent => cmd ()]
+
+    override this.Command (phantoms, message, _, world) =
+        match message with
+        | () ->
+            Phantoms.move phantoms
+            just world
+
+    override this.Content (_, _) =
+        [Content.screen "Screen" Vanilla []
+            [Content.layer "Layer" []
+                [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
+
+    override this.View (phantoms, _, _) =
+        let descriptors =
+            seq {
+                for phantomEntry in phantoms.Phantoms do
+                    let phantom = phantomEntry.Value
+                    yield
+                        { SpriteDescriptor.Transform = phantom.PhantomTransform
+                          Offset = v2Dup 0.5f
+                          InsetOpt = None
+                          Image = phantom.PhantomImage
+                          Color = colWhite
+                          Glow = colZero
+                          Flip = FlipNone }}
+        Render (0.0f, 0.0f, AssetTag.generalize Assets.Default.Image, SpritesDescriptor (Seq.toArray descriptors))
+        
+#endif
+
 type MetricsPlugin () =
     inherit NuPlugin ()
 #if ELMISH
     override this.GetGameDispatcher () = typeof<ElmishGameDispatcher>
-#else
+#endif
+#if PHANTOM
+    override this.GetGameDispatcher () = typeof<PhantomGameDispatcher>
+#endif
+#if !ELMISH && !PHANTOM
     override this.GetGameDispatcher () = typeof<MyGameDispatcher>
 #endif
 
