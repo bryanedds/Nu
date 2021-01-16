@@ -146,6 +146,8 @@ and [<NoEquality; NoComparison>] RenderAsset =
 
 /// The renderer. Represents the rendering system in Nu generally.
 and Renderer =
+    /// The render context for custom rendering.
+    abstract RenderContext : obj
     /// Attempt to load a render asset.
     abstract TryLoadRenderAsset : obj AssetTag -> RenderAsset option
     /// Pop all of the physics messages that have been enqueued.
@@ -165,6 +167,7 @@ type [<ReferenceEquality; NoComparison>] MockRenderer =
         { MockRenderer : unit }
 
     interface Renderer with
+        member renderer.RenderContext = obj ()
         member renderer.TryLoadRenderAsset _ = None
         member renderer.PopMessages () = List ()
         member renderer.ClearMessages () = ()
@@ -598,6 +601,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         renderer
 
     interface Renderer with
+
+        member renderer.RenderContext =
+            renderer.RenderContext :> obj
 
         member renderer.TryLoadRenderAsset assetTag =
             SdlRenderer.tryLoadRenderAsset assetTag renderer
