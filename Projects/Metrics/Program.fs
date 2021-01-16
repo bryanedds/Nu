@@ -228,13 +228,9 @@ type [<ReferenceEquality>] Phantom =
       PhantomAngularVelocity : single
       PhantomImage : Image AssetTag }
     static member init i =
-        { PhantomTransform =
-            { Transform.makeDefault () with
-                Position =
-                    v2
-                        (single i * 0.05f + Gen.randomf - (single Constants.Render.VirtualResolutionX * 0.5f))
-                        (Gen.randomf - (single Constants.Render.VirtualResolutionY * 0.5f))
-                Size = v2 6.0f 6.0f }
+        let x = single i * 0.05f + Gen.randomf - (single Constants.Render.VirtualResolutionX * 0.5f)
+        let y = Gen.randomf - (single Constants.Render.VirtualResolutionY * 0.5f)
+        { PhantomTransform = { Transform.makeDefault () with Position = v2 x y; Size = v2 6.0f 6.0f }
           PhantomLinearVelocity = v2 0.0f (Gen.randomf * 0.5f)
           PhantomAngularVelocity = Gen.randomf
           PhantomImage =  Assets.Default.Image }
@@ -289,12 +285,12 @@ type MetricsPlugin () =
     inherit NuPlugin ()
 #if ELMISH
     override this.GetGameDispatcher () = typeof<ElmishGameDispatcher>
-#endif
-#if PHANTOM
-    override this.GetGameDispatcher () = typeof<PhantomGameDispatcher>
-#endif
-#if !ELMISH && !PHANTOM
-    override this.GetGameDispatcher () = typeof<MyGameDispatcher>
+#else
+    #if PHANTOM
+        override this.GetGameDispatcher () = typeof<PhantomGameDispatcher>
+    #else
+        override this.GetGameDispatcher () = typeof<MyGameDispatcher>
+    #endif
 #endif
 
 /// This program exists to take metrics on Nu's performance.
