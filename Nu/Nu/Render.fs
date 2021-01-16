@@ -626,7 +626,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
         member renderer.CleanUp () =
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
-            let renderAssets = Seq.collect (Seq.map (fun (entry : KeyValuePair<_, _>) -> entry.Value)) renderAssetPackages
+            let renderAssets = renderAssetPackages |> Seq.collect (Seq.map (fun entry -> entry.Value))
             for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset
             renderer.RenderPackages.Clear ()
             renderer :> Renderer
