@@ -232,7 +232,7 @@ type [<ReferenceEquality>] Phantom =
             { Transform.makeDefault () with
                 Position =
                     v2
-                        (single i * 0.1f + Gen.randomf - (single Constants.Render.VirtualResolutionX * 0.5f))
+                        (single i * 0.05f + Gen.randomf - (single Constants.Render.VirtualResolutionX * 0.5f))
                         (Gen.randomf - (single Constants.Render.VirtualResolutionY * 0.5f))
                 Size = v2 6.0f 6.0f }
           PhantomLinearVelocity = v2 0.0f (Gen.randomf * 0.5f)
@@ -246,14 +246,14 @@ type [<ReferenceEquality>] Phantoms =
     { Phantoms : Map<Guid, Phantom> }
     static member init n =
         let phantoms = seq { for i in 0 .. n - 1 do yield Phantom.init i }
-        let phantomMap = Map.ofSeqBy (fun phantom -> (Gen.id, phantom)) phantoms
-        { Phantoms = phantomMap }
+        let phantoms = Map.ofSeqBy (fun phantom -> (Gen.id, phantom)) phantoms
+        { Phantoms = phantoms }
     static member move phantoms =
         for phantomEntry in phantoms.Phantoms do
             Phantom.move phantomEntry.Value
 
 type PhantomGameDispatcher () =
-    inherit GameDispatcher<Phantoms, unit, unit> (Phantoms.init 10000)
+    inherit GameDispatcher<Phantoms, unit, unit> (Phantoms.init 20000)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => cmd ()]
@@ -272,8 +272,8 @@ type PhantomGameDispatcher () =
     override this.View (phantoms, _, _) =
         let descriptors =
             seq {
-                for phantomEntry in phantoms.Phantoms do
-                    let phantom = phantomEntry.Value
+                for entry in phantoms.Phantoms do
+                    let phantom = entry.Value
                     yield
                         { SpriteDescriptor.Transform = phantom.PhantomTransform
                           Offset = v2Dup 0.5f
@@ -283,7 +283,6 @@ type PhantomGameDispatcher () =
                           Glow = colZero
                           Flip = FlipNone }}
         Render (0.0f, 0.0f, AssetTag.generalize Assets.Default.Image, SpritesDescriptor (Seq.toArray descriptors))
-        
 #endif
 
 type MetricsPlugin () =

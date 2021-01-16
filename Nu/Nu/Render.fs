@@ -94,7 +94,7 @@ type [<NoEquality; NoComparison>] TextDescriptor =
       Color : Color
       Justification : Justification }
 
-/// Describes a basic particle.
+/// Describes a particle.
 /// OPTIMIZATION: mutable for speed.
 type [<NoEquality; NoComparison; Struct>] ParticleDescriptor =
     { mutable Transform : Transform
@@ -104,7 +104,7 @@ type [<NoEquality; NoComparison; Struct>] ParticleDescriptor =
       mutable Glow : Color
       mutable Flip : Flip }
 
-/// Describes basic particles.
+/// Describes particles.
 type [<NoEquality; NoComparison>] ParticlesDescriptor =
     { Elevation : single
       PositionY : single
