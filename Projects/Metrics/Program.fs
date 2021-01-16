@@ -278,7 +278,11 @@ type PhantomGameDispatcher () =
                           Color = colWhite
                           Glow = colZero
                           Flip = FlipNone }}
-        Render (0.0f, 0.0f, AssetTag.generalize Assets.Default.Image, SpritesDescriptor (Seq.toArray descriptors))
+        Render
+            (0.0f,
+             single Constants.Render.VirtualResolutionY * -0.5f,
+             AssetTag.generalize Assets.Default.Image,
+             SpritesDescriptor (Seq.toArray descriptors))
 #endif
 
 type MetricsPlugin () =
