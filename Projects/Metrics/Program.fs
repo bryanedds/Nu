@@ -286,11 +286,11 @@ type MetricsPlugin () =
 #if ELMISH
     override this.GetGameDispatcher () = typeof<ElmishGameDispatcher>
 #else
-    #if PHANTOM
-        override this.GetGameDispatcher () = typeof<PhantomGameDispatcher>
-    #else
-        override this.GetGameDispatcher () = typeof<MyGameDispatcher>
-    #endif
+  #if PHANTOM
+    override this.GetGameDispatcher () = typeof<PhantomGameDispatcher>
+  #else
+    override this.GetGameDispatcher () = typeof<MyGameDispatcher>
+  #endif
 #endif
 
 /// This program exists to take metrics on Nu's performance.
