@@ -146,10 +146,6 @@ and [<NoEquality; NoComparison>] RenderAsset =
 
 /// The renderer. Represents the rendering system in Nu generally.
 and Renderer =
-    /// The render context for custom rendering.
-    abstract RenderContext : obj
-    /// Attempt to load a render asset.
-    abstract TryLoadRenderAsset : obj AssetTag -> RenderAsset option
     /// Pop all of the physics messages that have been enqueued.
     abstract PopMessages : unit -> RenderMessage List
     /// Clear all of the render messages that have been enqueued.
@@ -167,8 +163,6 @@ type [<ReferenceEquality; NoComparison>] MockRenderer =
         { MockRenderer : unit }
 
     interface Renderer with
-        member renderer.RenderContext = obj ()
-        member renderer.TryLoadRenderAsset _ = None
         member renderer.PopMessages () = List ()
         member renderer.ClearMessages () = ()
         member renderer.EnqueueMessage _ = ()
@@ -591,6 +585,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | _ ->
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
 
+    /// Get the render context.
+    static member getRenderContext renderer =
+        renderer.RenderContext
+
     /// Make a Renderer.
     static member make renderContext =
         let renderer =
@@ -601,12 +599,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         renderer
 
     interface Renderer with
-
-        member renderer.RenderContext =
-            renderer.RenderContext :> obj
-
-        member renderer.TryLoadRenderAsset assetTag =
-            SdlRenderer.tryLoadRenderAsset assetTag renderer
 
         member renderer.PopMessages () =
             let messages = renderer.RenderMessages
