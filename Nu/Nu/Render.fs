@@ -120,16 +120,17 @@ type [<NoEquality; NoComparison>] RenderDescriptor =
     | TileLayerDescriptor of TileLayerDescriptor
     | TextDescriptor of TextDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
+    | RenderCallback of (Matrix3x3 -> Matrix3x3 -> Vector2 -> Vector2 -> Renderer -> unit)
 
 /// Describes how to render a layered thing to the rendering system.
-type [<NoEquality; NoComparison>] LayeredDescriptor =
+and [<NoEquality; NoComparison>] LayeredDescriptor =
     { Elevation : single
       PositionY : single
       AssetTag : obj AssetTag
       RenderDescriptor : RenderDescriptor }
 
 /// A message to the rendering system.
-type [<NoEquality; NoComparison>] RenderMessage =
+and [<NoEquality; NoComparison>] RenderMessage =
     | LayeredDescriptorMessage of LayeredDescriptor
     | LayeredDescriptorsMessage of LayeredDescriptor array
     | HintRenderPackageUseMessage of string
@@ -139,12 +140,14 @@ type [<NoEquality; NoComparison>] RenderMessage =
     //| ScreenShakeMessage of ...
 
 /// An asset that is used for rendering.
-type [<NoEquality; NoComparison>] RenderAsset =
+and [<NoEquality; NoComparison>] RenderAsset =
     | TextureAsset of nativeint
     | FontAsset of nativeint * int
 
 /// The renderer. Represents the rendering system in Nu generally.
-type Renderer =
+and Renderer =
+    /// Attempt to load a render asset.
+    abstract TryLoadRenderAsset : obj AssetTag -> RenderAsset option
     /// Pop all of the physics messages that have been enqueued.
     abstract PopMessages : unit -> RenderMessage List
     /// Clear all of the render messages that have been enqueued.
@@ -162,6 +165,7 @@ type [<ReferenceEquality; NoComparison>] MockRenderer =
         { MockRenderer : unit }
 
     interface Renderer with
+        member renderer.TryLoadRenderAsset _ = None
         member renderer.PopMessages () = List ()
         member renderer.ClearMessages () = ()
         member renderer.EnqueueMessage _ = ()
@@ -568,6 +572,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | TileLayerDescriptor descriptor -> SdlRenderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
         | TextDescriptor descriptor -> SdlRenderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
         | ParticlesDescriptor descriptor -> SdlRenderer.renderParticles viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
+        | RenderCallback callback -> callback viewAbsolute viewRelative eyeCenter eyeSize renderer
 
     static member private renderLayeredDescriptors eyeCenter eyeSize (descriptors : LayeredDescriptor List) renderer =
         let renderContext = renderer.RenderContext
@@ -593,6 +598,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         renderer
 
     interface Renderer with
+
+        member renderer.TryLoadRenderAsset assetTag =
+            SdlRenderer.tryLoadRenderAsset assetTag renderer
 
         member renderer.PopMessages () =
             let messages = renderer.RenderMessages
