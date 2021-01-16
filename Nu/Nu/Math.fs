@@ -78,6 +78,13 @@ type [<NoEquality; NoComparison; Struct>] Transform =
           Elevation = 0.0f
           Flags = 0 }
 
+    static member makeDefault () =
+        { Position = Vector2.Zero
+          Size = Constants.Engine.EntitySizeDefault
+          Rotation = 0.0f
+          Elevation = 0.0f
+          Flags = 0b0001000110000001 }
+
     interface Transform Component with
         member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
         member this.AllocateJunctions _ = [||]

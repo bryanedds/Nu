@@ -642,12 +642,7 @@ module WorldTypes =
         /// Make an entity state value.
         static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
-            { Transform =
-                { Position = Vector2.Zero
-                  Size = Constants.Engine.EntitySizeDefault
-                  Rotation = 0.0f
-                  Elevation = 0.0f
-                  Flags = 0b0001000110000001 }
+            { Transform = Transform.makeDefault ()
               Dispatcher = dispatcher
               Facets = [||]
               Xtension = Xtension.makeSafe ()
