@@ -66,14 +66,14 @@ module SymbolStore =
             Log.info ("Symbol store package load failed due to unloadable asset graph due to: '" + error)
 
     let tryLoadSymbol (assetTag : Symbol AssetTag) metadata symbolStore =
-        let assetsOpt =
-            if symbolStore.SymbolPackages.ContainsKey assetTag.PackageName then
-                Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackages
-            else
-                Log.info ("Loading symbol package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                tryLoadSymbolPackage assetTag.PackageName metadata symbolStore
-                Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackages
-        Option.bind (fun assets -> Dictionary.tryFind assetTag.AssetName assets) assetsOpt
+        match Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackages with
+        | Some assets -> Dictionary.tryFind assetTag.AssetName assets
+        | None ->
+            Log.info ("Loading symbol package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
+            tryLoadSymbolPackage assetTag.PackageName metadata symbolStore
+            match Dictionary.tryFind assetTag.PackageName symbolStore.SymbolPackages with
+            | Some assets -> Dictionary.tryFind assetTag.AssetName assets
+            | None -> None
 
     /// Unload a symbolStore package with the given name.
     let unloadSymbolPackage packageName symbolStore =

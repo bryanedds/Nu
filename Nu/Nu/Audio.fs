@@ -133,14 +133,14 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
             Log.info ("Audio package load failed due to unloadable asset graph due to: '" + error)
 
     static member private tryFindAudioAsset (assetTag : obj AssetTag) audioPlayer =
-        let assetsOpt =
-            if audioPlayer.AudioPackages.ContainsKey assetTag.PackageName then
-                Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages
-            else
-                Log.info ("Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                SdlAudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
-                Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages
-        Option.bind (fun assets -> Dictionary.tryFind assetTag.AssetName assets) assetsOpt
+        match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
+        | Some assets -> Dictionary.tryFind assetTag.AssetName assets
+        | None ->
+            Log.info ("Loading audio package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
+            SdlAudioPlayer.tryLoadAudioPackage assetTag.PackageName audioPlayer
+            match Dictionary.tryFind assetTag.PackageName audioPlayer.AudioPackages with
+            | Some assets -> Dictionary.tryFind assetTag.AssetName assets
+            | None -> None
 
     static member private playSong playSongMessage audioPlayer =
         let song = playSongMessage.Song
