@@ -245,8 +245,8 @@ type [<ReferenceEquality>] Phantoms =
         let phantoms = Map.ofSeqBy (fun phantom -> (Gen.id, phantom)) phantoms
         { Phantoms = phantoms }
     static member move phantoms =
-        for phantomEntry in phantoms.Phantoms do
-            Phantom.move phantomEntry.Value
+        for entry in phantoms.Phantoms do
+            Phantom.move entry.Value
 
 type PhantomGameDispatcher () =
     inherit GameDispatcher<Phantoms, unit, unit> (Phantoms.init 20000)

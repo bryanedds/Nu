@@ -10,7 +10,6 @@ module KeyedArray =
 
     /// A garbage-collected keyed array.
     /// TODO: once this is well-tested, let's consider moving into Prime.
-    /// TODO: P1: consider implementing a type provider for this type.
     type [<NoEquality; NoComparison>] KeyedArray<'k, 'v when 'k : equality> =
         private
             { Keys_ : SortedDictionary<int, 'k> // sorted so that compacting does not change order
