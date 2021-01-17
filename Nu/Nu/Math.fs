@@ -30,6 +30,7 @@ module TransformMasks =
 open TransformMasks
 
 /// Carries transformation data specific to an Entity.
+/// TODO: P1: consider moving flags into the own type now that it's idiomatic to touch transforms directly.
 type [<NoEquality; NoComparison; Struct>] Transform =
     { // cache line begin
       mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
