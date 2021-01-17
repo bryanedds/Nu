@@ -177,6 +177,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     private
         { RenderContext : nativeint
           RenderPackages : RenderAsset Packages
+          mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
+          mutable RenderAssetCachedOpt : string * RenderAsset
           mutable RenderMessages : RenderMessage List
           LayeredDescriptors : LayeredDescriptor List }
 
@@ -189,12 +191,18 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         if assetNameCompare <> 0 then assetNameCompare else
         strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
-    static member private freeRenderAsset renderAsset =
+    static member private invalidateCaches renderer =
+        renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
+        renderer.RenderAssetCachedOpt <- Unchecked.defaultof<_>
+
+    static member private freeRenderAsset renderAsset renderer =
+        SdlRenderer.invalidateCaches renderer
         match renderAsset with
         | TextureAsset texture -> SDL.SDL_DestroyTexture texture
         | FontAsset (font, _) -> SDL_ttf.TTF_CloseFont font
 
-    static member private tryLoadRenderAsset2 renderContext (asset : obj Asset) =
+    static member private tryLoadRenderAsset (asset : obj Asset) renderContext renderer =
+        SdlRenderer.invalidateCaches renderer
         match Path.GetExtension asset.FilePath with
         | ".bmp"
         | ".png" ->
@@ -223,7 +231,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | Right assetGraph ->
             match AssetGraph.tryLoadAssetsFromPackage true (Some Constants.Associations.Render) packageName assetGraph with
             | Right assets ->
-                let renderAssetOpts = List.map (SdlRenderer.tryLoadRenderAsset2 renderer.RenderContext) assets
+                let renderAssetOpts = List.map (fun asset -> SdlRenderer.tryLoadRenderAsset asset renderer.RenderContext renderer) assets
                 let renderAssets = List.definitize renderAssetOpts
                 match Dictionary.tryFind packageName renderer.RenderPackages with
                 | Some renderAssetDict ->
@@ -237,15 +245,40 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | Left error ->
             Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
 
-    static member private tryLoadRenderAsset (assetTag : obj AssetTag) renderer =
-        let assetsOpt =
-            if renderer.RenderPackages.ContainsKey assetTag.PackageName then
-                Dictionary.tryFind assetTag.PackageName renderer.RenderPackages
+    static member tryFindRenderAsset (assetTag : obj AssetTag) renderer =
+        if  renderer.RenderPackageCachedOpt :> obj |> notNull &&
+            fst renderer.RenderPackageCachedOpt = assetTag.PackageName then
+            if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
+                fst renderer.RenderAssetCachedOpt = assetTag.AssetName then
+                Some (snd renderer.RenderAssetCachedOpt)
             else
+                let assets = snd renderer.RenderPackageCachedOpt
+                match Dictionary.tryFind assetTag.AssetName assets with
+                | Some asset as someAsset ->
+                    renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
+                    someAsset
+                | None -> None
+        else
+            match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
+            | Some assets ->
+                renderer.RenderPackageCachedOpt <- (assetTag.PackageName, assets)
+                match Dictionary.tryFind assetTag.AssetName assets with
+                | Some asset as someAsset ->
+                    renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
+                    someAsset
+                | None -> None
+            | None ->
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 SdlRenderer.tryLoadRenderPackage assetTag.PackageName renderer
-                Dictionary.tryFind assetTag.PackageName renderer.RenderPackages
-        Option.bind (fun assets -> Dictionary.tryFind assetTag.AssetName assets) assetsOpt
+                match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
+                | Some assets ->
+                    renderer.RenderPackageCachedOpt <- (assetTag.PackageName, assets)
+                    match Dictionary.tryFind assetTag.AssetName assets with
+                    | Some asset as someAsset ->
+                        renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
+                        someAsset
+                    | None -> None
+                | None -> None
 
     static member private handleHintRenderPackageUse hintPackageName renderer =
         SdlRenderer.tryLoadRenderPackage hintPackageName renderer
@@ -253,7 +286,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member private handleHintRenderPackageDisuse hintPackageName renderer =
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some assets ->
-            for asset in assets do SdlRenderer.freeRenderAsset asset.Value
+            for asset in assets do SdlRenderer.freeRenderAsset asset.Value renderer
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
@@ -291,7 +324,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let glow = descriptor.Glow
         let image = AssetTag.generalize descriptor.Image
         let flip = Flip.toSdlFlip descriptor.Flip
-        match SdlRenderer.tryLoadRenderAsset image renderer with
+        match SdlRenderer.tryFindRenderAsset image renderer with
         | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
@@ -356,7 +389,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let (allFound, tileSetTextures) =
             tileSets |>
             Array.map (fun (tileSet, tileSetImage) ->
-                match SdlRenderer.tryLoadRenderAsset (AssetTag.generalize tileSetImage) renderer with
+                match SdlRenderer.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
                 | Some (TextureAsset tileSetTexture) -> Some (tileSet, tileSetImage, tileSetTexture)
                 | Some _ -> None
                 | None -> None) |>
@@ -440,7 +473,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let text = String.textualize descriptor.Text
         let color = descriptor.Color
         let font = AssetTag.generalize descriptor.Font
-        match SdlRenderer.tryLoadRenderAsset font renderer with
+        match SdlRenderer.tryFindRenderAsset font renderer with
         | Some renderAsset ->
             match renderAsset with
             | FontAsset (font, _) ->
@@ -504,7 +537,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let view = if descriptor.Absolute then viewAbsolute else viewRelative
         let blend = Blend.toSdlBlendMode descriptor.Blend
         let image = AssetTag.generalize descriptor.Image
-        match SdlRenderer.tryLoadRenderAsset image renderer with
+        match SdlRenderer.tryFindRenderAsset image renderer with
         | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
@@ -594,6 +627,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let renderer =
             { RenderContext = renderContext
               RenderPackages = dictPlus []
+              RenderPackageCachedOpt = Unchecked.defaultof<_>
+              RenderAssetCachedOpt = Unchecked.defaultof<_>
               RenderMessages = List ()
               LayeredDescriptors = List () }
         renderer
@@ -619,7 +654,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         member renderer.CleanUp () =
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderAssetPackages |> Seq.collect (Seq.map (fun entry -> entry.Value))
-            for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset
+            for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
             renderer :> Renderer
 
