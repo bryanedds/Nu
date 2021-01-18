@@ -656,6 +656,16 @@ module WorldTypes =
               Id = id
               Name = name }
 
+        /// Copy an entity state.
+        static member inline copy (entityState : EntityState) =
+            { entityState with EntityState.Dispatcher = entityState.Dispatcher }
+
+        /// Copy an entity state, invalidating the incoming reference.
+        /// OPTIMIZATION: inlined invalidation masking for speed.
+        static member inline diverge (entityState : EntityState) =
+            entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
+            EntityState.copy entityState
+
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
             Xtension.tryGetProperty propertyName entityState.Xtension
@@ -665,28 +675,34 @@ module WorldTypes =
             Xtension.getProperty propertyName entityState.Xtension
 
         /// Try to set an xtension property with explicit type information.
-        static member trySetProperty propertyName property entityState =
+        static member trySetProperty propertyName property (entityState : EntityState) =
+            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
             match Xtension.trySetProperty propertyName property entityState.Xtension with
             | (true, xtension) ->
-                let entityState =
-                    if entityState.ShouldMutate then entityState
-                    else { entityState with Xtension = xtension }
+                entityState.Xtension <- xtension // redundant if xtension is imperative
                 (true, entityState)
             | (false, _) -> (false, entityState)
 
         /// Set an xtension property with explicit type information.
-        static member setProperty propertyName property entityState =
-            { entityState with EntityState.Xtension = Xtension.setProperty propertyName property entityState.Xtension }
+        static member setProperty propertyName property (entityState : EntityState) =
+            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            let xtension = Xtension.setProperty propertyName property entityState.Xtension
+            entityState.Xtension <- xtension // redundant if xtension is imperative
+            entityState
 
         /// Attach an xtension property.
-        static member attachProperty name property entityState =
-            { entityState with EntityState.Xtension = Xtension.attachProperty name property entityState.Xtension }
+        static member attachProperty name property (entityState : EntityState) =
+            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            let xtension = Xtension.attachProperty name property entityState.Xtension
+            entityState.Xtension <- xtension // redundant if xtension is imperative
+            entityState
 
         /// Detach an xtension property.
-        static member detachProperty name entityState =
+        static member detachProperty name (entityState : EntityState) =
+            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
             let xtension = Xtension.detachProperty name entityState.Xtension
-            if entityState.ShouldMutate then entityState
-            else { entityState with EntityState.Xtension = xtension }
+            entityState.Xtension <- xtension // redundant if xtension is imperative
+            entityState
 
         /// Get an entity state's transform.
         static member getTransform entityState =
@@ -694,14 +710,9 @@ module WorldTypes =
 
         /// Set an entity state's transform.
         static member setTransform (value : Transform) (entityState : EntityState) =
-            if entityState.ShouldMutate then
-                entityState.Transform.Assign value
-                entityState
-            else { entityState with Transform = value }
-
-        /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
-        static member copy (entityState : EntityState) =
-            { entityState with EntityState.Dispatcher = entityState.Dispatcher }
+            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            entityState.Transform.Assign value
+            entityState
 
         // Member properties; only for use by internal reflection facilities.
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
