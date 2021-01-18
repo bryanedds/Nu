@@ -510,7 +510,7 @@ module WorldModule2 =
             // not sure if we really want to also clear physics messages here - we didn't used to
             World.clearMessages world
 
-        /// Thaw the state of a world.
+        /// Unshelve the state of a world.
         static member unshelve world =
 
             // clear existing physics messages

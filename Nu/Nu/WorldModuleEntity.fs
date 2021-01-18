@@ -761,9 +761,10 @@ module WorldModuleEntity =
             world
 
         static member divergeEntity entity world =
-            World.getEntityState entity world |>
-            EntityState.copy |>
-            flip3 World.setEntityState entity world
+            let entityState = World.getEntityState entity world
+            entityState.Invalidated <- true
+            let entityState = EntityState.copy entityState
+            World.setEntityState entityState entity world
 
         static member internal registerEntity entity world =
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher
