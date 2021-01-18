@@ -354,19 +354,19 @@ type [<StructuralEquality; NoComparison>] ApplyBodyForceMessage =
       Force : Vector2 }
 
 /// A message from the physics system describing a body collision that took place.
-type [<StructuralEquality; NoComparison>] BodyCollisionMessage =
+type [<NoEquality; NoComparison; Struct>] BodyCollisionMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal
       Normal : Vector2
       Speed : single }
 
 /// A message from the physics system describing a body separation that took place.
-type [<StructuralEquality; NoComparison>] BodySeparationMessage =
+type [<NoEquality; NoComparison; Struct>] BodySeparationMessage =
     { BodyShapeSource : BodyShapeSourceInternal
       BodyShapeSource2 : BodyShapeSourceInternal }
 
 /// A message from the physics system describing the updated transform of a body.
-type [<StructuralEquality; NoComparison>] BodyTransformMessage =
+type [<NoEquality; NoComparison; Struct>] BodyTransformMessage =
     { BodySource : BodySourceInternal
       Position : Vector2
       Rotation : single
@@ -401,10 +401,10 @@ type [<StructuralEquality; NoComparison>] PhysicsMessage =
     | RebuildPhysicsHackMessage
 
 /// A message from the physics system.
-type [<StructuralEquality; NoComparison>] IntegrationMessage =
-    | BodyCollisionMessage of BodyCollisionMessage
-    | BodySeparationMessage of BodySeparationMessage
-    | BodyTransformMessage of BodyTransformMessage
+type [<NoEquality; NoComparison; Struct>] IntegrationMessage =
+    | BodyCollisionMessage of BodyCollisionMessage : BodyCollisionMessage
+    | BodySeparationMessage of BodySeparationMessage : BodySeparationMessage
+    | BodyTransformMessage of BodyTransformMessage : BodyTransformMessage
 
 /// Represents a physics engine in Nu.
 type PhysicsEngine =
@@ -794,12 +794,11 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             AetherPhysicsEngine.handlePhysicsMessage physicsEngine physicsMessage
         physicsEngine.RebuildingHack <- false
 
-    static member private createTransformMessages physicsEngine =
-        // NOTE: We should really be querying these bodies from the physics engine's internally-maintained awake-body
-        // list. Note also that I tried building Farseer with #define USE_AWAKE_BODY_SET so we can query from that
-        // AwakeBodyList, but there are compilation errors that, when I tried to fix, broke the whole system :)
-        //
-        // In truth, we just need a better physics engine implementation :)
+    static member private createIntegrationMessages physicsEngine =
+        // NOTE: P1: We should really be querying these bodies from the physics engine's internally-maintained
+        // awake-body list for better performance. It's quite suboptimal to have to iterate through all bodies!
+        // Note also that I tried building Farseer with #define USE_AWAKE_BODY_SET so we can query from that
+        // AwakeBodyList, but there are compilation errors that, when I tried to fix, broke the whole system.
         for body in physicsEngine.PhysicsContext.BodyList do
             if body.Awake && body.BodyType <> Dynamics.BodyType.Static then
                 let bodyTransformMessage =
@@ -810,8 +809,8 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
                           AngularVelocity = body.AngularVelocity
                           LinearVelocity = AetherPhysicsEngine.toPixelV2 body.LinearVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
-                
-    static member applyGravity physicsStepAmount physicsEngine =
+
+    static member private applyGravity physicsStepAmount physicsEngine =
         for (gravityScale, body) in physicsEngine.Bodies.Values do
             if  body.BodyType = Dynamics.BodyType.Dynamic then
                 body.LinearVelocity <-
@@ -885,7 +884,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             let physicsStepAmount = Constants.Physics.PhysicsStepRate * single tickRate
             AetherPhysicsEngine.applyGravity physicsStepAmount physicsEngine
             physicsEngine.PhysicsContext.Step physicsStepAmount
-            AetherPhysicsEngine.createTransformMessages physicsEngine
+            AetherPhysicsEngine.createIntegrationMessages physicsEngine
             let integrationMessages = List<IntegrationMessage> physicsEngine.IntegrationMessages
             physicsEngine.IntegrationMessages.Clear ()
             integrationMessages
