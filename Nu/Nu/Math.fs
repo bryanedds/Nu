@@ -12,19 +12,20 @@ open Nu
 module TransformMasks =
 
     // OPTIMIZATION: Transform flag bit-masks for performance.
-    let [<Literal>] ActiveMask =               0b0000000000000001
-    let [<Literal>] DirtyMask =                0b0000000000000010
-    let [<Literal>] InvalidatedMask =          0b0000000000000100
-    let [<Literal>] OmnipresentMask =          0b0000000000001000
-    let [<Literal>] AbsoluteMask =             0b0000000000010000
-    let [<Literal>] ImperativeMask =           0b0000000000100000
-    let [<Literal>] PublishChangesMask =       0b0000000001000000
-    let [<Literal>] EnabledMask =              0b0000000010000000
-    let [<Literal>] VisibleMask =              0b0000000100000000
-    let [<Literal>] AlwaysUpdateMask =         0b0000001000000000
-    let [<Literal>] PublishUpdatesMask =       0b0000010000000000
-    let [<Literal>] PublishPostUpdatesMask =   0b0000100000000000
-    let [<Literal>] PersistentMask =           0b0001000000000000
+    let [<Literal>] ActiveMask =                0b0000000000000001
+    let [<Literal>] DirtyMask =                 0b0000000000000010
+    let [<Literal>] InvalidatedMask =           0b0000000000000100
+    let [<Literal>] OmnipresentMask =           0b0000000000001000
+    let [<Literal>] AbsoluteMask =              0b0000000000010000
+    let [<Literal>] ImperativeMask =            0b0000000000100000
+    let [<Literal>] PublishChangesMask =        0b0000000001000000
+    let [<Literal>] EnabledMask =               0b0000000010000000
+    let [<Literal>] VisibleMask =               0b0000000100000000
+    let [<Literal>] AlwaysUpdateMask =          0b0000001000000000
+    let [<Literal>] PublishUpdatesMask =        0b0000010000000000
+    let [<Literal>] PublishPostUpdatesMask =    0b0000100000000000
+    let [<Literal>] PersistentMask =            0b0001000000000000
+    let [<Literal>] StandAloneMask =            0b0010000000000000
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -62,7 +63,9 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
     member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
     member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
+    member this.StandAlone with get () = this.Flags &&& StandAloneMask <> 0 and set value = this.Flags <- if value then this.Flags ||| StandAloneMask else this.Flags &&& ~~~StandAloneMask
     member this.Optimized with get () = ~~~this.Flags &&& OmnipresentMask ||| ~~~this.Flags &&& ImperativeMask ||| this.Flags &&& PublishChangesMask = 0
+    member this.ShouldMutate with get () = this.Imperative && not this.StandAlone // TODO: P1: find a way to determine this with bit masking for speed.
 
     /// Assign a transform in-place.
     member this.Assign that =
@@ -84,7 +87,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
           Size = Constants.Engine.EntitySizeDefault
           Rotation = 0.0f
           Elevation = 0.0f
-          Flags = 0b0001000110000001 }
+          Flags = 0b0011000110100001 }
 
     interface Transform Component with
         member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
