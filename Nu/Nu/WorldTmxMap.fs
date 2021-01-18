@@ -174,7 +174,7 @@ module TmxMap =
         let layers = List.ofSeq tileMap.Layers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
-        let tileImageAssets = tileMap.ImageAssets
+        let tileAssets = tileMap.ImageAssets
         let tileMapDescriptor = getDescriptor tileMapPosition tileMap
         let messagess =
             List.foldi
@@ -259,7 +259,7 @@ module TmxMap =
                                                   Tiles = Seq.toArray tiles
                                                   TileSourceSize = tileSourceSize
                                                   TileSize = tileSize
-                                                  TileImageAssets = tileImageAssets }}
+                                                  TileAssets = tileAssets }}
 
                         // loop
                         yC <- inc yC

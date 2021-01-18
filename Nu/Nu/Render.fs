@@ -84,7 +84,7 @@ type [<NoEquality; NoComparison>] TileLayerDescriptor =
       Tiles : TmxLayerTile array
       TileSourceSize : Vector2i
       TileSize : Vector2
-      TileImageAssets : (TmxTileset * Image AssetTag) array }
+      TileAssets : (TmxTileset * Image AssetTag) array }
 
 /// Describes how to render text to the rendering system.
 type [<NoEquality; NoComparison>] TextDescriptor =
@@ -308,29 +308,33 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         for renderMessage in renderMessages do
             SdlRenderer.handleRenderMessage renderMessage renderer
 
-    static member private renderSprite
+    /// Render sprite.
+    static member renderSprite
         (viewAbsolute : Matrix3x3)
         (viewRelative : Matrix3x3)
         (_ : Vector2)
         (eyeSize : Vector2)
-        (descriptor : SpriteDescriptor)
+        (transform : Transform)
+        (offset : Vector2)
+        (insetOpt : Vector4 option)
+        (image : Image AssetTag)
+        (color : Color)
+        (glow : Color)
+        (flip : Flip)
         renderer =
-        let transform = &descriptor.Transform
         let view = if transform.Flags &&& TransformMasks.AbsoluteMask <> 0 then viewAbsolute else viewRelative // OPTIMIZATION: using mask directly to avoid a transform copy.
-        let position = transform.Position - Vector2.Multiply (descriptor.Offset, transform.Size)
+        let position = transform.Position - Vector2.Multiply (offset, transform.Size)
         let positionView = position * view
         let sizeView = transform.Size * view.ExtractScaleMatrix ()
-        let color = descriptor.Color
-        let glow = descriptor.Glow
-        let image = AssetTag.generalize descriptor.Image
-        let flip = Flip.toSdlFlip descriptor.Flip
+        let image = AssetTag.generalize image
+        let flip = Flip.toSdlFlip flip
         match SdlRenderer.tryFindRenderAsset image renderer with
         | Some renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
                 let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
                 let mutable sourceRect = SDL.SDL_Rect ()
-                match descriptor.InsetOpt with
+                match insetOpt with
                 | Some inset ->
                     sourceRect.x <- int inset.X
                     sourceRect.y <- int inset.Y
@@ -365,29 +369,35 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
-    static member private renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
-        for sprite in sprites do
-            SdlRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
+    static member private renderSpriteDescriptor viewAbsolute viewRelative eyeCenter eyeSize (sprite : SpriteDescriptor) renderer =
+        SdlRenderer.renderSprite
+            viewAbsolute viewRelative eyeCenter eyeSize
+            sprite.Transform sprite.Offset sprite.InsetOpt sprite.Image sprite.Color sprite.Glow sprite.Flip
+            renderer
 
-    static member private renderTileLayerDescriptor
+    static member private renderSpriteDescriptors viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
+        for sprite in sprites do
+            SdlRenderer.renderSpriteDescriptor viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
+
+    /// Render tile layer.
+    static member renderTileLayer
         (viewAbsolute : Matrix3x3)
         (viewRelative : Matrix3x3)
         (_ : Vector2)
         (eyeSize : Vector2)
-        (descriptor : TileLayerDescriptor)
+        (transform : Transform)
+        (mapSize : Vector2i)
+        (tiles : TmxLayerTile array)
+        (tileSourceSize : Vector2i)
+        (tileSize : Vector2)
+        (tileAssets : (TmxTileset * Image AssetTag) array)
         renderer =
-        let mutable transform = descriptor.Transform
-        let view = if transform.Absolute then viewAbsolute else viewRelative
+        let view = if transform.Flags &&& TransformMasks.AbsoluteMask <> 0 then viewAbsolute else viewRelative
         let positionView = transform.Position * view
         let sizeView = transform.Size * view.ExtractScaleMatrix ()
         let tileRotation = transform.Rotation
-        let mapSize = descriptor.MapSize
-        let tiles = descriptor.Tiles
-        let tileSourceSize = descriptor.TileSourceSize
-        let tileSize = descriptor.TileSize
-        let tileSets = descriptor.TileImageAssets
         let (allFound, tileSetTextures) =
-            tileSets |>
+            tileAssets |>
             Array.map (fun (tileSet, tileSetImage) ->
                 match SdlRenderer.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
                 | Some (TextureAsset tileSetTexture) -> Some (tileSet, tileSetImage, tileSetTexture)
@@ -455,24 +465,32 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             tileDestRectRef := destRect
                             tileRotationCenterRef := rotationCenter
                             let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
-                            if renderResult <> 0 then Log.info ("Render error - could not render texture for tile '" + scstring descriptor + "' due to '" + SDL.SDL_GetError () + "."))
+                            if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + "."))
                 tiles
-        else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for '" + scstring tileSets + "'.")
+        else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for '" + scstring tileAssets + "'.")
 
-    static member private renderTextDescriptor
+    static member private renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize (tileLayer : TileLayerDescriptor) renderer =
+        SdlRenderer.renderTileLayer
+            viewAbsolute viewRelative eyeCenter eyeSize
+            tileLayer.Transform tileLayer.MapSize tileLayer.Tiles tileLayer.TileSourceSize tileLayer.TileSize tileLayer.TileAssets
+            renderer
+
+    /// Render text.
+    static member renderText
         (viewAbsolute : Matrix3x3)
         (viewRelative : Matrix3x3)
         (_ : Vector2)
         (eyeSize : Vector2)
-        (descriptor : TextDescriptor)
+        (transform : Transform)
+        (text : string)
+        (font : Font AssetTag)
+        (color : Color)
+        (justification : Justification)
         renderer =
-        let mutable transform = descriptor.Transform
-        let view = if transform.Absolute then viewAbsolute else viewRelative
+        let view = if transform.Flags &&& TransformMasks.AbsoluteMask <> 0 then viewAbsolute else viewRelative
         let positionView = transform.Position * view
         let sizeView = transform.Size * view.ExtractScaleMatrix ()
-        let text = String.textualize descriptor.Text
-        let color = descriptor.Color
-        let font = AssetTag.generalize descriptor.Font
+        let font = AssetTag.generalize font
         match SdlRenderer.tryFindRenderAsset font renderer with
         | Some renderAsset ->
             match renderAsset with
@@ -486,7 +504,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 // texture one or more times a frame must be understood! Although, maybe it all happens in software
                 // and vram fragmentation would not be a concern in the first place... perf could still be, however.
                 let (offset, textSurface) =
-                    match descriptor.Justification with
+                    match justification with
                     | Unjustified wrapped ->
                         let textSurface =
                             if wrapped
@@ -527,16 +545,29 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | _ -> Log.debug "Cannot render text with a non-font asset."
         | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
 
-    static member private renderParticles
+    static member private renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize (text : TextDescriptor) renderer =
+        SdlRenderer.renderText
+            viewAbsolute viewRelative eyeCenter eyeSize
+            text.Transform text.Text text.Font text.Color text.Justification
+            renderer
+
+    /// Render particles.
+    static member renderParticles
         (viewAbsolute : Matrix3x3)
         (viewRelative : Matrix3x3)
         (_ : Vector2)
         (eyeSize : Vector2)
-        (descriptor : ParticlesDescriptor)
+        (_ : single)
+        (_ : single)
+        (absolute : bool)
+        (blend : Blend)
+        (image : Image AssetTag)
+        (particles : ParticleDescriptor array)
         renderer =
-        let view = if descriptor.Absolute then viewAbsolute else viewRelative
-        let blend = Blend.toSdlBlendMode descriptor.Blend
-        let image = AssetTag.generalize descriptor.Image
+        let view = if absolute then viewAbsolute else viewRelative
+        let positionOffset = -(v2Zero * view)
+        let blend = Blend.toSdlBlendMode blend
+        let image = AssetTag.generalize image
         match SdlRenderer.tryFindRenderAsset image renderer with
         | Some renderAsset ->
             match renderAsset with
@@ -545,11 +576,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let mutable sourceRect = SDL.SDL_Rect ()
                 let mutable destRect = SDL.SDL_Rect ()
                 let mutable index = 0
-                while index < descriptor.Particles.Length do
-                    let descriptor = &descriptor.Particles.[index]
+                while index < particles.Length do
+                    let descriptor = &particles.[index]
                     let transform = &descriptor.Transform
                     let position = transform.Position - Vector2.Multiply (descriptor.Offset, transform.Size)
-                    let positionView = position * view // NOTE: computing positionView here would be significantly faster in a shader.
+                    let positionView = position + positionOffset
                     let sizeView = transform.Size * view.ExtractScaleMatrix ()
                     let color = descriptor.Color
                     let glow = descriptor.Glow
@@ -589,6 +620,12 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | _ -> Log.trace "Cannot render particle with a non-texture asset."
         | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
 
+    static member private renderParticlesDescriptor viewAbsolute viewRelative eyeCenter eyeSize (particles : ParticlesDescriptor) renderer =
+        SdlRenderer.renderParticles
+            viewAbsolute viewRelative eyeCenter eyeSize
+            particles.Elevation particles.PositionY particles.Absolute particles.Blend particles.Image particles.Particles
+            renderer
+
     static member private renderDescriptor
         (viewAbsolute : Matrix3x3)
         (viewRelative : Matrix3x3)
@@ -597,11 +634,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         descriptor
         renderer =
         match descriptor with
-        | SpriteDescriptor sprite -> SdlRenderer.renderSprite viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
-        | SpritesDescriptor sprites -> SdlRenderer.renderSprites viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
+        | SpriteDescriptor sprite -> SdlRenderer.renderSpriteDescriptor viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
+        | SpritesDescriptor sprites -> SdlRenderer.renderSpriteDescriptors viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
         | TileLayerDescriptor descriptor -> SdlRenderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
         | TextDescriptor descriptor -> SdlRenderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
-        | ParticlesDescriptor descriptor -> SdlRenderer.renderParticles viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
+        | ParticlesDescriptor descriptor -> SdlRenderer.renderParticlesDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
         | RenderCallback callback -> callback viewAbsolute viewRelative eyeCenter eyeSize renderer
 
     static member private renderLayeredDescriptors eyeCenter eyeSize (descriptors : LayeredDescriptor List) renderer =
