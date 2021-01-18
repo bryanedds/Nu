@@ -116,6 +116,11 @@ module WorldEntityModule =
         member this.StateReadOnly world =
             world |> World.getEntityState this |> EntityState.copy
 
+        /// Diverge an entity.
+        member this.Diverge world =
+            World.divergeEntity this world
+
+        /// Optimize an entity by setting { Imperative = true; Omnipresent = true; PublishChanges = false }.
         member this.Optimize world =
             let world = this.SetImperative true world
             let world = this.SetOmnipresent true world
