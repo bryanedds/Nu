@@ -251,17 +251,17 @@ module WorldModuleEntity =
             World.updateEntityState
                 (fun entityState ->
                     if value <> entityState.Imperative then
-                        if value then
+                        if value && entityState.StandAlone then
                             let properties = UMap.makeFromSeq Imperative (Xtension.toSeq entityState.Xtension)
-                            let xtension = Xtension.make properties false true (not value && not entityState.StandAlone)
+                            let xtension = Xtension.make properties false true true
                             entityState.Xtension <- xtension
-                            entityState.Imperative <- true
+                            entityState.Imperative <- value
                             Some entityState
                         else
                             let properties = UMap.makeFromSeq Functional (Xtension.toSeq entityState.Xtension)
-                            let xtension = Xtension.make properties false true (not value && not entityState.StandAlone)
+                            let xtension = Xtension.make properties false true false
                             let entityState = { entityState with Xtension = xtension }
-                            entityState.Imperative <- false
+                            entityState.Imperative <- value
                             Some entityState
                     else None)
                 false Property? Imperative value entity world

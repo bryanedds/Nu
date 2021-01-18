@@ -144,11 +144,10 @@ type MyGameDispatcher () =
         let world =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> None DefaultOverlay Simulants.DefaultLayer world
-#if !REACTIVE
-                let world = entity.Optimize world
-#endif
+                let world = entity.SetOmnipresent true world
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
-                entity.SetSize (v2One * 8.0f) world)
+                let world = entity.SetSize (v2One * 8.0f) world
+                world)
                 world indices
 #endif
         let world = World.selectScreen Simulants.DefaultScreen world
