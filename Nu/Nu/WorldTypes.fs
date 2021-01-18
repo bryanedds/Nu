@@ -646,7 +646,7 @@ module WorldTypes =
             { Transform = Transform.makeDefault ()
               Dispatcher = dispatcher
               Facets = [||]
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeImperative ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
