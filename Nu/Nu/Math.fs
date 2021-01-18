@@ -65,7 +65,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
     member this.StandAlone with get () = this.Flags &&& StandAloneMask <> 0 and set value = this.Flags <- if value then this.Flags ||| StandAloneMask else this.Flags &&& ~~~StandAloneMask
     member this.Optimized with get () = ~~~this.Flags &&& OmnipresentMask ||| ~~~this.Flags &&& ImperativeMask ||| this.Flags &&& PublishChangesMask = 0
-    member this.ShouldMutate with get () = this.Imperative && this.StandAlone // TODO: P1: find a way to determine this with bit masking for speed.
+    member this.ShouldMutate with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& StandAloneMask = 0
 
     /// Assign a transform in-place.
     member this.Assign that =
