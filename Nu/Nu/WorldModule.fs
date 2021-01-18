@@ -246,6 +246,11 @@ module WorldModule =
         static member internal updateAmbientState updater world =
             World.choose { world with AmbientState = updater world.AmbientState }
 
+        /// Get whether the game is running stand alone.
+        [<FunctionBinding>]
+        static member getStandAlone world =
+            World.getAmbientStateBy AmbientState.getStandAlone world
+
         /// Get the the liveness state of the engine.
         [<FunctionBinding>]
         static member getLiveness world =

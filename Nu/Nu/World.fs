@@ -477,7 +477,7 @@ module WorldModule3 =
                 let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                 let overlayRouter = OverlayRouter.make overlayRoutes
                 let symbolStore = SymbolStore.makeEmpty ()
-                AmbientState.make 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty symbolStore None
+                AmbientState.make config.StandAlone 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty symbolStore None
 
             // make the world's spatial tree
             let spatialTree = World.makeEntityTree ()
@@ -580,7 +580,7 @@ module WorldModule3 =
                         let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolStore = SymbolStore.makeEmpty ()
-                        AmbientState.make config.TickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps)
+                        AmbientState.make config.StandAlone config.TickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps)
 
                     // make the world's spatial tree
                     let spatialTree = World.makeEntityTree ()

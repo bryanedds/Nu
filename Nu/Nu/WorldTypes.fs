@@ -335,14 +335,15 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
-             Define? Imperative false
+             Define? Imperative true
              Define? PublishChanges false
              Define? Visible true
              Define? Enabled true
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
-             Define? Persistent true]
+             Define? Persistent true
+             Define? StandAlone true]
 
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
@@ -668,7 +669,7 @@ module WorldTypes =
             match Xtension.trySetProperty propertyName property entityState.Xtension with
             | (true, xtension) ->
                 let entityState =
-                    if entityState.Imperative then entityState
+                    if entityState.ShouldMutate then entityState
                     else { entityState with Xtension = xtension }
                 (true, entityState)
             | (false, _) -> (false, entityState)
@@ -684,7 +685,7 @@ module WorldTypes =
         /// Detach an xtension property.
         static member detachProperty name entityState =
             let xtension = Xtension.detachProperty name entityState.Xtension
-            if entityState.Imperative then entityState
+            if entityState.ShouldMutate then entityState
             else { entityState with EntityState.Xtension = xtension }
 
         /// Get an entity state's transform.
@@ -693,7 +694,7 @@ module WorldTypes =
 
         /// Set an entity state's transform.
         static member setTransform (value : Transform) (entityState : EntityState) =
-            if entityState.Imperative then
+            if entityState.ShouldMutate then
                 entityState.Transform.Assign value
                 entityState
             else { entityState with Transform = value }
@@ -719,7 +720,9 @@ module WorldTypes =
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
+        member this.StandAlone with get () = this.Transform.StandAlone and set value = this.Transform.StandAlone <- value
         member this.Optimized with get () = this.Transform.Optimized
+        member this.ShouldMutate with get () = this.Transform.ShouldMutate
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

@@ -59,6 +59,8 @@ module Reflection =
              ("PublishPostUpdates", true)
              ("CreationTimeStamp", true)
              ("Optimized", true)
+             ("StandAlone", true)
+             ("ShouldMutate", true)
              ("ScriptFrame", true)
              ("ScriptUnsubscriptions", true)
              ("TmxMap", true)
