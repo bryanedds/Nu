@@ -763,7 +763,7 @@ module WorldModuleEntity =
 #endif
             world
 
-        static member divergeEntity entity world =
+        static member internal divergeEntity entity world =
             let entityState = World.getEntityState entity world
             entityState.Invalidated <- true
             let entityState = EntityState.copy entityState
