@@ -251,18 +251,18 @@ module WorldModuleEntity =
             World.updateEntityState
                 (fun entityState ->
                     if value <> entityState.Imperative then
-                        if value && entityState.StandAlone then
+                        if value then
                             let properties = UMap.makeFromSeq Imperative (Xtension.toSeq entityState.Xtension)
                             let xtension = Xtension.make properties false true true
                             entityState.Xtension <- xtension
-                            entityState.Imperative <- value
+                            entityState.Imperative <- true
                             Some entityState
                         else
                             let properties = UMap.makeFromSeq Functional (Xtension.toSeq entityState.Xtension)
                             let xtension = Xtension.make properties false true false
                             let entityState = EntityState.diverge entityState
                             entityState.Xtension <- xtension
-                            entityState.Imperative <- value
+                            entityState.Imperative <- false
                             Some entityState
                     else None)
                 false Property? Imperative value entity world
@@ -313,7 +313,6 @@ module WorldModuleEntity =
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
-        static member internal getEntityStandAlone entity world = (World.getEntityState entity world).StandAlone
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).ShouldMutate
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) world.DestructionListRev
@@ -930,7 +929,7 @@ module WorldModuleEntity =
                 | ExplicitOverlay overlayName -> Some overlayName
 
             // make the bare entity state (with name as id if none is provided)
-            let entityState = EntityState.make nameOpt overlayNameOpt dispatcher
+            let entityState = EntityState.make nameOpt (World.getStandAlone world) overlayNameOpt dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
@@ -964,9 +963,6 @@ module WorldModuleEntity =
                     else entityState
                 | None -> entityState
 
-            // set stand-along flag
-            entityState.StandAlone <- World.getStandAlone world
-
             // add entity's state to world
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world =
@@ -976,9 +972,6 @@ module WorldModuleEntity =
                     else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
                 else world
             let world = World.addEntity false entityState entity world
-
-            // HACK: make sure xtension is consistent with imperativeness of entity state
-            let world = World.setEntityImperative entityState.Imperative entity world
             (entity, world)
 
         /// Create an entity from an simulant descriptor.
@@ -1022,7 +1015,7 @@ module WorldModuleEntity =
             let defaultOverlayNameOpt = World.getEntityDefaultOverlayName dispatcherName world
 
             // make the bare entity state with name as id
-            let entityState = EntityState.make None defaultOverlayNameOpt dispatcher
+            let entityState = EntityState.make None (World.getStandAlone world) defaultOverlayNameOpt dispatcher
 
             // attach the entity state's intrinsic facets and their properties
             let entityState = World.attachIntrinsicFacetsViaNames entityState world
@@ -1068,9 +1061,6 @@ module WorldModuleEntity =
                 | Some name -> { entityState with Name = name }
                 | None -> entityState
 
-            // set stand-along flag
-            entityState.StandAlone <- World.getStandAlone world
-
             // try to add entity state to the world
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world =
@@ -1080,9 +1070,6 @@ module WorldModuleEntity =
                     else failwith ("Entity '" + scstring entity + " already exists and cannot be created."); world
                 else world
             let world = World.addEntity true entityState entity world
-
-            // HACK: make sure xtension is consistent with imperativeness of entity state
-            let world = World.setEntityImperative entityState.Imperative entity world
             (entity, world)
 
         /// Read an entity from a file.
@@ -1294,8 +1281,6 @@ module WorldModuleEntity =
     let private initGetters () =
         Getters.Add ("Dispatcher", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world })
         Getters.Add ("Facets", fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world })
-        Getters.Add ("PublishChanges", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world })
-        Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
         Getters.Add ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform })
         Getters.Add ("Bounds", fun entity world -> { PropertyType = typeof<Vector4>; PropertyValue = World.getEntityBounds entity world })
         Getters.Add ("Position", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world })
@@ -1308,13 +1293,14 @@ module WorldModuleEntity =
         Getters.Add ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
         Getters.Add ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         Getters.Add ("Overflow", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world })
+        Getters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
+        Getters.Add ("PublishChanges", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChanges entity world })
         Getters.Add ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
         Getters.Add ("Enabled", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world })
         Getters.Add ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
         Getters.Add ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
         Getters.Add ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
         Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
-        Getters.Add ("StandAlone", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityStandAlone entity world })
         Getters.Add ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
         Getters.Add ("ShouldMutate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityShouldMutate entity world })
         Getters.Add ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })

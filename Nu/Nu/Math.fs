@@ -25,7 +25,6 @@ module TransformMasks =
     let [<Literal>] PublishUpdatesMask =        0b0000010000000000
     let [<Literal>] PublishPostUpdatesMask =    0b0000100000000000
     let [<Literal>] PersistentMask =            0b0001000000000000
-    let [<Literal>] StandAloneMask =            0b0010000000000000
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -63,9 +62,8 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
     member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
     member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
-    member this.StandAlone with get () = this.Flags &&& StandAloneMask <> 0 and set value = this.Flags <- if value then this.Flags ||| StandAloneMask else this.Flags &&& ~~~StandAloneMask
-    member this.Optimized with get () = ~~~this.Flags &&& OmnipresentMask ||| ~~~this.Flags &&& ImperativeMask ||| this.Flags &&& PublishChangesMask = 0
-    member this.ShouldMutate with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& StandAloneMask = 0
+    member this.Optimized with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& OmnipresentMask ||| ~~~this.Flags &&& PublishChangesMask = 0
+    member this.ShouldMutate with get () = ~~~this.Flags &&& ImperativeMask = 0
 
     /// Assign a transform in-place.
     member this.Assign that =
@@ -87,7 +85,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
           Size = Constants.Engine.EntitySizeDefault
           Rotation = 0.0f
           Elevation = 0.0f
-          Flags = 0b0011000110100001 }
+          Flags = 0b0001000110100001 }
 
     interface Transform Component with
         member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask

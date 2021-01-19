@@ -335,15 +335,13 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
-             Define? Imperative true
              Define? PublishChanges false
              Define? Visible true
              Define? Enabled true
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
-             Define? Persistent true
-             Define? StandAlone true]
+             Define? Persistent true]
 
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
@@ -641,12 +639,14 @@ module WorldTypes =
             member this.GetXtension () = this.Xtension
 
         /// Make an entity state value.
-        static member make nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+        static member make nameOpt imperative overlayNameOpt (dispatcher : EntityDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
-            { Transform = Transform.makeDefault ()
+            let mutable transform = Transform.makeDefault ()
+            transform.Imperative <- imperative
+            { Transform = transform
               Dispatcher = dispatcher
               Facets = [||]
-              Xtension = Xtension.makeImperative ()
+              Xtension = if imperative then Xtension.makeImperative () else Xtension.makeSafe ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
@@ -731,7 +731,6 @@ module WorldTypes =
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
-        member this.StandAlone with get () = this.Transform.StandAlone and set value = this.Transform.StandAlone <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.ShouldMutate with get () = this.Transform.ShouldMutate
 
