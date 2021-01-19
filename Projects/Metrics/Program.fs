@@ -229,19 +229,18 @@ type [<ReferenceEquality>] Phantom =
     static member init i =
         let x = single i * 0.05f + Gen.randomf - (single Constants.Render.VirtualResolutionX * 0.5f)
         let y = Gen.randomf - (single Constants.Render.VirtualResolutionY * 0.5f)
-        { PhantomTransform = { Transform.makeDefault () with Position = v2 x y; Size = v2 6.0f 6.0f }
+        { PhantomTransform = { Transform.makeDefault () with Position = v2 x y; Size = v2 9.0f 9.0f }
           PhantomLinearVelocity = v2 0.0f (Gen.randomf * 0.5f)
-          PhantomAngularVelocity = Gen.randomf
-          PhantomImage =  Assets.Default.Image }
+          PhantomAngularVelocity = Gen.randomf * 0.1f
+          PhantomImage =  Assets.Default.CharacterIdleImage }
     static member move phantom =
         phantom.PhantomTransform.Position <- phantom.PhantomTransform.Position + phantom.PhantomLinearVelocity
         phantom.PhantomTransform.Rotation <- phantom.PhantomTransform.Rotation + phantom.PhantomAngularVelocity
 
 type [<ReferenceEquality>] Phantoms =
-    { Phantoms : Map<Guid, Phantom> }
+    { Phantoms : Dictionary<Guid, Phantom> }
     static member init n =
-        let phantoms = seq { for i in 0 .. n - 1 do yield Phantom.init i }
-        let phantoms = Map.ofSeqBy (fun phantom -> (Gen.id, phantom)) phantoms
+        let phantoms = seq { for i in 0 .. n - 1 do yield (Gen.id, Phantom.init i) } |> dictPlus
         { Phantoms = phantoms }
     static member move phantoms =
         for entry in phantoms.Phantoms do
@@ -265,23 +264,19 @@ type PhantomGameDispatcher () =
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
 
     override this.View (phantoms, _, _) =
-        let descriptors =
-            seq {
-                for entry in phantoms.Phantoms do
-                    let phantom = entry.Value
-                    yield
-                        { SpriteDescriptor.Transform = phantom.PhantomTransform
-                          Offset = v2Dup 0.5f
-                          InsetOpt = None
-                          Image = phantom.PhantomImage
-                          Color = colWhite
-                          Glow = colZero
-                          Flip = FlipNone }}
         Render
             (0.0f,
              single Constants.Render.VirtualResolutionY * -0.5f,
-             AssetTag.generalize Assets.Default.Image,
-             SpritesDescriptor (Seq.toArray descriptors))
+             Assets.Default.Empty,
+             RenderCallback
+                 (fun viewAbsolute viewRelative eyeCenter eyeSize renderer ->
+                    for entry in phantoms.Phantoms do
+                        let phantom = entry.Value
+                        let sdlRenderer = renderer :?> SdlRenderer
+                        SdlRenderer.renderSprite
+                            viewAbsolute viewRelative eyeCenter eyeSize
+                            phantom.PhantomTransform (v2Dup 0.5f) None phantom.PhantomImage colWhite colZero FlipNone
+                            sdlRenderer))
 #endif
 
 type MetricsPlugin () =

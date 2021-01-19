@@ -19,6 +19,7 @@ module Assets =
     module Default =
     
         let (*Literal*) PackageName = Assets.Default.PackageName
+        let (*Literal*) Empty = asset<obj> PackageName Assets.Default.EmptyName
         let (*Literal*) EmptyImage = asset<Image> PackageName Assets.Default.EmptyImageName
         let (*Literal*) Image = asset<Image> PackageName Assets.Default.ImageName
         let (*Literal*) Image2 = asset<Image> PackageName Assets.Default.Image2Name
