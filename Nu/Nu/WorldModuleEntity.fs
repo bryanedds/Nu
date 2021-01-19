@@ -333,7 +333,6 @@ module WorldModuleEntity =
         static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishUpdates <- value; entityState) else None) false Property? PublishUpdates value entity world
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else None) false Property? PublishPostUpdates value entity world
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else None) false Property? Persistent value entity world
-        static member internal setEntityStandAlone value entity world = World.updateEntityState (fun entityState -> if value <> entityState.StandAlone then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.StandAlone <- value; entityState) else None) false Property? StandAlone value entity world
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else None) false Property? Overflow value entity world
         static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> if value <> entityState.ScriptFrame then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.ScriptFrame <- value; entityState) else None) false Property? ScriptFrame value entity world
 
@@ -965,6 +964,9 @@ module WorldModuleEntity =
                     else entityState
                 | None -> entityState
 
+            // set stand-along flag
+            entityState.StandAlone <- World.getStandAlone world
+
             // add entity's state to world
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world =
@@ -977,11 +979,6 @@ module WorldModuleEntity =
 
             // HACK: make sure xtension is consistent with imperativeness of entity state
             let world = World.setEntityImperative entityState.Imperative entity world
-
-            // set created in editor flag
-            let world = World.setEntityStandAlone (World.getStandAlone world) entity world
-
-            // fin
             (entity, world)
 
         /// Create an entity from an simulant descriptor.
@@ -1071,6 +1068,9 @@ module WorldModuleEntity =
                 | Some name -> { entityState with Name = name }
                 | None -> entityState
 
+            // set stand-along flag
+            entityState.StandAlone <- World.getStandAlone world
+
             // try to add entity state to the world
             let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
             let world =
@@ -1083,11 +1083,6 @@ module WorldModuleEntity =
 
             // HACK: make sure xtension is consistent with imperativeness of entity state
             let world = World.setEntityImperative entityState.Imperative entity world
-
-            // set created in editor flag
-            let world = World.setEntityStandAlone (World.getStandAlone world) entity world
-
-            // fin
             (entity, world)
 
         /// Read an entity from a file.
@@ -1353,7 +1348,6 @@ module WorldModuleEntity =
         Setters.Add ("PublishUpdates", fun _ _ world -> (false, world))
         Setters.Add ("PublishPostUpdates", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
-        Setters.Add ("StandAlone", fun property entity world -> (true, World.setEntityStandAlone (property.PropertyValue :?> bool) entity world))
         Setters.Add ("OverlayNameOpt", fun _ _ world -> (false, world))
         Setters.Add ("FacetNames", fun _ _ world -> (false, world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
