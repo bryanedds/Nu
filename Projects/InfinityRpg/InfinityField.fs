@@ -7,14 +7,14 @@ open InfinityRpg
 
 // TODO: turn this into an abstract data type.
 type [<ReferenceEquality; NoComparison>] Field =
-    { FieldMapNp : FieldMap }
+    { FieldMap : FieldMap }
 
     static member setFieldMap fieldMap field =
-        { field with FieldMapNp = fieldMap }
+        { field with FieldMap = fieldMap }
 
     static member initial =
         let DefaultRand = Rand.make ()
         let DefaultSizeC = v2i 4 4
         let DefaultPathEdgesC = [(v2i 1 1, v2i 2 2)]
         let DefaultFieldMap = fst (FieldMap.make Assets.Gameplay.FieldTileSheetImage v2iZero DefaultSizeC DefaultPathEdgesC DefaultRand)
-        { FieldMapNp = DefaultFieldMap }
+        { FieldMap = DefaultFieldMap }
