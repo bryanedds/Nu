@@ -235,9 +235,9 @@ module WorldSimulantModule =
             Stream.trackEvent4
                 (fun (a, current) _ world ->
                     let previous = current
-                    let current = World.getUpdateCount world
+                    let current = World.getClockTime world
                     ((a, current), previous < current))
-                id (Unchecked.defaultof<'a>, -1L) |>
+                id (Unchecked.defaultof<'a>, DateTimeOffset.MinValue) |>
             Stream.first
 
         /// Bind the left property to the value of the right, optionally breaking any cycles.

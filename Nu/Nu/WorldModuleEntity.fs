@@ -163,7 +163,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Xtension |> Xtension.toSeq |> Seq.toList
 
-        static member private setEntityState (entityState : EntityState) entity world =
+        static member private setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
 
         static member private updateEntityStateInternal updater (entityState : EntityState) entity world =
