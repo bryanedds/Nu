@@ -32,17 +32,15 @@ module AmbientState =
               Liveness : Liveness
               TickRate : int64 // NOTE: might be better to make this accessible from World to avoid cache misses
               TickTime : int64
-              UpdateCount : int64
               ClockDelta : single // NOTE: might be better to make this accessible from World to avoid cache misses
-              // cache line 2 begin
               Metadata : Metadata
               KeyValueStore : UMap<Guid, obj>
+              // cache line 2 begin
               ClockTime : DateTimeOffset // moved down here because it's 16 bytes according to - https://stackoverflow.com/a/38731608
               Tasklets : 'w Tasklet UList
               SdlDepsOpt : SdlDeps option
               SymbolStore : SymbolStore
               Overlayer : Overlayer
-              // cache line 3 begin
               OverlayRouter : OverlayRouter }
 
     /// Get whether the game is running in an editor.
@@ -85,10 +83,6 @@ module AmbientState =
     let isTicking state =
         getTickRate state <> 0L
 
-    /// Get the world's update count.
-    let getUpdateCount state =
-        state.UpdateCount
-
     /// Get the clock delta as a floating point number.
     let getClockDelta state =
         state.ClockDelta
@@ -103,7 +97,6 @@ module AmbientState =
         let delta = now - state.ClockTime
         { state with
             TickTime = state.TickTime + state.TickRate
-            UpdateCount = inc state.UpdateCount
             ClockDelta = single delta.TotalMilliseconds / (16.666666667f * single state.TickRate)
             ClockTime = now }
 
@@ -218,7 +211,6 @@ module AmbientState =
           TickTime = 0L
           ClockDelta = 1.0f
           ClockTime = DateTimeOffset.Now
-          UpdateCount = 0L
           Tasklets = UList.makeEmpty Constants.Engine.TaskletListConfig
           Metadata = assetMetadataMap
           OverlayRouter = overlayRouter

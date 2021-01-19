@@ -621,10 +621,10 @@ module WorldTypes =
 
     /// Hosts the ongoing state of an entity.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
-        { // cache line 1
+        { // cache line begin
           Dispatcher : EntityDispatcher
           mutable Transform : Transform
-          // cache line 2
+          // cache line 2 begin
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
@@ -632,7 +632,7 @@ module WorldTypes =
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable ScriptFrame : Scripting.DeclarationFrame
-          // cache line 3
+          // cache line 3 begin
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
           Name : string }
@@ -1052,7 +1052,7 @@ module WorldTypes =
     /// for that.
     and [<ReferenceEquality; NoComparison>] World =
         internal
-            { // cache line begin
+            { // cache line 1 begin
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState>
               EntityTree : Entity SpatialTree MutantCache
@@ -1061,7 +1061,7 @@ module WorldTypes =
               ScreenStates : UMap<Screen Address, ScreenState>
               GameState : GameState
               AmbientState : World AmbientState
-              // cache line end
+              // cache line 2 begin
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
               Dispatchers : Dispatchers

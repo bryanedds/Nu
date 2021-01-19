@@ -299,11 +299,6 @@ module WorldModule =
         static member isTicking world =
             World.getAmbientStateBy AmbientState.isTicking world
 
-        /// Get the world's update count.
-        [<FunctionBinding>]
-        static member getUpdateCount world =
-            World.getAmbientStateBy AmbientState.getUpdateCount world
-
         /// Get the world's clock time.
         /// No script function binding due to lack of a DateTimeOffset script conversion.
         static member getClockTime world =
