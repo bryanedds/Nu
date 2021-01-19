@@ -52,7 +52,7 @@ module WorldModuleEntity =
     let changeEventNamesCached = [|"Change"; ""; "Event"; ""; ""; ""|]
 
     type World with
-
+    
         // OPTIMIZATION: a ton of optimization has gone down in here...!
         static member private entityStateFinder (entity : Entity) world =
             let entityStateOpt = entity.EntityStateOpt
@@ -70,7 +70,7 @@ module WorldModuleEntity =
                 match entityStateOpt :> obj with
                 | null -> Unchecked.defaultof<EntityState>
                 | _ ->
-                    if entityStateOpt.Imperative then entity.EntityStateOpt <- entityStateOpt
+                    if entityStateOpt.ShouldMutate then entity.EntityStateOpt <- entityStateOpt
                     entityStateOpt
             else entityStateOpt
 
@@ -163,13 +163,13 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Xtension |> Xtension.toSeq |> Seq.toList
 
-        static member private setEntityState entityState entity world =
+        static member private setEntityState (entityState : EntityState) entity world =
             World.entityStateSetter entityState entity world
 
         static member private updateEntityStateInternal updater (entityState : EntityState) entity world =
             match updater entityState with
             | Some (entityState : EntityState) ->
-                if entityState.Imperative
+                if entityState.ShouldMutate
                 then (true, entityState, world)
                 else (true, entityState, World.setEntityState entityState entity world)
             | None -> (false, entityState, world)
@@ -251,35 +251,37 @@ module WorldModuleEntity =
             World.updateEntityState
                 (fun entityState ->
                     if value <> entityState.Imperative then
-                        if value then
+                        if value && entityState.StandAlone then
                             let properties = UMap.makeFromSeq Imperative (Xtension.toSeq entityState.Xtension)
                             let xtension = Xtension.make properties false true true
                             entityState.Xtension <- xtension
-                            entityState.Imperative <- true
+                            entityState.Imperative <- value
                             Some entityState
                         else
                             let properties = UMap.makeFromSeq Functional (Xtension.toSeq entityState.Xtension)
                             let xtension = Xtension.make properties false true false
-                            let entityState = { entityState with Xtension = xtension }
-                            entityState.Imperative <- false
+                            let entityState = EntityState.diverge entityState
+                            entityState.Xtension <- xtension
+                            entityState.Imperative <- value
                             Some entityState
                     else None)
                 false Property? Imperative value entity world
 
         static member internal getEntityModelProperty entity world =
-            (World.getEntityState entity world).Model
+            let entityState = World.getEntityState entity world
+            entityState.Model
 
         static member internal getEntityModel<'a> entity world =
-            (World.getEntityState entity world).Model.DesignerValue :?> 'a
+            let entityState = World.getEntityState entity world
+            entityState.Model.DesignerValue :?> 'a
 
         static member internal setEntityModelProperty (value : DesignerProperty) entity world =
             World.updateEntityState
                 (fun entityState ->
                     if value.DesignerValue =/= entityState.Model.DesignerValue then
-                        if entityState.Imperative then
-                            entityState.Model.DesignerValue <- value.DesignerValue
-                            Some entityState
-                        else Some { entityState with Model = { entityState.Model with DesignerValue = value.DesignerValue }}
+                        let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+                        entityState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
+                        Some entityState
                     else None)
                 true Property? Model value.DesignerValue entity world
 
@@ -288,10 +290,9 @@ module WorldModuleEntity =
                 (fun entityState ->
                     let valueObj = value :> obj
                     if valueObj =/= entityState.Model.DesignerValue then
-                        if entityState.Imperative then
-                            entityState.Model.DesignerValue <- valueObj
-                            Some entityState
-                        else Some { entityState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
+                        let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+                        entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }
+                        Some entityState
                     else None)
                 true Property? Model value entity world
 
@@ -312,8 +313,10 @@ module WorldModuleEntity =
         static member internal getEntityPublishUpdates entity world = (World.getEntityState entity world).PublishUpdates
         static member internal getEntityPublishPostUpdates entity world = (World.getEntityState entity world).PublishPostUpdates
         static member internal getEntityPersistent entity world = (World.getEntityState entity world).Persistent
-        static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) world.DestructionListRev
+        static member internal getEntityStandAlone entity world = (World.getEntityState entity world).StandAlone
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
+        static member internal getEntityShouldMutate entity world = (World.getEntityState entity world).ShouldMutate
+        static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) world.DestructionListRev
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
@@ -321,21 +324,42 @@ module WorldModuleEntity =
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
-        static member internal setEntityPosition value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if v2Neq value transform.Position then World.setEntityTransform { transform with Transform.Position = value } entity world else world
-        static member internal setEntitySize value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if v2Neq value transform.Size then World.setEntityTransform { transform with Size = value } entity world else world
-        static member internal setEntityRotation value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Rotation then World.setEntityTransform { transform with Rotation = value } entity world else world
-        static member internal setEntityElevation value entity world = let mutable transform = &(World.getEntityState entity world).Transform in if value <> transform.Elevation then World.setEntityTransform { transform with Elevation = value } entity world else world
-        static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then Some (if entityState.Imperative then entityState.Omnipresent <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Omnipresent <- value; entityState)) else None) false Property? Omnipresent value entity world
-        static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then Some (if entityState.Imperative then entityState.Absolute <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Absolute <- value; entityState)) else None) false Property? Absolute value entity world
-        static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChanges then Some (if entityState.Imperative then entityState.PublishChanges <- value; entityState else (let entityState = EntityState.copy entityState in entityState.PublishChanges <- value; entityState)) else None) false Property? PublishChanges value entity world
-        static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Enabled then Some (if entityState.Imperative then entityState.Enabled <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Enabled <- value; entityState)) else None) false Property? Enabled value entity world
-        static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Visible then Some (if entityState.Imperative then entityState.Visible <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Visible <- value; entityState)) else None) false Property? Visible value entity world
-        static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.AlwaysUpdate then Some (if entityState.Imperative then entityState.AlwaysUpdate <- value; entityState else (let entityState = EntityState.copy entityState in entityState.AlwaysUpdate <- value; entityState)) else None) false Property? AlwaysUpdate value entity world
-        static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then Some (if entityState.Imperative then entityState.PublishUpdates <- value; entityState else (let entityState = EntityState.copy entityState in entityState.PublishUpdates <- value; entityState)) else None) false Property? PublishUpdates value entity world
-        static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then Some (if entityState.Imperative then entityState.PublishPostUpdates <- value; entityState else (let entityState = EntityState.copy entityState in entityState.PublishPostUpdates <- value; entityState)) else None) false Property? PublishPostUpdates value entity world
-        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then Some (if entityState.Imperative then entityState.Persistent <- value; entityState else (let entityState = EntityState.copy entityState in entityState.Persistent <- value; entityState)) else None) false Property? Persistent value entity world
-        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then Some (if entityState.Imperative then entityState.Overflow <- value; entityState else { entityState with Overflow = value }) else None) false Property? Overflow value entity world
-        static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> if value <> entityState.ScriptFrame then Some (if entityState.Imperative then entityState.ScriptFrame <- value; entityState else { entityState with ScriptFrame = value }) else None) false Property? ScriptFrame value entity world
+        static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Omnipresent <- value; entityState) else None) false Property? Omnipresent value entity world
+        static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Absolute <- value; entityState) else None) false Property? Absolute value entity world
+        static member internal setEntityPublishChanges value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChanges then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishChanges <- value; entityState) else None) false Property? PublishChanges value entity world
+        static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Enabled then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Enabled <- value; entityState) else None) false Property? Enabled value entity world
+        static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Visible then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Visible <- value; entityState) else None) false Property? Visible value entity world
+        static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.AlwaysUpdate then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.AlwaysUpdate <- value; entityState) else None) false Property? AlwaysUpdate value entity world
+        static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishUpdates <- value; entityState) else None) false Property? PublishUpdates value entity world
+        static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else None) false Property? PublishPostUpdates value entity world
+        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else None) false Property? Persistent value entity world
+        static member internal setEntityStandAlone value entity world = World.updateEntityState (fun entityState -> if value <> entityState.StandAlone then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.StandAlone <- value; entityState) else None) false Property? StandAlone value entity world
+        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else None) false Property? Overflow value entity world
+        static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> if value <> entityState.ScriptFrame then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.ScriptFrame <- value; entityState) else None) false Property? ScriptFrame value entity world
+
+        static member internal setEntityPosition value entity world =
+            let mutable transform = &(World.getEntityState entity world).Transform
+            if v2Neq value transform.Position
+            then World.setEntityTransform { transform with Position = value } entity world
+            else world
+        
+        static member internal setEntitySize value entity world =
+            let mutable transform = &(World.getEntityState entity world).Transform
+            if v2Neq value transform.Size
+            then World.setEntityTransform { transform with Size = value } entity world
+            else world
+        
+        static member internal setEntityRotation value entity world =
+            let mutable transform = &(World.getEntityState entity world).Transform
+            if value <> transform.Rotation
+            then World.setEntityTransform { transform with Rotation = value } entity world
+            else world
+        
+        static member internal setEntityElevation value entity world =
+            let mutable transform = &(World.getEntityState entity world).Transform
+            if value <> transform.Elevation
+            then World.setEntityTransform { transform with Elevation = value } entity world
+            else world
 
         static member internal setEntityTransformWithoutEvent value entity world =
             let oldWorld = world
@@ -500,15 +524,14 @@ module WorldModuleEntity =
                         (entityState, world)
                     | None -> (entityState, world)
                 let propertyNames = World.getEntityPropertyDefinitionNamesToDetach entityState facet
-                let entityState = Reflection.detachPropertiesViaNames EntityState.copy propertyNames entityState
+                let entityState = Reflection.detachPropertiesViaNames EntityState.diverge propertyNames entityState
                 let entityState =
                     let facetNames = Set.remove facetName entityState.FacetNames
                     let facets = Array.remove ((=) facet) entityState.Facets
-                    if entityState.Imperative then
-                        entityState.FacetNames <- facetNames
-                        entityState.Facets <- facets
-                        entityState
-                    else { entityState with FacetNames = facetNames; Facets = facets }
+                    let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+                    entityState.FacetNames <- facetNames
+                    entityState.Facets <- facets
+                    entityState
                 match entityOpt with
                 | Some entity ->
                     let oldWorld = world
@@ -530,12 +553,11 @@ module WorldModuleEntity =
                     let entityState =
                         let facetNames = Set.add facetName entityState.FacetNames
                         let facets = Array.add facet entityState.Facets
-                        if entityState.Imperative then
-                            entityState.FacetNames <- facetNames
-                            entityState.Facets <- facets
-                            entityState
-                        else { entityState with FacetNames = facetNames; Facets = facets }
-                    let entityState = Reflection.attachProperties EntityState.copy facet entityState world
+                        let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+                        entityState.FacetNames <- facetNames
+                        entityState.Facets <- facets
+                        entityState
+                    let entityState = Reflection.attachProperties EntityState.diverge facet entityState world
                     match entityOpt with
                     | Some entity ->
                         let oldWorld = world
@@ -604,14 +626,14 @@ module WorldModuleEntity =
         static member internal attachIntrinsicFacetsViaNames entityState world =
             let entityDispatchers = World.getEntityDispatchers world
             let facets = World.getFacets world
-            Reflection.attachIntrinsicFacets EntityState.copy entityDispatchers facets entityState.Dispatcher entityState world
+            Reflection.attachIntrinsicFacets EntityState.diverge entityDispatchers facets entityState.Dispatcher entityState world
 
         static member internal applyEntityOverlay oldOverlayer overlayer world entity =
             let entityState = World.getEntityState entity world
             match entityState.OverlayNameOpt with
             | Some overlayName ->
                 let oldFacetNames = entityState.FacetNames
-                let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy overlayName overlayName entityState oldOverlayer overlayer
+                let entityState = Overlayer.applyOverlayToFacetNames EntityState.diverge overlayName overlayName entityState oldOverlayer overlayer
                 match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                 | Right (entityState, world) ->
                     let oldWorld = world
@@ -620,7 +642,7 @@ module WorldModuleEntity =
                     let oldAbsolute = oldEntityState.Absolute
                     let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
                     let facetNames = World.getEntityFacetNamesReflectively entityState
-                    let entityState = Overlayer.applyOverlay6 EntityState.copy overlayName overlayName facetNames entityState oldOverlayer overlayer
+                    let entityState = Overlayer.applyOverlay6 EntityState.diverge overlayName overlayName facetNames entityState oldOverlayer overlayer
                     let world = World.setEntityState entityState entity world
                     World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
@@ -760,10 +782,9 @@ module WorldModuleEntity =
 #endif
             world
 
-        static member divergeEntity entity world =
+        static member internal divergeEntity entity world =
             let entityState = World.getEntityState entity world
-            entityState.Invalidated <- true
-            let entityState = EntityState.copy entityState
+            let entityState = EntityState.diverge entityState
             World.setEntityState entityState entity world
 
         static member internal registerEntity entity world =
@@ -922,7 +943,7 @@ module WorldModuleEntity =
                 | Some overlayName ->
 
                     // apply overlay to facets
-                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy dispatcherName overlayName entityState overlayer overlayer
+                    let entityState = Overlayer.applyOverlayToFacetNames id dispatcherName overlayName entityState overlayer overlayer
 
                     // synchronize the entity's facets (and attach their properties)
                     match World.trySynchronizeFacetsToNames Set.empty entityState None world with
@@ -931,7 +952,7 @@ module WorldModuleEntity =
                 | None -> entityState
 
             // attach the entity state's dispatcher properties
-            let entityState = Reflection.attachProperties EntityState.copy entityState.Dispatcher entityState world
+            let entityState = Reflection.attachProperties id entityState.Dispatcher entityState world
 
             // apply the entity state's overlay if exists
             let entityState =
@@ -940,7 +961,7 @@ module WorldModuleEntity =
                     // OPTIMIZATION: apply overlay only when it will change something
                     if dispatcherName <> overlayName then
                         let facetNames = World.getEntityFacetNamesReflectively entityState
-                        Overlayer.applyOverlay EntityState.copy dispatcherName overlayName facetNames entityState overlayer
+                        Overlayer.applyOverlay id dispatcherName overlayName facetNames entityState overlayer
                     else entityState
                 | None -> entityState
 
@@ -956,6 +977,11 @@ module WorldModuleEntity =
 
             // HACK: make sure xtension is consistent with imperativeness of entity state
             let world = World.setEntityImperative entityState.Imperative entity world
+
+            // set created in editor flag
+            let world = World.setEntityStandAlone (World.getStandAlone world) entity world
+
+            // fin
             (entity, world)
 
         /// Create an entity from an simulant descriptor.
@@ -1006,18 +1032,18 @@ module WorldModuleEntity =
 
             // read the entity state's overlay and apply it to its facet names if applicable
             let overlayer = World.getOverlayer world
-            let entityState = Reflection.tryReadOverlayNameOptToTarget EntityState.copy entityDescriptor.EntityProperties entityState
+            let entityState = Reflection.tryReadOverlayNameOptToTarget id entityDescriptor.EntityProperties entityState
             let entityState = if Option.isNone entityState.OverlayNameOpt then { entityState with OverlayNameOpt = defaultOverlayNameOpt } else entityState
             let entityState =
                 match (defaultOverlayNameOpt, entityState.OverlayNameOpt) with
-                | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames EntityState.copy defaultOverlayName overlayName entityState overlayer overlayer
+                | (Some defaultOverlayName, Some overlayName) -> Overlayer.applyOverlayToFacetNames id defaultOverlayName overlayName entityState overlayer overlayer
                 | (_, _) -> entityState
 
             // read the entity state's facet names
-            let entityState = Reflection.readFacetNamesToTarget EntityState.copy entityDescriptor.EntityProperties entityState
+            let entityState = Reflection.readFacetNamesToTarget id entityDescriptor.EntityProperties entityState
 
             // attach the entity state's dispatcher properties
-            let entityState = Reflection.attachProperties EntityState.copy entityState.Dispatcher entityState world
+            let entityState = Reflection.attachProperties id entityState.Dispatcher entityState world
             
             // synchronize the entity state's facets (and attach their properties)
             let entityState =
@@ -1032,12 +1058,12 @@ module WorldModuleEntity =
                     // OPTIMIZATION: applying overlay only when it will change something
                     if dispatcherName <> overlayName then
                         let facetNames = World.getEntityFacetNamesReflectively entityState
-                        Overlayer.applyOverlay EntityState.copy dispatcherName overlayName facetNames entityState overlayer
+                        Overlayer.applyOverlay id dispatcherName overlayName facetNames entityState overlayer
                     else entityState
                 | None -> entityState
 
             // read the entity state's values
-            let entityState = Reflection.readPropertiesToTarget EntityState.copy entityDescriptor.EntityProperties entityState
+            let entityState = Reflection.readPropertiesToTarget id entityDescriptor.EntityProperties entityState
 
             // apply the name if one is provided
             let entityState =
@@ -1057,6 +1083,11 @@ module WorldModuleEntity =
 
             // HACK: make sure xtension is consistent with imperativeness of entity state
             let world = World.setEntityImperative entityState.Imperative entity world
+
+            // set created in editor flag
+            let world = World.setEntityStandAlone (World.getStandAlone world) entity world
+
+            // fin
             (entity, world)
 
         /// Read an entity from a file.
@@ -1094,7 +1125,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let world = World.destroyEntityImmediate entity world
             let (id, name) = Gen.idAndNameIf nameOpt
-            let entityState = { entityState with Id = id; Name = name }
+            let entityState = { entityState with Id = id; Name = name } // no need to diverge here
             let transmutedEntity = Entity (layer.LayerAddress <-- ntoa<Entity> name)
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
@@ -1109,7 +1140,7 @@ module WorldModuleEntity =
             let oldEntityState = World.getEntityState entity world
             let oldOverlayNameOpt = oldEntityState.OverlayNameOpt
             let entityState =
-                if oldEntityState.Imperative then
+                if oldEntityState.ShouldMutate then
                     oldEntityState.OverlayNameOpt <- overlayNameOpt
                     oldEntityState
                 else { oldEntityState with OverlayNameOpt = overlayNameOpt }
@@ -1118,7 +1149,7 @@ module WorldModuleEntity =
                 let overlayer = World.getOverlayer world
                 let (entityState, world) =
                     let oldFacetNames = entityState.FacetNames
-                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.copy oldOverlayName overlayName entityState overlayer overlayer
+                    let entityState = Overlayer.applyOverlayToFacetNames EntityState.diverge oldOverlayName overlayName entityState overlayer overlayer
                     match World.trySynchronizeFacetsToNames oldFacetNames entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
                     | Left error -> Log.debug error; (entityState, world)
@@ -1251,7 +1282,7 @@ module WorldModuleEntity =
                 let entityState = entityStateObj :?> EntityState
                 let id = Gen.id
                 let name = Gen.name
-                let entityState = { entityState with Id = id; Name = name }
+                let entityState = { entityState with Id = id; Name = name } // no need to diverge here
                 let position =
                     if atMouse
                     then World.mouseToWorld entityState.Absolute rightClickPosition world
@@ -1288,8 +1319,10 @@ module WorldModuleEntity =
         Getters.Add ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
         Getters.Add ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
         Getters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
-        Getters.Add ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
+        Getters.Add ("StandAlone", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityStandAlone entity world })
         Getters.Add ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
+        Getters.Add ("ShouldMutate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityShouldMutate entity world })
+        Getters.Add ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
         Getters.Add ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
         Getters.Add ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })
         Getters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
@@ -1320,6 +1353,7 @@ module WorldModuleEntity =
         Setters.Add ("PublishUpdates", fun _ _ world -> (false, world))
         Setters.Add ("PublishPostUpdates", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
+        Setters.Add ("StandAlone", fun property entity world -> (true, World.setEntityStandAlone (property.PropertyValue :?> bool) entity world))
         Setters.Add ("OverlayNameOpt", fun _ _ world -> (false, world))
         Setters.Add ("FacetNames", fun _ _ world -> (false, world))
         Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))

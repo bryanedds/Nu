@@ -360,8 +360,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     static member makeLongGrasses gameplay =
         let mapBounds = v4iBounds v2iZero (Constants.Layout.FieldMapSizeC - v2iOne)
-        let predicate1 coordinates = Math.isPointInBoundsI coordinates mapBounds && Map.find coordinates gameplay.Field.FieldMapNp.FieldTiles = FieldMap.GrassTile
-        let predicate2 coordinates = FieldMap.hasAtLeastNAdjacentTiles 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMapNp.FieldTiles
+        let predicate1 coordinates = Math.isPointInBoundsI coordinates mapBounds && Map.find coordinates gameplay.Field.FieldMap.FieldTiles = FieldMap.GrassTile
+        let predicate2 coordinates = FieldMap.hasAtLeastNAdjacentTiles 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMap.FieldTiles
         let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
         Set.fold (fun gameplay coordinates ->
             if predicate1 coordinates && predicate2 coordinates
@@ -397,7 +397,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
 
     static member initial =
         let field = Field.initial
-        let chessboard = Chessboard.make field.FieldMapNp
+        let chessboard = Chessboard.make field.FieldMap
         { Time = 0L
           InputMode = NormalInputMode
           ShallLoadGame = false

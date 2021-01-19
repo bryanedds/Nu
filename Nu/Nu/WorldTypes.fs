@@ -335,14 +335,15 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
-             Define? Imperative false
+             Define? Imperative true
              Define? PublishChanges false
              Define? Visible true
              Define? Enabled true
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
-             Define? Persistent true]
+             Define? Persistent true
+             Define? StandAlone true]
 
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
@@ -645,7 +646,7 @@ module WorldTypes =
             { Transform = Transform.makeDefault ()
               Dispatcher = dispatcher
               Facets = [||]
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeImperative ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
@@ -654,6 +655,16 @@ module WorldTypes =
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Id = id
               Name = name }
+
+        /// Copy an entity state.
+        static member inline copy (entityState : EntityState) =
+            { entityState with EntityState.Dispatcher = entityState.Dispatcher }
+
+        /// Copy an entity state, invalidating the incoming reference.
+        /// OPTIMIZATION: inlined invalidation masking for speed.
+        static member inline diverge (entityState : EntityState) =
+            entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
+            EntityState.copy entityState
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
@@ -664,28 +675,34 @@ module WorldTypes =
             Xtension.getProperty propertyName entityState.Xtension
 
         /// Try to set an xtension property with explicit type information.
-        static member trySetProperty propertyName property entityState =
+        static member trySetProperty propertyName property (entityState : EntityState) =
+            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
             match Xtension.trySetProperty propertyName property entityState.Xtension with
             | (true, xtension) ->
-                let entityState =
-                    if entityState.Imperative then entityState
-                    else { entityState with Xtension = xtension }
+                entityState.Xtension <- xtension // redundant if xtension is imperative
                 (true, entityState)
             | (false, _) -> (false, entityState)
 
         /// Set an xtension property with explicit type information.
-        static member setProperty propertyName property entityState =
-            { entityState with EntityState.Xtension = Xtension.setProperty propertyName property entityState.Xtension }
+        static member setProperty propertyName property (entityState : EntityState) =
+            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            let xtension = Xtension.setProperty propertyName property entityState.Xtension
+            entityState.Xtension <- xtension // redundant if xtension is imperative
+            entityState
 
         /// Attach an xtension property.
-        static member attachProperty name property entityState =
-            { entityState with EntityState.Xtension = Xtension.attachProperty name property entityState.Xtension }
+        static member attachProperty name property (entityState : EntityState) =
+            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            let xtension = Xtension.attachProperty name property entityState.Xtension
+            entityState.Xtension <- xtension // redundant if xtension is imperative
+            entityState
 
         /// Detach an xtension property.
-        static member detachProperty name entityState =
+        static member detachProperty name (entityState : EntityState) =
+            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
             let xtension = Xtension.detachProperty name entityState.Xtension
-            if entityState.Imperative then entityState
-            else { entityState with EntityState.Xtension = xtension }
+            entityState.Xtension <- xtension // redundant if xtension is imperative
+            entityState
 
         /// Get an entity state's transform.
         static member getTransform entityState =
@@ -693,14 +710,9 @@ module WorldTypes =
 
         /// Set an entity state's transform.
         static member setTransform (value : Transform) (entityState : EntityState) =
-            if entityState.Imperative then
-                entityState.Transform.Assign value
-                entityState
-            else { entityState with Transform = value }
-
-        /// Copy an entity such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
-        static member copy (entityState : EntityState) =
-            { entityState with EntityState.Dispatcher = entityState.Dispatcher }
+            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            entityState.Transform.Assign value
+            entityState
 
         // Member properties; only for use by internal reflection facilities.
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
@@ -719,7 +731,9 @@ module WorldTypes =
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
+        member this.StandAlone with get () = this.Transform.StandAlone and set value = this.Transform.StandAlone <- value
         member this.Optimized with get () = this.Transform.Optimized
+        member this.ShouldMutate with get () = this.Transform.ShouldMutate
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =

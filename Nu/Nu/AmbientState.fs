@@ -19,6 +19,9 @@ type [<NoEquality; NoComparison>] 'w Tasklet =
 [<AutoOpen>]
 module AmbientState =
 
+    /// Tracks whether the game is running stand alone.
+    let mutable private StandAlone = true
+
     /// Tracks the state of tasklet processing.
     let mutable private TaskletsProcessing = false
 
@@ -41,6 +44,10 @@ module AmbientState =
               Overlayer : Overlayer
               // cache line 3 begin
               OverlayRouter : OverlayRouter }
+
+    /// Get whether the game is running in an editor.
+    let getStandAlone (_ : 'w AmbientState) =
+        StandAlone
 
     /// Get the the liveness state of the engine.
     let getLiveness state =
@@ -204,7 +211,8 @@ module AmbientState =
         by state.OverlayRouter
 
     /// Make an ambient state value.
-    let make tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
+    let make standAlone tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
+        StandAlone <- standAlone
         { Liveness = Live
           TickRate = tickRate
           TickTime = 0L

@@ -41,7 +41,7 @@ module FieldDispatcher =
             [define Entity.Omnipresent true]
 
         override this.Initializers (field, _) =
-            [Entity.Size <== field --> fun field -> vctovf field.FieldMapNp.FieldSizeC]
+            [Entity.Size <== field --> fun field -> vctovf field.FieldMap.FieldSizeC]
         
         override this.View (field, entity, world) =
             let fieldTransform = entity.GetTransform world
@@ -53,7 +53,7 @@ module FieldDispatcher =
                     (Vector2.Multiply (Constants.Layout.TileSize, Constants.Layout.TileSheetSize))
                     (entity.GetOverflow world)
             if World.isBoundsInView absolute bounds world then
-                let fieldMap = field.FieldMapNp
+                let fieldMap = field.FieldMap
                 let image = fieldMap.FieldTileSheet
                 let mInViewBounds = World.getViewBounds absolute world |> viewBoundsToMapUnits
                 let tiles = fieldMap.FieldTiles
@@ -80,4 +80,4 @@ module FieldDispatcher =
             else View.empty
 
         override this.GetQuickSize (entity, world) =
-            vctovf ((entity.GetField world).FieldMapNp).FieldSizeC
+            vctovf ((entity.GetField world).FieldMap).FieldSizeC
