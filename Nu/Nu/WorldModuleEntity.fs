@@ -268,10 +268,12 @@ module WorldModuleEntity =
                 false Property? Imperative value entity world
 
         static member internal getEntityModelProperty entity world =
-            (World.getEntityState entity world).Model
+            let entityState = World.getEntityState entity world
+            entityState.Model
 
         static member internal getEntityModel<'a> entity world =
-            (World.getEntityState entity world).Model.DesignerValue :?> 'a
+            let entityState = World.getEntityState entity world
+            entityState.Model.DesignerValue :?> 'a
 
         static member internal setEntityModelProperty (value : DesignerProperty) entity world =
             World.updateEntityState
