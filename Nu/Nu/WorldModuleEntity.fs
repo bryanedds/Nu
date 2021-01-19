@@ -280,8 +280,7 @@ module WorldModuleEntity =
                 (fun entityState ->
                     if value.DesignerValue =/= entityState.Model.DesignerValue then
                         let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
-                        entityState.Model.DesignerType <- value.DesignerType
-                        entityState.Model.DesignerValue <- value.DesignerValue
+                        entityState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
                         Some entityState
                     else None)
                 true Property? Model value.DesignerValue entity world
@@ -292,8 +291,7 @@ module WorldModuleEntity =
                     let valueObj = value :> obj
                     if valueObj =/= entityState.Model.DesignerValue then
                         let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
-                        entityState.Model.DesignerType <- typeof<'a>
-                        entityState.Model.DesignerValue <- valueObj
+                        entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }
                         Some entityState
                     else None)
                 true Property? Model value entity world
