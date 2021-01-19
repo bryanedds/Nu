@@ -17,6 +17,7 @@ module Assets =
     module Default =
 
         let [<Literal>] PackageName = "Default"
+        let [<Literal>] EmptyName = ""
         let [<Literal>] EmptyImageName = "EmptyImage"
         let [<Literal>] ImageName = "Image"
         let [<Literal>] Image2Name = "Image2"
