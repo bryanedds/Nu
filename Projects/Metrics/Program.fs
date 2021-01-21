@@ -270,12 +270,11 @@ type PhantomGameDispatcher () =
              Assets.Default.Empty,
              RenderCallback
                  (fun viewAbsolute viewRelative eyeCenter eyeSize renderer ->
-                    for entry in phantoms.Phantoms do
-                        let phantom = entry.Value
-                        let sdlRenderer = renderer :?> SdlRenderer
+                    let sdlRenderer = renderer :?> SdlRenderer
+                    for phantom in phantoms.Phantoms do
                         SdlRenderer.renderSprite
                             viewAbsolute viewRelative eyeCenter eyeSize
-                            phantom.PhantomTransform (v2Dup 0.5f) None phantom.PhantomImage colWhite colZero FlipNone
+                            phantom.Value.PhantomTransform (v2Dup 0.5f) None phantom.Value.PhantomImage colWhite colZero FlipNone
                             sdlRenderer))
 #endif
 
