@@ -135,16 +135,16 @@ type MyGameDispatcher () =
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS_PURE
-        let indices = // 9,900 entities
+        let indices = // 6,600 entities
             seq {
                 for i in 0 .. 74 do
                     for j in 0 .. 43 do
-                        for k in 0 .. 2 do
+                        for k in 0 .. 1 do
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
             Seq.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> None DefaultOverlay Simulants.DefaultLayer world
-                let world = entity.SetOmnipresent true world
+                let world = entity.SetOmnipresent true world // removes entity from entity tree for significantly faster transform updates
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 let world = entity.SetSize (v2One * 8.0f) world
                 world)
