@@ -129,8 +129,7 @@ module Reflection =
             else []
 
     /// Get the property definitions of a target type not considering inheritance.
-    /// OPTIMIZATION: Memoized for efficiency since PropertyDefinitions properties will likely return
-    /// a newly constructed list.
+    /// OPTIMIZATION: Memoized for efficiency since Properties will likely return a newly constructed list.
     let getPropertyDefinitionsNoInherit (targetType : Type) =
         match PropertyDefinitionsCache.TryGetValue targetType with
         | (true, definitions) -> definitions
