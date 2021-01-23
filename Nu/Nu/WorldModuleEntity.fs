@@ -68,9 +68,12 @@ module WorldModuleEntity =
                 getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
                 getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
                 match entityStateOpt :> obj with
-                | null -> Unchecked.defaultof<EntityState>
+                | null ->
+                    Unchecked.defaultof<EntityState>
                 | _ ->
-                    if entityStateOpt.ShouldMutate then entity.EntityStateOpt <- entityStateOpt
+                    if entityStateOpt.ShouldMutate then
+                        entityStateOpt.Invalidated <- false
+                        entity.EntityStateOpt <- entityStateOpt
                     entityStateOpt
             else entityStateOpt
 
@@ -376,35 +379,46 @@ module WorldModuleEntity =
             let oldWorld = world
             let oldEntityState = World.getEntityState entity world
             let oldOmnipresent = oldEntityState.Omnipresent
-            let oldAbsolute = oldEntityState.Absolute
-            let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
-            let oldTransform = { oldEntityState.Transform with Position = oldEntityState.Transform.Position }
-            let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
+            let oldTransform = oldEntityState.Transform
             let (changed, world) =
-                World.updateEntityStateWithoutEvent
-                    (fun entityState ->
-                        if not (Transform.equalsByRef (&value, &entityState.Transform))
-                        then Some (EntityState.setTransformByRef (&value, entityState))
-                        else None)
-                    entity world
+                if oldOmnipresent then
+                    let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
+                    World.updateEntityStateWithoutEvent
+                        (fun entityState ->
+                            if not (Transform.equalsByRef (&value, &entityState.Transform))
+                            then Some (EntityState.setTransformByRef (&value, entityState))
+                            else None)
+                        entity world
+                else
+                    let oldAbsolute = oldEntityState.Absolute
+                    let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
+                    let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
+                    let (changed, world) =
+                        World.updateEntityStateWithoutEvent
+                            (fun entityState ->
+                                if not (Transform.equalsByRef (&value, &entityState.Transform))
+                                then Some (EntityState.setTransformByRef (&value, entityState))
+                                else None)
+                            entity world
+                    let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
+                    (changed, world)
             if changed then
 #if DEBUG
                 if oldEntityState.Transform.Flags <> value.Flags then failwith "Cannot change transform flags via setEntityTransform."
 #endif
-                let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                 if World.getEntityPublishChanges entity world then
-                    let positionChanged = v2Neq value.Position oldTransform.Position
-                    let sizeChanged = v2Neq value.Size oldTransform.Size
-                    let rotationChanged = value.Rotation <> oldTransform.Rotation
-                    let elevationChanged = value.Elevation <> oldTransform.Elevation
-                    let world = World.publishEntityChange Property? Transform value entity world
-                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bounds (v4Bounds value.Position value.Size) entity world else world
-                    let world = if positionChanged then World.publishEntityChange Property? Position value.Position entity world else world
-                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Center (value.Position + value.Size * 0.5f) entity world else world
-                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bottom (value.Position + value.Size.WithY 0.0f * 0.5f) entity world else world
-                    let world = if sizeChanged then World.publishEntityChange Property? Size value.Size entity world else world
-                    let world = if rotationChanged then World.publishEntityChange Property? Rotation value.Rotation entity world else world
-                    let world = if elevationChanged then World.publishEntityChange Property? Elevation value.Elevation entity world else world
+                    let positionChanged = v2Neq valueInRef.Position oldTransform.Position
+                    let sizeChanged = v2Neq valueInRef.Size oldTransform.Size
+                    let rotationChanged = valueInRef.Rotation <> oldTransform.Rotation
+                    let elevationChanged = valueInRef.Elevation <> oldTransform.Elevation
+                    let world = World.publishEntityChange Property? Transform valueInRef entity world
+                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bounds (v4Bounds valueInRef.Position valueInRef.Size) entity world else world
+                    let world = if positionChanged then World.publishEntityChange Property? Position valueInRef.Position entity world else world
+                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Center (valueInRef.Position + valueInRef.Size * 0.5f) entity world else world
+                    let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bottom (valueInRef.Position + valueInRef.Size.WithY 0.0f * 0.5f) entity world else world
+                    let world = if sizeChanged then World.publishEntityChange Property? Size valueInRef.Size entity world else world
+                    let world = if rotationChanged then World.publishEntityChange Property? Rotation valueInRef.Rotation entity world else world
+                    let world = if elevationChanged then World.publishEntityChange Property? Elevation valueInRef.Elevation entity world else world
                     world
                 else world
             else world
@@ -869,7 +883,7 @@ module WorldModuleEntity =
                 // add entity to world
                 let world = World.addEntityState entityState entity world
 
-                // mutate entity tree
+                // mutate entity tree if entity is selected
                 let world =
                     if WorldModule.isSelected entity world then
                         let entityTree =
@@ -1234,7 +1248,7 @@ module WorldModuleEntity =
 
         static member internal updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax (entity : Entity) oldWorld world =
 
-            // only need to do this when entity is selected
+            // only do this when entity is selected
             if WorldModule.isSelected entity world then
 
                 // OPTIMIZATION: work with the entity state directly to avoid function call overheads
