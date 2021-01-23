@@ -618,6 +618,7 @@ module WorldTypes =
             { this with LayerState.Dispatcher = this.Dispatcher }
 
     /// Hosts the ongoing state of an entity.
+    /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
         { // cache line begin
           Dispatcher : EntityDispatcher
@@ -629,7 +630,7 @@ module WorldTypes =
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
-          mutable ScriptFrame : Scripting.DeclarationFrame
+          mutable ScriptFrameOpt : Scripting.DeclarationFrame option
           // cache line 3 begin
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
@@ -651,7 +652,7 @@ module WorldTypes =
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
-              ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptFrameOpt = None
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Id = id
               Name = name }
