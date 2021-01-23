@@ -630,7 +630,7 @@ module WorldTypes =
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
-          mutable ScriptFrameOpt : Scripting.DeclarationFrame option
+          mutable ScriptFrameOpt : Scripting.DeclarationFrame
           // cache line 3 begin
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
@@ -652,7 +652,7 @@ module WorldTypes =
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
               FacetNames = Set.empty
-              ScriptFrameOpt = None
+              ScriptFrameOpt = Unchecked.defaultof<_>
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Id = id
               Name = name }
