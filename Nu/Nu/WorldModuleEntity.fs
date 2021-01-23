@@ -166,6 +166,7 @@ module WorldModuleEntity =
         static member private setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
 
+        // NOTE: P1: I think we could use an in ref in updater to avoid allocation on every call...
         static member private updateEntityStateInternal updater (entityState : EntityState) entity world =
             match updater entityState with
             | Some (entityState : EntityState) ->
@@ -295,6 +296,30 @@ module WorldModuleEntity =
                         Some entityState
                     else None)
                 true Property? Model value entity world
+                
+        static member internal getEntityScriptFrame entity world =
+            let entityState = World.getEntityState entity world
+            match entityState.ScriptFrameOpt with
+            | None ->
+                let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+                let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+                entityState.ScriptFrameOpt <- Some scriptFrame
+                scriptFrame
+            | Some scriptFrame -> scriptFrame
+
+        static member internal setEntityScriptFrame value entity world =
+            World.updateEntityState (fun entityState ->
+                let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+                match entityState.ScriptFrameOpt with
+                | None ->
+                    entityState.ScriptFrameOpt <- Some value
+                    Some entityState
+                | Some scriptFrame ->
+                    if value <> scriptFrame then
+                        entityState.ScriptFrameOpt <- Some scriptFrame
+                        Some entityState
+                    else None)
+                false Property? ScriptFrame value entity world
 
         // NOTE: wouldn't macros be nice?
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
@@ -319,7 +344,6 @@ module WorldModuleEntity =
         static member internal getEntityOverflow entity world = (World.getEntityState entity world).Overflow
         static member internal getEntityOverlayNameOpt entity world = (World.getEntityState entity world).OverlayNameOpt
         static member internal getEntityFacetNames entity world = (World.getEntityState entity world).FacetNames
-        static member internal getEntityScriptFrame entity world = (World.getEntityState entity world).ScriptFrame
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
@@ -333,7 +357,6 @@ module WorldModuleEntity =
         static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else None) false Property? PublishPostUpdates value entity world
         static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else None) false Property? Persistent value entity world
         static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else None) false Property? Overflow value entity world
-        static member internal setEntityScriptFrame value entity world = World.updateEntityState (fun entityState -> if value <> entityState.ScriptFrame then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.ScriptFrame <- value; entityState) else None) false Property? ScriptFrame value entity world
 
         static member internal setEntityPosition value entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
