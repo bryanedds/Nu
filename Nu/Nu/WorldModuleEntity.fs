@@ -300,25 +300,20 @@ module WorldModuleEntity =
         static member internal getEntityScriptFrame entity world =
             let entityState = World.getEntityState entity world
             match entityState.ScriptFrameOpt with
-            | None ->
+            | null ->
                 let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
                 let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
-                entityState.ScriptFrameOpt <- Some scriptFrame
+                entityState.ScriptFrameOpt <- scriptFrame
                 scriptFrame
-            | Some scriptFrame -> scriptFrame
+            | scriptFrame -> scriptFrame
 
         static member internal setEntityScriptFrame value entity world =
             World.updateEntityState (fun entityState ->
                 let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
-                match entityState.ScriptFrameOpt with
-                | None ->
-                    entityState.ScriptFrameOpt <- Some value
+                if value <> entityState.ScriptFrameOpt then
+                    entityState.ScriptFrameOpt <- value
                     Some entityState
-                | Some scriptFrame ->
-                    if value <> scriptFrame then
-                        entityState.ScriptFrameOpt <- Some scriptFrame
-                        Some entityState
-                    else None)
+                else None)
                 false Property? ScriptFrame value entity world
 
         // NOTE: wouldn't macros be nice?
