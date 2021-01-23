@@ -991,8 +991,8 @@ module TileMapFacetModule =
             let world =
                 World.monitor (fun _ world ->
                     let quickSize = entity.GetQuickSize world
-                    let transform = entity.GetTransform world
-                    let world = entity.SetTransformWithoutEvent { transform with Size = quickSize } world
+                    let transform = { entity.GetTransform world with Size = quickSize }
+                    let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
                     (entity.ChangeEvent Property? TileMap)
                     entity
@@ -1080,8 +1080,8 @@ module TmxMapFacetModule =
             let world =
                 World.monitor (fun _ world ->
                     let quickSize = entity.GetQuickSize world
-                    let transform = entity.GetTransform world
-                    let world = entity.SetTransformWithoutEvent { transform with Size = quickSize } world
+                    let transform = { entity.GetTransform world with Size = quickSize }
+                    let world = entity.SetTransformWithoutEvent transform world
                     (Cascade, entity.PropagatePhysics world))
                     (entity.ChangeEvent Property? TmxMap)
                     entity

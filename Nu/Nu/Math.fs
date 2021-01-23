@@ -40,8 +40,8 @@ type [<NoEquality; NoComparison; Struct>] Transform =
       mutable Flags : int }
       // 4 bytes free
 
-    /// NOTE: inline to elide copying.
-    static member inline equals left right =
+    /// Test transforms for equality.
+    static member inline equalsByRef (left : Transform inref, right : Transform inref) =
         left.Position.X = right.Position.X &&
         left.Position.Y = right.Position.Y &&
         left.Size.X = right.Size.X &&
@@ -49,6 +49,22 @@ type [<NoEquality; NoComparison; Struct>] Transform =
         left.Rotation = right.Rotation &&
         left.Elevation = right.Elevation &&
         left.Flags = right.Flags
+        
+    /// Test transforms for equality.
+    static member inline equals (left : Transform) (right : Transform) =
+        Transform.equalsByRef (&left, &right)
+
+    /// Assign the value of the left transform to the right.
+    static member inline assignByRef (source : Transform inref, target : Transform byref) =
+        target.Position <- source.Position
+        target.Size <- source.Size
+        target.Rotation <- source.Rotation
+        target.Elevation <- source.Elevation
+        target.Flags <- source.Flags
+
+    /// Assign the value of the left transform to the right.
+    static member inline assign (source : Transform, target : Transform byref) =
+        Transform.assignByRef (&source, &target)
 
     member this.Dirty with get () = this.Flags &&& DirtyMask <> 0 and set value = this.Flags <- if value then this.Flags ||| DirtyMask else this.Flags &&& ~~~DirtyMask
     member this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
@@ -65,14 +81,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     member this.Optimized with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& OmnipresentMask ||| ~~~this.Flags &&& PublishChangesMask = 0
     member this.ShouldMutate with get () = ~~~this.Flags &&& ImperativeMask = 0
 
-    /// Assign a transform in-place.
-    member this.Assign that =
-        this.Position <- that.Position
-        this.Size <- that.Size
-        this.Rotation <- that.Rotation
-        this.Elevation <- that.Elevation
-        this.Flags <- that.Flags
-
+    /// Make an empty transform.
     static member makeEmpty () =
         { Position = Vector2.Zero
           Size = Vector2.One
@@ -80,6 +89,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
           Elevation = 0.0f
           Flags = 0 }
 
+    /// Make the default transform.
     static member makeDefault () =
         { Position = Vector2.Zero
           Size = Constants.Engine.EntitySizeDefault
