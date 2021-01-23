@@ -710,9 +710,9 @@ module WorldTypes =
             entityState.Transform
 
         /// Set an entity state's transform.
-        static member setTransform (value : Transform) (entityState : EntityState) =
+        static member setTransformByRef (value : Transform inref, entityState : EntityState) =
             let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
-            entityState.Transform.Assign value
+            Transform.assignByRef (&value, &entityState.Transform)
             entityState
 
         // Member properties; only for use by internal reflection facilities.
