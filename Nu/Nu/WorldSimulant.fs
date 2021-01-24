@@ -37,12 +37,15 @@ module WorldSimulantModule =
             | _ -> failwithumf ()
 
         static member internal tryGetProperty name (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> World.tryGetEntityProperty name entity world
-            | :? Layer as layer -> World.tryGetLayerProperty name layer world
-            | :? Screen as screen -> World.tryGetScreenProperty name screen world
-            | :? Game -> World.tryGetGameProperty name world
-            | _ -> None
+            let mutable property = Unchecked.defaultof<_>
+            let found =
+                match simulant with
+                | :? Entity as entity -> World.tryGetEntityProperty (name, entity, world, &property)
+                | :? Layer as layer -> World.tryGetLayerProperty (name, layer, world, &property)
+                | :? Screen as screen -> World.tryGetScreenProperty (name, screen, world, &property)
+                | :? Game -> World.tryGetGameProperty (name, world, &property)
+                | _ -> false
+            if found then Some property else None
 
         static member internal getProperty name (simulant : Simulant) world =
             match simulant with

@@ -39,10 +39,8 @@ module WorldModuleEntity =
     let mutable private getFreshKeyAndValueEntity = Unchecked.defaultof<Entity>
     let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
     let private getFreshKeyAndValue () =
-        let entityStateOpt =
-            match UMap.tryGetValue getFreshKeyAndValueEntity.EntityAddress getFreshKeyAndValueWorld.EntityStates with
-            | (true, entityStateOpt) -> entityStateOpt
-            | (false, _) -> Unchecked.defaultof<EntityState>
+        let mutable entityStateOpt = Unchecked.defaultof<_>
+        let _ = UMap.tryGetValue (getFreshKeyAndValueEntity.EntityAddress, getFreshKeyAndValueWorld.EntityStates, &entityStateOpt)
         KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity.EntityAddress, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
     let private getFreshKeyAndValueCached =
         getFreshKeyAndValue
@@ -147,9 +145,7 @@ module WorldModuleEntity =
             world
 
         static member private getEntityStateOpt entity world =
-            let entityStateOpt = World.entityStateFinder entity world
-            if isNull (entityStateOpt :> obj) then None
-            else Some entityStateOpt
+            World.entityStateFinder entity world
 
         static member internal getEntityState entity world =
 #if DEBUG
@@ -224,7 +220,7 @@ module WorldModuleEntity =
             else world
 
         static member internal getEntityExists entity world =
-            Option.isSome (World.getEntityStateOpt entity world)
+            notNull (World.getEntityStateOpt entity world :> obj)
 
         static member internal getEntityStateBoundsMax entityState =
             // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
@@ -501,9 +497,10 @@ module WorldModuleEntity =
             if Reflection.isFacetCompatibleWithDispatcher entityDispatcherMap facet entityState then
                 List.notExists
                     (fun (propertyDefinition : PropertyDefinition) ->
-                        match Xtension.tryGetProperty propertyDefinition.PropertyName entityState.Xtension with
-                        | Some property -> property.PropertyType <> propertyDefinition.PropertyType
-                        | None -> false)
+                        let mutable property = Unchecked.defaultof<_>
+                        match Xtension.tryGetProperty (propertyDefinition.PropertyName, entityState.Xtension, &property) with
+                        | true -> property.PropertyType <> propertyDefinition.PropertyType
+                        | false -> false)
                     facetPropertyDefinitions
             else false
 
@@ -686,34 +683,39 @@ module WorldModuleEntity =
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
             | None -> world
 
-        static member internal tryGetEntityProperty propertyName entity world =
-            match World.getEntityStateOpt entity world with
-            | Some entityState ->
-                match EntityState.tryGetProperty propertyName entityState with
-                | Some property as some ->
+        static member internal tryGetEntityProperty (propertyName, entity, world, property : _ byref) =
+            let entityStateOpt = World.getEntityStateOpt entity world
+            match entityStateOpt :> obj with
+            | null -> false
+            | _ ->
+                match EntityState.tryGetProperty (propertyName, entityStateOpt, &property) with
+                | true ->
                     match property.PropertyValue with
-                    | :? ComputedProperty as cp -> Some { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }
-                    | :? DesignerProperty as dp -> Some { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }
-                    | _ -> some
-                | None ->
+                    | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
+                    | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
+                    | _ -> true
+                | false ->
                     match Getters.TryGetValue propertyName with
-                    | (true, getter) -> Some (getter entity world)
-                    | (false, _) -> None
-            | None -> None
+                    | (true, getter) -> property <- getter entity world; true
+                    | (false, _) -> false
 
         static member internal getEntityProperty propertyName entity world =
-            match World.tryGetEntityProperty propertyName entity world with
-            | Some property -> property
-            | None -> failwithf "Could not find property '%s'." propertyName
+            let mutable property = Unchecked.defaultof<_>
+            match World.tryGetEntityProperty (propertyName, entity, world, &property) with
+            | true -> property
+            | false -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityPropertyWithoutEvent propertyName property entity world =
-            match World.getEntityStateOpt entity world with
-            | Some entityState ->
+            let entityStateOpt = World.getEntityStateOpt entity world
+            match entityStateOpt :> obj with
+            | null -> (false, false, world)
+            | _ ->
                 match Setters.TryGetValue propertyName with
                 | (false, _) ->
+                    let mutable propertyOld = Unchecked.defaultof<_>
                     let (success, changed, world) =
-                        match EntityState.tryGetProperty propertyName entityState with
-                        | Some propertyOld ->
+                        match EntityState.tryGetProperty (propertyName, entityStateOpt, &propertyOld) with
+                        | true ->
                             match propertyOld.PropertyValue with
                             | :? ComputedProperty as cp ->
                                 match cp.ComputedSetOpt with
@@ -725,22 +727,21 @@ module WorldModuleEntity =
                             | :? DesignerProperty as dp ->
                                 if property.PropertyValue =/= dp.DesignerValue then
                                     let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
-                                    match EntityState.trySetProperty propertyName property entityState with
+                                    match EntityState.trySetProperty propertyName property entityStateOpt with
                                     | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
                                     | (false, _) -> (false, false, world)
                                 else (true, false, world)
                             | _ ->
                                 if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    match EntityState.trySetProperty propertyName property entityState with
+                                    match EntityState.trySetProperty propertyName property entityStateOpt with
                                     | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
                                     | (false, _) -> (false, false, world)
                                 else (true, false, world)
-                        | None -> (false, false, world)
+                        | false -> (false, false, world)
                     (success, changed, world)
                 | (true, setter) ->
                     let (changed, world) = setter property entity world
                     (true, changed, world)
-            | None -> (false, false, world)
 
         static member internal setEntityPropertyWithoutEvent propertyName property entity world =
             match World.trySetEntityPropertyWithoutEvent propertyName property entity world with

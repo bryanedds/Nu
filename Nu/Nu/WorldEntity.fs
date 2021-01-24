@@ -134,7 +134,9 @@ module WorldEntityModule =
 
         /// Try to get a property value and type.
         member this.TryGetProperty propertyName world =
-            World.tryGetEntityProperty propertyName this world
+            let mutable property = Unchecked.defaultof<_>
+            let found = World.tryGetEntityProperty (propertyName, this, world, &property)
+            if found then Some property else None
 
         /// Get a property value and type.
         member this.GetProperty propertyName world =

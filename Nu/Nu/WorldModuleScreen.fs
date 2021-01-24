@@ -132,19 +132,20 @@ module WorldModuleScreen =
                     else None)
                 Property? Model value screen world
 
-        static member internal tryGetScreenProperty propertyName screen world =
+        static member internal tryGetScreenProperty (propertyName, screen, world, property : _ byref) =
             if World.getScreenExists screen world then
                 match Getters.TryGetValue propertyName with
-                | (false, _) -> ScreenState.tryGetProperty propertyName (World.getScreenState screen world)
-                | (true, getter) -> Some (getter screen world)
-            else None
+                | (false, _) -> ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property)
+                | (true, getter) -> property <- getter screen world; true
+            else false
 
         static member internal getScreenProperty propertyName screen world =
             match Getters.TryGetValue propertyName with
             | (false, _) ->
-                match ScreenState.tryGetProperty propertyName (World.getScreenState screen world) with
-                | None -> failwithf "Could not find property '%s'." propertyName
-                | Some property -> property
+                let mutable property = Unchecked.defaultof<_>
+                match ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property) with
+                | true -> property
+                | false -> failwithf "Could not find property '%s'." propertyName
             | (true, getter) -> getter screen world
 
         static member internal trySetScreenProperty propertyName property screen world =
@@ -156,14 +157,15 @@ module WorldModuleScreen =
                     let world =
                         World.updateScreenState
                             (fun screenState ->
-                                match ScreenState.tryGetProperty propertyName screenState with
-                                | Some propertyOld ->
+                                let mutable propertyOld = Unchecked.defaultof<_>
+                                match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
+                                | true ->
                                     if property.PropertyValue =/= propertyOld.PropertyValue then
                                         let (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
                                         success <- successInner
                                         Some gameState
                                     else None
-                                | None -> None)
+                                | false -> None)
                             propertyName property.PropertyValue screen world
                     (success, world)
             else (false, world)

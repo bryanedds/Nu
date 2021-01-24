@@ -71,7 +71,11 @@ module WorldGameModule =
         member this.AssetsReloadEvent = Events.AssetsReload --> this
 
         /// Try to get a property value and type.
-        member this.TryGetProperty propertyName world = World.tryGetGameProperty propertyName world
+        member this.TryGetProperty propertyName world =
+            let mutable property = Unchecked.defaultof<_>
+            if World.tryGetGameProperty (propertyName, world, &property)
+            then Some property
+            else None
 
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getGameProperty propertyName world

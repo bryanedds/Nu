@@ -123,9 +123,10 @@ module Overlayer =
                 let propertyValueOpt =
                     match (propertyOpt, xtensionOpt) with
                     | (null, Some xtension) ->
-                        match Xtension.tryGetProperty propertyName xtension with
-                        | Some property -> Some property.PropertyValue
-                        | None -> None
+                        let mutable property = Unchecked.defaultof<_>
+                        match Xtension.tryGetProperty (propertyName, xtension, &property) with
+                        | true -> Some property.PropertyValue
+                        | false -> None
                     | (null, None) -> None
                     | (targetProperty, _) -> Some (targetProperty.GetValue target)
                 match propertyValueOpt with
@@ -179,8 +180,9 @@ module Overlayer =
             | :? Xtension as xtension ->
                 let xtension =
                     Map.foldBack (fun propertyName propertySymbol xtension ->
-                        match Xtension.tryGetProperty propertyName xtension with
-                        | Some property ->
+                        let mutable property = Unchecked.defaultof<_>
+                        match Xtension.tryGetProperty (propertyName, xtension, &property) with
+                        | true ->
                             let propertyType = property.PropertyType
                             match getPropertyState propertyName propertyType target oldOverlaySymbols with
                             | Bare | Overlaid ->
@@ -189,7 +191,7 @@ module Overlayer =
                                 let property = { PropertyType = propertyType; PropertyValue = propertyValue;  }
                                 Xtension.attachProperty propertyName property xtension
                             | Altered | NonPersistent -> xtension
-                        | None ->
+                        | false ->
                             let recordProperties = targetType.GetProperties ()
                             if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) recordProperties then
                                 match propertySymbol with

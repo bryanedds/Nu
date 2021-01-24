@@ -304,17 +304,18 @@ module WorldModuleGame =
         static member assetTagsToValueOpts<'a> assetTags metadata world =
             List.map (fun assetTag -> World.assetTagToValueOpt<'a> assetTag metadata world) assetTags
 
-        static member internal tryGetGameProperty propertyName world =
+        static member internal tryGetGameProperty (propertyName, world, property : _ byref) =
             match Getters.TryGetValue propertyName with
-            | (false, _) -> GameState.tryGetProperty propertyName (World.getGameState world)
-            | (true, getter) -> Some (getter world)
+            | (true, getter) -> property <- getter world; true
+            | (false, _) -> GameState.tryGetProperty (propertyName, World.getGameState world, &property)
 
         static member internal getGameProperty propertyName world =
             match Getters.TryGetValue propertyName with
             | (false, _) ->
-                match GameState.tryGetProperty propertyName (World.getGameState world) with
-                | None -> failwithf "Could not find property '%s'." propertyName
-                | Some property -> property
+                let mutable property = Unchecked.defaultof<_>
+                match GameState.tryGetProperty (propertyName, World.getGameState world, &property) with
+                | true -> property
+                | false -> failwithf "Could not find property '%s'." propertyName
             | (true, getter) -> getter world
 
         static member internal trySetGameProperty propertyName property world =
@@ -325,14 +326,15 @@ module WorldModuleGame =
                 let world =
                     World.updateGameState
                         (fun gameState ->
-                            match GameState.tryGetProperty propertyName gameState with
-                            | Some propertyOld ->
+                            let mutable propertyOld = Unchecked.defaultof<_>
+                            match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
+                            | true ->
                                 if property.PropertyValue =/= propertyOld.PropertyValue then
                                     let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
                                     success <- successInner
                                     Some gameState
                                 else None
-                            | None -> None)
+                            | false -> None)
                         propertyName property.PropertyValue world
                 (success, world)
 
