@@ -461,8 +461,8 @@ module WorldTypes =
               CreationTimeStamp = Core.getUniqueTimeStamp () }
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty propertyName gameState =
-            Xtension.tryGetProperty propertyName gameState.Xtension
+        static member tryGetProperty (propertyName, gameState, propertyRef : Property byref) =
+            Xtension.tryGetProperty (propertyName, gameState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
         static member getProperty propertyName gameState =
@@ -528,8 +528,8 @@ module WorldTypes =
               Name = name }
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty propertyName screenState =
-            Xtension.tryGetProperty propertyName screenState.Xtension
+        static member tryGetProperty (propertyName, screenState, propertyRef : Property byref) =
+            Xtension.tryGetProperty (propertyName, screenState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
         static member getProperty propertyName screenState =
@@ -587,8 +587,8 @@ module WorldTypes =
               Name = name }
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty propertyName layerState =
-            Xtension.tryGetProperty propertyName layerState.Xtension
+        static member tryGetProperty (propertyName, layerState, propertyRef : Property byref) =
+            Xtension.tryGetProperty (propertyName, layerState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
         static member getProperty propertyName layerState =
@@ -669,8 +669,8 @@ module WorldTypes =
             entityState'
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty propertyName entityState =
-            Xtension.tryGetProperty propertyName entityState.Xtension
+        static member tryGetProperty (propertyName, entityState, propertyRef : Property byref) =
+            Xtension.tryGetProperty (propertyName, entityState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
         static member getProperty propertyName entityState =

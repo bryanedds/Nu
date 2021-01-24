@@ -57,7 +57,11 @@ module WorldScreenModule =
         member this.OutgoingFinishEvent = Events.OutgoingFinish --> this
 
         /// Try to get a property value and type.
-        member this.TryGetProperty propertyName world = World.tryGetScreenProperty propertyName this world
+        member this.TryGetProperty propertyName world =
+            let mutable property = Unchecked.defaultof<_>
+            if World.tryGetScreenProperty (propertyName, this, world, &property)
+            then Some property
+            else None
 
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getScreenProperty propertyName this world

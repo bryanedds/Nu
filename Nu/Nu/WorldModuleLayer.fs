@@ -139,19 +139,20 @@ module WorldModuleLayer =
                     else None)
                 Property? Model value layer world
 
-        static member internal tryGetLayerProperty propertyName layer world =
+        static member internal tryGetLayerProperty (propertyName, layer, world, property : _ byref) =
             if World.getLayerExists layer world then
                 match Getters.TryGetValue propertyName with
-                | (false, _) -> LayerState.tryGetProperty propertyName (World.getLayerState layer world)
-                | (true, getter) -> Some (getter layer world)
-            else None
+                | (true, getter) -> property <- getter layer world; true
+                | (false, _) -> LayerState.tryGetProperty (propertyName, World.getLayerState layer world, &property)
+            else false
 
         static member internal getLayerProperty propertyName layer world =
             match Getters.TryGetValue propertyName with
             | (false, _) ->
-                match LayerState.tryGetProperty propertyName (World.getLayerState layer world) with
-                | None -> failwithf "Could not find property '%s'." propertyName
-                | Some property -> property
+                let mutable property = Unchecked.defaultof<_>
+                match LayerState.tryGetProperty (propertyName, World.getLayerState layer world, &property) with
+                | true -> property
+                | false -> failwithf "Could not find property '%s'." propertyName
             | (true, getter) -> getter layer world
 
         static member internal trySetLayerProperty propertyName property layer world =
@@ -163,14 +164,15 @@ module WorldModuleLayer =
                     let world =
                         World.updateLayerState
                             (fun layerState ->
-                                match LayerState.tryGetProperty propertyName layerState with
-                                | Some propertyOld ->
+                                let mutable propertyOld = Unchecked.defaultof<_>
+                                match LayerState.tryGetProperty (propertyName, layerState, &propertyOld) with
+                                | true ->
                                     if property.PropertyValue =/= propertyOld.PropertyValue then
                                         let (successInner, gameState) = LayerState.trySetProperty propertyName property layerState
                                         success <- successInner
                                         Some gameState
                                     else None
-                                | None -> None)
+                                | false -> None)
                             propertyName property.PropertyValue layer world
                     (success, world)
             else (false, world)

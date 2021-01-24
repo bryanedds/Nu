@@ -42,7 +42,11 @@ module WorldLayerModule =
         member this.PostUpdateEvent = Events.PostUpdate --> this
 
         /// Try to get a property value and type.
-        member this.TryGetProperty propertyName world = World.tryGetLayerProperty propertyName this world
+        member this.TryGetProperty propertyName world =
+            let mutable property = Unchecked.defaultof<_>
+            if World.tryGetLayerProperty (propertyName, this, world, &property)
+            then Some property
+            else None
 
         /// Get a property value and type.
         member this.GetProperty propertyName world = World.getLayerProperty propertyName this world
