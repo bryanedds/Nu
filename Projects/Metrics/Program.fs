@@ -56,25 +56,47 @@ type [<NoEquality; NoComparison; Struct>] Mover =
         member this.Disjunction index junctions ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
 #endif
 
+#if FACETLESS
+type MetricsEntityDispatcher () =
+    inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
+
+    override this.Update (entity, world) =
+        entity.SetRotation (entity.GetRotation world + 0.03f) world
+
+    override this.View (staticImage, entity, world) =
+        let transform = entity.GetTransform world
+        View.Render
+            (transform.Elevation,
+             transform.Position.Y,
+             AssetTag.generalize staticImage,
+             SpriteDescriptor
+                { Transform = transform
+                  Offset = Vector2.Zero
+                  InsetOpt = None
+                  Image = staticImage
+                  Color = colWhite
+                  Glow = colZero
+                  Flip = FlipNone })
+#else
 type MetricsEntityDispatcher () =
     inherit EntityDispatcher ()
 
-#if !ECS && !ECS_PURE
+  #if !ECS && !ECS_PURE
     static member Facets =
         [typeof<StaticSpriteFacet>]
-#endif
+  #endif
 
-#if REACTIVE
+  #if REACTIVE
     static member Properties =
         [define Entity.PublishChanges true]
-#endif
+  #endif
 
-#if !ECS && !ECS_PURE
+  #if !ECS && !ECS_PURE
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
-#endif
+  #endif
 
-#if ECS
+  #if ECS
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
         let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { Active = false; Entity = entity; Sprite = Assets.Default.Image4 } (entity.GetId world)
@@ -84,6 +106,7 @@ type MetricsEntityDispatcher () =
         let ecs = entity.Parent.Parent.GetEcs world
         let _ : bool = ecs.UnregisterCorrelated<StaticSpriteComponent> (entity.GetId world)
         world
+  #endif
 #endif
 
 type MyGameDispatcher () =
