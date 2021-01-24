@@ -71,9 +71,7 @@ module WorldModuleEntity =
                 | null ->
                     Unchecked.defaultof<EntityState>
                 | _ ->
-                    if entityStateOpt.ShouldMutate then
-                        entityStateOpt.Invalidated <- false
-                        entity.EntityStateOpt <- entityStateOpt
+                    if entityStateOpt.ShouldMutate then entity.EntityStateOpt <- entityStateOpt
                     entityStateOpt
             else entityStateOpt
 
@@ -404,7 +402,7 @@ module WorldModuleEntity =
                     (changed, world)
             if changed then
 #if DEBUG
-                if oldEntityState.Transform.Flags <> value.Flags then failwith "Cannot change transform flags via setEntityTransform."
+                if oldEntityState.Transform.Flags <> valueInRef.Flags then failwith "Cannot change transform flags via setEntityTransform."
 #endif
                 if World.getEntityPublishChanges entity world then
                     let positionChanged = v2Neq valueInRef.Position oldTransform.Position

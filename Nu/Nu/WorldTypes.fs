@@ -664,8 +664,9 @@ module WorldTypes =
         /// Copy an entity state, invalidating the incoming reference.
         /// OPTIMIZATION: inlined invalidation masking for speed.
         static member inline diverge (entityState : EntityState) =
+            let entityState' = EntityState.copy entityState
             entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
-            EntityState.copy entityState
+            entityState'
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty propertyName entityState =
