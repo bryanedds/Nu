@@ -82,19 +82,17 @@ module WorldScreenModule =
         member this.IsIdling world = match this.GetTransitionState world with IdlingState -> true | _ -> false
 
         /// Check that a screen is selected.
-        member this.GetSelected world =
-            match (World.getGameState world).OmniScreenOpt with
+        member this.IsSelected world =
+            let gameState = World.getGameState world
+            match gameState.OmniScreenOpt with
             | Some omniScreen when Address.head this.ScreenAddress = Address.head omniScreen.ScreenAddress -> true
             | _ ->
-                match (World.getGameState world).SelectedScreenOpt with
+                match gameState.SelectedScreenOpt with
                 | Some screen when Address.head this.ScreenAddress = Address.head screen.ScreenAddress -> true
                 | _ -> false
 
         /// Check that a screen exists in the world.
         member this.Exists world = World.getScreenExists this world
-
-        /// Check that a screen is selected.
-        member this.Selected world = WorldModule.isSelected this world
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)

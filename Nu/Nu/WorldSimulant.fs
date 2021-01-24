@@ -148,16 +148,6 @@ module WorldSimulantModule =
             | :? Game -> Some (World.getGameScriptFrame world)
             | _ -> failwithumf ()
 
-        /// Determine if the given simulant is currently selected.
-        [<FunctionBinding>]
-        static member getSelected (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> entity.GetSelected world
-            | :? Layer as layer -> layer.GetSelected world
-            | :? Screen as screen -> screen.GetSelected world
-            | :? Game -> true
-            | _ -> failwithumf ()
-
         /// Attempt to get the parent of the given simulant.
         [<FunctionBinding>]
         static member tryGetParent (simulant : Simulant) world =

@@ -383,18 +383,20 @@ module BasicEmitterFacetModule =
             processOutput output entity world
 
         override this.Actualize (entity, world) =
-            let time = World.getTickTime world
-            let particleSystem = entity.GetParticleSystem world
-            let particlesDescriptors = ParticleSystem.toParticlesDescriptors time particleSystem
-            let particlesMessages =
-                List.map (fun (descriptor : ParticlesDescriptor) ->
-                    LayeredDescriptorMessage
-                        { Elevation = descriptor.Elevation
-                          PositionY = descriptor.PositionY
-                          AssetTag = AssetTag.generalize descriptor.Image
-                          RenderDescriptor = ParticlesDescriptor descriptor })
-                    particlesDescriptors
-            World.enqueueRenderMessages particlesMessages world
+            if entity.GetVisible world && entity.GetInView world then
+                let time = World.getTickTime world
+                let particleSystem = entity.GetParticleSystem world
+                let particlesDescriptors = ParticleSystem.toParticlesDescriptors time particleSystem
+                let particlesMessages =
+                    List.map (fun (descriptor : ParticlesDescriptor) ->
+                        LayeredDescriptorMessage
+                            { Elevation = descriptor.Elevation
+                              PositionY = descriptor.PositionY
+                              AssetTag = AssetTag.generalize descriptor.Image
+                              RenderDescriptor = ParticlesDescriptor descriptor })
+                        particlesDescriptors
+                World.enqueueRenderMessages particlesMessages world
+            else world
 
 [<AutoOpen>]
 module BasicEmittersFacetModule =
@@ -1652,7 +1654,7 @@ module GuiDispatcherModule =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let handling =
-                if entity.GetSelected world && entity.GetVisible world then
+                if entity.IsSelected world && entity.GetVisible world then
                     let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
                     if data.Down &&
                        entity.GetSwallowMouseLeft world &&
@@ -1685,7 +1687,7 @@ module GuiDispatcherModule =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
             let handling =
-                if entity.GetSelected world && entity.GetVisible world then
+                if entity.IsSelected world && entity.GetVisible world then
                     let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
                     if data.Down &&
                        entity.GetSwallowMouseLeft world &&
@@ -1740,7 +1742,7 @@ module ButtonDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.GetSelected world then
+            if entity.IsSelected world then
                 let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
                 if  entity.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
@@ -1756,7 +1758,7 @@ module ButtonDispatcherModule =
         let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.GetSelected world then
+            if entity.IsSelected world then
                 let wasDown = entity.GetDown world
                 let world = entity.SetDown false world
                 let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
@@ -1947,7 +1949,7 @@ module ToggleDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.GetSelected world then
+            if entity.IsSelected world then
                 let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
                 if  entity.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
@@ -1961,7 +1963,7 @@ module ToggleDispatcherModule =
         let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.GetSelected world then
+            if entity.IsSelected world then
                 let wasPressed = entity.GetPressed world
                 let world = entity.SetPressed false world
                 let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
@@ -2087,7 +2089,7 @@ module FeelerDispatcherModule =
         let handleMouseLeftDown evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.GetSelected world then
+            if entity.IsSelected world then
                 let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) data.Position world
                 if  entity.GetVisible world &&
                     Math.isPointInBounds mousePositionWorld (entity.GetBounds world) then
@@ -2103,7 +2105,7 @@ module FeelerDispatcherModule =
         let handleMouseLeftUp evt world =
             let entity = evt.Subscriber : Entity
             let data = evt.Data : MouseButtonData
-            if entity.GetSelected world && entity.GetVisible world then
+            if entity.IsSelected world && entity.GetVisible world then
                 if entity.GetEnabled world then
                     let world = entity.SetTouched false world
                     let eventTrace = EventTrace.debug "FeelerDispatcher" "handleMouseLeftDown" EventTrace.empty

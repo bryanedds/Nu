@@ -64,19 +64,17 @@ module WorldLayerModule =
         member this.Set<'a> propertyName (value : 'a) world = World.setLayerProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world
 
         /// Check that a layer is selected.
-        member this.GetSelected world =
-            match (World.getGameState world).OmniScreenOpt with
+        member this.IsSelected world =
+            let gameState = World.getGameState world
+            match gameState.OmniScreenOpt with
             | Some omniScreen when Address.head this.LayerAddress = Address.head omniScreen.ScreenAddress -> true
             | _ ->
-                match (World.getGameState world).SelectedScreenOpt with
+                match gameState.SelectedScreenOpt with
                 | Some screen when Address.head this.LayerAddress = Address.head screen.ScreenAddress -> true
                 | _ -> false
 
         /// Check that a layer exists in the world.
         member this.Exists world = World.getLayerExists this world
-
-        /// Check that a layer is selected.
-        member this.Selected world = WorldModule.isSelected this world
 
         /// Check that a layer dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
