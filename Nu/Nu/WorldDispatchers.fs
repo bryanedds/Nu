@@ -758,16 +758,17 @@ module TextFacetModule =
                       Rotation = 0.0f
                       Elevation = entity.GetElevation world + 0.5f
                       Flags = entity.GetFlags world }
+                let font = entity.GetFont world
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
-                          AssetTag = entity.GetFont world |> AssetTag.generalize
+                          AssetTag = AssetTag.generalize font
                           RenderDescriptor =
                             TextDescriptor
                                 { Transform = transform
                                   Text = text
-                                  Font = entity.GetFont world
+                                  Font = font
                                   Color = if entity.GetEnabled world then entity.GetTextColor world else entity.GetTextDisabledColor world
                                   Justification = entity.GetJustification world }})
                     world
@@ -1363,17 +1364,18 @@ module StaticSpriteFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
+                let staticImage = entity.GetStaticImage world
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
-                          AssetTag = entity.GetStaticImage world |> AssetTag.generalize
+                          AssetTag = AssetTag.generalize staticImage
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform
                                   Offset = Vector2.Zero
                                   InsetOpt = entity.GetInsetOpt world
-                                  Image = entity.GetStaticImage world
+                                  Image = staticImage
                                   Color = entity.GetColor world
                                   Glow = entity.GetGlow world
                                   Flip = entity.GetFlip world }})
@@ -1435,17 +1437,18 @@ module AnimatedSpriteFacetModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
+                let animationSheet = entity.GetAnimationSheet world
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
-                          AssetTag = entity.GetAnimationSheet world |> AssetTag.generalize
+                          AssetTag = AssetTag.generalize animationSheet
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform
                                   Offset = Vector2.Zero
                                   InsetOpt = getSpriteInsetOpt entity world
-                                  Image = entity.GetAnimationSheet world
+                                  Image = animationSheet
                                   Color = entity.GetColor world
                                   Glow = entity.GetGlow world
                                   Flip = entity.GetFlip world }})
@@ -1835,17 +1838,18 @@ module LabelDispatcherModule =
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
                 let transform = entity.GetTransform world
+                let labelImage = entity.GetLabelImage world
                 World.enqueueRenderMessage
                     (LayeredDescriptorMessage
                         { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
-                          AssetTag = entity.GetLabelImage world |> AssetTag.generalize
+                          AssetTag = AssetTag.generalize labelImage
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform
                                   Offset = Vector2.Zero
                                   InsetOpt = None
-                                  Image = entity.GetLabelImage world
+                                  Image = labelImage
                                   Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
                                   Glow = Color.Zero
                                   Flip = FlipNone }})
@@ -2178,29 +2182,31 @@ module FillBarDispatcherModule =
                       Elevation = entity.GetElevation world
                       Flags = entity.GetFlags world }
                 let fillBarColor = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                let borderImage = entity.GetBorderImage world
+                let fillImage = entity.GetFillImage world
                 World.enqueueRenderMessage
                     (LayeredDescriptorsMessage
                         [|{ Elevation = borderSpriteTransform.Elevation
                             PositionY = borderSpriteTransform.Position.Y
-                            AssetTag = entity.GetBorderImage world |> AssetTag.generalize
+                            AssetTag = AssetTag.generalize borderImage
                             RenderDescriptor =
                                 SpriteDescriptor
                                     { Transform = borderSpriteTransform
                                       Offset = Vector2.Zero
                                       InsetOpt = None
-                                      Image = entity.GetBorderImage world
+                                      Image = borderImage
                                       Color = fillBarColor
                                       Glow = Color.Zero
                                       Flip = FlipNone }}
                           { Elevation = fillBarSpriteTransform.Elevation
                             PositionY = fillBarSpriteTransform.Position.Y
-                            AssetTag = entity.GetFillImage world |> AssetTag.generalize
+                            AssetTag = AssetTag.generalize fillImage
                             RenderDescriptor =
                                 SpriteDescriptor
                                     { Transform = fillBarSpriteTransform
                                       Offset = Vector2.Zero
                                       InsetOpt = None
-                                      Image = entity.GetFillImage world
+                                      Image = fillImage
                                       Color = fillBarColor
                                       Glow = Color.Zero
                                       Flip = FlipNone }}|])
