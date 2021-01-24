@@ -783,9 +783,22 @@ module WorldModuleEntity =
             | Some _ as opt -> opt
             | None -> Some dispatcherName
 
+        static member internal getEntityBoundsOverflow entity world =
+            let entityState = World.getEntityState entity world
+            let mutable transform = &entityState.Transform
+            v4BoundsOverflow transform.Position transform.Size entityState.Overflow
+
         static member internal getEntityBoundsMax entity world =
             let entityState = World.getEntityState entity world
             World.getEntityStateBoundsMax entityState
+
+        static member internal getEntityInView entity world =
+            let entityState = World.getEntityState entity world
+            let mutable transform = &entityState.Transform
+            if not transform.Omnipresent then
+                let boundsOverflow = v4BoundsOverflow transform.Position transform.Size entityState.Overflow
+                World.isBoundsInView transform.Absolute boundsOverflow world
+            else true
 
         static member internal getEntityQuickSize (entity : Entity) world =
             let dispatcher = World.getEntityDispatcher entity world

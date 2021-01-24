@@ -185,34 +185,26 @@ module WorldEntityModule =
         member this.GetQuickSize world = World.getEntityQuickSize this world
 
         /// Get an entity's bounds, taking into account its overflow.
-        member this.GetBoundsOverflow world = v4BoundsOverflow (this.GetPosition world) (this.GetSize world) (this.GetOverflow world)
+        member this.GetBoundsOverflow world = World.getEntityBoundsOverflow this world
 
         /// Get an entity's bounds maximum.
         member this.GetBoundsMax world = World.getEntityBoundsMax this world
 
+        /// Check that an entity is in the camera's view.
+        member this.GetInView world = World.getEntityInView this world
+
         /// Check that an entity is selected.
-        member this.GetSelected world =
-            match (World.getGameState world).OmniScreenOpt with
+        member this.IsSelected world =
+            let gameState = World.getGameState world
+            match gameState.OmniScreenOpt with
             | Some omniScreen when Address.head this.EntityAddress = Address.head omniScreen.ScreenAddress -> true
             | _ ->
-                match (World.getGameState world).SelectedScreenOpt with
+                match gameState.SelectedScreenOpt with
                 | Some screen when Address.head this.EntityAddress = Address.head screen.ScreenAddress -> true
                 | _ -> false
 
-        /// Check that an entity is in the camera's view.
-        member this.GetInView world =
-            if not (this.GetOmnipresent world) then
-                World.isBoundsInView
-                    (this.GetAbsolute world)
-                    (this.GetBoundsOverflow world)
-                    world
-             else true
-
         /// Check that an entity exists in the world.
         member this.Exists world = World.getEntityExists this world
-
-        /// Check that an entity is selected.
-        member this.Selected world = WorldModule.isSelected this world
 
         /// Set an entity's size by its quick size.
         member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world

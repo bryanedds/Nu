@@ -1306,7 +1306,7 @@ module WorldBindings =
                     struct (World.derive address, world)
                 | struct (Scripting.Violation (_, error, _), _) -> failwith error
                 | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.getSelected simulant world
+            let result = World.isSelected simulant world
             let value = result
             let value = ScriptingSystem.tryImport typeof<Boolean> value world |> Option.get
             struct (value, world)
