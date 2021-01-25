@@ -96,5 +96,5 @@ module CharacterDispatcherModule =
                             Color = Color.White
                             Glow = Color.Zero
                             Flip = FlipNone }}
-                World.enqueueLayeredMessage message world
+                World.enqueueRenderLayeredMessage message world
             else world

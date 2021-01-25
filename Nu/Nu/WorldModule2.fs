@@ -820,7 +820,7 @@ module WorldModule2 =
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
                 let transform = { Position = position; Size = size; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = -1 }
-                World.enqueueLayeredMessage
+                World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
                       AssetTag = AssetTag.generalize dissolveImage
