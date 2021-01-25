@@ -31,15 +31,15 @@ module WorldRender =
             for message in messages do Renderer.enqueueMessage message renderer
             world
             
-        /// Enqueue a layered descriptor for rendering, bypassing enqueueRenderMessage for speed.
-        static member enqueueLayeredDescriptor (descriptor : LayeredDescriptor) world =
-            Renderer.enqueueLayeredDescriptor descriptor world.Subsystems.Renderer
+        /// Enqueue a layered message for rendering, bypassing enqueueRenderMessage for speed.
+        static member enqueueLayeredMessage (message : RenderLayeredMessage) world =
+            Renderer.enqueueLayeredMessage message world.Subsystems.Renderer
             world
 
-        /// Enqueue multiple rendering messages to the world.
-        static member enqueueLayeredDescriptors (descriptors : LayeredDescriptor seq) world =
+        /// Enqueue multiple layered rendering messages to the world, bypassing enqueueRenderMessage for speed.
+        static member enqueueLayeredMessages (messages : RenderLayeredMessage seq) world =
             let renderer = World.getRenderer world
-            for descriptor in descriptors do Renderer.enqueueLayeredDescriptor descriptor renderer
+            for message in messages do Renderer.enqueueLayeredMessage message renderer
             world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be

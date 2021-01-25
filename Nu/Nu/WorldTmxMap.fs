@@ -170,7 +170,7 @@ module TmxMap =
               IsSensor = false }
         bodyProperties
 
-    let getLayeredDescriptors time absolute (viewBounds : Vector4) tileLayerClearance (tileMapPosition : Vector2) tileMapElevation tileMapParallax (tileMap : TmxMap) =
+    let getLayeredMessages time absolute (viewBounds : Vector4) tileLayerClearance (tileMapPosition : Vector2) tileMapElevation tileMapParallax (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.Layers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)

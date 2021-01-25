@@ -83,7 +83,7 @@ module CharacterDispatcherModule =
                 let transform = entity.GetTransform world
                 let animationState = entity.GetCharacterAnimationState world
                 let animationSheet = entity.GetCharacterAnimationSheet world
-                let descriptor =
+                let message =
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
                       AssetTag = AssetTag.generalize animationSheet
@@ -96,5 +96,5 @@ module CharacterDispatcherModule =
                             Color = Color.White
                             Glow = Color.Zero
                             Flip = FlipNone }}
-                World.enqueueLayeredDescriptor descriptor world
+                World.enqueueLayeredMessage message world
             else world
