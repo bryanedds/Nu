@@ -27,7 +27,7 @@ module DeclarativeOperators2 =
             match view with
             | Render (elevation, positionY, assetTag, descriptor) ->
                 let layeredDescriptor = { Elevation = elevation; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
-                World.enqueueRenderMessage (LayeredDescriptorMessage layeredDescriptor) world
+                World.enqueueLayeredDescriptor layeredDescriptor world
             | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
             | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
             | FadeOutSong fade -> World.fadeOutSong fade world
@@ -386,16 +386,15 @@ module BasicEmitterFacetModule =
             if entity.GetVisible world && entity.GetInView world then
                 let time = World.getTickTime world
                 let particleSystem = entity.GetParticleSystem world
-                let particlesDescriptors = ParticleSystem.toParticlesDescriptors time particleSystem
-                let particlesMessages =
+                let particlesDescriptors =
+                    particleSystem |>
+                    ParticleSystem.toParticlesDescriptors time |>
                     List.map (fun (descriptor : ParticlesDescriptor) ->
-                        LayeredDescriptorMessage
-                            { Elevation = descriptor.Elevation
-                              PositionY = descriptor.PositionY
-                              AssetTag = AssetTag.generalize descriptor.Image
-                              RenderDescriptor = ParticlesDescriptor descriptor })
-                        particlesDescriptors
-                World.enqueueRenderMessages particlesMessages world
+                        { Elevation = descriptor.Elevation
+                          PositionY = descriptor.PositionY
+                          AssetTag = AssetTag.generalize descriptor.Image
+                          RenderDescriptor = ParticlesDescriptor descriptor })
+                World.enqueueLayeredDescriptors particlesDescriptors world
             else world
 
 [<AutoOpen>]
@@ -609,16 +608,15 @@ module EffectFacetModule =
                         (entity.GetParticleSystem world)
 
                 // actualize particles
-                let particlesDescriptors = ParticleSystem.toParticlesDescriptors time particleSystem
-                let particlesMessages =
+                let particlesDescriptors =
+                    particleSystem |>
+                    ParticleSystem.toParticlesDescriptors time |>
                     List.map (fun (descriptor : ParticlesDescriptor) ->
-                        LayeredDescriptorMessage
-                            { Elevation = descriptor.Elevation
-                              PositionY = descriptor.PositionY
-                              AssetTag = AssetTag.generalize descriptor.Image
-                              RenderDescriptor = ParticlesDescriptor descriptor })
-                        particlesDescriptors
-                let world = World.enqueueRenderMessages particlesMessages world
+                        { Elevation = descriptor.Elevation
+                          PositionY = descriptor.PositionY
+                          AssetTag = AssetTag.generalize descriptor.Image
+                          RenderDescriptor = ParticlesDescriptor descriptor })
+                let world = World.enqueueLayeredDescriptors particlesDescriptors world
 
                 // update effect history in-place
                 effectHistory.AddToFront effectSlice
@@ -761,18 +759,17 @@ module TextFacetModule =
                       Elevation = entity.GetElevation world + 0.5f
                       Flags = entity.GetFlags world }
                 let font = entity.GetFont world
-                World.enqueueRenderMessage
-                    (LayeredDescriptorMessage
-                        { Elevation = transform.Elevation
-                          PositionY = transform.Position.Y
-                          AssetTag = AssetTag.generalize font
-                          RenderDescriptor =
-                            TextDescriptor
-                                { Transform = transform
-                                  Text = text
-                                  Font = font
-                                  Color = if entity.GetEnabled world then entity.GetTextColor world else entity.GetTextDisabledColor world
-                                  Justification = entity.GetJustification world }})
+                World.enqueueLayeredDescriptor
+                    { Elevation = transform.Elevation
+                      PositionY = transform.Position.Y
+                      AssetTag = AssetTag.generalize font
+                      RenderDescriptor =
+                        TextDescriptor
+                            { Transform = transform
+                              Text = text
+                              Font = font
+                              Color = if entity.GetEnabled world then entity.GetTextColor world else entity.GetTextDisabledColor world
+                              Justification = entity.GetJustification world }}
                     world
             else world
 
@@ -1028,8 +1025,8 @@ module TileMapFacetModule =
                 | Some tileMap ->
                     let absolute = entity.GetAbsolute world
                     let viewBounds = World.getViewBounds absolute world
-                    let tileMapRenderMessages =
-                        TmxMap.getRenderMessages
+                    let tileMapDescriptors =
+                        TmxMap.getLayeredDescriptors
                             (World.getTickTime world)
                             absolute
                             viewBounds
@@ -1038,7 +1035,7 @@ module TileMapFacetModule =
                             (entity.GetElevation world)
                             (entity.GetParallax world)
                             tileMap
-                    World.enqueueRenderMessages tileMapRenderMessages world
+                    World.enqueueLayeredDescriptors tileMapDescriptors world
                 | None -> world
             else world
 
@@ -1113,8 +1110,8 @@ module TmxMapFacetModule =
             if entity.GetVisible world then
                 let absolute = entity.GetAbsolute world
                 let viewBounds = World.getViewBounds absolute world
-                let tileMapRenderMessages =
-                    TmxMap.getRenderMessages
+                let tileMapDescriptors =
+                    TmxMap.getLayeredDescriptors
                         (World.getTickTime world)
                         absolute
                         viewBounds
@@ -1123,7 +1120,7 @@ module TmxMapFacetModule =
                         (entity.GetElevation world)
                         (entity.GetParallax world)
                         (entity.GetTmxMap world)
-                World.enqueueRenderMessages tileMapRenderMessages world
+                World.enqueueLayeredDescriptors tileMapDescriptors world
             else world
 
         override this.GetQuickSize (entity, world) =
@@ -1367,20 +1364,19 @@ module StaticSpriteFacetModule =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
                 let staticImage = entity.GetStaticImage world
-                World.enqueueRenderMessage
-                    (LayeredDescriptorMessage
-                        { Elevation = transform.Elevation
-                          PositionY = transform.Position.Y
-                          AssetTag = AssetTag.generalize staticImage
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = transform
-                                  Offset = Vector2.Zero
-                                  InsetOpt = entity.GetInsetOpt world
-                                  Image = staticImage
-                                  Color = entity.GetColor world
-                                  Glow = entity.GetGlow world
-                                  Flip = entity.GetFlip world }})
+                World.enqueueLayeredDescriptor
+                    { Elevation = transform.Elevation
+                      PositionY = transform.Position.Y
+                      AssetTag = AssetTag.generalize staticImage
+                      RenderDescriptor =
+                        SpriteDescriptor
+                            { Transform = transform
+                              Offset = Vector2.Zero
+                              InsetOpt = entity.GetInsetOpt world
+                              Image = staticImage
+                              Color = entity.GetColor world
+                              Glow = entity.GetGlow world
+                              Flip = entity.GetFlip world }}
                     world
             else world
 
@@ -1440,20 +1436,19 @@ module AnimatedSpriteFacetModule =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
                 let animationSheet = entity.GetAnimationSheet world
-                World.enqueueRenderMessage
-                    (LayeredDescriptorMessage
-                        { Elevation = transform.Elevation
-                          PositionY = transform.Position.Y
-                          AssetTag = AssetTag.generalize animationSheet
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = transform
-                                  Offset = Vector2.Zero
-                                  InsetOpt = getSpriteInsetOpt entity world
-                                  Image = animationSheet
-                                  Color = entity.GetColor world
-                                  Glow = entity.GetGlow world
-                                  Flip = entity.GetFlip world }})
+                World.enqueueLayeredDescriptor
+                    { Elevation = transform.Elevation
+                      PositionY = transform.Position.Y
+                      AssetTag = AssetTag.generalize animationSheet
+                      RenderDescriptor =
+                        SpriteDescriptor
+                            { Transform = transform
+                              Offset = Vector2.Zero
+                              InsetOpt = getSpriteInsetOpt entity world
+                              Image = animationSheet
+                              Color = entity.GetColor world
+                              Glow = entity.GetGlow world
+                              Flip = entity.GetFlip world }}
                     world
             else world
 
@@ -1799,20 +1794,19 @@ module ButtonDispatcherModule =
             if entity.GetVisible world then
                 let transform = entity.GetTransform world
                 let image = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
-                World.enqueueRenderMessage
-                    (LayeredDescriptorMessage
-                        { Elevation = transform.Elevation
-                          PositionY = transform.Position.Y
-                          AssetTag = AssetTag.generalize image
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = transform
-                                  Offset = Vector2.Zero
-                                  InsetOpt = None
-                                  Image = image
-                                  Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
-                                  Glow = Color.Zero
-                                  Flip = FlipNone }})
+                World.enqueueLayeredDescriptor
+                    { Elevation = transform.Elevation
+                      PositionY = transform.Position.Y
+                      AssetTag = AssetTag.generalize image
+                      RenderDescriptor =
+                        SpriteDescriptor
+                            { Transform = transform
+                              Offset = Vector2.Zero
+                              InsetOpt = None
+                              Image = image
+                              Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Glow = Color.Zero
+                              Flip = FlipNone }}
                     world
             else world
 
@@ -1841,20 +1835,19 @@ module LabelDispatcherModule =
             if entity.GetVisible world then
                 let transform = entity.GetTransform world
                 let labelImage = entity.GetLabelImage world
-                World.enqueueRenderMessage
-                    (LayeredDescriptorMessage
-                        { Elevation = transform.Elevation
-                          PositionY = transform.Position.Y
-                          AssetTag = AssetTag.generalize labelImage
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = transform
-                                  Offset = Vector2.Zero
-                                  InsetOpt = None
-                                  Image = labelImage
-                                  Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
-                                  Glow = Color.Zero
-                                  Flip = FlipNone }})
+                World.enqueueLayeredDescriptor
+                    { Elevation = transform.Elevation
+                      PositionY = transform.Position.Y
+                      AssetTag = AssetTag.generalize labelImage
+                      RenderDescriptor =
+                        SpriteDescriptor
+                            { Transform = transform
+                              Offset = Vector2.Zero
+                              InsetOpt = None
+                              Image = labelImage
+                              Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Glow = Color.Zero
+                              Flip = FlipNone }}
                     world
             else world
 
@@ -1893,20 +1886,19 @@ module TextDispatcherModule =
                 match entity.GetBackgroundImageOpt world with
                 | Some image ->
                     let transform = entity.GetTransform world
-                    World.enqueueRenderMessage
-                        (LayeredDescriptorMessage
-                            { Elevation = transform.Elevation
-                              PositionY = transform.Position.Y
-                              AssetTag = AssetTag.generalize image
-                              RenderDescriptor =
-                                SpriteDescriptor
-                                    { Transform = transform
-                                      Offset = Vector2.Zero
-                                      InsetOpt = None
-                                      Image = image
-                                      Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
-                                      Glow = Color.Zero
-                                      Flip = FlipNone }})
+                    World.enqueueLayeredDescriptor
+                        { Elevation = transform.Elevation
+                          PositionY = transform.Position.Y
+                          AssetTag = AssetTag.generalize image
+                          RenderDescriptor =
+                            SpriteDescriptor
+                                { Transform = transform
+                                  Offset = Vector2.Zero
+                                  InsetOpt = None
+                                  Image = image
+                                  Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                                  Glow = Color.Zero
+                                  Flip = FlipNone }}
                         world
                 | None -> world
             else world
@@ -2012,20 +2004,19 @@ module ToggleDispatcherModule =
                     if entity.GetOpen world && not (entity.GetPressed world)
                     then entity.GetOpenImage world
                     else entity.GetClosedImage world
-                World.enqueueRenderMessage
-                    (LayeredDescriptorMessage
-                        { Elevation = transform.Elevation
-                          PositionY = transform.Position.Y
-                          AssetTag = AssetTag.generalize image
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = transform
-                                  Offset = Vector2.Zero
-                                  InsetOpt = None
-                                  Image = image
-                                  Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
-                                  Glow = Color.Zero
-                                  Flip = FlipNone }})
+                World.enqueueLayeredDescriptor
+                    { Elevation = transform.Elevation
+                      PositionY = transform.Position.Y
+                      AssetTag = AssetTag.generalize image
+                      RenderDescriptor =
+                        SpriteDescriptor
+                            { Transform = transform
+                              Offset = Vector2.Zero
+                              InsetOpt = None
+                              Image = image
+                              Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Glow = Color.Zero
+                              Flip = FlipNone }}
                     world
             else world
 
@@ -2187,36 +2178,34 @@ module FillBarDispatcherModule =
                 let borderImage = entity.GetBorderImage world
                 let fillImage = entity.GetFillImage world
                 let world =
-                    World.enqueueRenderMessage
-                        (LayeredDescriptorMessage
-                            { Elevation = borderSpriteTransform.Elevation
-                              PositionY = borderSpriteTransform.Position.Y
-                              AssetTag = AssetTag.generalize borderImage
-                              RenderDescriptor =
-                                SpriteDescriptor
-                                    { Transform = borderSpriteTransform
-                                      Offset = Vector2.Zero
-                                      InsetOpt = None
-                                      Image = borderImage
-                                      Color = fillBarColor
-                                      Glow = Color.Zero
-                                      Flip = FlipNone }})
+                    World.enqueueLayeredDescriptor
+                        { Elevation = borderSpriteTransform.Elevation
+                          PositionY = borderSpriteTransform.Position.Y
+                          AssetTag = AssetTag.generalize borderImage
+                          RenderDescriptor =
+                            SpriteDescriptor
+                                { Transform = borderSpriteTransform
+                                  Offset = Vector2.Zero
+                                  InsetOpt = None
+                                  Image = borderImage
+                                  Color = fillBarColor
+                                  Glow = Color.Zero
+                                  Flip = FlipNone }}
                         world
                 let world =
-                    World.enqueueRenderMessage
-                        (LayeredDescriptorMessage
-                          { Elevation = fillBarSpriteTransform.Elevation
-                            PositionY = fillBarSpriteTransform.Position.Y
-                            AssetTag = AssetTag.generalize fillImage
-                            RenderDescriptor =
-                                SpriteDescriptor
-                                    { Transform = fillBarSpriteTransform
-                                      Offset = Vector2.Zero
-                                      InsetOpt = None
-                                      Image = fillImage
-                                      Color = fillBarColor
-                                      Glow = Color.Zero
-                                      Flip = FlipNone }})
+                    World.enqueueLayeredDescriptor
+                        { Elevation = fillBarSpriteTransform.Elevation
+                          PositionY = fillBarSpriteTransform.Position.Y
+                          AssetTag = AssetTag.generalize fillImage
+                          RenderDescriptor =
+                              SpriteDescriptor
+                                  { Transform = fillBarSpriteTransform
+                                    Offset = Vector2.Zero
+                                    InsetOpt = None
+                                    Image = fillImage
+                                    Color = fillBarColor
+                                    Glow = Color.Zero
+                                    Flip = FlipNone }}
                         world
                 world
             else world
@@ -2328,20 +2317,19 @@ module CharacterDispatcherModule =
                     else
                         let image = entity.GetCharacterWalkSheet world
                         (Some (computeWalkCelInset celSize celRun animationDelay time), image)
-                World.enqueueRenderMessage
-                    (LayeredDescriptorMessage
-                        { Elevation = transform.Elevation
-                          PositionY = transform.Position.Y
-                          AssetTag = AssetTag.generalize image
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = transform
-                                  Offset = v2Zero
-                                  InsetOpt = insetOpt
-                                  Image = image
-                                  Color = Color.White
-                                  Glow = Color.Zero
-                                  Flip = if facingLeft then FlipH else FlipNone }})
+                World.enqueueLayeredDescriptor
+                    { Elevation = transform.Elevation
+                      PositionY = transform.Position.Y
+                      AssetTag = AssetTag.generalize image
+                      RenderDescriptor =
+                        SpriteDescriptor
+                            { Transform = transform
+                              Offset = v2Zero
+                              InsetOpt = insetOpt
+                              Image = image
+                              Color = Color.White
+                              Glow = Color.Zero
+                              Flip = if facingLeft then FlipH else FlipNone }}
                     world
             else world
 

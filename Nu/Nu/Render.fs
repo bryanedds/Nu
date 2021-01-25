@@ -145,12 +145,14 @@ and [<NoEquality; NoComparison>] RenderAsset =
 
 /// The renderer. Represents the rendering system in Nu generally.
 and Renderer =
-    /// Pop all of the physics messages that have been enqueued.
+    /// Pop all of the render messages that have been enqueued.
     abstract PopMessages : unit -> RenderMessage List
-    /// Clear all of the render messages that have been enqueued.
+    /// Clear all of the render messages that have been enqueued and all of the layered descriptors that have been added.
     abstract ClearMessages : unit -> unit
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : RenderMessage -> unit
+    /// Enqueue a layered descriptor for rendering, bypassing EnqueueMessage for speed.
+    abstract EnqueueLayeredDescriptor : LayeredDescriptor -> unit
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> RenderMessage List -> unit
     /// Handle render clean up by freeing all loaded render assets.
@@ -165,6 +167,7 @@ type [<ReferenceEquality; NoComparison>] MockRenderer =
         member renderer.PopMessages () = List ()
         member renderer.ClearMessages () = ()
         member renderer.EnqueueMessage _ = ()
+        member renderer.EnqueueLayeredDescriptor _ = ()
         member renderer.Render _ _ _ = ()
         member renderer.CleanUp () = renderer :> Renderer
 
@@ -677,9 +680,13 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
         member renderer.ClearMessages () =
             renderer.RenderMessages <- List ()
+            renderer.LayeredDescriptors.Clear ()
 
         member renderer.EnqueueMessage renderMessage =
             renderer.RenderMessages.Add renderMessage
+
+        member renderer.EnqueueLayeredDescriptor layeredDescriptor =
+            renderer.LayeredDescriptors.Add layeredDescriptor
 
         member renderer.Render eyeCenter eyeSize renderMessages =
             SdlRenderer.handleRenderMessages renderMessages renderer
@@ -696,13 +703,17 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 [<RequireQualifiedAccess>]
 module Renderer =
 
-    /// Clear all of the render messages that have been enqueued.
+    /// Clear all of the render messages that have been enqueued and all of the layered descriptors that have been added.
     let clearMessages (renderer : Renderer) =
         renderer.ClearMessages ()
 
     /// Enqueue a message from an external source.
     let enqueueMessage message (renderer : Renderer) =
         renderer.EnqueueMessage message
+
+    /// Enqueue a layered descriptor from an external source, bypassing enqueueMessage for speed.
+    let enqueueLayeredDescriptor descriptor (renderer : Renderer) =
+        renderer.EnqueueLayeredDescriptor descriptor
 
     /// Render a frame of the game.
     let render eyeCenter eyeSize renderMessages (renderer : Renderer) =

@@ -158,11 +158,11 @@ type MyGameDispatcher () =
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS_PURE
-        let indices = // 9,900 entities
+        let indices = // 13,200 entities
             seq {
                 for i in 0 .. 74 do
                     for j in 0 .. 43 do
-                        for k in 0 .. 2 do
+                        for k in 0 .. 3 do
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
             Seq.fold (fun world position ->
@@ -187,7 +187,7 @@ type MyGameDispatcher () =
 
         // define actualize for static sprites
         let _ = ecs.Subscribe EcsEvents.Actualize (fun _ _ _ world ->
-            let messages = List ()
+            let descriptors = List ()
             for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
                 for i in 0 .. components.Length - 1 do
                     let mutable comp = &components.[i]
@@ -195,9 +195,9 @@ type MyGameDispatcher () =
                         let entity = comp.Entity.State world
                         if entity.Visible then
                             let spriteDescriptor = SpriteDescriptor { Transform = entity.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
-                            let message = LayeredDescriptorMessage { Elevation = entity.Elevation; PositionY = entity.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
-                            messages.Add message
-            World.enqueueRenderMessages messages world)
+                            let layeredDescriptor = { Elevation = entity.Elevation; PositionY = entity.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
+                            descriptors.Add layeredDescriptor
+            World.addLayeredDescriptors descriptors world)
 #else
         ignore screen
 #endif

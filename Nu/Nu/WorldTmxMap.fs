@@ -170,15 +170,15 @@ module TmxMap =
               IsSensor = false }
         bodyProperties
 
-    let getRenderMessages time absolute (viewBounds : Vector4) tileLayerClearance (tileMapPosition : Vector2) tileMapElevation tileMapParallax (tileMap : TmxMap) =
+    let getLayeredDescriptors time absolute (viewBounds : Vector4) tileLayerClearance (tileMapPosition : Vector2) tileMapElevation tileMapParallax (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.Layers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
         let tileSize = v2 (single tileMap.TileWidth) (single tileMap.TileHeight)
         let tileAssets = tileMap.ImageAssets
         let tileMapDescriptor = getDescriptor tileMapPosition tileMap
-        let messagess =
+        let descriptorLists =
             List.foldi
-                (fun i messagess (layer : TmxLayer) ->
+                (fun i descriptorLists (layer : TmxLayer) ->
 
                     // compute elevation value
                     let elevationOffset =
@@ -204,8 +204,8 @@ module TmxMap =
                             let r2 = r + viewBounds.Size
                             (r, r2)
 
-                    // accumulate messages
-                    let messages = List ()
+                    // accumulate decriptors
+                    let descriptors = List ()
                     let mutable yC = 0
                     let mutable yO = r.Y + single yC * tileSize.Y
                     while r.Y + single yC * tileSize.Y < r2.Y + tileSize.Y do
@@ -246,28 +246,27 @@ module TmxMap =
                             // check if in view bounds
                             if Math.isBoundsIntersectingBounds (v4Bounds transform.Position transform.Size) viewBounds then
 
-                                // accumulate message
-                                messages.Add $
-                                    LayeredDescriptorMessage
-                                        { Elevation = transform.Elevation
-                                          PositionY = transform.Position.Y
-                                          AssetTag = AssetTag.make "" "" // just disregard asset for render ordering
-                                          RenderDescriptor =
-                                            TileLayerDescriptor
-                                                { Transform = transform
-                                                  MapSize = Vector2i (tileMap.Width, tileMap.Height)
-                                                  Tiles = Seq.toArray tiles
-                                                  TileSourceSize = tileSourceSize
-                                                  TileSize = tileSize
-                                                  TileAssets = tileAssets }}
+                                // accumulate descriptor
+                                descriptors.Add
+                                    { Elevation = transform.Elevation
+                                      PositionY = transform.Position.Y
+                                      AssetTag = AssetTag.make "" "" // just disregard asset for render ordering
+                                      RenderDescriptor =
+                                        TileLayerDescriptor
+                                            { Transform = transform
+                                              MapSize = Vector2i (tileMap.Width, tileMap.Height)
+                                              Tiles = Seq.toArray tiles
+                                              TileSourceSize = tileSourceSize
+                                              TileSize = tileSize
+                                              TileAssets = tileAssets }}
 
                         // loop
                         yC <- inc yC
                         yO <- r.Y + single yC * tileSize.Y
                                     
-                    Seq.toList messages :: messagess)
+                    Seq.toList descriptors :: descriptorLists)
                 [] layers
-        List.concat messagess
+        List.concat descriptorLists
 
     let getQuickSize (tileMap : TmxMap) =
         v2

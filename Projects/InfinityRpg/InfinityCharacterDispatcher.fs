@@ -83,19 +83,18 @@ module CharacterDispatcherModule =
                 let transform = entity.GetTransform world
                 let animationState = entity.GetCharacterAnimationState world
                 let animationSheet = entity.GetCharacterAnimationSheet world
-                let renderMessage =
-                    LayeredDescriptorMessage
-                        { Elevation = transform.Elevation
-                          PositionY = transform.Position.Y
-                          AssetTag = AssetTag.generalize animationSheet
-                          RenderDescriptor =
-                            SpriteDescriptor
-                              { Transform = transform
-                                Offset = v2Zero
-                                InsetOpt = getSpriteInsetOpt animationState time
-                                Image = animationSheet
-                                Color = Color.White
-                                Glow = Color.Zero
-                                Flip = FlipNone }}
-                World.enqueueRenderMessage renderMessage world
+                let descriptor =
+                    { Elevation = transform.Elevation
+                      PositionY = transform.Position.Y
+                      AssetTag = AssetTag.generalize animationSheet
+                      RenderDescriptor =
+                        SpriteDescriptor
+                          { Transform = transform
+                            Offset = v2Zero
+                            InsetOpt = getSpriteInsetOpt animationState time
+                            Image = animationSheet
+                            Color = Color.White
+                            Glow = Color.Zero
+                            Flip = FlipNone }}
+                World.enqueueLayeredDescriptor descriptor world
             else world

@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open Prime
 open Nu
 
@@ -30,6 +29,17 @@ module WorldRender =
         static member enqueueRenderMessages (messages : RenderMessage seq) world =
             let renderer = World.getRenderer world
             for message in messages do Renderer.enqueueMessage message renderer
+            world
+            
+        /// Enqueue a layered descriptor for rendering, bypassing enqueueRenderMessage for speed.
+        static member enqueueLayeredDescriptor (descriptor : LayeredDescriptor) world =
+            Renderer.enqueueLayeredDescriptor descriptor world.Subsystems.Renderer
+            world
+
+        /// Enqueue multiple rendering messages to the world.
+        static member enqueueLayeredDescriptors (descriptors : LayeredDescriptor seq) world =
+            let renderer = World.getRenderer world
+            for descriptor in descriptors do Renderer.enqueueLayeredDescriptor descriptor renderer
             world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be
