@@ -132,7 +132,6 @@ and [<NoEquality; NoComparison>] LayeredDescriptor =
 /// A message to the rendering system.
 and [<NoEquality; NoComparison>] RenderMessage =
     | LayeredDescriptorMessage of LayeredDescriptor
-    | LayeredDescriptorsMessage of LayeredDescriptor array
     | HintRenderPackageUseMessage of string
     | HintRenderPackageDisuseMessage of string
     | ReloadRenderAssetsMessage
@@ -299,7 +298,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
         | LayeredDescriptorMessage descriptor -> renderer.LayeredDescriptors.Add descriptor
-        | LayeredDescriptorsMessage descriptors -> renderer.LayeredDescriptors.AddRange descriptors
         | HintRenderPackageUseMessage hintPackageUse -> SdlRenderer.handleHintRenderPackageUse hintPackageUse renderer
         | HintRenderPackageDisuseMessage hintPackageDisuse -> SdlRenderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
         | ReloadRenderAssetsMessage -> SdlRenderer.handleReloadRenderAssets renderer
