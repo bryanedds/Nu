@@ -820,20 +820,19 @@ module WorldModule2 =
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
                 let transform = { Position = position; Size = size; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = -1 }
-                World.enqueueRenderMessage
-                    (LayeredDescriptorMessage
-                        { Elevation = transform.Elevation
-                          PositionY = transform.Position.Y
-                          AssetTag = AssetTag.generalize dissolveImage
-                          RenderDescriptor =
-                            SpriteDescriptor
-                                { Transform = transform
-                                  Offset = Vector2.Zero
-                                  InsetOpt = None
-                                  Image = dissolveImage
-                                  Color = color
-                                  Glow = Color.Zero
-                                  Flip = FlipNone }})
+                World.enqueueLayeredDescriptor
+                    { Elevation = transform.Elevation
+                      PositionY = transform.Position.Y
+                      AssetTag = AssetTag.generalize dissolveImage
+                      RenderDescriptor =
+                        SpriteDescriptor
+                            { Transform = transform
+                              Offset = Vector2.Zero
+                              InsetOpt = None
+                              Image = dissolveImage
+                              Color = color
+                              Glow = Color.Zero
+                              Flip = FlipNone }}
                     world
             | None -> world
 
