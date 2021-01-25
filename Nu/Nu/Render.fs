@@ -122,8 +122,8 @@ type [<NoEquality; NoComparison>] RenderDescriptor =
     | ParticlesDescriptor of ParticlesDescriptor
     | RenderCallback of (Matrix3x3 -> Matrix3x3 -> Vector2 -> Vector2 -> Renderer -> unit)
 
-/// Describes how to render a layered thing to the rendering system.
-and [<NoEquality; NoComparison>] LayeredDescriptor =
+/// A layered message to the rendering system.
+and [<NoEquality; NoComparison>] RenderLayeredMessage =
     { Elevation : single
       PositionY : single
       AssetTag : obj AssetTag
@@ -131,7 +131,7 @@ and [<NoEquality; NoComparison>] LayeredDescriptor =
 
 /// A message to the rendering system.
 and [<NoEquality; NoComparison>] RenderMessage =
-    | LayeredDescriptorMessage of LayeredDescriptor
+    | RenderLayeredMessage of RenderLayeredMessage
     | HintRenderPackageUseMessage of string
     | HintRenderPackageDisuseMessage of string
     | ReloadRenderAssetsMessage
@@ -147,12 +147,12 @@ and [<NoEquality; NoComparison>] RenderAsset =
 and Renderer =
     /// Pop all of the render messages that have been enqueued.
     abstract PopMessages : unit -> RenderMessage List
-    /// Clear all of the render messages that have been enqueued and all of the layered descriptors that have been added.
+    /// Clear all of the render messages that have been enqueued.
     abstract ClearMessages : unit -> unit
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : RenderMessage -> unit
-    /// Enqueue a layered descriptor for rendering, bypassing EnqueueMessage for speed.
-    abstract EnqueueLayeredDescriptor : LayeredDescriptor -> unit
+    /// Enqueue a layered message for rendering, bypassing EnqueueMessage for speed.
+    abstract EnqueueLayeredMessage : RenderLayeredMessage -> unit
     /// Render a frame of the game.
     abstract Render : Vector2 -> Vector2 -> RenderMessage List -> unit
     /// Handle render clean up by freeing all loaded render assets.
@@ -167,7 +167,7 @@ type [<ReferenceEquality; NoComparison>] MockRenderer =
         member renderer.PopMessages () = List ()
         member renderer.ClearMessages () = ()
         member renderer.EnqueueMessage _ = ()
-        member renderer.EnqueueLayeredDescriptor _ = ()
+        member renderer.EnqueueLayeredMessage _ = ()
         member renderer.Render _ _ _ = ()
         member renderer.CleanUp () = renderer :> Renderer
 
@@ -182,9 +182,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
           mutable RenderPackageCachedOpt : string * Dictionary<string, RenderAsset> // OPTIMIZATION: nullable for speed
           mutable RenderAssetCachedOpt : string * RenderAsset
           mutable RenderMessages : RenderMessage List
-          LayeredDescriptors : LayeredDescriptor List }
+          RenderLayeredMessages : RenderLayeredMessage List }
 
-    static member private compareDescriptors (left : LayeredDescriptor) (right : LayeredDescriptor) =
+    static member private compareDescriptors (left : RenderLayeredMessage) (right : RenderLayeredMessage) =
         let elevationCompare = left.Elevation.CompareTo right.Elevation
         if elevationCompare <> 0 then elevationCompare else
         let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
@@ -300,7 +300,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
-        | LayeredDescriptorMessage descriptor -> renderer.LayeredDescriptors.Add descriptor
+        | RenderLayeredMessage message -> renderer.RenderLayeredMessages.Add message
         | HintRenderPackageUseMessage hintPackageUse -> SdlRenderer.handleHintRenderPackageUse hintPackageUse renderer
         | HintRenderPackageDisuseMessage hintPackageDisuse -> SdlRenderer.handleHintRenderPackageDisuse hintPackageDisuse renderer
         | ReloadRenderAssetsMessage -> SdlRenderer.handleReloadRenderAssets renderer
@@ -642,7 +642,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | ParticlesDescriptor descriptor -> SdlRenderer.renderParticlesDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
         | RenderCallback callback -> callback viewAbsolute viewRelative eyeCenter eyeSize renderer
 
-    static member private renderLayeredDescriptors eyeCenter eyeSize (descriptors : LayeredDescriptor List) renderer =
+    static member private renderLayeredMessages eyeCenter eyeSize (messages : RenderLayeredMessage List) renderer =
         let renderContext = renderer.RenderContext
         let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
         match targetResult with
@@ -650,9 +650,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
             let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
             let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
-            descriptors.Sort SdlRenderer.compareDescriptors
-            for descriptor in descriptors do
-                SdlRenderer.renderDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor.RenderDescriptor renderer
+            messages.Sort SdlRenderer.compareDescriptors
+            for message in messages do
+                SdlRenderer.renderDescriptor viewAbsolute viewRelative eyeCenter eyeSize message.RenderDescriptor renderer
         | _ ->
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
 
@@ -668,7 +668,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
               RenderMessages = List ()
-              LayeredDescriptors = List () }
+              RenderLayeredMessages = List () }
         renderer
 
     interface Renderer with
@@ -680,18 +680,18 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
         member renderer.ClearMessages () =
             renderer.RenderMessages <- List ()
-            renderer.LayeredDescriptors.Clear ()
+            renderer.RenderLayeredMessages.Clear ()
 
         member renderer.EnqueueMessage renderMessage =
             renderer.RenderMessages.Add renderMessage
 
-        member renderer.EnqueueLayeredDescriptor layeredDescriptor =
-            renderer.LayeredDescriptors.Add layeredDescriptor
+        member renderer.EnqueueLayeredMessage layeredMessage =
+            renderer.RenderLayeredMessages.Add layeredMessage
 
         member renderer.Render eyeCenter eyeSize renderMessages =
             SdlRenderer.handleRenderMessages renderMessages renderer
-            SdlRenderer.renderLayeredDescriptors eyeCenter eyeSize renderer.LayeredDescriptors renderer
-            renderer.LayeredDescriptors.Clear ()
+            SdlRenderer.renderLayeredMessages eyeCenter eyeSize renderer.RenderLayeredMessages renderer
+            renderer.RenderLayeredMessages.Clear ()
 
         member renderer.CleanUp () =
             let renderAssetPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
@@ -703,7 +703,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 [<RequireQualifiedAccess>]
 module Renderer =
 
-    /// Clear all of the render messages that have been enqueued and all of the layered descriptors that have been added.
+    /// Clear all of the render messages that have been enqueued.
     let clearMessages (renderer : Renderer) =
         renderer.ClearMessages ()
 
@@ -711,9 +711,9 @@ module Renderer =
     let enqueueMessage message (renderer : Renderer) =
         renderer.EnqueueMessage message
 
-    /// Enqueue a layered descriptor from an external source, bypassing enqueueMessage for speed.
-    let enqueueLayeredDescriptor descriptor (renderer : Renderer) =
-        renderer.EnqueueLayeredDescriptor descriptor
+    /// Enqueue a layered message from an external source, bypassing enqueueMessage for speed.
+    let enqueueLayeredMessage message (renderer : Renderer) =
+        renderer.EnqueueLayeredMessage message
 
     /// Render a frame of the game.
     let render eyeCenter eyeSize renderMessages (renderer : Renderer) =

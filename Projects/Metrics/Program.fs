@@ -187,7 +187,7 @@ type MyGameDispatcher () =
 
         // define actualize for static sprites
         let _ = ecs.Subscribe EcsEvents.Actualize (fun _ _ _ world ->
-            let descriptors = List ()
+            let messages = List ()
             for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
                 for i in 0 .. components.Length - 1 do
                     let mutable comp = &components.[i]
@@ -195,9 +195,9 @@ type MyGameDispatcher () =
                         let entity = comp.Entity.State world
                         if entity.Visible then
                             let spriteDescriptor = SpriteDescriptor { Transform = entity.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
-                            let layeredDescriptor = { Elevation = entity.Elevation; PositionY = entity.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
-                            descriptors.Add layeredDescriptor
-            World.addLayeredDescriptors descriptors world)
+                            let layeredMessage = { Elevation = entity.Elevation; PositionY = entity.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
+                            messages.Add layeredMessage
+            World.enqueueLayeredMessages messages world)
 #else
         ignore screen
 #endif
