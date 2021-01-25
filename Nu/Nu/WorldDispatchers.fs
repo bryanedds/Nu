@@ -27,7 +27,7 @@ module DeclarativeOperators2 =
             match view with
             | Render (elevation, positionY, assetTag, descriptor) ->
                 let message = { Elevation = elevation; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
-                World.enqueueLayeredMessage message world
+                World.enqueueRenderLayeredMessage message world
             | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
             | PlaySong (fade, volume, assetTag) -> World.playSong fade volume assetTag world
             | FadeOutSong fade -> World.fadeOutSong fade world
@@ -394,7 +394,7 @@ module BasicEmitterFacetModule =
                           PositionY = descriptor.PositionY
                           AssetTag = AssetTag.generalize descriptor.Image
                           RenderDescriptor = ParticlesDescriptor descriptor })
-                World.enqueueLayeredMessages particlesMessages world
+                World.enqueueRenderLayeredMessages particlesMessages world
             else world
 
 [<AutoOpen>]
@@ -616,7 +616,7 @@ module EffectFacetModule =
                           PositionY = descriptor.PositionY
                           AssetTag = AssetTag.generalize descriptor.Image
                           RenderDescriptor = ParticlesDescriptor descriptor })
-                let world = World.enqueueLayeredMessages particlesMessages world
+                let world = World.enqueueRenderLayeredMessages particlesMessages world
 
                 // update effect history in-place
                 effectHistory.AddToFront effectSlice
@@ -759,7 +759,7 @@ module TextFacetModule =
                       Elevation = entity.GetElevation world + 0.5f
                       Flags = entity.GetFlags world }
                 let font = entity.GetFont world
-                World.enqueueLayeredMessage
+                World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
                       AssetTag = AssetTag.generalize font
@@ -1035,7 +1035,7 @@ module TileMapFacetModule =
                             (entity.GetElevation world)
                             (entity.GetParallax world)
                             tileMap
-                    World.enqueueLayeredMessages tileMapMessages world
+                    World.enqueueRenderLayeredMessages tileMapMessages world
                 | None -> world
             else world
 
@@ -1120,7 +1120,7 @@ module TmxMapFacetModule =
                         (entity.GetElevation world)
                         (entity.GetParallax world)
                         (entity.GetTmxMap world)
-                World.enqueueLayeredMessages tileMapMessages world
+                World.enqueueRenderLayeredMessages tileMapMessages world
             else world
 
         override this.GetQuickSize (entity, world) =
@@ -1364,7 +1364,7 @@ module StaticSpriteFacetModule =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
                 let staticImage = entity.GetStaticImage world
-                World.enqueueLayeredMessage
+                World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
                       AssetTag = AssetTag.generalize staticImage
@@ -1436,7 +1436,7 @@ module AnimatedSpriteFacetModule =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
                 let animationSheet = entity.GetAnimationSheet world
-                World.enqueueLayeredMessage
+                World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
                       AssetTag = AssetTag.generalize animationSheet
@@ -1794,7 +1794,7 @@ module ButtonDispatcherModule =
             if entity.GetVisible world then
                 let transform = entity.GetTransform world
                 let image = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
-                World.enqueueLayeredMessage
+                World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
                       AssetTag = AssetTag.generalize image
@@ -1835,7 +1835,7 @@ module LabelDispatcherModule =
             if entity.GetVisible world then
                 let transform = entity.GetTransform world
                 let labelImage = entity.GetLabelImage world
-                World.enqueueLayeredMessage
+                World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
                       AssetTag = AssetTag.generalize labelImage
@@ -1886,7 +1886,7 @@ module TextDispatcherModule =
                 match entity.GetBackgroundImageOpt world with
                 | Some image ->
                     let transform = entity.GetTransform world
-                    World.enqueueLayeredMessage
+                    World.enqueueRenderLayeredMessage
                         { Elevation = transform.Elevation
                           PositionY = transform.Position.Y
                           AssetTag = AssetTag.generalize image
@@ -2004,7 +2004,7 @@ module ToggleDispatcherModule =
                     if entity.GetOpen world && not (entity.GetPressed world)
                     then entity.GetOpenImage world
                     else entity.GetClosedImage world
-                World.enqueueLayeredMessage
+                World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
                       AssetTag = AssetTag.generalize image
@@ -2178,7 +2178,7 @@ module FillBarDispatcherModule =
                 let borderImage = entity.GetBorderImage world
                 let fillImage = entity.GetFillImage world
                 let world =
-                    World.enqueueLayeredMessage
+                    World.enqueueRenderLayeredMessage
                         { Elevation = borderSpriteTransform.Elevation
                           PositionY = borderSpriteTransform.Position.Y
                           AssetTag = AssetTag.generalize borderImage
@@ -2193,7 +2193,7 @@ module FillBarDispatcherModule =
                                   Flip = FlipNone }}
                         world
                 let world =
-                    World.enqueueLayeredMessage
+                    World.enqueueRenderLayeredMessage
                         { Elevation = fillBarSpriteTransform.Elevation
                           PositionY = fillBarSpriteTransform.Position.Y
                           AssetTag = AssetTag.generalize fillImage
@@ -2317,7 +2317,7 @@ module CharacterDispatcherModule =
                     else
                         let image = entity.GetCharacterWalkSheet world
                         (Some (computeWalkCelInset celSize celRun animationDelay time), image)
-                World.enqueueLayeredMessage
+                World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
                       AssetTag = AssetTag.generalize image

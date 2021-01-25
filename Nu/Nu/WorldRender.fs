@@ -32,12 +32,12 @@ module WorldRender =
             world
             
         /// Enqueue a layered message for rendering, bypassing enqueueRenderMessage for speed.
-        static member enqueueLayeredMessage (message : RenderLayeredMessage) world =
+        static member enqueueRenderLayeredMessage (message : RenderLayeredMessage) world =
             Renderer.enqueueLayeredMessage message world.Subsystems.Renderer
             world
 
         /// Enqueue multiple layered rendering messages to the world, bypassing enqueueRenderMessage for speed.
-        static member enqueueLayeredMessages (messages : RenderLayeredMessage seq) world =
+        static member enqueueRenderLayeredMessages (messages : RenderLayeredMessage seq) world =
             let renderer = World.getRenderer world
             for message in messages do Renderer.enqueueLayeredMessage message renderer
             world
