@@ -2186,12 +2186,13 @@ module FillBarDispatcherModule =
                 let fillBarColor = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
                 let borderImage = entity.GetBorderImage world
                 let fillImage = entity.GetFillImage world
-                World.enqueueRenderMessage
-                    (LayeredDescriptorsMessage
-                        [|{ Elevation = borderSpriteTransform.Elevation
-                            PositionY = borderSpriteTransform.Position.Y
-                            AssetTag = AssetTag.generalize borderImage
-                            RenderDescriptor =
+                let world =
+                    World.enqueueRenderMessage
+                        (LayeredDescriptorMessage
+                            { Elevation = borderSpriteTransform.Elevation
+                              PositionY = borderSpriteTransform.Position.Y
+                              AssetTag = AssetTag.generalize borderImage
+                              RenderDescriptor =
                                 SpriteDescriptor
                                     { Transform = borderSpriteTransform
                                       Offset = Vector2.Zero
@@ -2199,7 +2200,11 @@ module FillBarDispatcherModule =
                                       Image = borderImage
                                       Color = fillBarColor
                                       Glow = Color.Zero
-                                      Flip = FlipNone }}
+                                      Flip = FlipNone }})
+                        world
+                let world =
+                    World.enqueueRenderMessage
+                        (LayeredDescriptorMessage
                           { Elevation = fillBarSpriteTransform.Elevation
                             PositionY = fillBarSpriteTransform.Position.Y
                             AssetTag = AssetTag.generalize fillImage
@@ -2211,8 +2216,9 @@ module FillBarDispatcherModule =
                                       Image = fillImage
                                       Color = fillBarColor
                                       Glow = Color.Zero
-                                      Flip = FlipNone }}|])
-                    world
+                                      Flip = FlipNone }})
+                        world
+                world
             else world
 
         override this.GetQuickSize (entity, world) =
