@@ -158,7 +158,7 @@ type MyGameDispatcher () =
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS_PURE
-        let indices = // 13,200 entities
+        let positions = // 13,200 entity positions
             seq {
                 for i in 0 .. 74 do
                     for j in 0 .. 43 do
@@ -171,7 +171,7 @@ type MyGameDispatcher () =
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 let world = entity.SetSize (v2One * 8.0f) world
                 world)
-                world indices
+                world positions
 #endif
         let world = World.selectScreen Simulants.DefaultScreen world
 #if ECS
