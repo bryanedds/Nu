@@ -54,8 +54,8 @@ type [<StructuralEquality; NoComparison>] SeparationData =
 module Events =
 
     let Wildcard = Prime.Events.Wildcard
-    let Subscribe = stoa<obj Address> "Subscribe/Event"
-    let Unsubscribe = stoa<obj Address> "Unsubscribe/Event"
+    let Subscribe = stoa<obj Address> "Subscribe/Event" // TODO: P1: instead of exposing an expensively subscribe event in Prime, just implement a fast specialized callback.
+    let Unsubscribe = stoa<obj Address> "Unsubscribe/Event" // TODO: P1: instead of exposing an expensively subscribe event in Prime, just implement a fast specialized callback.
     let Update = stoa<unit> "Update/Event"
     let PostUpdate = stoa<unit> "PostUpdate/Event"
     let Select = stoa<unit> "Select/Event"
