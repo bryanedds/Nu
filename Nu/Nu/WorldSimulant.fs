@@ -233,7 +233,7 @@ module WorldSimulantModule =
                 id (Unchecked.defaultof<'a>, DateTimeOffset.MinValue) |>
             Stream.first
 
-        /// Bind the left property to the value of the right, optionally breaking any cycles.
+        /// Bind the left property to the right property.
         static member bind (left : Lens<'a, World>) (right : Lens<'a, World>) world =
             match left.This :> obj with
             | null -> failwithumf ()
@@ -243,10 +243,10 @@ module WorldSimulantModule =
 [<AutoOpen>]
 module WorldSimulantOperators =
 
-    /// Bind one property to the value of another.
+    /// Bind the left property to the right property.
     let bind<'a> (left : Lens<'a, World>) right world = World.bind left right world
 
-    /// Bind one property to the value of another.
+    /// Bind the left property to the right property.
     let inline (<=<) left right = bind left right
 
 [<RequireQualifiedAccess>]
