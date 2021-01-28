@@ -14,7 +14,7 @@ type [<StructuralEquality; StructuralComparison>] MouseButton =
     | MouseRight
     | MouseX1
     | MouseX2
-    static member toEventName this = this.ToString().Substring("Mouse".Length)
+    static member toEventName this = this.ToString().Substring "Mouse".Length
     static member ofEventName eventName = scvalue<MouseButton> ("Mouse" + eventName)
 
 /// Describes a gamepad direction.

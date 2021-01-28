@@ -181,6 +181,47 @@ module Nu =
                     else tryPropagateByName simulant left.Name right world
                 (handling, world :> obj)
 
+            WorldTypes.handleSubscribeAndUnsubscribeEventHook <- fun eventAddress _ worldObj ->
+                // here we need to update the event publish flags for entities based on whether there are subscriptions to
+                // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
+                // that these optimization do not support, and warn the developer if they are invoked. Additionally, we
+                // warn if the user attempts to subscribe to a Change event with a wildcard as doing so is not supported.
+                let world = worldObj :?> World
+                let eventNames = Address.getNames eventAddress
+                match eventNames with
+                | [|eventFirstName; _; screenName; layerName; entityName|] ->
+                    let entity = Entity [|screenName; layerName; entityName|]
+                    match eventFirstName with
+                    | "Update" ->
+#if DEBUG
+                        if Array.contains (Address.head Events.Wildcard) eventNames then
+                            Log.debug
+                                ("Subscribing to entity update events with a wildcard is not supported. " +
+                                 "This will cause a bug where some entity update events are not published.")
+#endif
+                        World.updateEntityPublishUpdateFlag entity world :> obj
+#if !DISABLE_ENTITY_POST_UPDATE
+                    | "PostUpdate" ->
+#if DEBUG
+                        if Array.contains (Address.head Events.Wildcard) eventNames then
+                            Log.debug
+                                ("Subscribing to entity post-update events with a wildcard is not supported. " +
+                                 "This will cause a bug where some entity post-update events are not published.")
+#endif
+                        World.updateEntityPublishPostUpdateFlag entity world :> obj
+#endif
+                    | _ -> world :> obj
+                | eventNames when eventNames.Length >= 3 ->
+                    let eventFirstName = eventNames.[0]
+                    let eventSecondName = eventNames.[1]
+                    match eventFirstName with
+                    | "Change" when eventSecondName <> "ParentNodeOpt" ->
+                        if Array.contains (Address.head Events.Wildcard) eventNames then
+                            Log.debug "Subscribing to change events with a wildcard is not supported."
+                        world :> obj
+                    | _ -> world :> obj
+                | _ -> world :> obj
+
             // init eval F# reach-around
             // TODO: remove duplicated code with the following 4 functions...
             WorldModule.eval <- fun expr localFrame scriptContext world ->
@@ -484,10 +525,6 @@ module WorldModule3 =
 
             // make the world
             let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree (snd defaultGameDispatcher)
-            
-            // subscribe to subscribe and unsubscribe events
-            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
-            let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
 
             // finally, register the game
             World.registerGame world
@@ -591,10 +628,6 @@ module WorldModule3 =
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world
                     let world = List.fold (fun world (key, value) -> World.addKeyedValue key value world) world kvps
-
-                    // subscribe to subscribe and unsubscribe events
-                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Subscribe Simulants.Game world
-                    let world = World.subscribe World.handleSubscribeAndUnsubscribe Events.Unsubscribe Simulants.Game world
 
                     // try to load the prelude for the scripting language
                     match World.tryEvalPrelude world with
