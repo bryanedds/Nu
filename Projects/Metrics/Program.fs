@@ -158,7 +158,7 @@ type MyGameDispatcher () =
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS_PURE
-        let positions = // 9,900 entity positions
+        let positions = // 9,900 entity positions (goal: 60FPS)
             seq {
                 for i in 0 .. 74 do
                     for j in 0 .. 43 do
@@ -219,7 +219,7 @@ type [<ReferenceEquality>] Intss =
         { Intss = intss.Intss |> Seq.map (fun kvp -> (kvp.Key, Ints.inc kvp.Value)) |> Map.ofSeq }
 
 type ElmishGameDispatcher () =
-    inherit GameDispatcher<Intss, int, unit> (Intss.init 45) // 2025 ints
+    inherit GameDispatcher<Intss, int, unit> (Intss.init 50) // 2500 ints (goal: 60FPS)
 
     override this.Channel (_, game) =
         [game.UpdateEvent => msg 0]
