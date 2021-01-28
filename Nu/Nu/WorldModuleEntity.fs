@@ -149,9 +149,10 @@ module WorldModuleEntity =
 
         static member internal getEntityState entity world =
 #if DEBUG
-            match World.getEntityStateOpt entity world with
-            | Some entityState -> entityState
-            | None -> failwith ("Could not find entity with address '" + scstring entity.EntityAddress + "'.")
+            let entityStateOpt = World.entityStateFinder entity world
+            match entityStateOpt :> obj with
+            | null -> failwith ("Could not find entity with address '" + scstring entity.EntityAddress + "'.")
+            | _ -> entityStateOpt
 #else
             World.entityStateFinder entity world
 #endif
