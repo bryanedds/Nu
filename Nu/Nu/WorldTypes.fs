@@ -161,10 +161,11 @@ module WorldTypes =
     // Property category reach-arounds.
     let mutable internal getPropertyOpt : string -> Propertied -> obj -> obj option = Unchecked.defaultof<_>
     let mutable internal setPropertyOpt : string -> Propertied -> obj option -> Type -> obj -> obj = Unchecked.defaultof<_>
-    let mutable internal handlePropertyChange : string -> Propertied -> obj -> obj -> obj * obj= Unchecked.defaultof<_>
+    let mutable internal handlePropertyChange : string -> Propertied -> obj -> obj -> obj * obj = Unchecked.defaultof<_>
 
     // EventSystem reach-arounds.
     let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
+    let mutable internal handleSubscribeAndUnsubscribeEventHook : obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription =
@@ -1135,6 +1136,12 @@ module WorldTypes =
                 Debug.World.Chosen <- world
 #endif
                 (handling, world)
+
+            member this.SubscribeEventHook eventAddress subscriber world =
+                handleSubscribeAndUnsubscribeEventHook eventAddress subscriber world :?> World
+
+            member this.UnsubscribeEventHook eventAddress subscriber world =
+                handleSubscribeAndUnsubscribeEventHook eventAddress subscriber world :?> World
 
         interface World ScriptingSystem with
 

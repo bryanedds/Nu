@@ -436,5 +436,4 @@ type Entity =
 
     /// Provides a full view of all the properties of an entity. Useful for debugging such
     /// as with the Watch feature in Visual Studio.
-    static member view entity world = World.viewEntityProperties entity world   
-        
+    static member view entity world = World.viewEntityProperties entity world

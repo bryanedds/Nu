@@ -370,45 +370,6 @@ module WorldModule2 =
         static member createSplashScreen<'d when 'd :> ScreenDispatcher> nameOpt splashDescriptor destination world =
             World.createSplashScreen6 typeof<'d>.Name nameOpt splashDescriptor destination world
 
-        static member internal handleSubscribeAndUnsubscribe event world =
-            // here we need to update the event publish flags for entities based on whether there are subscriptions to
-            // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
-            // that these optimization do not support, and warn the developer if they are invoked. Additionally, we
-            // warn if the user attempts to subscribe to a Change event with a wildcard as doing so is not supported.
-            let eventAddress = event.Data
-            let eventNames = Address.getNames eventAddress
-            match eventNames with
-            | [|eventFirstName; _; screenName; layerName; entityName|] ->
-                let entity = Entity [|screenName; layerName; entityName|]
-                match eventFirstName with
-                | "Update" ->
-                    if Array.contains (Address.head Events.Wildcard) eventNames then
-                        Log.debug
-                            ("Subscribing to entity update events with a wildcard is not supported. " +
-                             "This will cause a bug where some entity update events are not published.")
-                    let world = World.updateEntityPublishUpdateFlag entity world
-                    (Cascade, world)
-#if !DISABLE_ENTITY_POST_UPDATE
-                | "PostUpdate" ->
-                    if Array.contains (Address.head Events.Wildcard) eventNames then
-                        Log.debug
-                            ("Subscribing to entity post-update events with a wildcard is not supported. " +
-                             "This will cause a bug where some entity post-update events are not published.")
-                    let world = World.updateEntityPublishPostUpdateFlag entity world
-                    (Cascade, world)
-#endif
-                | _ -> (Cascade, world)
-            | eventNames when eventNames.Length >= 3 ->
-                let eventFirstName = eventNames.[0]
-                let eventSecondName = eventNames.[1]
-                match eventFirstName with
-                | "Change" when eventSecondName <> "ParentNodeOpt" ->
-                    if Array.contains (Address.head Events.Wildcard) eventNames then
-                        Log.debug "Subscribing to change events with a wildcard is not supported."
-                    (Cascade, world)
-                | _ -> (Cascade, world)
-            | _ -> (Cascade, world)
-
         static member internal makeIntrinsicOverlays facets entityDispatchers =
             let requiresFacetNames = fun sourceType -> sourceType = typeof<EntityDispatcher>
             let facets = facets |> Map.toValueList |> List.map box
