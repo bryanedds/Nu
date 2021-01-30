@@ -696,9 +696,9 @@ module BattleDispatcher =
                 | None -> just battle
                     
             | TechCharacterAmbient (sourceIndex, _, _) ->
-                if Simulants.BattleRide.Exists world then
+                if Simulants.Battle.Scene.Ride.Exists world then
                     let battle =
-                        let tags = Simulants.BattleRide.GetEffectTags world
+                        let tags = Simulants.Battle.Scene.Ride.GetEffectTags world
                         match Map.tryFind "Tag" tags with
                         | Some tag -> Battle.updateCharacter (Character.updateBottom (constant tag.Position)) sourceIndex battle
                         | None -> battle
@@ -762,7 +762,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeCancelEffect ()
-                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
                     let world = entity.SetEffect effect world
                     let world = entity.SetCenter target.CenterOffset3 world
                     let world = entity.SetElevation (Constants.Battle.GuiEffectElevation - 1.0f) world
@@ -774,7 +774,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeHitPointsChangeEffect delta
-                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
                     let world = entity.SetEffect effect world
                     let world = entity.SetCenter target.CenterOffset2 world
                     let world = entity.SetElevation Constants.Battle.GuiEffectElevation world
@@ -786,7 +786,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeBoltEffect ()
-                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
                     let world = entity.SetEffect effect world
                     let world = entity.SetSize (v2 192.0f 758.0f) world
                     let world = entity.SetBottom target.Bottom world
@@ -799,7 +799,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeCycloneBlurEffect radius
-                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
                     let world = entity.SetEffect effect world
                     let world = entity.SetSize (v2 234.0f 234.0f) world
                     let world = entity.SetCenter target.Center world
@@ -814,7 +814,7 @@ module BattleDispatcher =
                     let world =
                         World.delay (fun world ->
                             let effect = Effects.makeImpactSplashEffect ()
-                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
                             let world = entity.SetEffect effect world
                             let world = entity.SetSize (v2 192.0f 96.0f) world
                             let world = entity.SetBottom target.Bottom world
@@ -831,7 +831,7 @@ module BattleDispatcher =
                     let world =
                         World.delay (fun world ->
                             let effect = Effects.makeSlashSpikeEffect position target.Bottom
-                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.BattleScene world
+                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
                             let world = entity.SetEffect effect world
                             let world = entity.SetSize (v2 96.0f 96.0f) world
                             let world = entity.SetBottom target.Bottom world
@@ -843,7 +843,7 @@ module BattleDispatcher =
 
             | DisplayHop hop ->
                 let effect = Effects.makeHopEffect hop.HopStart hop.HopStop
-                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.BattleRide.Name) DefaultOverlay Simulants.BattleScene world
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Name) DefaultOverlay Simulants.Battle.Scene.Layer world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v2Zero world
                 let world = entity.SetSelfDestruct true world
@@ -851,7 +851,7 @@ module BattleDispatcher =
 
             | DisplayCircle (position, radius) ->
                 let effect = Effects.makeCircleEffect radius
-                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.BattleRide.Name) DefaultOverlay Simulants.BattleScene world
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Name) DefaultOverlay Simulants.Battle.Scene.Layer world
                 let world = entity.SetPosition position world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v2Zero world
@@ -865,8 +865,8 @@ module BattleDispatcher =
         override this.Content (battle, screen) =
 
             // scene layer
-            let background = Simulants.BattleScene / "Background"
-            [Content.layer Simulants.BattleScene.Name []
+            let background = Simulants.Battle.Scene.Layer / "Background"
+            [Content.layer Simulants.Battle.Scene.Layer.Name []
 
                 [// background
                  Content.label background.Name
@@ -876,11 +876,11 @@ module BattleDispatcher =
                      background.LabelImage == asset "Battle" "Background"]
 
                  // dialog
-                 Dialog.content Simulants.BattleDialog.Name
+                 Dialog.content Simulants.Battle.Hud.Dialog.Name
                     (battle --> fun battle -> battle.DialogOpt)
 
                  // dialog interact button
-                 Content.button Simulants.BattleInteract.Name
+                 Content.button Simulants.Battle.Hud.Interact.Name
                     [Entity.Position == v2 248.0f -240.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 144.0f 48.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible <== battle --> fun battle -> match battle.DialogOpt with Some dialog -> Dialog.canAdvance dialog | None -> false

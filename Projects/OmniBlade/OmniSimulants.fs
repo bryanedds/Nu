@@ -8,63 +8,100 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // global
-    let Splash = Screen "Splash"
+    [<RequireQualifiedAccess>]
+    module Splash = let Screen = Screen "Splash"
 
-    // title
-    let Title = Screen "Title"
-    let TitleGui = Title / "Gui"
-    let TitleNew = TitleGui / "New"
-    let TitleLoad = TitleGui / "Load"
-    let TitleCredits = TitleGui / "Credits"
-    let TitleExit = TitleGui / "Exit"
+    [<RequireQualifiedAccess>]
+    module Intro = let Screen = Screen "Intro"
+    
+    [<RequireQualifiedAccess>]
+    module Intro2 = let Screen = Screen "Intro2"
+    
+    [<RequireQualifiedAccess>]
+    module Intro3 = let Screen = Screen "Intro3"
+    
+    [<RequireQualifiedAccess>]
+    module Intro4 = let Screen = Screen "Intro4"
+    
+    [<RequireQualifiedAccess>]
+    module Intro5 = let Screen = Screen "Intro5"
 
-    // credits
-    let Credits = Screen "Credits"
-    let CreditsGui = Credits / "Gui"
-    let CreditsBack = CreditsGui / "Back"
+    [<RequireQualifiedAccess>]
+    module Title =
 
-    // intro
-    let Intro = Screen "Intro"
-    let Intro2 = Screen "Intro2"
-    let Intro3 = Screen "Intro3"
-    let Intro4 = Screen "Intro4"
-    let Intro5 = Screen "Intro5"
+        let Screen = Screen "Title"
+    
+        [<RequireQualifiedAccess>]
+        module Gui =
 
-    // field
-    let Field = Simulants.DefaultScreen
-    let FieldHud = Field / "Hud"
-    let FieldBack = FieldHud / "Back"
-    let FieldScene = Field / "Scene"
-    let FieldBackdrop = FieldScene / "Backdrop"
-    let FieldTransitionFade = FieldScene / "FieldTransitionFade"
-    let FieldTileMap = FieldScene / "TileMap"
-    let FieldAvatar = FieldScene / "Avatar"
-    let FieldSubmenu = Field / "Submenu"
-    let FieldInteract = FieldScene / "Interact"
-    let FieldDialog = FieldScene / "Dialog"
-    let FieldShop = Field / "Shop"
-    let FieldShopBuy = Field / "ShopBuy"
-    let FieldShopSell = Field / "ShopSell"
-    let FieldShopLeave = Field / "ShopLeave"
-    let FieldShopGold = Field / "ShopGold"
-    let FieldShopPageUp = Field / "ShopPageUp"
-    let FieldShopPageDown = Field / "ShopPageDown"
-    let FieldShopConfirm = Field / "ShopConfirm"
-    let FieldShopConfirmAccept = Field / "ShopConfirmAccept"
-    let FieldShopConfirmDecline = Field / "ShopConfirmDecline"
-    let FieldShopConfirmOffer = Field / "ShopConfirmOffer"
-    let FieldShopConfirmLine1 = Field / "ShopConfirmLine1"
-    let FieldShopConfirmLine2 = Field / "ShopConfirmLine2"
-    let SubmenuTeam = Field / "Team"
-    let SubmenuItem = Field / "Item"
-    let SubmenuClose = Field / "Close"
-    let SubmenuUse = Field / "Use"
+            let Layer = Screen / "Gui"
+            let New = Layer / "New"
+            let Load = Layer / "Load"
+            let Credits = Layer / "Credits"
+            let Exit = Layer / "Exit"
 
-    // battle
-    let Battle = Screen "Battle"
-    let BattleHud = Battle / "Hud"
-    let BattleScene = Battle / "Scene"
-    let BattleDialog = BattleScene / "Dialog"
-    let BattleInteract = BattleScene / "Interact"
-    let BattleRide = BattleScene / "Ride"
+    [<RequireQualifiedAccess>]
+    module Credits =
+
+        let Screen = Screen "Credits"
+    
+        [<RequireQualifiedAccess>]
+        module Gui =
+    
+            let Layer = Screen / "Gui"
+            let Back = Layer / "Back"
+
+    [<RequireQualifiedAccess>]
+    module Field =
+
+        let Screen = Simulants.DefaultScreen
+
+        [<RequireQualifiedAccess>]
+        module Hud =
+
+            let Layer = Screen / "Hud"
+            let Submenu = Layer / "Submenu"
+
+        [<RequireQualifiedAccess>]
+        module Scene =
+
+            let Layer = Screen / "Scene"
+            let Backdrop = Layer / "Backdrop"
+            let TransitionFade = Layer / "TransitionFade"
+            let TileMap = Layer / "TileMap"
+            let Avatar = Layer / "Avatar"
+            let Interact = Layer / "Interact"
+            let Dialog = Layer / "Dialog"
+
+        [<RequireQualifiedAccess>]
+        module Submenu =
+
+            let Layer = Screen / "Submenu"
+            let Team = Layer / "Team"
+            let Item = Layer / "Item"
+            let Close = Layer / "Close"
+            let Use = Layer / "Use"
+
+        [<RequireQualifiedAccess>]
+        module Shop =
+
+            let Layer = Screen / "Shop"
+            let Panel = Layer / "Panel"
+
+    [<RequireQualifiedAccess>]
+    module Battle =
+
+        let Screen = Screen "Battle"
+
+        [<RequireQualifiedAccess>]
+        module Hud =
+    
+            let Layer = Screen / "Hud"
+            let Dialog = Layer / "Dialog"
+            let Interact = Layer / "Interact"
+    
+        [<RequireQualifiedAccess>]
+        module Scene =
+
+            let Layer = Screen / "Scene"
+            let Ride = Layer / "Ride"
