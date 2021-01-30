@@ -5,42 +5,58 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // same as above, but for the splash screen
-    let Splash = Screen "Splash"
+    [<RequireQualifiedAccess>]
+    module Splash =
 
-    // same as above, but for the title screen
-    let Title = Screen "Title"
+        let Screen = Screen "Splash"
 
-    // this is the layer that is loaded into the title screen that contains all of its gui
-    // entities. You'll notice that the layer is built from a combination of the title screen as
-    // well as its own individual name as found in its document, 'Assets/Gui/Title.nulyr'.
-    let TitleGui = Title / "Gui"
+    [<RequireQualifiedAccess>]
+    module Title =
 
-    // this is like the above, but for the play button found in the above layer
-    let TitleNewGame = TitleGui / "NewGame"
-    let TitleLoadGame = TitleGui / "LoadGame"
+        let Screen = Screen "Title"
 
-    // and so on for the title screens credits and exit buttons
-    let TitleCredits = TitleGui / "Credits"
-    let TitleExit = TitleGui / "Exit"
+        [<RequireQualifiedAccess>]
+        module Gui =
 
-    // like those proceeding them, these are the various simulants of the credits screen
-    let Credits = Screen "Credits"
-    let CreditsGui = Credits / "Gui"
-    let CreditsBack = CreditsGui / "Back"
+            let Layer = Screen / "Gui"
+            let NewGame = Layer / "NewGame"
+            let LoadGame = Layer / "LoadGame"
+            let Credits = Layer / "Credits"
+            let Exit = Layer / "Exit"
 
-    // these are more gameplay simulants
-    let Gameplay = Screen "Gameplay"
-    let Hud = Gameplay / "Hud"
-    let HudBack = Hud / "Back"
-    let HudSaveGame = Hud / "SaveGame"
-    let HudHalt = Hud / "Halt"
-    let HudFeeler = Hud / "Feeler"
-    let HudDetailUpward = Hud / "DetailUpward"
-    let HudDetailRightward = Hud / "DetailRightward"
-    let HudDetailDownward = Hud / "DetailDownward"
-    let HudDetailLeftward = Hud / "DetailLeftward"
-    let HudWait = Hud / "Wait"
-    let Scene = Gameplay / "Scene"
-    let Field = Scene / "Field"
-    let Player = Scene / "Player"
+    [<RequireQualifiedAccess>]
+    module Credits =
+        
+        let Screen = Screen "Credits"
+
+        [<RequireQualifiedAccess>]
+        module Gui =
+
+            let Layer = Screen / "Gui"
+            let Back = Layer / "Back"
+
+    [<RequireQualifiedAccess>]
+    module Gameplay =
+
+        let Screen = Screen "Gameplay"
+
+        [<RequireQualifiedAccess>]
+        module Gui =
+
+            let Layer = Screen / "Gui"
+            let Back = Layer / "Back"
+            let SaveGame = Layer / "SaveGame"
+            let Halt = Layer / "Halt"
+            let Feeler = Layer / "Feeler"
+            let DetailUpward = Layer / "DetailUpward"
+            let DetailRightward = Layer / "DetailRightward"
+            let DetailDownward = Layer / "DetailDownward"
+            let DetailLeftward = Layer / "DetailLeftward"
+            let Wait = Layer / "Wait"
+
+        [<RequireQualifiedAccess>]
+        module Scene =
+
+            let Layer = Screen / "Scene"
+            let Field = Layer / "Field"
+            let Player = Layer / "Player"
