@@ -95,7 +95,7 @@ type [<StructuralEquality; StructuralComparison>] OverlayNameDescriptor =
     | DefaultOverlay
     | ExplicitOverlay of string
 
-/// Describes the origin of a piece of simulnat content.
+/// Describes the origin of a piece of simulant content.
 type [<StructuralEquality; NoComparison>] ContentOrigin =
     | SimulantOrigin of Simulant
     | FacetOrigin of Simulant * string

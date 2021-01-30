@@ -153,7 +153,7 @@ module WorldLayerModule =
             let world = World.addLayer false layerState layer world
             (layer, world)
 
-        /// Create a layer from a simulnat descriptor.
+        /// Create a layer from a simulant descriptor.
         static member createLayer3 descriptor screen world =
             let (layer, world) =
                 World.createLayer4 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt screen world
