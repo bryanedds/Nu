@@ -29,38 +29,38 @@ type MyGameplayDispatcher () =
         [Simulants.Game.KeyboardKeyDownEvent =|> fun evt ->
             if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated then cmd Jump
             else cmd Nop
-         Simulants.Gameplay.UpdateEvent =|> fun _ ->
+         Simulants.Gameplay.Screen.UpdateEvent =|> fun _ ->
             if KeyboardState.isKeyDown KeyboardKey.Left then cmd MoveLeft
             elif KeyboardState.isKeyDown KeyboardKey.Right then cmd MoveRight
             else cmd Nop
-         Simulants.Gameplay.PostUpdateEvent => cmd EyeTrack]
+         Simulants.Gameplay.Screen.PostUpdateEvent => cmd EyeTrack]
 
     // here we handle the above commands
     override this.Command (_, command, _, world) =
         let world =
             match command with
             | MoveLeft ->
-                let physicsId = Simulants.Player.GetPhysicsId world
+                let physicsId = Simulants.Gameplay.Scene.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
                 then World.applyBodyForce (v2 -2000.0f 0.0f) physicsId world
                 else World.applyBodyForce (v2 -500.0f 0.0f) physicsId world
             | MoveRight ->
-                let physicsId = Simulants.Player.GetPhysicsId world
+                let physicsId = Simulants.Gameplay.Scene.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world
                 then World.applyBodyForce (v2 2000.0f 0.0f) physicsId world
                 else World.applyBodyForce (v2 500.0f 0.0f) physicsId world
             | Jump ->
-                let physicsId = Simulants.Player.GetPhysicsId world
+                let physicsId = Simulants.Gameplay.Scene.Player.GetPhysicsId world
                 if World.isBodyOnGround physicsId world then
                     let world = World.applyBodyForce (v2 0.0f 90000.0f) physicsId world
                     World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                 else world
             | EyeTrack ->
                 if World.getTickRate world <> 0L
-                then Simulants.Game.SetEyeCenter (Simulants.Player.GetCenter world) world
+                then Simulants.Game.SetEyeCenter (Simulants.Gameplay.Scene.Player.GetCenter world) world
                 else world
             | Back ->
-                World.transitionScreen Simulants.Title world
+                World.transitionScreen Simulants.Title.Screen world
             | Nop -> world
         just world
 
@@ -70,12 +70,12 @@ type MyGameplayDispatcher () =
         [// the level layer
          Content.layerIfScreenSelected screen $ fun _ _ ->
             Content.layerFromFile
-                Simulants.Level.Name
+                Simulants.Gameplay.Level.Layer.Name
                 "Assets/Gameplay/Level.nulyr"
 
          // the hud layer
          Content.layerIfScreenSelected screen $ fun _ _ ->
-            Content.layer "Hud" []
+            Content.layer "Gui" []
                 [Content.button Gen.name
                     [Entity.Text == "Back"
                      Entity.Position == v2 260.0f -260.0f
@@ -84,7 +84,7 @@ type MyGameplayDispatcher () =
 
          // the player layer
          Content.layerIfScreenSelected screen $ fun _ _ ->
-            Content.layer Simulants.Scene.Name []
-                [Content.character Simulants.Player.Name
+            Content.layer Simulants.Gameplay.Scene.Layer.Name []
+                [Content.character Simulants.Gameplay.Scene.Player.Name
                     [Entity.Position == v2 0.0f 0.0f
                      Entity.Size == v2 108.0f 108.0f]]]

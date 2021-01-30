@@ -57,9 +57,9 @@ module Simulants =
         let Screen = Simulants.DefaultScreen
 
         [<RequireQualifiedAccess>]
-        module Hud =
+        module Gui =
 
-            let Layer = Screen / "Hud"
+            let Layer = Screen / "Gui"
             let Submenu = Layer / "Submenu"
 
         [<RequireQualifiedAccess>]
@@ -94,9 +94,9 @@ module Simulants =
         let Screen = Screen "Battle"
 
         [<RequireQualifiedAccess>]
-        module Hud =
+        module Gui =
     
-            let Layer = Screen / "Hud"
+            let Layer = Screen / "Gui"
             let Dialog = Layer / "Dialog"
             let Interact = Layer / "Interact"
     

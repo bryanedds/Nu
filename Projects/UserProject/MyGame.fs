@@ -17,27 +17,27 @@ type MyGameDispatcher () =
 
     // here we channel from events to signals
     override this.Channel (_, _) =
-        [Simulants.TitleCredits.ClickEvent => cmd ShowCredits
-         Simulants.TitlePlay.ClickEvent => cmd ShowGameplay
-         Simulants.TitleExit.ClickEvent => cmd ExitGame
-         Simulants.CreditsBack.ClickEvent => cmd ShowTitle]
+        [Simulants.Title.Gui.Credits.ClickEvent => cmd ShowCredits
+         Simulants.Title.Gui.Play.ClickEvent => cmd ShowGameplay
+         Simulants.Title.Gui.Exit.ClickEvent => cmd ExitGame
+         Simulants.Credits.Gui.Back.ClickEvent => cmd ShowTitle]
 
     // here we handle the above commands
     override this.Command (_, command, _, world) =
         let world =
             match command with
-            | ShowTitle -> World.transitionScreen Simulants.Title world
-            | ShowCredits -> World.transitionScreen Simulants.Credits world
-            | ShowGameplay -> World.transitionScreen Simulants.Gameplay world
+            | ShowTitle -> World.transitionScreen Simulants.Title.Screen world
+            | ShowCredits -> World.transitionScreen Simulants.Credits.Screen world
+            | ShowGameplay -> World.transitionScreen Simulants.Gameplay.Screen world
             | ExitGame -> World.exit world
         just world
 
     // here we describe the content of the game including all of its screens.
     override this.Content (_, _) =
-        [Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Some Simulants.Title)) [] []
-         Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nulyr"
-         Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nulyr"
-         Content.screen<MyGameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]
+        [Content.screen Simulants.Splash.Screen.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Some Simulants.Title.Screen)) [] []
+         Content.screenFromLayerFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nulyr"
+         Content.screenFromLayerFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nulyr"
+         Content.screen<MyGameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]
 
     // here we hint to the renderer and audio system that the 'Gui' package should be loaded ahead of time
     override this.Register (game, world) =

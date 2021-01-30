@@ -37,23 +37,23 @@ module InfinityDispatcher =
             base.Register (game, world)
 
         override this.Channel (_, _) =
-            [Simulants.TitleCredits.ClickEvent => cmd ShowCredits
-             Simulants.TitleNewGame.ClickEvent => cmd (SetShallLoadGame false)
-             Simulants.TitleLoadGame.ClickEvent => cmd (SetShallLoadGame true)
-             Simulants.TitleExit.ClickEvent => cmd ExitGame
-             Simulants.CreditsBack.ClickEvent => cmd ShowTitle
-             Simulants.HudBack.ClickEvent => cmd ShowTitle]
+            [Simulants.Title.Gui.Credits.ClickEvent => cmd ShowCredits
+             Simulants.Title.Gui.NewGame.ClickEvent => cmd (SetShallLoadGame false)
+             Simulants.Title.Gui.LoadGame.ClickEvent => cmd (SetShallLoadGame true)
+             Simulants.Title.Gui.Exit.ClickEvent => cmd ExitGame
+             Simulants.Credits.Gui.Back.ClickEvent => cmd ShowTitle
+             Simulants.Gameplay.Gui.Back.ClickEvent => cmd ShowTitle]
 
         override this.Command (_, command, _, world) =
             match command with
-            | ShowTitle -> World.transitionScreen Simulants.Title world |> just
-            | ShowCredits -> World.transitionScreen Simulants.Credits world |> just
-            | ShowGameplay -> World.transitionScreen Simulants.Gameplay world |> just
-            | SetShallLoadGame shallLoadGame -> Simulants.Gameplay.Gameplay.Update (fun infinity -> { infinity with ShallLoadGame = shallLoadGame }) world |> withCmd ShowGameplay
+            | ShowTitle -> World.transitionScreen Simulants.Title.Screen world |> just
+            | ShowCredits -> World.transitionScreen Simulants.Credits.Screen world |> just
+            | ShowGameplay -> World.transitionScreen Simulants.Gameplay.Screen world |> just
+            | SetShallLoadGame shallLoadGame -> Simulants.Gameplay.Screen.Gameplay.Update (fun infinity -> { infinity with ShallLoadGame = shallLoadGame }) world |> withCmd ShowGameplay
             | ExitGame -> World.exit world |> just
 
         override this.Content (infinity, _) =
-            [Content.screen Simulants.Splash.Name (Splash (Constants.Gui.DissolveDescriptor, Constants.Gui.SplashData, None, Some Simulants.Title)) [] []
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gui.ButterflyGirlSong)) Assets.Gui.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gui.ButterflyGirlSong)) Assets.Gui.CreditsLayerFilePath
-             Content.screen<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gameplay.HerosVengeanceSong)) [Screen.Gameplay <== infinity --> fun infinity -> infinity.Gameplay] []]
+            [Content.screen Simulants.Splash.Screen.Name (Splash (Constants.Gui.DissolveDescriptor, Constants.Gui.SplashData, None, Some Simulants.Title.Screen)) [] []
+             Content.screenFromLayerFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gui.ButterflyGirlSong)) Assets.Gui.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gui.ButterflyGirlSong)) Assets.Gui.CreditsLayerFilePath
+             Content.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gameplay.HerosVengeanceSong)) [Screen.Gameplay <== infinity --> fun infinity -> infinity.Gameplay] []]

@@ -4,23 +4,47 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // same as above, but for the splash screen
-    let Splash = Screen "Splash"
+    [<RequireQualifiedAccess>]
+    module Splash =
 
-    // same as above, but for the title screen and its children
-    let Title = Screen "Title"
-    let TitleGui = Title / "Gui"
-    let TitlePlay = TitleGui / "Play"
-    let TitleCredits = TitleGui / "Credits"
-    let TitleExit = TitleGui / "Exit"
+        let Screen = Screen "Splash"
 
-    // credits screen handles
-    let Credits = Screen "Credits"
-    let CreditsGui = Credits / "Gui"
-    let CreditsBack = CreditsGui / "Back"
+    [<RequireQualifiedAccess>]
+    module Title =
 
-    // gameplay screen handles
-    let Gameplay = Screen "Gameplay"
-    let Level = Gameplay / "Level"
-    let Scene = Gameplay / "Scene"
-    let Player = Scene / "Player"
+        let Screen = Screen "Title"
+
+        [<RequireQualifiedAccess>]
+        module Gui =
+
+            let Layer = Screen / "Gui"
+            let Play = Layer / "Play"
+            let Credits = Layer / "Credits"
+            let Exit = Layer / "Exit"
+
+    [<RequireQualifiedAccess>]
+    module Credits =
+        
+        let Screen = Screen "Credits"
+
+        [<RequireQualifiedAccess>]
+        module Gui =
+
+            let Layer = Screen / "Gui"
+            let Back = Layer / "Back"
+
+    [<RequireQualifiedAccess>]
+    module Gameplay =
+
+        let Screen = Screen "Gameplay"
+
+        [<RequireQualifiedAccess>]
+        module Level =
+
+            let Layer = Screen / "Level"
+
+        [<RequireQualifiedAccess>]
+        module Scene =
+
+            let Layer = Screen / "Scene"
+            let Player = Layer / "Player"

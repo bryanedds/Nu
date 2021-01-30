@@ -52,9 +52,9 @@ module GameplayDispatcher =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.initial)
 
         override this.Channel (_, _) =
-            [Simulants.Gameplay.SelectEvent => msg Initialize
-             Simulants.Gameplay.UpdateEvent => msg Update
-             Simulants.Gameplay.PostUpdateEvent => cmd TrackPlayer]
+            [Simulants.Gameplay.Screen.SelectEvent => msg Initialize
+             Simulants.Gameplay.Screen.UpdateEvent => msg Update
+             Simulants.Gameplay.Screen.PostUpdateEvent => cmd TrackPlayer]
 
         override this.Message (gameplay, message, _, world) =
             
@@ -316,7 +316,7 @@ module GameplayDispatcher =
                                         match Chessboard.tryGetCharacterCoordinates reactorIndex gameplay.Chessboard with
                                         | Some reactorCoordinates ->
                                             let effect = Effects.makeMagicMissileImpactEffect ()
-                                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Scene world
+                                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Layer world
                                             let world = entity.SetEffect effect world
                                             let world = entity.SetSize Constants.Layout.TileSize world
                                             let world = entity.SetPosition (vctovf reactorCoordinates) world
@@ -326,7 +326,7 @@ module GameplayDispatcher =
                                     | None -> world
                                 else
                                     let effect = Effects.makeSwordStrikeEffect turn.Direction
-                                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Scene world
+                                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Layer world
                                     let world = entity.SetEffect effect world
                                     let world = entity.SetSize (v2Dup 144.0f) world
                                     let world = entity.SetPosition ((vctovf turn.OriginCoordinates) - Constants.Layout.TileSize) world
@@ -365,8 +365,8 @@ module GameplayDispatcher =
                 else just world
 
             | TrackPlayer ->
-                let playerCenter = Simulants.Player.GetCenter world
-                let fieldBounds = Simulants.Field.GetBounds world
+                let playerCenter = Simulants.Gameplay.Scene.Player.GetCenter world
+                let fieldBounds = Simulants.Gameplay.Scene.Field.GetBounds world
                 let world = World.setEyeCenter playerCenter world
                 let world = World.constrainEyeBounds fieldBounds world
                 just world
@@ -378,10 +378,10 @@ module GameplayDispatcher =
 
             // scene layer
             [Content.layerIfScreenSelected screen (fun _ _ ->
-                Content.layer Simulants.Scene.Name []
+                Content.layer Simulants.Gameplay.Scene.Layer.Name []
 
                     // field
-                    [Content.entity<FieldDispatcher> Simulants.Field.Name
+                    [Content.entity<FieldDispatcher> Simulants.Gameplay.Scene.Field.Name
                        [Entity.Field <== gameplay --> fun gameplay -> gameplay.Field]
 
                      // pickups
@@ -403,7 +403,7 @@ module GameplayDispatcher =
                         (fun index character _ ->
                             let name =
                                 match index with
-                                | 0 -> Simulants.Player.Name
+                                | 0 -> Simulants.Gameplay.Scene.Player.Name
                                 | _ -> "Enemy+" + scstring index
                             Content.entity<CharacterDispatcher> name
                                 [Entity.CharacterAnimationSheet <== character --> fun (_, _, _) -> match index with 0 -> Assets.Gameplay.PlayerImage | _ -> Assets.Gameplay.GoopyImage // TODO: pull this from data
@@ -412,24 +412,24 @@ module GameplayDispatcher =
                                  Entity.Position <== character --> fun (position, _, _) -> position])])
 
              // hud layer
-             Content.layer Simulants.Hud.Name []
+             Content.layer Simulants.Gameplay.Gui.Layer.Name []
 
                 [// halt button
-                 Content.button Simulants.HudHalt.Name
+                 Content.button Simulants.Gameplay.Gui.Halt.Name
                     [Entity.Position == v2 184.0f -144.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Halt"
                      Entity.Enabled <== gameplay --> fun gameplay -> gameplay.Round.IsPlayerTraveling
                      Entity.ClickEvent ==> msg HaltPlayer]
 
                  // save button
-                 Content.button Simulants.HudSaveGame.Name
+                 Content.button Simulants.Gameplay.Gui.SaveGame.Name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Save Game"
                      Entity.Enabled <== gameplay --> fun gameplay -> not (Round.inProgress gameplay.Round) && gameplay.InputMode = NormalInputMode
                      Entity.ClickEvent ==> cmd Save]
 
                  // back button
-                 Content.button Simulants.HudBack.Name
+                 Content.button Simulants.Gameplay.Gui.Back.Name
                     [Entity.Position == v2 184.0f -256.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Back"]
 
@@ -444,35 +444,35 @@ module GameplayDispatcher =
                      Entity.LabelImage == asset "Gui" "DetailBackdrop"]
 
                  // detail up
-                 Content.button Simulants.HudDetailUpward.Name
+                 Content.button Simulants.Gameplay.Gui.DetailUpward.Name
                     [Entity.Position == v2 -387.0f -126.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailUpwardUp"; Entity.DownImage == asset "Gui" "DetailUpwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Upward))]
 
                  // detail right
-                 Content.button Simulants.HudDetailRightward.Name
+                 Content.button Simulants.Gameplay.Gui.DetailRightward.Name
                     [Entity.Position == v2 -336.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailRightwardUp"; Entity.DownImage == asset "Gui" "DetailRightwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Rightward))]
 
                  // detail down
-                 Content.button Simulants.HudDetailDownward.Name
+                 Content.button Simulants.Gameplay.Gui.DetailDownward.Name
                     [Entity.Position == v2 -387.0f -234.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailDownwardUp"; Entity.DownImage == asset "Gui" "DetailDownwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Downward))]
 
                  // detail left
-                 Content.button Simulants.HudDetailLeftward.Name
+                 Content.button Simulants.Gameplay.Gui.DetailLeftward.Name
                     [Entity.Position == v2 -438.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailLeftwardUp"; Entity.DownImage == asset "Gui" "DetailLeftwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Leftward))]
 
                  // wait button
-                 Content.button Simulants.HudWait.Name
+                 Content.button Simulants.Gameplay.Gui.Wait.Name
                     [Entity.Position == v2 -387.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "W"
                      Entity.Enabled <== gameplay --> fun gameplay -> if Round.inProgress gameplay.Round then false else true
@@ -491,6 +491,6 @@ module GameplayDispatcher =
                                     Entity.ClickEvent ==> msg EnterSelectionMode])]
 
                  // input feeler
-                 Content.feeler Simulants.HudFeeler.Name
+                 Content.feeler Simulants.Gameplay.Gui.Feeler.Name
                     [Entity.Position == v2 -480.0f -270.0f; Entity.Size == v2 960.0f 540.0f; Entity.Elevation == 9.0f
                      Entity.TouchEvent ==|> fun evt -> cmd (HandlePlayerInput (TouchInput evt.Data))]]]

@@ -876,11 +876,11 @@ module BattleDispatcher =
                      background.LabelImage == asset "Battle" "Background"]
 
                  // dialog
-                 Dialog.content Simulants.Battle.Hud.Dialog.Name
+                 Dialog.content Simulants.Battle.Gui.Dialog.Name
                     (battle --> fun battle -> battle.DialogOpt)
 
                  // dialog interact button
-                 Content.button Simulants.Battle.Hud.Interact.Name
+                 Content.button Simulants.Battle.Gui.Interact.Name
                     [Entity.Position == v2 248.0f -240.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 144.0f 48.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible <== battle --> fun battle -> match battle.DialogOpt with Some dialog -> Dialog.canAdvance dialog | None -> false

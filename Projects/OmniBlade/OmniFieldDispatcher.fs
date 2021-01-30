@@ -627,7 +627,7 @@ module FieldDispatcher =
                      Entity.TraverseEvent ==|> fun evt -> msg (Traverse evt.Data)]
 
                  // submenu button
-                 Content.button Simulants.Field.Hud.Submenu.Name
+                 Content.button Simulants.Field.Gui.Submenu.Name
                     [Entity.Position == v2 -456.0f -246.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 144.0f 48.0f
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage; Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Text == "Submenu"
