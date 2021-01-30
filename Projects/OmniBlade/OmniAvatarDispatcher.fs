@@ -176,7 +176,7 @@ module AvatarDispatcher =
                 if not (World.isSelectedScreenTransitioning world) then
                     let world =
                         if force <> v2Zero && entity.GetEnabled world then
-                            let physicsId = Simulants.FieldAvatar.GetPhysicsId world
+                            let physicsId = Simulants.Field.Scene.Avatar.GetPhysicsId world
                             World.applyBodyForce force physicsId world
                         else world
                     let eventTrace = EventTrace.record4 "Avatar" "Command" "Traverse" EventTrace.empty

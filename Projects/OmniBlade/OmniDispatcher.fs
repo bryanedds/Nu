@@ -48,20 +48,19 @@ module GameDispatcher =
             base.Register (game, world)
 
         override this.Channel (_, _) =
-            [Simulants.Field.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
-             Simulants.Battle.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
+            [Simulants.Field.Screen.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
+             Simulants.Battle.Screen.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
              Simulants.Game.UpdateEvent => msg Update
 #if DEV
-             Simulants.TitleNew.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
+             Simulants.Title.Gui.New.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
 #else
-             Simulants.TitleNew.ClickEvent => msg Intro
+             Simulants.Title.Gui.New.ClickEvent => msg Intro
 #endif
-             Simulants.TitleLoad.ClickEvent =|> fun _ -> msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
-             Simulants.TitleCredits.ClickEvent => msg (Change (Gui Credits))
-             Simulants.TitleExit.ClickEvent => cmd Exit
-             Simulants.CreditsBack.ClickEvent => msg (Change (Gui Title))
-             Simulants.FieldBack.ClickEvent => msg (Change (Gui Title))
-             Simulants.Intro5.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))]
+             Simulants.Title.Gui.Load.ClickEvent =|> fun _ -> msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
+             Simulants.Title.Gui.Credits.ClickEvent => msg (Change (Gui Credits))
+             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
+             Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
+             Simulants.Intro5.Screen.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))]
 
         override this.Message (omni, message, _, world) =
 
@@ -87,8 +86,8 @@ module GameDispatcher =
                 | Gui gui ->
                     match gui with
                     | Splashing -> just omni
-                    | Title -> withCmd (Show Simulants.Title) omni
-                    | Credits -> withCmd (Show Simulants.Credits) omni
+                    | Title -> withCmd (Show Simulants.Title.Screen) omni
+                    | Credits -> withCmd (Show Simulants.Credits.Screen) omni
                 | Field field ->
                     match field.BattleOpt with
                     | Some battle ->
@@ -96,15 +95,15 @@ module GameDispatcher =
                         | BattleCease (result, consequents, time) ->
                             if World.getTickTime world - time = 60L then
                                 if result
-                                then withCmd (Show Simulants.Field) (Field (Field.synchronizeFromBattle consequents battle field))
-                                else withCmd (Show Simulants.Title) (Gui Title)
-                            else withCmd (Show Simulants.Battle) omni
-                        | _ -> withCmd (Show Simulants.Battle) omni
-                    | None -> withCmd (Show Simulants.Field) omni
+                                then withCmd (Show Simulants.Field.Screen) (Field (Field.synchronizeFromBattle consequents battle field))
+                                else withCmd (Show Simulants.Title.Screen) (Gui Title)
+                            else withCmd (Show Simulants.Battle.Screen) omni
+                        | _ -> withCmd (Show Simulants.Battle.Screen) omni
+                    | None -> withCmd (Show Simulants.Field.Screen) omni
 
             | Intro ->
                 let splashing = msg (Change (Gui Splashing))
-                let intro = cmd (Show Simulants.Intro)
+                let intro = cmd (Show Simulants.Intro.Screen)
                 withSigs [splashing; intro] omni
 
         override this.Command (_, command, _, world) =
@@ -115,30 +114,30 @@ module GameDispatcher =
         override this.Content (omni, _) =
 
             [// splash
-             Content.screen Simulants.Splash.Name (Splash (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Some Simulants.Title)) [] []
+             Content.screen Simulants.Splash.Screen.Name (Splash (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Some Simulants.Title.Screen)) [] []
 
              // title
-             Content.screenFromLayerFile Simulants.Title.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleLayerFilePath
+             Content.screenFromLayerFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleLayerFilePath
 
              // credits
-             Content.screenFromLayerFile Simulants.Credits.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsLayerFilePath
+             Content.screenFromLayerFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsLayerFilePath
 
              // intros
-             Content.screenFromLayerFile Simulants.Intro.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro2)) Assets.Gui.IntroLayerFilePath
-             Content.screenFromLayerFile Simulants.Intro2.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro3)) Assets.Gui.Intro2LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro3.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro4)) Assets.Gui.Intro3LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro4.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro5)) Assets.Gui.Intro4LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro5.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, None)) Assets.Gui.Intro5LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro2.Screen)) Assets.Gui.IntroLayerFilePath
+             Content.screenFromLayerFile Simulants.Intro2.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro3.Screen)) Assets.Gui.Intro2LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro3.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro4.Screen)) Assets.Gui.Intro3LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro4.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro5.Screen)) Assets.Gui.Intro4LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro5.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, None)) Assets.Gui.Intro5LayerFilePath
 
              // field
-             Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Gui.Dissolve, None))
+             Content.screen<FieldDispatcher> Simulants.Field.Screen.Name (Dissolve (Constants.Gui.Dissolve, None))
                 [Screen.Field <== omni --> fun omni ->
                     match omni with
                     | Gui _ -> Field.empty
                     | Field field -> field] []
 
              // battle
-             Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Battle.BattleSong))
+             Content.screen<BattleDispatcher> Simulants.Battle.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Battle.BattleSong))
                 [Screen.Battle <== omni --> fun omni ->
                     match omni with
                     | Gui _ -> Battle.empty
