@@ -399,7 +399,10 @@ module WorldModuleEntity =
                     (changed, world)
             if changed then
 #if DEBUG
-                if oldEntityState.Transform.Flags <> valueInRef.Flags then failwith "Cannot change transform flags via setEntityTransform."
+                let ignoredFlags = TransformMasks.InvalidatedMask ||| TransformMasks.DirtyMask
+                let oldFlags = oldEntityState.Transform.Flags ||| ignoredFlags
+                let newFlags = valueInRef.Flags ||| ignoredFlags
+                if oldFlags <> newFlags then failwith "Cannot change transform flags via setEntityTransform."
 #endif
                 if World.getEntityPublishChanges entity world then
                     let positionChanged = v2Neq valueInRef.Position oldTransform.Position
