@@ -13,8 +13,8 @@ module TransformMasks =
 
     // OPTIMIZATION: Transform flag bit-masks for performance.
     let [<Literal>] ActiveMask =                0b0000000000000001
-    let [<Literal>] DirtyMask =                 0b0000000000000010
-    let [<Literal>] InvalidatedMask =           0b0000000000000100
+    let [<Literal>] InvalidatedMask =           0b0000000000000010
+    let [<Literal>] DirtyMask =                 0b0000000000000100
     let [<Literal>] OmnipresentMask =           0b0000000000001000
     let [<Literal>] AbsoluteMask =              0b0000000000010000
     let [<Literal>] ImperativeMask =            0b0000000000100000
@@ -66,8 +66,8 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     static member inline assign (source : Transform, target : Transform byref) =
         Transform.assignByRef (&source, &target)
 
-    member this.Dirty with get () = this.Flags &&& DirtyMask <> 0 and set value = this.Flags <- if value then this.Flags ||| DirtyMask else this.Flags &&& ~~~DirtyMask
     member this.Invalidated with get () = this.Flags &&& InvalidatedMask <> 0 and set value = this.Flags <- if value then this.Flags ||| InvalidatedMask else this.Flags &&& ~~~InvalidatedMask
+    member this.Dirty with get () = this.Flags &&& DirtyMask <> 0 and set value = this.Flags <- if value then this.Flags ||| DirtyMask else this.Flags &&& ~~~DirtyMask
     member this.Omnipresent with get () = this.Flags &&& OmnipresentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| OmnipresentMask else this.Flags &&& ~~~OmnipresentMask
     member this.Absolute with get () = this.Flags &&& AbsoluteMask <> 0 and set value = this.Flags <- if value then this.Flags ||| AbsoluteMask else this.Flags &&& ~~~AbsoluteMask
     member this.Imperative with get () = this.Flags &&& ImperativeMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ImperativeMask else this.Flags &&& ~~~ImperativeMask
