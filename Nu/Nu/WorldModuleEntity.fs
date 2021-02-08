@@ -357,8 +357,8 @@ module WorldModuleEntity =
             let oldOmnipresent = oldEntityState.Omnipresent
             let oldAbsolute = oldEntityState.Absolute
             let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
-            let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
             let (changed, world) =
+                let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
                 World.updateEntityStateWithoutEvent
                     (fun entityState ->
                         if not (Transform.equalsByRef (&value, &entityState.Transform))
@@ -366,7 +366,10 @@ module WorldModuleEntity =
                         else None)
                     entity world
             if changed then
-                if oldEntityState.Transform.Flags <> value.Flags then failwith "Cannot change transform flags via setEntityTransformEithoutEvent."
+                let ignoredFlags = TransformMasks.InvalidatedMask ||| TransformMasks.DirtyMask
+                let oldFlags = oldEntityState.Transform.Flags ||| ignoredFlags
+                let newFlags = valueInRef.Flags ||| ignoredFlags
+                if oldFlags <> newFlags then failwith "Cannot change transform flags via setEntityTransformEithoutEvent."
                 World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
             else world
 
