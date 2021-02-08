@@ -62,6 +62,7 @@ module Reflection =
              ("Optimized", true)
              ("ShouldMutate", true)
              ("ScriptFrame", true)
+             ("ScriptFrameOpt", true)
              ("ScriptUnsubscriptions", true)
              ("TmxMap", true)
              ("NodeUnsubscribe", true)
