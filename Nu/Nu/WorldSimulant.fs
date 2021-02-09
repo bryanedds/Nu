@@ -240,14 +240,26 @@ module WorldSimulantModule =
             | :? Simulant as simulant -> WorldModule.bind5 simulant left right world
             | _ -> failwithumf ()
 
+        /// Bind the left property to the right and the right property to the left.
+        static member mirror<'a> (left : Lens<'a, World>) right world =
+            let world = World.bind left right world
+            let world = World.bind right left world
+            world
+
 [<AutoOpen>]
 module WorldSimulantOperators =
 
     /// Bind the left property to the right property.
     let bind<'a> (left : Lens<'a, World>) right world = World.bind left right world
 
+    /// Bind the left property to the right and the right property to the left.
+    let mirror<'a> (left : Lens<'a, World>) right world = World.mirror left right world
+
     /// Bind the left property to the right property.
     let inline (<=<) left right = bind left right
+
+    /// Bind the left property to the right and the right property to the left.
+    let inline (<=>) left right = mirror left right
 
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
