@@ -35,7 +35,7 @@ module AssetTag =
         left.AssetName = right.AssetName
 
     /// Make an asset tag.
-    let make<'a> packageName assetName : AssetTag<'a> =
+    let make<'a> packageName assetName : 'a AssetTag =
         { PackageName = packageName; AssetName = assetName }
 
     /// Convert an asset tag to a string pair.
@@ -84,7 +84,7 @@ type [<NoEquality; NoComparison>] 'a Asset =
 module Asset =
 
     /// Make an asset value.
-    let make<'a> assetTag filePath refinements associations : Asset<'a> =
+    let make<'a> assetTag filePath refinements associations : 'a Asset =
         { AssetTag = assetTag
           FilePath = filePath
           Refinements = refinements
