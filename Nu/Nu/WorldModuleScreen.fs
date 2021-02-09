@@ -294,17 +294,12 @@ module WorldModuleScreen =
         
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Model", fun property screen world -> (true, World.setScreenModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world))
         Setters.Add ("TransitionState", fun property screen world -> (true, World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world))
         Setters.Add ("TransitionTicks", fun property screen world -> (true, World.setScreenTransitionTicks (property.PropertyValue :?> int64) screen world))
         Setters.Add ("Incoming", fun property screen world -> (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world))
         Setters.Add ("Outgoing", fun property screen world -> (true, World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world))
         Setters.Add ("Persistent", fun property screen world -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world))
-        Setters.Add ("ScriptFrame", fun _ _ world -> (false, world))
-        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
-        Setters.Add ("Name", fun _ _ world -> (false, world))
-        Setters.Add ("Id", fun _ _ world -> (false, world))
         
     /// Initialize getters and setters
     let internal init () =

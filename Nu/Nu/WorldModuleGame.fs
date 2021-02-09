@@ -420,16 +420,12 @@ module WorldModuleGame =
 
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Dispatcher", fun _ world -> (false, world))
         Setters.Add ("Model", fun property world -> (true, World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world))
         Setters.Add ("OmniScreenOpt", fun property world -> (true, World.setOmniScreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("SelectedScreenOpt", fun property world -> (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("ScreenTransitionDestinationOpt", fun property world -> (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world))
         Setters.Add ("EyeCenter", fun property world -> (true, World.setEyeCenter (property.PropertyValue :?> Vector2) world))
         Setters.Add ("EyeSize", fun property world -> (true, World.setEyeSize (property.PropertyValue :?> Vector2) world))
-        Setters.Add ("ScriptFrame", fun _ world -> (false, world))
-        Setters.Add ("CreationTimeStamp", fun _ world -> (false, world))
-        Setters.Add ("Id", fun _ world -> (false, world))
 
     /// Initialize getters and setters
     let internal init () =

@@ -295,13 +295,9 @@ module WorldModuleLayer =
         
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
         Setters.Add ("Model", fun property layer world -> (true, World.setLayerModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } layer world))
         Setters.Add ("Visible", fun property layer world -> (true, World.setLayerVisible (property.PropertyValue :?> bool) layer world))
         Setters.Add ("Persistent", fun property layer world -> (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world))
-        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
-        Setters.Add ("Name", fun _ _ world -> (false, world))
-        Setters.Add ("Id", fun _ _ world -> (false, world))
         
     /// Initialize getters and setters
     let internal init () =
