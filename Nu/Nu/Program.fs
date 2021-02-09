@@ -27,7 +27,9 @@ module Program =
     script language | s-expr DSL                | Visual Studio & Gaia
     effect system   | s-expr DSL                | Gaia & Aether (TBA)
     mind (TBA)      | s-expr DSL                | Gaia & Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
+    particles       | F#                        | Visual Studio
     subsystems      | F#                        | Visual Studio
+    ECS             | F#                        | Visual Studio
     components      | F# (facets / dispatchers) | Visual Studio
     elmish / MVU    | F# (facets / dispatchers) | Visual Studio
     interactions    | F# (chains)               | Visual Studio (deprecated, but still usable)
@@ -40,12 +42,9 @@ module Program =
 
     For the system that isn't interpreted, a strong type system is in place to make sure complex
     data-flow dependencies are made explicit and checked with good error messages. For this system,
-    however, no hot-reloading is possible, negatively impacting the authoring experience.
+    however, no hot-reloading is possible, negatively affecting the authoring experience.
 
-    The trade-offs for each given domain does seem to be appropriate. While the simulant system
-    MUST be run-time in order to be WYSIWYG editable, the interaction system isn't too badly
-    affected by the need for program restarts, and benefits proportionately from having an
-    expressive static type system. *)
+    The trade-offs for each given domain does seem to be approxiately appropriate. *)
 
     (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
     scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
