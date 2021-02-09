@@ -1877,9 +1877,7 @@ module TextDispatcherModule =
              define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
         override this.Register (entity, world) =
-            let world = bind (entity.Model<string> ()) entity.Text world
-            let world = bind entity.Text (entity.Model<string> ()) world
-            world
+            mirror (entity.Model<string> ()) entity.Text world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
@@ -1991,8 +1989,7 @@ module ToggleDispatcherModule =
              define Entity.ToggleSoundVolume Constants.Audio.SoundVolumeDefault]
 
         override this.Register (entity, world) =
-            let world = bind (entity.Model<bool> ()) entity.Open world
-            let world = bind entity.Open (entity.Model<bool> ()) world
+            let world = mirror (entity.Model<bool> ()) entity.Open world
             let world = World.monitor handleMouseLeftDown Events.MouseLeftDown entity world
             let world = World.monitor handleMouseLeftUp Events.MouseLeftUp entity world
             world
@@ -2155,9 +2152,7 @@ module FillBarDispatcherModule =
              define Entity.BorderImage Assets.Default.Image12]
 
         override this.Register (entity, world) =
-            let world = bind (entity.Model<single> ()) entity.Fill world
-            let world = bind entity.Fill (entity.Model<single> ()) world
-            world
+            mirror (entity.Model<single> ()) entity.Fill world
 
         override this.Actualize (entity, world) =
             if entity.GetVisible world then
