@@ -1373,8 +1373,6 @@ module WorldModuleEntity =
 
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Dispatcher", fun _ _ world -> (false, world))
-        Setters.Add ("Facets", fun _ _ world -> (false, world))
         Setters.Add ("Transform", fun property entity world -> let value = property.PropertyValue :?> Transform in (true, World.setEntityTransformByRef (&value, entity, world)))
         Setters.Add ("Bounds", fun property entity world -> (true, World.setEntityBounds (property.PropertyValue :?> Vector4) entity world))
         Setters.Add ("Position", fun property entity world -> (true, World.setEntityPosition (property.PropertyValue :?> Vector2) entity world))
@@ -1392,14 +1390,8 @@ module WorldModuleEntity =
         Setters.Add ("Visible", fun property entity world -> (true, World.setEntityVisible (property.PropertyValue :?> bool) entity world))
         Setters.Add ("Enabled", fun property entity world -> (true, World.setEntityEnabled (property.PropertyValue :?> bool) entity world))
         Setters.Add ("AlwaysUpdate", fun property entity world -> (true, World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world))
-        Setters.Add ("PublishUpdates", fun _ _ world -> (false, world))
-        Setters.Add ("PublishPostUpdates", fun _ _ world -> (false, world))
         Setters.Add ("Persistent", fun property entity world -> (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
-        Setters.Add ("OverlayNameOpt", fun _ _ world -> (false, world))
-        Setters.Add ("FacetNames", fun _ _ world -> (false, world))
-        Setters.Add ("CreationTimeStamp", fun _ _ world -> (false, world))
-        Setters.Add ("Id", fun _ _ world -> (false, world))
-        Setters.Add ("Name", fun _ _ world -> (false, world))
+        Setters.Add ("FacetNames", fun _ _ world -> (false, world)) // TODO: consider logging an error?
 
     /// Initialize getters and setters
     let internal init () =
