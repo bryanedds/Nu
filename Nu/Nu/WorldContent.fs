@@ -103,6 +103,9 @@ module Content =
     let entity<'d when 'd :> EntityDispatcher> entityName initializers =
         entityWithContent<'d> entityName initializers []
 
+    /// Describe a basic emitter with the given initializers.
+    let basicEmitter entityName initializers = entity<BasicEmitterDispatcher> entityName initializers
+
     /// Describe an effect with the given initializers.
     let effect entityName initializers = entity<EffectDispatcher> entityName initializers
 
