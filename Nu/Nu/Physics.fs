@@ -585,8 +585,8 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         let list = List<Common.Vertices> ()
         list.Add rectangle
         let bodyShapes = body.CreateCompoundPolygon (list, density)
-        let bodyShapeTop = body.CreateCircle (endRadius, density, Common.Vector2 (0.0f, height * 0.5f))
-        let bodyShapeBottom = body.CreateCircle (endRadius, density, Common.Vector2 (0.0f, 0.0f - height * 0.5f))
+        let bodyShapeTop = body.CreateCircle (endRadius, density, Common.Vector2 (0.0f, height * 0.5f) + center)
+        let bodyShapeBottom = body.CreateCircle (endRadius, density, Common.Vector2 (0.0f, 0.0f - height * 0.5f) + center)
         bodyShapes.Add bodyShapeTop
         bodyShapes.Add bodyShapeBottom
         for bodyShape in bodyShapes do
