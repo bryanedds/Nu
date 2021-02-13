@@ -483,7 +483,7 @@ module WorldModuleEntity =
             transform.Position + transform.Size.WithY 0.0f * 0.5f
 
         static member internal setEntityBottom value entity world =
-            let mutable transform = &(World.getEntityState entity world).Transform
+            let mutable transform = (World.getEntityState entity world).Transform
             let position = value - transform.Size.WithY 0.0f * 0.5f
             if v2Neq transform.Position position then
                 transform.Position <- position
