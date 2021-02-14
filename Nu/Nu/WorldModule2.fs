@@ -276,9 +276,9 @@ module WorldModule2 =
                                     | Some currentSong -> World.fadeOutSong currentSong.FadeOutMs world
                                     | None -> world
                             | None ->
-                                let frameMs = 1.0f / single Constants.Engine.DesiredFps * 1000.0f
-                                let fadeMs = single outgoing.TransitionLifeTime * frameMs
-                                World.fadeOutSong (int fadeMs) world // fade out based on outgoing transition time
+                                match World.getCurrentSongOpt world with
+                                | Some currentSong -> World.fadeOutSong currentSong.FadeOutMs world
+                                | None -> world
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                         World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
                     else world
