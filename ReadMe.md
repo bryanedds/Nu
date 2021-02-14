@@ -28,10 +28,10 @@ Editing a section of a BlazeVector stage.
 ![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
 Editing a special effect in Nu.
 
-![Screenshot](Nu/Projects/OmniBlade/Promotional/OmniBladeBattle.png?raw=true)
+![Screenshot](Projects/OmniBlade/Promotional/OmniBladeBattle.png?raw=true)
 A battle with Goblins in OmniBlade.
 
-![Screenshot](Nu/Projects/OmniBlade/Promotional/OmniBladeOuterTomb.png?raw=true)
+![Screenshot](Projects/OmniBlade/Promotional/OmniBladeOuterTomb.png?raw=true)
 Wandering around the encampment in OmniBlade.
 
 Getting Started
