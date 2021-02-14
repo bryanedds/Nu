@@ -114,9 +114,9 @@ module Effects =
                        { TweenValue = Color.White; TweenLength = 30L }
                        { TweenValue = Color.White.WithA (byte 0); TweenLength = 0L }|])|],
                  Nil)
-        let explosionSoundEffect =
+        let thunderSoundEffect =
             SoundEffect
-                (Resource (AssetTag.toPair Assets.Field.ExplosionSound),
+                (Resource (AssetTag.toPair Assets.Field.ThunderSound),
                  [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 0L }; { LogicValue = false; LogicLength = 70L }|])|],
                  Nil)
         { EffectName = "Bolt"
@@ -127,7 +127,7 @@ module Effects =
                 (Shift 0.0f,
                  [|boltSprite
                    Delay (10L, explosionSprite)
-                   Delay (10L, explosionSoundEffect)|]) }
+                   Delay (10L, thunderSoundEffect)|]) }
 
     let makeImpactSplashEffect () =
         { EffectName = "ImpactSplash"

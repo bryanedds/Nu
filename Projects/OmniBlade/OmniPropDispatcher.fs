@@ -57,11 +57,11 @@ module PropDispatcher =
                     | None -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                 | Npc _ ->
                     match prop.PropState with
-                    | NpcState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                    | NpcState true -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     | _ -> BodyEmpty
                 | Shopkeep _ ->
                     match prop.PropState with
-                    | ShopkeepState true -> BodyBox { Extent = v2 0.22f 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = None }
+                    | ShopkeepState true -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     | _ -> BodyEmpty
                 | Portal _ | Switch _ | SavePoint _ ->
                     BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
@@ -124,7 +124,7 @@ module PropDispatcher =
                                 | VillageWoman -> (1, 0)
                                 | VillageBoy -> (2, 0)
                                 | VillageGirl -> (3, 0)
-                                | FireGoblinNpc -> (0, 4)
+                                | FireGoblinNpc -> (4, 0)
                             let column = column + CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize

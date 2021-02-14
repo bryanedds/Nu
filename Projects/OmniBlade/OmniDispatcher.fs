@@ -123,11 +123,11 @@ module GameDispatcher =
              Content.screenFromLayerFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsLayerFilePath
 
              // intros
-             Content.screenFromLayerFile Simulants.Intro.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro2.Screen)) Assets.Gui.IntroLayerFilePath
-             Content.screenFromLayerFile Simulants.Intro2.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro3.Screen)) Assets.Gui.Intro2LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro3.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro4.Screen)) Assets.Gui.Intro3LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro4.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, Some Simulants.Intro5.Screen)) Assets.Gui.Intro4LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro5.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.WindSong, None)) Assets.Gui.Intro5LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Some Simulants.Intro2.Screen)) Assets.Gui.IntroLayerFilePath
+             Content.screenFromLayerFile Simulants.Intro2.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Some Simulants.Intro3.Screen)) Assets.Gui.Intro2LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro3.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Some Simulants.Intro4.Screen)) Assets.Gui.Intro3LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro4.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Some Simulants.Intro5.Screen)) Assets.Gui.Intro4LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro5.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, None)) Assets.Gui.Intro5LayerFilePath
 
              // field
              Content.screen<FieldDispatcher> Simulants.Field.Screen.Name (Dissolve (Constants.Gui.Dissolve, None))
@@ -137,7 +137,7 @@ module GameDispatcher =
                     | Field field -> field] []
 
              // battle
-             Content.screen<BattleDispatcher> Simulants.Battle.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Battle.BattleSong))
+             Content.screen<BattleDispatcher> Simulants.Battle.Screen.Name (Dissolve (Constants.Gui.Dissolve, None))
                 [Screen.Battle <== omni --> fun omni ->
                     match omni with
                     | Gui _ -> Battle.empty

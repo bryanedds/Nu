@@ -1,4 +1,6 @@
-[[Default
+[[Data
+  [[Assets Assets/Data csv [Symbol] []]]]
+ [Default
   [[Asset Font "Assets/Default/FreeMonoBold.024.ttf" [Render] []]
    [Assets Assets/Default nueffect [Symbol] []]
    [Assets Assets/Default nuscript [Symbol] []]
@@ -8,7 +10,7 @@
    [Assets Assets/Default ogg [Audio] []]
    [Assets Assets/Default tmx [] []]]]
  [Gui
-  [[Asset Font "Assets/Gui/Manaspc.024.ttf" [Render] []]
+  [[Asset Font "Assets/Gui/Fonts/Manaspc.024.ttf" [Render] []]
    [Assets Assets/Gui csv [Symbol] []]
    [Assets Assets/Gui psd [Render] [PsdToPng Retro]]
    [Assets Assets/Gui png [Render] []]
@@ -32,4 +34,13 @@
    [Assets Assets/Battle ogg [Audio] []]
    [Assets Assets/Battle tsx [] []]
    [Assets Assets/Battle tmx [] []]
-   [Assets Assets/Battle nulyr [] []]]]]
+   [Assets Assets/Battle nulyr [] []]]]
+ [Cave
+  [[Assets Assets/Cave csv [Symbol] []]
+   [Assets Assets/Cave psd [Render] [PsdToPng Retro]]
+   [Assets Assets/Cave png [Render] []]
+   [Assets Assets/Cave wav [Audio] []]
+   [Assets Assets/Cave ogg [Audio] []]
+   [Assets Assets/Cave tsx [] []]
+   [Assets Assets/Cave tmx [] []]
+   [Assets Assets/Cave nulyr [] []]]]]

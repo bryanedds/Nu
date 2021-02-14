@@ -60,6 +60,8 @@ module BattleDispatcher =
         | DisplayHop of Hop
         | DisplayCircle of Vector2 * single
         | PlaySound of int64 * single * AssetTag<Sound>
+        | PlaySong of int * single * Song AssetTag
+        | FadeOutSong of int
 
     type Screen with
         member this.GetBattle = this.GetModel<Battle>
@@ -188,7 +190,7 @@ module BattleDispatcher =
                         | DamageCycle ->
                             if Character.getAnimationFinished time character then
                                 let woundCharacter = WoundCharacter targetIndex
-                                let playDeathSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DeathSound)
+                                let playDeathSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastDeathSound)
                                 ([Message woundCharacter; Command playDeathSound], battle)
                             else ([], battle)
                         | WoundCycle ->
@@ -219,9 +221,13 @@ module BattleDispatcher =
                 withSigs sigs battle
             | None -> just battle
 
-        and tickReady time timeStart battle =
+        and tickReady time timeStart (battle : Battle) =
             let timeLocal = time - timeStart
-            if timeLocal >= 90L && timeLocal < 160L then
+            if timeLocal = 61L then // first frame after transitioning in
+                match battle.BattleSongOpt with
+                | Some battleSong -> withCmd (PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, battleSong)) battle
+                | None -> just battle
+            elif timeLocal >= 90L && timeLocal < 160L then
                 let timeLocalReady = timeLocal - 90L
                 withMsg (ReadyCharacters timeLocalReady) battle
             elif timeLocal = 160L then
@@ -352,12 +358,18 @@ module BattleDispatcher =
                 | None -> just (Battle.updateBattleState (constant (BattleCease (outcome, battle.PrizePool.Consequents, time))) battle)
                 | Some _ -> just battle
 
-        and tick time battle =
+        and tickBattleCease time timeStart battle =
+            let localTime = time - timeStart
+            if localTime = 0L
+            then withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) battle
+            else just battle
+
+        and tick time (battle : Battle) =
             match battle.BattleState with
             | BattleReady timeStart -> tickReady time timeStart battle
             | BattleRunning -> tickRunning time battle
             | BattleResults (outcome, timeStart) -> tickBattleResults time timeStart outcome battle
-            | BattleCease (_, _, _) -> just battle
+            | BattleCease (_, _, timeStart) -> tickBattleCease time timeStart battle
 
         override this.Channel (_, battle) =
             [battle.UpdateEvent => msg Tick
@@ -409,14 +421,14 @@ module BattleDispatcher =
                         let command = ActionCommand.make Defend characterIndex None
                         let battle = Battle.appendActionCommand command battle
                         battle
-                    | "Consumable" ->
-                        Battle.updateCharacter
-                            (Character.updateInputState (constant ItemMenu) >> Character.undefend)
-                            characterIndex
-                            battle
                     | "Tech" ->
                         Battle.updateCharacter
                             (Character.updateInputState (constant TechMenu) >> Character.undefend)
+                            characterIndex
+                            battle
+                    | "Consumable" ->
+                        Battle.updateCharacter
+                            (Character.updateInputState (constant ItemMenu) >> Character.undefend)
                             characterIndex
                             battle
                     | _ -> failwithumf ()
@@ -568,7 +580,10 @@ module BattleDispatcher =
                 let hopOpt =
                     // TODO: pull behavior from data
                     match techType with
-                    | Critical -> Some { HopStart = source.Bottom; HopStop = target.BottomOffset3 }
+                    | Critical ->
+                        let hopDirection = Direction.ofVector2 (target.Bottom - source.Bottom)
+                        let hopStop = target.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
+                        Some { HopStart = source.Bottom; HopStop = hopStop }
                     | Cyclone -> Some { HopStart = source.Bottom; HopStop = target.BottomOffset2 }
                     | Bolt | Slash | Tremor -> None
                 match hopOpt with
@@ -659,7 +674,11 @@ module BattleDispatcher =
                 let target = Battle.getCharacter targetIndex battle
                 let hopOpt =
                     match techType with
-                    | Critical | Cyclone -> Some { HopStart = target.BottomOffset2; HopStop = source.BottomOriginal }
+                    | Critical ->
+                        let hopDirection = Direction.ofVector2 (target.Bottom - source.BottomOriginal)
+                        let hopStart = target.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
+                        Some { HopStart = hopStart; HopStop = source.BottomOriginal }
+                    | Cyclone -> Some { HopStart = target.BottomOffset2; HopStop = source.BottomOriginal }
                     | Bolt | Slash | Tremor -> None
                 match hopOpt with
                 | None -> just battle
@@ -862,18 +881,25 @@ module BattleDispatcher =
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
 
-        override this.Content (battle, screen) =
+            | PlaySong (fade, volume, assetTag) ->
+                let world = World.playSong fade volume assetTag world
+                just world
+
+            | FadeOutSong fade ->
+                let world = World.fadeOutSong fade world
+                just world
+                
+
+        override this.Content (battle, _) =
 
             // scene layer
-            let background = Simulants.Battle.Scene.Layer / "Background"
             [Content.layer Simulants.Battle.Scene.Layer.Name []
 
-                [// background
-                 Content.label background.Name
-                    [background.Position == v2 -480.0f -270.0f
-                     background.Size == v2 960.0f 580.0f
-                     background.Elevation == Constants.Battle.BackgroundElevation
-                     background.LabelImage == asset "Battle" "Background"]
+                [// tile map
+                 Content.tileMap Gen.name
+                    [Entity.Position == v2 -480.0f -270.0f
+                     Entity.Elevation == Constants.Battle.BackgroundElevation
+                     Entity.TileMap <== battle --> fun battle -> battle.TileMap]
 
                  // dialog
                  Dialog.content Simulants.Battle.Gui.Dialog.Name
@@ -901,8 +927,8 @@ module BattleDispatcher =
              Content.layers battle (fun battle -> Battle.getAllies battle) constant $ fun index ally _ ->
 
                 // input layer
-                let input = screen / ("Input" + "+" + scstring index)
-                Content.layer input.Name []
+                let inputName = "Input" + "+" + scstring index
+                Content.layer inputName []
 
                     [// health bar
                      Content.fillBar "HealthBar" 
@@ -924,7 +950,7 @@ module BattleDispatcher =
                                     match ally.InputState with NoInput | RegularMenu -> false | _ -> true)
                                     allies
                             alliesPastRegularMenu
-                         Entity.RingMenu == { Items = Map.ofList [(0, ("Attack", true)); (1, ("Defend", true)); (2, ("Consumable", true)); (3, ("Tech", true))]; ItemCancelOpt = None }
+                         Entity.RingMenu == { Items = Map.ofList [(0, ("Attack", true)); (1, ("Defend", true)); (2, ("Tech", true)); (3, ("Consumable", true))]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (index, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel index)]
 

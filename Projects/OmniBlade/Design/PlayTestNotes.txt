@@ -1,0 +1,32 @@
+General
+-------
+
+- rendering bug: when player walks against wall in downward direction, the player sprite sometimes flashes over the wall! discovered in inner tomb just before save.
+- (subjective perception) downward player face has a slight lemming look due to darker sprites being interpreted as part of the face.
+
+Outer Tomb
+----------
+
+- tree shadows look awkward over the player.
+- some sprites on sides of cave don't match against adjacent tiles, to an extent that looks unfinished.
+
+Inner Tomb
+----------
+
+- cave opening sprites look fairly poor, the second one particularly misplaced.
+- save sounds like two overlapping and somewhat disjunct sound effects.
+
+Cave
+----
+
+- got into fight after leaving cave. bug or intentional?
+- boss represented by pink half-square outline.
+
+Battle
+------
+
+- old icons are still there.
+- background changes to debug upon fade-out.
+- sometimes hurricane attack doesn't cancel enemy lightning?
+- is hurricane attack slowing performance or just slow?
+

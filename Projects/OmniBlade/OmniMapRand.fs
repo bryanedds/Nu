@@ -283,15 +283,15 @@ type MapRand =
         let openingId = 0
         let (openingX, openingY, openingWidth, openingHeight, openingInfo) =
             match origin with
-            | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2, mapTmx.TileHeight * 2, "[Portal Center Downward TombInner [IX 8]]")
-            | OriginN ->    (14 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal North Downward TombInner [IX 7]]")
-            | OriginE ->    (31 * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal East Leftward TombInner [IX 6]]")
-            | OriginS ->    (14 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Upward TombInner [IX 5]]")
-            | OriginW ->    (0  * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal West Rightward TombInner [IX 4]]")
-            | OriginNE ->   (14 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Downward TombInner [IX 3]]")
-            | OriginNW ->   (0  * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal West Rightward TombInner [IX 2]]")
-            | OriginSE ->   (31 * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal East Leftward TombInner [IX 1]]")
-            | OriginSW ->   (14 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Upward TombInner [IX 0]]")
+            | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2, mapTmx.TileHeight * 2, "[Portal Center Downward TombGround [IX 8]]")
+            | OriginN ->    (14 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal North Downward TombGround [IX 7]]")
+            | OriginE ->    (31 * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal East Leftward TombGround [IX 6]]")
+            | OriginS ->    (14 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Upward TombGround [IX 5]]")
+            | OriginW ->    (0  * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal West Rightward TombGround [IX 4]]")
+            | OriginNE ->   (14 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Downward TombGround [IX 3]]")
+            | OriginNW ->   (0  * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal West Rightward TombGround [IX 2]]")
+            | OriginSE ->   (31 * mapTmx.TileWidth, 14 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 4, "[Portal East Leftward TombGround [IX 1]]")
+            | OriginSW ->   (14 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 4, mapTmx.TileHeight * 1, "[Portal South Upward TombGround [IX 0]]")
         let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
         let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * 32
         let object = TmxMap.makeObject openingId 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)

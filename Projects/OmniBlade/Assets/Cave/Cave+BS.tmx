@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="3">
+ <tileset firstgid="1" source="Cave.tsx"/>
+ <layer id="2" name="Floor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwwEJAAAMA6DxaOsfaj2Ogr2kqqqq6usDp54QEA==
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztlW0KwjAMhjdvIGzqgQS/DjS90tyNZFPxIubHCqU0aZJmQ2SBl0FJeJ59hNWroqh/OBfIUZmzAfsEuStzyHBw7A4yKNMqHXz2E6KtXuFgxdY4UOyhhDPIq8RZWA/HIXXfazh7wHVPPBOqh3LgPPMGzq+QG8FP9WAOG8b7bsed6jJ7nEMV8FPfmhXfOYT8VPXjTlOenB5XUr51+fwd5IPsFWfvpDNvON8GO4A5cPZOMhNjUw6cvQsLm6HYmAP3m/YrNsNhxxws+BJ26CDZKVf+jIbN2QtO5bBzHSzYWgdLttRhCjbXYUp2ymEOtkvsf1XNxF74C/+f+F9hyaoh
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props">
+  <object id="2" gid="235" x="708" y="384" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc FireGoblinNpc FireGoblinSpecialty Downward [[&quot;Welcome to your doom!&quot;]]]"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

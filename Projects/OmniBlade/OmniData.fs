@@ -27,27 +27,27 @@ type Advent =
     | FireGoblinDefeated
 
 type Direction =
-    | Downward
-    | Leftward
     | Upward
     | Rightward
+    | Downward
+    | Leftward
 
     static member ofVector2 (v2 : Vector2) =
         let angle = double (atan2 v2.Y v2.X)
         let angle = if angle < 0.0 then angle + Math.PI * 2.0 else angle
         let direction =
-            if      angle > Math.PI * 1.75 || angle <= Math.PI * 0.25 then  Rightward
-            elif    angle > Math.PI * 0.25 && angle <= Math.PI * 0.75 then  Upward
-            elif    angle > Math.PI * 0.75 && angle <= Math.PI * 1.25 then  Leftward
-            else                                                            Downward
+            if      angle > Math.PI * 1.74997 || angle <= Math.PI * 0.25003 then    Rightward
+            elif    angle > Math.PI * 0.74997 && angle <= Math.PI * 1.25003 then    Leftward
+            elif    angle > Math.PI * 0.25 && angle <= Math.PI * 0.75 then          Upward
+            else                                                                    Downward
         direction
 
     static member toVector2 direction =
         match direction with
-        | Rightward -> v2Right
         | Upward -> v2Up
-        | Leftward -> v2Left
+        | Rightward -> v2Right
         | Downward -> v2Down
+        | Leftward -> v2Left
 
 type EffectType =
     | Physical
@@ -254,8 +254,9 @@ type ShopkeepType =
 type FieldType =
     | DebugRoom
     | DebugRoom2
-    | TombInner
     | TombOuter
+    | TombGround
+    | TombBasement
     | Cave
 
 type SwitchType =
@@ -283,22 +284,18 @@ type CharacterAnimationCycle =
     | ReadyCycle
     | PoiseCycle of PoiseType
     | AttackCycle
-    | CastCycle
+    | WoundCycle
     | SpinCycle
     | DamageCycle
     | IdleCycle
+    | CastCycle
     | Cast2Cycle
     | SlashCycle
     | WhirlCycle
     | BuryCycle
-    | FlyCycle
-    | HopForwardCycle
-    | HopBackCycle
-    | WoundCycle
 
 type AllyType =
-    | Finn
-    | Glenn
+    | Jinn
 
 type EnemyType =
     | BlueGoblin
@@ -323,7 +320,7 @@ module OmniSeedState =
     
     let rotate fieldType state =
         match fieldType with
-        | DebugRoom | DebugRoom2 | TombInner | TombOuter -> state.RandSeedState
+        | DebugRoom | DebugRoom2 | TombOuter | TombGround | TombBasement -> state.RandSeedState
         | Cave -> rotl64 1 state.RandSeedState
 
     let makeFromSeedState randSeedState =
@@ -587,6 +584,7 @@ type [<NoEquality; NoComparison>] BattleData =
     { BattleType : BattleType // key
       BattleAllyPositions : Vector2 list
       BattleEnemies : EnemyData list
+      BattleTileMap : TileMap AssetTag
       BattleSongOpt : Song AssetTag option }
 
 type [<NoEquality; NoComparison>] EncounterData =
@@ -641,19 +639,19 @@ module Data =
         Map.ofListBy (fun data -> getKey data, data) value
 
     let private readFromFiles () =
-        { Weapons = readSheet Assets.Field.WeaponDataFilePath (fun data -> data.WeaponType)
-          Armors = readSheet Assets.Field.ArmorDataFilePath (fun data -> data.ArmorType)
-          Accessories = readSheet Assets.Field.AccessoryDataFilePath (fun data -> data.AccessoryType)
-          Consumables = readSheet Assets.Field.ConsumableDataFilePath (fun data -> data.ConsumableType)
-          Techs = readSheet Assets.Field.TechDataFilePath (fun data -> data.TechType)
-          Archetypes = readSheet Assets.Field.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
-          Characters = readSheet Assets.Field.CharacterDataFilePath (fun data -> data.CharacterType)
-          Shops = readSheet Assets.Field.ShopDataFilePath (fun data -> data.ShopType)
-          Fields = readSheet Assets.Field.FieldDataFilePath (fun data -> data.FieldType)
-          Battles = readSheet Assets.Field.BattleDataFilePath (fun data -> data.BattleType)
-          Encounters = readSheet Assets.Field.EncounterDataFilePath (fun data -> data.EncounterType)
-          TechAnimations = readSheet Assets.Field.TechAnimationDataFilePath (fun data -> data.TechType)
-          CharacterAnimations = readSheet Assets.Field.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
+        { Weapons = readSheet Assets.Data.WeaponDataFilePath (fun data -> data.WeaponType)
+          Armors = readSheet Assets.Data.ArmorDataFilePath (fun data -> data.ArmorType)
+          Accessories = readSheet Assets.Data.AccessoryDataFilePath (fun data -> data.AccessoryType)
+          Consumables = readSheet Assets.Data.ConsumableDataFilePath (fun data -> data.ConsumableType)
+          Techs = readSheet Assets.Data.TechDataFilePath (fun data -> data.TechType)
+          Archetypes = readSheet Assets.Data.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
+          Characters = readSheet Assets.Data.CharacterDataFilePath (fun data -> data.CharacterType)
+          Shops = readSheet Assets.Data.ShopDataFilePath (fun data -> data.ShopType)
+          Fields = readSheet Assets.Data.FieldDataFilePath (fun data -> data.FieldType)
+          Battles = readSheet Assets.Data.BattleDataFilePath (fun data -> data.BattleType)
+          Encounters = readSheet Assets.Data.EncounterDataFilePath (fun data -> data.EncounterType)
+          TechAnimations = readSheet Assets.Data.TechAnimationDataFilePath (fun data -> data.TechType)
+          CharacterAnimations = readSheet Assets.Data.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
 
     let Value =
         readFromFiles ()
