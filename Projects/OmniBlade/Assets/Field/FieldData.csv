@@ -1,6 +1,0 @@
-Type,FieldTileMap,FieldBackgroundColor,FieldSongOpt,EncounterTypeOpt,TreasureList
-DebugRoom,[FieldStatic [Field DebugRoom]],[8 8 8 255],[Some [Field Field]],None,[]
-DebugRoom2,[FieldStatic [Field DebugRoom2]],[8 8 8 255],[Some [Field Field]],[Some DebugEncounter],[]
-TombOuter,[FieldStatic [Field TombOuter]],[131 156 172 255],[Some [Field TombOuter]],None,[]
-TombInner,[FieldStatic [Field TombInner]],[41 41 32 255],[Some [Field TombInner]],None,[]
-Cave,"[FieldRandom 15 0.1 OriginSW ""Assets/Field/Cave""]",[41 41 32 255],[Some [Field Stirrings]],[Some CaveEncounter],[[Equipment [WeaponType BronzeSword]] [Equipment [WeaponType BronzeSword]] [Equipment [ArmorType BronzeMail]] [Equipment [ArmorType BronzeMail]] [Stash 10] [Stash 10] [Consumable GreenHerb] [Consumable GreenHerb] [Consumable GreenHerb] [Consumable GreenHerb] [Consumable GreenHerb] [Consumable GreenHerb]]

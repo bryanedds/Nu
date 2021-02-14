@@ -294,11 +294,11 @@ module Character =
 
     let empty =
         let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
-        let animationState = { TimeStart = 0L; AnimationSheet = Assets.Field.FinnAnimationSheet; AnimationCycle = IdleCycle; Direction = Downward }
+        let animationState = { TimeStart = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; AnimationCycle = IdleCycle; Direction = Downward }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = AllyIndex 0
-          CharacterType_ = Ally Finn
+          CharacterType_ = Ally Jinn
           CharacterState_ = CharacterState.empty
           AnimationState_ = animationState
           AutoBattleOpt_ = None

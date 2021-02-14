@@ -32,7 +32,7 @@ module AvatarDispatcher =
 
     type AvatarDispatcher () =
         inherit EntityDispatcher<Avatar, AvatarMessage, AvatarCommand>
-            (Avatar.make (v4Bounds v2Zero Constants.Gameplay.CharacterSize) Assets.Field.FinnAnimationSheet Downward)
+            (Avatar.make (v4Bounds v2Zero Constants.Gameplay.CharacterSize) Assets.Field.JinnAnimationSheet Downward)
 
         static let coreShapeId = Gen.id
         static let sensorShapeId = Gen.id
@@ -72,8 +72,8 @@ module AvatarDispatcher =
         override this.Initializers (avatar, entity) =
             let bodyShapes =
                 BodyShapes
-                    [BodyCircle { Radius = 0.22f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
-                     BodyCircle { Radius = 0.33f; Center = v2 0.0f -0.3f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
+                    [BodyCapsule { Height = 0.01f; Radius = 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
+                     BodyCircle { Radius = 0.25f; Center = v2 -0.01f -0.36f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
             [entity.Bounds <== avatar --> fun avatar -> avatar.Bounds
              entity.FixedRotation == true
              entity.GravityScale == 0.0f

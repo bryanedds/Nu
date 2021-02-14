@@ -40,6 +40,8 @@ module Battle =
               Characters_ : Map<CharacterIndex, Character>
               Inventory_ : Inventory
               PrizePool_ : PrizePool
+              TileMap_ : TileMap AssetTag
+              BattleSongOpt_ : Song AssetTag option
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand Queue
               DialogOpt_ : Dialog option }
@@ -48,6 +50,8 @@ module Battle =
         member this.BattleState = this.BattleState_
         member this.Inventory = this.Inventory_
         member this.PrizePool = this.PrizePool_
+        member this.TileMap = this.TileMap_
+        member this.BattleSongOpt = this.BattleSongOpt_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
         member this.DialogOpt = this.DialogOpt_
@@ -178,11 +182,14 @@ module Battle =
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
+        let tileMap = battleData.BattleTileMap
         let battle =
             { BattleState_ = BattleReady time
               Characters_ = characters
               Inventory_ = inventory
               PrizePool_ = prizePool
+              TileMap_ = tileMap
+              BattleSongOpt_ = battleData.BattleSongOpt
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty
               DialogOpt_ = None }
@@ -216,6 +223,8 @@ module Battle =
           Characters_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
           PrizePool_ = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
+          TileMap_ = Assets.Field.DebugBattleTileMap
+          BattleSongOpt_ = None
           CurrentCommandOpt_ = None
           ActionCommands_ = Queue.empty
           DialogOpt_ = None }

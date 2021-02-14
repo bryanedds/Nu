@@ -1,7 +1,0 @@
-Type,BattleAllyPositions,BattleEnemies,BattleSongOpt
-DebugBattle,[[-60 -192] [-342 -96] [240 -90]],[[BlueGoblin [-144 18]] [BlueGoblin [24 36]]],[Some [Battle Battle]]
-CaveBattle,[[-60 -192] [-342 -96] [240 -90]],[[BlueGoblin [-60 42]]],[Some [Battle Battle]]
-CaveBattle2,[[-60 -192] [-342 -96] [240 -90]],[[BlueGoblin [-144 18]] [BlueGoblin [24 36]]],[Some [Battle Battle]]
-CaveBattle3,[[-60 -192] [-342 -96] [240 -90]],[[PoisonGoblin [-60 42]]],[Some [Battle Battle]]
-CaveBattle4,[[-60 -192] [-342 -96] [240 -90]],[[BlueGoblin [-180 66]] [PoisonGoblin [-54 126]] [BlueGoblin [60 54]]],[Some [Battle Battle]]
-FireGoblinBattle,[[-60 -192] [-342 -96] [240 -90]],[[PoisonGoblin [-174 84]] [FireGoblin [-60 12]] [BlueGoblin [48 108]]],[Some [Battle Battle]]

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="3" nextobjectid="1">
+ <tileset firstgid="1" source="Cave.tsx"/>
+ <layer id="2" name="Floor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwwEJAAAMA6DxaOsfaj2Ogr2kqqqq6usDp54QEA==
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztk8sJgDAQRDU1+OvIX6dqSypqIyaIEGSFza7Eywy8S8B5iTC5SZI8kMLyTCbokfKnv7e0hL+2Z12kt0+EfzBx/oHzr4R/juh/C/zwS3vdrhsG1PY1fr93ZEBtX+P3excG1PY1fk4vNxL/l4E/3L+nF0eqc2/2+1Lgv6m8u0jQuAEAAIDYnEc4dVY=
+  </data>
+ </layer>
+</map>

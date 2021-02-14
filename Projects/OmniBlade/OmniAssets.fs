@@ -13,91 +13,94 @@ module Assets =
         let SaveFilePath = "OmniBlade.sav"
 
     [<RequireQualifiedAccess>]
+    module Data =
+        
+        let WeaponDataFilePath = "Assets/Data/WeaponData.csv"
+        let ArmorDataFilePath = "Assets/Data/ArmorData.csv"
+        let AccessoryDataFilePath = "Assets/Data/AccessoryData.csv"
+        let ConsumableDataFilePath = "Assets/Data/ConsumableData.csv"
+        let TechDataFilePath = "Assets/Data/TechData.csv"
+        let ArchetypeDataFilePath = "Assets/Data/ArchetypeData.csv"
+        let CharacterDataFilePath = "Assets/Data/CharacterData.csv"
+        let ShopDataFilePath = "Assets/Data/ShopData.csv"
+        let FieldDataFilePath = "Assets/Data/FieldData.csv"
+        let BattleDataFilePath = "Assets/Data/BattleData.csv"
+        let EncounterDataFilePath = "Assets/Data/EncounterData.csv"
+        let TechAnimationDataFilePath = "Assets/Data/TechAnimationData.csv"
+        let CharacterAnimationDataFilePath = "Assets/Data/CharacterAnimationData.csv"
+
+    [<RequireQualifiedAccess>]
     module Gui =
 
         let PackageName = "Gui"
-        let Font = asset<Font> PackageName "Font"
-        let DialogThinImage = asset<Image> PackageName "DialogThin"
-        let DialogThickImage = asset<Image> PackageName "DialogThick"
-        let DialogXLImage = asset<Image> PackageName "DialogXL"
-        let DialogXXLImage = asset<Image> PackageName "DialogXXL"
-        let ButtonUpImage = asset<Image> PackageName "ButtonUp"
-        let ButtonDownImage = asset<Image> PackageName "ButtonDown"
-        let ButtonShortUpImage = asset<Image> PackageName "ButtonShortUp"
-        let ButtonShortDownImage = asset<Image> PackageName "ButtonShortDown"
+        let Font = asset<Font> PackageName "Font" // TODO: P1: See if this is openly licensed (manaspace font).
+        let Splash = asset<Image> PackageName "Splash"
+        let DialogThinImage = asset<Image> PackageName "DialogThin" // TODO: P1: Convert tile sheet.
+        let DialogThickImage = asset<Image> PackageName "DialogThick" // TODO: P1: Convert tile sheet.
+        let DialogXLImage = asset<Image> PackageName "DialogXL" // TODO: P1: Convert tile sheet.
+        let DialogXXLImage = asset<Image> PackageName "DialogXXL" // TODO: P1: Convert tile sheet.
+        let ButtonUpImage = asset<Image> PackageName "ButtonUp" // TODO: P1: Convert tile sheet.
+        let ButtonDownImage = asset<Image> PackageName "ButtonDown" // TODO: P1: Convert tile sheet.
+        let ButtonShortUpImage = asset<Image> PackageName "ButtonShortUp" // TODO: P1: Convert tile sheet.
+        let ButtonShortDownImage = asset<Image> PackageName "ButtonShortDown" // TODO: P1: Convert tile sheet.
         let AffirmSound = asset<Sound> PackageName "Affirm"
         let MistakeSound = asset<Sound> PackageName "Mistake"
-        let WindSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Wind" }
         let TitleSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Title" }
-        let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
-        let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
-        let IntroLayerFilePath = "Assets/Gui/Intro.nulyr"
-        let Intro2LayerFilePath = "Assets/Gui/Intro2.nulyr"
-        let Intro3LayerFilePath = "Assets/Gui/Intro3.nulyr"
-        let Intro4LayerFilePath = "Assets/Gui/Intro4.nulyr"
-        let Intro5LayerFilePath = "Assets/Gui/Intro5.nulyr"
-        
+        let IntroSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = 1500; Song = asset<Song> PackageName "Intro" }
+        let TitleLayerFilePath = "Assets/Gui/Layers/Title.nulyr"
+        let CreditsLayerFilePath = "Assets/Gui/Layers/Credits.nulyr"
+        let IntroLayerFilePath = "Assets/Gui/Layers/Intro.nulyr"
+        let Intro2LayerFilePath = "Assets/Gui/Layers/Intro2.nulyr"
+        let Intro3LayerFilePath = "Assets/Gui/Layers/Intro3.nulyr"
+        let Intro4LayerFilePath = "Assets/Gui/Layers/Intro4.nulyr"
+        let Intro5LayerFilePath = "Assets/Gui/Layers/Intro5.nulyr"
+
     [<RequireQualifiedAccess>]
     module Field =
 
         let PackageName = "Field"
-        let DebugRoomTileMap = asset<TileMap> PackageName "DebugRoom"
+        let DebugRoomTileMap = asset<TileMap> PackageName "DebugRoom" // TODO: P1: Convert tile sheet.
+        let DebugBattleTileMap = asset<TileMap> PackageName "DebugBattle" // TODO: P1: Convert tile sheet.
         let WoodenChestOpenedImage = asset<Image> PackageName "WoodenChestOpened"
         let WoodenChestClosedImage = asset<Image> PackageName "WoodenChestClosed"
         let BrassChestOpenedImage = asset<Image> PackageName "BrassChestOpened"
         let BrassChestClosedImage = asset<Image> PackageName "BrassChestClosed"
-        let WoodenDoorOpenedImage = asset<Image> PackageName "WoodenDoorOpened"
-        let WoodenDoorClosedImage = asset<Image> PackageName "WoodenDoorClosed"
-        let ThrowSwitchOffImage = asset<Image> PackageName "ThrowSwitchOff"
-        let ThrowSwitchOnImage = asset<Image> PackageName "ThrowSwitchOn"
-        let StepPlateImage = asset<Image> PackageName "StepPlate"
-        let SavePointImage = asset<Image> PackageName "SavePoint"
+        let WoodenDoorOpenedImage = asset<Image> PackageName "WoodenDoorOpened" // TODO: P1: Convert art.
+        let WoodenDoorClosedImage = asset<Image> PackageName "WoodenDoorClosed" // TODO: P1: Convert art.
+        let ThrowSwitchOffImage = asset<Image> PackageName "ThrowSwitchOff" // TODO: P1: Convert art.
+        let ThrowSwitchOnImage = asset<Image> PackageName "ThrowSwitchOn" // TODO: P1: Convert art.
+        let StepPlateImage = asset<Image> PackageName "StepPlate" // TODO: P1: Convert art.
+        let SavePointImage = asset<Image> PackageName "SavePoint" // TODO: P1: Convert art.
         let NpcAnimationSheet = asset<Image> PackageName "Npcs"
         let ShopkeepAnimationSheet = asset<Image> PackageName "Shopkeep"
-        let FinnAnimationSheet = asset<Image> PackageName "Finn"
-        let FinnPortraitImage = asset<Image> PackageName "FinnPortrait"
-        let GlennAnimationSheet = asset<Image> PackageName "Glenn"
-        let GlennPortraitImage = asset<Image> PackageName "GlennPortrait"
-        let GoblinAnimationSheet = asset<Image> PackageName "Goblin"
-        let BeastScreamSound = asset<Sound> PackageName "BeastScream"
-        let EnterBattleSound = asset<Sound> PackageName "EnterBattle"
+        let JinnAnimationSheet = asset<Image> PackageName "Jinn"
+        let JinnPortraitImage = asset<Image> PackageName "JinnPortrait"
+        let StepStairSound = asset<Sound> PackageName "StepStair"
+        let StepPlateSound = asset<Sound> PackageName "StepPlate"
+        let StepSaveSound = asset<Sound> PackageName "StepSave"
+        let BeastGrowlSound = asset<Sound> PackageName "BeastGrowl"
+        let BeastDeathSound = asset<Sound> PackageName "BeastDeath"
         let HealSound = asset<Sound> PackageName "Heal"
         let PurchaseSound = asset<Sound> PackageName "Purchase"
         let SaveSound = asset<Sound> PackageName "Save"
-        let OpenDoorSound = asset<Sound> PackageName "Unlatch"
-        let OpenChestSound = asset<Sound> PackageName "Unlatch2"
-        let TriggerSound = asset<Sound> PackageName "Unlatch3"
+        let DoorOpenSound = asset<Sound> PackageName "DoorOpen"
+        let ChestOpenSound = asset<Sound> PackageName "ChestOpen"
         let UseSwitchSound = asset<Sound> PackageName "Unlatch4"
-        let StairStepsSound = asset<Sound> PackageName "StairSteps"
         let UnsheatheSound = asset<Sound> PackageName "Unsheathe"
         let GrowthSound = asset<Sound> PackageName "Growth"
         let HitSound = asset<Sound> PackageName "Hit"
         let SlashSound = asset<Sound> PackageName "Slash"
+        let ThunderSound = asset<Sound> PackageName "Thunder"
         let ExplosionSound = asset<Sound> PackageName "Explosion"
-        let DeathSound = asset<Sound> PackageName "Death"
         let FieldSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Field" }
-        let WeaponDataFilePath = "Assets/Field/WeaponData.csv"
-        let ArmorDataFilePath = "Assets/Field/ArmorData.csv"
-        let AccessoryDataFilePath = "Assets/Field/AccessoryData.csv"
-        let ConsumableDataFilePath = "Assets/Field/ConsumableData.csv"
-        let TechDataFilePath = "Assets/Field/TechData.csv"
-        let ArchetypeDataFilePath = "Assets/Field/ArchetypeData.csv"
-        let CharacterDataFilePath = "Assets/Field/CharacterData.csv"
-        let ShopDataFilePath = "Assets/Field/ShopData.csv"
-        let FieldDataFilePath = "Assets/Field/FieldData.csv"
-        let BattleDataFilePath = "Assets/Field/BattleData.csv"
-        let EncounterDataFilePath = "Assets/Field/EncounterData.csv"
-        let TechAnimationDataFilePath = "Assets/Field/TechAnimationData.csv"
-        let CharacterAnimationDataFilePath = "Assets/Field/CharacterAnimationData.csv"
 
     [<RequireQualifiedAccess>]
     module Battle =
         
         let PackageName = "Battle"
-        let CancelImage = asset<Image> PackageName "Cancel"
-        let BoltAnimationSheet = asset<Image> PackageName "Bolt"
-        let CycloneBlurAnimationSheet = asset<Image> PackageName "CycloneBlur"
-        let SpikeAnimationSheet = asset<Image> PackageName "Spike"
-        let ExplosionAnimationSheet = asset<Image> PackageName "Explosion"
-        let ImpactSplashAnimationSheet = asset<Image> PackageName "ImpactSplash"
-        let BattleSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Battle" }
+        let CancelImage = asset<Image> PackageName "Cancel" // TODO: P1: Convert all icon art.
+        let BoltAnimationSheet = asset<Image> PackageName "Bolt" // TODO: P1: Convert effect art.
+        let CycloneBlurAnimationSheet = asset<Image> PackageName "CycloneBlur" // TODO: P1: Convert effect art.
+        let SpikeAnimationSheet = asset<Image> PackageName "Spike" // TODO: P1: Convert effect art.
+        let ExplosionAnimationSheet = asset<Image> PackageName "Explosion" // TODO: P1: Convert effect art.
+        let ImpactSplashAnimationSheet = asset<Image> PackageName "ImpactSplash" // TODO: P1: Convert effect art.

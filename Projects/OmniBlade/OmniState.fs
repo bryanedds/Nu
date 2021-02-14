@@ -189,29 +189,9 @@ type [<ReferenceEquality; NoComparison>] Teammate =
             HitPoints = teammate.HitPointsMax
             TechPoints = teammate.TechPointsMax }
 
-    static member finn =
+    static member jinn =
         let index = 0
-        let characterType = Ally Finn
-        let character = Map.find characterType Data.Value.Characters
-        let expPoints = Algorithms.levelToExpPoints character.LevelBase
-        let archetypeType = character.ArchetypeType
-        let weaponOpt = character.WeaponOpt
-        let armorOpt = character.ArmorOpt
-        let accessories = character.Accessories
-        { ArchetypeType = archetypeType
-          TeamIndex = index
-          PartyIndexOpt = Some index
-          CharacterType = characterType
-          HitPoints = Algorithms.hitPointsMax armorOpt archetypeType character.LevelBase
-          TechPoints = Algorithms.techPointsMax armorOpt archetypeType character.LevelBase
-          ExpPoints = expPoints
-          WeaponOpt = weaponOpt
-          ArmorOpt = armorOpt
-          Accessories = accessories }
-
-    static member glenn =
-        let index = 1
-        let characterType = Ally Glenn
+        let characterType = Ally Jinn
         let character = Map.find characterType Data.Value.Characters
         let expPoints = Algorithms.levelToExpPoints character.LevelBase
         let archetypeType = character.ArchetypeType
@@ -353,10 +333,10 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
 
     static member directionToInt direction =
         match direction with
-        | Downward -> 0
-        | Leftward -> 1
-        | Upward -> 2
-        | Rightward -> 3
+        | Upward -> 0
+        | Rightward -> 1
+        | Downward -> 2
+        | Leftward -> 3
 
     static member timeLocal time state =
         time - state.TimeStart
@@ -421,7 +401,7 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
 
     static member empty =
         { TimeStart = 0L
-          AnimationSheet = Assets.Field.FinnAnimationSheet
+          AnimationSheet = Assets.Field.JinnAnimationSheet
           AnimationCycle = IdleCycle
           Direction = Downward }
 

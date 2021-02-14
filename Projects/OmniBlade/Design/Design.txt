@@ -1,109 +1,166 @@
+OmniBlade Design Document
+
+Dungeon Structure -
+
 overall, I want to have a looting style of gameplay
 the fights will be lightly randomly encountered and chests will have many monster-in-a-boxes.
-if the player dies, they go back to the main menu
+if the player dies, they go back to the main menu. high stakes gameplay is a key design point.
 and you can only save outside of a dungeon
-bryaneddsToday at 11:07 AM
-i think i'll make all dungeons accessible from the start, but in order to enter all but the first one, you have to use a key to get in which can be bought from a shop.
-and whenever the player leaves the dungeon, the door is relocked.
+all dungeons are accessible from the start, but in order to enter all but the first one, you have to use a key to get in which can be bought from the shop. and whenever the player leaves the dungeon, the door is relocked.
 higher level dungeons require more expensive keys
-additionally, you can pay to recruit additional characters other than your main character.
-these are strange design mechanics, but that's because the first game won't be story-based for scoping reasons.
-I do need to decide on the theme for the game, too.
-bryaneddsToday at 11:23 AM
-okay, there were once 13 elementally-differentiated demons that came together to destroy the world.
+
+Party Structure -
+
+you can hire a new party member in any order, but each consecutive hire costs significantly more so that you won't be able to acquire them all until stage 4 or 5.
+
+Story / Progress Structure -
+
+There were once 9 demons that came together to destroy the world.
 the heroes of yore came together to destroy them, however, they found that they could not be killed.
 so instead they pushed them back into the ancient tomb from whence they came and locked them within.
-it is rumored that the demons had hoarded vast treasures in the tomb.
-as a treasure hunter, you received word that an alchemist who was researching the mysteries of the ancient seals was traveling to the gates. Additionally, one of the seals has already been broken.
-you hear that other treasure hunters had picked up this word as well.
+it is rumored that the demons had hoarded vast treasures in the tomb, including the sword of the goddess of time, OmniBlade.
+as a treasure hunter, you received word that an alchemist who was researching the mysteries of the ancient seals was traveling to the gates. you hear that other explorer had picked up this word as well.
 not believing in anything such as 'ancient demons', you decide to make the trip to investigate what treasures can be liberated by yours truly before anyone else.
-mechanically, this will provide the player with 12 different doors to unlock and 13 elementally-differentiated labyrinths to explore.
-bryaneddsToday at 11:44 AM
-in practice, that means i need to go ahead and design the tomb entrance area.
-it will be an outside area with some tents propped up here and there containing traders as well as rival treasure hunters
-each level will be themed around its associated demon theme - fire, ice, water, earth, castle, jungle, and so on.
+In order to open the door to the entrance to the next section, you must find one of the 'echoes' of the possessed. After their exposition, they will leave behind a trinket that will open the way.
 
-"They became the rule makers by, ironically, breaking all the rules. They realized that - when all is said and done - only those who lie are believed, and only those who cheat, win. Those without power will always be regarded as contemptible. Those who reject power on principle, who speak truth to power, will be made the scapegoats of its worst evils. This is the world you live in, breathe in, swim in. It is an ocean of corruption."
-Michael (aganm)Today at 11:48 AM
-that quote sounds pretty darn accurate to me
-bryaneddsToday at 11:49 AM
-I'm thinking about putting it as a line the game.
-I still haven't figured out a back story, so I'm taking fragments of my own thoughts and see if they will build a narrative.
-This line explains how the 9 ancient demons came to power.
-What I haven't yet figured out is how they were defeated.
-Michael (aganm)Today at 11:55 AM
-do you have a summary of the back story that you want to write?
-bryaneddsToday at 11:56 AM
-not really - it's still kicking around
-the premise of the game is that you are a treasure hunter looting the recently-discovered tomb of 9 ancient demons
-i have just enough story to make the game mechanics fit together
-but I'm still working on the back story
-bryaneddsToday at 12:11 PM
-"It's not the light that you see, it's the light that you be."
-perhaps the heroes antithesis to the above.
-bryaneddsToday at 12:32 PM
-"And should your light shine to bright or too long? It is inevitable that a demon of darkness will come to throw shade upon you..."
-"Then remind that demon that, after his fleeting time in the world, he is hellbound. Tho time moves slow in the moment, as the season pass, we all reflect how the current year was shorter than that last."
-"Constantly, we all accelerate to our ultimate place in the cosmos. Faster and faster we move toward it. When the demons is stripped of all his worldly treasures in death, all he will be left with is Judgment."
-"Were you a light, or were you a shade upon lights?"
-"At the end of all things, what else could possibly matter?"
+Narrative Structure -
 
-Level Topologies
+The journey through each stage is a series of encounters with the 'echo' of a person who the stage's demon is using to link into the world. The echo is the character's self-recollection at different points in their life, usually malformative. The dialog is what they said during those various points in time. From a psychological perspective, you're watching them relive their experiences. The echo can see you and even address you, but they don't know who you are and are often not interested in why you're there. You see your surroundings, but they see the environment in which their life event took place. Through their monologue, you witness the origin of the thoughts that turned into obsessions that became portals through which demons could enter them. When the demon is defeated, you see their echoes converge and form a ghost that can now see reality as what it is. Through instrospection, they come to understand their weakness and its consequences. They finish their self-talk / monologue. You then tell them "It's time to go." A light falls over them, and they rise and fade.
 
- /\
-/\ \
+Ultimately, you learn that you were called there for the same reason as those who are trapped. It is by your own pathological desires that you were drawn there - material desire and a hatred for suffering. If you choose to take the OmniBlade at the end of the game, you will be succumb to possession and your soul becomes a portal through which the army of Hell emerges to destroy the world.
 
- -|
-  |
-  |-
+And of course, the mysterious NPC who is helping you is really himself possessed and trying to ensnare you. He planned for you to liberate the souls of the possessed people with the treasures you had found in the tomb as a loss leader to tempt you with possession of its ultimate weapon, OmniBlade. He argues that with the this weapon, you will be able to liberate the souls of not just a few, but the whole world from the endless cycle of suffering.
 
- _
-/ \
-| |
-\_/
- 
- ---
-|   |
------
-|   |
- ---
+Levels -
 
- ---
-| | |
------
-| | |
- ---
+Cave (The Girl who was Never Free) -
 
-----
-\/\/
- --
+She never knew freedom. She was a servent of a servent of a Queen who, many suspect, killed the King. She poisoned her master and took her place. Through treachery and cunning, she rose through the servant ranks. When a vassal from another kingdom offered her freedom as his bride, she turned him down. Not because he was unseemly, but because of all of the power she had come to wield other those who once humiliated her. Later, after hearing news of his death, she turned her thoughts back to him. She became enraged and devoted the rest of her life to being as wicked as she could be to those below her.
 
-____
-\/\/
- \/
+When she passed, her lingering soul became a portal for the Demon of Entanglement (Spider) to return to the world.
 
- --
- \/
- /\
- --
+Forest (The Man with Unfinished Business) -
 
- /\
- --
- \/
- /\
- --
- \/
+He knew death was near. He had too many things left to do. Too many scores to settle. Too many loose ends to tie up. He would do anything to get the time required to preserve his legacy. If he could trade his soul to maintain his business, he would do it. It was said that there was an exiled princess living in the forest that can give life beyond death...
 
-  _
- / \
-|\ /|
- \|/
+He gave himself to the lady. Henceforth, he extended his life by devouring the blood of others. For many years he carried out his business. But one day he was accused of being a vampire. He tried to defend himself and his legacy, but eventually his son and only heir would come to know the truth. The son came to his father sword in hand. But the son was slain instead. Outside he could hear the people rabbling. The building had been put to flame. In fire, he perished cursing the people, the country, and God himself. His soul went to where it was promised - into the hands of the Demon of Undeath (Lich).
 
-______
-\/\/\/
- \/\/
-  \/
+Desert (The Boy who was Stranded) -
 
-Twisted Ring Topology
+Factory (The Woman with a Broken Heart) -
 
-Degenerate Connected 5 Pentagon
+Too many have been devoured by disease. Everything is dying. But there is no time to cry. There is no time to feel anything at all. These machines we build, they are the only things that will survive this. I will become like this machine. We know how the mind works. We know how to keep what is needed and how to throw away the rest. The mind is just another machine... We can fix a machine. I will be the first to do this knowing the consequences. I will keep what is needed. I will throw away the rest.
+
+After the last member of her village passed, she started walking the road to the neighboring village. There, she found only several surviving children. She could see in their eyes the unbearable pain she could once feel. Do not cry children. Your minds are just another machine... We can fix a machine. We will keep what is needed. We will throw away the rest...
+
+The Demon of Machinery (Robomination) could not but agree with so clearly rational a sentiment.
+
+Castle (The Lady Whose Child Was Lost) -
+
+She lost her husband to war. All that remained of his memory is their son. His eyes were just like his father's. One day she was summoned to the castle for business about recompense for her husband's death. Accompanied by her young son, she walked through the busiest hall of the castle. Where is he? She called out to him. He is gone. Please help me find him. What do you mean you cannot find him? The castle may be closing to the public, but I cannot find my son. Please let me find my son. Please let me back in. How can you put me out here? Please let me find my son... No one brings word. No one knows his whereabouts. This stipend is all I have of their memory. They took them both from me. You tell me to not despair. You tell me to have faith. You do not know what this means. I will go to the lake. I will not return.
+
+Her soul came into possession Demon of Despair (Hydra)
+
+(Resolution) "I saw your eyes in a dream... I'm sorry. I miss you..."
+
+Jungle (The Boy who could not Forgive - Demon of Revenge) -
+
+A frail boy with a gentle heart living under the yoke of a devouring monster. He would do anything for protection, but even those who would protect him turned against him out of fear. There is no cost too high to pay for vengenace... (pathological vengeance-seeking - demon of hatred).
+
+Mountain (The Prince Who Would Have Nothing) -
+
+A prince who saw the corrupting evils of materialism, who escaped to the mountain to live a life of meagerness... (pathological ego denial - demon of devouring)
+
+Ruins (The Girl Who Danced for Hell) -
+
+She was a bucket of paint. She wanted to spill herself all over the world. She will do anything to manifest her (pathological vanity - demon of hell's opening gate)
+
+Dead Sea (The Boy Who Was Stranded - Demon of Chaos) -
+
+Seasons (The Man torn by War) -
+
+On his father's side, the West. On his mother's, the East. A leader with divided loyalties. In time, he grew to hate both sides. If their terrible nature were to drag him to death, he would take all of them with him using a forbidden weapon (pathological rage - demon of destruction)
+
+Volcano (The Girl With The Endless Dream) -
+
+She could not face reality, so she locked herself in a dream... (pathological escapism - demon of delusion)
+
+Dev Notes -
+
+Allies should stand at west, south, east in battlefield to maximize number of line attacks.
+
+Battle Structure -
+
+Enemy Layout Types (N = Normal Enemy, B = Big Enemy) -
+
+[N] - Stage 1 Only
+[B]
+
+[NN]
+[BN]
+[BB]
+[N][N]
+[B][N]
+[B][B]
+
+[NNN] - Ideal for player in terms of risk / reward.
+[NBN] - Ideal for player but slightly harder.
+[BNB] - Attack on N may split group.
+[N][NN] - Easy for player to prioritize.
+[B][NN] - Difficult for player to prioritize.
+[BB][N] - Strange, short mop-up.
+[BB][B] - Interesting.
+[N][N][N] - Can be tedious.
+[N][B][N] - Can be tedious and drawn out.
+
+[NNNN] - Only 3 of 4 may be hit w/ cyclone.
+[BNNN]
+[BNNB] - Attack on N may split group.
+[B][NNN]
+[BN][BN]
+[BB][N][N] - Longer mop up.
+[BBB][N] - Difficult, short mop up.
+[N][N][N][N] - Very tedious if no line attacks materialize.
+
+[BBB][N][N] - Difficult, long mop up.
+[NNN][N][N]
+[NNNNN] - Only 3 of 5 may be hit w/ cyclone.
+[NNBNN] - Only 3 of 5 may be hit w/ cyclone.
+[NBNBN] - Only 3 of 5 may be hit w/ cyclone.
+[BNNNB] - Only 3 of 5 may be hit w/ cyclone.
+[NBBBN] - Only 3 of 5 may be hit w/ cyclone. Difficult.
+[B][NNN][B]
+
+[NNNNNN] - N's should be on the weaker side (like bats).
+[NNN][NNN] - N's should be on the weaker side (like bats).
+[NBN][NBN] - Boss level challenge.
+
+Level 1A (50% B) -
+[*]
+
+Level 1B (50% B) -
+[**]
+[*][*]
+
+Level 2A (50% B) -
+[***]
+[**][*]
+[*][*][*]
+
+Level 2B (50% B, Max 3) -
+[****]
+[***][*]
+[**][**]
+[**][*][*]
+[*][*][*][*]
+
+Level 3A (50% B, Max 3) -
+[*****]
+[****][*]
+[***][**]
+[***][*][*]
+
+Level 3B (50% B, Max 3) -
+[******]
+[****][**]
+[***][***]

@@ -363,14 +363,14 @@ module Field =
 
     let debug =
         { empty with
-            Team_ = Map.singleton 0 Teammate.finn }
+            Team_ = Map.singleton 0 Teammate.jinn }
 
     let initial randSeedState =
         { empty with
             FieldType_ = TombOuter
             OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
             Avatar_ = Avatar.initial
-            Team_ = Map.singleton 0 Teammate.finn
+            Team_ = Map.singleton 0 Teammate.jinn
             Inventory_ = Inventory.initial }
 
     let save field =

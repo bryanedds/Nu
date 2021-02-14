@@ -176,7 +176,7 @@ module FieldDispatcher =
                     | Some battleType -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!^But something approaches!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = Some (Set.empty, battleType) })) field
                     | None -> Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Found " + ItemType.getName itemType + "!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field
                 let field = Field.updateAdvents (Set.addMany consequents) field
-                withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.OpenChestSound)) field
+                withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
             else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
 
         static let interactDoor requirements consequents (prop : Prop) (field : Field) =
@@ -185,7 +185,7 @@ module FieldDispatcher =
                 if field.Advents.IsSupersetOf requirements then
                     let field = Field.updateAdvents (Set.addMany consequents) field
                     let field = Field.updatePropStates (Map.add prop.PropId (DoorState true)) field
-                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.OpenDoorSound)) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
                 else just (Field.updateDialogOpt (constant (Some { DialogForm = DialogThin; DialogText = "Locked!"; DialogProgress = 0; DialogPage = 0; DialogBattleOpt = None })) field)
             | _ -> failwithumf ()
 
@@ -342,7 +342,7 @@ module FieldDispatcher =
                             withCmd songCmd field
 
                         // finish transition
-                        elif time = fieldTransition.FieldTransitionTime then
+                        elif time = dec fieldTransition.FieldTransitionTime then
                             let field = Field.updateFieldTransitionOpt (constant None) field
                             just field
 
@@ -368,7 +368,7 @@ module FieldDispatcher =
                                   FieldDirection = direction
                                   FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
                             let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
-                            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StairStepsSound)) field
+                            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)) field
                         else just field
                     | None -> just field
                 | Some _ -> just field
@@ -383,7 +383,7 @@ module FieldDispatcher =
                                 let field = Field.updateAdvents (constant (Set.union consequents field.Advents)) field
                                 match sensorType with
                                 | AirSensor -> (cmds, field)
-                                | HiddenSensor | StepPlateSensor -> (Command (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.TriggerSound)) :: cmds, field)
+                                | HiddenSensor | StepPlateSensor -> (Command (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: cmds, field)
                             else (cmds, field))
                             ([], field) sensors
                     results
@@ -426,7 +426,7 @@ module FieldDispatcher =
                         let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                         let field = Field.updateTeam (Map.add index teammate) field
                         let field = Field.updateSubmenu (constant { field.Submenu with SubmenuUseOpt = None }) field
-                        if result then withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
+                        if result then withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
                         else just field
                     | None -> just field
                 | None -> just field
@@ -501,7 +501,7 @@ module FieldDispatcher =
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromTeam (Field.getParty field) field.Inventory prizePool battleData time
                     let field = Field.updateBattleOpt (constant (Some battle)) field
-                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastScreamSound)) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
 
             | Traverse velocity ->
@@ -510,7 +510,7 @@ module FieldDispatcher =
                     let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromTeam field.Team field.Inventory prizePool battleData (World.getTickTime world)
                     let field = Field.updateBattleOpt (constant (Some battle)) field
-                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastScreamSound)) field
+                    withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | (None, field) -> just field
 
             | Interact ->
@@ -616,7 +616,7 @@ module FieldDispatcher =
 
                  // avatar
                  Content.entity<AvatarDispatcher> Simulants.Field.Scene.Avatar.Name
-                    [Entity.Position == v2Dup 120.0f; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
+                    [Entity.Position == v2Dup 144.0f; Entity.Elevation == Constants.Field.ForegroundElevation; Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Enabled <== field --> fun field ->
                         field.Submenu.SubmenuState = SubmenuClosed &&
                         Option.isNone field.DialogOpt &&
