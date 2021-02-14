@@ -15,7 +15,7 @@ This repository hosts several projects, including -
 
 - the **Nu Game Engine**, a cross-platform F# 2D game engine built in the functional style. Uses SDL2 and Farseer Physics.
 - the sample game **BlazeVector**.
-- the Chrono Trigger-like game being developed in my spare time.
+- the Chrono Trigger-like game, **OmniBlade** that is now in production.
 
 Here is some media on the Nu Game Engine -
 
@@ -28,6 +28,12 @@ Editing a section of a BlazeVector stage.
 ![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
 Editing a special effect in Nu.
 
+![Screenshot](Nu/Projects/OmniBlade/Promotional/OmniBladeBattle.png?raw=true)
+A battle with Goblins in OmniBlade.
+
+![Screenshot](Nu/Projects/OmniBlade/Promotional/OmniBladeOuterTomb.png?raw=true)
+Wandering around the encampment in OmniBlade.
+
 Getting Started
 ===============
 
@@ -38,6 +44,6 @@ https://github.com/bryanedds/Nu/blob/master/Nu/Nu.Documentation/Nu%20Game%20Engi
 No Code of Conduct
 ===============
 
-This project adheres to No Code of Conduct.  We are all adults.  We accept anyone's contributions.  Nothing else matters.
+This project adheres to No Code of Conduct. We are all adults. We accept anyone's contributions. Nothing else matters.
 
 For more information please visit the [No Code of Conduct](https://github.com/domgetter/NCoC) homepage.
