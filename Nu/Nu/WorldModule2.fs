@@ -261,19 +261,24 @@ module WorldModule2 =
             | OutgoingState ->
                 let world =
                     if selectedScreen.GetTransitionTicks world = 0L then
+                        let incoming = selectedScreen.GetIncoming world
+                        let outgoing = selectedScreen.GetOutgoing world
                         let world =
-                            match (selectedScreen.GetOutgoing world).SongOpt with
+                            match outgoing.SongOpt with
                             | Some playSong ->
                                 match World.getScreenTransitionDestinationOpt world with
                                 | Some destination ->
-                                    match ((selectedScreen.GetIncoming world).SongOpt, (destination.GetIncoming world).SongOpt) with
+                                    match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
                                     | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
                                     | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
                                 | None ->
                                     match World.getCurrentSongOpt world with
                                     | Some currentSong -> World.fadeOutSong currentSong.FadeOutMs world
                                     | None -> world
-                            | None -> world
+                            | None ->
+                                let frameMs = 1.0f / single Constants.Engine.DesiredFps * 1000.0f
+                                let fadeMs = single outgoing.TransitionLifeTime * frameMs
+                                World.fadeOutSong (int fadeMs) world // fade out based on outgoing transition time
                         let eventTrace = EventTrace.record4 "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                         World.publish () (Events.OutgoingStart --> selectedScreen) eventTrace selectedScreen world
                     else world
