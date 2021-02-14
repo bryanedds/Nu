@@ -25,14 +25,14 @@ Nu's tutorial game, BlazeVector!
 ![Screenshot](Projects/BlazeVector/Promotional/EditingASectionOfABlazeVectorStage.png?raw=true)
 Editing a section of a BlazeVector stage.
 
-![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
-Editing a special effect in Nu.
-
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeBattle.png?raw=true)
 A battle with Goblins in OmniBlade.
 
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeOuterTomb.png?raw=true)
 Wandering around the encampment in OmniBlade.
+
+![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
+Editing a special effect in Nu.
 
 Getting Started
 ===============
