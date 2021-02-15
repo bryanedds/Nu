@@ -4,7 +4,7 @@ open Prime
 open Nu
 open InfinityRpg
 
-// TODO: see if we can get rid of or generalize this type.
+/// TODO: see if we can get rid of or generalize this type.
 type [<ReferenceEquality; NoComparison>] Reactor =
     | ReactingCharacter of CharacterIndex
     | ReactingPickup of Vector2i
@@ -91,7 +91,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
           Direction = direction
           StartTime = time }
 
-// TODO: consider folding this type into Chessboard.
+/// TODO: consider folding this type into Chessboard.
 type [<ReferenceEquality; NoComparison>] Puppeteer =
     { CharacterTurns : Turn list }
 

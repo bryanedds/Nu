@@ -21,13 +21,11 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Gui =
 
-        // dissolve constants
         let DissolveDescriptor =
             { IncomingTime = 20L
               OutgoingTime = 30L
               DissolveImage = asset<Image> Assets.Gui.PackageName "Dissolve" }
 
-        // splash constants
         let SplashData =
             { DissolveDescriptor = DissolveDescriptor
               IdlingTime = 60L
@@ -36,7 +34,6 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Gameplay =
 
-        // general data
         let CharacterWalkStep = 4
         let CharacterWalkSteps = int Layout.TileSize.X / CharacterWalkStep
         let CharacterAnimationFacingDelay = 16L
