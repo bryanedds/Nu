@@ -6,7 +6,7 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
-// TODO: turn this into an abstract data type.
+/// TODO: turn this into an abstract data type.
 type [<ReferenceEquality; NoComparison>] Chessboard =
     { Spaces : Vector2i Set
       Characters : Map<Vector2i, Character>

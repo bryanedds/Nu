@@ -11,11 +11,11 @@ type InputMode =
     | SelectionInputMode
     | DisabledInputMode
 
-// NOTE: continuity here is the player's ability to perform operations across multiple rounds without processing
-// NoRound in between. rounds are thus linked together preventing the game from alternating between "round on" and
-// "round off" states. in other words, PlayerContinuity effectively tells the game whether to advance the round cycle
-// or turn it off. this is what prevents things like a save button blinking on and off during player navigation and
-// waiting.
+/// NOTE: continuity here is the player's ability to perform operations across multiple rounds without processing
+/// NoRound in between. rounds are thus linked together preventing the game from alternating between "round on" and
+/// "round off" states. in other words, PlayerContinuity effectively tells the game whether to advance the round cycle
+/// or turn it off. this is what prevents things like a save button blinking on and off during player navigation and
+/// waiting.
 type [<ReferenceEquality; NoComparison>] PlayerContinuity =
     | ManualNavigation
     | AutomaticNavigation of NavigationNode list
@@ -35,7 +35,7 @@ type RoundState =
     | FinishingRound
     | NoRound
 
-// TODO: turn this into an abstract data type.
+/// TODO: turn this into an abstract data type.
 type [<ReferenceEquality; NoComparison>] Round =
     { PlayerContinuity : PlayerContinuity
       CharacterMoves : Map<CharacterIndex, Move>
@@ -100,14 +100,14 @@ type [<ReferenceEquality; NoComparison>] Round =
 
     static member removeHeadFromAttackingEnemyGroup round =
         Round.updateAttackingEnemyGroup List.tail round
-    
+
     static member empty =
         { PlayerContinuity = NoContinuity
           CharacterMoves = Map.empty
           WalkingEnemyGroup = []
           AttackingEnemyGroup = [] }
 
-// TODO: turn this into an abstract data type.
+/// TODO: turn this into an abstract data type.
 type [<ReferenceEquality; NoComparison>] Gameplay =
     { Time : int64
       InputMode : InputMode
