@@ -5,7 +5,7 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
-// TODO: turn this into an abstract data type.
+/// TODO: turn this into an abstract data type.
 type [<ReferenceEquality; NoComparison>] Field =
     { FieldMap : FieldMap }
 
