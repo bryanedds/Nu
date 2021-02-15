@@ -223,13 +223,15 @@ module WorldModule2 =
             World.handleAsScreenTransitionPlus<'a, 's> Cascade destination evt world |> snd
 
         static member private updateScreenTransition3 (screen : Screen) transition world =
-            let transitionTicks = screen.GetTransitionTicks world
-            if transitionTicks = dec transition.TransitionLifeTime then
+            let tickRate = World.getTickRate world
+            let transitionTicks = screen.GetTransitionTicks world + tickRate
+            let world = screen.SetTransitionTicks transitionTicks world
+            if transitionTicks = transition.TransitionLifeTime + tickRate then
                 (true, screen.SetTransitionTicks 0L world)
-            elif transitionTicks >= transition.TransitionLifeTime then
+            elif transitionTicks > transition.TransitionLifeTime then
                 Log.debug ("TransitionLifeTime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
                 (true, screen.SetTransitionTicks 0L world)
-            else (false, screen.SetTransitionTicks (transitionTicks + World.getTickRate world) world)
+            else (false, world)
 
         static member private updateScreenTransition2 (selectedScreen : Screen) world =
             match selectedScreen.GetTransitionState world with
