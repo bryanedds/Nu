@@ -179,7 +179,7 @@ module AvatarDispatcher =
                             let physicsId = Simulants.Field.Scene.Avatar.GetPhysicsId world
                             World.applyBodyForce force physicsId world
                         else world
-                    let eventTrace = EventTrace.record4 "Avatar" "Command" "Traverse" EventTrace.empty
+                    let eventTrace = EventTrace.debug "Avatar" "Command" "Traverse" EventTrace.empty
                     let world = World.publish (entity.GetLinearVelocity world) entity.TraverseEvent eventTrace entity world
                     just world
                 else just world
