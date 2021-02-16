@@ -138,7 +138,7 @@ module WorldModuleEntity =
                     changeEventNamesCached.[5] <- entityNames.[2]
                     rtoa<ChangeData> changeEventNamesCached
                 else rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-            let eventTrace = EventTrace.debug "World" "publishEntityChange" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
             let sorted = propertyName = "ParentNodeOpt"
             let world = World.publishPlus changeData changeEventAddress eventTrace entity sorted world
             if changeEventNamesUtilized then changeEventNamesFree <- true
@@ -858,13 +858,13 @@ module WorldModuleEntity =
                     else world)
                     world facets
             let world = World.updateEntityPublishFlags entity world
-            let eventTrace = EventTrace.debug "World" "registerEntity" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "registerEntity" "" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Register"; "Event"|] --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             world
 
         static member internal unregisterEntity (entity : Entity) world =
-            let eventTrace = EventTrace.debug "World" "unregisteringEntity" EventTrace.empty
+            let eventTrace = EventTrace.debug "World" "unregisteringEntity" "" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Unregistering"; "Event"|] --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
             let dispatcher = World.getEntityDispatcher entity world : EntityDispatcher

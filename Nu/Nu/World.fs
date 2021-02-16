@@ -487,7 +487,7 @@ module WorldModule3 =
                 let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None // NOTE: lambda expression is duplicated in multiple places...
                 let eventFilter = Core.getEventFilter ()
                 let globalSimulant = Simulants.Game
-                let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
+                let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
                 EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized
 
             // make the default game dispatcher
@@ -555,7 +555,7 @@ module WorldModule3 =
                     let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None
                     let eventFilter = Core.getEventFilter ()
                     let globalSimulant = Simulants.Game
-                    let globalSimulantGeneralized = { GpgAddress = atoa globalSimulant.GameAddress }
+                    let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
                     EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized
                     
                 // make plug-in facets and dispatchers

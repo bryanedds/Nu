@@ -142,9 +142,9 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
 module EventTrace =
 
     /// Record event only in debug mode.
-    let debug moduleName functionName eventTrace =
+    let debug moduleName functionName moreInfo eventTrace =
 #if DEBUG
-        EventTrace.record moduleName functionName eventTrace
+        EventTrace.record moduleName functionName moreInfo eventTrace
 #else
         ignore moduleName
         ignore functionName
@@ -152,8 +152,8 @@ module EventTrace =
 #endif
 
     /// Record event only in all modes.
-    let trace moduleName functionName eventTrace =
-        EventTrace.record moduleName functionName eventTrace
+    let trace moduleName functionName moreInfo eventTrace =
+        EventTrace.record moduleName functionName moreInfo eventTrace
 
 [<AutoOpen>]
 module WorldTypes =
@@ -1074,23 +1074,6 @@ module WorldTypes =
 
         interface World EventSystem with
 
-            member this.GetLiveness () =
-                AmbientState.getLiveness this.AmbientState
-
-            member this.GetGlobalSimulantSpecialized () =
-                EventSystemDelegate.getGlobalSimulantSpecialized this.EventSystemDelegate
-
-            member this.GetGlobalSimulantGeneralized () =
-                EventSystemDelegate.getGlobalSimulantGeneralized this.EventSystemDelegate
-
-            member this.SimulantExists simulant =
-                match simulant with
-                | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
-                | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
-                | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
-                | :? Game | :? GlobalSimulantGeneralized -> true
-                | _  -> false
-
             member this.GetPropertyOpt<'a> propertyName simulant =
                 match getPropertyOpt propertyName simulant (box this) with
                 | Some a -> Some (a :?> 'a)
@@ -1107,10 +1090,27 @@ module WorldTypes =
                 let (unsubscribe, world) = handlePropertyChange propertyName simulant (box handler) (box this)
                 (unsubscribe :?> World -> World, world :?> World)
 
-            member this.GetEventSystemDelegateHook () =
+            member this.GetLiveness () =
+                AmbientState.getLiveness this.AmbientState
+
+            member this.GetSimulantExists simulant =
+                match simulant with
+                | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
+                | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
+                | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
+                | :? Game | :? GlobalSimulantGeneralized -> true
+                | _  -> false
+
+            member this.GetGlobalSimulantSpecialized () =
+                EventSystemDelegate.getGlobalSimulantSpecialized this.EventSystemDelegate
+
+            member this.GetGlobalSimulantGeneralized () =
+                EventSystemDelegate.getGlobalSimulantGeneralized this.EventSystemDelegate
+
+            member this.GetEventSystemDelegate () =
                 this.EventSystemDelegate
 
-            member this.UpdateEventSystemDelegateHook updater =
+            member this.UpdateEventSystemDelegate updater =
                 let this = { this with EventSystemDelegate = updater this.EventSystemDelegate }
 #if DEBUG
                 if Debug.World.Frozen > 0 then failwith "Invalid operation on a frozen world."
