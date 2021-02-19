@@ -26,7 +26,7 @@ type [<NoEquality; NoComparison>] MapGeneralized =
 type [<NoEquality; NoComparison>] ScreenBehavior =
     | Vanilla
     | Dissolve of DissolveDescriptor * SongDescriptor option
-    | Splash of DissolveDescriptor * SplashDescriptor * SongDescriptor option * Screen option
+    | Splash of DissolveDescriptor * SplashDescriptor * SongDescriptor option * Screen
     | OmniScreen
 
 /// Describes the content of an entity.

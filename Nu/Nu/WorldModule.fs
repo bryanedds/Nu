@@ -108,7 +108,7 @@ module WorldModule =
     let mutable internal unregister : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
-    let mutable internal expandContent : (SplashDescriptor option -> Screen option -> Screen -> World -> World) -> SimulantContent -> ContentOrigin -> Simulant -> Simulant -> World -> Simulant option * World =
+    let mutable internal expandContent : (SplashDescriptor option -> Screen -> Screen -> World -> World) -> SimulantContent -> ContentOrigin -> Simulant -> Simulant -> World -> Simulant option * World =
         Unchecked.defaultof<_>
 
     let mutable internal destroyImmediate : Simulant -> World -> World =

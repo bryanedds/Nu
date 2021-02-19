@@ -114,7 +114,7 @@ module GameDispatcher =
         override this.Content (omni, _) =
 
             [// splash
-             Content.screen Simulants.Splash.Screen.Name (Splash (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Some Simulants.Title.Screen)) [] []
+             Content.screen Simulants.Splash.Screen.Name (Splash (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title.Screen)) [] []
 
              // title
              Content.screenFromLayerFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleLayerFilePath
@@ -123,11 +123,11 @@ module GameDispatcher =
              Content.screenFromLayerFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsLayerFilePath
 
              // intros
-             Content.screenFromLayerFile Simulants.Intro.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Some Simulants.Intro2.Screen)) Assets.Gui.IntroLayerFilePath
-             Content.screenFromLayerFile Simulants.Intro2.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Some Simulants.Intro3.Screen)) Assets.Gui.Intro2LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro3.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Some Simulants.Intro4.Screen)) Assets.Gui.Intro3LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro4.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Some Simulants.Intro5.Screen)) Assets.Gui.Intro4LayerFilePath
-             Content.screenFromLayerFile Simulants.Intro5.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, None)) Assets.Gui.Intro5LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2.Screen)) Assets.Gui.IntroLayerFilePath
+             Content.screenFromLayerFile Simulants.Intro2.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3.Screen)) Assets.Gui.Intro2LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro3.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4.Screen)) Assets.Gui.Intro3LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro4.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5.Screen)) Assets.Gui.Intro4LayerFilePath
+             Content.screenFromLayerFile Simulants.Intro5.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field.Screen)) Assets.Gui.Intro5LayerFilePath
 
              // field
              Content.screen<FieldDispatcher> Simulants.Field.Screen.Name (Dissolve (Constants.Gui.Dissolve, None))

@@ -34,7 +34,7 @@ type MyGameDispatcher () =
 
     // here we describe the content of the game including all of its screens.
     override this.Content (_, _) =
-        [Content.screen Simulants.Splash.Screen.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Some Simulants.Title.Screen)) [] []
+        [Content.screen Simulants.Splash.Screen.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
          Content.screenFromLayerFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nulyr"
          Content.screenFromLayerFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nulyr"
          Content.screen<MyGameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]
