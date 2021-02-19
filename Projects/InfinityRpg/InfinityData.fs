@@ -2,13 +2,10 @@ namespace InfinityRpg
 open Prime
 
 type CharacterIndex =
-    | EnemyIndex of int
     | PlayerIndex
-    member this.IsEnemy = match this with EnemyIndex _ -> true | PlayerIndex -> false
+    | EnemyIndex of int
     member this.IsAlly = not this.IsEnemy
-
-type AllyType =
-    | Player
+    member this.IsEnemy = match this with EnemyIndex _ -> true | PlayerIndex -> false
 
 type EnemyType =
     | Goopy
@@ -17,7 +14,7 @@ type EnemyType =
     | Zommie
 
 type CharacterType =
-    | Ally of AllyType
+    | Ally
     | Enemy of EnemyType
 
 type ElementType =
