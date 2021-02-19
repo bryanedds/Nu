@@ -67,7 +67,7 @@ type [<ReferenceEquality; NoComparison>] Character =
 
     static member empty =
         { CharacterIndex = PlayerIndex
-          CharacterType = Ally Player
+          CharacterType = Ally
           FacingDirection = Upward
           ExpPoints = 0
           HitPoints = 10 // note this is an arbitrary number as hp max is calculated
