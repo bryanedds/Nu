@@ -192,6 +192,7 @@ module WorldModule2 =
                 else (false, world)
             | None ->
                 let world = World.setScreenTransitionDestinationOpt (Some destination) world
+                let world = World.setScreenTransitionStatePlus IncomingState destination world
                 (true, world)
 
         /// Transition to the given screen.
