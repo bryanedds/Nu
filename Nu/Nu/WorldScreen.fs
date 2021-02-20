@@ -169,11 +169,12 @@ module WorldScreenModule =
 
         /// Destroy a screen in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// screen's existence. Consider using World.destroyScreen instead.
-        static member destroyScreenImmediate screen world =
+        static member destroyScreenImmediate (screen : Screen) world =
             let world = World.tryRemoveSimulantFromDestruction screen world
             let destroyLayersImmediate screen world =
                 let layers = World.getLayers screen world
                 World.destroyLayersImmediate layers world
+            EventSystemDelegate.cleanEventAddressCache screen.ScreenAddress
             World.removeScreen3 destroyLayersImmediate screen world
 
         /// Destroy a screen in the world at the end of the current update.
