@@ -173,11 +173,12 @@ module WorldLayerModule =
 
         /// Destroy a layer in the world immediately. Can be dangerous if existing in-flight publishing depends on the
         /// layer's existence. Consider using World.destroyLayer instead.
-        static member destroyLayerImmediate layer world =
+        static member destroyLayerImmediate (layer : Layer) world =
             let world = World.tryRemoveSimulantFromDestruction layer world
             let destroyEntitiesImmediate layer world =
                 let entities = World.getEntities layer world
                 World.destroyEntitiesImmediate entities world
+            EventSystemDelegate.cleanEventAddressCache layer.LayerAddress
             World.removeLayer3 destroyEntitiesImmediate layer world
 
         /// Destroy a layer in the world at the end of the current update.
