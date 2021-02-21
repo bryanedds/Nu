@@ -29,11 +29,11 @@ type [<NoEquality; NoComparison>] AssetMetadata =
 module TmxExtensions =
 
     // OPTIMIZATION: cache tileset image assets.
-    let imageAssetsMemoized = dictPlus<TmxTileset, Image AssetTag> []
+    let ImageAssetsMemo = dictPlus<TmxTileset, Image AssetTag> []
 
     type TmxTileset with
         member this.ImageAsset =
-            match imageAssetsMemoized.TryGetValue this with
+            match ImageAssetsMemo.TryGetValue this with
             | (false, _) ->
                 let imageAsset =
                     try scvalue<Image AssetTag> this.Properties.["Image"]
@@ -43,7 +43,7 @@ module TmxExtensions =
                             "You must add a Custom Property to the tile set called 'Image' and give it an asset value like '[PackageName AssetName]'.\n" +
                             "This will specify where the engine can find the tile set's associated image asset."
                         raise (TileSetPropertyNotFoundException errorMessage)
-                imageAssetsMemoized.Add (this, imageAsset)
+                ImageAssetsMemo.Add (this, imageAsset)
                 imageAsset
             | (true, imageAssets) -> imageAssets
 

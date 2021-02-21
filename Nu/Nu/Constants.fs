@@ -97,7 +97,7 @@ module Metadata =
 [<RequireQualifiedAccess>]
 module Effects =
 
-    let [<Literal>] EffectHistoryMaxDefault = 300 // 5 seconds
+    let [<Literal>] EffectHistoryMaxDefault = Engine.DesiredFps // 1 second of effect history
 
 [<RequireQualifiedAccess>]
 module Math =
