@@ -22,7 +22,7 @@ type Refinement =
         | _ -> failwith ("Invalid refinement '" + str + "'.")
 
 /// Describes a means for looking up an asset.
-type[<NoEquality; NoComparison; Struct>] 'a AssetTag =
+type [<NoEquality; NoComparison; Struct>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
 

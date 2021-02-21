@@ -829,20 +829,23 @@ module WorldModule2 =
             let world = List.fold (fun world screen -> World.actualizeScreen screen world) world screens
             let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.actualizeScreenTransition selectedScreen world | None -> world
             let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
+
+            // actualize entities
+            ActualizeEntitiesTimer.Start ()
 #if DEBUG
-            // layer visibility only has an effect on entities in debug mode
             let world =
                 Seq.fold (fun world (entity : Entity) ->
                     let layer = entity.Parent
-                    if layer.GetVisible world
+                    if layer.GetVisible world // layer visibility only has an effect on entities in debug mode
                     then World.actualizeEntity entity world
                     else world)
                     world entities
 #else
-            ActualizeEntitiesTimer.Start ()
             let world = Seq.fold (fun world (entity : Entity) -> World.actualizeEntity entity world) world entities
-            ActualizeEntitiesTimer.Stop ()
 #endif
+            ActualizeEntitiesTimer.Stop ()
+
+            // fin
             world
 
         static member private processInput world =
