@@ -169,7 +169,10 @@ module WorldModule =
             let gameState = GameState.make activeGameDispatcher
             let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
-            let entityStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
+            let entityStates =
+                if AmbientState.getStandAlone ambientState
+                then UMap.makeEmpty Imperative
+                else UMap.makeEmpty Functional
             let world =
                 World.choose
                     { EventSystemDelegate = eventDelegate

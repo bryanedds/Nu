@@ -33,7 +33,10 @@ module WorldModuleLayer =
                             let entityDirectory' = KeyValuePair (layerDirectory.Key, layerDirectory')
                             UMap.add screenName entityDirectory' world.ScreenDirectory
                         | None ->
-                            let entityDirectory' = (KeyValuePair (layer.LayerAddress, UMap.makeEmpty Constants.Engine.SimulantMapConfig))
+                            let entityDirectory' =
+                                if World.getStandAlone world
+                                then (KeyValuePair (layer.LayerAddress, UMap.makeEmpty Imperative))
+                                else (KeyValuePair (layer.LayerAddress, UMap.makeEmpty Functional))
                             let layerDirectory' = UMap.add layerName entityDirectory' layerDirectory.Value
                             UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
                     | None -> failwith ("Cannot add layer '" + scstring layer.LayerAddress + "' to non-existent screen.")
