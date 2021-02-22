@@ -488,7 +488,8 @@ module WorldModule3 =
                 let eventFilter = Core.getEventFilter ()
                 let globalSimulant = Simulants.Game
                 let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
-                EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized
+                let eventConfig = if config.StandAlone then Imperative else Functional
+                EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized eventConfig
 
             // make the default game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
@@ -556,7 +557,8 @@ module WorldModule3 =
                     let eventFilter = Core.getEventFilter ()
                     let globalSimulant = Simulants.Game
                     let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
-                    EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized
+                    let eventConfig = if config.StandAlone then Imperative else Functional
+                    EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized eventConfig
                     
                 // make plug-in facets and dispatchers
                 let pluginFacets = plugin.Birth<Facet> ()
