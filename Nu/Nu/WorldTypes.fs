@@ -142,7 +142,7 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
 module EventTrace =
 
     /// Record event only in debug mode.
-    let debug moduleName functionName moreInfo eventTrace =
+    let debug (moduleName : string) (functionName : string) (moreInfo : string) (eventTrace : EventTrace) =
 #if DEBUG
         EventTrace.record moduleName functionName moreInfo eventTrace
 #else
