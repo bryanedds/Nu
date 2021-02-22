@@ -148,6 +148,7 @@ module EventTrace =
 #else
         ignore moduleName
         ignore functionName
+        ignore moreInfo
         eventTrace
 #endif
 
