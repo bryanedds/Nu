@@ -197,11 +197,11 @@ module WorldDeclarative =
                 | None ->
                     match simulantOpt with
                     | Some simulant -> World.addKeyedValue simulantMapId (Map.singleton key simulant) world
-                    | None -> Log.debug "Expected entity to be created from expandContent, but none was created."; world
+                    | None -> Log.debug "Expected simulant to be created from expandContent, but none was created."; world
                 | Some simulantMap ->
                     match simulantOpt with
                     | Some simulant -> World.addKeyedValue simulantMapId (Map.add key simulant simulantMap) world
-                    | None -> Log.debug "Expected entity to be created from expandContent, but none was created."; world)
+                    | None -> Log.debug "Expected simulant to be created from expandContent, but none was created."; world)
                 world added
 
         static member internal synchronizeSimulants mapper monitorMapper simulantMapId previous current origin owner parent world =
