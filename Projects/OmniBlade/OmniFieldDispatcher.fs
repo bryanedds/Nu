@@ -342,7 +342,7 @@ module FieldDispatcher =
                             withCmd songCmd field
 
                         // finish transition
-                        elif time = dec fieldTransition.FieldTransitionTime then
+                        elif time = fieldTransition.FieldTransitionTime then
                             let field = Field.updateFieldTransitionOpt (constant None) field
                             just field
 
