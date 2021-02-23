@@ -223,18 +223,17 @@ module WorldModule2 =
             World.handleAsScreenTransitionPlus<'a, 's> Cascade destination evt world |> snd
 
         static member private updateScreenTransition3 (screen : Screen) transition world =
-            // TODO: consider if we should transition immediately on 0 life time rather than waiting for the first update.
-            if transition.TransitionLifeTime <> 0L then
-                let tickRate = World.getTickRate world
-                let transitionTicks = screen.GetTransitionTicks world + tickRate
-                let world = screen.SetTransitionTicks transitionTicks world
-                if transitionTicks = transition.TransitionLifeTime then
-                    (true, screen.SetTransitionTicks 0L world)
-                elif transitionTicks > transition.TransitionLifeTime then
-                    Log.debug ("TransitionLifeTime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
-                    (true, screen.SetTransitionTicks 0L world)
-                else (false, world)
-            else (true, screen.SetTransitionTicks 0L world)
+            // NOTE: we do not immediately transition when transition time is zero because we only want screen
+            // transitions to happen outside the update loop!
+            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX for
+            // full black if fading.
+            let transitionTicks = screen.GetTransitionTicks world
+            if transitionTicks = transition.TransitionLifeTime then
+                (true, screen.SetTransitionTicks 0L world)
+            elif transitionTicks > transition.TransitionLifeTime then
+                Log.debug ("TransitionLifeTime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
+                (true, screen.SetTransitionTicks 0L world)
+            else (false, screen.SetTransitionTicks (transitionTicks + World.getTickRate world) world)
 
         static member private updateScreenTransition2 (selectedScreen : Screen) world =
             match selectedScreen.GetTransitionState world with
