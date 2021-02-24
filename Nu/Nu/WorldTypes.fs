@@ -1033,6 +1033,16 @@ module WorldTypes =
             left.PAName = right.PAName &&
             Address.equals left.PASimulant.SimulantAddress right.PASimulant.SimulantAddress
 
+        static member make name (simulant : Simulant) =
+            let hash = hash name ^^^ hash simulant.SimulantAddress
+            { PAName = name
+              PASimulant = simulant
+              PAHash = hash }
+
+        interface PropertyAddress IEquatable with
+            member this.Equals that =
+                PropertyAddress.equals this that
+
         override this.GetHashCode () =
             this.PAHash
 
@@ -1040,12 +1050,6 @@ module WorldTypes =
             match that with
             | :? PropertyAddress as that -> PropertyAddress.equals this that
             | _ -> failwithumf ()
-
-        static member make name (simulant : Simulant) =
-            let hash = hash name ^^^ hash simulant.SimulantAddress
-            { PAName = name
-              PASimulant = simulant
-              PAHash = hash }
 
     /// Describes a property binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal PropertyBinding =
