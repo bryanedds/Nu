@@ -299,12 +299,12 @@ module WorldModuleScreen =
         
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Model", fun property screen world -> (true, World.setScreenModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world))
-        Setters.Add ("TransitionState", fun property screen world -> (true, World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world))
-        Setters.Add ("TransitionTicks", fun property screen world -> (true, World.setScreenTransitionTicks (property.PropertyValue :?> int64) screen world))
-        Setters.Add ("Incoming", fun property screen world -> (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world))
-        Setters.Add ("Outgoing", fun property screen world -> (true, World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world))
-        Setters.Add ("Persistent", fun property screen world -> (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world))
+        Setters.Add ("Model", fun property screen world -> if World.getScreenModel screen world =/= property.PropertyValue then (true, World.setScreenModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world) else (false, world))
+        Setters.Add ("TransitionState", fun property screen world -> if World.getScreenTransitionState screen world =/= property.PropertyValue then (true, World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world) else (false, world))
+        Setters.Add ("TransitionTicks", fun property screen world -> if World.getScreenTransitionTicks screen world =/= property.PropertyValue then (true, World.setScreenTransitionTicks (property.PropertyValue :?> int64) screen world) else (false, world))
+        Setters.Add ("Incoming", fun property screen world -> if World.getScreenIncoming screen world =/= property.PropertyValue then (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world) else (false, world))
+        Setters.Add ("Outgoing", fun property screen world -> if World.getScreenOutgoing screen world =/= property.PropertyValue then (true, World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world) else (false, world))
+        Setters.Add ("Persistent", fun property screen world -> if World.getScreenPersistent screen world =/= property.PropertyValue then (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world) else (false, world))
         
     /// Initialize getters and setters
     let internal init () =

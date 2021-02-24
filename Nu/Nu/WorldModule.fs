@@ -673,13 +673,9 @@ module WorldModule =
                     if  Option.isNone propertyBinding.PBRight.PayloadOpt && // lenses with payloads are from simulant synchronization, not bindings
                         propertyBinding.PBRight.Validate world &&
                         propertyBinding.PBLeft.Validate world then
-                        let propertyValueOld = propertyBinding.PBLeft.GetWithoutValidation world
-                        let propertyValue = propertyBinding.PBRight.GetWithoutValidation world
-                        if propertyValueOld =/= propertyValue then
-                            match propertyBinding.PBLeft.SetOpt with
-                            | Some setter -> setter propertyValue world
-                            | None -> world
-                        else world
+                        match propertyBinding.PBLeft.SetOpt with
+                        | Some setter -> setter (propertyBinding.PBRight.GetWithoutValidation world) world
+                        | None -> world
                     else world)
                     world propertyBindings
             | (false, _) -> world
