@@ -24,7 +24,7 @@ module WorldModuleGame =
             let game = Game ()
 
             let world =
-                World.publishBindingChange propertyName propertyValue game world
+                World.publishBindingChange propertyName game world
 
             let world =
                 let changeData = { Name = propertyName; Value = propertyValue }

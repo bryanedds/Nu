@@ -665,26 +665,18 @@ module WorldModule =
 
     type World with // PropertyBindingsMap
 
-        static member internal publishBindingChange propertyName propertyValueOrigin simulant world =
-            let propertyAddress = PropertyAddress.make simulant propertyName
+        static member internal publishBindingChange propertyName simulant world =
+            let propertyAddress = PropertyAddress.make propertyName simulant
             match world.PropertyBindingsMap.TryGetValue propertyAddress with
             | (true, propertyBindings) ->
                 UMap.fold (fun world _ propertyBinding ->
-                    match propertyBinding.PBValueOpt with
-                    | Some propertyValueStored ->
-                        if objNeq propertyValueOrigin propertyValueStored then
-                            let propertyValue = propertyBinding.PBSource.GetWithoutValidation world
-                            propertyBinding.PBValueOpt <- Some propertyValue
-                            match propertyBinding.PBTarget.SetOpt with
-                            | Some setter -> setter propertyValue world
-                            | None -> world
-                        else world
-                    | None ->
-                        let propertyValue = propertyBinding.PBSource.GetWithoutValidation world
-                        propertyBinding.PBValueOpt <- Some propertyValue
-                        match propertyBinding.PBTarget.SetOpt with
+                    if  Option.isNone propertyBinding.PBRight.PayloadOpt &&
+                        propertyBinding.PBRight.Validate world then
+                        let propertyValue = propertyBinding.PBRight.GetWithoutValidation world
+                        match propertyBinding.PBLeft.SetOpt with
                         | Some setter -> setter propertyValue world
-                        | None -> world)
+                        | None -> world
+                    else world)
                     world propertyBindings
             | (false, _) -> world
 
