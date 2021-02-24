@@ -373,7 +373,7 @@ module Nu =
             // init bind5 F# reach-around
             WorldModule.bind5 <- fun simulant left right world ->
                 let leftFixup =
-                    let validate = fun world -> left.Validate world && World.getExists simulant world
+                    let validate = World.getExists simulant
                     if isNull (left.This :> obj) then
                         { Lens.make
                             left.Name
