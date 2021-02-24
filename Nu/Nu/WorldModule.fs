@@ -672,10 +672,13 @@ module WorldModule =
                 UMap.fold (fun world _ propertyBinding ->
                     if  Option.isNone propertyBinding.PBRight.PayloadOpt &&
                         propertyBinding.PBRight.Validate world then
+                        let propertyValueOld = propertyBinding.PBLeft.GetWithoutValidation world
                         let propertyValue = propertyBinding.PBRight.GetWithoutValidation world
-                        match propertyBinding.PBLeft.SetOpt with
-                        | Some setter -> setter propertyValue world
-                        | None -> world
+                        if objNeq propertyValueOld propertyValue then
+                            match propertyBinding.PBLeft.SetOpt with
+                            | Some setter -> setter propertyValue world
+                            | None -> world
+                        else world
                     else world)
                     world propertyBindings
             | (false, _) -> world
