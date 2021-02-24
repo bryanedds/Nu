@@ -670,7 +670,7 @@ module WorldModule =
             match world.PropertyBindingsMap.TryGetValue propertyAddress with
             | (true, propertyBindings) ->
                 UMap.fold (fun world _ propertyBinding ->
-                    if  Option.isNone propertyBinding.PBRight.PayloadOpt &&
+                    if  Option.isNone propertyBinding.PBRight.PayloadOpt && // lenses with payloads are from simulant synchronization, not bindings
                         propertyBinding.PBRight.Validate world &&
                         propertyBinding.PBLeft.Validate world then
                         let propertyValueOld = propertyBinding.PBLeft.GetWithoutValidation world
