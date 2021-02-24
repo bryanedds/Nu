@@ -1130,11 +1130,15 @@ module WorldTypes =
                 AmbientState.getLiveness this.AmbientState
 
             member this.GetSimulantExists simulant =
-                match simulant with
-                | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
-                | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
-                | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
-                | :? Game | :? GlobalSimulantGeneralized -> true
+                // OPTIMIZATION: constant-time look-up here improve non-entity existence queries.
+                match simulant.SimulantAddress.Names.Length with
+                | 3 ->
+                    let entity = simulant :?> Entity
+                    notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
+                    UMap.containsKey (simulant :?> Entity).EntityAddress this.EntityStates
+                | 2 -> UMap.containsKey (simulant :?> Layer).LayerAddress this.LayerStates
+                | 1 -> UMap.containsKey (simulant :?> Screen).ScreenAddress this.ScreenStates
+                | 0 -> true
                 | _  -> false
 
             member this.GetGlobalSimulantSpecialized () =
