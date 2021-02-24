@@ -70,7 +70,7 @@ module Nu =
                     | None -> world)
                 simulant
               with
-                Validate = left.Validate }
+                Validate = World.getExists simulant }
         let rightFixup =
             { Lens.makeReadOnly
                 right.Name
