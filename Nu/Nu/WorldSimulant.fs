@@ -196,7 +196,12 @@ module WorldSimulantModule =
         /// Check that a simulant exists in the world.
         [<FunctionBinding>]
         static member getExists (simulant : Simulant) (world : World) =
-            (world :> World EventSystem).GetSimulantExists simulant
+            match simulant with
+            | :? Entity as entity ->
+                // OPTIMIZATION: check for valid entity state ref in handle before delving into world
+                notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
+                (world :> World EventSystem).GetSimulantExists simulant
+            | _ -> (world :> World EventSystem).GetSimulantExists simulant
 
         /// Attempt to convert an address to a concrete simulant reference.
         static member tryDerive address =
