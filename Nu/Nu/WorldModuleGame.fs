@@ -20,12 +20,18 @@ module WorldModuleGame =
     type World with
 
         static member private publishGameChange propertyName (propertyValue : obj) world =
+
             let game = Game ()
+
+            let world =
+                World.publishBindingChange propertyName propertyValue game world
+
             let world =
                 let changeData = { Name = propertyName; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"|]
                 let eventTrace = EventTrace.debug "World" "publishGameChange" "" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace game false world
+
             world
 
         static member internal getGameState world =
@@ -304,7 +310,7 @@ module WorldModuleGame =
         static member assetTagsToValueOpts<'a> assetTags metadata world =
             List.map (fun assetTag -> World.assetTagToValueOpt<'a> assetTag metadata world) assetTags
 
-        static member internal tryGetGameProperty (propertyName, world, property : _ byref) =
+        static member internal tryGetGameProperty (propertyName, world, property : _ outref) =
             match Getters.TryGetValue propertyName with
             | (true, getter) -> property <- getter world; true
             | (false, _) -> GameState.tryGetProperty (propertyName, World.getGameState world, &property)

@@ -60,11 +60,16 @@ module WorldModuleScreen =
             World.screenStateRemover screen world
 
         static member private publishScreenChange (propertyName : string) (propertyValue : obj) (screen : Screen) world =
+
+            let world =
+                World.publishBindingChange propertyName propertyValue screen world
+
             let world =
                 let changeData = { Name = propertyName; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; screen.Name|]
                 let eventTrace = EventTrace.debug "World" "publishScreenChange" "" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace screen false world
+
             world
 
         static member private getScreenStateOpt screen world =
@@ -132,7 +137,7 @@ module WorldModuleScreen =
                     else None)
                 Property? Model value screen world
 
-        static member internal tryGetScreenProperty (propertyName, screen, world, property : _ byref) =
+        static member internal tryGetScreenProperty (propertyName, screen, world, property : _ outref) =
             if World.getScreenExists screen world then
                 match Getters.TryGetValue propertyName with
                 | (false, _) -> ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property)

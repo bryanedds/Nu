@@ -463,7 +463,7 @@ module WorldTypes =
               CreationTimeStamp = Core.getUniqueTimeStamp () }
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty (propertyName, gameState, propertyRef : Property byref) =
+        static member tryGetProperty (propertyName, gameState, propertyRef : Property outref) =
             Xtension.tryGetProperty (propertyName, gameState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
@@ -530,7 +530,7 @@ module WorldTypes =
               Name = name }
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty (propertyName, screenState, propertyRef : Property byref) =
+        static member tryGetProperty (propertyName, screenState, propertyRef : Property outref) =
             Xtension.tryGetProperty (propertyName, screenState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
@@ -589,7 +589,7 @@ module WorldTypes =
               Name = name }
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty (propertyName, layerState, propertyRef : Property byref) =
+        static member tryGetProperty (propertyName, layerState, propertyRef : Property outref) =
             Xtension.tryGetProperty (propertyName, layerState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
@@ -671,7 +671,7 @@ module WorldTypes =
             entityState'
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty (propertyName, entityState, propertyRef : Property byref) =
+        static member tryGetProperty (propertyName, entityState, propertyRef : Property outref) =
             Xtension.tryGetProperty (propertyName, entityState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
@@ -1022,6 +1022,41 @@ module WorldTypes =
                 | :? Entity as that -> (this :> Entity IComparable).CompareTo that
                 | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
 
+    /// Describes a property's location in Nu's optimized Elmish implementation.
+    and [<CustomEquality; NoComparison>] internal PropertyAddress =
+        { PASimulant : Simulant
+          PAName : string
+          PAHash : int }
+
+        static member equals left right =
+            left.PAHash = right.PAHash && // short-circuit
+            left.PASimulant = right.PASimulant &&
+            left.PAName = right.PAName
+
+        override this.GetHashCode () =
+            this.PAHash
+
+        override this.Equals that =
+            match that with
+            | :? PropertyAddress as that -> PropertyAddress.equals this that
+            | _ -> failwithumf ()
+
+        static member make (simulant : Simulant) name =
+            let hash = hash simulant.SimulantAddress ^^^ hash name
+            { PASimulant = simulant
+              PAName = name
+              PAHash = hash }
+
+    /// Describes a property binding for Nu's optimized Elmish implementation.
+    and [<NoEquality; NoComparison>] internal PropertyBinding =
+        { PBSource : World Lens
+          mutable PBValueOpt : obj option
+          PBTarget : World Lens }
+
+    /// Describes property bindings for Nu's optimized Elmish implementation.
+    and internal PropertyBindings =
+        UMap<Guid, PropertyBinding>
+
     /// The world's dispatchers (including facets).
     /// 
     /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
@@ -1056,6 +1091,7 @@ module WorldTypes =
     and [<ReferenceEquality; NoComparison>] World =
         internal
             { // cache line 1 begin
+              PropertyBindingsMap : UMap<PropertyAddress, PropertyBindings>
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState>
               EntityTree : Entity SpatialTree MutantCache
@@ -1063,8 +1099,8 @@ module WorldTypes =
               LayerStates : UMap<Layer Address, LayerState>
               ScreenStates : UMap<Screen Address, ScreenState>
               GameState : GameState
-              AmbientState : World AmbientState
               // cache line 2 begin
+              AmbientState : World AmbientState
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
               Dispatchers : Dispatchers

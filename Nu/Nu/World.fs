@@ -44,6 +44,48 @@ module Nu =
         then tryPropagateByLens left right world
         else tryPropagateByName simulant left.Name right world
 
+    let internal unbind propertyBindingId propertyAddress world =
+        match world.PropertyBindingsMap.TryGetValue propertyAddress with
+        | (true, propertyBindings) ->
+            let propertyBindings = UMap.remove propertyBindingId propertyBindings
+            if UMap.notEmpty propertyBindings then
+                let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
+                World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+            else
+                let propertyBindingsMap = UMap.remove propertyAddress world.PropertyBindingsMap
+                World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+        | (false, _) -> world
+
+    let bind simulant (left : World Lens) (right : World Lens) world =
+        let leftFixup = // fix up left lens
+            Lens.make
+                left.Name
+                (fun world ->
+                    match World.tryGetProperty left.Name simulant world with
+                    | Some property -> property.PropertyValue
+                    | None -> failwithumf ())
+                (fun propertyValue world ->
+                    match World.tryGetProperty left.Name simulant world with
+                    | Some property -> snd (World.trySetProperty left.Name (Reflection.isPropertyAlwaysPublishByName left.Name) { property with PropertyValue = propertyValue } simulant world)
+                    | None -> world)
+                simulant
+        let leftFixup = { leftFixup with Validate = left.Validate }
+        let (_, world) = tryPropagateByLens leftFixup right world // propagate immediately to start things out synchronized
+        let propertyBindingId = Gen.id
+        let propertyAddress = PropertyAddress.make right.This right.Name
+        let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingId propertyAddress world)) (acatff simulant.SimulantAddress Events.Unregistering) simulant world
+        match world.PropertyBindingsMap.TryGetValue propertyAddress with
+        | (true, propertyBindings) ->
+            let propertyBindings = UMap.add propertyBindingId { PBSource = right; PBValueOpt = None; PBTarget = leftFixup } propertyBindings
+            let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
+            World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+        | (false, _) ->
+            let config = if AmbientState.getStandAlone world.AmbientState then Imperative else Functional
+            let propertyBindings = UMap.makeEmpty config
+            let propertyBindings = UMap.add propertyBindingId { PBSource = right; PBValueOpt = None; PBTarget = leftFixup } propertyBindings
+            let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
+            World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+
     /// Initialize the Nu game engine.
     let init nuConfig =
 
@@ -361,33 +403,34 @@ module Nu =
 
             // init bind5 F# reach-around
             WorldModule.bind5 <- fun simulant left right world ->
-                let (_, world) =
-                    // propagate immediately to start things out synchronized
-                    tryPropagate simulant left right world
-                let (compressionId, monitorMapperOpt) =
-                    match right.PayloadOpt with
-                    | Some payload ->
-                        let (compressionId, monitorMapper) = payload :?> Payload
-                        (compressionId, Some monitorMapper)
-                    | None -> (Gen.id, None)
-                let (_, world) =
-                    World.monitorCompressed
-                        Gen.id None None None
-                        (Right (box (simulant, left, right)))
-                        (Events.Register --> right.This.SimulantAddress)
-                        simulant
-                        world
-                let (_, world) =
-                    World.monitorCompressed
-                        compressionId
-                        monitorMapperOpt
-                        (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a =/= a2 | None -> true))
-                        None
-                        (Right (box (simulant, left, right)))
-                        (Events.Change right.Name --> right.This.SimulantAddress)
-                        simulant
-                        world
-                world
+                bind simulant left right world
+                //let (_, world) =
+                //    // propagate immediately to start things out synchronized
+                //    tryPropagate simulant left right world
+                //let (compressionId, monitorMapperOpt) =
+                //    match right.PayloadOpt with
+                //    | Some payload ->
+                //        let (compressionId, monitorMapper) = payload :?> Payload
+                //        (compressionId, Some monitorMapper)
+                //    | None -> (Gen.id, None)
+                //let (_, world) =
+                //    World.monitorCompressed
+                //        Gen.id None None None
+                //        (Right (box (simulant, left, right)))
+                //        (Events.Register --> right.This.SimulantAddress)
+                //        simulant
+                //        world
+                //let (_, world) =
+                //    World.monitorCompressed
+                //        compressionId
+                //        monitorMapperOpt
+                //        (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a =/= a2 | None -> true))
+                //        None
+                //        (Right (box (simulant, left, right)))
+                //        (Events.Change right.Name --> right.This.SimulantAddress)
+                //        simulant
+                //        world
+                //world
 
             // init miscellaneous reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world

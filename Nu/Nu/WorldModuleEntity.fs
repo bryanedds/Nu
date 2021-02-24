@@ -125,23 +125,30 @@ module WorldModuleEntity =
             alwaysPublish || entityState.PublishChanges
 
         static member private publishEntityChange propertyName (propertyValue : obj) (entity : Entity) world =
-            let changeData = { Name = propertyName; Value = propertyValue }
-            let entityNames = Address.getNames entity.EntityAddress
-            let mutable changeEventNamesUtilized = false
-            let changeEventAddress =
-                if changeEventNamesFree then
-                    changeEventNamesFree <- false
-                    changeEventNamesUtilized <- true
-                    changeEventNamesCached.[1] <- propertyName
-                    changeEventNamesCached.[3] <- entityNames.[0]
-                    changeEventNamesCached.[4] <- entityNames.[1]
-                    changeEventNamesCached.[5] <- entityNames.[2]
-                    rtoa<ChangeData> changeEventNamesCached
-                else rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-            let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
-            let sorted = propertyName = "ParentNodeOpt"
-            let world = World.publishPlus changeData changeEventAddress eventTrace entity sorted world
-            if changeEventNamesUtilized then changeEventNamesFree <- true
+
+            let world =
+                World.publishBindingChange propertyName propertyValue entity world
+
+            let world =
+                let changeData = { Name = propertyName; Value = propertyValue }
+                let entityNames = Address.getNames entity.EntityAddress
+                let mutable changeEventNamesUtilized = false
+                let changeEventAddress =
+                    if changeEventNamesFree then
+                        changeEventNamesFree <- false
+                        changeEventNamesUtilized <- true
+                        changeEventNamesCached.[1] <- propertyName
+                        changeEventNamesCached.[3] <- entityNames.[0]
+                        changeEventNamesCached.[4] <- entityNames.[1]
+                        changeEventNamesCached.[5] <- entityNames.[2]
+                        rtoa<ChangeData> changeEventNamesCached
+                    else rtoa<ChangeData> [|"Change"; propertyName; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+                let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
+                let sorted = propertyName = "ParentNodeOpt"
+                let world = World.publishPlus changeData changeEventAddress eventTrace entity sorted world
+                if changeEventNamesUtilized then changeEventNamesFree <- true
+                world
+
             world
 
         static member private getEntityStateOpt entity world =
@@ -690,7 +697,7 @@ module WorldModuleEntity =
                 | Left error -> Log.info ("There was an issue in applying a reloaded overlay: " + error); world
             | None -> world
 
-        static member internal tryGetEntityProperty (propertyName, entity, world, property : _ byref) =
+        static member internal tryGetEntityProperty (propertyName, entity, world, property : _ outref) =
             let entityStateOpt = World.getEntityStateOpt entity world
             match entityStateOpt :> obj with
             | null -> false
