@@ -675,7 +675,7 @@ module WorldModule =
                         propertyBinding.PBLeft.Validate world then
                         let propertyValueOld = propertyBinding.PBLeft.GetWithoutValidation world
                         let propertyValue = propertyBinding.PBRight.GetWithoutValidation world
-                        if objNeq propertyValueOld propertyValue then
+                        if propertyValueOld =/= propertyValue then
                             match propertyBinding.PBLeft.SetOpt with
                             | Some setter -> setter propertyValue world
                             | None -> world

@@ -21,9 +21,9 @@ module Nu =
         if right.Validate world then
             let value = right.GetWithoutValidation world
             if World.getExists left.This world
-            then (Cascade, (Option.get left.SetOpt) value world)
-            else (Cascade, world)
-        else (Cascade, world)
+            then (Option.get left.SetOpt) value world
+            else world
+        else world
 
     let private tryPropagateByName simulant leftName (right : World Lens) world =
         if right.Validate world then
@@ -33,11 +33,10 @@ module Nu =
                 if property.PropertyValue =/= value then // OPTIMIZATION: avoid reflection when value doesn't change
                     let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
                     let property = { property with PropertyValue = value }
-                    let world = World.trySetProperty leftName alwaysPublish property simulant world |> snd
-                    (Cascade, world)
-                else (Cascade, world)
-            | None -> (Cascade, world)
-        else (Cascade, world)
+                    World.trySetProperty leftName alwaysPublish property simulant world |> snd
+                else world
+            | None -> world
+        else world
 
     let private tryPropagate simulant (left : World Lens) (right : World Lens) world =
         if notNull (left.This :> obj)
@@ -78,10 +77,11 @@ module Nu =
                 right.This
               with
                 Validate = right.Validate }
-        let (_, world) = tryPropagateByLens leftFixup rightFixup world // propagate immediately to start things out synchronized
+        let world = tryPropagateByLens leftFixup rightFixup world // propagate immediately to start things out synchronized
         let propertyBindingId = Gen.id
         let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
-        let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingId propertyAddress world)) (acatff simulant.SimulantAddress Events.Unregistering) simulant world
+        let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingId propertyAddress world)) (Events.Unregistering --> simulant.SimulantAddress) simulant world
+        let world = World.monitor (fun _ world -> (Cascade, tryPropagate simulant leftFixup rightFixup world)) (Events.Register --> right.This.SimulantAddress) simulant world
         match world.PropertyBindingsMap.TryGetValue propertyAddress with
         | (true, propertyBindings) ->
             let propertyBindings = UMap.add propertyBindingId { PBLeft = leftFixup; PBRight = rightFixup } propertyBindings
@@ -225,11 +225,11 @@ module Nu =
             WorldTypes.handleUserDefinedCallback <- fun userDefined _ worldObj ->
                 let world = worldObj :?> World
                 let (simulant, left, right) = userDefined :?> Simulant * World Lens * World Lens
-                let (handling, world) =
+                let world =
                     if notNull (left.This :> obj)
                     then tryPropagateByLens left right world
                     else tryPropagateByName simulant left.Name right world
-                (handling, world :> obj)
+                (Cascade, world :> obj)
 
             WorldTypes.handleSubscribeAndUnsubscribeEventHook <- fun eventAddress _ worldObj ->
                 // here we need to update the event publish flags for entities based on whether there are subscriptions to
