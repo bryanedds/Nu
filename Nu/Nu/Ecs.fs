@@ -533,7 +533,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
     { EntityId : Guid
       EntityEcs : 'w Ecs }
-    member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> () : 'c byref =
+    member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> () : 'c outref =
         let systemName = typeof<'c>.Name
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> systemName
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef

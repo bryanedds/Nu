@@ -72,12 +72,17 @@ module WorldModuleLayer =
             World.layerStateRemover layer world
 
         static member private publishLayerChange propertyName (propertyValue : obj) (layer : Layer) world =
+
+            let world =
+                World.publishBindingChange propertyName propertyValue layer world
+
             let world =
                 let changeData = { Name = propertyName; Value = propertyValue }
                 let layerNames = Address.getNames layer.LayerAddress
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; layerNames.[0]; layerNames.[1]|]
                 let eventTrace = EventTrace.debug "World" "publishLayerChange" "" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace layer false world
+
             world
 
         static member private getLayerStateOpt layer world =
@@ -142,7 +147,7 @@ module WorldModuleLayer =
                     else None)
                 Property? Model value layer world
 
-        static member internal tryGetLayerProperty (propertyName, layer, world, property : _ byref) =
+        static member internal tryGetLayerProperty (propertyName, layer, world, property : _ outref) =
             if World.getLayerExists layer world then
                 match Getters.TryGetValue propertyName with
                 | (true, getter) -> property <- getter layer world; true

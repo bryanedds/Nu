@@ -166,6 +166,10 @@ module WorldModule =
 
         /// Make the world.
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
+            let propertyBindings =
+                if AmbientState.getStandAlone ambientState
+                then UMap.makeEmpty Imperative
+                else UMap.makeEmpty Functional
             let gameState = GameState.make activeGameDispatcher
             let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
@@ -175,7 +179,8 @@ module WorldModule =
                 else UMap.makeEmpty Functional
             let world =
                 World.choose
-                    { EventSystemDelegate = eventDelegate
+                    { PropertyBindingsMap = propertyBindings
+                      EventSystemDelegate = eventDelegate
                       EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                       EntityTree = MutantCache.make id spatialTree
                       EntityStates = entityStates
@@ -657,6 +662,31 @@ module WorldModule =
         static member monitor<'a, 's when 's :> Simulant>
             callback eventAddress subscriber world =
             World.choose (EventSystem.monitor<'a, 's, World> callback eventAddress subscriber world)
+
+    type World with // PropertyBindingsMap
+
+        static member internal publishBindingChange propertyName propertyValueOrigin simulant world =
+            let propertyAddress = PropertyAddress.make simulant propertyName
+            match world.PropertyBindingsMap.TryGetValue propertyAddress with
+            | (true, propertyBindings) ->
+                UMap.fold (fun world _ propertyBinding ->
+                    match propertyBinding.PBValueOpt with
+                    | Some propertyValueStored ->
+                        if objNeq propertyValueOrigin propertyValueStored then
+                            let propertyValue = propertyBinding.PBSource.GetWithoutValidation world
+                            propertyBinding.PBValueOpt <- Some propertyValue
+                            match propertyBinding.PBTarget.SetOpt with
+                            | Some setter -> setter propertyValue world
+                            | None -> world
+                        else world
+                    | None ->
+                        let propertyValue = propertyBinding.PBSource.GetWithoutValidation world
+                        propertyBinding.PBValueOpt <- Some propertyValue
+                        match propertyBinding.PBTarget.SetOpt with
+                        | Some setter -> setter propertyValue world
+                        | None -> world)
+                    world propertyBindings
+            | (false, _) -> world
 
     type World with // Scripting
 
