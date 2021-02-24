@@ -127,7 +127,7 @@ module WorldModuleEntity =
         static member private publishEntityChange propertyName (propertyValue : obj) (entity : Entity) world =
 
             let world =
-                World.publishBindingChange propertyName propertyValue entity world
+                World.publishBindingChange propertyName entity world
 
             let world =
                 let changeData = { Name = propertyName; Value = propertyValue }

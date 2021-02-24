@@ -74,7 +74,7 @@ module WorldModuleLayer =
         static member private publishLayerChange propertyName (propertyValue : obj) (layer : Layer) world =
 
             let world =
-                World.publishBindingChange propertyName propertyValue layer world
+                World.publishBindingChange propertyName layer world
 
             let world =
                 let changeData = { Name = propertyName; Value = propertyValue }

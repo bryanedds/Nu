@@ -57,8 +57,8 @@ module Nu =
         | (false, _) -> world
 
     let bind simulant (left : World Lens) (right : World Lens) world =
-        let leftFixup = // fix up left lens
-            Lens.make
+        let leftFixup =
+            { Lens.make
                 left.Name
                 (fun world ->
                     match World.tryGetProperty left.Name simulant world with
@@ -69,20 +69,28 @@ module Nu =
                     | Some property -> snd (World.trySetProperty left.Name (Reflection.isPropertyAlwaysPublishByName left.Name) { property with PropertyValue = propertyValue } simulant world)
                     | None -> world)
                 simulant
-        let leftFixup = { leftFixup with Validate = left.Validate }
-        let (_, world) = tryPropagateByLens leftFixup right world // propagate immediately to start things out synchronized
+              with
+                Validate = left.Validate }
+        let rightFixup =
+            { Lens.makeReadOnly
+                right.Name
+                right.GetWithoutValidation
+                right.This
+              with
+                Validate = right.Validate }
+        let (_, world) = tryPropagateByLens leftFixup rightFixup world // propagate immediately to start things out synchronized
         let propertyBindingId = Gen.id
-        let propertyAddress = PropertyAddress.make right.This right.Name
+        let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
         let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingId propertyAddress world)) (acatff simulant.SimulantAddress Events.Unregistering) simulant world
         match world.PropertyBindingsMap.TryGetValue propertyAddress with
         | (true, propertyBindings) ->
-            let propertyBindings = UMap.add propertyBindingId { PBSource = right; PBValueOpt = None; PBTarget = leftFixup } propertyBindings
+            let propertyBindings = UMap.add propertyBindingId { PBLeft = leftFixup; PBRight = rightFixup } propertyBindings
             let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
             World.choose { world with PropertyBindingsMap = propertyBindingsMap }
         | (false, _) ->
             let config = if AmbientState.getStandAlone world.AmbientState then Imperative else Functional
             let propertyBindings = UMap.makeEmpty config
-            let propertyBindings = UMap.add propertyBindingId { PBSource = right; PBValueOpt = None; PBTarget = leftFixup } propertyBindings
+            let propertyBindings = UMap.add propertyBindingId { PBLeft = leftFixup; PBRight = rightFixup } propertyBindings
             let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
             World.choose { world with PropertyBindingsMap = propertyBindingsMap }
 

@@ -1024,14 +1024,14 @@ module WorldTypes =
 
     /// Describes a property's location in Nu's optimized Elmish implementation.
     and [<CustomEquality; NoComparison>] internal PropertyAddress =
-        { PASimulant : Simulant
-          PAName : string
+        { PAName : string
+          PASimulant : Simulant
           PAHash : int }
 
         static member equals left right =
             left.PAHash = right.PAHash && // short-circuit
-            left.PASimulant = right.PASimulant &&
-            left.PAName = right.PAName
+            left.PAName = right.PAName &&
+            Address.equals left.PASimulant.SimulantAddress right.PASimulant.SimulantAddress
 
         override this.GetHashCode () =
             this.PAHash
@@ -1041,17 +1041,16 @@ module WorldTypes =
             | :? PropertyAddress as that -> PropertyAddress.equals this that
             | _ -> failwithumf ()
 
-        static member make (simulant : Simulant) name =
-            let hash = hash simulant.SimulantAddress ^^^ hash name
-            { PASimulant = simulant
-              PAName = name
+        static member make name (simulant : Simulant) =
+            let hash = hash name ^^^ hash simulant.SimulantAddress
+            { PAName = name
+              PASimulant = simulant
               PAHash = hash }
 
     /// Describes a property binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal PropertyBinding =
-        { PBSource : World Lens
-          mutable PBValueOpt : obj option
-          PBTarget : World Lens }
+        { PBLeft : World Lens
+          PBRight : World Lens }
 
     /// Describes property bindings for Nu's optimized Elmish implementation.
     and internal PropertyBindings =

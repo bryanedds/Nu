@@ -62,7 +62,7 @@ module WorldModuleScreen =
         static member private publishScreenChange (propertyName : string) (propertyValue : obj) (screen : Screen) world =
 
             let world =
-                World.publishBindingChange propertyName propertyValue screen world
+                World.publishBindingChange propertyName screen world
 
             let world =
                 let changeData = { Name = propertyName; Value = propertyValue }
