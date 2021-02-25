@@ -41,8 +41,8 @@ module WorldBindings =
         "readGameFromFile getScreens setScreenDissolve destroyScreen " +
         "createScreen createDissolveScreen writeScreenToFile readScreenFromFile " +
         "getLayers createLayer destroyLayer destroyLayers " +
-        "writeLayerToFile readLayerFromFile destroyEntity destroyEntities " +
-        "tryPickEntity writeEntityToFile getEntities createEntity " +
+        "writeLayerToFile readLayerFromFile writeEntityToFile getEntities " +
+        "destroyEntity destroyEntities tryPickEntity createEntity " +
         "readEntityFromFile reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames " +
         "getEyeCenter setEyeCenter getEyeSize setEyeSize " +
         "getEyeBounds getOmniScreenOpt setOmniScreenOpt getOmniScreen " +
@@ -1803,6 +1803,52 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readLayerFromFile' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let writeEntityToFile filePath enity world =
+        let oldWorld = world
+        try
+            let filePath =
+                match ScriptingSystem.tryExport typeof<String> filePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
+            let struct (enity, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal enity world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Entity address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.writeEntityToFile filePath enity world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'writeEntityToFile' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getEntities layer world =
+        let oldWorld = world
+        try
+            let struct (layer, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal layer world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Layer address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.getEntities layer world
+            let value = result
+            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntities' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let destroyEntity entity world =
         let oldWorld = world
         try
@@ -1878,52 +1924,6 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryPickEntity' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let writeEntityToFile filePath enity world =
-        let oldWorld = world
-        try
-            let filePath =
-                match ScriptingSystem.tryExport typeof<String> filePath world with
-                | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
-            let struct (enity, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal enity world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.writeEntityToFile filePath enity world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'writeEntityToFile' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let getEntities layer world =
-        let oldWorld = world
-        try
-            let struct (layer, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal layer world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Layer address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.getEntities layer world
-            let value = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntities' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let createEntity dispatcherName nameOpt overlayDescriptor layer world =
@@ -3654,6 +3654,28 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalWriteEntityToFileBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filePath; enity|] -> writeEntityToFile filePath enity world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetEntitiesBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|layer|] -> getEntities layer world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalDestroyEntityBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3682,28 +3704,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|position; entities|] -> tryPickEntity position entities world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalWriteEntityToFileBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|filePath; enity|] -> writeEntityToFile filePath enity world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalGetEntitiesBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|layer|] -> getEntities layer world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4309,11 +4309,11 @@ module WorldBindings =
              ("destroyLayers", { Fn = evalDestroyLayersBinding; Pars = [|"layers"|]; DocOpt = None })
              ("writeLayerToFile", { Fn = evalWriteLayerToFileBinding; Pars = [|"filePath"; "layer"|]; DocOpt = None })
              ("readLayerFromFile", { Fn = evalReadLayerFromFileBinding; Pars = [|"filePath"; "nameOpt"; "screen"|]; DocOpt = None })
+             ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
+             ("getEntities", { Fn = evalGetEntitiesBinding; Pars = [|"layer"|]; DocOpt = None })
              ("destroyEntity", { Fn = evalDestroyEntityBinding; Pars = [|"entity"|]; DocOpt = None })
              ("destroyEntities", { Fn = evalDestroyEntitiesBinding; Pars = [|"entities"|]; DocOpt = None })
              ("tryPickEntity", { Fn = evalTryPickEntityBinding; Pars = [|"position"; "entities"|]; DocOpt = None })
-             ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
-             ("getEntities", { Fn = evalGetEntitiesBinding; Pars = [|"layer"|]; DocOpt = None })
              ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "nameOpt"; "overlayDescriptor"; "layer"|]; DocOpt = None })
              ("readEntityFromFile", { Fn = evalReadEntityFromFileBinding; Pars = [|"filePath"; "nameOpt"; "layer"|]; DocOpt = None })
              ("reassignEntity", { Fn = evalReassignEntityBinding; Pars = [|"entity"; "nameOpt"; "layer"|]; DocOpt = None })
