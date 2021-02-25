@@ -71,9 +71,11 @@ module WorldModuleLayer =
 
         static member private publishLayerChange propertyName (propertyValue : obj) (layer : Layer) world =
 
+            // publish change binding
             let world =
                 World.publishBindingChange propertyName layer world
 
+            // publish event binding
             let world =
                 let changeData = { Name = propertyName; Value = propertyValue }
                 let layerNames = Address.getNames layer.LayerAddress
@@ -81,6 +83,7 @@ module WorldModuleLayer =
                 let eventTrace = EventTrace.debug "World" "publishLayerChange" "" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace layer false world
 
+            // fin
             world
 
         static member private getLayerStateOpt layer world =

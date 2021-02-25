@@ -69,7 +69,7 @@ module Nu =
                             if entityBindingCount = 0
                             then UMap.remove entity.EntityAddress entityBindingCounts
                             else UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
-                        let world = if entityBindingCount = 0 && entity.Exists world then World.setEntityPublishBindings false entity world else world
+                        let world = if entityBindingCount = 0 && entity.Exists world then World.setEntityPublishChangeBindings false entity world else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                     | None -> world // failwithumf ()
                 | None -> failwithumf ()
@@ -263,19 +263,19 @@ module Nu =
                                             else UMap.add entityAddress entityChangeCount entityChangeCounts
                                         let world =
                                             if entity.Exists world then
-                                                if entityChangeCount = 0 then World.setEntityPublishChanges false entity world
-                                                elif entityChangeCount = 1 then World.setEntityPublishChanges true entity world
+                                                if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world
+                                                elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world
                                                 else world
                                             else world
                                         World.addKeyedValue EntityChangeCountsId entityChangeCounts world
                                     | (false, _) ->
                                         if not subscribing then failwithumf ()
-                                        let world = if entity.Exists world then World.setEntityPublishChanges true entity world else world
+                                        let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world else world
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                                 | None ->
                                     if not subscribing then failwithumf ()
                                     let entityChangeCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
-                                    let world = if entity.Exists world then World.setEntityPublishChanges true entity world else world
+                                    let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world else world
                                     World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                             else world
                         if  eventSecondName <> "ParentNodeOpt" &&
@@ -455,17 +455,17 @@ module Nu =
                             | Some entityBindingCount ->
                                 let entityBindingCount = inc entityBindingCount
                                 let entityBindingCounts = UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
-                                let world = if entityBindingCount = 1 && entity.Exists world then World.setEntityPublishBindings true entity world else world
+                                let world = if entityBindingCount = 1 && entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
                                 World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                             | None ->
                                 let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
                                 let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
-                                let world = if entity.Exists world then World.setEntityPublishBindings true entity world else world
+                                let world = if entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
                                 World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                         | None ->
                             let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
                             let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
-                            let world = if entity.Exists world then World.setEntityPublishBindings true entity world else world
+                            let world = if entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
                             World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                     | _ -> world
                 match world.PropertyBindingsMap.TryGetValue propertyAddress with
