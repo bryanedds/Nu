@@ -59,15 +59,18 @@ module WorldModuleScreen =
 
         static member private publishScreenChange (propertyName : string) (propertyValue : obj) (screen : Screen) world =
 
+            // publish change binding
             let world =
                 World.publishBindingChange propertyName screen world
 
+            // publish change event
             let world =
                 let changeData = { Name = propertyName; Value = propertyValue }
                 let changeEventAddress = rtoa<ChangeData> [|"Change"; propertyName; "Event"; screen.Name|]
                 let eventTrace = EventTrace.debug "World" "publishScreenChange" "" EventTrace.empty
                 World.publishPlus changeData changeEventAddress eventTrace screen false world
 
+            // fin
             world
 
         static member private getScreenStateOpt screen world =

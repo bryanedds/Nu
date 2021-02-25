@@ -18,14 +18,14 @@ module TransformMasks =
     let [<Literal>] OmnipresentMask =           0b0000000000001000
     let [<Literal>] AbsoluteMask =              0b0000000000010000
     let [<Literal>] ImperativeMask =            0b0000000000100000
-    let [<Literal>] PublishChangesMask =        0b0000000001000000
-    let [<Literal>] EnabledMask =               0b0000000010000000
-    let [<Literal>] VisibleMask =               0b0000000100000000
-    let [<Literal>] AlwaysUpdateMask =          0b0000001000000000
-    let [<Literal>] PublishUpdatesMask =        0b0000010000000000
-    let [<Literal>] PublishPostUpdatesMask =    0b0000100000000000
-    let [<Literal>] PersistentMask =            0b0001000000000000
-    let [<Literal>] PublishBindingsMask =       0b0010000000000000
+    let [<Literal>] PublishChangeBindingsMask = 0b0000000001000000
+    let [<Literal>] PublishChangeEventsMask =   0b0000000010000000
+    let [<Literal>] EnabledMask =               0b0000000100000000
+    let [<Literal>] VisibleMask =               0b0000001000000000
+    let [<Literal>] AlwaysUpdateMask =          0b0000010000000000
+    let [<Literal>] PublishUpdatesMask =        0b0000100000000000
+    let [<Literal>] PublishPostUpdatesMask =    0b0001000000000000
+    let [<Literal>] PersistentMask =            0b0010000000000000
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -72,15 +72,15 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     member this.Omnipresent with get () = this.Flags &&& OmnipresentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| OmnipresentMask else this.Flags &&& ~~~OmnipresentMask
     member this.Absolute with get () = this.Flags &&& AbsoluteMask <> 0 and set value = this.Flags <- if value then this.Flags ||| AbsoluteMask else this.Flags &&& ~~~AbsoluteMask
     member this.Imperative with get () = this.Flags &&& ImperativeMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ImperativeMask else this.Flags &&& ~~~ImperativeMask
-    member this.PublishChanges with get () = this.Flags &&& PublishChangesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishChangesMask else this.Flags &&& ~~~PublishChangesMask
+    member this.PublishChangeBindings with get () = this.Flags &&& PublishChangeBindingsMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishChangeBindingsMask else this.Flags &&& ~~~PublishChangeBindingsMask
+    member this.PublishChangeEvents with get () = this.Flags &&& PublishChangeEventsMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishChangeEventsMask else this.Flags &&& ~~~PublishChangeEventsMask
     member this.Enabled with get () = this.Flags &&& EnabledMask <> 0 and set value = this.Flags <- if value then this.Flags ||| EnabledMask else this.Flags &&& ~~~EnabledMask
     member this.Visible with get () = this.Flags &&& VisibleMask <> 0 and set value = this.Flags <- if value then this.Flags ||| VisibleMask else this.Flags &&& ~~~VisibleMask
     member this.AlwaysUpdate with get () = this.Flags &&& AlwaysUpdateMask <> 0 and set value = this.Flags <- if value then this.Flags ||| AlwaysUpdateMask else this.Flags &&& ~~~AlwaysUpdateMask
     member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
     member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
     member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
-    member this.PublishBindings with get () = this.Flags &&& PublishBindingsMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishBindingsMask else this.Flags &&& ~~~PublishBindingsMask
-    member this.Optimized with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& OmnipresentMask ||| ~~~this.Flags &&& PublishChangesMask = 0
+    member this.Optimized with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& OmnipresentMask ||| ~~~this.Flags &&& PublishChangeEventsMask = 0
     member this.ShouldMutate with get () = ~~~this.Flags &&& ImperativeMask = 0 // TODO: P1: consider stripping this out once we determine it's not likely to be needed again.
 
     /// Make an empty transform.
@@ -97,7 +97,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
           Size = Constants.Engine.EntitySizeDefault
           Rotation = 0.0f
           Elevation = 0.0f
-          Flags = 0b0001000110100001 }
+          Flags = 0b0010001100100001 }
 
     interface Transform Component with
         member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask

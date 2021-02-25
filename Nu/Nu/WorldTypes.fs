@@ -337,14 +337,14 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
-             Define? PublishChanges false
+             Define? PublishChangeBindings false
+             Define? PublishChangeEvents false
              Define? Visible true
              Define? Enabled true
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
-             Define? Persistent true
-             Define? PublishBindings false]
+             Define? Persistent true]
 
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
@@ -729,14 +729,14 @@ module WorldTypes =
         member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
         member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
         member this.Imperative with get () = this.Transform.Imperative and set value = this.Transform.Imperative <- value
-        member this.PublishChanges with get () = this.Transform.PublishChanges and set value = this.Transform.PublishChanges <- value
+        member this.PublishChangeBindings with get () = this.Transform.PublishChangeBindings and set value = this.Transform.PublishChangeBindings <- value
+        member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
         member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
         member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
         member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
-        member this.PublishBindings with get () = this.Transform.PublishBindings and set value = this.Transform.PublishBindings <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.ShouldMutate with get () = this.Transform.ShouldMutate
 
