@@ -64,6 +64,7 @@ module Nu =
                 | Some entityBindingCounts ->
                     match UMap.tryFind entity.EntityAddress entityBindingCounts with
                     | Some entityBindingCount ->
+                        printfn "%A %i" entity entityBindingCount
                         let entityBindingCount = dec entityBindingCount
                         let entityBindingCounts =
                             if entityBindingCount = 0
@@ -71,7 +72,7 @@ module Nu =
                             else UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
                         let world = if entityBindingCount = 0 && entity.Exists world then World.setEntityPublishChangeBindings false entity world else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
-                    | None -> world // failwithumf ()
+                    | None -> failwithumf ()
                 | None -> failwithumf ()
             | _ -> world
 
@@ -454,17 +455,19 @@ module Nu =
                             match UMap.tryFind entity.EntityAddress entityBindingCounts with
                             | Some entityBindingCount ->
                                 let entityBindingCount = inc entityBindingCount
+                                printfn "%A %i %i" entity entityBindingCount (UMap.length entityBindingCounts)
                                 let entityBindingCounts = UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
                                 let world = if entityBindingCount = 1 && entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
                                 World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                             | None ->
-                                let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
                                 let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
+                                printfn "%A 1 %i" entity (UMap.length entityBindingCounts)
                                 let world = if entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
                                 World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                         | None ->
                             let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
                             let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
+                            printfn "%A 1 %i" entity (UMap.length entityBindingCounts)
                             let world = if entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
                             World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                     | _ -> world
