@@ -10,11 +10,9 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldModuleLayer =
 
-    /// Dynamic property getters.
-    let internal Getters = Dictionary<string, Layer -> World -> Property> HashIdentity.Structural
-
-    /// Dynamic property setters.
-    let internal Setters = Dictionary<string, Property -> Layer -> World -> bool * World> HashIdentity.Structural
+    /// Dynamic property getters / setters.
+    let internal LayerGetters = Dictionary<string, Layer -> World -> Property> HashIdentity.Structural
+    let internal LayerSetters = Dictionary<string, Property -> Layer -> World -> bool * World> HashIdentity.Structural
 
     type World with
     
@@ -149,13 +147,13 @@ module WorldModuleLayer =
 
         static member internal tryGetLayerProperty (propertyName, layer, world, property : _ outref) =
             if World.getLayerExists layer world then
-                match Getters.TryGetValue propertyName with
+                match LayerGetters.TryGetValue propertyName with
                 | (true, getter) -> property <- getter layer world; true
                 | (false, _) -> LayerState.tryGetProperty (propertyName, World.getLayerState layer world, &property)
             else false
 
         static member internal getLayerProperty propertyName layer world =
-            match Getters.TryGetValue propertyName with
+            match LayerGetters.TryGetValue propertyName with
             | (false, _) ->
                 let mutable property = Unchecked.defaultof<_>
                 match LayerState.tryGetProperty (propertyName, World.getLayerState layer world, &property) with
@@ -165,7 +163,7 @@ module WorldModuleLayer =
 
         static member internal trySetLayerProperty propertyName property layer world =
             if World.getLayerExists layer world then
-                match Setters.TryGetValue propertyName with
+                match LayerSetters.TryGetValue propertyName with
                 | (true, setter) -> setter property layer world
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
@@ -187,7 +185,7 @@ module WorldModuleLayer =
 
         static member internal setLayerProperty propertyName property layer world =
             if World.getLayerExists layer world then
-                match Setters.TryGetValue propertyName with
+                match LayerSetters.TryGetValue propertyName with
                 | (true, setter) ->
                     match setter property layer world with
                     | (true, world) -> world
@@ -291,21 +289,21 @@ module WorldModuleLayer =
 
     /// Initialize property getters.
     let private initGetters () =
-        Getters.Add ("Dispatcher", fun layer world -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcher layer world })
-        Getters.Add ("Model", fun layer world -> let designerProperty = World.getLayerModelProperty layer world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-        Getters.Add ("Visible", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world })
-        Getters.Add ("Persistent", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world })
-        Getters.Add ("Destroying", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerDestroying layer world })
-        Getters.Add ("ScriptFrame", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScriptFrame layer world })
-        Getters.Add ("CreationTimeStamp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStamp layer world })
-        Getters.Add ("Name", fun layer world -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world })
-        Getters.Add ("Id", fun layer world -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world })
+        LayerGetters.Add ("Dispatcher", fun layer world -> { PropertyType = typeof<LayerDispatcher>; PropertyValue = World.getLayerDispatcher layer world })
+        LayerGetters.Add ("Model", fun layer world -> let designerProperty = World.getLayerModelProperty layer world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
+        LayerGetters.Add ("Visible", fun layer world -> { PropertyType = typeof<single>; PropertyValue = World.getLayerVisible layer world })
+        LayerGetters.Add ("Persistent", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerPersistent layer world })
+        LayerGetters.Add ("Destroying", fun layer world -> { PropertyType = typeof<bool>; PropertyValue = World.getLayerDestroying layer world })
+        LayerGetters.Add ("ScriptFrame", fun layer world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getLayerScriptFrame layer world })
+        LayerGetters.Add ("CreationTimeStamp", fun layer world -> { PropertyType = typeof<int64>; PropertyValue = World.getLayerCreationTimeStamp layer world })
+        LayerGetters.Add ("Name", fun layer world -> { PropertyType = typeof<string>; PropertyValue = World.getLayerName layer world })
+        LayerGetters.Add ("Id", fun layer world -> { PropertyType = typeof<Guid>; PropertyValue = World.getLayerId layer world })
         
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Model", fun property layer world -> if World.getLayerModel layer world =/= property.PropertyValue then (true, World.setLayerModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } layer world) else (false, world))
-        Setters.Add ("Visible", fun property layer world -> if World.getLayerVisible layer world =/= property.PropertyValue then (true, World.setLayerVisible (property.PropertyValue :?> bool) layer world) else (false, world))
-        Setters.Add ("Persistent", fun property layer world -> if World.getLayerPersistent layer world =/= property.PropertyValue then (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world) else (false, world))
+        LayerSetters.Add ("Model", fun property layer world -> if World.getLayerModel layer world =/= property.PropertyValue then (true, World.setLayerModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } layer world) else (false, world))
+        LayerSetters.Add ("Visible", fun property layer world -> if World.getLayerVisible layer world =/= property.PropertyValue then (true, World.setLayerVisible (property.PropertyValue :?> bool) layer world) else (false, world))
+        LayerSetters.Add ("Persistent", fun property layer world -> if World.getLayerPersistent layer world =/= property.PropertyValue then (true, World.setLayerPersistent (property.PropertyValue :?> bool) layer world) else (false, world))
         
     /// Initialize getters and setters
     let internal init () =

@@ -337,8 +337,7 @@ module BasicEmitterFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.SelfDestruct false
+            [define Entity.SelfDestruct false
              define Entity.EmitterOffset v2Zero
              define Entity.EmitterTwist 0.0f
              define Entity.EmitterBlend Transparent
@@ -516,8 +515,7 @@ module EffectFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.SelfDestruct false
+            [define Entity.SelfDestruct false
              define Entity.EffectSymbolOpt None
              define Entity.EffectStartTimeOpt None
              define Entity.EffectDefinitions Map.empty
@@ -689,8 +687,7 @@ module ScriptFacetModule =
             (Cascade, world)
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.ScriptOpt None
+            [define Entity.ScriptOpt None
              define Entity.Script [||]
              define Entity.ScriptUnsubscriptions []
              define Entity.RegisterScript Scripting.Unit
@@ -846,8 +843,7 @@ module RigidBodyFacetModule =
             World.localizeBodyShape (entity.GetSize world) (entity.GetBodyShape world) world
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.BodyEnabled true
+            [define Entity.BodyEnabled true
              define Entity.BodyType Dynamic
              define Entity.Awake true
              define Entity.Density Constants.Physics.DensityDefault
@@ -931,8 +927,7 @@ module JointFacetModule =
         inherit Facet ()
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.JointDevice JointEmpty
+            [define Entity.JointDevice JointEmpty
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
@@ -968,7 +963,6 @@ module TileMapFacetModule =
 
         static member Properties =
             [define Entity.Omnipresent true
-             define Entity.PublishChanges true
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -1057,7 +1051,6 @@ module TmxMapFacetModule =
 
         static member Properties =
             [define Entity.Omnipresent true
-             define Entity.PublishChanges true
              define Entity.BodyEnabled true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
@@ -1559,9 +1552,6 @@ module BasicEmitterDispatcherModule =
         static member Facets =
             [typeof<BasicEmitterFacet>]
 
-        static member Properties =
-            [define Entity.PublishChanges true]
-
 [<AutoOpen>]
 module EffectDispatcherModule =
 
@@ -1572,8 +1562,7 @@ module EffectDispatcherModule =
             [typeof<EffectFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] FlipNone [] Nil]]]]")]
+            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] FlipNone [] Nil]]]]")]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -1619,17 +1608,11 @@ module NodeDispatcherModule =
         static member Facets =
             [typeof<NodeFacet>]
 
-        static member Properties =
-            [define Entity.PublishChanges true]
-
     type [<AbstractClass>] NodeDispatcher<'model, 'message, 'command> (model) =
         inherit EntityDispatcher<'model, 'message, 'command> (model)
 
         static member Facets =
             [typeof<NodeFacet>]
-
-        static member Properties =
-            [define Entity.PublishChanges true]
 
 [<AutoOpen>]
 module GuiDispatcherModule =
@@ -1665,7 +1648,6 @@ module GuiDispatcherModule =
         static member Properties =
             [define Entity.Omnipresent true
              define Entity.Absolute true
-             define Entity.PublishChanges true
              define Entity.AlwaysUpdate true
              define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))
              define Entity.SwallowMouseLeft true]
@@ -1697,7 +1679,6 @@ module GuiDispatcherModule =
 
         static member Properties =
             [define Entity.Absolute true
-             define Entity.PublishChanges true
              define Entity.AlwaysUpdate true
              define Entity.DisabledColor (Color (byte 192, byte 192, byte 192, byte 192))
              define Entity.SwallowMouseLeft true]
@@ -2221,8 +2202,7 @@ module BlockDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.BodyType Static
+            [define Entity.BodyType Static
              define Entity.StaticImage Assets.Default.Image4]
 
 [<AutoOpen>]
@@ -2236,8 +2216,7 @@ module BoxDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.StaticImage Assets.Default.Image4]
+            [define Entity.StaticImage Assets.Default.Image4]
 
 [<AutoOpen>]
 module CharacterDispatcherModule =
@@ -2271,8 +2250,7 @@ module CharacterDispatcherModule =
             [typeof<RigidBodyFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.CelSize (v2 28.0f 28.0f)
+            [define Entity.CelSize (v2 28.0f 28.0f)
              define Entity.CelRun 8
              define Entity.AnimationDelay 4L
              define Entity.FixedRotation true
@@ -2339,7 +2317,6 @@ module TileMapDispatcherModule =
 
         static member Properties =
             [define Entity.Omnipresent true
-             define Entity.PublishChanges true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
@@ -2358,7 +2335,6 @@ module TmxMapDispatcherModule =
 
         static member Properties =
             [define Entity.Omnipresent true
-             define Entity.PublishChanges true
              define Entity.Friction 0.0f
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"

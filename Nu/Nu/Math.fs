@@ -25,6 +25,7 @@ module TransformMasks =
     let [<Literal>] PublishUpdatesMask =        0b0000010000000000
     let [<Literal>] PublishPostUpdatesMask =    0b0000100000000000
     let [<Literal>] PersistentMask =            0b0001000000000000
+    let [<Literal>] PublishBindingsMask =       0b0010000000000000
 
 // NOTE: opening this in order to make the Transform property implementations reasonably succinct.
 open TransformMasks
@@ -78,6 +79,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     member this.PublishUpdates with get () = this.Flags &&& PublishUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishUpdatesMask else this.Flags &&& ~~~PublishUpdatesMask
     member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
     member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
+    member this.PublishBindings with get () = this.Flags &&& PublishBindingsMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishBindingsMask else this.Flags &&& ~~~PublishBindingsMask
     member this.Optimized with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& OmnipresentMask ||| ~~~this.Flags &&& PublishChangesMask = 0
     member this.ShouldMutate with get () = ~~~this.Flags &&& ImperativeMask = 0 // TODO: P1: consider stripping this out once we determine it's not likely to be needed again.
 
