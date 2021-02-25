@@ -31,7 +31,6 @@ module PropDispatcher =
         
         static member Properties =
             [define Entity.Elevation Constants.Layout.PropElevation
-             define Entity.PublishChanges true
              define Entity.Omnipresent true]
         
         override this.Initializers (prop, _) =

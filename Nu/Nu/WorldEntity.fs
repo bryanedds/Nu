@@ -60,9 +60,6 @@ module WorldEntityModule =
         member this.GetImperative world = World.getEntityImperative this world
         member this.SetImperative value world = World.setEntityImperative value this world
         member this.Imperative = lens Property? Imperative this.GetImperative this.SetImperative this
-        member this.GetPublishChanges world = World.getEntityPublishChanges this world
-        member this.SetPublishChanges value world = World.setEntityPublishChanges value this world
-        member this.PublishChanges = lens Property? PublishChanges this.GetPublishChanges this.SetPublishChanges this
         member this.GetEnabled world = World.getEntityEnabled this world
         member this.SetEnabled value world = World.setEntityEnabled value this world
         member this.Enabled = lens Property? Enabled this.GetEnabled this.SetEnabled this
@@ -116,11 +113,10 @@ module WorldEntityModule =
         member this.StateReadOnly world =
             world |> World.getEntityState this |> EntityState.copy
 
-        /// Optimize an entity by setting { Imperative = true; Omnipresent = true; PublishChanges = false }.
+        /// Optimize an entity by setting { Imperative = true; Omnipresent = true }.
         member this.Optimize world =
             let world = this.SetImperative true world
             let world = this.SetOmnipresent true world
-            let world = this.SetPublishChanges false world
             world
 
         /// Set the transform of an entity without generating any change events.

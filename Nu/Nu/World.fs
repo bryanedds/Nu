@@ -14,7 +14,6 @@ open Nu
 module Nu =
 
     let mutable private Initialized = false
-
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
@@ -44,16 +43,40 @@ module Nu =
         else tryPropagateByName simulant left.Name right world
 
     let internal unbind propertyBindingId propertyAddress world =
-        match world.PropertyBindingsMap.TryGetValue propertyAddress with
-        | (true, propertyBindings) ->
-            let propertyBindings = UMap.remove propertyBindingId propertyBindings
-            if UMap.notEmpty propertyBindings then
-                let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
-                World.choose { world with PropertyBindingsMap = propertyBindingsMap }
-            else
-                let propertyBindingsMap = UMap.remove propertyAddress world.PropertyBindingsMap
-                World.choose { world with PropertyBindingsMap = propertyBindingsMap }
-        | (false, _) -> world
+
+        // add binding to map
+        let world =
+            match world.PropertyBindingsMap.TryGetValue propertyAddress with
+            | (true, propertyBindings) ->
+                let propertyBindings = UMap.remove propertyBindingId propertyBindings
+                if UMap.notEmpty propertyBindings then
+                    let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
+                    World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+                else
+                    let propertyBindingsMap = UMap.remove propertyAddress world.PropertyBindingsMap
+                    World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+            | (false, _) -> world
+
+        // decrease bind counter
+        let world =
+            match propertyAddress.PASimulant with
+            | :? Entity as entity ->
+                match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
+                | Some entityBindingCounts ->
+                    match UMap.tryFind entity.EntityAddress entityBindingCounts with
+                    | Some entityBindingCount ->
+                        let entityBindingCount = dec entityBindingCount
+                        let entityBindingCounts =
+                            if entityBindingCount = 0
+                            then UMap.remove entity.EntityAddress entityBindingCounts
+                            else UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
+                        let world = if entityBindingCount = 0 && entity.Exists world then World.setEntityPublishBindings false entity world else world
+                        World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                    | None -> world // failwithumf ()
+                | None -> failwithumf ()
+            | _ -> world
+
+        world
 
     /// Initialize the Nu game engine.
     let init nuConfig =
@@ -98,7 +121,7 @@ module Nu =
                 | :? Simulant as simulant ->
                     match simulant with
                     | :? Entity as entity ->
-                        match (valueOpt, WorldModuleEntity.Setters.TryGetValue propertyName) with
+                        match (valueOpt, WorldModuleEntity.EntitySetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
                             let layer = entity.Parent
                             let screen = layer.Parent
@@ -121,7 +144,7 @@ module Nu =
                         | (None, (false, _)) ->
                             World.detachEntityProperty propertyName entity world |> box
                     | :? Layer as layer ->
-                        match (valueOpt, WorldModuleLayer.Setters.TryGetValue propertyName) with
+                        match (valueOpt, WorldModuleLayer.LayerSetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
                             let screen = layer.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
@@ -139,7 +162,7 @@ module Nu =
                         | (None, (false, _)) ->
                             World.detachLayerProperty propertyName layer world |> box
                     | :? Screen as screen ->
-                        match (valueOpt, WorldModuleScreen.Setters.TryGetValue propertyName) with
+                        match (valueOpt, WorldModuleScreen.ScreenSetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
@@ -153,7 +176,7 @@ module Nu =
                         | (None, (false, _)) ->
                             World.detachScreenProperty propertyName screen world |> box
                     | :? Game ->
-                        match (valueOpt, WorldModuleGame.Setters.TryGetValue propertyName) with
+                        match (valueOpt, WorldModuleGame.GameSetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
                             let property = { PropertyValue = value; PropertyType = ty }
                             setter property world |> snd |> box
@@ -192,7 +215,7 @@ module Nu =
                     else tryPropagateByName simulant left.Name right world
                 (Cascade, world :> obj)
 
-            WorldTypes.handleSubscribeAndUnsubscribeEventHook <- fun eventAddress _ worldObj ->
+            WorldTypes.handleSubscribeAndUnsubscribeEventHook <- fun subscribing eventAddress _ worldObj ->
                 // here we need to update the event publish flags for entities based on whether there are subscriptions to
                 // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
                 // that these optimization do not support, and warn the developer if they are invoked. Additionally, we
@@ -226,9 +249,40 @@ module Nu =
                     let eventFirstName = eventNames.[0]
                     let eventSecondName = eventNames.[1]
                     match eventFirstName with
-                    | "Change" when eventSecondName <> "ParentNodeOpt" ->
-                        if Array.contains (Address.head Events.Wildcard) eventNames then
-                            Log.debug "Subscribing to change events with a wildcard is not supported."
+                    | "Change" ->
+                        let world =
+                            if eventNames.Length = 6 then
+                                let entityAddress = rtoa (Array.skip 3 eventNames)
+                                let entity = Entity entityAddress
+                                match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityChangeCountsId world with
+                                | Some entityChangeCounts ->
+                                    match entityChangeCounts.TryGetValue entityAddress with
+                                    | (true, entityChangeCount) ->
+                                        let entityChangeCount = if subscribing then inc entityChangeCount else dec entityChangeCount
+                                        let entityChangeCounts =
+                                            if entityChangeCount = 0
+                                            then UMap.remove entityAddress entityChangeCounts
+                                            else UMap.add entityAddress entityChangeCount entityChangeCounts
+                                        let world =
+                                            if entity.Exists world then
+                                                if entityChangeCount = 0 then World.setEntityPublishChanges false entity world
+                                                elif entityChangeCount = 1 then World.setEntityPublishChanges true entity world
+                                                else world
+                                            else world
+                                        World.addKeyedValue EntityChangeCountsId entityChangeCounts world
+                                    | (false, _) ->
+                                        if not subscribing then failwithumf ()
+                                        let world = if entity.Exists world then World.setEntityPublishChanges true entity world else world
+                                        World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
+                                | None ->
+                                    if not subscribing then failwithumf ()
+                                    let entityChangeCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+                                    let world = if entity.Exists world then World.setEntityPublishChanges true entity world else world
+                                    World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
+                            else world
+                        if  eventSecondName <> "ParentNodeOpt" &&
+                            Array.contains (Address.head Events.Wildcard) eventNames then
+                            Log.debug "Subscribing to change events with a wildcard is not supported (except for ParentNodeOpt)."
                         world :> obj
                     | _ -> world :> obj
                 | _ -> world :> obj
@@ -394,13 +448,35 @@ module Nu =
                 let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
                 let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingId propertyAddress world)) (Events.Unregistering --> simulant.SimulantAddress) simulant world
                 let world = World.monitor (fun _ world -> (Cascade, tryPropagate simulant leftFixup rightFixup world)) (Events.Register --> right.This.SimulantAddress) simulant world
+                let world =
+                    match right.This with
+                    | :? Entity as entity ->
+                        match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
+                        | Some entityBindingCounts ->
+                            match UMap.tryFind entity.EntityAddress entityBindingCounts with
+                            | Some entityBindingCount ->
+                                let entityBindingCount = inc entityBindingCount
+                                let entityBindingCounts = UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
+                                let world = if entityBindingCount = 1 && entity.Exists world then World.setEntityPublishBindings true entity world else world
+                                World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                            | None ->
+                                let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+                                let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
+                                let world = if entity.Exists world then World.setEntityPublishBindings true entity world else world
+                                World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                        | None ->
+                            let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+                            let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
+                            let world = if entity.Exists world then World.setEntityPublishBindings true entity world else world
+                            World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                    | _ -> world
                 match world.PropertyBindingsMap.TryGetValue propertyAddress with
                 | (true, propertyBindings) ->
                     let propertyBindings = UMap.add propertyBindingId { PBLeft = leftFixup; PBRight = rightFixup } propertyBindings
                     let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
                     World.choose { world with PropertyBindingsMap = propertyBindingsMap }
                 | (false, _) ->
-                    let config = if AmbientState.getStandAlone world.AmbientState then Imperative else Functional
+                    let config = if World.getStandAlone world then Imperative else Functional
                     let propertyBindings = UMap.makeEmpty config
                     let propertyBindings = UMap.add propertyBindingId { PBLeft = leftFixup; PBRight = rightFixup } propertyBindings
                     let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap

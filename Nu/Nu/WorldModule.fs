@@ -166,39 +166,30 @@ module WorldModule =
 
         /// Make the world.
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
-            let propertyBindings =
-                if AmbientState.getStandAlone ambientState
-                then UMap.makeEmpty Imperative
-                else UMap.makeEmpty Functional
-            let gameState = GameState.make activeGameDispatcher
-            let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
+            let propertyBindings = if AmbientState.getStandAlone ambientState then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+            let entityStates = if AmbientState.getStandAlone ambientState then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
-            let entityStates =
-                if AmbientState.getStandAlone ambientState
-                then UMap.makeEmpty Imperative
-                else UMap.makeEmpty Functional
+            let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
+            let gameState = GameState.make activeGameDispatcher
             let world =
-                World.choose
-                    { PropertyBindingsMap = propertyBindings
-                      EventSystemDelegate = eventDelegate
-                      EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) Unchecked.defaultof<EntityState>
-                      EntityTree = MutantCache.make id spatialTree
-                      EntityStates = entityStates
-                      LayerStates = layerStates
-                      ScreenStates = screenStates
-                      GameState = gameState
-                      AmbientState = ambientState
-                      Subsystems = subsystems
-                      ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
-                      Dispatchers = dispatchers
-                      ScriptingEnv = scriptingEnv
-                      ScriptingContext = Game ()
-                      DestructionListRev = []
-                      Plugin = plugin }
-            let world =
-                World.choose
-                    { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
-            world
+                { PropertyBindingsMap = propertyBindings
+                  EventSystemDelegate = eventDelegate
+                  EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) Unchecked.defaultof<EntityState>
+                  EntityTree = MutantCache.make id spatialTree
+                  EntityStates = entityStates
+                  LayerStates = layerStates
+                  ScreenStates = screenStates
+                  GameState = gameState
+                  AmbientState = ambientState
+                  Subsystems = subsystems
+                  ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
+                  Dispatchers = dispatchers
+                  ScriptingEnv = scriptingEnv
+                  ScriptingContext = Game ()
+                  DestructionListRev = []
+                  Plugin = plugin }
+            let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
+            World.choose world
 
     type World with // Caching
 
@@ -415,7 +406,7 @@ module WorldModule =
 
         /// Schedule an operation to be executed by the engine at the given time.
         static member schedule fn time world =
-            let tasklet = { ScheduledTime = time; Command = { Execute = fn }}
+            let tasklet = { ScheduledTime = time; Execute = fn }
             World.addTasklet tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame.
@@ -425,7 +416,7 @@ module WorldModule =
 
         /// Schedule an operation to be executed by the engine with the given delay.
         static member delay fn delay world =
-            let tasklet = { ScheduledTime = World.getTickTime world + delay; Command = { Execute = fn }}
+            let tasklet = { ScheduledTime = World.getTickTime world + delay; Execute = fn }
             World.addTasklet tasklet world
 
         /// Attempt to get the window flags.

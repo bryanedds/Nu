@@ -86,11 +86,6 @@ type MetricsEntityDispatcher () =
         [typeof<StaticSpriteFacet>]
   #endif
 
-  #if REACTIVE
-    static member Properties =
-        [define Entity.PublishChanges true]
-  #endif
-
   #if !ECS && !ECS_PURE
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world

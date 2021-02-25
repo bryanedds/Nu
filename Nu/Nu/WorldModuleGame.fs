@@ -11,11 +11,9 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldModuleGame =
 
-    /// Dynamic property getters.
-    let internal Getters = Dictionary<string, World -> Property> HashIdentity.Structural
-
-    /// Dynamic property setters.
-    let internal Setters = Dictionary<string, Property -> World -> bool * World> HashIdentity.Structural
+    /// Dynamic property getters / setters.
+    let internal GameGetters = Dictionary<string, World -> Property> HashIdentity.Structural
+    let internal GameSetters = Dictionary<string, Property -> World -> bool * World> HashIdentity.Structural
 
     type World with
 
@@ -311,12 +309,12 @@ module WorldModuleGame =
             List.map (fun assetTag -> World.assetTagToValueOpt<'a> assetTag metadata world) assetTags
 
         static member internal tryGetGameProperty (propertyName, world, property : _ outref) =
-            match Getters.TryGetValue propertyName with
+            match GameGetters.TryGetValue propertyName with
             | (true, getter) -> property <- getter world; true
             | (false, _) -> GameState.tryGetProperty (propertyName, World.getGameState world, &property)
 
         static member internal getGameProperty propertyName world =
-            match Getters.TryGetValue propertyName with
+            match GameGetters.TryGetValue propertyName with
             | (false, _) ->
                 let mutable property = Unchecked.defaultof<_>
                 match GameState.tryGetProperty (propertyName, World.getGameState world, &property) with
@@ -325,7 +323,7 @@ module WorldModuleGame =
             | (true, getter) -> getter world
 
         static member internal trySetGameProperty propertyName property world =
-            match Setters.TryGetValue propertyName with
+            match GameSetters.TryGetValue propertyName with
             | (true, setter) -> setter property world
             | (false, _) ->
                 let mutable success = false // bit of a hack to get additional state out of the lambda
@@ -345,7 +343,7 @@ module WorldModuleGame =
                 (success, world)
 
         static member internal setGameProperty propertyName property world =
-            match Setters.TryGetValue propertyName with
+            match GameSetters.TryGetValue propertyName with
             | (true, setter) ->
                 match setter property world with
                 | (true, world) -> world
@@ -413,25 +411,25 @@ module WorldModuleGame =
 
     /// Initialize property getters.
     let private initGetters () =
-        Getters.Add ("Dispatcher", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher world })
-        Getters.Add ("Model", fun world -> let designerProperty = World.getGameModelProperty world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-        Getters.Add ("OmniScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
-        Getters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
-        Getters.Add ("ScreenTransitionDestinationOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
-        Getters.Add ("EyeCenter", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world })
-        Getters.Add ("EyeSize", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world })
-        Getters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame world })
-        Getters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
-        Getters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
+        GameGetters.Add ("Dispatcher", fun world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher world })
+        GameGetters.Add ("Model", fun world -> let designerProperty = World.getGameModelProperty world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
+        GameGetters.Add ("OmniScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
+        GameGetters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
+        GameGetters.Add ("ScreenTransitionDestinationOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
+        GameGetters.Add ("EyeCenter", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world })
+        GameGetters.Add ("EyeSize", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world })
+        GameGetters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame world })
+        GameGetters.Add ("CreationTimeStamp", fun world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameCreationTimeStamp world })
+        GameGetters.Add ("Id", fun world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId world })
 
     /// Initialize property setters.
     let private initSetters () =
-        Setters.Add ("Model", fun property world -> if World.getGameModel world =/= property.PropertyValue then (true, World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world) else (false, world))
-        Setters.Add ("OmniScreenOpt", fun property world -> if World.getOmniScreenOpt world =/= property.PropertyValue then (true, World.setOmniScreenOpt (property.PropertyValue :?> Screen option) world) else (false, world))
-        Setters.Add ("SelectedScreenOpt", fun property world -> if World.getSelectedScreenOpt world =/= property.PropertyValue then (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world) else (false, world))
-        Setters.Add ("ScreenTransitionDestinationOpt", fun property world -> if World.getScreenTransitionDestinationOpt world =/= property.PropertyValue then (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world) else (false, world))
-        Setters.Add ("EyeCenter", fun property world -> if World.getEyeCenter world =/= property.PropertyValue then (true, World.setEyeCenter (property.PropertyValue :?> Vector2) world) else (false, world))
-        Setters.Add ("EyeSize", fun property world -> if World.getEyeSize world =/= property.PropertyValue then (true, World.setEyeSize (property.PropertyValue :?> Vector2) world) else (false, world))
+        GameSetters.Add ("Model", fun property world -> if World.getGameModel world =/= property.PropertyValue then (true, World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world) else (false, world))
+        GameSetters.Add ("OmniScreenOpt", fun property world -> if World.getOmniScreenOpt world =/= property.PropertyValue then (true, World.setOmniScreenOpt (property.PropertyValue :?> Screen option) world) else (false, world))
+        GameSetters.Add ("SelectedScreenOpt", fun property world -> if World.getSelectedScreenOpt world =/= property.PropertyValue then (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world) else (false, world))
+        GameSetters.Add ("ScreenTransitionDestinationOpt", fun property world -> if World.getScreenTransitionDestinationOpt world =/= property.PropertyValue then (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world) else (false, world))
+        GameSetters.Add ("EyeCenter", fun property world -> if World.getEyeCenter world =/= property.PropertyValue then (true, World.setEyeCenter (property.PropertyValue :?> Vector2) world) else (false, world))
+        GameSetters.Add ("EyeSize", fun property world -> if World.getEyeSize world =/= property.PropertyValue then (true, World.setEyeSize (property.PropertyValue :?> Vector2) world) else (false, world))
 
     /// Initialize getters and setters
     let internal init () =

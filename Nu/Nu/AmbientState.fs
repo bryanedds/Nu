@@ -7,14 +7,10 @@ open SDL2
 open Prime
 open Nu
 
-/// A command that transforms the world in some manner.
-type [<NoEquality; NoComparison>] 'w Command =
-    { Execute : 'w -> 'w }
-
 /// A tasklet to be completed at the scheduled tick time.
 type [<NoEquality; NoComparison>] 'w Tasklet =
     { ScheduledTime : int64
-      Command : 'w Command }
+      Execute : 'w -> 'w }
 
 [<AutoOpen>]
 module AmbientState =

@@ -71,7 +71,6 @@ module CharacterDispatcherModule =
         static member Properties =
             [define Entity.Size Constants.Layout.TileSize
              define Entity.Elevation Constants.Layout.CharacterElevation
-             define Entity.PublishChanges true
              define Entity.Omnipresent true
              define Entity.CharacterAnimationState CharacterAnimationState.initial
              define Entity.CharacterAnimationSheet Assets.Gameplay.PlayerImage

@@ -166,7 +166,7 @@ module WorldTypes =
 
     // EventSystem reach-arounds.
     let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
-    let mutable internal handleSubscribeAndUnsubscribeEventHook : obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
+    let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription =
@@ -343,7 +343,8 @@ module WorldTypes =
              Define? AlwaysUpdate false
              Define? PublishUpdates false
              Define? PublishPostUpdates false
-             Define? Persistent true]
+             Define? Persistent true
+             Define? PublishBindings false]
 
         /// Register an entity when adding it to a layer.
         abstract Register : Entity * World -> World
@@ -735,6 +736,7 @@ module WorldTypes =
         member this.PublishUpdates with get () = this.Transform.PublishUpdates and set value = this.Transform.PublishUpdates <- value
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
+        member this.PublishBindings with get () = this.Transform.PublishBindings and set value = this.Transform.PublishBindings <- value
         member this.Optimized with get () = this.Transform.Optimized
         member this.ShouldMutate with get () = this.Transform.ShouldMutate
 
@@ -1182,10 +1184,10 @@ module WorldTypes =
                 (handling, world)
 
             member this.SubscribeEventHook eventAddress subscriber world =
-                handleSubscribeAndUnsubscribeEventHook eventAddress subscriber world :?> World
+                handleSubscribeAndUnsubscribeEventHook true eventAddress subscriber world :?> World
 
             member this.UnsubscribeEventHook eventAddress subscriber world =
-                handleSubscribeAndUnsubscribeEventHook eventAddress subscriber world :?> World
+                handleSubscribeAndUnsubscribeEventHook false eventAddress subscriber world :?> World
 
         interface World ScriptingSystem with
 
