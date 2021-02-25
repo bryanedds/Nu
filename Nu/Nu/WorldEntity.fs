@@ -60,9 +60,6 @@ module WorldEntityModule =
         member this.GetImperative world = World.getEntityImperative this world
         member this.SetImperative value world = World.setEntityImperative value this world
         member this.Imperative = lens Property? Imperative this.GetImperative this.SetImperative this
-        member this.GetPublishChanges world = World.getEntityPublishChanges this world
-        member this.SetPublishChanges value world = World.setEntityPublishChanges value this world
-        member this.PublishChanges = lens Property? PublishChanges this.GetPublishChanges this.SetPublishChanges this
         member this.GetEnabled world = World.getEntityEnabled this world
         member this.SetEnabled value world = World.setEntityEnabled value this world
         member this.Enabled = lens Property? Enabled this.GetEnabled this.SetEnabled this
@@ -106,7 +103,7 @@ module WorldEntityModule =
         member this.State world =
             let entityState = World.getEntityState this world
 #if DEBUG
-            if not entityState.Optimized then failwith "Can get the entity state of an entity only if it is Optimized (Imperative, Omnipresent, and not PublishChanges)."
+            if not entityState.Optimized then failwith "Can get the entity state of an entity only if it is Optimized (Imperative, Omnipresent, and not PublishChangeEvents)."
 #endif
             entityState
 
@@ -116,11 +113,10 @@ module WorldEntityModule =
         member this.StateReadOnly world =
             world |> World.getEntityState this |> EntityState.copy
 
-        /// Optimize an entity by setting { Imperative = true; Omnipresent = true; PublishChanges = false }.
+        /// Optimize an entity by setting { Imperative = true; Omnipresent = true }.
         member this.Optimize world =
             let world = this.SetImperative true world
             let world = this.SetOmnipresent true world
-            let world = this.SetPublishChanges false world
             world
 
         /// Set the transform of an entity without generating any change events.
@@ -147,30 +143,25 @@ module WorldEntityModule =
             (World.getEntityProperty propertyName this world).PropertyValue :?> 'a
 
         /// Try to set a property value with explicit type.
-        member this.TrySetProperty propertyName alwaysPublish property world =
-            World.trySetEntityProperty propertyName alwaysPublish property this world
+        member this.TrySetProperty propertyName property world =
+            World.trySetEntityProperty propertyName property this world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName alwaysPublish property world =
-            World.setEntityProperty propertyName alwaysPublish property this world
+        member this.SetProperty propertyName property world =
+            World.setEntityProperty propertyName property this world
 
         /// Attach a property.
-        member this.AttachProperty propertyName alwaysPublish property world =
-            World.attachEntityProperty propertyName alwaysPublish property this world
+        member this.AttachProperty propertyName property world =
+            World.attachEntityProperty propertyName property this world
 
         /// Detach a property.
         member this.DetachProperty propertyName world =
             World.detachEntityProperty propertyName this world
 
         /// Set a property value.
-        member this.SetFast<'a> propertyName alwaysPublish (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setEntityProperty propertyName alwaysPublish property this world
-
-        /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world =
-            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-            this.SetFast propertyName alwaysPublish value world
+            let property = { PropertyType = typeof<'a>; PropertyValue = value }
+            World.setEntityProperty propertyName property this world
 
         /// Set a property value with publishing an event.
         member this.SetWithoutEvent<'a> propertyName (value : 'a) world =
@@ -387,7 +378,7 @@ module WorldEntityModule =
                             // only set parent node if one was not specified by the descriptor properties
                             if not (List.exists (fun (name, _) -> name = Property? ParentNodeOpt) descriptor.SimulantProperties) then
                                 let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
-                                entity.TrySetProperty Property? ParentNodeOpt true property world |> snd
+                                entity.TrySetProperty Property? ParentNodeOpt property world |> snd
                             else world
                         | _ -> world
                     let world =

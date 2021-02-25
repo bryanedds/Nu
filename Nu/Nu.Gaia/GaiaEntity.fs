@@ -33,7 +33,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
         let nodeProperties = Reflection.getPropertyDefinitions typeof<NodeFacet>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if propertyName.EndsWith "Script" then "Scripts"
-        elif propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" || propertyName = "PublishChanges" then "\rAmbient Properties"
+        elif propertyName = "Name" || propertyName = "OverlayNameOpt" || propertyName = "FacetNames" then "\rAmbient Properties"
         elif propertyName.EndsWith "Model" then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "\rScene Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) nodeProperties then "\rScene Properties"
@@ -118,8 +118,7 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                         | (Right (), world) -> world
                         | (Left error, world) -> Log.trace error; world
                     | _ ->
-                        let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
-                        PropertyDescriptor.trySetValue alwaysPublish propertyDescriptor value entity world |> snd
+                        PropertyDescriptor.trySetValue propertyDescriptor value entity world |> snd
                 Globals.World <- world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world

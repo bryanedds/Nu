@@ -66,9 +66,6 @@ module AvatarDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        static member Properties =
-            [define Entity.PublishChanges true]
-
         override this.Initializers (avatar, entity) =
             let bodyShapes =
                 BodyShapes

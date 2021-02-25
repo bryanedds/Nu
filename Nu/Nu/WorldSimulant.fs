@@ -55,25 +55,25 @@ module WorldSimulantModule =
             | :? Game -> World.getGameProperty name world
             | _ -> failwithumf ()
 
-        static member internal trySetProperty name alwaysPublish property (simulant : Simulant) world =
+        static member internal trySetProperty name property (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> World.trySetEntityProperty name alwaysPublish property entity world
+            | :? Entity as entity -> World.trySetEntityProperty name property entity world
             | :? Layer as layer -> World.trySetLayerProperty name property layer world
             | :? Screen as screen -> World.trySetScreenProperty name property screen world
             | :? Game -> World.trySetGameProperty name property world
             | _ -> (false, world)
 
-        static member internal setProperty name alwaysPublish property (simulant : Simulant) world =
+        static member internal setProperty name property (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> World.setEntityProperty name alwaysPublish property entity world
+            | :? Entity as entity -> World.setEntityProperty name property entity world
             | :? Layer as layer -> World.setLayerProperty name property layer world
             | :? Screen as screen -> World.setScreenProperty name property screen world
             | :? Game -> World.setGameProperty name property world
             | _ -> failwithumf ()
 
-        static member internal attachProperty name alwaysPublish property (simulant : Simulant) world =
+        static member internal attachProperty name property (simulant : Simulant) world =
             match simulant with
-            | :? Entity as entity -> World.attachEntityProperty name alwaysPublish property entity world
+            | :? Entity as entity -> World.attachEntityProperty name property entity world
             | :? Layer as layer -> World.attachLayerProperty name property layer world
             | :? Screen as screen -> World.attachScreenProperty name property screen world
             | :? Game -> World.attachGameProperty name property world
@@ -287,10 +287,10 @@ module PropertyDescriptor =
         | None -> None
 
     /// Attempt to set the simulant's property value.
-    let trySetValue alwaysPublish propertyDescriptor propertyValue simulant world =
+    let trySetValue propertyDescriptor propertyValue simulant world =
         let (propertyName, propertyType) = (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType)
         let property = { PropertyType = propertyType; PropertyValue = propertyValue }
-        World.trySetProperty propertyName alwaysPublish property simulant world
+        World.trySetProperty propertyName property simulant world
 
     /// Get the property descriptors as constructed from the given function in the given context.
     let getPropertyDescriptors<'s when 's :> SimulantState> makePropertyDescriptor contextOpt =
