@@ -88,7 +88,7 @@ and LayerPropertyDescriptor (propertyDescriptor, attributes) =
                             ignore
                         world
                     | _ ->
-                        let (_, world) = PropertyDescriptor.trySetValue true propertyDescriptor value layer world
+                        let (_, world) = PropertyDescriptor.trySetValue propertyDescriptor value layer world
                         world
                 Globals.World <- world // must be set for property grid
                 layerTds.Form.layerPropertyGrid.Refresh ()

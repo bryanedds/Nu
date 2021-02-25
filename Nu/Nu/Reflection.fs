@@ -51,7 +51,6 @@ module Reflection =
     let initPropertyAttributes nonPersistent propertyName =
         NonPersistentPropertyNames.Add (propertyName, nonPersistent)
 
-
     /// Is a property with the given name not persistent?
     let isPropertyNonPersistentByName (propertyName : string) =
         match NonPersistentPropertyNames.TryGetValue propertyName with
@@ -59,7 +58,6 @@ module Reflection =
         | (false, _) ->
             let result =
                 propertyName.EndsWith ("Np", StringComparison.Ordinal) ||
-                propertyName.EndsWith ("Tp", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Id", StringComparison.Ordinal) ||
                 propertyName.EndsWith ("Ids", StringComparison.Ordinal)
             NonPersistentPropertyNames.Add (propertyName, result)
