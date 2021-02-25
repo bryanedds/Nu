@@ -406,7 +406,7 @@ module WorldModule =
 
         /// Schedule an operation to be executed by the engine at the given time.
         static member schedule fn time world =
-            let tasklet = { ScheduledTime = time; Execute = fn }
+            let tasklet = { ScheduledTime = time; ScheduledOp = fn }
             World.addTasklet tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame.
@@ -416,7 +416,7 @@ module WorldModule =
 
         /// Schedule an operation to be executed by the engine with the given delay.
         static member delay fn delay world =
-            let tasklet = { ScheduledTime = World.getTickTime world + delay; Execute = fn }
+            let tasklet = { ScheduledTime = World.getTickTime world + delay; ScheduledOp = fn }
             World.addTasklet tasklet world
 
         /// Attempt to get the window flags.
