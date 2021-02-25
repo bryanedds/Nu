@@ -1031,7 +1031,7 @@ module WorldTypes =
           PAHash : int }
 
         static member equals left right =
-            left.PAHash = right.PAHash && // short-circuit
+            left.PAHash = right.PAHash &&
             left.PAName = right.PAName &&
             Address.equals left.PASimulant.SimulantAddress right.PASimulant.SimulantAddress
 

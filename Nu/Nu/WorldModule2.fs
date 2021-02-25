@@ -497,7 +497,7 @@ module WorldModule2 =
         static member private processTasklet (taskletsNotRun, world) tasklet =
             let time = World.getTickTime world
             if time = tasklet.ScheduledTime then
-                let world = tasklet.Execute world
+                let world = tasklet.ScheduledOp world
                 (taskletsNotRun, world)
             elif time > tasklet.ScheduledTime then
                 Log.debug ("Tasklet leak found for time '" + scstring time + "'.")

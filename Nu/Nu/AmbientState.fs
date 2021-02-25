@@ -10,7 +10,7 @@ open Nu
 /// A tasklet to be completed at the scheduled tick time.
 type [<NoEquality; NoComparison>] 'w Tasklet =
     { ScheduledTime : int64
-      Execute : 'w -> 'w }
+      ScheduledOp : 'w -> 'w }
 
 [<AutoOpen>]
 module AmbientState =
