@@ -30,9 +30,8 @@ module Nu =
             match World.tryGetProperty leftName simulant world with
             | Some property ->
                 if property.PropertyValue =/= value then // OPTIMIZATION: avoid reflection when value doesn't change
-                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
                     let property = { property with PropertyValue = value }
-                    World.trySetProperty leftName alwaysPublish property simulant world |> snd
+                    World.trySetProperty leftName property simulant world |> snd
                 else world
             | None -> world
         else world
@@ -136,9 +135,8 @@ module Nu =
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
-                            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                             let property = { PropertyValue = value; PropertyType = ty }
-                            World.attachEntityProperty propertyName alwaysPublish property entity world |> box
+                            World.attachEntityProperty propertyName property entity world |> box
                         | (None, (true, _)) ->
                             World.destroyEntity entity world |> box
                         | (None, (false, _)) ->
@@ -437,7 +435,7 @@ module Nu =
                                 | None -> failwithumf ())
                             (fun propertyValue world ->
                                 match World.tryGetProperty left.Name simulant world with
-                                | Some property -> snd (World.trySetProperty left.Name (Reflection.isPropertyAlwaysPublishByName left.Name) { property with PropertyValue = propertyValue } simulant world)
+                                | Some property -> snd (World.trySetProperty left.Name { property with PropertyValue = propertyValue } simulant world)
                                 | None -> world)
                             simulant
                           with Validate = validate }
