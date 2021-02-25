@@ -15,36 +15,6 @@ module Reflection =
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
-    /// A dictionary of properties that always have their changes published.
-    let private AlwaysPublishPropertyNames =
-        dictPlus
-            [// misc properties
-             ("Model", true)
-             ("ParentNodeOpt", true)
-             ("ScriptOpt", true)
-             ("Script", true)
-             ("TmxMap", true)
-
-             // emitter properties
-             ("EmitterOffset", true)
-             ("EmitterTwist", true)
-             ("EmitterBlend", true)
-             ("EmitterImage", true)
-             ("EmitterLifeTimeOpt", true)
-             ("ParticleLifeTimeMaxOpt", true)
-             ("ParticleRate", true)
-             ("ParticleMax", true)
-             ("BasicParticleSeed", true)
-             ("EmitterConstraint", true)
-             ("EmitterStyle", true)
-             ("BasicEmitterSymbols", true)
-             ("BasicEmitterDescriptors", true)
-
-             // effect properties
-             ("EffectSymbolOpt", true)
-             ("EffectSymbols", true)
-             ("EffectDescriptors", true)]
-
     /// A dictionary of properties that are never serialized.
     let private NonPersistentPropertyNames =
         dictPlus
@@ -77,22 +47,10 @@ module Reflection =
              ("EffectHistory", true)]
 
     /// Initialize a property's dynamic attributes.
-    /// Available as an alternative to using the AP, TP, and NP property name suffixes.
-    let initPropertyAttributes alwaysPublish nonPersistent propertyName =
-        AlwaysPublishPropertyNames.Add (propertyName, alwaysPublish)
+    /// Available as an alternative to using the NP property name suffix.
+    let initPropertyAttributes nonPersistent propertyName =
         NonPersistentPropertyNames.Add (propertyName, nonPersistent)
 
-    /// Check if a property with the given name should always publish a change event.
-    let isPropertyAlwaysPublishByName (propertyName : string) =
-        match AlwaysPublishPropertyNames.TryGetValue propertyName with
-        | (true, result) -> result
-        | (false, _) ->
-            let result =
-                propertyName.EndsWith ("Model", StringComparison.Ordinal) ||
-                propertyName.EndsWith ("Ap", StringComparison.Ordinal) ||
-                propertyName.EndsWith ("Tp", StringComparison.Ordinal)
-            AlwaysPublishPropertyNames.Add (propertyName, result)
-            result
 
     /// Is a property with the given name not persistent?
     let isPropertyNonPersistentByName (propertyName : string) =

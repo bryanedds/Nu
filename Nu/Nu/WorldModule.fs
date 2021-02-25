@@ -126,16 +126,16 @@ module WorldModule =
     type World with // Reflection
 
         /// Initialize a property's dynamic attributes.
-        /// Available as an alternative to using the AP, TP, and NP property name suffixes.
-        static member initPropertyAttributes alwaysPublish nonPersistent propertyName =
-            Reflection.initPropertyAttributes alwaysPublish nonPersistent propertyName
+        /// Available as an alternative to using the NP property name suffix.
+        static member initPropertyAttributes nonPersistent propertyName =
+            Reflection.initPropertyAttributes nonPersistent propertyName
 
         /// Initialize a property's dynamic attributes.
-        /// Available as an alternative to using the AP, TP, and NP property name suffixes.
+        /// Available as an alternative to using the NP property name suffix.
         [<FunctionBinding "initPropertyAttributes">]
-        static member initPropertyAttributesWorld alwaysPublish nonPersistent propertyName (world : World) =
+        static member initPropertyAttributesWorld nonPersistent propertyName (world : World) =
             ignore world // for world parameter for scripting
-            Reflection.initPropertyAttributes alwaysPublish nonPersistent propertyName
+            Reflection.initPropertyAttributes nonPersistent propertyName
 
     type World with // Construction
 
