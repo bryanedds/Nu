@@ -19,7 +19,6 @@ module PickupDispatcher =
 
         static member Properties =
             [define Entity.Elevation Constants.Layout.PickupElevation
-             define Entity.PublishChanges true
              define Entity.Omnipresent true]
         
         override this.Initializers (pickup, _) =

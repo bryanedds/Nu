@@ -234,7 +234,7 @@ module WorldDeclarative =
             let lensGeneralized =
                 Lens.mapWorld (fun a world ->
                     let (b, c) =
-                        if refEq a lensResult || genEq a lensResult then
+                        if a === lensResult then
                             match (sieveResultOpt, unfoldResultOpt) with
                             | (Some b, Some c) -> (b, c)
                             | (Some b, None) -> let c = unfold b world in (b, c)
@@ -252,7 +252,7 @@ module WorldDeclarative =
             let monitorMapper =
                 fun a _ world ->
                     let b =
-                        if refEq a.Value monitorResult || genEq a.Value monitorResult
+                        if a.Value === monitorResult
                         then match sieveResultOpt with Some b -> b | None -> sieve (lens.Get world)
                         else sieve (lens.Get world)
                     monitorResult <- a.Value
@@ -261,7 +261,7 @@ module WorldDeclarative =
             let monitorFilter =
                 fun a a2Opt _ ->
                     match a2Opt with
-                    | Some a2 -> not (refEq a a2 || genEq a a2)
+                    | Some a2 -> a =/= a2
                     | None -> true
             let subscription = fun _ world ->
                 let mapGeneralized = Lens.get lensGeneralized world

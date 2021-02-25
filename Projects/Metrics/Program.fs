@@ -86,11 +86,6 @@ type MetricsEntityDispatcher () =
         [typeof<StaticSpriteFacet>]
   #endif
 
-  #if REACTIVE
-    static member Properties =
-        [define Entity.PublishChanges true]
-  #endif
-
   #if !ECS && !ECS_PURE
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
@@ -237,7 +232,7 @@ type ElmishGameDispatcher () =
                         Content.staticSprite (string j)
                             [Entity.Omnipresent == true
                              Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
-                             Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12)) ])])
+                             Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12))])])
              Content.layer "Layer" []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
 #endif

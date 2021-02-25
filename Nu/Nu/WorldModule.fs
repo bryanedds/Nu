@@ -126,16 +126,16 @@ module WorldModule =
     type World with // Reflection
 
         /// Initialize a property's dynamic attributes.
-        /// Available as an alternative to using the AP, TP, and NP property name suffixes.
-        static member initPropertyAttributes alwaysPublish nonPersistent propertyName =
-            Reflection.initPropertyAttributes alwaysPublish nonPersistent propertyName
+        /// Available as an alternative to using the NP property name suffix.
+        static member initPropertyAttributes nonPersistent propertyName =
+            Reflection.initPropertyAttributes nonPersistent propertyName
 
         /// Initialize a property's dynamic attributes.
-        /// Available as an alternative to using the AP, TP, and NP property name suffixes.
+        /// Available as an alternative to using the NP property name suffix.
         [<FunctionBinding "initPropertyAttributes">]
-        static member initPropertyAttributesWorld alwaysPublish nonPersistent propertyName (world : World) =
+        static member initPropertyAttributesWorld nonPersistent propertyName (world : World) =
             ignore world // for world parameter for scripting
-            Reflection.initPropertyAttributes alwaysPublish nonPersistent propertyName
+            Reflection.initPropertyAttributes nonPersistent propertyName
 
     type World with // Construction
 
@@ -166,34 +166,30 @@ module WorldModule =
 
         /// Make the world.
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
-            let gameState = GameState.make activeGameDispatcher
-            let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
+            let propertyBindings = if AmbientState.getStandAlone ambientState then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+            let entityStates = if AmbientState.getStandAlone ambientState then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
             let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
-            let entityStates =
-                if AmbientState.getStandAlone ambientState
-                then UMap.makeEmpty Imperative
-                else UMap.makeEmpty Functional
+            let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
+            let gameState = GameState.make activeGameDispatcher
             let world =
-                World.choose
-                    { EventSystemDelegate = eventDelegate
-                      EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) Unchecked.defaultof<EntityState>
-                      EntityTree = MutantCache.make id spatialTree
-                      EntityStates = entityStates
-                      LayerStates = layerStates
-                      ScreenStates = screenStates
-                      GameState = gameState
-                      AmbientState = ambientState
-                      Subsystems = subsystems
-                      ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
-                      Dispatchers = dispatchers
-                      ScriptingEnv = scriptingEnv
-                      ScriptingContext = Game ()
-                      DestructionListRev = []
-                      Plugin = plugin }
-            let world =
-                World.choose
-                    { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
-            world
+                { PropertyBindingsMap = propertyBindings
+                  EventSystemDelegate = eventDelegate
+                  EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) Unchecked.defaultof<EntityState>
+                  EntityTree = MutantCache.make id spatialTree
+                  EntityStates = entityStates
+                  LayerStates = layerStates
+                  ScreenStates = screenStates
+                  GameState = gameState
+                  AmbientState = ambientState
+                  Subsystems = subsystems
+                  ScreenDirectory = UMap.makeEmpty Constants.Engine.SimulantMapConfig
+                  Dispatchers = dispatchers
+                  ScriptingEnv = scriptingEnv
+                  ScriptingContext = Game ()
+                  DestructionListRev = []
+                  Plugin = plugin }
+            let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
+            World.choose world
 
     type World with // Caching
 
@@ -410,7 +406,7 @@ module WorldModule =
 
         /// Schedule an operation to be executed by the engine at the given time.
         static member schedule fn time world =
-            let tasklet = { ScheduledTime = time; Command = { Execute = fn }}
+            let tasklet = { ScheduledTime = time; ScheduledOp = fn }
             World.addTasklet tasklet world
 
         /// Schedule an operation to be executed by the engine at the end of the current frame.
@@ -420,7 +416,7 @@ module WorldModule =
 
         /// Schedule an operation to be executed by the engine with the given delay.
         static member delay fn delay world =
-            let tasklet = { ScheduledTime = World.getTickTime world + delay; Command = { Execute = fn }}
+            let tasklet = { ScheduledTime = World.getTickTime world + delay; ScheduledOp = fn }
             World.addTasklet tasklet world
 
         /// Attempt to get the window flags.
@@ -657,6 +653,23 @@ module WorldModule =
         static member monitor<'a, 's when 's :> Simulant>
             callback eventAddress subscriber world =
             World.choose (EventSystem.monitor<'a, 's, World> callback eventAddress subscriber world)
+
+    type World with // PropertyBindingsMap
+
+        static member internal publishBindingChange propertyName simulant world =
+            let propertyAddress = PropertyAddress.make propertyName simulant
+            match world.PropertyBindingsMap.TryGetValue propertyAddress with
+            | (true, propertyBindings) ->
+                UMap.fold (fun world _ propertyBinding ->
+                    if  Option.isNone propertyBinding.PBRight.PayloadOpt && // lenses with payloads are from simulant synchronization, not bindings
+                        propertyBinding.PBRight.Validate world &&
+                        propertyBinding.PBLeft.Validate world then
+                        match propertyBinding.PBLeft.SetOpt with
+                        | Some setter -> setter (propertyBinding.PBRight.GetWithoutValidation world) world
+                        | None -> world
+                    else world)
+                    world propertyBindings
+            | (false, _) -> world
 
     type World with // Scripting
 

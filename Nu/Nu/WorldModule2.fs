@@ -497,7 +497,7 @@ module WorldModule2 =
         static member private processTasklet (taskletsNotRun, world) tasklet =
             let time = World.getTickTime world
             if time = tasklet.ScheduledTime then
-                let world = tasklet.Command.Execute world
+                let world = tasklet.ScheduledOp world
                 (taskletsNotRun, world)
             elif time > tasklet.ScheduledTime then
                 Log.debug ("Tasklet leak found for time '" + scstring time + "'.")
@@ -1103,10 +1103,8 @@ module GameDispatcherModule =
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
-                    let propertyName = def.PropertyName
-                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
-                    World.setProperty def.PropertyName alwaysPublish property game world
+                    World.setProperty def.PropertyName property game world
                 | EventHandlerDefinition (handler, partialAddress) ->
                     let eventAddress = partialAddress --> game
                     World.monitor (fun (evt : Event) world ->

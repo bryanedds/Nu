@@ -27,8 +27,7 @@ module PropDispatcher =
             [typeof<RigidBodyFacet>]
 
         static member Properties =
-            [define Entity.PublishChanges true
-             define Entity.FixedRotation true
+            [define Entity.FixedRotation true
              define Entity.GravityScale 0.0f]
 
         override this.Channel (_, entity) =

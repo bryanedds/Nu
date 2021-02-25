@@ -166,7 +166,7 @@ module WorldTypes =
 
     // EventSystem reach-arounds.
     let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
-    let mutable internal handleSubscribeAndUnsubscribeEventHook : obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
+    let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
     /// Represents an unsubscription operation for an event.
     type Unsubscription =
@@ -337,7 +337,8 @@ module WorldTypes =
              Define? Absolute false
              Define? Model { DesignerType = typeof<unit>; DesignerValue = () }
              Define? Overflow Vector2.Zero
-             Define? PublishChanges false
+             Define? PublishChangeBindings false
+             Define? PublishChangeEvents false
              Define? Visible true
              Define? Enabled true
              Define? AlwaysUpdate false
@@ -463,7 +464,7 @@ module WorldTypes =
               CreationTimeStamp = Core.getUniqueTimeStamp () }
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty (propertyName, gameState, propertyRef : Property byref) =
+        static member tryGetProperty (propertyName, gameState, propertyRef : Property outref) =
             Xtension.tryGetProperty (propertyName, gameState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
@@ -530,7 +531,7 @@ module WorldTypes =
               Name = name }
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty (propertyName, screenState, propertyRef : Property byref) =
+        static member tryGetProperty (propertyName, screenState, propertyRef : Property outref) =
             Xtension.tryGetProperty (propertyName, screenState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
@@ -589,7 +590,7 @@ module WorldTypes =
               Name = name }
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty (propertyName, layerState, propertyRef : Property byref) =
+        static member tryGetProperty (propertyName, layerState, propertyRef : Property outref) =
             Xtension.tryGetProperty (propertyName, layerState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
@@ -671,7 +672,7 @@ module WorldTypes =
             entityState'
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty (propertyName, entityState, propertyRef : Property byref) =
+        static member tryGetProperty (propertyName, entityState, propertyRef : Property outref) =
             Xtension.tryGetProperty (propertyName, entityState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
@@ -728,7 +729,8 @@ module WorldTypes =
         member this.Omnipresent with get () = this.Transform.Omnipresent and set value = this.Transform.Omnipresent <- value
         member this.Absolute with get () = this.Transform.Absolute and set value = this.Transform.Absolute <- value
         member this.Imperative with get () = this.Transform.Imperative and set value = this.Transform.Imperative <- value
-        member this.PublishChanges with get () = this.Transform.PublishChanges and set value = this.Transform.PublishChanges <- value
+        member this.PublishChangeBindings with get () = this.Transform.PublishChangeBindings and set value = this.Transform.PublishChangeBindings <- value
+        member this.PublishChangeEvents with get () = this.Transform.PublishChangeEvents and set value = this.Transform.PublishChangeEvents <- value
         member this.Enabled with get () = this.Transform.Enabled and set value = this.Transform.Enabled <- value
         member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
         member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
@@ -1022,6 +1024,44 @@ module WorldTypes =
                 | :? Entity as that -> (this :> Entity IComparable).CompareTo that
                 | _ -> failwith "Invalid Entity comparison (comparee not of type Entity)."
 
+    /// Describes a property's location in Nu's optimized Elmish implementation.
+    and [<CustomEquality; NoComparison>] internal PropertyAddress =
+        { PAName : string
+          PASimulant : Simulant
+          PAHash : int }
+
+        static member equals left right =
+            left.PAHash = right.PAHash &&
+            left.PAName = right.PAName &&
+            Address.equals left.PASimulant.SimulantAddress right.PASimulant.SimulantAddress
+
+        static member make name (simulant : Simulant) =
+            let hash = hash name ^^^ hash simulant.SimulantAddress
+            { PAName = name
+              PASimulant = simulant
+              PAHash = hash }
+
+        interface PropertyAddress IEquatable with
+            member this.Equals that =
+                PropertyAddress.equals this that
+
+        override this.GetHashCode () =
+            this.PAHash
+
+        override this.Equals that =
+            match that with
+            | :? PropertyAddress as that -> PropertyAddress.equals this that
+            | _ -> failwithumf ()
+
+    /// Describes a property binding for Nu's optimized Elmish implementation.
+    and [<NoEquality; NoComparison>] internal PropertyBinding =
+        { PBLeft : World Lens
+          PBRight : World Lens }
+
+    /// Describes property bindings for Nu's optimized Elmish implementation.
+    and internal PropertyBindings =
+        UMap<Guid, PropertyBinding>
+
     /// The world's dispatchers (including facets).
     /// 
     /// I would prefer this type to be inlined in World, but it has been extracted to its own white-box
@@ -1056,6 +1096,7 @@ module WorldTypes =
     and [<ReferenceEquality; NoComparison>] World =
         internal
             { // cache line 1 begin
+              PropertyBindingsMap : UMap<PropertyAddress, PropertyBindings>
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState>
               EntityTree : Entity SpatialTree MutantCache
@@ -1063,8 +1104,8 @@ module WorldTypes =
               LayerStates : UMap<Layer Address, LayerState>
               ScreenStates : UMap<Screen Address, ScreenState>
               GameState : GameState
-              AmbientState : World AmbientState
               // cache line 2 begin
+              AmbientState : World AmbientState
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
               Dispatchers : Dispatchers
@@ -1095,11 +1136,15 @@ module WorldTypes =
                 AmbientState.getLiveness this.AmbientState
 
             member this.GetSimulantExists simulant =
-                match simulant with
-                | :? Entity as entity -> UMap.containsKey entity.EntityAddress this.EntityStates
-                | :? Layer as layer -> UMap.containsKey layer.LayerAddress this.LayerStates
-                | :? Screen as screen -> UMap.containsKey screen.ScreenAddress this.ScreenStates
-                | :? Game | :? GlobalSimulantGeneralized -> true
+                // OPTIMIZATION: constant-time look-up here improve non-entity existence queries.
+                match simulant.SimulantAddress.Names.Length with
+                | 3 ->
+                    let entity = simulant :?> Entity
+                    notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
+                    UMap.containsKey (simulant :?> Entity).EntityAddress this.EntityStates
+                | 2 -> UMap.containsKey (simulant :?> Layer).LayerAddress this.LayerStates
+                | 1 -> UMap.containsKey (simulant :?> Screen).ScreenAddress this.ScreenStates
+                | 0 -> true
                 | _  -> false
 
             member this.GetGlobalSimulantSpecialized () =
@@ -1139,10 +1184,10 @@ module WorldTypes =
                 (handling, world)
 
             member this.SubscribeEventHook eventAddress subscriber world =
-                handleSubscribeAndUnsubscribeEventHook eventAddress subscriber world :?> World
+                handleSubscribeAndUnsubscribeEventHook true eventAddress subscriber world :?> World
 
             member this.UnsubscribeEventHook eventAddress subscriber world =
-                handleSubscribeAndUnsubscribeEventHook eventAddress subscriber world :?> World
+                handleSubscribeAndUnsubscribeEventHook false eventAddress subscriber world :?> World
 
         interface World ScriptingSystem with
 

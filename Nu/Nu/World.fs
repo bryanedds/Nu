@@ -14,16 +14,15 @@ open Nu
 module Nu =
 
     let mutable private Initialized = false
-
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
         if right.Validate world then
             let value = right.GetWithoutValidation world
             if World.getExists left.This world
-            then (Cascade, (Option.get left.SetOpt) value world)
-            else (Cascade, world)
-        else (Cascade, world)
+            then (Option.get left.SetOpt) value world
+            else world
+        else world
 
     let private tryPropagateByName simulant leftName (right : World Lens) world =
         if right.Validate world then
@@ -31,18 +30,53 @@ module Nu =
             match World.tryGetProperty leftName simulant world with
             | Some property ->
                 if property.PropertyValue =/= value then // OPTIMIZATION: avoid reflection when value doesn't change
-                    let alwaysPublish = Reflection.isPropertyAlwaysPublishByName leftName
                     let property = { property with PropertyValue = value }
-                    let world = World.trySetProperty leftName alwaysPublish property simulant world |> snd
-                    (Cascade, world)
-                else (Cascade, world)
-            | None -> (Cascade, world)
-        else (Cascade, world)
+                    World.trySetProperty leftName property simulant world |> snd
+                else world
+            | None -> world
+        else world
 
     let private tryPropagate simulant (left : World Lens) (right : World Lens) world =
         if notNull (left.This :> obj)
         then tryPropagateByLens left right world
         else tryPropagateByName simulant left.Name right world
+
+    let internal unbind propertyBindingId propertyAddress world =
+
+        // add binding to map
+        let world =
+            match world.PropertyBindingsMap.TryGetValue propertyAddress with
+            | (true, propertyBindings) ->
+                let propertyBindings = UMap.remove propertyBindingId propertyBindings
+                if UMap.notEmpty propertyBindings then
+                    let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
+                    World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+                else
+                    let propertyBindingsMap = UMap.remove propertyAddress world.PropertyBindingsMap
+                    World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+            | (false, _) -> world
+
+        // decrease bind counter
+        let world =
+            match propertyAddress.PASimulant with
+            | :? Entity as entity ->
+                match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
+                | Some entityBindingCounts ->
+                    match UMap.tryFind entity.EntityAddress entityBindingCounts with
+                    | Some entityBindingCount ->
+                        let entityBindingCount = dec entityBindingCount
+                        let entityBindingCounts =
+                            if entityBindingCount = 0
+                            then UMap.remove entity.EntityAddress entityBindingCounts
+                            else UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
+                        let world = if entityBindingCount = 0 && entity.Exists world then World.setEntityPublishChangeBindings false entity world else world
+                        World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                    | None -> failwithumf ()
+                | None -> failwithumf ()
+            | _ -> world
+
+        // fin
+        world
 
     /// Initialize the Nu game engine.
     let init nuConfig =
@@ -87,7 +121,7 @@ module Nu =
                 | :? Simulant as simulant ->
                     match simulant with
                     | :? Entity as entity ->
-                        match (valueOpt, WorldModuleEntity.Setters.TryGetValue propertyName) with
+                        match (valueOpt, WorldModuleEntity.EntitySetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
                             let layer = entity.Parent
                             let screen = layer.Parent
@@ -102,15 +136,14 @@ module Nu =
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
                             let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
-                            let alwaysPublish = Reflection.isPropertyAlwaysPublishByName propertyName
                             let property = { PropertyValue = value; PropertyType = ty }
-                            World.attachEntityProperty propertyName alwaysPublish property entity world |> box
+                            World.attachEntityProperty propertyName property entity world |> box
                         | (None, (true, _)) ->
                             World.destroyEntity entity world |> box
                         | (None, (false, _)) ->
                             World.detachEntityProperty propertyName entity world |> box
                     | :? Layer as layer ->
-                        match (valueOpt, WorldModuleLayer.Setters.TryGetValue propertyName) with
+                        match (valueOpt, WorldModuleLayer.LayerSetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
                             let screen = layer.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
@@ -128,7 +161,7 @@ module Nu =
                         | (None, (false, _)) ->
                             World.detachLayerProperty propertyName layer world |> box
                     | :? Screen as screen ->
-                        match (valueOpt, WorldModuleScreen.Setters.TryGetValue propertyName) with
+                        match (valueOpt, WorldModuleScreen.ScreenSetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
@@ -142,7 +175,7 @@ module Nu =
                         | (None, (false, _)) ->
                             World.detachScreenProperty propertyName screen world |> box
                     | :? Game ->
-                        match (valueOpt, WorldModuleGame.Setters.TryGetValue propertyName) with
+                        match (valueOpt, WorldModuleGame.GameSetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
                             let property = { PropertyValue = value; PropertyType = ty }
                             setter property world |> snd |> box
@@ -175,13 +208,13 @@ module Nu =
             WorldTypes.handleUserDefinedCallback <- fun userDefined _ worldObj ->
                 let world = worldObj :?> World
                 let (simulant, left, right) = userDefined :?> Simulant * World Lens * World Lens
-                let (handling, world) =
+                let world =
                     if notNull (left.This :> obj)
                     then tryPropagateByLens left right world
                     else tryPropagateByName simulant left.Name right world
-                (handling, world :> obj)
+                (Cascade, world :> obj)
 
-            WorldTypes.handleSubscribeAndUnsubscribeEventHook <- fun eventAddress _ worldObj ->
+            WorldTypes.handleSubscribeAndUnsubscribeEventHook <- fun subscribing eventAddress _ worldObj ->
                 // here we need to update the event publish flags for entities based on whether there are subscriptions to
                 // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
                 // that these optimization do not support, and warn the developer if they are invoked. Additionally, we
@@ -215,9 +248,40 @@ module Nu =
                     let eventFirstName = eventNames.[0]
                     let eventSecondName = eventNames.[1]
                     match eventFirstName with
-                    | "Change" when eventSecondName <> "ParentNodeOpt" ->
-                        if Array.contains (Address.head Events.Wildcard) eventNames then
-                            Log.debug "Subscribing to change events with a wildcard is not supported."
+                    | "Change" ->
+                        let world =
+                            if eventNames.Length = 6 then
+                                let entityAddress = rtoa (Array.skip 3 eventNames)
+                                let entity = Entity entityAddress
+                                match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityChangeCountsId world with
+                                | Some entityChangeCounts ->
+                                    match entityChangeCounts.TryGetValue entityAddress with
+                                    | (true, entityChangeCount) ->
+                                        let entityChangeCount = if subscribing then inc entityChangeCount else dec entityChangeCount
+                                        let entityChangeCounts =
+                                            if entityChangeCount = 0
+                                            then UMap.remove entityAddress entityChangeCounts
+                                            else UMap.add entityAddress entityChangeCount entityChangeCounts
+                                        let world =
+                                            if entity.Exists world then
+                                                if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world
+                                                elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world
+                                                else world
+                                            else world
+                                        World.addKeyedValue EntityChangeCountsId entityChangeCounts world
+                                    | (false, _) ->
+                                        if not subscribing then failwithumf ()
+                                        let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world else world
+                                        World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
+                                | None ->
+                                    if not subscribing then failwithumf ()
+                                    let entityChangeCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+                                    let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world else world
+                                    World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
+                            else world
+                        if  eventSecondName <> "ParentNodeOpt" &&
+                            Array.contains (Address.head Events.Wildcard) eventNames then
+                            Log.debug "Subscribing to change events with a wildcard is not supported (except for ParentNodeOpt)."
                         world :> obj
                     | _ -> world :> obj
                 | _ -> world :> obj
@@ -361,33 +425,60 @@ module Nu =
 
             // init bind5 F# reach-around
             WorldModule.bind5 <- fun simulant left right world ->
-                let (_, world) =
-                    // propagate immediately to start things out synchronized
-                    tryPropagate simulant left right world
-                let (compressionId, monitorMapperOpt) =
-                    match right.PayloadOpt with
-                    | Some payload ->
-                        let (compressionId, monitorMapper) = payload :?> Payload
-                        (compressionId, Some monitorMapper)
-                    | None -> (Gen.id, None)
-                let (_, world) =
-                    World.monitorCompressed
-                        Gen.id None None None
-                        (Right (box (simulant, left, right)))
-                        (Events.Register --> right.This.SimulantAddress)
-                        simulant
-                        world
-                let (_, world) =
-                    World.monitorCompressed
-                        compressionId
-                        monitorMapperOpt
-                        (Some (fun a a2Opt _ -> match a2Opt with Some a2 -> a =/= a2 | None -> true))
-                        None
-                        (Right (box (simulant, left, right)))
-                        (Events.Change right.Name --> right.This.SimulantAddress)
-                        simulant
-                        world
-                world
+                let leftFixup =
+                    let validate = World.getExists simulant
+                    if isNull (left.This :> obj) then
+                        { Lens.make
+                            left.Name
+                            (fun world ->
+                                match World.tryGetProperty left.Name simulant world with
+                                | Some property -> property.PropertyValue
+                                | None -> failwithumf ())
+                            (fun propertyValue world ->
+                                match World.tryGetProperty left.Name simulant world with
+                                | Some property -> snd (World.trySetProperty left.Name { property with PropertyValue = propertyValue } simulant world)
+                                | None -> world)
+                            simulant
+                          with Validate = validate }
+                    else { Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant with Validate = validate }
+                let rightFixup = { Lens.makeReadOnly right.Name right.GetWithoutValidation right.This with Validate = right.Validate }
+                let world = tryPropagateByLens leftFixup rightFixup world // propagate immediately to start things out synchronized
+                let propertyBindingId = Gen.id
+                let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
+                let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingId propertyAddress world)) (Events.Unregistering --> simulant.SimulantAddress) simulant world
+                let world = World.monitor (fun _ world -> (Cascade, tryPropagate simulant leftFixup rightFixup world)) (Events.Register --> right.This.SimulantAddress) simulant world
+                let world =
+                    match right.This with
+                    | :? Entity as entity ->
+                        match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
+                        | Some entityBindingCounts ->
+                            match UMap.tryFind entity.EntityAddress entityBindingCounts with
+                            | Some entityBindingCount ->
+                                let entityBindingCount = inc entityBindingCount
+                                let entityBindingCounts = UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
+                                let world = if entityBindingCount = 1 && entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
+                                World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                            | None ->
+                                let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
+                                let world = if entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
+                                World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                        | None ->
+                            let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+                            let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
+                            let world = if entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
+                            World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                    | _ -> world
+                match world.PropertyBindingsMap.TryGetValue propertyAddress with
+                | (true, propertyBindings) ->
+                    let propertyBindings = UMap.add propertyBindingId { PBLeft = leftFixup; PBRight = rightFixup } propertyBindings
+                    let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
+                    World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+                | (false, _) ->
+                    let config = if World.getStandAlone world then Imperative else Functional
+                    let propertyBindings = UMap.makeEmpty config
+                    let propertyBindings = UMap.add propertyBindingId { PBLeft = leftFixup; PBRight = rightFixup } propertyBindings
+                    let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
+                    World.choose { world with PropertyBindingsMap = propertyBindingsMap }
 
             // init miscellaneous reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world
