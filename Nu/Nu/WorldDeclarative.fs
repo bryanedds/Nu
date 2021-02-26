@@ -255,8 +255,8 @@ module WorldDeclarative =
                         if a.Value === monitorResult then
                             match sieveResultOpt with
                             | Some b -> b
-                            | None -> if lens.Validate world then sieve (lens.Get world) else sieve a.Value
-                        elif lens.Validate world then sieve (lens.Get world)
+                            | None -> if Lens.validate lens world then sieve (Lens.get lens world) else sieve a.Value
+                        elif Lens.validate lens world then sieve (lens.Get world)
                         else sieve a.Value
                     monitorResult <- a.Value
                     sieveResultOpt <- Some b
@@ -267,7 +267,7 @@ module WorldDeclarative =
                     | Some a2 -> a =/= a2
                     | None -> true
             let subscription = fun _ world ->
-                if lensGeneralized.Validate world then
+                if Lens.validate lensGeneralized world then
                     let mapGeneralized = Lens.get lensGeneralized world
                     let mutable current = USet.makeEmpty Functional
                     let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
@@ -276,7 +276,7 @@ module WorldDeclarative =
                         let lens' = Lens.map (fun keyed -> keyed.TryGetValue key) lensGeneralized
                         match Lens.get lens' world with
                         | (true, _) ->
-                            let lens'' = { Lens.map snd lens' with Validate = fun world -> if lens'.Validate world then (match Lens.get lens' world with (exists, _) -> exists) else false }
+                            let lens'' = { Lens.map snd lens' with ValidateOpt = Some (fun world -> if Lens.validate lens' world then (match Lens.get lens' world with (exists, _) -> exists) else false) }
                             let item = PartialComparable.make key lens''
                             current <- USet.add item current
                         | (false, _) -> ()
