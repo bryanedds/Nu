@@ -252,9 +252,12 @@ module WorldDeclarative =
             let monitorMapper =
                 fun a _ world ->
                     let b =
-                        if a.Value === monitorResult
-                        then match sieveResultOpt with Some b -> b | None -> sieve (lens.Get world)
-                        else sieve (lens.Get world)
+                        if a.Value === monitorResult then
+                            match sieveResultOpt with
+                            | Some b -> b
+                            | None -> if lens.Validate world then sieve (lens.Get world) else sieve a.Value
+                        elif lens.Validate world then sieve (lens.Get world)
+                        else sieve a.Value
                     monitorResult <- a.Value
                     sieveResultOpt <- Some b
                     b
@@ -264,25 +267,27 @@ module WorldDeclarative =
                     | Some a2 -> a =/= a2
                     | None -> true
             let subscription = fun _ world ->
-                let mapGeneralized = Lens.get lensGeneralized world
-                let mutable current = USet.makeEmpty Functional
-                let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
-                while enr.MoveNext () do
-                    let key = fst enr.Current
-                    let lens' = Lens.map (fun keyed -> keyed.TryGetValue key) lensGeneralized
-                    match Lens.get lens' world with
-                    | (true, _) ->
-                        let lens'' = { Lens.map snd lens' with Validate = fun world -> match Lens.get lens' world with (exists, _) -> exists }
-                        let item = PartialComparable.make key lens''
-                        current <- USet.add item current
-                    | (false, _) -> ()
-                let previous =
-                    match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> previousSetKey world with
-                    | Some previous -> previous
-                    | None -> USet.makeEmpty Functional
-                let world = World.synchronizeSimulants mapper monitorMapper simulantMapKey previous current origin owner parent world
-                let world = World.addKeyedValue previousSetKey current world
-                (Cascade, world)
+                if lensGeneralized.Validate world then
+                    let mapGeneralized = Lens.get lensGeneralized world
+                    let mutable current = USet.makeEmpty Functional
+                    let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
+                    while enr.MoveNext () do
+                        let key = fst enr.Current
+                        let lens' = Lens.map (fun keyed -> keyed.TryGetValue key) lensGeneralized
+                        match Lens.get lens' world with
+                        | (true, _) ->
+                            let lens'' = { Lens.map snd lens' with Validate = fun world -> if lens'.Validate world then (match Lens.get lens' world with (exists, _) -> exists) else false }
+                            let item = PartialComparable.make key lens''
+                            current <- USet.add item current
+                        | (false, _) -> ()
+                    let previous =
+                        match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> previousSetKey world with
+                        | Some previous -> previous
+                        | None -> USet.makeEmpty Functional
+                    let world = World.synchronizeSimulants mapper monitorMapper simulantMapKey previous current origin owner parent world
+                    let world = World.addKeyedValue previousSetKey current world
+                    (Cascade, world)
+                else (Cascade, world)
             let (_, world) = subscription Unchecked.defaultof<_> world // expand simulants immediately rather than waiting for parent registration
             let (_, world) = World.monitorCompressed Gen.id (Some monitorMapper) (Some monitorFilter) None (Left subscription) lens.ChangeEvent parent world
             world
