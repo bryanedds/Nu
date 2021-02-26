@@ -404,7 +404,7 @@ module WorldEntityModule =
                             world handlers
                     let world =
                         List.fold (fun world content ->
-                            World.expandEntityContent content origin owner layer world |> snd)
+                            World.expandEntityContent content origin entity layer world |> snd)
                             world (snd content)
                     (Some entity, world)
                 | Choice3Of3 (entityName, filePath) ->
