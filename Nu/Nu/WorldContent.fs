@@ -124,7 +124,7 @@ module Content =
     /// Describe a label with the given initializers.
     let label entityName initializers = entity<LabelDispatcher> entityName initializers
 
-    /// Describe a panel with the given initializers and content.
+    /// Describe a group with the given initializers and content.
     let group entityName initializers content = entityWithContent<GuiDispatcher> entityName initializers content
 
     /// Describe a panel with the given initializers and content.
