@@ -623,10 +623,10 @@ module WorldTypes =
     /// Hosts the ongoing state of an entity.
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
-        { // cache line begin
+        { // cache line 1
           Dispatcher : EntityDispatcher
           mutable Transform : Transform
-          // cache line 2 begin
+          // cache line 2
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
@@ -634,7 +634,7 @@ module WorldTypes =
           mutable OverlayNameOpt : string option
           mutable FacetNames : string Set
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
-          // cache line 3 begin
+          // cache line 3
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
           Name : string }
@@ -1095,8 +1095,8 @@ module WorldTypes =
     /// for that.
     and [<ReferenceEquality; NoComparison>] World =
         internal
-            { // cache line 1 begin
-              PropertyBindingsMap : UMap<PropertyAddress, PropertyBindings>
+            { // cache line 1
+              PropertyBindingsMap : UMap<PropertyAddress, PropertyBindings> // TODO: P1: put this behind a world API rather than accessing / updating it directly...
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState>
               EntityTree : Entity SpatialTree MutantCache
@@ -1104,7 +1104,7 @@ module WorldTypes =
               LayerStates : UMap<Layer Address, LayerState>
               ScreenStates : UMap<Screen Address, ScreenState>
               GameState : GameState
-              // cache line 2 begin
+              // cache line 2
               AmbientState : World AmbientState
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
