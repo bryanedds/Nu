@@ -276,7 +276,11 @@ module WorldDeclarative =
                         let lens' = Lens.map (fun keyed -> keyed.TryGetValue key) lensGeneralized
                         match Lens.get lens' world with
                         | (true, _) ->
-                            let lens'' = { Lens.map snd lens' with ValidateOpt = Some (fun world -> if Lens.validate lens' world then (match Lens.get lens' world with (exists, _) -> exists) else false) }
+                            let validateOpt =
+                                match lens'.ValidateOpt with
+                                | Some validate -> Some (fun world -> if validate world then (match Lens.get lens' world with (exists, _) -> exists) else false)
+                                | None -> Some (fun world -> match Lens.get lens' world with (exists, _) -> exists)
+                            let lens'' = { Lens.map snd lens' with ValidateOpt = validateOpt }
                             let item = PartialComparable.make key lens''
                             current <- USet.add item current
                         | (false, _) -> ()
