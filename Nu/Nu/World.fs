@@ -17,11 +17,9 @@ module Nu =
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
-        if right.Validate world then
+        if right.Validate world && left.Validate world then
             let value = right.GetWithoutValidation world
-            if World.getExists left.This world
-            then (Option.get left.SetOpt) value world
-            else world
+            (Option.get left.SetOpt) value world
         else world
 
     let private tryPropagateByName simulant leftName (right : World Lens) world =
@@ -29,7 +27,7 @@ module Nu =
             let value = right.GetWithoutValidation world
             match World.tryGetProperty leftName simulant world with
             | Some property ->
-                if property.PropertyValue =/= value then // OPTIMIZATION: avoid reflection when value doesn't change
+                if property.PropertyValue =/= value then
                     let property = { property with PropertyValue = value }
                     World.trySetProperty leftName property simulant world |> snd
                 else world
