@@ -17,7 +17,7 @@ module Nu =
     let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
 
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
-        if right.Validate world && left.Validate world then
+        if right.Validate world then
             let value = right.GetWithoutValidation world
             (Option.get left.SetOpt) value world
         else world
