@@ -424,9 +424,8 @@ module Nu =
             // init bind5 F# reach-around
             WorldModule.bind5 <- fun simulant left right world ->
                 let leftFixup =
-                    let validateOpt = Some (World.getExists simulant)
                     if isNull (left.This :> obj) then
-                        { Lens.make
+                        Lens.make
                             left.Name
                             (fun world ->
                                 match World.tryGetProperty left.Name simulant world with
@@ -437,8 +436,7 @@ module Nu =
                                 | Some property -> snd (World.trySetProperty left.Name { property with PropertyValue = propertyValue } simulant world)
                                 | None -> world)
                             simulant
-                          with ValidateOpt = validateOpt }
-                    else { Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant with ValidateOpt = validateOpt }
+                    else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant
                 let rightFixup = { Lens.makeReadOnly right.Name right.GetWithoutValidation right.This with ValidateOpt = right.ValidateOpt }
                 let world = tryPropagateByLens leftFixup rightFixup world // propagate immediately to start things out synchronized
                 let propertyBindingId = Gen.id
