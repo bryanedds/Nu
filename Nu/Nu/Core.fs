@@ -85,25 +85,3 @@ module CoreOperators =
     /// The implicit conversion operator.
     /// Same as the (!!) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (!!) (arg : ^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) arg)
-
-/// TODO: P1: remove this after upgrading Prime.
-[<AutoOpen>]
-module TemporaryOperators =
-
-    open System.Collections.Generic
-    open FSharp.Reflection
-    
-    /// Memoized union tags.
-    let private TagsMemo = Dictionary<obj, int> (HashIdentity.Structural)
-    
-    /// Get the union tag for the give case value.
-    /// OPTIMIZATION: memoizes zero-field unions for speed.
-    /// TODO: P1: remove this after upgrading Prime.
-    let getTag<'u> (unionCase : 'u) =
-        match TagsMemo.TryGetValue unionCase with
-        | (true, tag) -> tag
-        | (false, _) ->
-            let (unionCaseInfo, _) = FSharpValue.GetUnionFields (unionCase, typeof<'u>)
-            let tag = unionCaseInfo.Tag
-            if Array.isEmpty (unionCaseInfo.GetFields ()) then TagsMemo.Add (unionCase, tag)
-            tag

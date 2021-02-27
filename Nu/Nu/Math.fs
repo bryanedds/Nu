@@ -33,7 +33,7 @@ open TransformMasks
 /// Carries transformation data specific to an Entity.
 /// TODO: P1: consider moving flags into the own type now that it's idiomatic to touch transforms directly.
 type [<NoEquality; NoComparison; Struct>] Transform =
-    { // cache line begin
+    { // cache line 1
       mutable Position : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Size : Vector2 // NOTE: will become a Vector3 if Nu gets 3D capabilities
       mutable Rotation : single // NOTE: will become a Vector3 if Nu gets 3D capabilities
