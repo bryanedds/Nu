@@ -10,14 +10,14 @@ module Assets =
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Global =
-    
+
         let [<Literal>] AssetGraphFilePath = Assets.Global.AssetGraphFilePath
         let [<Literal>] OverlayerFilePath = Assets.Global.OverlayerFilePath
         let [<Literal>] PreludeFilePath = Assets.Global.PreludeFilePath
 
     [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
     module Default =
-    
+
         let (*Literal*) PackageName = Assets.Default.PackageName
         let (*Literal*) Empty = asset<obj> PackageName Assets.Default.EmptyName
         let (*Literal*) EmptyImage = asset<Image> PackageName Assets.Default.EmptyImageName
