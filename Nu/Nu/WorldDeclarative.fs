@@ -256,7 +256,7 @@ module WorldDeclarative =
                             match sieveResultOpt with
                             | Some b -> b
                             | None -> if Lens.validate lens world then sieve (Lens.get lens world) else sieve a.Value
-                        elif Lens.validate lens world then sieve (lens.Get world)
+                        elif Lens.validate lens world then sieve (Lens.get lens world)
                         else sieve a.Value
                     monitorResult <- a.Value
                     sieveResultOpt <- Some b
