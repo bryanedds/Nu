@@ -667,6 +667,7 @@ module Color =
     let colZero = Color.Zero
     let colWhite = Color.White
     let colBlack = Color.Black
+    let colGray = Color.Gray
 
 /// The Color value that can be plugged into the scripting language.
 type [<CustomEquality; CustomComparison>] ColorPluggable =

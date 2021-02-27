@@ -468,7 +468,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
                             if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + "."))
                 tiles
-        else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for '" + scstring tileAssets + "'.")
+        else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     static member private renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize (tileLayer : TileLayerDescriptor) renderer =
         SdlRenderer.renderTileLayer

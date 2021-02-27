@@ -68,6 +68,11 @@ namespace Nu
         public static readonly Color Black = new Color(0, 0, 0, 255);
 
         /// <summary>
+        /// The gray color.
+        /// </summary>
+        public static readonly Color Gray = new Color(127, 127, 127, 255);
+
+        /// <summary>
         /// Defines the size of the <see cref="Color"/> struct in bytes.
         /// </summary>
         public static readonly int SizeInBytes = Marshal.SizeOf<Color>();
