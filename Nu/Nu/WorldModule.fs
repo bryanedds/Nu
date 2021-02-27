@@ -663,10 +663,9 @@ module WorldModule =
                 UMap.fold (fun world _ propertyBinding ->
                     if  Option.isNone propertyBinding.PBRight.PayloadOpt && // lenses with payloads are from simulant synchronization, not bindings
                         propertyBinding.PBRight.Validate world &&
-                        propertyBinding.PBLeft.Validate world then
-                        match propertyBinding.PBLeft.SetOpt with
-                        | Some setter -> setter (propertyBinding.PBRight.GetWithoutValidation world) world
-                        | None -> world
+                        (world :> World EventSystem).GetSimulantExists propertyBinding.PBLeft.This then
+                        let setter = Option.get propertyBinding.PBLeft.SetOpt
+                        setter (propertyBinding.PBRight.GetWithoutValidation world) world
                     else world)
                     world propertyBindings
             | (false, _) -> world
