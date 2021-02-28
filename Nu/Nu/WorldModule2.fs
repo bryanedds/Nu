@@ -789,7 +789,7 @@ module WorldModule2 =
                 let color = Color.White.WithA (byte (alpha * 255.0f))
                 let position = -eyeSize * 0.5f // negation for right-handedness
                 let size = eyeSize
-                let transform = { Position = position; Size = size; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = -1 }
+                let transform = { Position = position; Size = size; Rotation = 0.0f; Elevation = Single.MaxValue; Flags = 0 }
                 World.enqueueRenderLayeredMessage
                     { Elevation = transform.Elevation
                       PositionY = transform.Position.Y
@@ -797,6 +797,7 @@ module WorldModule2 =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
+                              Absolute = true
                               Offset = Vector2.Zero
                               InsetOpt = None
                               Image = dissolveImage

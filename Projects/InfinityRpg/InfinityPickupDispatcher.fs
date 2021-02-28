@@ -30,6 +30,7 @@ module PickupDispatcher =
                 Render (transform.Elevation, transform.Position.Y, AssetTag.generalize pickup.PickupImage,
                      SpriteDescriptor
                        { Transform = transform
+                         Absolute = entity.GetAbsolute world
                          Offset = v2Zero
                          InsetOpt = None
                          Image = pickup.PickupImage

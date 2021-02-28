@@ -63,6 +63,7 @@ module CharacterDispatcher =
                 Render (transform.Elevation, transform.Position.Y, AssetTag.generalize character.AnimationSheet,
                     SpriteDescriptor
                         { Transform = transform
+                          Absolute = entity.GetAbsolute world
                           Offset = Vector2.Zero
                           InsetOpt = Some (getSpriteInset entity world)
                           Image = character.AnimationSheet

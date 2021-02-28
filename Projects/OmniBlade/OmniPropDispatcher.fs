@@ -154,6 +154,7 @@ module PropDispatcher =
                 Render (elevation, positionY, assetTag,
                     SpriteDescriptor
                         { Transform = transform
+                          Absolute = entity.GetAbsolute world
                           Offset = Vector2.Zero
                           InsetOpt = insetOpt
                           Image = image

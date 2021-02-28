@@ -66,6 +66,7 @@ module FieldDispatcher =
                                 let tileTransform = { tileTransform with Position = tilePosition }
                                 let sprite =
                                     { Transform = tileTransform
+                                      Absolute = entity.GetAbsolute world
                                       Offset = v2Zero
                                       InsetOpt = tileInsetOpt
                                       Image = image

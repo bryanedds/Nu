@@ -70,6 +70,7 @@ type [<StructuralEquality; StructuralComparison>] Justification =
 /// Describes how to render a sprite to the rendering system.
 type [<NoEquality; NoComparison>] SpriteDescriptor =
     { Transform : Transform
+      Absolute : bool
       Offset : Vector2
       InsetOpt : Vector4 option
       Image : Image AssetTag
@@ -80,6 +81,7 @@ type [<NoEquality; NoComparison>] SpriteDescriptor =
 /// Describes how to render a tile map layer to the rendering system.
 type [<NoEquality; NoComparison>] TileLayerDescriptor =
     { Transform : Transform
+      Absolute : bool
       MapSize : Vector2i
       Tiles : TmxLayerTile array
       TileSourceSize : Vector2i
@@ -89,6 +91,7 @@ type [<NoEquality; NoComparison>] TileLayerDescriptor =
 /// Describes how to render text to the rendering system.
 type [<NoEquality; NoComparison>] TextDescriptor =
     { Transform : Transform
+      Absolute : bool
       Text : string
       Font : Font AssetTag
       Color : Color
@@ -98,6 +101,7 @@ type [<NoEquality; NoComparison>] TextDescriptor =
 /// OPTIMIZATION: mutable for speed.
 type [<NoEquality; NoComparison; Struct>] ParticleDescriptor =
     { mutable Transform : Transform
+      mutable Absolute : bool
       mutable Offset : Vector2
       mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection.
       mutable Color : Color
@@ -316,6 +320,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         (_ : Vector2)
         (eyeSize : Vector2)
         (transform : Transform)
+        (absolute : bool)
         (offset : Vector2)
         (insetOpt : Vector4 option)
         (image : Image AssetTag)
@@ -323,7 +328,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         (glow : Color)
         (flip : Flip)
         renderer =
-        let view = if transform.Flags &&& TransformMasks.AbsoluteMask <> 0 then viewAbsolute else viewRelative // OPTIMIZATION: using mask directly to avoid a transform copy.
+        let view = if absolute then viewAbsolute else viewRelative
         let position = transform.Position - Vector2.Multiply (offset, transform.Size)
         let positionView = position * view
         let sizeView = transform.Size * view.ExtractScaleMatrix ()
@@ -373,7 +378,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member private renderSpriteDescriptor viewAbsolute viewRelative eyeCenter eyeSize (sprite : SpriteDescriptor) renderer =
         SdlRenderer.renderSprite
             viewAbsolute viewRelative eyeCenter eyeSize
-            sprite.Transform sprite.Offset sprite.InsetOpt sprite.Image sprite.Color sprite.Glow sprite.Flip
+            sprite.Transform sprite.Absolute sprite.Offset sprite.InsetOpt sprite.Image sprite.Color sprite.Glow sprite.Flip
             renderer
 
     static member private renderSpriteDescriptors viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
@@ -387,13 +392,14 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         (_ : Vector2)
         (eyeSize : Vector2)
         (transform : Transform)
+        (absolute : bool)
         (mapSize : Vector2i)
         (tiles : TmxLayerTile array)
         (tileSourceSize : Vector2i)
         (tileSize : Vector2)
         (tileAssets : (TmxTileset * Image AssetTag) array)
         renderer =
-        let view = if transform.Flags &&& TransformMasks.AbsoluteMask <> 0 then viewAbsolute else viewRelative
+        let view = if absolute then viewAbsolute else viewRelative
         let positionView = transform.Position * view
         let sizeView = transform.Size * view.ExtractScaleMatrix ()
         let tileRotation = transform.Rotation
@@ -473,7 +479,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member private renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize (tileLayer : TileLayerDescriptor) renderer =
         SdlRenderer.renderTileLayer
             viewAbsolute viewRelative eyeCenter eyeSize
-            tileLayer.Transform tileLayer.MapSize tileLayer.Tiles tileLayer.TileSourceSize tileLayer.TileSize tileLayer.TileAssets
+            tileLayer.Transform tileLayer.Absolute tileLayer.MapSize tileLayer.Tiles tileLayer.TileSourceSize tileLayer.TileSize tileLayer.TileAssets
             renderer
 
     /// Render text.
@@ -483,12 +489,13 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         (_ : Vector2)
         (eyeSize : Vector2)
         (transform : Transform)
+        (absolute : bool)
         (text : string)
         (font : Font AssetTag)
         (color : Color)
         (justification : Justification)
         renderer =
-        let view = if transform.Flags &&& TransformMasks.AbsoluteMask <> 0 then viewAbsolute else viewRelative
+        let view = if absolute then viewAbsolute else viewRelative
         let positionView = transform.Position * view
         let sizeView = transform.Size * view.ExtractScaleMatrix ()
         let font = AssetTag.generalize font
@@ -549,7 +556,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member private renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize (text : TextDescriptor) renderer =
         SdlRenderer.renderText
             viewAbsolute viewRelative eyeCenter eyeSize
-            text.Transform text.Text text.Font text.Color text.Justification
+            text.Transform text.Absolute text.Text text.Font text.Color text.Justification
             renderer
 
     /// Render particles.

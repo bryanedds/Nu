@@ -42,6 +42,7 @@ module PropDispatcher =
                 Render (transform.Elevation, transform.Position.Y, AssetTag.generalize prop.PropImage,
                     SpriteDescriptor
                         { Transform = transform
+                          Absolute = entity.GetAbsolute world
                           Offset = v2Zero
                           InsetOpt = getSpriteInsetOpt prop
                           Image = prop.PropImage

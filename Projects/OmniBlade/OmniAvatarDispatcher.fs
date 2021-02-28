@@ -187,6 +187,7 @@ module AvatarDispatcher =
                 Render (transform.Elevation, transform.Position.Y, AssetTag.generalize avatar.AnimationSheet,
                     SpriteDescriptor
                         { Transform = transform
+                          Absolute = entity.GetAbsolute world
                           Offset = Vector2.Zero
                           InsetOpt = Some (getSpriteInset entity world)
                           Image = avatar.AnimationSheet

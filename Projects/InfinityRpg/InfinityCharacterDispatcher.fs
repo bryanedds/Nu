@@ -89,6 +89,7 @@ module CharacterDispatcherModule =
                       RenderDescriptor =
                         SpriteDescriptor
                           { Transform = transform
+                            Absolute = entity.GetAbsolute world
                             Offset = v2Zero
                             InsetOpt = getSpriteInsetOpt animationState time
                             Image = animationSheet

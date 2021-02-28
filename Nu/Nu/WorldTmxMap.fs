@@ -254,6 +254,7 @@ module TmxMap =
                                       RenderDescriptor =
                                         TileLayerDescriptor
                                             { Transform = transform
+                                              Absolute = absolute
                                               MapSize = Vector2i (tileMap.Width, tileMap.Height)
                                               Tiles = Seq.toArray tiles
                                               TileSourceSize = tileSourceSize

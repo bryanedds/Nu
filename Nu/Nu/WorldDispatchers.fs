@@ -761,6 +761,7 @@ module TextFacetModule =
                       RenderDescriptor =
                         TextDescriptor
                             { Transform = transform
+                              Absolute = entity.GetAbsolute world
                               Text = text
                               Font = font
                               Color = if entity.GetEnabled world then entity.GetTextColor world else entity.GetTextDisabledColor world
@@ -1362,6 +1363,7 @@ module StaticSpriteFacetModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
+                              Absolute = entity.GetAbsolute world
                               Offset = Vector2.Zero
                               InsetOpt = entity.GetInsetOpt world
                               Image = staticImage
@@ -1434,6 +1436,7 @@ module AnimatedSpriteFacetModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
+                              Absolute = entity.GetAbsolute world
                               Offset = Vector2.Zero
                               InsetOpt = getSpriteInsetOpt entity world
                               Image = animationSheet
@@ -1778,6 +1781,7 @@ module ButtonDispatcherModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
+                              Absolute = entity.GetAbsolute world
                               Offset = Vector2.Zero
                               InsetOpt = None
                               Image = image
@@ -1819,6 +1823,7 @@ module LabelDispatcherModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
+                              Absolute = entity.GetAbsolute world
                               Offset = Vector2.Zero
                               InsetOpt = None
                               Image = labelImage
@@ -1868,6 +1873,7 @@ module TextDispatcherModule =
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = transform
+                                  Absolute = entity.GetAbsolute world
                                   Offset = Vector2.Zero
                                   InsetOpt = None
                                   Image = image
@@ -1985,6 +1991,7 @@ module ToggleDispatcherModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
+                              Absolute = entity.GetAbsolute world
                               Offset = Vector2.Zero
                               InsetOpt = None
                               Image = image
@@ -2157,6 +2164,7 @@ module FillBarDispatcherModule =
                           RenderDescriptor =
                             SpriteDescriptor
                                 { Transform = borderSpriteTransform
+                                  Absolute = entity.GetAbsolute world
                                   Offset = Vector2.Zero
                                   InsetOpt = None
                                   Image = borderImage
@@ -2172,6 +2180,7 @@ module FillBarDispatcherModule =
                           RenderDescriptor =
                               SpriteDescriptor
                                   { Transform = fillBarSpriteTransform
+                                    Absolute = entity.GetAbsolute world
                                     Offset = Vector2.Zero
                                     InsetOpt = None
                                     Image = fillImage
@@ -2293,6 +2302,7 @@ module CharacterDispatcherModule =
                       RenderDescriptor =
                         SpriteDescriptor
                             { Transform = transform
+                              Absolute = entity.GetAbsolute world
                               Offset = v2Zero
                               InsetOpt = insetOpt
                               Image = image
