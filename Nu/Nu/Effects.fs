@@ -533,11 +533,11 @@ module EffectSystem =
                       Rotation = slice.Rotation
                       Elevation = slice.Elevation
                       Flags = 0 }
-                transform.Absolute <- effectSystem.Absolute
                 let spriteView =
                     Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                         SpriteDescriptor 
                             { Transform = transform
+                              Absolute = effectSystem.Absolute
                               Offset = slice.Offset
                               InsetOpt = slice.InsetOpt
                               Image = AssetTag.specialize<Image> image
@@ -577,11 +577,11 @@ module EffectSystem =
                           Rotation = slice.Rotation
                           Elevation = slice.Elevation
                           Flags = 0 }
-                    transform.Absolute <- effectSystem.Absolute
                     let animatedSpriteView =
                         Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image,
                             SpriteDescriptor
                                { Transform = transform
+                                 Absolute = effectSystem.Absolute
                                  Offset = slice.Offset
                                  InsetOpt = Some inset
                                  Image = AssetTag.specialize<Image> image
@@ -614,11 +614,11 @@ module EffectSystem =
                       Rotation = slice.Rotation
                       Elevation = slice.Elevation
                       Flags = 0 }
-                transform.Absolute <- effectSystem.Absolute
                 let spriteView =
                     Render (transform.Elevation, transform.Position.Y, font,
                         TextDescriptor 
                             { Transform = transform
+                              Absolute = effectSystem.Absolute
                               Text = text
                               Font = AssetTag.specialize<Font> font
                               Color = slice.Color
