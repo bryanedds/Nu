@@ -235,8 +235,8 @@ module WorldDeclarative =
                     let (b, c) =
                         if a === lensResult then
                             match (sieveResultOpt, unfoldResultOpt) with
-                            | (Some b, Some c) -> (b, c)
-                            | (Some b, None) -> (b, unfold b world)
+                            | (Some sieveResult, Some unfoldResult) -> (sieveResult, unfoldResult)
+                            | (Some sieveResult, None) -> (sieveResult, unfold sieveResult world)
                             | (None, Some _) -> failwithumf ()
                             | (None, None) -> let b = sieve a in (b, unfold b world)
                         else
@@ -261,7 +261,7 @@ module WorldDeclarative =
                     let b =
                         if a.Value === monitorResult then
                             match sieveResultOpt with
-                            | Some b -> b
+                            | Some sieveResult -> sieveResult
                             | None -> if Lens.validate lens world then sieve (Lens.get lens world) else sieve a.Value
                         elif Lens.validate lens world then sieve (Lens.get lens world)
                         else sieve a.Value
