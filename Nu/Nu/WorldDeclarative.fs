@@ -227,7 +227,6 @@ module WorldDeclarative =
             world =
             let previousSetKey = Gen.id
             let simulantMapKey = Gen.id
-            let mutable monitorResult = Unchecked.defaultof<obj>
             let mutable lensResult = Unchecked.defaultof<obj>
             let mutable sieveResultOpt = None
             let mutable unfoldResultOpt = None
@@ -237,29 +236,37 @@ module WorldDeclarative =
                         if a === lensResult then
                             match (sieveResultOpt, unfoldResultOpt) with
                             | (Some b, Some c) -> (b, c)
-                            | (Some b, None) -> let c = unfold b world in (b, c)
+                            | (Some b, None) -> (b, unfold b world)
                             | (None, Some _) -> failwithumf ()
-                            | (None, None) -> let b = sieve a in let c = unfold b world in (b, c)
+                            | (None, None) -> let b = sieve a in (b, unfold b world)
                         else
-                            let b = sieve a
-                            let c = unfold b world
-                            (b, c)
+                            match (sieveResultOpt, unfoldResultOpt) with
+                            | (Some sieveResult, Some unfoldResult) ->
+                                let b = sieve a in if b === sieveResult then (b, unfoldResult) else (b, unfold b world)
+                            | (Some _, None) ->
+                                let b = sieve a in (b, unfold b world)
+                            | (None, Some _) ->
+                                failwithumf ()
+                            | (None, None) ->
+                                let b = sieve a in (b, unfold b world)
                     lensResult <- a
                     sieveResultOpt <- Some b
                     unfoldResultOpt <- Some c
                     c)
                     lens
+            let mutable monitorResult = Unchecked.defaultof<obj>
+            let mutable monitorSieveResultOpt = None
             let monitorMapper =
                 fun a _ world ->
                     let b =
                         if a.Value === monitorResult then
-                            match sieveResultOpt with
+                            match monitorSieveResultOpt with
                             | Some b -> b
                             | None -> if Lens.validate lens world then sieve (Lens.get lens world) else sieve a.Value
                         elif Lens.validate lens world then sieve (Lens.get lens world)
                         else sieve a.Value
                     monitorResult <- a.Value
-                    sieveResultOpt <- Some b
+                    monitorSieveResultOpt <- Some b
                     b
             let monitorFilter =
                 fun a a2Opt _ ->
