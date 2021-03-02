@@ -916,18 +916,18 @@ module BattleDispatcher =
                  // allies
                  Content.entities battle
                     (fun battle -> Battle.getAllies battle) constant
-                    (fun index battle _ -> Content.entity<CharacterDispatcher> ("Ally+" + scstring index) [Entity.Character <== battle])
+                    (fun index battle _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== battle])
 
                  // enemies
                  Content.entities battle
                     (fun battle -> Battle.getEnemies battle) constant
-                    (fun index battle _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.Character <== battle])]
+                    (fun index battle _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== battle])]
 
              // input groups
              Content.groups battle (fun battle -> Battle.getAllies battle) constant $ fun index ally _ ->
 
                 // input group
-                let inputName = "Input" + "+" + scstring index
+                let inputName = "Input" + "+" + CharacterIndex.toEntityName index
                 Content.group inputName []
 
                     [// health bar
