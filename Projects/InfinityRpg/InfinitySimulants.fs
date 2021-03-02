@@ -45,14 +45,6 @@ module Simulants =
 
             let Group = Screen / "Gui"
             let Back = Group / "Back"
-            let SaveGame = Group / "SaveGame"
-            let Halt = Group / "Halt"
-            let Feeler = Group / "Feeler"
-            let DetailUpward = Group / "DetailUpward"
-            let DetailRightward = Group / "DetailRightward"
-            let DetailDownward = Group / "DetailDownward"
-            let DetailLeftward = Group / "DetailLeftward"
-            let Wait = Group / "Wait"
 
         [<RequireQualifiedAccess>]
         module Scene =

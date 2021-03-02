@@ -411,27 +411,27 @@ module GameplayDispatcher =
                                  Entity.CharacterAnimationTime <== character --> fun (_, _, time) -> time
                                  Entity.Position <== character --> fun (position, _, _) -> position])])
 
-             // hud group
+             // gui group
              Content.group Simulants.Gameplay.Gui.Group.Name []
 
-                [// halt button
-                 Content.button Simulants.Gameplay.Gui.Halt.Name
+                [// back button
+                 Content.button Simulants.Gameplay.Gui.Back.Name
+                    [Entity.Position == v2 184.0f -256.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
+                     Entity.Text == "Back"]
+
+                 // halt button
+                 Content.button Gen.name
                     [Entity.Position == v2 184.0f -144.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Halt"
                      Entity.Enabled <== gameplay --> fun gameplay -> gameplay.Round.IsPlayerTraveling
                      Entity.ClickEvent ==> msg HaltPlayer]
 
                  // save button
-                 Content.button Simulants.Gameplay.Gui.SaveGame.Name
+                 Content.button Gen.name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Save Game"
                      Entity.Enabled <== gameplay --> fun gameplay -> not (Round.inProgress gameplay.Round) && gameplay.InputMode = NormalInputMode
                      Entity.ClickEvent ==> cmd Save]
-
-                 // back button
-                 Content.button Simulants.Gameplay.Gui.Back.Name
-                    [Entity.Position == v2 184.0f -256.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
-                     Entity.Text == "Back"]
 
                  // HP
                  Content.text Gen.name
@@ -444,42 +444,42 @@ module GameplayDispatcher =
                      Entity.LabelImage == asset "Gui" "DetailBackdrop"]
 
                  // detail up
-                 Content.button Simulants.Gameplay.Gui.DetailUpward.Name
+                 Content.button Gen.name
                     [Entity.Position == v2 -387.0f -126.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailUpwardUp"; Entity.DownImage == asset "Gui" "DetailUpwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Upward))]
 
                  // detail right
-                 Content.button Simulants.Gameplay.Gui.DetailRightward.Name
+                 Content.button Gen.name
                     [Entity.Position == v2 -336.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailRightwardUp"; Entity.DownImage == asset "Gui" "DetailRightwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Rightward))]
 
                  // detail down
-                 Content.button Simulants.Gameplay.Gui.DetailDownward.Name
+                 Content.button Gen.name
                     [Entity.Position == v2 -387.0f -234.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailDownwardUp"; Entity.DownImage == asset "Gui" "DetailDownwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Downward))]
 
                  // detail left
-                 Content.button Simulants.Gameplay.Gui.DetailLeftward.Name
+                 Content.button Gen.name
                     [Entity.Position == v2 -438.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.UpImage == asset "Gui" "DetailLeftwardUp"; Entity.DownImage == asset "Gui" "DetailLeftwardDown"
                      Entity.ClickSoundOpt == None
                      Entity.ClickEvent ==> cmd (HandlePlayerInput (DirectionInput Leftward))]
 
                  // wait button
-                 Content.button Simulants.Gameplay.Gui.Wait.Name
+                 Content.button Gen.name
                     [Entity.Position == v2 -387.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "W"
                      Entity.Enabled <== gameplay --> fun gameplay -> if Round.inProgress gameplay.Round then false else true
                      Entity.ClickEvent ==> cmd (HandlePlayerInput TurnSkipInput)]
 
                  // item bar
-                 Content.panel "ItemBar"
+                 Content.panel Gen.name
                     [Entity.Position == v2 400.0f 200.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f]
                         [Content.entities gameplay
                            (fun gameplay -> gameplay.Inventory)
@@ -491,6 +491,6 @@ module GameplayDispatcher =
                                     Entity.ClickEvent ==> msg EnterSelectionMode])]
 
                  // input feeler
-                 Content.feeler Simulants.Gameplay.Gui.Feeler.Name
+                 Content.feeler Gen.name
                     [Entity.Position == v2 -480.0f -270.0f; Entity.Size == v2 960.0f 540.0f; Entity.Elevation == 9.0f
                      Entity.TouchEvent ==|> fun evt -> cmd (HandlePlayerInput (TouchInput evt.Data))]]]
