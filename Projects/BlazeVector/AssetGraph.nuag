@@ -8,7 +8,7 @@
    [Assets Assets/Default bmp [Render] []]
    [Assets Assets/Default wav [Audio] []]
    [Assets Assets/Default ogg [Audio] []]
-   [Assets Assets/Default nulyr [] []]
+   [Assets Assets/Default nugroup [] []]
    [Assets Assets/Default tmx [] []]]]
  [Gameplay
   [[Assets Assets/Gameplay png [Render] []]
@@ -16,9 +16,9 @@
    [Assets Assets/Gameplay ogg [Audio] []]
    [Assets Assets/Gameplay tsx [] []]
    [Assets Assets/Gameplay tmx [] []]
-   [Assets Assets/Gameplay nulyr [] []]]]
+   [Assets Assets/Gameplay nugroup [] []]]]
  [Gui
   [[Assets Assets/Gui png [Render] []]
    [Assets Assets/Gui wav [Audio] []]
    [Assets Assets/Gui ogg [Audio] []]
-   [Assets Assets/Gui nulyr [] []]]]]
+   [Assets Assets/Gui nugroup [] []]]]]

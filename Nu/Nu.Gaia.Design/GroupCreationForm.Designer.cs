@@ -1,6 +1,6 @@
 ﻿namespace Nu.Gaia.Design
 {
-    partial class LayerCreationForm
+    partial class GroupCreationForm
     {
         /// <summary>
         /// Required designer variable.
@@ -87,7 +87,7 @@
             this.label2.TabIndex = 3;
             this.label2.Text = "Dispatcher:";
             // 
-            // LayerCreationForm
+            // GroupCreationForm
             // 
             this.AcceptButton = this.okButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -100,8 +100,8 @@
             this.Controls.Add(this.nameTextBox);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.okButton);
-            this.Name = "LayerCreationForm";
-            this.Text = "Layer Creation";
+            this.Name = "GroupCreationForm";
+            this.Text = "Group Creation";
             this.ResumeLayout(false);
             this.PerformLayout();
 

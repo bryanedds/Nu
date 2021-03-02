@@ -2349,93 +2349,93 @@ module TmxMapDispatcherModule =
              define Entity.Parallax 0.0f]
 
 [<AutoOpen>]
-module LayerDispatcherModule =
+module GroupDispatcherModule =
 
     type World with
 
-        static member internal signalLayer<'model, 'message, 'command> signal (layer : Layer) world =
-            match layer.GetDispatcher world with
-            | :? LayerDispatcher<'model, 'message, 'command> as dispatcher ->
-                Signal.processSignal dispatcher.Message dispatcher.Command (layer.Model<'model> ()) signal layer world
+        static member internal signalGroup<'model, 'message, 'command> signal (group : Group) world =
+            match group.GetDispatcher world with
+            | :? GroupDispatcher<'model, 'message, 'command> as dispatcher ->
+                Signal.processSignal dispatcher.Message dispatcher.Command (group.Model<'model> ()) signal group world
             | _ ->
-                Log.info "Failed to send signal to layer."
+                Log.info "Failed to send signal to group."
                 world
 
-    and Layer with
+    and Group with
 
         member this.UpdateModel<'model> updater world =
             this.SetModel<'model> (updater (this.GetModel<'model> world)) world
 
         member this.Signal<'model, 'message, 'command> signal world =
-            World.signalLayer<'model, 'message, 'command> signal this world
+            World.signalGroup<'model, 'message, 'command> signal this world
 
-    and [<AbstractClass>] LayerDispatcher<'model, 'message, 'command> (initial : 'model) =
-        inherit LayerDispatcher ()
+    and [<AbstractClass>] GroupDispatcher<'model, 'message, 'command> (initial : 'model) =
+        inherit GroupDispatcher ()
 
-        member this.GetModel (layer : Layer) world : 'model =
-            layer.GetModel<'model> world
+        member this.GetModel (group : Group) world : 'model =
+            group.GetModel<'model> world
 
-        member this.SetModel (model : 'model) (layer : Layer) world =
-            layer.SetModel<'model> model world
+        member this.SetModel (model : 'model) (group : Group) world =
+            group.SetModel<'model> model world
 
-        member this.Model (layer : Layer) =
-            lens Property? Model (this.GetModel layer) (flip this.SetModel layer) layer
+        member this.Model (group : Group) =
+            lens Property? Model (this.GetModel group) (flip this.SetModel group) group
 
-        override this.Register (layer, world) =
+        override this.Register (group, world) =
             let world =
-                let property = World.getLayerModelProperty layer world
+                let property = World.getGroupModelProperty group world
                 if property.DesignerType = typeof<unit>
-                then layer.SetModel<'model> initial world
+                then group.SetModel<'model> initial world
                 else world
-            let channels = this.Channel (this.Model layer, layer)
-            let world = Signal.processChannels this.Message this.Command (this.Model layer) channels layer world
-            let content = this.Content (this.Model layer, layer)
+            let channels = this.Channel (this.Model group, group)
+            let world = Signal.processChannels this.Message this.Command (this.Model group) channels group world
+            let content = this.Content (this.Model group, group)
             let world =
                 List.fold (fun world content ->
-                    World.expandEntityContent content (SimulantOrigin layer) layer layer world |> snd)
+                    World.expandEntityContent content (SimulantOrigin group) group group world |> snd)
                     world content
-            let initializers = this.Initializers (this.Model layer, layer)
+            let initializers = this.Initializers (this.Model group, group)
             List.fold (fun world initializer ->
                 match initializer with
                 | PropertyDefinition def ->
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
-                    World.setProperty def.PropertyName property layer world
+                    World.setProperty def.PropertyName property group world
                 | EventHandlerDefinition (handler, partialAddress) ->
-                    let eventAddress = partialAddress --> layer
+                    let eventAddress = partialAddress --> group
                     World.monitor (fun (evt : Event) world ->
-                        let world = WorldModule.trySignal (handler evt) layer world
+                        let world = WorldModule.trySignal (handler evt) group world
                         (Cascade, world))
-                        eventAddress (layer :> Simulant) world
+                        eventAddress (group :> Simulant) world
                 | BindDefinition (left, right) ->
-                    WorldModule.bind5 layer left right world)
+                    WorldModule.bind5 group left right world)
                 world initializers
 
-        override this.Actualize (layer, world) =
-            let view = this.View (this.GetModel layer world, layer, world)
+        override this.Actualize (group, world) =
+            let view = this.View (this.GetModel group world, group, world)
             World.actualizeView view world
 
-        override this.TrySignal (signalObj, layer, world) =
+        override this.TrySignal (signalObj, group, world) =
             match signalObj with
-            | :? Signal<'message, obj> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
-            | :? Signal<obj, 'command> as signal -> layer.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
+            | :? Signal<'message, obj> as signal -> group.Signal<'model, 'message, 'command> (match signal with Message message -> msg message | _ -> failwithumf ()) world
+            | :? Signal<obj, 'command> as signal -> group.Signal<'model, 'message, 'command> (match signal with Command command -> cmd command | _ -> failwithumf ()) world
             | _ -> Log.info "Incorrect signal type returned from event binding."; world
 
-        abstract member Initializers : Lens<'model, World> * Layer -> PropertyInitializer list
+        abstract member Initializers : Lens<'model, World> * Group -> PropertyInitializer list
         default this.Initializers (_, _) = []
 
-        abstract member Channel : Lens<'model, World> * Layer -> Channel<'message, 'command, Layer, World> list
+        abstract member Channel : Lens<'model, World> * Group -> Channel<'message, 'command, Group, World> list
         default this.Channel (_, _) = []
 
-        abstract member Message : 'model * 'message * Layer * World -> Signal<'message, 'command> list * 'model
+        abstract member Message : 'model * 'message * Group * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model
 
-        abstract member Command : 'model * 'command * Layer * World -> Signal<'message, 'command> list * World
+        abstract member Command : 'model * 'command * Group * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Layer -> EntityContent list
+        abstract member Content : Lens<'model, World> * Group -> EntityContent list
         default this.Content (_, _) = []
 
-        abstract member View : 'model * Layer * World -> View
+        abstract member View : 'model * Group * World -> View
         default this.View (_, _, _) = View.empty
 
 [<AutoOpen>]
@@ -2482,7 +2482,7 @@ module ScreenDispatcherModule =
             let content = this.Content (this.Model screen, screen)
             let world =
                 List.fold (fun world content ->
-                    World.expandLayerContent content (SimulantOrigin screen) screen world |> snd)
+                    World.expandGroupContent content (SimulantOrigin screen) screen world |> snd)
                     world content
             let initializers = this.Initializers (this.Model screen, screen)
             List.fold (fun world initializer ->
@@ -2522,7 +2522,7 @@ module ScreenDispatcherModule =
         abstract member Command : 'model * 'command * Screen * World -> Signal<'message, 'command> list * World
         default this.Command (_, _, _, world) = just world
 
-        abstract member Content : Lens<'model, World> * Screen -> LayerContent list
+        abstract member Content : Lens<'model, World> * Screen -> GroupContent list
         default this.Content (_, _) = []
 
         abstract member View : 'model * Screen * World -> View

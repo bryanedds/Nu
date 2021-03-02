@@ -100,7 +100,7 @@ module Nu =
             // init simulant modules
             WorldModuleGame.init ()
             WorldModuleScreen.init ()
-            WorldModuleLayer.init ()
+            WorldModuleGroup.init ()
             WorldModuleEntity.init ()
 
             // init getPropertyOpt F# reach-around
@@ -121,43 +121,43 @@ module Nu =
                     | :? Entity as entity ->
                         match (valueOpt, WorldModuleEntity.EntitySetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
-                            let layer = entity.Parent
-                            let screen = layer.Parent
+                            let group = entity.Parent
+                            let screen = group.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
-                            let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
+                            let world = if not (World.getGroupExists group world) then World.createGroup None screen world |> snd else world
+                            let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay group world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
                             setter property entity world |> snd |> box
                         | (Some value, (false, _)) ->
-                            let layer = entity.Parent
-                            let screen = layer.Parent
+                            let group = entity.Parent
+                            let screen = group.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
-                            let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay layer world |> snd else world
+                            let world = if not (World.getGroupExists group world) then World.createGroup None screen world |> snd else world
+                            let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay group world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
                             World.attachEntityProperty propertyName property entity world |> box
                         | (None, (true, _)) ->
                             World.destroyEntity entity world |> box
                         | (None, (false, _)) ->
                             World.detachEntityProperty propertyName entity world |> box
-                    | :? Layer as layer ->
-                        match (valueOpt, WorldModuleLayer.LayerSetters.TryGetValue propertyName) with
+                    | :? Group as group ->
+                        match (valueOpt, WorldModuleGroup.GroupSetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
-                            let screen = layer.Parent
+                            let screen = group.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
+                            let world = if not (World.getGroupExists group world) then World.createGroup None screen world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
-                            setter property layer world |> snd |> box
+                            setter property group world |> snd |> box
                         | (Some value, (false, _)) ->
-                            let screen = layer.Parent
+                            let screen = group.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
-                            let world = if not (World.getLayerExists layer world) then World.createLayer None screen world |> snd else world
+                            let world = if not (World.getGroupExists group world) then World.createGroup None screen world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
-                            World.attachLayerProperty propertyName property layer world |> box
+                            World.attachGroupProperty propertyName property group world |> box
                         | (None, (true, _)) ->
-                            World.destroyLayer layer world |> box
+                            World.destroyGroup group world |> box
                         | (None, (false, _)) ->
-                            World.detachLayerProperty propertyName layer world |> box
+                            World.detachGroupProperty propertyName group world |> box
                     | :? Screen as screen ->
                         match (valueOpt, WorldModuleScreen.ScreenSetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
@@ -220,8 +220,8 @@ module Nu =
                 let world = worldObj :?> World
                 let eventNames = Address.getNames eventAddress
                 match eventNames with
-                | [|eventFirstName; _; screenName; layerName; entityName|] ->
-                    let entity = Entity [|screenName; layerName; entityName|]
+                | [|eventFirstName; _; screenName; groupName; entityName|] ->
+                    let entity = Entity [|screenName; groupName; entityName|]
                     match eventFirstName with
                     | "Update" ->
 #if DEBUG
@@ -358,7 +358,7 @@ module Nu =
                     (fun (simulant : Simulant) _ ->
                         match simulant with
                         | :? Entity as entity -> { SortElevation = entity.GetElevation world; SortPositionY = 0.0f; SortTarget = entity } :> IComparable
-                        | :? Layer as layer -> { SortElevation = Constants.Engine.LayerSortPriority; SortPositionY = 0.0f; SortTarget = layer } :> IComparable
+                        | :? Group as group -> { SortElevation = Constants.Engine.GroupSortPriority; SortPositionY = 0.0f; SortTarget = group } :> IComparable
                         | :? Screen as screen -> { SortElevation = Constants.Engine.ScreenSortPriority; SortPositionY = 0.0f; SortTarget = screen } :> IComparable
                         | :? Game | :? GlobalSimulantGeneralized -> { SortElevation = Constants.Engine.GameSortPriority; SortPositionY = 0.0f; SortTarget = Simulants.Game } :> IComparable
                         | _ -> failwithumf ())
@@ -367,7 +367,7 @@ module Nu =
 
             // init admitScreenElements F# reach-around
             WorldModule.admitScreenElements <- fun screen world ->
-                let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
                 let oldWorld = world
                 let entityTree =
                     MutantCache.mutateMutant
@@ -384,7 +384,7 @@ module Nu =
                 
             // init evictScreenElements F# reach-around
             WorldModule.evictScreenElements <- fun screen world ->
-                let entities = World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
+                let entities = World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat |> Seq.toArray
                 let oldWorld = world
                 let entityTree =
                     MutantCache.mutateMutant
@@ -402,7 +402,7 @@ module Nu =
             // init registerScreenPhysics F# reach-around
             WorldModule.registerScreenPhysics <- fun screen world ->
                 let entities =
-                    World.getLayers screen world |>
+                    World.getGroups screen world |>
                     Seq.map (flip World.getEntities world) |>
                     Seq.concat |>
                     Seq.toArray
@@ -413,7 +413,7 @@ module Nu =
             // init unregisterScreenPhysics F# reach-around
             WorldModule.unregisterScreenPhysics <- fun screen world ->
                 let entities =
-                    World.getLayers screen world |>
+                    World.getGroups screen world |>
                     Seq.map (flip World.getEntities world) |>
                     Seq.concat |>
                     Seq.toArray
@@ -488,7 +488,7 @@ module Nu =
             // init debug view F# reach-arounds
             Debug.World.viewGame <- fun world -> Debug.Game.view (world :?> World)
             Debug.World.viewScreen <- fun screen world -> Debug.Screen.view (screen :?> Screen) (world :?> World)
-            Debug.World.viewLayer <- fun layer world -> Debug.Layer.view (layer :?> Layer) (world :?> World)
+            Debug.World.viewGroup <- fun group world -> Debug.Group.view (group :?> Group) (world :?> World)
             Debug.World.viewEntity <- fun entity world -> Debug.Entity.view (entity :?> Entity) (world :?> World)
 
             // init scripting
@@ -518,8 +518,8 @@ module WorldModule3 =
         static member private makeDefaultScreenDispatchers () =
             Map.ofList [World.pairWithName (ScreenDispatcher ())]
 
-        static member private makeDefaultLayerDispatchers () =
-            Map.ofList [World.pairWithName (LayerDispatcher ())]
+        static member private makeDefaultGroupDispatchers () =
+            Map.ofList [World.pairWithName (GroupDispatcher ())]
 
         static member private makeDefaultEntityDispatchers () =
             // TODO: consider if we should reflectively generate these
@@ -585,7 +585,7 @@ module WorldModule3 =
             let dispatchers =
                 { GameDispatchers = Map.ofList [defaultGameDispatcher]
                   ScreenDispatchers = World.makeDefaultScreenDispatchers ()
-                  LayerDispatchers = World.makeDefaultLayerDispatchers ()
+                  GroupDispatchers = World.makeDefaultGroupDispatchers ()
                   EntityDispatchers = World.makeDefaultEntityDispatchers ()
                   Facets = World.makeDefaultFacets ()
                   TryGetExtrinsic = World.tryGetExtrinsic
@@ -617,13 +617,13 @@ module WorldModule3 =
             // finally, register the game
             World.registerGame world
 
-        /// Make a default world with a default screen, layer, and entity, such as for testing.
+        /// Make a default world with a default screen, group, and entity, such as for testing.
         static member makeDefault () =
             let worldConfig = WorldConfig.defaultConfig
             let world = World.makeEmpty worldConfig
             let world = World.createScreen (Some Simulants.DefaultScreen.Name) world |> snd
-            let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd
-            let world = World.createEntity (Some Simulants.DefaultEntity.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
+            let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
+            let world = World.createEntity (Some Simulants.DefaultEntity.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
             world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
@@ -651,7 +651,7 @@ module WorldModule3 =
                 let pluginFacets = plugin.Birth<Facet> ()
                 let pluginGameDispatchers = plugin.Birth<GameDispatcher> ()
                 let pluginScreenDispatchers = plugin.Birth<ScreenDispatcher> ()
-                let pluginLayerDispatchers = plugin.Birth<LayerDispatcher> ()
+                let pluginGroupDispatchers = plugin.Birth<GroupDispatcher> ()
                 let pluginEntityDispatchers = plugin.Birth<EntityDispatcher> ()
 
                 // make the default game dispatcher
@@ -661,7 +661,7 @@ module WorldModule3 =
                 let dispatchers =
                     { GameDispatchers = Map.addMany pluginGameDispatchers (Map.ofList [defaultGameDispatcher])
                       ScreenDispatchers = Map.addMany pluginScreenDispatchers (World.makeDefaultScreenDispatchers ())
-                      LayerDispatchers = Map.addMany pluginLayerDispatchers (World.makeDefaultLayerDispatchers ())
+                      GroupDispatchers = Map.addMany pluginGroupDispatchers (World.makeDefaultGroupDispatchers ())
                       EntityDispatchers = Map.addMany pluginEntityDispatchers (World.makeDefaultEntityDispatchers ())
                       Facets = Map.addMany pluginFacets (World.makeDefaultFacets ())
                       TryGetExtrinsic = World.tryGetExtrinsic

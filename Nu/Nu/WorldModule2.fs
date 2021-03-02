@@ -23,13 +23,13 @@ module WorldModule2 =
     let private UpdateGatherTimer = Diagnostics.Stopwatch ()
     let private UpdateGameTimer = Diagnostics.Stopwatch ()
     let private UpdateScreensTimer = Diagnostics.Stopwatch ()
-    let private UpdateLayersTimer = Diagnostics.Stopwatch ()
+    let private UpdateGroupsTimer = Diagnostics.Stopwatch ()
     let private UpdateEntitiesTimer = Diagnostics.Stopwatch ()
     let private PostUpdateTimer = Diagnostics.Stopwatch ()
     let private PostUpdateGatherTimer = Diagnostics.Stopwatch ()
     let private PostUpdateGameTimer = Diagnostics.Stopwatch ()
     let private PostUpdateScreensTimer = Diagnostics.Stopwatch ()
-    let private PostUpdateLayersTimer = Diagnostics.Stopwatch ()
+    let private PostUpdateGroupsTimer = Diagnostics.Stopwatch ()
 #if !DISABLE_ENTITY_POST_UPDATE
     let private PostUpdateEntitiesTimer = Diagnostics.Stopwatch ()
 #endif
@@ -61,11 +61,11 @@ module WorldModule2 =
         static member internal rebuildEntityTree world =
             let omniEntities =
                 match World.getOmniScreenOpt world with
-                | Some screen -> World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
                 | None -> Seq.empty
             let selectedEntities =
                 match World.getSelectedScreenOpt world with
-                | Some screen -> World.getLayers screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
                 | None -> Seq.empty
             let entities = Seq.append omniEntities selectedEntities
             let tree = World.makeEntityTree ()
@@ -327,15 +327,15 @@ module WorldModule2 =
         /// Set the splash aspects of a screen.
         [<FunctionBinding>]
         static member setScreenSplash splashDataOpt destination (screen : Screen) world =
-            let splashLayer = screen / "SplashLayer"
-            let splashSprite = splashLayer / "SplashSprite"
-            let world = World.destroyLayerImmediate splashLayer world
+            let splashGroup = screen / "SplashGroup"
+            let splashSprite = splashGroup / "SplashSprite"
+            let world = World.destroyGroupImmediate splashGroup world
             match splashDataOpt with
             | Some splashDescriptor ->
                 let cameraEyeSize = World.getEyeSize world
-                let world = World.createLayer<LayerDispatcher> (Some splashLayer.Name) screen world |> snd
-                let world = splashLayer.SetPersistent false world
-                let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashLayer world |> snd
+                let world = World.createGroup<GroupDispatcher> (Some splashGroup.Name) screen world |> snd
+                let world = splashGroup.SetPersistent false world
+                let world = World.createEntity<StaticSpriteDispatcher> (Some splashSprite.Name) DefaultOverlay splashGroup world |> snd
                 let world = splashSprite.SetPersistent false world
                 let world = splashSprite.SetSize cameraEyeSize world
                 let world = splashSprite.SetPosition (-cameraEyeSize * 0.5f) world
@@ -351,21 +351,21 @@ module WorldModule2 =
                         world
                 let (unsub, world) = World.monitorCompressed Gen.id None None None (Left (World.handleSplashScreenIdle splashDescriptor.IdlingTime destination screen)) (Events.IncomingFinish --> screen) screen world
                 let (unsub2, world) = World.monitorCompressed Gen.id None None None (Left (World.handleAsScreenTransitionFromSplash destination)) (Events.OutgoingFinish --> screen) screen world
-                let world = World.monitor (fun _ -> unsub >> unsub2 >> pair Cascade) (Events.Unregistering --> splashLayer) screen world
+                let world = World.monitor (fun _ -> unsub >> unsub2 >> pair Cascade) (Events.Unregistering --> splashGroup) screen world
                 world
             | None -> world
 
-        /// Create a dissolve screen whose content is loaded from the given layer file.
+        /// Create a dissolve screen whose content is loaded from the given group file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile6 dispatcherName nameOpt dissolveDescriptor songOpt layerFilePath world =
+        static member createDissolveScreenFromGroupFile6 dispatcherName nameOpt dissolveDescriptor songOpt groupFilePath world =
             let (dissolveScreen, world) = World.createDissolveScreen5 dispatcherName nameOpt dissolveDescriptor songOpt world
-            let world = World.readLayerFromFile layerFilePath None dissolveScreen world |> snd
+            let world = World.readGroupFromFile groupFilePath None dissolveScreen world |> snd
             (dissolveScreen, world)
 
-        /// Create a dissolve screen whose content is loaded from the given layer file.
+        /// Create a dissolve screen whose content is loaded from the given group file.
         [<FunctionBinding>]
-        static member createDissolveScreenFromLayerFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor songOpt layerFilePath world =
-            World.createDissolveScreenFromLayerFile6 typeof<'d>.Name nameOpt dissolveDescriptor layerFilePath songOpt world
+        static member createDissolveScreenFromGroupFile<'d when 'd :> ScreenDispatcher> nameOpt dissolveDescriptor songOpt groupFilePath world =
+            World.createDissolveScreenFromGroupFile6 typeof<'d>.Name nameOpt dissolveDescriptor groupFilePath songOpt world
 
         /// Create a splash screen that transitions to the given destination upon completion.
         [<FunctionBinding>]
@@ -704,7 +704,7 @@ module WorldModule2 =
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
-            let layers = Seq.concat (List.map (flip World.getLayers world) screens)
+            let groups = Seq.concat (List.map (flip World.getGroups world) screens)
             let (entities, world) = World.getEntitiesInView2 world
             UpdateGatherTimer.Stop ()
 
@@ -718,10 +718,10 @@ module WorldModule2 =
             let world = List.fold (fun world screen -> World.updateScreen screen world) world screens
             UpdateScreensTimer.Stop ()
 
-            // update layers
-            UpdateLayersTimer.Start ()
-            let world = Seq.fold (fun world layer -> World.updateLayer layer world) world layers
-            UpdateLayersTimer.Stop ()
+            // update groups
+            UpdateGroupsTimer.Start ()
+            let world = Seq.fold (fun world group -> World.updateGroup group world) world groups
+            UpdateGroupsTimer.Stop ()
 
             // update entities
             UpdateEntitiesTimer.Start ()
@@ -744,7 +744,7 @@ module WorldModule2 =
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
-            let layers = Seq.concat (List.map (flip World.getLayers world) screens)
+            let groups = Seq.concat (List.map (flip World.getGroups world) screens)
 #if !DISABLE_ENTITY_POST_UPDATE
             let (entities, world) = World.getEntitiesInView2 world
 #endif
@@ -760,10 +760,10 @@ module WorldModule2 =
             let world = List.fold (fun world screen -> World.postUpdateScreen screen world) world screens
             PostUpdateScreensTimer.Stop ()
 
-            // post-update layers
-            PostUpdateLayersTimer.Start ()
-            let world = Seq.fold (fun world layer -> World.postUpdateLayer layer world) world layers
-            PostUpdateLayersTimer.Stop ()
+            // post-update groups
+            PostUpdateGroupsTimer.Start ()
+            let world = Seq.fold (fun world group -> World.postUpdateGroup group world) world groups
+            PostUpdateGroupsTimer.Stop ()
 
 #if !DISABLE_ENTITY_POST_UPDATE
             // post-update entities
@@ -820,7 +820,7 @@ module WorldModule2 =
             let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
-            let layers = Seq.concat (List.map (flip World.getLayers world) screens)
+            let groups = Seq.concat (List.map (flip World.getGroups world) screens)
             let (entities, world) = World.getEntitiesInView2 world
             ActualizeGatherTimer.Stop ()
 
@@ -828,15 +828,15 @@ module WorldModule2 =
             let world = World.actualizeGame world
             let world = List.fold (fun world screen -> World.actualizeScreen screen world) world screens
             let world = match World.getSelectedScreenOpt world with Some selectedScreen -> World.actualizeScreenTransition selectedScreen world | None -> world
-            let world = Seq.fold (fun world layer -> World.actualizeLayer layer world) world layers
+            let world = Seq.fold (fun world group -> World.actualizeGroup group world) world groups
 
             // actualize entities
             ActualizeEntitiesTimer.Start ()
 #if DEBUG
             let world =
                 Seq.fold (fun world (entity : Entity) ->
-                    let layer = entity.Parent
-                    if layer.GetVisible world // layer visibility only has an effect on entities in debug mode
+                    let group = entity.Parent
+                    if group.GetVisible world // group visibility only has an effect on entities in debug mode
                     then World.actualizeEntity entity world
                     else world)
                     world entities
@@ -1061,7 +1061,7 @@ module GameDispatcherModule =
         static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.signalEntity<'model, 'message, 'command> signal entity world
-            | :? Layer as layer -> World.signalLayer<'model, 'message, 'command> signal layer world
+            | :? Group as group -> World.signalGroup<'model, 'message, 'command> signal group world
             | :? Screen as screen -> World.signalScreen<'model, 'message, 'command> signal screen world
             | :? Game as game -> World.signalGame<'model, 'message, 'command> signal game world
             | _ -> failwithumf ()
@@ -1165,7 +1165,7 @@ module WorldModule2' =
         static member trySignal signal (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> entity.TrySignal signal world
-            | :? Layer as layer -> layer.TrySignal signal world
+            | :? Group as group -> group.TrySignal signal world
             | :? Screen as screen -> screen.TrySignal signal world
             | :? Game as game -> game.TrySignal signal world
             | _ -> failwithumf ()
@@ -1174,7 +1174,7 @@ module WorldModule2' =
         static member signal<'model, 'message, 'command> signal (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> entity.Signal<'model, 'message, 'command> signal world
-            | :? Layer as layer -> layer.Signal<'model, 'message, 'command> signal world
+            | :? Group as group -> group.Signal<'model, 'message, 'command> signal world
             | :? Screen as screen -> screen.Signal<'model, 'message, 'command> signal world
             | :? Game as game -> game.Signal<'model, 'message, 'command> signal world
             | _ -> failwithumf ()

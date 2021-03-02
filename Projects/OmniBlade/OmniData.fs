@@ -507,8 +507,8 @@ module FieldData =
             let propObjects =
                 match tryGetTileMap omniSeedState fieldData world with
                 | Some tileMap ->
-                    if tileMap.ObjectGroups.Contains Constants.Field.PropsLayerName then
-                        let group = tileMap.ObjectGroups.Item Constants.Field.PropsLayerName
+                    if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
+                        let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
                         enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (tileMap, group, propObject)) |> Seq.toList
                     else []
                 | None -> []

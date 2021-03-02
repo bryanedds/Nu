@@ -16,7 +16,7 @@
    [Assets Assets/Gui png [Render] []]
    [Assets Assets/Gui wav [Audio] []]
    [Assets Assets/Gui ogg [Audio] []]
-   [Assets Assets/Gui nulyr [] []]]]
+   [Assets Assets/Gui nugroup [] []]]]
  [Field
   [[Assets Assets/Field csv [Symbol] []]
    [Assets Assets/Field psd [Render] [PsdToPng Retro]]
@@ -25,7 +25,7 @@
    [Assets Assets/Field ogg [Audio] []]
    [Assets Assets/Field tsx [] []]
    [Assets Assets/Field tmx [] []]
-   [Assets Assets/Field nulyr [] []]]]
+   [Assets Assets/Field nugroup [] []]]]
  [Battle
   [[Assets Assets/Battle csv [Symbol] []]
    [Assets Assets/Battle psd [Render] [PsdToPng Retro]]
@@ -34,7 +34,7 @@
    [Assets Assets/Battle ogg [Audio] []]
    [Assets Assets/Battle tsx [] []]
    [Assets Assets/Battle tmx [] []]
-   [Assets Assets/Battle nulyr [] []]]]
+   [Assets Assets/Battle nugroup [] []]]]
  [Cave
   [[Assets Assets/Cave csv [Symbol] []]
    [Assets Assets/Cave psd [Render] [PsdToPng Retro]]
@@ -43,4 +43,4 @@
    [Assets Assets/Cave ogg [Audio] []]
    [Assets Assets/Cave tsx [] []]
    [Assets Assets/Cave tmx [] []]
-   [Assets Assets/Cave nulyr [] []]]]]
+   [Assets Assets/Cave nugroup [] []]]]]

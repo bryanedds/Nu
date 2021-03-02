@@ -1,4 +1,4 @@
-[LayerDispatcher
+[GroupDispatcher
  [[Model
    ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=4.7.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Layer]
@@ -6,11 +6,11 @@
   [Visible True]]
  [[TextDispatcher
    [[Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "It appears I am not the first to find it..."]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "The ancient 'tomb' of the 9 mythical demons."]]
     [Optimized False]
     [Position [-32 -32]]
     [Size [64 64]]
-    [Text "it appears I am not the first to find it."]]]
+    [Text "the ancient 'tomb' of the 9 mythical demons."]]]
   [StaticSpriteDispatcher
    [[Color [0 0 0 255]]
     [Elevation -10]

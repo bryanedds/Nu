@@ -138,7 +138,7 @@ module AssetGraph =
     /// A graph of all the assets used in a game.
     [<Syntax
         ("Asset Assets",
-         "nueffect nuscript nulyr psd png bmp ttf tmx wav ogg csv " +
+         "nueffect nuscript nugroup psd png bmp ttf tmx wav ogg csv " +
          "PsdToPng Retro " +
          "Render Audio Symbol",
          "", "", "",

@@ -12,11 +12,11 @@ open Nu.Gaia.Design
 
 // TODO: consider getting rid of the duplication of code from GaiaEntity.fs.
 
-type [<TypeDescriptionProvider (typeof<LayerTypeDescriptorProvider>)>] LayerTypeDescriptorSource =
-    { DescribedLayer : Layer
+type [<TypeDescriptionProvider (typeof<GroupTypeDescriptorProvider>)>] GroupTypeDescriptorSource =
+    { DescribedGroup : Group
       Form : GaiaForm }
 
-and LayerPropertyDescriptor (propertyDescriptor, attributes) =
+and GroupPropertyDescriptor (propertyDescriptor, attributes) =
     inherit System.ComponentModel.PropertyDescriptor (propertyDescriptor.PropertyName, attributes)
 
     let propertyName =
@@ -53,9 +53,9 @@ and LayerPropertyDescriptor (propertyDescriptor, attributes) =
     override this.SetValue (source, value) =
         Globals.WorldChangers.Add $ fun world ->
         
-            // grab the type descriptor and layer
-            let layerTds = source :?> LayerTypeDescriptorSource
-            let layer = layerTds.DescribedLayer
+            // grab the type descriptor and group
+            let groupTds = source :?> GroupTypeDescriptorSource
+            let group = groupTds.DescribedGroup
 
             // pull string quotes out of string
             let value =
@@ -70,8 +70,8 @@ and LayerPropertyDescriptor (propertyDescriptor, attributes) =
             // change the name property
             | "Name" ->
                 MessageBox.Show
-                    ("Changing the name of a layer after it has been created is not yet implemented.",
-                     "Cannot change layer name in Gaia.",
+                    ("Changing the name of a group after it has been created is not yet implemented.",
+                     "Cannot change group name in Gaia.",
                      MessageBoxButtons.OK) |>
                     ignore
                 world
@@ -82,40 +82,40 @@ and LayerPropertyDescriptor (propertyDescriptor, attributes) =
                     match propertyName with
                     | "OverlayNameOpt" ->
                         MessageBox.Show
-                            ("Changing the overlay of a layer after it has been created is not yet implemented.",
-                             "Cannot change layer overlay in Gaia.",
+                            ("Changing the overlay of a group after it has been created is not yet implemented.",
+                             "Cannot change group overlay in Gaia.",
                              MessageBoxButtons.OK) |>
                             ignore
                         world
                     | _ ->
-                        let (_, world) = PropertyDescriptor.trySetValue propertyDescriptor value layer world
+                        let (_, world) = PropertyDescriptor.trySetValue propertyDescriptor value group world
                         world
                 Globals.World <- world // must be set for property grid
-                layerTds.Form.layerPropertyGrid.Refresh ()
+                groupTds.Form.groupPropertyGrid.Refresh ()
                 world
 
     override this.GetValue source =
         match source with
         | null -> null // WHY THE FUCK IS THIS EVER null???
         | source ->
-            let layerTds = source :?> LayerTypeDescriptorSource
-            PropertyDescriptor.tryGetValue propertyDescriptor layerTds.DescribedLayer Globals.World |> Option.get
+            let groupTds = source :?> GroupTypeDescriptorSource
+            PropertyDescriptor.tryGetValue propertyDescriptor groupTds.DescribedGroup Globals.World |> Option.get
 
-and LayerTypeDescriptor (sourceOpt : obj) =
+and GroupTypeDescriptor (sourceOpt : obj) =
     inherit CustomTypeDescriptor ()
 
     override this.GetProperties () =
         let contextOpt =
             match sourceOpt with
-            | :? LayerTypeDescriptorSource as source -> Some (source.DescribedLayer :> Simulant, Globals.World)
+            | :? GroupTypeDescriptorSource as source -> Some (source.DescribedGroup :> Simulant, Globals.World)
             | _ -> None
-        let makePropertyDescriptor = fun (epv, tcas) -> (LayerPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
-        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<LayerState> makePropertyDescriptor contextOpt
+        let makePropertyDescriptor = fun (epv, tcas) -> (GroupPropertyDescriptor (epv, Array.map (fun attr -> attr :> Attribute) tcas)) :> System.ComponentModel.PropertyDescriptor
+        let propertyDescriptors = PropertyDescriptor.getPropertyDescriptors<GroupState> makePropertyDescriptor contextOpt
         PropertyDescriptorCollection (Array.ofList propertyDescriptors)
 
     override this.GetProperties _ =
         this.GetProperties ()
 
-and LayerTypeDescriptorProvider () =
+and GroupTypeDescriptorProvider () =
     inherit TypeDescriptionProvider ()
-    override this.GetTypeDescriptor (_, sourceOpt) = LayerTypeDescriptor sourceOpt :> ICustomTypeDescriptor
+    override this.GetTypeDescriptor (_, sourceOpt) = GroupTypeDescriptor sourceOpt :> ICustomTypeDescriptor

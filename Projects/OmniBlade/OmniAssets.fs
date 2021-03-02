@@ -47,13 +47,13 @@ module Assets =
         let MistakeSound = asset<Sound> PackageName "Mistake"
         let TitleSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Title" }
         let IntroSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = 1500; Song = asset<Song> PackageName "Intro" }
-        let TitleLayerFilePath = "Assets/Gui/Layers/Title.nulyr"
-        let CreditsLayerFilePath = "Assets/Gui/Layers/Credits.nulyr"
-        let IntroLayerFilePath = "Assets/Gui/Layers/Intro.nulyr"
-        let Intro2LayerFilePath = "Assets/Gui/Layers/Intro2.nulyr"
-        let Intro3LayerFilePath = "Assets/Gui/Layers/Intro3.nulyr"
-        let Intro4LayerFilePath = "Assets/Gui/Layers/Intro4.nulyr"
-        let Intro5LayerFilePath = "Assets/Gui/Layers/Intro5.nulyr"
+        let TitleGroupFilePath = "Assets/Gui/Groups/Title.nugroup"
+        let CreditsGroupFilePath = "Assets/Gui/Groups/Credits.nugroup"
+        let IntroGroupFilePath = "Assets/Gui/Groups/Intro.nugroup"
+        let Intro2GroupFilePath = "Assets/Gui/Groups/Intro2.nugroup"
+        let Intro3GroupFilePath = "Assets/Gui/Groups/Intro3.nugroup"
+        let Intro4GroupFilePath = "Assets/Gui/Groups/Intro4.nugroup"
+        let Intro5GroupFilePath = "Assets/Gui/Groups/Intro5.nugroup"
 
     [<RequireQualifiedAccess>]
     module Field =

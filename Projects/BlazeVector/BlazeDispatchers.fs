@@ -242,7 +242,7 @@ module SceneModule =
         | PlayerFall
 
     type SceneDispatcher () =
-        inherit LayerDispatcher<unit, unit, SceneCommand> ()
+        inherit GroupDispatcher<unit, unit, SceneCommand> ()
 
         override this.Channel (_, scene) =
             [scene.UpdateEvent => cmd AdjustCamera
@@ -289,11 +289,11 @@ module GameplayModule =
                 entities
 
         static let createSectionFromFile filePath sectionName xShift gameplay world =
-            let (section, world) = World.readLayerFromFile filePath (Some sectionName) gameplay world
+            let (section, world) = World.readGroupFromFile filePath (Some sectionName) gameplay world
             let sectionEntities = World.getEntities section world
             shiftEntities xShift sectionEntities world
 
-        static let createSectionLayers gameplay world =
+        static let createSectionGroups gameplay world =
             let random = System.Random ()
             let sectionFilePaths = List.toArray Assets.Gameplay.SectionFilePaths
             List.fold
@@ -307,7 +307,7 @@ module GameplayModule =
                 [0 .. SectionCount - 1]
 
         static let createScene gameplay world =
-            World.readLayerFromFile Assets.Gameplay.SceneLayerFilePath (Some Simulants.Scene.Name) gameplay world |> snd
+            World.readGroupFromFile Assets.Gameplay.SceneGroupFilePath (Some Simulants.Scene.Name) gameplay world |> snd
 
         override this.Channel (_, gameplay) =
             [gameplay.SelectEvent => cmd StartPlay
@@ -318,10 +318,10 @@ module GameplayModule =
                 match command with
                 | StartPlay ->
                     let world = createScene gameplay world
-                    createSectionLayers gameplay world
+                    createSectionGroups gameplay world
                 | StopPlay ->
                     let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
-                    let layerNames = Simulants.Scene.Name :: sectionNames
-                    let layers = List.map (fun layerName -> gameplay / layerName) layerNames
-                    World.destroyLayers layers world
+                    let groupNames = Simulants.Scene.Name :: sectionNames
+                    let groups = List.map (fun groupName -> gameplay / groupName) groupNames
+                    World.destroyGroups groups world
             just world

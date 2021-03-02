@@ -8,7 +8,7 @@
    [Assets Assets/Default bmp [Render] []]
    [Assets Assets/Default wav [Audio] []]
    [Assets Assets/Default ogg [Audio] []]
-   [Assets Assets/Default nulyr [] []]
+   [Assets Assets/Default nugroup [] []]
    [Assets Assets/Default tmx [] []]]]
  [Gameplay
   [[Assets Assets/Gameplay png [Render] []]

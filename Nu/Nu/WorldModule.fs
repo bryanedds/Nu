@@ -19,11 +19,11 @@ module Simulants =
     /// The default screen - may or may not exist.
     let DefaultScreen = Screen "Screen"
     
-    /// The default layer - may or may not exist.
-    let DefaultLayer = DefaultScreen / "Layer"
+    /// The default group - may or may not exist.
+    let DefaultGroup = DefaultScreen / "Group"
     
     /// The default entity - may or may not exist.
-    let DefaultEntity = DefaultLayer / "Entity"
+    let DefaultEntity = DefaultGroup / "Entity"
 
 [<AutoOpen>]
 module WorldModuleOperators =
@@ -36,7 +36,7 @@ module WorldModuleOperators =
     let resolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't =
         let simulant2 = Relation.resolve<Simulant, 't> simulant.SimulantAddress relation
         if  typeof<'t> = typeof<Entity> ||
-            typeof<'t> = typeof<Layer> ||
+            typeof<'t> = typeof<Group> ||
             typeof<'t> = typeof<Screen> ||
             typeof<'t> = typeof<Game> then
             Activator.CreateInstance (typeof<'t>, simulant2) :?> 't
@@ -168,7 +168,7 @@ module WorldModule =
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
             let propertyBindings = if AmbientState.getStandAlone ambientState then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
             let entityStates = if AmbientState.getStandAlone ambientState then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
-            let layerStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
+            let groupStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let gameState = GameState.make activeGameDispatcher
             let world =
@@ -177,7 +177,7 @@ module WorldModule =
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                   EntityTree = MutantCache.make id spatialTree
                   EntityStates = entityStates
-                  LayerStates = layerStates
+                  GroupStates = groupStates
                   ScreenStates = screenStates
                   GameState = gameState
                   AmbientState = ambientState
@@ -222,9 +222,9 @@ module WorldModule =
         static member getScreenDispatchers world =
             world.Dispatchers.ScreenDispatchers
 
-        /// Get the layer dispatchers of the world.
-        static member getLayerDispatchers world =
-            world.Dispatchers.LayerDispatchers
+        /// Get the group dispatchers of the world.
+        static member getGroupDispatchers world =
+            world.Dispatchers.GroupDispatchers
 
         /// Get the entity dispatchers of the world.
         static member getEntityDispatchers world =
@@ -605,7 +605,7 @@ module WorldModule =
                                         // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
                                         match subscriber with
                                         | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
-                                        | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
+                                        | :? Group -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
                                         | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
                                         | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
                                         | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)

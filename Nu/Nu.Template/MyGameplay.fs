@@ -67,24 +67,24 @@ type MyGameplayDispatcher () =
     // here we describe the content of the game including the level, the hud, and the player
     override this.Content (_, screen) =
 
-        [// the level layer
-         Content.layerIfScreenSelected screen $ fun _ _ ->
-            Content.layerFromFile
-                Simulants.Gameplay.Level.Layer.Name
-                "Assets/Gameplay/Level.nulyr"
+        [// the level group
+         Content.groupIfScreenSelected screen $ fun _ _ ->
+            Content.groupFromFile
+                Simulants.Gameplay.Level.Group.Name
+                "Assets/Gameplay/Level.nugroup"
 
-         // the gui layer
-         Content.layerIfScreenSelected screen $ fun _ _ ->
-            Content.layer "Gui" []
+         // the gui group
+         Content.groupIfScreenSelected screen $ fun _ _ ->
+            Content.group "Gui" []
                 [Content.button Gen.name
                     [Entity.Text == "Back"
                      Entity.Position == v2 260.0f -260.0f
                      Entity.Elevation == 10.0f
                      Entity.ClickEvent ==> cmd Back]]
 
-         // the player layer
-         Content.layerIfScreenSelected screen $ fun _ _ ->
-            Content.layer Simulants.Gameplay.Scene.Layer.Name []
+         // the player group
+         Content.groupIfScreenSelected screen $ fun _ _ ->
+            Content.group Simulants.Gameplay.Scene.Group.Name []
                 [Content.character Simulants.Gameplay.Scene.Player.Name
                     [Entity.Position == v2 0.0f 0.0f
                      Entity.Size == v2 108.0f 108.0f]]]

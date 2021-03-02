@@ -22,47 +22,47 @@ module Content =
         ScreenFromFile (screenName, behavior, filePath)
 
     /// Describe a screen to be loaded from a file.
-    let screenFromLayerFile<'d when 'd :> ScreenDispatcher> screenName behavior filePath =
-        ScreenFromLayerFile (screenName, behavior, typeof<'d>, filePath)
+    let screenFromGroupFile<'d when 'd :> ScreenDispatcher> screenName behavior filePath =
+        ScreenFromGroupFile (screenName, behavior, typeof<'d>, filePath)
 
-    /// Describe a screen with the given initializers and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> screenName behavior initializers layers =
-        ScreenFromInitializers (typeof<'d>.Name, screenName, behavior, initializers, layers)
+    /// Describe a screen with the given initializers and contained groups.
+    let screen<'d when 'd :> ScreenDispatcher> screenName behavior initializers groups =
+        ScreenFromInitializers (typeof<'d>.Name, screenName, behavior, initializers, groups)
 
-    /// Describe layers to be instantiated from a lens.
-    let layers
+    /// Describe groups to be instantiated from a lens.
+    let groups
         (lens : Lens<'a, World>)
         (sieve : 'a -> 'b)
         (unfold : 'b -> World -> Map<'k, 'c>)
-        (mapper : 'k -> Lens<'c, World> -> World -> LayerContent) =
+        (mapper : 'k -> Lens<'c, World> -> World -> GroupContent) =
         let lens = lens.Map box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
         let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> --> cast<'c>) world
-        LayersFromStream (lens, sieve, unfold, mapper)
+        GroupsFromStream (lens, sieve, unfold, mapper)
 
-    /// Describe a layer to be optionally instantiated from a lens.
-    let layerIf lens predicate (mapper : Lens<'a, World> -> World -> LayerContent) =
+    /// Describe a group to be optionally instantiated from a lens.
+    let groupIf lens predicate (mapper : Lens<'a, World> -> World -> GroupContent) =
         let mapper = fun _ a world -> mapper a world
-        layers lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) id mapper
+        groups lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) id mapper
 
-    /// Describe a layer to be instantiated when a screen is selected.
-    let layerIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> LayerContent) =
+    /// Describe a group to be instantiated when a screen is selected.
+    let groupIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> GroupContent) =
         let mapper = (fun lens world -> mapper (Lens.map (constant ()) lens) world)
-        layerIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
+        groupIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
-    /// Describe a layer to be optionally instantiated from a lens.
-    let layerOpt lens sieve (mapper : Lens<'a, World> -> World -> LayerContent) =
+    /// Describe a group to be optionally instantiated from a lens.
+    let groupOpt lens sieve (mapper : Lens<'a, World> -> World -> GroupContent) =
         let mapper = fun _ a world -> mapper (a --> Option.get) world
-        layers lens sieve (fun a _ -> if Option.isSome a then Map.singleton 0 a else Map.empty) mapper
+        groups lens sieve (fun a _ -> if Option.isSome a then Map.singleton 0 a else Map.empty) mapper
 
-    /// Describe a layer to be loaded from a file.
-    let layerFromFile<'d when 'd :> LayerDispatcher> layerName filePath =
-        LayerFromFile (layerName, filePath)
+    /// Describe a group to be loaded from a file.
+    let groupFromFile<'d when 'd :> GroupDispatcher> groupName filePath =
+        GroupFromFile (groupName, filePath)
 
-    /// Describe a layer with the given initializers and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> layerName initializers entities =
-        LayerFromInitializers (typeof<'d>.Name, layerName, initializers, entities)
+    /// Describe a group with the given initializers and contained entities.
+    let group<'d when 'd :> GroupDispatcher> groupName initializers entities =
+        GroupFromInitializers (typeof<'d>.Name, groupName, initializers, entities)
 
     /// Describe entities to be instantiated from a lens.
     let entities
@@ -124,8 +124,8 @@ module Content =
     /// Describe a label with the given initializers.
     let label entityName initializers = entity<LabelDispatcher> entityName initializers
 
-    /// Describe a group with the given initializers and content.
-    let group entityName initializers content = entityWithContent<GuiDispatcher> entityName initializers content
+    /// Describe an association of gui entities with the given initializers and content.
+    let assoc entityName initializers content = entityWithContent<GuiDispatcher> entityName initializers content
 
     /// Describe a panel with the given initializers and content.
     let panel entityName initializers content = entityWithContent<LabelDispatcher> entityName initializers content

@@ -781,7 +781,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeCancelEffect ()
-                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Group world
                     let world = entity.SetEffect effect world
                     let world = entity.SetCenter target.CenterOffset3 world
                     let world = entity.SetElevation (Constants.Battle.GuiEffectElevation - 1.0f) world
@@ -793,7 +793,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeHitPointsChangeEffect delta
-                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Group world
                     let world = entity.SetEffect effect world
                     let world = entity.SetCenter target.CenterOffset2 world
                     let world = entity.SetElevation Constants.Battle.GuiEffectElevation world
@@ -805,7 +805,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeBoltEffect ()
-                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Group world
                     let world = entity.SetEffect effect world
                     let world = entity.SetSize (v2 192.0f 758.0f) world
                     let world = entity.SetBottom target.Bottom world
@@ -818,7 +818,7 @@ module BattleDispatcher =
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
                     let effect = Effects.makeCycloneBlurEffect radius
-                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
+                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Group world
                     let world = entity.SetEffect effect world
                     let world = entity.SetSize (v2 234.0f 234.0f) world
                     let world = entity.SetCenter target.Center world
@@ -833,7 +833,7 @@ module BattleDispatcher =
                     let world =
                         World.delay (fun world ->
                             let effect = Effects.makeImpactSplashEffect ()
-                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
+                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Group world
                             let world = entity.SetEffect effect world
                             let world = entity.SetSize (v2 192.0f 96.0f) world
                             let world = entity.SetBottom target.Bottom world
@@ -850,7 +850,7 @@ module BattleDispatcher =
                     let world =
                         World.delay (fun world ->
                             let effect = Effects.makeSlashSpikeEffect position target.Bottom
-                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Layer world
+                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Group world
                             let world = entity.SetEffect effect world
                             let world = entity.SetSize (v2 96.0f 96.0f) world
                             let world = entity.SetBottom target.Bottom world
@@ -862,7 +862,7 @@ module BattleDispatcher =
 
             | DisplayHop hop ->
                 let effect = Effects.makeHopEffect hop.HopStart hop.HopStop
-                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Name) DefaultOverlay Simulants.Battle.Scene.Layer world
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Name) DefaultOverlay Simulants.Battle.Scene.Group world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v2Zero world
                 let world = entity.SetSelfDestruct true world
@@ -870,7 +870,7 @@ module BattleDispatcher =
 
             | DisplayCircle (position, radius) ->
                 let effect = Effects.makeCircleEffect radius
-                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Name) DefaultOverlay Simulants.Battle.Scene.Layer world
+                let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Name) DefaultOverlay Simulants.Battle.Scene.Group world
                 let world = entity.SetPosition position world
                 let world = entity.SetEffect effect world
                 let world = entity.SetEffectOffset v2Zero world
@@ -892,8 +892,8 @@ module BattleDispatcher =
 
         override this.Content (battle, _) =
 
-            // scene layer
-            [Content.layer Simulants.Battle.Scene.Layer.Name []
+            // scene group
+            [Content.group Simulants.Battle.Scene.Group.Name []
 
                 [// tile map
                  Content.tileMap Gen.name
@@ -923,12 +923,12 @@ module BattleDispatcher =
                     (fun battle -> Battle.getEnemies battle) constant
                     (fun index battle _ -> Content.entity<CharacterDispatcher> ("Enemy+" + scstring index) [Entity.Character <== battle])]
 
-             // input layers
-             Content.layers battle (fun battle -> Battle.getAllies battle) constant $ fun index ally _ ->
+             // input groups
+             Content.groups battle (fun battle -> Battle.getAllies battle) constant $ fun index ally _ ->
 
-                // input layer
+                // input group
                 let inputName = "Input" + "+" + scstring index
-                Content.layer inputName []
+                Content.group inputName []
 
                     [// health bar
                      Content.fillBar "HealthBar" 

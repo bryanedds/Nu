@@ -78,15 +78,15 @@ module WorldModuleEntity =
         static member private entityStateAdder entityState (entity : Entity) world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
-                | [|screenName; layerName; entityName|] ->
+                | [|screenName; groupName; entityName|] ->
                     match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some layerDirectory ->
-                        match UMap.tryFind layerName layerDirectory.Value with
+                    | Some groupDirectory ->
+                        match UMap.tryFind groupName groupDirectory.Value with
                         | Some entityDirectory ->
                             let entityDirectory' = UMap.add entityName entity.EntityAddress entityDirectory.Value
-                            let layerDirectory' = UMap.add layerName (KeyValuePair (entityDirectory.Key, entityDirectory')) layerDirectory.Value
-                            UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
-                        | None -> failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent layer.")
+                            let groupDirectory' = UMap.add groupName (KeyValuePair (entityDirectory.Key, entityDirectory')) groupDirectory.Value
+                            UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
+                        | None -> failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent group.")
                     | None -> failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen.")
                 | _ -> failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
             let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
@@ -95,15 +95,15 @@ module WorldModuleEntity =
         static member private entityStateRemover (entity : Entity) world =
             let screenDirectory =
                 match Address.getNames entity.EntityAddress with
-                | [|screenName; layerName; entityName|] ->
+                | [|screenName; groupName; entityName|] ->
                     match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some layerDirectory ->
-                        match UMap.tryFind layerName layerDirectory.Value with
+                    | Some groupDirectory ->
+                        match UMap.tryFind groupName groupDirectory.Value with
                         | Some entityDirectory ->
                             let entityDirectory' = UMap.remove entityName entityDirectory.Value
-                            let layerDirectory' = UMap.add layerName (KeyValuePair (entityDirectory.Key, entityDirectory')) layerDirectory.Value
-                            UMap.add screenName (KeyValuePair (layerDirectory.Key, layerDirectory')) world.ScreenDirectory
-                        | None -> failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent layer.")
+                            let groupDirectory' = UMap.add groupName (KeyValuePair (entityDirectory.Key, entityDirectory')) groupDirectory.Value
+                            UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
+                        | None -> failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent group.")
                     | None -> failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen.")
                 | _ -> failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
             let entityStates = UMap.remove entity.EntityAddress world.EntityStates
@@ -987,7 +987,7 @@ module WorldModuleEntity =
 
         /// Create an entity and add it to the world.
         [<FunctionBinding "createEntity">]
-        static member createEntity5 dispatcherName nameOpt overlayDescriptor (layer : Layer) world =
+        static member createEntity5 dispatcherName nameOpt overlayDescriptor (group : Group) world =
 
             // find the entity's dispatcher
             let dispatchers = World.getEntityDispatchers world
@@ -1040,7 +1040,7 @@ module WorldModuleEntity =
                 | None -> entityState
 
             // make entity address
-            let entityAddress = layer.LayerAddress <-- ntoa<Entity> entityState.Name
+            let entityAddress = group.GroupAddress <-- ntoa<Entity> entityState.Name
 
             // apply publish bindings state
             match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
@@ -1064,9 +1064,9 @@ module WorldModuleEntity =
             (entity, world)
 
         /// Create an entity from an simulant descriptor.
-        static member createEntity4 overlayDescriptor descriptor layer world =
+        static member createEntity4 overlayDescriptor descriptor group world =
             let (entity, world) =
-                World.createEntity5 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt overlayDescriptor layer world
+                World.createEntity5 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt overlayDescriptor group world
             let world =
                 List.fold (fun world (propertyName, property) ->
                     World.setEntityProperty propertyName property entity world)
@@ -1078,11 +1078,11 @@ module WorldModuleEntity =
             (entity, world)
 
         /// Create an entity and add it to the world.
-        static member createEntity<'d when 'd :> EntityDispatcher> nameOpt overlayNameDescriptor layer world =
-            World.createEntity5 typeof<'d>.Name nameOpt overlayNameDescriptor layer world
+        static member createEntity<'d when 'd :> EntityDispatcher> nameOpt overlayNameDescriptor group world =
+            World.createEntity5 typeof<'d>.Name nameOpt overlayNameDescriptor group world
 
         /// Read an entity from an entity descriptor.
-        static member readEntity entityDescriptor nameOpt (layer : Layer) world =
+        static member readEntity entityDescriptor nameOpt (group : Group) world =
 
             // make the dispatcher
             let dispatcherName = entityDescriptor.EntityDispatcherName
@@ -1150,7 +1150,7 @@ module WorldModuleEntity =
                 | None -> entityState
 
             // try to add entity state to the world
-            let entity = Entity (layer.LayerAddress <-- ntoa<Entity> entityState.Name)
+            let entity = Entity (group.GroupAddress <-- ntoa<Entity> entityState.Name)
             let world =
                 if World.getEntityExists entity world then
                     if World.getEntityDestroying entity world
@@ -1162,10 +1162,10 @@ module WorldModuleEntity =
 
         /// Read an entity from a file.
         [<FunctionBinding>]
-        static member readEntityFromFile (filePath : string) nameOpt layer world =
+        static member readEntityFromFile (filePath : string) nameOpt group world =
             let entityDescriptorStr = File.ReadAllText filePath
             let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
-            World.readEntity entityDescriptor nameOpt layer world
+            World.readEntity entityDescriptor nameOpt group world
 
         /// Write an entity to an entity descriptor.
         static member writeEntity (entity : Entity) entityDescriptor world =
@@ -1189,21 +1189,21 @@ module WorldModuleEntity =
             let getEntityProperties = Reflection.writePropertiesFromTarget shouldWriteProperty entityDescriptor.EntityProperties entityState
             { entityDescriptor with EntityProperties = getEntityProperties }
 
-        /// Reassign an entity's identity and / or layer. Note that since this destroys the reassigned entity
+        /// Reassign an entity's identity and / or group. Note that since this destroys the reassigned entity
         /// immediately, you should not call this inside an event handler that involves the reassigned entity itself.
-        static member reassignEntityImmediate entity nameOpt (layer : Layer) world =
+        static member reassignEntityImmediate entity nameOpt (group : Group) world =
             let entityState = World.getEntityState entity world
             let world = World.destroyEntityImmediate entity world
             let (id, name) = Gen.idAndNameIf nameOpt
             let entityState = { entityState with Id = id; Name = name } // no need to diverge here
-            let transmutedEntity = Entity (layer.LayerAddress <-- ntoa<Entity> name)
+            let transmutedEntity = Entity (group.GroupAddress <-- ntoa<Entity> name)
             let world = World.addEntity false entityState transmutedEntity world
             (transmutedEntity, world)
 
-        /// Reassign an entity's identity and / or layer.
+        /// Reassign an entity's identity and / or group.
         [<FunctionBinding>]
-        static member reassignEntity entity nameOpt layer world =
-            World.frame (World.reassignEntityImmediate entity nameOpt layer >> snd) world
+        static member reassignEntity entity nameOpt group world =
+            World.frame (World.reassignEntityImmediate entity nameOpt group >> snd) world
 
         /// Try to set an entity's optional overlay name.
         static member trySetEntityOverlayNameOpt overlayNameOpt entity world =
@@ -1340,7 +1340,7 @@ module WorldModuleEntity =
             World.destroyEntityImmediate entity world
 
         /// Paste an entity from the clipboard.
-        static member pasteEntityFromClipboard atMouse rightClickPosition positionSnap rotationSnap (layer : Layer) world =
+        static member pasteEntityFromClipboard atMouse rightClickPosition positionSnap rotationSnap (group : Group) world =
             match Clipboard with
             | Some entityStateObj ->
                 let entityState = entityStateObj :?> EntityState
@@ -1354,7 +1354,7 @@ module WorldModuleEntity =
                 let transform = { EntityState.getTransform entityState with Position = position }
                 let transform = Math.snapTransform positionSnap rotationSnap transform
                 let entityState = EntityState.setTransformByRef (&transform, entityState)
-                let entity = Entity (layer.LayerAddress <-- ntoa<Entity> name)
+                let entity = Entity (group.GroupAddress <-- ntoa<Entity> name)
                 let world = World.addEntity false entityState entity world
                 (Some entity, world)
             | None -> (None, world)

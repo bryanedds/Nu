@@ -316,7 +316,7 @@ module GameplayDispatcher =
                                         match Chessboard.tryGetCharacterCoordinates reactorIndex gameplay.Chessboard with
                                         | Some reactorCoordinates ->
                                             let effect = Effects.makeMagicMissileImpactEffect ()
-                                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Layer world
+                                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Group world
                                             let world = entity.SetEffect effect world
                                             let world = entity.SetSize Constants.Layout.TileSize world
                                             let world = entity.SetPosition (vctovf reactorCoordinates) world
@@ -326,7 +326,7 @@ module GameplayDispatcher =
                                     | None -> world
                                 else
                                     let effect = Effects.makeSwordStrikeEffect turn.Direction
-                                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Layer world
+                                    let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Group world
                                     let world = entity.SetEffect effect world
                                     let world = entity.SetSize (v2Dup 144.0f) world
                                     let world = entity.SetPosition ((vctovf turn.OriginCoordinates) - Constants.Layout.TileSize) world
@@ -376,9 +376,9 @@ module GameplayDispatcher =
 
         override this.Content (gameplay, screen) =
 
-            // scene layer
-            [Content.layerIfScreenSelected screen (fun _ _ ->
-                Content.layer Simulants.Gameplay.Scene.Layer.Name []
+            // scene group
+            [Content.groupIfScreenSelected screen (fun _ _ ->
+                Content.group Simulants.Gameplay.Scene.Group.Name []
 
                     // field
                     [Content.entity<FieldDispatcher> Simulants.Gameplay.Scene.Field.Name
@@ -411,8 +411,8 @@ module GameplayDispatcher =
                                  Entity.CharacterAnimationTime <== character --> fun (_, _, time) -> time
                                  Entity.Position <== character --> fun (position, _, _) -> position])])
 
-             // hud layer
-             Content.layer Simulants.Gameplay.Gui.Layer.Name []
+             // hud group
+             Content.group Simulants.Gameplay.Gui.Group.Name []
 
                 [// halt button
                  Content.button Simulants.Gameplay.Gui.Halt.Name

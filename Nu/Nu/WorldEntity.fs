@@ -273,19 +273,19 @@ module WorldEntityModule =
                 else Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
             world
 
-        /// Get all the entities contained by a layer.
+        /// Get all the entities contained by a group.
         [<FunctionBinding>]
-        static member getEntities (layer : Layer) world =
-            match Address.getNames layer.LayerAddress with
-            | [|screenName; layerName|] ->
+        static member getEntities (group : Group) world =
+            match Address.getNames group.GroupAddress with
+            | [|screenName; groupName|] ->
                 match UMap.tryFind screenName (World.getScreenDirectory world) with
-                | Some layerDirectory ->
-                    match UMap.tryFind layerName layerDirectory.Value with
+                | Some groupDirectory ->
+                    match UMap.tryFind groupName groupDirectory.Value with
                     | Some entityDirectory ->
                         UMap.fold (fun state _ (entityAddress : _ Address) -> Entity entityAddress :: state) [] entityDirectory.Value :> _ seq
-                    | None -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
-                | None -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
-            | _ -> failwith ("Invalid layer address '" + scstring layer.LayerAddress + "'.")
+                    | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
+                | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
+            | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
 
         /// Destroy an entity in the world at the end of the current update.
         [<FunctionBinding>]
@@ -327,13 +327,13 @@ module WorldEntityModule =
                     picked)
                 entitiesSorted
 
-        /// Write multiple entities to a layer descriptor.
-        static member writeEntities entities layerDescriptor world =
+        /// Write multiple entities to a group descriptor.
+        static member writeEntities entities groupDescriptor world =
             entities |>
             Seq.sortBy (fun (entity : Entity) -> entity.GetCreationTimeStamp world) |>
             Seq.filter (fun (entity : Entity) -> entity.GetPersistent world) |>
-            Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) layerDescriptor.EntitieDescriptors |>
-            fun entityDescriptors -> { layerDescriptor with EntitieDescriptors = entityDescriptors }
+            Seq.fold (fun entityDescriptors entity -> World.writeEntity entity EntityDescriptor.empty world :: entityDescriptors) groupDescriptor.EntitieDescriptors |>
+            fun entityDescriptors -> { groupDescriptor with EntitieDescriptors = entityDescriptors }
 
         /// Write an entity to a file.
         [<FunctionBinding>]
@@ -347,31 +347,31 @@ module WorldEntityModule =
             File.Delete filePath
             File.Move (filePathTmp, filePath)
 
-        /// Read multiple entities from a layer descriptor.
-        static member readEntities layerDescriptor layer world =
+        /// Read multiple entities from a group descriptor.
+        static member readEntities groupDescriptor group world =
             List.foldBack
                 (fun entityDescriptor (entities, world) ->
                     let entityNameOpt = EntityDescriptor.getNameOpt entityDescriptor
-                    let (entity, world) = World.readEntity entityDescriptor entityNameOpt layer world
+                    let (entity, world) = World.readEntity entityDescriptor entityNameOpt group world
                     (entity :: entities, world))
-                    layerDescriptor.EntitieDescriptors
+                    groupDescriptor.EntitieDescriptors
                     ([], world)
 
         /// Turn an entity lens into a series of live entities.
-        static member expandEntities (lens : Lens<obj, World>) sieve unfold mapper origin owner layer world =
+        static member expandEntities (lens : Lens<obj, World>) sieve unfold mapper origin owner group world =
             let mapperGeneralized = fun i a w -> mapper i a w :> SimulantContent
-            World.expandSimulants lens sieve unfold mapperGeneralized origin owner layer world
+            World.expandSimulants lens sieve unfold mapperGeneralized origin owner group world
 
         /// Turn entity content into a live entity.
-        static member expandEntityContent content origin (owner : Simulant) layer world =
-            if World.getLayerExists layer world then
-                match EntityContent.expand content layer world with
+        static member expandEntityContent content origin (owner : Simulant) group world =
+            if World.getGroupExists group world then
+                match EntityContent.expand content group world with
                 | Choice1Of3 (lens, sieve, unfold, mapper) ->
-                    let world = World.expandEntities lens sieve unfold mapper origin owner layer world
+                    let world = World.expandEntities lens sieve unfold mapper origin owner group world
                     (None, world)
                 | Choice2Of3 (_, descriptor, handlers, binds, content) ->
                     let (entity, world) =
-                        World.createEntity4 DefaultOverlay descriptor layer world
+                        World.createEntity4 DefaultOverlay descriptor group world
                     let world =
                         match owner with
                         | :? Entity as parent ->
@@ -404,11 +404,11 @@ module WorldEntityModule =
                             world handlers
                     let world =
                         List.fold (fun world content ->
-                            World.expandEntityContent content origin entity layer world |> snd)
+                            World.expandEntityContent content origin entity group world |> snd)
                             world (snd content)
                     (Some entity, world)
                 | Choice3Of3 (entityName, filePath) ->
-                    let (entity, world) = World.readEntityFromFile filePath (Some entityName) layer world
+                    let (entity, world) = World.readEntityFromFile filePath (Some entityName) group world
                     let world =
                         match origin with
                         | SimulantOrigin simulant

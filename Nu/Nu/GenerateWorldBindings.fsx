@@ -45,7 +45,7 @@ let getExtrinsicKeywords () =
 let getParameterConversion (ty : Type) =
     match ty.Name with
     | "World" -> WorldParameter
-    | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> ValueParameter (RelationParameter ty)
+    | "Entity" | "Group" | "Screen" | "Game" | "Simulant" -> ValueParameter (RelationParameter ty)
     | "Address`1" -> ValueParameter (AddressParameter ty)
     | "IEnumerable`1" | "FSharpList`1" ->
         let itemType = (ty.GetGenericArguments ()).[0]
@@ -63,7 +63,7 @@ let rec tryGetReturnConversion (ty : Type) : ReturnConversion option =
         | [|garg; garg2|] when garg2.Name = "World" ->
             match
                 (match garg.Name with
-                 | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> Some SimulantReturn
+                 | "Entity" | "Group" | "Screen" | "Game" | "Simulant" -> Some SimulantReturn
                  | "IEnumerable`1" | "FSharpList`1"| "HashSet`1"  ->
                      let itemType = (garg.GetGenericArguments ()).[0]
                      if typeof<Simulant>.IsAssignableFrom itemType
@@ -85,7 +85,7 @@ let rec tryGetReturnConversion (ty : Type) : ReturnConversion option =
         if not (typeof<Simulant>.IsAssignableFrom itemType)
         then Some (PureReturn (NormalListReturn ty))
         else Some (PureReturn SimulantHashSetReturn)
-    | "Entity" | "Layer" | "Screen" | "Game" | "Simulant" -> Some (PureReturn SimulantReturn)
+    | "Entity" | "Group" | "Screen" | "Game" | "Simulant" -> Some (PureReturn SimulantReturn)
     | _ -> Some (PureReturn (NormalReturn ty))
 
 let tryGenerateBinding (method : MethodInfo) =

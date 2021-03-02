@@ -33,13 +33,13 @@ module Gaia =
         World.updateKeyedValue<EditorState> updater Globals.EditorGuid world
 
     let private getPickableEntities world =
-        let selectedLayer = (getEditorState world).SelectedLayer
+        let selectedGroup = (getEditorState world).SelectedGroup
         let (entities, world) = World.getEntitiesInView2 world
-        let entitiesInLayer =
+        let entitiesInGroup =
             Enumerable.ToList
                 (Enumerable.Where
-                    (entities, fun entity -> entity.GetVisible world && entity.Parent = selectedLayer))
-        (entitiesInLayer, world)
+                    (entities, fun entity -> entity.GetVisible world && entity.Parent = selectedGroup))
+        (entitiesInGroup, world)
 
     let private getSnaps (form : GaiaForm) =
         let positionSnap = snd (Int32.TryParse form.positionSnapTextBox.Text)
@@ -132,8 +132,8 @@ module Gaia =
             let treeNode = TreeNode dispatcherKvp.Key
             treeNode.Name <- treeNode.Text
             form.entityTreeView.Nodes.Add treeNode |> ignore
-        let selectedLayer = (getEditorState world).SelectedLayer
-        for entity in World.getEntities selectedLayer world do
+        let selectedGroup = (getEditorState world).SelectedGroup
+        for entity in World.getEntities selectedGroup world do
             addEntityTreeViewNode entity form world
         restoreExpansionState form.entityTreeView treeState
         setEntityTreeViewSelectionToEntityPropertyGridSelection form
@@ -165,8 +165,8 @@ module Gaia =
     let private addHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
         let entityNodeKey = scstring entity
         let entityNode = TreeNode entity.Name
-        let layerNodeKey = scstring entity.Parent
-        let layerNode = form.hierarchyTreeView.Nodes.[layerNodeKey]
+        let groupNodeKey = scstring entity.Parent
+        let groupNode = form.hierarchyTreeView.Nodes.[groupNodeKey]
         entityNode.Name <- entityNodeKey
         if entity.Has<NodeFacet> world then
             match entity.GetParentNodeOpt world with
@@ -176,8 +176,8 @@ module Gaia =
                 match tryFindHierarchyTreeNode entityParentNodeKey form world with
                 | Some node -> node.Nodes.Add entityNode |> ignore
                 | None -> failwithumf ()
-            | None -> layerNode.Nodes.Add entityNode |> ignore
-        else layerNode.Nodes.Add entityNode |> ignore
+            | None -> groupNode.Nodes.Add entityNode |> ignore
+        else groupNode.Nodes.Add entityNode |> ignore
 
     let private removeHierarchyTreeEntityNode (entity : Entity) (form : GaiaForm) world =
         let entityNodeKey = scstring entity
@@ -191,14 +191,14 @@ module Gaia =
         // imperatively.
         let treeState = getExpansionState form.hierarchyTreeView
         form.hierarchyTreeView.Nodes.Clear ()
-        let layers = World.getLayers Simulants.DefaultScreen world
-        for layer in layers do
-            let layerNode = TreeNode layer.Name
-            layerNode.Name <- scstring layer
-            form.hierarchyTreeView.Nodes.Add layerNode |> ignore
-            let entities = World.getEntities layer world
+        let groups = World.getGroups Simulants.DefaultScreen world
+        for group in groups do
+            let groupNode = TreeNode group.Name
+            groupNode.Name <- scstring group
+            form.hierarchyTreeView.Nodes.Add groupNode |> ignore
+            let entities = World.getEntities group world
             for entity in entities do
-                let mutable parentNode = layerNode
+                let mutable parentNode = groupNode
                 for entity in entity.GetChildNodes world @ [entity] do
                     let entityNodeKey = scstring entity
                     if not (parentNode.Nodes.ContainsKey entityNodeKey) then
@@ -210,21 +210,21 @@ module Gaia =
         restoreExpansionState form.hierarchyTreeView treeState
         setHierarchyTreeViewSelectionToEntityPropertyGridSelection form
 
-    let private refreshLayerTabs (form : GaiaForm) world =
+    let private refreshGroupTabs (form : GaiaForm) world =
 
-        // add layers imperatively to preserve existing layer tabs
-        // NOTE: adding layers in reverse works better when opening anew
-        let layers = World.getLayers Simulants.DefaultScreen world
-        let layerTabPages = form.layerTabControl.TabPages
-        for layer in Seq.rev layers do
-            let layerName = layer.Name
-            if not (layerTabPages.ContainsKey layerName) then
-                layerTabPages.Add (layerName, layerName)
+        // add groups imperatively to preserve existing group tabs
+        // NOTE: adding groups in reverse works better when opening anew
+        let groups = World.getGroups Simulants.DefaultScreen world
+        let groupTabPages = form.groupTabControl.TabPages
+        for group in Seq.rev groups do
+            let groupName = group.Name
+            if not (groupTabPages.ContainsKey groupName) then
+                groupTabPages.Add (groupName, groupName)
     
-        // remove layers imperatively to preserve existing layer tabs 
-        for layerTabPage in layerTabPages do
-            if Seq.notExists (fun (layer : Layer) -> layer.Name = layerTabPage.Name) layers then
-                layerTabPages.RemoveByKey layerTabPage.Name
+        // remove groups imperatively to preserve existing group tabs 
+        for groupTabPage in groupTabPages do
+            if Seq.notExists (fun (group : Group) -> group.Name = groupTabPage.Name) groups then
+                groupTabPages.RemoveByKey groupTabPage.Name
 
     let private selectEntity entity (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
@@ -245,29 +245,29 @@ module Gaia =
             else deselectEntity form world
         | _ -> ()
 
-    let private selectLayer layer (form : GaiaForm) world =
-        let layerTds = { DescribedLayer = layer; Form = form }
+    let private selectGroup group (form : GaiaForm) world =
+        let groupTds = { DescribedGroup = group; Form = form }
         Globals.World <- world // must be set for property grid
-        form.layerPropertyGrid.SelectedObject <- layerTds
+        form.groupPropertyGrid.SelectedObject <- groupTds
 
-    let private deselectLayer (form : GaiaForm) world =
+    let private deselectGroup (form : GaiaForm) world =
         Globals.World <- world // must be set for property grid
-        form.layerPropertyGrid.SelectedObject <- null
+        form.groupPropertyGrid.SelectedObject <- null
 
-    let private refreshLayerPropertyGrid (form : GaiaForm) world =
-        match form.layerPropertyGrid.SelectedObject with
-        | :? LayerTypeDescriptorSource as layerTds ->
+    let private refreshGroupPropertyGrid (form : GaiaForm) world =
+        match form.groupPropertyGrid.SelectedObject with
+        | :? GroupTypeDescriptorSource as groupTds ->
             Globals.World <- world // must be set for property grid
-            if layerTds.DescribedLayer.Exists world
-            then form.layerPropertyGrid.Refresh ()
-            else deselectLayer form world
+            if groupTds.DescribedGroup.Exists world
+            then form.groupPropertyGrid.Refresh ()
+            else deselectGroup form world
         | _ -> ()
 
     let private refreshFormOnUndoRedo (form : GaiaForm) world =
         form.tickingButton.Checked <- false
         refreshEntityPropertyGrid form world
-        refreshLayerPropertyGrid form world
-        refreshLayerTabs form world
+        refreshGroupPropertyGrid form world
+        refreshGroupTabs form world
         refreshEntityTreeView form world
         refreshHierarchyTreeView form world
 
@@ -373,56 +373,56 @@ module Gaia =
             (Resolve, world)
         | DragCameraNone -> (Resolve, world)
 
-    let private monitorEntityEvents (layer : Layer) form world =
-        let world = World.monitor (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> layer --> Events.Wildcard) layer world
-        let world = World.monitor (handleNuEntityRegister form) (Events.Register --> layer --> Events.Wildcard) layer world
-        let world = World.monitor (handleNuEntityUnregistering form) (Events.Unregistering --> layer --> Events.Wildcard) layer world
+    let private monitorEntityEvents (group : Group) form world =
+        let world = World.monitor (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> group --> Events.Wildcard) group world
+        let world = World.monitor (handleNuEntityRegister form) (Events.Register --> group --> Events.Wildcard) group world
+        let world = World.monitor (handleNuEntityUnregistering form) (Events.Unregistering --> group --> Events.Wildcard) group world
         world
 
-    let private trySaveSelectedLayer filePath world =
+    let private trySaveSelectedGroup filePath world =
         let oldWorld = world
-        let selectedLayer = (getEditorState world).SelectedLayer
-        try World.writeLayerToFile filePath selectedLayer world
+        let selectedGroup = (getEditorState world).SelectedGroup
+        try World.writeGroupToFile filePath selectedGroup world
         with exn ->
             World.choose oldWorld |> ignore
             MessageBox.Show ("Could not save file due to: " + scstring exn, "File save error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
 
-    let private tryLoadSelectedLayer (form : GaiaForm) filePath world =
+    let private tryLoadSelectedGroup (form : GaiaForm) filePath world =
 
         // old world in case we need to rewind
         let oldWorld = world
 
-        try // destroy current layer
-            let selectedLayer = (getEditorState world).SelectedLayer
-            let world = World.destroyLayerImmediate selectedLayer world
+        try // destroy current group
+            let selectedGroup = (getEditorState world).SelectedGroup
+            let world = World.destroyGroupImmediate selectedGroup world
 
-            // load and add layer, updating tab and selected layer in the process
-            let layerDescriptorStr = File.ReadAllText filePath
-            let layerDescriptor = scvalue<LayerDescriptor> layerDescriptorStr
-            let layerName = match layerDescriptor.LayerProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
-            let layer = Simulants.DefaultScreen / layerName
-            if not (layer.Exists world) then
-                let (layer, world) = World.readLayer layerDescriptor None Simulants.DefaultScreen world
-                form.layerTabControl.SelectedTab.Text <- layer.Name
-                form.layerTabControl.SelectedTab.Name <- layer.Name
-                let world = updateEditorState (fun editorState -> { editorState with SelectedLayer = layer }) world
-                let world = monitorEntityEvents layer form world
+            // load and add group, updating tab and selected group in the process
+            let groupDescriptorStr = File.ReadAllText filePath
+            let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+            let groupName = match groupDescriptor.GroupProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
+            let group = Simulants.DefaultScreen / groupName
+            if not (group.Exists world) then
+                let (group, world) = World.readGroup groupDescriptor None Simulants.DefaultScreen world
+                form.groupTabControl.SelectedTab.Text <- group.Name
+                form.groupTabControl.SelectedTab.Name <- group.Name
+                let world = updateEditorState (fun editorState -> { editorState with SelectedGroup = group }) world
+                let world = monitorEntityEvents group form world
 
                 // refresh tree views
                 refreshEntityTreeView form world
                 refreshHierarchyTreeView form world
-                (Some layer, world)
+                (Some group, world)
             
             // handle load failure
             else
                 let world = World.choose oldWorld
-                MessageBox.Show ("Could not load layer file with same name as an existing layer", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Could not load group file with same name as an existing group", "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 (None, world)
 
         // handle load failure
         with exn ->
             let world = World.choose oldWorld
-            MessageBox.Show ("Could not load layer file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+            MessageBox.Show ("Could not load group file due to: " + scstring exn, "File load error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
             (None, world)
 
     let private handleFormExit (form : GaiaForm) (_ : EventArgs) =
@@ -470,9 +470,9 @@ module Gaia =
 
     let private handlePropertyPickParentNode (propertyDescriptor : System.ComponentModel.PropertyDescriptor) (entityTds : EntityTypeDescriptorSource) (form : GaiaForm) world =
         use entityPicker = new EntityPicker ()
-        let selectedLayer = (getEditorState world).SelectedLayer
+        let selectedGroup = (getEditorState world).SelectedGroup
         let entityNames =
-            World.getEntities selectedLayer world |>
+            World.getEntities selectedGroup world |>
             Seq.filter (fun entity -> entity.Has<NodeFacet> world) |>
             Seq.filter (fun entity -> not (Gen.isName entity.Name)) |>
             Seq.map (fun entity -> entity.Name) |>
@@ -567,8 +567,8 @@ module Gaia =
                     form.propertyValueTextBox.EmptyUndoBuffer ()
                     form.pickPropertyButton.Visible <- false
                     form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
-        else // assume layer
-            match (form.layerPropertyGrid.SelectedObject, form.layerPropertyGrid.SelectedGridItem) with
+        else // assume group
+            match (form.groupPropertyGrid.SelectedObject, form.groupPropertyGrid.SelectedGridItem) with
             | (null, _) | (_, null) ->
                 form.propertyEditor.Enabled <- false
                 form.propertyNameLabel.Text <- String.Empty
@@ -643,19 +643,19 @@ module Gaia =
                         Log.info ("Invalid apply property operation due to: " + scstring exn)
                     | exn -> Log.info ("Invalid apply property operation due to: " + scstring exn)
                 | _ -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
-        | :? LayerTypeDescriptorSource as layerTds ->
-            match form.layerPropertyGrid.SelectedGridItem with
+        | :? GroupTypeDescriptorSource as groupTds ->
+            match form.groupPropertyGrid.SelectedGridItem with
             | null -> Log.trace "Invalid apply property operation (likely a code issue in Gaia)."
             | selectedGridItem ->
                 match selectedGridItem.GridItemType with
                 | GridItemType.Property when form.propertyNameLabel.Text = selectedGridItem.Label ->
-                    let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> LayerPropertyDescriptor
+                    let propertyDescriptor = selectedGridItem.PropertyDescriptor :?> GroupPropertyDescriptor
                     let typeConverter = SymbolicConverter (false, None, selectedGridItem.PropertyDescriptor.PropertyType)
                     try form.propertyValueTextBox.EndUndoAction ()
                         let strEscaped = form.propertyValueTextBox.Text.TrimEnd ()
                         let strUnescaped = String.unescape strEscaped
                         let propertyValue = typeConverter.ConvertFromString strUnescaped
-                        propertyDescriptor.SetValue (layerTds, propertyValue)
+                        propertyDescriptor.SetValue (groupTds, propertyValue)
                     with
                     | :? ConversionException as exn ->
                         match exn.SymbolOpt with
@@ -776,16 +776,16 @@ module Gaia =
     let private handleFormEntityPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
 
-    let private handleFormLayerPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormGroupPropertyGridSelectedObjectsChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
 
-    let private handleFormLayerPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormGroupPropertyGridSelectedGridItemChanged (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
 
     let private handlePropertyTabControlSelectedIndexChanged (form : GaiaForm) (_ : EventArgs) =
         if form.propertyTabControl.SelectedIndex = 0
         then refreshEntityPropertyGrid form Globals.World
-        else refreshLayerPropertyGrid form Globals.World
+        else refreshGroupPropertyGrid form Globals.World
 
     let private handleFormPropertyRefreshClick (form : GaiaForm) (_ : EventArgs) =
         refreshPropertyEditor form
@@ -813,10 +813,10 @@ module Gaia =
                 match Address.getNames address with
                 | [|_; _|] ->
 
-                    // select the layer of the selected entity
-                    let layer = Layer (atoa address)
-                    let layerTabIndex = form.layerTabControl.TabPages.IndexOfKey layer.Name
-                    form.layerTabControl.SelectTab layerTabIndex
+                    // select the group of the selected entity
+                    let group = Group (atoa address)
+                    let groupTabIndex = form.groupTabControl.TabPages.IndexOfKey group.Name
+                    form.groupTabControl.SelectTab groupTabIndex
                     world
 
                 | [|_; _; _|] ->
@@ -824,10 +824,10 @@ module Gaia =
                     // get a handle to the selected entity
                     let entity = Entity (atoa address)
 
-                    // select the layer of the selected entity
-                    let layer = entity.Parent
-                    let layerTabIndex = form.layerTabControl.TabPages.IndexOfKey layer.Name
-                    form.layerTabControl.SelectTab layerTabIndex
+                    // select the group of the selected entity
+                    let group = entity.Parent
+                    let groupTabIndex = form.groupTabControl.TabPages.IndexOfKey group.Name
+                    form.groupTabControl.SelectTab groupTabIndex
 
                     // select the entity in the property grid
                     selectEntity entity form world
@@ -840,7 +840,7 @@ module Gaia =
         addWorldChanger $ fun world ->
             let oldWorld = world
             try Globals.pushPastWorld world
-                let selectedLayer = (getEditorState world).SelectedLayer
+                let selectedGroup = (getEditorState world).SelectedGroup
                 let dispatcherName = form.createEntityComboBox.Text
                 let overlayNameDescriptor =
                     match form.overlayComboBox.Text with
@@ -848,7 +848,7 @@ module Gaia =
                     | "(Routed Overlay)" -> RoutedOverlay
                     | "(No Overlay)" -> NoOverlay
                     | overlayName -> ExplicitOverlay overlayName
-                let (entity, world) = World.createEntity5 dispatcherName None overlayNameDescriptor selectedLayer world
+                let (entity, world) = World.createEntity5 dispatcherName None overlayNameDescriptor selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
                 let mousePosition = World.getMousePositionF world
                 let entityPosition =
@@ -880,48 +880,48 @@ module Gaia =
             | _ -> world
 
     let private handleFormNew (form : GaiaForm) (_ : EventArgs) =
-        use layerCreationForm = new LayerCreationForm ()
-        layerCreationForm.StartPosition <- FormStartPosition.CenterParent
-        layerCreationForm.dispatcherTextBox.Text <- typeof<LayerDispatcher>.Name
-        layerCreationForm.okButton.Click.Add $ fun _ ->
+        use groupCreationForm = new GroupCreationForm ()
+        groupCreationForm.StartPosition <- FormStartPosition.CenterParent
+        groupCreationForm.dispatcherTextBox.Text <- typeof<GroupDispatcher>.Name
+        groupCreationForm.okButton.Click.Add $ fun _ ->
             addWorldChanger $ fun world ->
                 let oldWorld = world
                 Globals.pushPastWorld world
-                let layerName = layerCreationForm.nameTextBox.Text
-                let layerDispatcherName = layerCreationForm.dispatcherTextBox.Text
-                try if String.length layerName = 0 then failwith "Layer name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createLayer4 layerDispatcherName (Some layerName) Simulants.DefaultScreen world |> snd
-                    refreshLayerTabs form world
+                let groupName = groupCreationForm.nameTextBox.Text
+                let groupDispatcherName = groupCreationForm.dispatcherTextBox.Text
+                try if String.length groupName = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
+                    let world = World.createGroup4 groupDispatcherName (Some groupName) Simulants.DefaultScreen world |> snd
+                    refreshGroupTabs form world
                     refreshHierarchyTreeView form world
                     deselectEntity form world
-                    form.layerTabControl.SelectTab (form.layerTabControl.TabPages.IndexOfKey layerName)
+                    form.groupTabControl.SelectTab (form.groupTabControl.TabPages.IndexOfKey groupName)
                     world
                 with exn ->
                     let world = World.choose oldWorld
-                    MessageBox.Show ("Could not create layer due to: " + scstring exn, "Layer creation error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                    MessageBox.Show ("Could not create group due to: " + scstring exn, "Group creation error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                     world
-            layerCreationForm.Close ()
-        layerCreationForm.cancelButton.Click.Add (fun _ -> layerCreationForm.Close ())
-        layerCreationForm.ShowDialog form |> ignore
+            groupCreationForm.Close ()
+        groupCreationForm.cancelButton.Click.Add (fun _ -> groupCreationForm.Close ())
+        groupCreationForm.ShowDialog form |> ignore
 
     let private handleFormSave saveAs (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            let layer = (getEditorState world).SelectedLayer
-            form.saveFileDialog.Title <- "Save '" + layer.Name + "' As"
-            match Map.tryFind layer.LayerAddress (getEditorState world).FilePaths with
+            let group = (getEditorState world).SelectedGroup
+            form.saveFileDialog.Title <- "Save '" + group.Name + "' As"
+            match Map.tryFind group.GroupAddress (getEditorState world).FilePaths with
             | Some filePath -> form.saveFileDialog.FileName <- filePath
             | None -> form.saveFileDialog.FileName <- String.Empty
             if saveAs || String.IsNullOrWhiteSpace form.saveFileDialog.FileName then
                 match form.saveFileDialog.ShowDialog form with
                 | DialogResult.OK ->
                     let filePath = form.saveFileDialog.FileName
-                    trySaveSelectedLayer filePath world
+                    trySaveSelectedGroup filePath world
                     updateEditorState (fun value ->
-                        let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
+                        let filePaths = Map.add group.GroupAddress filePath value.FilePaths
                         { value with FilePaths = filePaths })
                         world
                 | _ -> world
-            else trySaveSelectedLayer form.saveFileDialog.FileName world; world
+            else trySaveSelectedGroup form.saveFileDialog.FileName world; world
 
     let private handleFormOpen (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
@@ -930,36 +930,36 @@ module Gaia =
             | DialogResult.OK ->
                 Globals.pushPastWorld world
                 let filePath = form.openFileDialog.FileName
-                match tryLoadSelectedLayer form filePath world with
-                | (Some layer, world) ->
+                match tryLoadSelectedGroup form filePath world with
+                | (Some group, world) ->
                     let world =
                         updateEditorState (fun value ->
-                            let filePaths = Map.add layer.LayerAddress filePath value.FilePaths
+                            let filePaths = Map.add group.GroupAddress filePath value.FilePaths
                             { value with FilePaths = filePaths })
                             world
-                    deselectEntity form world // currently selected entity may be gone if loading into an existing layer
+                    deselectEntity form world // currently selected entity may be gone if loading into an existing group
                     world
                 | (None, world) -> world
             | _ -> world
 
     let private handleFormClose (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            match form.layerTabControl.TabPages.Count with
+            match form.groupTabControl.TabPages.Count with
             | 1 ->
-                MessageBox.Show ("Cannot close the only remaining layer.", "Layer close error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
+                MessageBox.Show ("Cannot close the only remaining group.", "Group close error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
             | _ ->
                 Globals.pushPastWorld world
-                let layer = (getEditorState world).SelectedLayer
-                let world = World.destroyLayerImmediate layer world
+                let group = (getEditorState world).SelectedGroup
+                let world = World.destroyGroupImmediate group world
                 deselectEntity form world
-                form.layerTabControl.TabPages.RemoveByKey layer.Name
+                form.groupTabControl.TabPages.RemoveByKey group.Name
                 updateEditorState (fun editorState ->
-                    let layerTabControl = form.layerTabControl
-                    let layerTab = layerTabControl.SelectedTab
+                    let groupTabControl = form.groupTabControl
+                    let groupTab = groupTabControl.SelectedTab
                     { editorState with
-                        SelectedLayer = Simulants.DefaultScreen / layerTab.Text
-                        FilePaths = Map.remove layer.LayerAddress editorState.FilePaths })
+                        SelectedGroup = Simulants.DefaultScreen / groupTab.Text
+                        FilePaths = Map.remove group.GroupAddress editorState.FilePaths })
                     world
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
@@ -1040,10 +1040,10 @@ module Gaia =
     let private handleFormPaste atMouse (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             Globals.pushPastWorld world
-            let selectedLayer = (getEditorState world).SelectedLayer
+            let selectedGroup = (getEditorState world).SelectedGroup
             let (positionSnap, rotationSnap) = getSnaps form
             let editorState = getEditorState world
-            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedLayer world
+            let (entityOpt, world) = World.pasteEntityFromClipboard atMouse editorState.RightClickPosition positionSnap rotationSnap selectedGroup world
             match entityOpt with
             | Some entity -> selectEntity entity form world; world
             | None -> world
@@ -1076,24 +1076,24 @@ module Gaia =
                 MessageBox.Show ("Asset reload error due to: " + error + "'.", "Asset reload error", MessageBoxButtons.OK, MessageBoxIcon.Error) |> ignore
                 world
 
-    let private handleFormLayerTabDeselected (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormGroupTabDeselected (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
             deselectEntity form world
             refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
-            refreshLayerPropertyGrid form world
+            refreshGroupPropertyGrid form world
             world
 
-    let private handleFormLayerTabSelected (form : GaiaForm) (_ : EventArgs) =
+    let private handleFormGroupTabSelected (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            let selectedLayer =
-                let layerTabControl = form.layerTabControl
-                let layerTab = layerTabControl.SelectedTab
-                Simulants.DefaultScreen / layerTab.Text
-            let world = updateEditorState (fun editorState -> { editorState with SelectedLayer = selectedLayer}) world
+            let selectedGroup =
+                let groupTabControl = form.groupTabControl
+                let groupTab = groupTabControl.SelectedTab
+                Simulants.DefaultScreen / groupTab.Text
+            let world = updateEditorState (fun editorState -> { editorState with SelectedGroup = selectedGroup}) world
             refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
-            selectLayer selectedLayer form world
+            selectGroup selectedGroup form world
             world
 
     let private handleTraceEventsCheckBoxChanged (form : GaiaForm) (_ : EventArgs) =
@@ -1179,15 +1179,15 @@ module Gaia =
                 else form.evalInputTextBox.Text
             let exprsStr = Symbol.OpenSymbolsStr + "\n" + exprsStr + "\n" + Symbol.CloseSymbolsStr
             try let exprs = scvalue<Scripting.Expr array> exprsStr
-                let layer = (getEditorState world).SelectedLayer
+                let group = (getEditorState world).SelectedGroup
                 let (selectedSimulant, localFrame) =
                     match form.entityPropertyGrid.SelectedObject with
                     | :?
                         EntityTypeDescriptorSource as entityTds when
-                        form.propertyTabControl.SelectedTab <> form.layerTabPage ->
+                        form.propertyTabControl.SelectedTab <> form.groupTabPage ->
                         let entity = entityTds.DescribedEntity
                         (entity :> Simulant, entity.GetScriptFrame world)
-                    | _ -> (layer :> Simulant, layer.GetScriptFrame world)
+                    | _ -> (group :> Simulant, group.GetScriptFrame world)
                 let prettyPrinter = (SyntaxAttribute.getOrDefault typeof<Scripting.Expr>).PrettyPrinter
                 let struct (evaleds, world) = World.evalManyWithLogging exprs localFrame selectedSimulant world
                 let evaledStrs = Array.map (fun evaled -> PrettyPrinter.prettyPrint (scstring evaled) prettyPrinter) evaleds
@@ -1225,9 +1225,9 @@ module Gaia =
                     world
                 | exprStr :: _ ->
                     try let expr = scvalue<Scripting.Expr> exprStr
-                        let selectedLayer = (getEditorState world).SelectedLayer
-                        let localFrame = selectedLayer.GetScriptFrame world
-                        let struct (evaled, world) = World.evalWithLogging expr localFrame selectedLayer world
+                        let selectedGroup = (getEditorState world).SelectedGroup
+                        let localFrame = selectedGroup.GetScriptFrame world
+                        let struct (evaled, world) = World.evalWithLogging expr localFrame selectedGroup world
                         match Scripting.Expr.toFSharpTypeOpt evaled with
                         | Some dt ->
                             let dvOpt =
@@ -1408,10 +1408,10 @@ module Gaia =
     /// Attach Gaia to the given world.
     let attachToWorld targetDir form world =
         if World.getSelectedScreen world = Simulants.DefaultScreen then
-            let layers = World.getLayers Simulants.DefaultScreen world |> Seq.toList
-            let (defaultLayer, world) =
-                match layers with
-                | defaultLayer :: _ ->
+            let groups = World.getGroups Simulants.DefaultScreen world |> Seq.toList
+            let (defaultGroup, world) =
+                match groups with
+                | defaultGroup :: _ ->
                     match World.tryGetKeyedValue<EditorState> Globals.EditorGuid world with
                     | None ->
                         let editorState =
@@ -1419,7 +1419,7 @@ module Gaia =
                               RightClickPosition = Vector2.Zero
                               DragEntityState = DragEntityNone
                               DragCameraState = DragCameraNone
-                              SelectedLayer = defaultLayer
+                              SelectedGroup = defaultGroup
                               FilePaths = Map.empty }
                         let world = World.addKeyedValue Globals.EditorGuid editorState world
                         let world = World.subscribe (handleNuMouseRightDown form) Events.MouseRightDown Simulants.Game world
@@ -1427,11 +1427,11 @@ module Gaia =
                         let world = World.subscribe (handleNuEntityDragEnd form) Events.MouseLeftUp Simulants.Game world
                         let world = World.subscribe (handleNuCameraDragBegin form) Events.MouseCenterDown Simulants.Game world
                         let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
-                        (defaultLayer, world)
-                    | Some _ -> (defaultLayer, world) // NOTE: conclude world is already attached
-                | [] -> failwith ("Cannot attach Gaia to a world with no layers inside the '" + scstring Simulants.DefaultScreen + "' screen.")
-            let world = List.fold (fun world layer -> monitorEntityEvents layer form world) world layers
-            (defaultLayer, world)
+                        (defaultGroup, world)
+                    | Some _ -> (defaultGroup, world) // NOTE: conclude world is already attached
+                | [] -> failwith ("Cannot attach Gaia to a world with no groups inside the '" + scstring Simulants.DefaultScreen + "' screen.")
+            let world = List.fold (fun world group -> monitorEntityEvents group form world) world groups
+            (defaultGroup, world)
         else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.DefaultScreen + "'.")
 
     let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) =
@@ -1454,15 +1454,15 @@ module Gaia =
             | _ -> Globals.World <- World.choose Globals.World
 
     let private run3 runWhile targetDir sdlDeps (form : GaiaForm) =
-        let (defaultLayer, world) = attachToWorld targetDir form Globals.World
+        let (defaultGroup, world) = attachToWorld targetDir form Globals.World
         let world = World.setMasterSongVolume 0.0f world // no song playback in editor by default
         Globals.World <- world
         refreshOverlayComboBox form Globals.World
         refreshCreateComboBox form Globals.World
         refreshEntityTreeView form Globals.World
         refreshHierarchyTreeView form Globals.World
-        refreshLayerTabs form Globals.World
-        selectLayer defaultLayer form Globals.World
+        refreshGroupTabs form Globals.World
+        selectGroup defaultGroup form Globals.World
         form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
         form.tickingButton.CheckState <- CheckState.Unchecked
         form.songPlaybackButton.CheckState <- if World.getMasterSongVolume world = 0.0f then CheckState.Unchecked else CheckState.Checked
@@ -1551,8 +1551,8 @@ module Gaia =
         form.createElevationMinusButton.Click.Add (handleFormCreateElevationMinusClick form)
         form.entityPropertyGrid.SelectedObjectsChanged.Add (handleFormEntityPropertyGridSelectedObjectsChanged form)
         form.entityPropertyGrid.SelectedGridItemChanged.Add (handleFormEntityPropertyGridSelectedGridItemChanged form)
-        form.layerPropertyGrid.SelectedObjectsChanged.Add (handleFormLayerPropertyGridSelectedObjectsChanged form)
-        form.layerPropertyGrid.SelectedGridItemChanged.Add (handleFormLayerPropertyGridSelectedGridItemChanged form)
+        form.groupPropertyGrid.SelectedObjectsChanged.Add (handleFormGroupPropertyGridSelectedObjectsChanged form)
+        form.groupPropertyGrid.SelectedGridItemChanged.Add (handleFormGroupPropertyGridSelectedGridItemChanged form)
         form.propertyTabControl.SelectedIndexChanged.Add (handlePropertyTabControlSelectedIndexChanged form)
         form.discardPropertyButton.Click.Add (handleFormPropertyRefreshClick form)
         form.applyPropertyButton.Click.Add (handleFormPropertyApplyClick form)
@@ -1575,11 +1575,11 @@ module Gaia =
         form.quickSizeToolStripMenuItem.Click.Add (handleFormQuickSize form)
         form.startStopTickingToolStripMenuItem.Click.Add (fun _ -> form.tickingButton.PerformClick ())
         form.deleteContextMenuItem.Click.Add (handleFormDeleteEntity form)
-        form.newLayerToolStripMenuItem.Click.Add (handleFormNew form)
-        form.saveLayerToolStripMenuItem.Click.Add (handleFormSave false form)
-        form.saveLayerAsToolStripMenuItem.Click.Add (handleFormSave true form)
-        form.openLayerToolStripMenuItem.Click.Add (handleFormOpen form)
-        form.closeLayerToolStripMenuItem.Click.Add (handleFormClose form)
+        form.newGroupToolStripMenuItem.Click.Add (handleFormNew form)
+        form.saveGroupToolStripMenuItem.Click.Add (handleFormSave false form)
+        form.saveGroupAsToolStripMenuItem.Click.Add (handleFormSave true form)
+        form.openGroupToolStripMenuItem.Click.Add (handleFormOpen form)
+        form.closeGroupToolStripMenuItem.Click.Add (handleFormClose form)
         form.undoButton.Click.Add (handleFormUndo form)
         form.undoToolStripMenuItem.Click.Add (handleFormUndo form)
         form.redoButton.Click.Add (handleFormRedo form)
@@ -1598,8 +1598,8 @@ module Gaia =
         form.quickSizeToolStripButton.Click.Add (handleFormQuickSize form)
         form.resetCameraButton.Click.Add (handleFormResetCamera form)
         form.reloadAssetsButton.Click.Add (handleFormReloadAssets form)
-        form.layerTabControl.Deselected.Add (handleFormLayerTabDeselected form)
-        form.layerTabControl.Selected.Add (handleFormLayerTabSelected form)
+        form.groupTabControl.Deselected.Add (handleFormGroupTabDeselected form)
+        form.groupTabControl.Selected.Add (handleFormGroupTabSelected form)
         form.evalButton.Click.Add (handleEvalClick form)
         form.clearOutputButton.Click.Add (handleClearOutputClick form)
         form.createEntityComboBox.SelectedIndexChanged.Add (handleCreateEntityComboBoxSelectedIndexChanged form)
@@ -1695,8 +1695,8 @@ module Gaia =
             let (screen, world) =
                 World.createScreen3 screenDispatcher.Name (Some Simulants.DefaultScreen.Name) world
             let world =
-                if Seq.isEmpty (World.getLayers screen world)
-                then World.createLayer (Some "Layer") screen world |> snd
+                if Seq.isEmpty (World.getGroups screen world)
+                then World.createGroup (Some "Group") screen world |> snd
                 else world
             let world = World.selectScreen screen world
             Right world

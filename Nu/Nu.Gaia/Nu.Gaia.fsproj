@@ -67,7 +67,7 @@
     <Compile Include="GaiaConstants.fs" />
     <Compile Include="GaiaTypes.fs" />
     <Compile Include="GaiaEntity.fs" />
-    <Compile Include="GaiaLayer.fs" />
+    <Compile Include="GaiaGroup.fs" />
     <Compile Include="Gaia.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />

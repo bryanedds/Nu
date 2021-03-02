@@ -2,9 +2,9 @@
 
 namespace Nu.Gaia.Design
 {
-    public partial class LayerCreationForm : Form
+    public partial class GroupCreationForm : Form
     {
-        public LayerCreationForm()
+        public GroupCreationForm()
         {
             InitializeComponent();
         }

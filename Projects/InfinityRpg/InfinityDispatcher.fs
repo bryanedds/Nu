@@ -54,6 +54,6 @@ module InfinityDispatcher =
 
         override this.Content (infinity, _) =
             [Content.screen Simulants.Splash.Screen.Name (Splash (Constants.Gui.DissolveDescriptor, Constants.Gui.SplashData, None, Simulants.Title.Screen)) [] []
-             Content.screenFromLayerFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gui.ButterflyGirlSong)) Assets.Gui.TitleLayerFilePath
-             Content.screenFromLayerFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gui.ButterflyGirlSong)) Assets.Gui.CreditsLayerFilePath
+             Content.screenFromGroupFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gui.ButterflyGirlSong)) Assets.Gui.TitleGroupFilePath
+             Content.screenFromGroupFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gui.ButterflyGirlSong)) Assets.Gui.CreditsGroupFilePath
              Content.screen<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Gui.DissolveDescriptor, Some Assets.Gameplay.HerosVengeanceSong)) [Screen.Gameplay <== infinity --> fun infinity -> infinity.Gameplay] []]
