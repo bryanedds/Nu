@@ -11,4 +11,4 @@ type MyPlugin () =
 
     // this specifies the screen dispatcher to use in the editor
     override this.GetEditorScreenDispatcher () =
-        typeof<MyGameplayDispatcher>
+        (Simulants.Gameplay.Screen, typeof<MyGameplayDispatcher>)

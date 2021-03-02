@@ -191,7 +191,7 @@ module Gaia =
         // imperatively.
         let treeState = getExpansionState form.hierarchyTreeView
         form.hierarchyTreeView.Nodes.Clear ()
-        let groups = World.getGroups Simulants.DefaultScreen world
+        let groups = World.getGroups Globals.Screen world
         for group in groups do
             let groupNode = TreeNode group.Name
             groupNode.Name <- scstring group
@@ -214,7 +214,7 @@ module Gaia =
 
         // add groups imperatively to preserve existing group tabs
         // NOTE: adding groups in reverse works better when opening anew
-        let groups = World.getGroups Simulants.DefaultScreen world
+        let groups = World.getGroups Globals.Screen world
         let groupTabPages = form.groupTabControl.TabPages
         for group in Seq.rev groups do
             let groupName = group.Name
@@ -400,9 +400,9 @@ module Gaia =
             let groupDescriptorStr = File.ReadAllText filePath
             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
             let groupName = match groupDescriptor.GroupProperties.TryFind "Name" with Some (Atom (name, _)) -> name | _ -> failwithumf ()
-            let group = Simulants.DefaultScreen / groupName
+            let group = Globals.Screen / groupName
             if not (group.Exists world) then
-                let (group, world) = World.readGroup groupDescriptor None Simulants.DefaultScreen world
+                let (group, world) = World.readGroup groupDescriptor None Globals.Screen world
                 form.groupTabControl.SelectedTab.Text <- group.Name
                 form.groupTabControl.SelectedTab.Name <- group.Name
                 let world = updateEditorState (fun editorState -> { editorState with SelectedGroup = group }) world
@@ -890,7 +890,7 @@ module Gaia =
                 let groupName = groupCreationForm.nameTextBox.Text
                 let groupDispatcherName = groupCreationForm.dispatcherTextBox.Text
                 try if String.length groupName = 0 then failwith "Group name cannot be empty in Gaia due to WinForms limitations."
-                    let world = World.createGroup4 groupDispatcherName (Some groupName) Simulants.DefaultScreen world |> snd
+                    let world = World.createGroup4 groupDispatcherName (Some groupName) Globals.Screen world |> snd
                     refreshGroupTabs form world
                     refreshHierarchyTreeView form world
                     deselectEntity form world
@@ -958,7 +958,7 @@ module Gaia =
                     let groupTabControl = form.groupTabControl
                     let groupTab = groupTabControl.SelectedTab
                     { editorState with
-                        SelectedGroup = Simulants.DefaultScreen / groupTab.Text
+                        SelectedGroup = Globals.Screen / groupTab.Text
                         FilePaths = Map.remove group.GroupAddress editorState.FilePaths })
                     world
 
@@ -1089,7 +1089,7 @@ module Gaia =
             let selectedGroup =
                 let groupTabControl = form.groupTabControl
                 let groupTab = groupTabControl.SelectedTab
-                Simulants.DefaultScreen / groupTab.Text
+                Globals.Screen / groupTab.Text
             let world = updateEditorState (fun editorState -> { editorState with SelectedGroup = selectedGroup}) world
             refreshEntityTreeView form world
             refreshEntityPropertyGrid form world
@@ -1407,8 +1407,8 @@ module Gaia =
 
     /// Attach Gaia to the given world.
     let attachToWorld targetDir form world =
-        if World.getSelectedScreen world = Simulants.DefaultScreen then
-            let groups = World.getGroups Simulants.DefaultScreen world |> Seq.toList
+        if World.getSelectedScreen world = Globals.Screen then
+            let groups = World.getGroups Globals.Screen world |> Seq.toList
             let (defaultGroup, world) =
                 match groups with
                 | defaultGroup :: _ ->
@@ -1429,10 +1429,10 @@ module Gaia =
                         let world = World.subscribe (handleNuCameraDragEnd form) Events.MouseCenterUp Simulants.Game world
                         (defaultGroup, world)
                     | Some _ -> (defaultGroup, world) // NOTE: conclude world is already attached
-                | [] -> failwith ("Cannot attach Gaia to a world with no groups inside the '" + scstring Simulants.DefaultScreen + "' screen.")
+                | [] -> failwith ("Cannot attach Gaia to a world with no groups inside the '" + scstring Globals.Screen + "' screen.")
             let world = List.fold (fun world group -> monitorEntityEvents group form world) world groups
             (defaultGroup, world)
-        else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Simulants.DefaultScreen + "'.")
+        else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Globals.Screen + "'.")
 
     let rec private tryRun3 runWhile sdlDeps (form : GaiaForm) =
         try World.runWithoutCleanUp
@@ -1688,12 +1688,13 @@ module Gaia =
                 World.setEventFilter
                     (EventFilter.NotAny [EventFilter.Pattern (Rexpr "Update", []); EventFilter.Pattern (Rexpr "Mouse/Move", [])])
                     world
-            let screenDispatcher =
+            let (screen, screenDispatcher) =
                 if useGameplayScreen
                 then plugin.GetEditorScreenDispatcher ()
-                else typeof<ScreenDispatcher>
+                else (Simulants.DefaultScreen, typeof<ScreenDispatcher>)
+            Globals.Screen <- screen
             let (screen, world) =
-                World.createScreen3 screenDispatcher.Name (Some Simulants.DefaultScreen.Name) world
+                World.createScreen3 screenDispatcher.Name (Some screen.Name) world
             let world =
                 if Seq.isEmpty (World.getGroups screen world)
                 then World.createGroup (Some "Group") screen world |> snd
