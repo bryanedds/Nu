@@ -11,7 +11,7 @@ module internal World =
 #endif
     let mutable internal viewGame = fun (_ : obj) -> Array.create 0 (String.Empty, obj ())
     let mutable internal viewScreen = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
-    let mutable internal viewLayer = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
+    let mutable internal viewGroup = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
     let mutable internal viewEntity = fun (_ : obj) (_ : obj) -> Array.create 0 (String.Empty, obj ())
 
 namespace Nu
@@ -296,32 +296,32 @@ module WorldTypes =
         abstract TrySignal : obj * Screen * World -> World
         default this.TrySignal (_, _, world) = world
 
-    /// The default dispatcher for layers.
-    and LayerDispatcher () =
+    /// The default dispatcher for groups.
+    and GroupDispatcher () =
         inherit SimulantDispatcher ()
 
-        /// Register a layer when adding it to a screen.
-        abstract Register : Layer * World -> World
+        /// Register a group when adding it to a screen.
+        abstract Register : Group * World -> World
         default this.Register (_, world) = world
 
-        /// Unregister a layer when removing it from a screen.
-        abstract Unregister : Layer * World -> World
+        /// Unregister a group when removing it from a screen.
+        abstract Unregister : Group * World -> World
         default this.Unregister (_, world) = world
 
-        /// Update a layer.
-        abstract Update : Layer * World -> World
+        /// Update a group.
+        abstract Update : Group * World -> World
         default this.Update (_, world) = world
 
-        /// Post-update a layer.
-        abstract PostUpdate : Layer * World -> World
+        /// Post-update a group.
+        abstract PostUpdate : Group * World -> World
         default this.PostUpdate (_, world) = world
 
-        /// Actualize a layer.
-        abstract Actualize : Layer * World -> World
+        /// Actualize a group.
+        abstract Actualize : Group * World -> World
         default this.Actualize (_, world) = world
 
-        /// Try to send a signal to a layer.
-        abstract TrySignal : obj * Layer * World -> World
+        /// Try to send a signal to a group.
+        abstract TrySignal : obj * Group * World -> World
         default this.TrySignal (_, _, world) = world
 
     /// The default dispatcher for entities.
@@ -346,11 +346,11 @@ module WorldTypes =
              Define? PublishPostUpdates false
              Define? Persistent true]
 
-        /// Register an entity when adding it to a layer.
+        /// Register an entity when adding it to a group.
         abstract Register : Entity * World -> World
         default this.Register (_, world) = world
 
-        /// Unregister an entity when removing it from a layer.
+        /// Unregister an entity when removing it from a group.
         abstract Unregister : Entity * World -> World
         default this.Unregister (_, world) = world
 
@@ -561,9 +561,9 @@ module WorldTypes =
         static member copy this =
             { this with ScreenState.Dispatcher = this.Dispatcher }
 
-    /// Hosts the ongoing state of a layer.
-    and [<NoEquality; NoComparison; CLIMutable>] LayerState =
-        { Dispatcher : LayerDispatcher
+    /// Hosts the ongoing state of a group.
+    and [<NoEquality; NoComparison; CLIMutable>] GroupState =
+        { Dispatcher : GroupDispatcher
           Xtension : Xtension
           Model : DesignerProperty
           Visible : bool
@@ -576,8 +576,8 @@ module WorldTypes =
         interface SimulantState with
             member this.GetXtension () = this.Xtension
 
-        /// Make a layer state value.
-        static member make nameOpt (dispatcher : LayerDispatcher) =
+        /// Make a group state value.
+        static member make nameOpt (dispatcher : GroupDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
               Xtension = Xtension.makeSafe ()
@@ -590,35 +590,35 @@ module WorldTypes =
               Name = name }
 
         /// Try to get an xtension property and its type information.
-        static member tryGetProperty (propertyName, layerState, propertyRef : Property outref) =
-            Xtension.tryGetProperty (propertyName, layerState.Xtension, &propertyRef)
+        static member tryGetProperty (propertyName, groupState, propertyRef : Property outref) =
+            Xtension.tryGetProperty (propertyName, groupState.Xtension, &propertyRef)
 
         /// Get an xtension property and its type information.
-        static member getProperty propertyName layerState =
-            Xtension.getProperty propertyName layerState.Xtension
+        static member getProperty propertyName groupState =
+            Xtension.getProperty propertyName groupState.Xtension
 
         /// Try to set an xtension property with explicit type information.
-        static member trySetProperty propertyName property layerState =
-            match Xtension.trySetProperty propertyName property layerState.Xtension with
-            | (true, xtension) -> (true, { layerState with Xtension = xtension })
-            | (false, _) -> (false, layerState)
+        static member trySetProperty propertyName property groupState =
+            match Xtension.trySetProperty propertyName property groupState.Xtension with
+            | (true, xtension) -> (true, { groupState with Xtension = xtension })
+            | (false, _) -> (false, groupState)
 
         /// Set an xtension property with explicit type information.
-        static member setProperty propertyName property layerState =
-            { layerState with LayerState.Xtension = Xtension.setProperty propertyName property layerState.Xtension }
+        static member setProperty propertyName property groupState =
+            { groupState with GroupState.Xtension = Xtension.setProperty propertyName property groupState.Xtension }
 
         /// Attach an xtension property.
-        static member attachProperty name property layerState =
-            { layerState with LayerState.Xtension = Xtension.attachProperty name property layerState.Xtension }
+        static member attachProperty name property groupState =
+            { groupState with GroupState.Xtension = Xtension.attachProperty name property groupState.Xtension }
 
         /// Detach an xtension property.
-        static member detachProperty name layerState =
-            let xtension = Xtension.detachProperty name layerState.Xtension
-            { layerState with LayerState.Xtension = xtension }
+        static member detachProperty name groupState =
+            let xtension = Xtension.detachProperty name groupState.Xtension
+            { groupState with GroupState.Xtension = xtension }
 
-        /// Copy a layer such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
+        /// Copy a group such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
         static member copy this =
-            { this with LayerState.Dispatcher = this.Dispatcher }
+            { this with GroupState.Dispatcher = this.Dispatcher }
 
     /// Hosts the ongoing state of an entity.
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
@@ -793,7 +793,7 @@ module WorldTypes =
                 | _ -> failwith "Invalid Game comparison (comparee not of type Game)."
 
     /// The screen type that allows transitioning to and from other screens, and also hosts the
-    /// currently interactive layers of entities.
+    /// currently interactive groups of entities.
     and Screen (screenAddress) =
 
         // check that address is of correct length for a screen
@@ -820,8 +820,8 @@ module WorldTypes =
         /// Helper for accessing screen lenses.
         static member Lens = Unchecked.defaultof<Screen>
 
-        /// Derive a layer from its screen.
-        static member (/) (screen : Screen, layerName) = Layer (atoa<Screen, Layer> screen.ScreenAddress --> ntoa layerName)
+        /// Derive a group from its screen.
+        static member (/) (screen : Screen, groupName) = Group (atoa<Screen, Group> screen.ScreenAddress --> ntoa groupName)
 
         /// Concatenate an address with a screen's address, forcing the type of first address.
         static member (-->) (address : 'a Address, screen : Screen) =
@@ -854,75 +854,75 @@ module WorldTypes =
                 | :? Screen as that -> (this :> Screen IComparable).CompareTo that
                 | _ -> failwith "Invalid Screen comparison (comparee not of type Screen)."
 
-    /// Forms a logical layer of entities.
-    and Layer (layerAddress) =
+    /// Forms a logical group of entities.
+    and Group (groupAddress) =
 
-        // check that address is of correct length for a layer
-        do if Address.length layerAddress <> 2 then failwith "Layer address must be length of 2."
+        // check that address is of correct length for a group
+        do if Address.length groupAddress <> 2 then failwith "Group address must be length of 2."
 
-        /// Create a layer reference from an address string.
-        new (layerAddressStr : string) = Layer (stoa layerAddressStr)
+        /// Create a group reference from an address string.
+        new (groupAddressStr : string) = Group (stoa groupAddressStr)
 
-        /// Create a layer reference from a list of names.
-        new (layerNames : string array) = Layer (rtoa layerNames)
+        /// Create a group reference from a list of names.
+        new (groupNames : string array) = Group (rtoa groupNames)
 
-        /// Create a layer reference from a list of names.
-        new (layerNames : string list) = Layer (ltoa layerNames)
+        /// Create a group reference from a list of names.
+        new (groupNames : string list) = Group (ltoa groupNames)
 
-        /// Create a layer reference from a the required names.
-        new (screenName : string, layerName : string) = Layer [screenName; layerName]
+        /// Create a group reference from a the required names.
+        new (screenName : string, groupName : string) = Group [screenName; groupName]
 
-        /// The address of the layer.
-        member this.LayerAddress = layerAddress
+        /// The address of the group.
+        member this.GroupAddress = groupAddress
 
-        /// The parent screen of the layer.
-        member this.Parent = let names = this.LayerAddress.Names in Screen names.[0]
+        /// The parent screen of the group.
+        member this.Parent = let names = this.GroupAddress.Names in Screen names.[0]
 
-        /// Get the name of a layer.
-        member this.Name = Address.getName this.LayerAddress
+        /// Get the name of a group.
+        member this.Name = Address.getName this.GroupAddress
 
 #if DEBUG
-        /// Get the latest value of a layer's properties.
+        /// Get the latest value of a group's properties.
         [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-        member private this.View = Debug.World.viewLayer (this :> obj) Debug.World.Chosen
+        member private this.View = Debug.World.viewGroup (this :> obj) Debug.World.Chosen
 #endif
 
-        /// Derive an entity from its layer.
-        static member (/) (layer : Layer, entityName) = Entity (atoa<Layer, Entity> layer.LayerAddress --> ntoa entityName)
+        /// Derive an entity from its group.
+        static member (/) (group : Group, entityName) = Entity (atoa<Group, Entity> group.GroupAddress --> ntoa entityName)
 
-        /// Concatenate an address with a layer's address, forcing the type of first address.
-        static member (-->) (address : 'a Address, layer : Layer) =
-            match box layer with
+        /// Concatenate an address with a group's address, forcing the type of first address.
+        static member (-->) (address : 'a Address, group : Group) =
+            match box group with
             | null -> address // HACK: this case is a hack to be able to insert events into the elmish event handler
-            | _ -> acatff address layer.LayerAddress
+            | _ -> acatff address group.GroupAddress
 
-        /// Helper for accessing layer lenses.
-        static member Lens = Unchecked.defaultof<Layer>
+        /// Helper for accessing group lenses.
+        static member Lens = Unchecked.defaultof<Group>
 
         override this.ToString () =
-            scstring this.LayerAddress
+            scstring this.GroupAddress
 
         override this.Equals that =
             match that with
-            | :? Layer as that -> this.LayerAddress === that.LayerAddress
+            | :? Group as that -> this.GroupAddress === that.GroupAddress
             | _ -> false
 
         override this.GetHashCode () =
-            Address.hash this.LayerAddress
+            Address.hash this.GroupAddress
 
         interface Simulant with
-            member this.SimulantAddress = atoa<Layer, Simulant> this.LayerAddress
+            member this.SimulantAddress = atoa<Group, Simulant> this.GroupAddress
             end
 
-        interface Layer IComparable with
+        interface Group IComparable with
             member this.CompareTo that =
-                Address.compare this.LayerAddress that.LayerAddress
+                Address.compare this.GroupAddress that.GroupAddress
 
         interface IComparable with
             member this.CompareTo that =
                 match that with
-                | :? Layer as that -> (this :> Layer IComparable).CompareTo that
-                | _ -> failwith "Invalid Layer comparison (comparee not of type Layer)."
+                | :? Group as that -> (this :> Group IComparable).CompareTo that
+                | _ -> failwith "Invalid Group comparison (comparee not of type Group)."
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers
     /// to implement things like buttons, characters, blocks, and things of that sort.
@@ -960,13 +960,13 @@ module WorldTypes =
         new (entityNames : string list) = Entity (ltoa entityNames)
 
         /// Create an entity reference from a the required names.
-        new (screenName : string, layerName : string, entityName : string) = Entity [screenName; layerName; entityName]
+        new (screenName : string, groupName : string, entityName : string) = Entity [screenName; groupName; entityName]
 
         /// The address of the entity.
         member this.EntityAddress = entityAddress
 
-        /// The parent layer of the entity.
-        member this.Parent = let names = this.EntityAddress.Names in Layer [names.[0]; names.[1]]
+        /// The parent group of the entity.
+        member this.Parent = let names = this.EntityAddress.Names in Group [names.[0]; names.[1]]
 
         /// The address of the entity's update event.
         member this.UpdateEventCached = updateEvent
@@ -1069,7 +1069,7 @@ module WorldTypes =
     and [<ReferenceEquality; NoComparison>] internal Dispatchers =
         { GameDispatchers : Map<string, GameDispatcher>
           ScreenDispatchers : Map<string, ScreenDispatcher>
-          LayerDispatchers : Map<string, LayerDispatcher>
+          GroupDispatchers : Map<string, GroupDispatcher>
           EntityDispatchers : Map<string, EntityDispatcher>
           Facets : Map<string, Facet>
           TryGetExtrinsic : string -> World ScriptingTrinsic option
@@ -1101,13 +1101,13 @@ module WorldTypes =
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState>
               EntityTree : Entity SpatialTree MutantCache
               EntityStates : UMap<Entity Address, EntityState>
-              LayerStates : UMap<Layer Address, LayerState>
+              GroupStates : UMap<Group Address, GroupState>
               ScreenStates : UMap<Screen Address, ScreenState>
               GameState : GameState
               // cache line 2
               AmbientState : World AmbientState
               Subsystems : Subsystems
-              ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Layer Address, UMap<string, Entity Address>>>>>
+              ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Group Address, UMap<string, Entity Address>>>>>
               Dispatchers : Dispatchers
               ScriptingEnv : Scripting.Env
               ScriptingContext : Simulant
@@ -1142,7 +1142,7 @@ module WorldTypes =
                     let entity = simulant :?> Entity
                     notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
                     UMap.containsKey (simulant :?> Entity).EntityAddress this.EntityStates
-                | 2 -> UMap.containsKey (simulant :?> Layer).LayerAddress this.LayerStates
+                | 2 -> UMap.containsKey (simulant :?> Group).GroupAddress this.GroupStates
                 | 1 -> UMap.containsKey (simulant :?> Screen).ScreenAddress this.ScreenStates
                 | 0 -> true
                 | _  -> false
@@ -1172,7 +1172,7 @@ module WorldTypes =
                 let (handling, world) =
                     match simulant with
                     | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> simulant publisher eventData eventAddress eventTrace subscription world
-                    | :? Layer -> EventSystem.publishEvent<'a, 'p, Layer, World> simulant publisher eventData eventAddress eventTrace subscription world
+                    | :? Group -> EventSystem.publishEvent<'a, 'p, Group, World> simulant publisher eventData eventAddress eventTrace subscription world
                     | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> simulant publisher eventData eventAddress eventTrace subscription world
                     | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> simulant publisher eventData eventAddress eventTrace subscription world
                     | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> simulant publisher eventData eventAddress eventTrace subscription world
@@ -1206,7 +1206,7 @@ module WorldTypes =
                 | ("Color", (:? Color as color)) -> let colorp = { Color = color } in colorp :> Scripting.Pluggable |> Scripting.Pluggable |> Some
                 | ("Game", (:? Game as game)) -> game.GameAddress |> atos |> Scripting.Keyword |> Some
                 | ("Screen", (:? Screen as screen)) -> screen.ScreenAddress |> atos |> Scripting.Keyword |> Some
-                | ("Layer", (:? Layer as layer)) -> layer.LayerAddress |> atos |> Scripting.Keyword |> Some
+                | ("Group", (:? Group as group)) -> group.GroupAddress |> atos |> Scripting.Keyword |> Some
                 | ("Entity", (:? Entity as entity)) -> entity.EntityAddress |> atos |> Scripting.Keyword |> Some
                 | ("Simulant", (:? Simulant as simulant)) -> simulant.SimulantAddress |> atos |> Scripting.Keyword |> Some
                 | (_, _) -> None
@@ -1220,7 +1220,7 @@ module WorldTypes =
                 | ("Color", Scripting.Pluggable pluggable) -> let color = pluggable :?> ColorPluggable in color.Color :> obj |> Some
                 | ("Game", Scripting.String str) | ("Game", Scripting.Keyword str) -> str |> stoa |> Game :> obj |> Some
                 | ("Screen", Scripting.String str) | ("Screen", Scripting.Keyword str) -> str |> stoa |> Screen :> obj |> Some
-                | ("Layer", Scripting.String str) | ("Layer", Scripting.Keyword str) -> str |> stoa |> Layer :> obj |> Some
+                | ("Group", Scripting.String str) | ("Group", Scripting.Keyword str) -> str |> stoa |> Group :> obj |> Some
                 | ("Entity", Scripting.String str) | ("Entity", Scripting.Keyword str) -> str |> stoa |> Entity :> obj |> Some
                 | ("Simulant", Scripting.String _) | ("Simulant", Scripting.Keyword _) -> None // TODO: see if this should be failwithumf or a violation instead.
                 | (_, _) -> None
@@ -1322,8 +1322,8 @@ type GameDispatcher = WorldTypes.GameDispatcher
 /// The default dispatcher for screens.
 type ScreenDispatcher = WorldTypes.ScreenDispatcher
 
-/// The default dispatcher for layers.
-type LayerDispatcher = WorldTypes.LayerDispatcher
+/// The default dispatcher for groups.
+type GroupDispatcher = WorldTypes.GroupDispatcher
 
 /// The default dispatcher for entities.
 type EntityDispatcher = WorldTypes.EntityDispatcher
@@ -1335,11 +1335,11 @@ type Facet = WorldTypes.Facet
 type Game = WorldTypes.Game
 
 /// The screen type that allows transitioning to and from other screens, and also hosts the
-/// currently interactive layers of entities.
+/// currently interactive groups of entities.
 type Screen = WorldTypes.Screen
 
-/// Forms a logical layer of entities.
-type Layer = WorldTypes.Layer
+/// Forms a logical group of entities.
+type Group = WorldTypes.Group
 
 /// The type around which the whole game engine is based! Used in combination with dispatchers
 /// to implement things like buttons, characters, blocks, and things of that sort.

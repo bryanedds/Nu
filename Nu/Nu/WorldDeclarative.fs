@@ -37,46 +37,46 @@ type [<NoEquality; NoComparison>] EntityContent =
     interface SimulantContent
 
     /// Expand an entity content to its constituent parts.
-    static member expand content (layer : Layer) (world : World) =
+    static member expand content (group : Group) (world : World) =
         match content with
         | EntitiesFromStream (lens, sieve, unfold, mapper) ->
             Choice1Of3 (lens, sieve, unfold, mapper)
         | EntityFromInitializers (dispatcherName, name, initializers, content) ->
-            let (descriptor, handlersEntity, bindsEntity) = Describe.entity4 dispatcherName (Some name) initializers (layer / name) world
-            Choice2Of3 (name, descriptor, handlersEntity, bindsEntity, (layer / name, content))
+            let (descriptor, handlersEntity, bindsEntity) = Describe.entity4 dispatcherName (Some name) initializers (group / name) world
+            Choice2Of3 (name, descriptor, handlersEntity, bindsEntity, (group / name, content))
         | EntityFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
 
-/// Describes the content of a layer.
-type [<NoEquality; NoComparison>] LayerContent =
-    | LayersFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> MapGeneralized) * (obj -> Lens<obj, World> -> World -> LayerContent)
-    | LayerFromInitializers of string * string * PropertyInitializer list * EntityContent list
-    | LayerFromFile of string * string
+/// Describes the content of a group.
+type [<NoEquality; NoComparison>] GroupContent =
+    | GroupsFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> MapGeneralized) * (obj -> Lens<obj, World> -> World -> GroupContent)
+    | GroupFromInitializers of string * string * PropertyInitializer list * EntityContent list
+    | GroupFromFile of string * string
     interface SimulantContent
 
-    /// Expand a layer content to its constituent parts.
+    /// Expand a group content to its constituent parts.
     static member expand content screen (world : World) =
         match content with
-        | LayersFromStream (lens, sieve, unfold, mapper) ->
+        | GroupsFromStream (lens, sieve, unfold, mapper) ->
             Choice1Of3 (lens, sieve, unfold, mapper)
-        | LayerFromInitializers (dispatcherName, name, initializers, content) ->
-            let layer = screen / name
-            let expansions = List.map (fun content -> EntityContent.expand content layer world) content
-            let streams = List.map (function Choice1Of3 (lens, sieve, unfold, mapper) -> Some (layer, lens, sieve, unfold, mapper) | _ -> None) expansions |> List.definitize
+        | GroupFromInitializers (dispatcherName, name, initializers, content) ->
+            let group = screen / name
+            let expansions = List.map (fun content -> EntityContent.expand content group world) content
+            let streams = List.map (function Choice1Of3 (lens, sieve, unfold, mapper) -> Some (group, lens, sieve, unfold, mapper) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (_, descriptor, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
             let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
             let binds = List.map (function Choice2Of3 (_, _, _, binds, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize
             let filePaths = List.map (function Choice3Of3 filePath -> Some filePath | _ -> None) expansions |> List.definitize |> List.map (fun (entityName, path) -> (name, entityName, path))
-            let (descriptor, handlersLayer, bindsLayer) = Describe.layer5 dispatcherName (Some name) initializers descriptors layer world
-            Choice2Of3 (name, descriptor, handlers @ handlersLayer, binds @ bindsLayer, streams, filePaths, entityContents)
-        | LayerFromFile (name, filePath) ->
+            let (descriptor, handlersGroup, bindsGroup) = Describe.group5 dispatcherName (Some name) initializers descriptors group world
+            Choice2Of3 (name, descriptor, handlers @ handlersGroup, binds @ bindsGroup, streams, filePaths, entityContents)
+        | GroupFromFile (name, filePath) ->
             Choice3Of3 (name, filePath)
 
 /// Describes the content of a screen.
 type [<NoEquality; NoComparison>] ScreenContent =
-    | ScreenFromInitializers of string * string * ScreenBehavior * PropertyInitializer list * LayerContent list
-    | ScreenFromLayerFile of string * ScreenBehavior * Type * string
+    | ScreenFromInitializers of string * string * ScreenBehavior * PropertyInitializer list * GroupContent list
+    | ScreenFromGroupFile of string * ScreenBehavior * Type * string
     | ScreenFromFile of string * ScreenBehavior * string
     interface SimulantContent
 
@@ -85,18 +85,18 @@ type [<NoEquality; NoComparison>] ScreenContent =
         match content with
         | ScreenFromInitializers (dispatcherName, name, behavior, initializers, content) ->
             let screen = Screen name
-            let expansions = List.map (fun content -> LayerContent.expand content screen world) content
+            let expansions = List.map (fun content -> GroupContent.expand content screen world) content
             let streams = List.map (function Choice1Of3 (lens, sieve, unfold, mapper) -> Some (screen, lens, sieve, unfold, mapper) | _ -> None) expansions |> List.definitize
             let descriptors = List.map (function Choice2Of3 (_, descriptor, _, _, _, _, _) -> Some descriptor | _ -> None) expansions |> List.definitize
             let handlers = List.map (function Choice2Of3 (_, _, handlers, _, _, _, _) -> Some handlers | _ -> None) expansions |> List.definitize |> List.concat
             let binds = List.map (function Choice2Of3 (_, _, _, binds, _, _, _) -> Some binds | _ -> None) expansions |> List.definitize |> List.concat
             let entityStreams = List.map (function Choice2Of3 (_, _, _, _, stream, _, _) -> Some stream | _ -> None) expansions |> List.definitize |> List.concat
-            let entityFilePaths = List.map (function Choice2Of3 (_, _, _, _, _, filePaths, _) -> Some (List.map (fun (layerName, entityName, filePath) -> (name, layerName, entityName, filePath)) filePaths) | _ -> None) expansions |> List.definitize |> List.concat
+            let entityFilePaths = List.map (function Choice2Of3 (_, _, _, _, _, filePaths, _) -> Some (List.map (fun (groupName, entityName, filePath) -> (name, groupName, entityName, filePath)) filePaths) | _ -> None) expansions |> List.definitize |> List.concat
             let entityContents = List.map (function Choice2Of3 (_, _, _, _, _, _, entityContents) -> Some entityContents | _ -> None) expansions |> List.definitize |> List.concat
-            let layerFilePaths = List.map (function Choice3Of3 (layerName, filePath) -> Some (name, layerName, filePath) | _ -> None) expansions |> List.definitize
+            let groupFilePaths = List.map (function Choice3Of3 (groupName, filePath) -> Some (name, groupName, filePath) | _ -> None) expansions |> List.definitize
             let (descriptor, handlersScreen, bindsScreen) = Describe.screen5 dispatcherName (Some name) initializers descriptors screen world
-            Left (name, descriptor, handlers @ handlersScreen, binds @ bindsScreen, behavior, streams, entityStreams, layerFilePaths, entityFilePaths, entityContents)
-        | ScreenFromLayerFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
+            Left (name, descriptor, handlers @ handlersScreen, binds @ bindsScreen, behavior, streams, entityStreams, groupFilePaths, entityFilePaths, entityContents)
+        | ScreenFromGroupFile (name, behavior, ty, filePath) -> Right (name, behavior, Some ty, filePath)
         | ScreenFromFile (name, behavior, filePath) -> Right (name, behavior, None, filePath)
 
 /// Describes the content of a game.
@@ -114,15 +114,15 @@ type [<NoEquality; NoComparison>] GameContent =
             let descriptors = Either.getLeftValues expansions |> List.map (fun (_, descriptor, _, _, _, _, _, _, _, _) -> descriptor)
             let handlers = Either.getLeftValues expansions |> List.map (fun (_, _, handlers, _, _, _, _, _, _, _) -> handlers) |> List.concat
             let binds = Either.getLeftValues expansions |> List.map (fun (_, _, _, binds, _, _, _, _, _, _) -> binds) |> List.concat
-            let layerStreams = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, stream, _, _, _, _) -> stream) |> List.concat
+            let groupStreams = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, stream, _, _, _, _) -> stream) |> List.concat
             let entityStreams = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, stream, _, _, _) -> stream) |> List.concat
             let screenBehaviors = Either.getLeftValues expansions |> List.map (fun (screenName, _, _,  _, _, behavior, _, _, _, _) -> (screenName, behavior)) |> Map.ofList
-            let layerFilePaths = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, layerFilePaths, _, _) -> layerFilePaths) |> List.concat
+            let groupFilePaths = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, groupFilePaths, _, _) -> groupFilePaths) |> List.concat
             let entityFilePaths = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, _, entityFilePaths, _) -> entityFilePaths) |> List.concat
             let entityContents = Either.getLeftValues expansions |> List.map (fun (_, _, _, _, _, _, _, _, _, entityContents) -> entityContents) |> List.concat
             let screenFilePaths = Either.getRightValues expansions
             let (descriptor, handlersGame, bindsGame) = Describe.game5 dispatcherName initializers descriptors game world
-            Left (descriptor, handlers @ handlersGame, binds @ bindsGame, screenBehaviors, layerStreams, entityStreams, screenFilePaths, layerFilePaths, entityFilePaths, entityContents)
+            Left (descriptor, handlers @ handlersGame, binds @ bindsGame, screenBehaviors, groupStreams, entityStreams, screenFilePaths, groupFilePaths, entityFilePaths, entityContents)
         | GameFromFile filePath -> Right filePath
 
 /// Opens up some functions to make simulant lenses more accessible.
@@ -130,7 +130,7 @@ module Declarative =
 
     let Game = Game.Lens
     let Screen = Screen.Lens
-    let Layer = Layer.Lens
+    let Group = Group.Lens
     let Entity = Entity.Lens
 
 [<AutoOpen>]

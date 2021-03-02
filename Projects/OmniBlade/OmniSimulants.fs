@@ -34,11 +34,11 @@ module Simulants =
         [<RequireQualifiedAccess>]
         module Gui =
 
-            let Layer = Screen / "Gui"
-            let New = Layer / "New"
-            let Load = Layer / "Load"
-            let Credits = Layer / "Credits"
-            let Exit = Layer / "Exit"
+            let Group = Screen / "Gui"
+            let New = Group / "New"
+            let Load = Group / "Load"
+            let Credits = Group / "Credits"
+            let Exit = Group / "Exit"
 
     [<RequireQualifiedAccess>]
     module Credits =
@@ -48,8 +48,8 @@ module Simulants =
         [<RequireQualifiedAccess>]
         module Gui =
     
-            let Layer = Screen / "Gui"
-            let Back = Layer / "Back"
+            let Group = Screen / "Gui"
+            let Back = Group / "Back"
 
     [<RequireQualifiedAccess>]
     module Field =
@@ -59,34 +59,34 @@ module Simulants =
         [<RequireQualifiedAccess>]
         module Gui =
 
-            let Layer = Screen / "Gui"
-            let Submenu = Layer / "Submenu"
+            let Group = Screen / "Gui"
+            let Submenu = Group / "Submenu"
 
         [<RequireQualifiedAccess>]
         module Scene =
 
-            let Layer = Screen / "Scene"
-            let Backdrop = Layer / "Backdrop"
-            let TransitionFade = Layer / "TransitionFade"
-            let TileMap = Layer / "TileMap"
-            let Avatar = Layer / "Avatar"
-            let Interact = Layer / "Interact"
-            let Dialog = Layer / "Dialog"
+            let Group = Screen / "Scene"
+            let Backdrop = Group / "Backdrop"
+            let TransitionFade = Group / "TransitionFade"
+            let TileMap = Group / "TileMap"
+            let Avatar = Group / "Avatar"
+            let Interact = Group / "Interact"
+            let Dialog = Group / "Dialog"
 
         [<RequireQualifiedAccess>]
         module Submenu =
 
-            let Layer = Screen / "Submenu"
-            let Team = Layer / "Team"
-            let Item = Layer / "Item"
-            let Close = Layer / "Close"
-            let Use = Layer / "Use"
+            let Group = Screen / "Submenu"
+            let Team = Group / "Team"
+            let Item = Group / "Item"
+            let Close = Group / "Close"
+            let Use = Group / "Use"
 
         [<RequireQualifiedAccess>]
         module Shop =
 
-            let Layer = Screen / "Shop"
-            let Panel = Layer / "Panel"
+            let Group = Screen / "Shop"
+            let Panel = Group / "Panel"
 
     [<RequireQualifiedAccess>]
     module Battle =
@@ -96,12 +96,12 @@ module Simulants =
         [<RequireQualifiedAccess>]
         module Gui =
     
-            let Layer = Screen / "Gui"
-            let Dialog = Layer / "Dialog"
-            let Interact = Layer / "Interact"
+            let Group = Screen / "Gui"
+            let Dialog = Group / "Dialog"
+            let Interact = Group / "Interact"
     
         [<RequireQualifiedAccess>]
         module Scene =
 
-            let Layer = Screen / "Scene"
-            let Ride = Layer / "Ride"
+            let Group = Screen / "Scene"
+            let Ride = Group / "Ride"

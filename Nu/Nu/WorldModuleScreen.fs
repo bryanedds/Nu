@@ -24,13 +24,13 @@ module WorldModuleScreen =
                 match Address.getNames screen.ScreenAddress with
                 | [|screenName|] ->
                     match UMap.tryFind screenName world.ScreenDirectory with
-                    | Some layerDirectory ->
+                    | Some groupDirectory ->
                         // NOTE: this is logically a redundant operation...
-                        let layerDirectory = KeyValuePair (screen.ScreenAddress, layerDirectory.Value)
-                        UMap.add screenName layerDirectory world.ScreenDirectory
+                        let groupDirectory = KeyValuePair (screen.ScreenAddress, groupDirectory.Value)
+                        UMap.add screenName groupDirectory world.ScreenDirectory
                     | None ->
-                        let layerDirectory = KeyValuePair (screen.ScreenAddress, UMap.makeEmpty Constants.Engine.SimulantMapConfig)
-                        UMap.add screenName layerDirectory world.ScreenDirectory
+                        let groupDirectory = KeyValuePair (screen.ScreenAddress, UMap.makeEmpty Constants.Engine.SimulantMapConfig)
+                        UMap.add screenName groupDirectory world.ScreenDirectory
                 | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
             let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
@@ -227,22 +227,22 @@ module WorldModuleScreen =
                 if isNew then World.registerScreen screen world else world
             else failwith ("Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'.")
 
-        static member internal removeScreen3 removeLayers screen world =
+        static member internal removeScreen3 removeGroups screen world =
             if World.getScreenExists screen world then
                 let world = World.unregisterScreen screen world
-                let world = removeLayers screen world
+                let world = removeGroups screen world
                 World.removeScreenState screen world
             else world
 
-        static member internal writeScreen4 writeLayers screen screenDescriptor world =
+        static member internal writeScreen4 writeGroups screen screenDescriptor world =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.Dispatcher
             let screenDescriptor = { screenDescriptor with ScreenDispatcherName = screenDispatcherName }
             let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
-            writeLayers screen screenDescriptor world
+            writeGroups screen screenDescriptor world
 
-        static member internal readScreen4 readLayers screenDescriptor nameOpt world =
+        static member internal readScreen4 readGroups screenDescriptor nameOpt world =
 
             // make the dispatcher
             let dispatcherName = screenDescriptor.ScreenDispatcherName
@@ -273,8 +273,8 @@ module WorldModuleScreen =
             let screen = Screen (ntoa screenState.Name)
             let world = World.addScreen true screenState screen world
             
-            // read the screen's layers
-            let world = readLayers screenDescriptor screen world |> snd
+            // read the screen's groups
+            let world = readGroups screenDescriptor screen world |> snd
             (screen, world)
 
         /// View all of the properties of a screen.

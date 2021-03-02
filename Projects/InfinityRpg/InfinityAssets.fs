@@ -13,8 +13,8 @@ module Assets =
     module Gui =
 
         let PackageName = "Gui"
-        let TitleLayerFilePath = "Assets/Gui/Title.nulyr"
-        let CreditsLayerFilePath = "Assets/Gui/Credits.nulyr"
+        let TitleGroupFilePath = "Assets/Gui/Title.nugroup"
+        let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
         let ButterflyGirlSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "ButterflyGirl" }
 
     [<RequireQualifiedAccess>]

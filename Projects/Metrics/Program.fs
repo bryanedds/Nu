@@ -107,7 +107,7 @@ type MetricsEntityDispatcher () =
 type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, unit> (())
 
-    let Fps = Simulants.DefaultLayer / "Fps"
+    let Fps = Simulants.DefaultGroup / "Fps"
 
     override this.Register (game, world) =
         let world = base.Register (game, world)
@@ -149,8 +149,8 @@ type MyGameDispatcher () =
                         position.Position.Y <- position.Position.Y + velocity.Velocity.Y
             world)
 #endif
-        let world = World.createLayer (Some Simulants.DefaultLayer.Name) Simulants.DefaultScreen world |> snd
-        let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultLayer world |> snd
+        let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
+        let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS_PURE
         let positions = // 9,900 entity positions (goal: 60FPS)
@@ -161,7 +161,7 @@ type MyGameDispatcher () =
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
             Seq.fold (fun world position ->
-                let (entity, world) = World.createEntity<MetricsEntityDispatcher> None NoOverlay Simulants.DefaultLayer world
+                let (entity, world) = World.createEntity<MetricsEntityDispatcher> None NoOverlay Simulants.DefaultGroup world
                 let world = entity.SetOmnipresent true world
                 let world = entity.SetPosition (position + v2 -450.0f -265.0f) world
                 let world = entity.SetSize (v2One * 8.0f) world
@@ -192,7 +192,7 @@ type MyGameDispatcher () =
                             let spriteDescriptor = SpriteDescriptor { Transform = entity.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
                             let layeredMessage = { Elevation = entity.Elevation; PositionY = entity.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
                             messages.Add layeredMessage
-            World.enqueueLayeredMessages messages world)
+            World.enqueueGroupedMessages messages world)
 #else
         ignore screen
 #endif
@@ -226,14 +226,14 @@ type ElmishGameDispatcher () =
 
     override this.Content (intss, _) =
         [Content.screen "Screen" Vanilla []
-            [Content.layers intss (fun intss -> intss.Intss) constant (fun i intss _ ->
-                Content.layer (string i) []
+            [Content.groups intss (fun intss -> intss.Intss) constant (fun i intss _ ->
+                Content.group (string i) []
                     [Content.entities intss (fun ints -> ints.Ints) constant (fun j int _ ->
                         Content.staticSprite (string j)
                             [Entity.Omnipresent == true
                              Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
                              Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12))])])
-             Content.layer "Layer" []
+             Content.group "Group" []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
 #endif
 
@@ -277,7 +277,7 @@ type PhantomGameDispatcher () =
 
     override this.Content (_, _) =
         [Content.screen "Screen" Vanilla []
-            [Content.layer "Layer" []
+            [Content.group "Group" []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
 
     override this.View (phantoms, _, _) =

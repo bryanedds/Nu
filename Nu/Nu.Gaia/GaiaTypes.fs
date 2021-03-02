@@ -26,8 +26,8 @@ type EditorState =
       RightClickPosition : Vector2
       DragEntityState : DragEntityState
       DragCameraState : DragCameraState
-      SelectedLayer : Layer
-      FilePaths : Map<Layer Address, string> }
+      SelectedGroup : Group
+      FilePaths : Map<Group Address, string> }
 
 type SavedState =
     { BinaryFilePath : string

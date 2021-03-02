@@ -171,11 +171,11 @@ module WorldScreenModule =
         /// screen's existence. Consider using World.destroyScreen instead.
         static member destroyScreenImmediate (screen : Screen) world =
             let world = World.tryRemoveSimulantFromDestruction screen world
-            let destroyLayersImmediate screen world =
-                let layers = World.getLayers screen world
-                World.destroyLayersImmediate layers world
+            let destroyGroupsImmediate screen world =
+                let groups = World.getGroups screen world
+                World.destroyGroupsImmediate groups world
             EventSystemDelegate.cleanEventAddressCache screen.ScreenAddress
-            World.removeScreen3 destroyLayersImmediate screen world
+            World.removeScreen3 destroyGroupsImmediate screen world
 
         /// Destroy a screen in the world at the end of the current update.
         [<FunctionBinding>]
@@ -213,7 +213,7 @@ module WorldScreenModule =
                     world descriptor.SimulantProperties
             let world =
                 List.fold (fun world childDescriptor ->
-                    World.createLayer3 childDescriptor screen world |> snd)
+                    World.createGroup3 childDescriptor screen world |> snd)
                     world descriptor.SimulantChildren
             (screen, world)
 
@@ -234,10 +234,10 @@ module WorldScreenModule =
 
         /// Write a screen to a screen descriptor.
         static member writeScreen screen screenDescriptor world =
-            let writeLayers screen screenDescriptor world =
-                let layers = World.getLayers screen world
-                World.writeLayers layers screenDescriptor world
-            World.writeScreen4 writeLayers screen screenDescriptor world
+            let writeGroups screen screenDescriptor world =
+                let groups = World.getGroups screen world
+                World.writeGroups groups screenDescriptor world
+            World.writeScreen4 writeGroups screen screenDescriptor world
 
         /// Write multiple screens to a game descriptor.
         static member writeScreens screens gameDescriptor world =
@@ -261,7 +261,7 @@ module WorldScreenModule =
 
         /// Read a screen from a screen descriptor.
         static member readScreen screenDescriptor nameOpt world =
-            World.readScreen4 World.readLayers screenDescriptor nameOpt world
+            World.readScreen4 World.readGroups screenDescriptor nameOpt world
 
         /// Read multiple screens from a game descriptor.
         static member readScreens gameDescriptor world =
@@ -296,16 +296,16 @@ module WorldScreenModule =
         /// Turn screen content into a live screen.
         static member expandScreenContent setScreenSplash content origin game world =
             match ScreenContent.expand content game world with
-            | Left (_, descriptor, handlers, binds, behavior, layerStreams, entityStreams, layerFilePaths, entityFilePaths, entityContents) ->
+            | Left (_, descriptor, handlers, binds, behavior, groupStreams, entityStreams, groupFilePaths, entityFilePaths, entityContents) ->
                 let (screen, world) =
                     World.createScreen2 descriptor world
                 let world =
-                    List.fold (fun world (_ : string, layerName, filePath) ->
-                        World.readLayerFromFile filePath (Some layerName) screen world |> snd)
-                        world layerFilePaths
+                    List.fold (fun world (_ : string, groupName, filePath) ->
+                        World.readGroupFromFile filePath (Some groupName) screen world |> snd)
+                        world groupFilePaths
                 let world =
-                    List.fold (fun world (_ : string, layerName, entityName, filePath) ->
-                        World.readEntityFromFile filePath (Some entityName) (screen / layerName) world |> snd)
+                    List.fold (fun world (_ : string, groupName, entityName, filePath) ->
+                        World.readEntityFromFile filePath (Some entityName) (screen / groupName) world |> snd)
                         world entityFilePaths
                 let world =
                     List.fold (fun world (simulant, left : World Lens, right) ->
@@ -322,25 +322,25 @@ module WorldScreenModule =
                         world handlers
                 let world =
                     List.fold (fun world (screen, lens, sieve, unfold, mapper) ->
-                        World.expandLayers lens sieve unfold mapper origin screen world)
-                        world layerStreams
+                        World.expandGroups lens sieve unfold mapper origin screen world)
+                        world groupStreams
                 let world =
-                    List.fold (fun world (layer, lens, sieve, unfold, mapper) ->
-                        World.expandEntities lens sieve unfold mapper origin layer layer world)
+                    List.fold (fun world (group, lens, sieve, unfold, mapper) ->
+                        World.expandEntities lens sieve unfold mapper origin group group world)
                         world entityStreams
                 let world =
                     List.fold (fun world (owner : Entity, entityContents) ->
-                        let layer = owner.Parent
+                        let group = owner.Parent
                         List.fold (fun world entityContent ->
-                            World.expandEntityContent entityContent origin owner layer world |> snd)
+                            World.expandEntityContent entityContent origin owner group world |> snd)
                             world entityContents)
                         world entityContents
                 let world =
                     World.applyScreenBehavior setScreenSplash behavior screen world
                 (screen, world)
-            | Right (name, behavior, Some dispatcherType, layerFilePath) ->
+            | Right (name, behavior, Some dispatcherType, groupFilePath) ->
                 let (screen, world) = World.createScreen3 dispatcherType.Name (Some name) world
-                let world = World.readLayerFromFile layerFilePath None screen world |> snd
+                let world = World.readGroupFromFile groupFilePath None screen world |> snd
                 let world = World.applyScreenBehavior setScreenSplash behavior screen world
                 (screen, world)
             | Right (name, behavior, None, filePath) ->

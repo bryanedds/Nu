@@ -23,7 +23,7 @@ module WorldSimulantModule =
         static member internal tryGetState (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.getEntityState entity world :> SimulantState |> Some
-            | :? Layer as layer -> World.getLayerState layer world :> SimulantState |> Some
+            | :? Group as group -> World.getGroupState group world :> SimulantState |> Some
             | :? Screen as screen -> World.getScreenState screen world :> SimulantState |> Some
             | :? Game -> World.getGameState world :> SimulantState |> Some
             | _ -> None
@@ -31,9 +31,9 @@ module WorldSimulantModule =
         static member internal getState (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.getEntityState entity world :> SimulantState
-            | :? Game -> World.getGameState world :> SimulantState
-            | :? Layer as layer -> World.getLayerState layer world :> SimulantState
+            | :? Group as group -> World.getGroupState group world :> SimulantState
             | :? Screen as screen -> World.getScreenState screen world :> SimulantState
+            | :? Game -> World.getGameState world :> SimulantState
             | _ -> failwithumf ()
 
         static member internal tryGetProperty name (simulant : Simulant) world =
@@ -41,7 +41,7 @@ module WorldSimulantModule =
             let found =
                 match simulant with
                 | :? Entity as entity -> World.tryGetEntityProperty (name, entity, world, &property)
-                | :? Layer as layer -> World.tryGetLayerProperty (name, layer, world, &property)
+                | :? Group as group -> World.tryGetGroupProperty (name, group, world, &property)
                 | :? Screen as screen -> World.tryGetScreenProperty (name, screen, world, &property)
                 | :? Game -> World.tryGetGameProperty (name, world, &property)
                 | _ -> false
@@ -50,7 +50,7 @@ module WorldSimulantModule =
         static member internal getProperty name (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.getEntityProperty name entity world
-            | :? Layer as layer -> World.getLayerProperty name layer world
+            | :? Group as group -> World.getGroupProperty name group world
             | :? Screen as screen -> World.getScreenProperty name screen world
             | :? Game -> World.getGameProperty name world
             | _ -> failwithumf ()
@@ -58,7 +58,7 @@ module WorldSimulantModule =
         static member internal trySetProperty name property (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.trySetEntityProperty name property entity world
-            | :? Layer as layer -> World.trySetLayerProperty name property layer world
+            | :? Group as group -> World.trySetGroupProperty name property group world
             | :? Screen as screen -> World.trySetScreenProperty name property screen world
             | :? Game -> World.trySetGameProperty name property world
             | _ -> (false, world)
@@ -66,7 +66,7 @@ module WorldSimulantModule =
         static member internal setProperty name property (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.setEntityProperty name property entity world
-            | :? Layer as layer -> World.setLayerProperty name property layer world
+            | :? Group as group -> World.setGroupProperty name property group world
             | :? Screen as screen -> World.setScreenProperty name property screen world
             | :? Game -> World.setGameProperty name property world
             | _ -> failwithumf ()
@@ -74,7 +74,7 @@ module WorldSimulantModule =
         static member internal attachProperty name property (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.attachEntityProperty name property entity world
-            | :? Layer as layer -> World.attachLayerProperty name property layer world
+            | :? Group as group -> World.attachGroupProperty name property group world
             | :? Screen as screen -> World.attachScreenProperty name property screen world
             | :? Game -> World.attachGameProperty name property world
             | _ -> failwithumf ()
@@ -82,7 +82,7 @@ module WorldSimulantModule =
         static member internal detachProperty name (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.detachEntityProperty name entity world
-            | :? Layer as layer -> World.detachLayerProperty name layer world
+            | :? Group as group -> World.detachGroupProperty name group world
             | :? Screen as screen -> World.detachScreenProperty name screen world
             | :? Game -> World.detachGameProperty name world
             | _ -> failwithumf ()
@@ -91,7 +91,7 @@ module WorldSimulantModule =
         static member getDispatcher (simulant : Simulant) (world : World) =
             match simulant with
             | :? Entity as entity -> entity.GetDispatcher world :> Dispatcher
-            | :? Layer as layer -> layer.GetDispatcher world :> Dispatcher
+            | :? Group as group -> group.GetDispatcher world :> Dispatcher
             | :? Screen as screen -> screen.GetDispatcher world :> Dispatcher
             | :? Game -> Simulants.Game.GetDispatcher world :> Dispatcher
             | _ -> failwithumf ()
@@ -99,7 +99,7 @@ module WorldSimulantModule =
         static member internal unregister (simulant : Simulant) (world : World) =
             match simulant with
             | :? Entity as entity -> World.unregisterEntity entity world
-            | :? Layer as layer -> World.unregisterLayer layer world
+            | :? Group as group -> World.unregisterGroup group world
             | :? Screen as screen -> World.unregisterScreen screen world
             | :? Game -> World.unregisterGame world
             | _ -> failwithumf ()
@@ -107,7 +107,7 @@ module WorldSimulantModule =
         static member internal register (simulant : Simulant) (world : World) =
             match simulant with
             | :? Entity as entity -> World.registerEntity entity world
-            | :? Layer as layer -> World.registerLayer layer world
+            | :? Group as group -> World.registerGroup group world
             | :? Screen as screen -> World.registerScreen screen world
             | :? Game -> World.registerGame world
             | _ -> failwithumf ()
@@ -116,8 +116,8 @@ module WorldSimulantModule =
         [<FunctionBinding>]
         static member expandContent setScreenSplash (content : SimulantContent) origin owner (parent : Simulant) (world : World) =
             match (content, parent) with
-            | ((:? EntityContent as entityContent), (:? Layer as layer)) -> World.expandEntityContent entityContent origin owner layer world |> mapFst (Option.map cast<Simulant>)
-            | ((:? LayerContent as layerContent), (:? Screen as screen)) -> World.expandLayerContent layerContent origin screen world |> mapFst (Option.map cast<Simulant>)
+            | ((:? EntityContent as entityContent), (:? Group as group)) -> World.expandEntityContent entityContent origin owner group world |> mapFst (Option.map cast<Simulant>)
+            | ((:? GroupContent as groupContent), (:? Screen as screen)) -> World.expandGroupContent groupContent origin screen world |> mapFst (Option.map cast<Simulant>)
             | ((:? ScreenContent as screenContent), (:? Game as game)) -> World.expandScreenContent setScreenSplash screenContent origin game world |> mapFst (Some << cast<Simulant>)
             | _ -> failwithumf ()
 
@@ -126,7 +126,7 @@ module WorldSimulantModule =
         static member destroyImmediate (simulant : Simulant) (world : World) =
             match simulant with
             | :? Entity as entity -> World.destroyEntityImmediate entity world
-            | :? Layer as layer -> World.destroyLayerImmediate layer world
+            | :? Group as group -> World.destroyGroupImmediate group world
             | :? Screen as screen -> World.destroyScreenImmediate screen world
             | _ -> failwithumf ()
 
@@ -135,7 +135,7 @@ module WorldSimulantModule =
         static member destroy (simulant : Simulant) (world : World) =
             match simulant with
             | :? Entity as entity -> World.destroyEntity entity world
-            | :? Layer as layer -> World.destroyLayer layer world
+            | :? Group as group -> World.destroyGroup group world
             | :? Screen as screen -> World.destroyScreen screen world
             | _ -> failwithumf ()
 
@@ -143,7 +143,7 @@ module WorldSimulantModule =
         static member internal tryGetScriptFrame (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> Some (World.getEntityScriptFrame entity world)
-            | :? Layer as layer -> Some (World.getLayerScriptFrame layer world)
+            | :? Group as group -> Some (World.getGroupScriptFrame group world)
             | :? Screen as screen -> Some (World.getScreenScriptFrame screen world)
             | :? Game -> Some (World.getGameScriptFrame world)
             | _ -> failwithumf ()
@@ -154,7 +154,7 @@ module WorldSimulantModule =
             ignore (world : World)
             match simulant with
             | :? Entity as entity -> Some (entity.Parent :> Simulant)
-            | :? Layer as layer -> Some (layer.Parent :> Simulant)
+            | :? Group as group -> Some (group.Parent :> Simulant)
             | :? Screen -> Some (Simulants.Game :> Simulant)
             | :? Game -> None
             | _ -> failwithumf ()
@@ -165,7 +165,7 @@ module WorldSimulantModule =
             ignore (world : World)
             match simulant with
             | :? Entity as entity -> entity.Parent :> Simulant
-            | :? Layer as layer -> layer.Parent :> Simulant
+            | :? Group as group -> group.Parent :> Simulant
             | :? Screen -> Simulants.Game :> Simulant
             | :? Game -> failwithumf ()
             | _ -> failwithumf ()
@@ -188,8 +188,8 @@ module WorldSimulantModule =
         static member getChildren (simulant : Simulant) world =
             match simulant with
             | :? Entity -> Seq.empty
-            | :? Layer as layer -> enumerable<Simulant> (World.getEntities layer world)
-            | :? Screen as screen -> enumerable<Simulant> (World.getLayers screen world)
+            | :? Group as group -> enumerable<Simulant> (World.getEntities group world)
+            | :? Screen as screen -> enumerable<Simulant> (World.getGroups screen world)
             | :? Game -> enumerable<Simulant> (World.getScreens world)
             | _ -> failwithumf ()
 
@@ -203,7 +203,7 @@ module WorldSimulantModule =
             match Address.getNames address with
             | [||] -> Some (Simulants.Game :> Simulant)
             | [|_|] -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
-            | [|_; _|] -> Some (Layer (Address.changeType<obj, Layer> address) :> Simulant)
+            | [|_; _|] -> Some (Group (Address.changeType<obj, Group> address) :> Simulant)
             | [|_; _; _|] -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)
             | _ -> None
 

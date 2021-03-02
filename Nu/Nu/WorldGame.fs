@@ -195,15 +195,15 @@ module WorldGameModule =
         // Get all the entities in the world.
         [<FunctionBinding "getEntities0">]
         static member getEntities1 world =
-            World.getLayers1 world |>
-            Seq.map (fun layer -> World.getEntities layer world) |>
+            World.getGroups1 world |>
+            Seq.map (fun group -> World.getEntities group world) |>
             Seq.concat
 
-        // Get all the layers in the world.
-        [<FunctionBinding "getLayers0">]
-        static member getLayers1 world =
+        // Get all the groups in the world.
+        [<FunctionBinding "getGroups0">]
+        static member getGroups1 world =
             World.getScreens world |>
-            Seq.map (fun screen -> World.getLayers screen world) |>
+            Seq.map (fun screen -> World.getGroups screen world) |>
             Seq.concat
 
         /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.

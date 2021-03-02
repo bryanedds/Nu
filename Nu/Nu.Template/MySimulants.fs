@@ -17,10 +17,10 @@ module Simulants =
         [<RequireQualifiedAccess>]
         module Gui =
 
-            let Layer = Screen / "Gui"
-            let Play = Layer / "Play"
-            let Credits = Layer / "Credits"
-            let Exit = Layer / "Exit"
+            let Group = Screen / "Gui"
+            let Play = Group / "Play"
+            let Credits = Group / "Credits"
+            let Exit = Group / "Exit"
 
     [<RequireQualifiedAccess>]
     module Credits =
@@ -30,8 +30,8 @@ module Simulants =
         [<RequireQualifiedAccess>]
         module Gui =
 
-            let Layer = Screen / "Gui"
-            let Back = Layer / "Back"
+            let Group = Screen / "Gui"
+            let Back = Group / "Back"
 
     [<RequireQualifiedAccess>]
     module Gameplay =
@@ -41,10 +41,10 @@ module Simulants =
         [<RequireQualifiedAccess>]
         module Level =
 
-            let Layer = Screen / "Level"
+            let Group = Screen / "Level"
 
         [<RequireQualifiedAccess>]
         module Scene =
 
-            let Layer = Screen / "Scene"
-            let Player = Layer / "Player"
+            let Group = Screen / "Scene"
+            let Player = Group / "Player"

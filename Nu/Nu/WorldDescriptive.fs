@@ -34,26 +34,26 @@ module EntityDescriptor =
         { EntityDispatcherName = String.Empty
           EntityProperties = Map.empty }
 
-/// Describes a layer value independent of the engine.
-/// Used to directly serialize a layer.
-type [<StructuralEquality; NoComparison>] LayerDescriptor =
-    { LayerDispatcherName : string
-      LayerProperties : Map<string, Symbol>
+/// Describes a group value independent of the engine.
+/// Used to directly serialize a group.
+type [<StructuralEquality; NoComparison>] GroupDescriptor =
+    { GroupDispatcherName : string
+      GroupProperties : Map<string, Symbol>
       EntitieDescriptors : EntityDescriptor list }
 
 [<RequireQualifiedAccess>]
-module LayerDescriptor =
+module GroupDescriptor =
 
     /// Derive a name from the dispatcher.
     let getNameOpt dispatcher =
-        dispatcher.LayerProperties |>
+        dispatcher.GroupProperties |>
         Map.tryFind (Property? Name) |>
         Option.map symbolToValue<string>
 
-    /// The empty layer descriptor.
+    /// The empty group descriptor.
     let empty =
-        { LayerDispatcherName = String.Empty
-          LayerProperties = Map.empty
+        { GroupDispatcherName = String.Empty
+          GroupProperties = Map.empty
           EntitieDescriptors = [] }
 
 /// Describes a screen value independent of the engine.
@@ -61,7 +61,7 @@ module LayerDescriptor =
 type [<StructuralEquality; NoComparison>] ScreenDescriptor =
     { ScreenDispatcherName : string
       ScreenProperties : Map<string, Symbol>
-      LayerDescriptors : LayerDescriptor list }
+      GroupDescriptors : GroupDescriptor list }
 
 [<RequireQualifiedAccess>]
 module ScreenDescriptor =
@@ -76,7 +76,7 @@ module ScreenDescriptor =
     let empty =
         { ScreenDispatcherName = String.Empty
           ScreenProperties = Map.empty
-          LayerDescriptors = [] }
+          GroupDescriptors = [] }
 
 /// Describes a game value independent of the engine.
 /// Used to directly serialize a game.
@@ -161,21 +161,21 @@ module Describe =
     let game<'d when 'd :> GameDispatcher> initializers screens game world =
         game5 typeof<'d>.Name initializers screens game world
 
-    /// Describe a screen with the given initializers and contained layers.
-    let screen5 dispatcherName nameOpt (initializers : PropertyInitializer list) (layers : SimulantDescriptor list) (screen : Screen) world =
-        simulant5 dispatcherName nameOpt initializers layers screen world
+    /// Describe a screen with the given initializers and contained groups.
+    let screen5 dispatcherName nameOpt (initializers : PropertyInitializer list) (groups : SimulantDescriptor list) (screen : Screen) world =
+        simulant5 dispatcherName nameOpt initializers groups screen world
 
-    /// Describe a screen with the given initializers and contained layers.
-    let screen<'d when 'd :> ScreenDispatcher> nameOpt initializers layers screen world =
-        screen5 typeof<'d>.Name nameOpt initializers layers screen world
+    /// Describe a screen with the given initializers and contained groups.
+    let screen<'d when 'd :> ScreenDispatcher> nameOpt initializers groups screen world =
+        screen5 typeof<'d>.Name nameOpt initializers groups screen world
 
-    /// Describe a layer with the given initializers and contained entities.
-    let layer5 dispatcherName nameOpt (initializers : PropertyInitializer list) (entities : SimulantDescriptor list) (layer : Layer) world =
-        simulant5 dispatcherName nameOpt initializers entities layer world
+    /// Describe a group with the given initializers and contained entities.
+    let group5 dispatcherName nameOpt (initializers : PropertyInitializer list) (entities : SimulantDescriptor list) (group : Group) world =
+        simulant5 dispatcherName nameOpt initializers entities group world
 
-    /// Describe a layer with the given initializers and contained entities.
-    let layer<'d when 'd :> LayerDispatcher> initializers entities world =
-        layer5 typeof<'d>.Name initializers entities world
+    /// Describe a group with the given initializers and contained entities.
+    let group<'d when 'd :> GroupDispatcher> initializers entities world =
+        group5 typeof<'d>.Name initializers entities world
 
     /// Describe an entity with the given initializers.
     let entity4 dispatcherName nameOpt (initializers : PropertyInitializer list) (entity : Entity) world =

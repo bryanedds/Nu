@@ -100,11 +100,11 @@
     <Compile Include="WorldModule.fs" />
     <Compile Include="WorldModuleGame.fs" />
     <Compile Include="WorldModuleScreen.fs" />
-    <Compile Include="WorldModuleLayer.fs" />
+    <Compile Include="WorldModuleGroup.fs" />
     <Compile Include="WorldModuleEntity.fs" />
     <Compile Include="WorldDeclarative.fs" />
     <Compile Include="WorldEntity.fs" />
-    <Compile Include="WorldLayer.fs" />
+    <Compile Include="WorldGroup.fs" />
     <Compile Include="WorldScreen.fs" />
     <Compile Include="WorldGame.fs" />
     <Compile Include="WorldSimulant.fs" />
