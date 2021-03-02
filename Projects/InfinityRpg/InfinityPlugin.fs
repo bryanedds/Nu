@@ -12,7 +12,7 @@ type InfinityPlugin () =
         
     // specify the screen dispatcher to use in the editor
     override this.GetEditorScreenDispatcher () =
-        typeof<GameplayDispatcher>
+        (Simulants.Gameplay.Screen, typeof<GameplayDispatcher>)
 
     // route overlays to specific dispatchers
     override this.MakeOverlayRoutes () =
