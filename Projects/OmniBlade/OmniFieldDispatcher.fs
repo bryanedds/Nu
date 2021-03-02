@@ -219,7 +219,7 @@ module FieldDispatcher =
             withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SaveSound)) field
 
         static let sidebar position elevation (field : Lens<Field, World>) =
-            Content.assoc Gen.name []
+            Content.association Gen.name []
                 [Content.button Gen.name
                    [Entity.PositionLocal == position; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.Text == "T"

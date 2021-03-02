@@ -125,7 +125,7 @@ module Content =
     let label entityName initializers = entity<LabelDispatcher> entityName initializers
 
     /// Describe an association of gui entities with the given initializers and content.
-    let assoc entityName initializers content = entityWithContent<GuiDispatcher> entityName initializers content
+    let association entityName initializers content = entityWithContent<GuiDispatcher> entityName initializers content
 
     /// Describe a panel with the given initializers and content.
     let panel entityName initializers content = entityWithContent<LabelDispatcher> entityName initializers content
