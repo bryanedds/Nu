@@ -20,6 +20,11 @@ type CharacterIndex =
         | (EnemyIndex _, EnemyIndex _) -> true
         | (_, _) -> false
 
+    static member toEntityName index =
+        match index with
+        | AllyIndex i -> "Ally+" + scstring i
+        | EnemyIndex i -> "Enemy+" + scstring i
+
 type Advent =
     | DebugSwitch
     | DebugSwitch2
