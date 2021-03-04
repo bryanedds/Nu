@@ -274,6 +274,7 @@ module WorldModule2 =
                                 | Some destination ->
                                     match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
                                     | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
+                                    | (None, None) -> world // do nothing when neither plays a song (allowing manual control)
                                     | (_, _) -> World.fadeOutSong playSong.FadeOutMs world // fade out when song is different
                                 | None ->
                                     match World.getCurrentSongOpt world with
