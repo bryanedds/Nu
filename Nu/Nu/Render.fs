@@ -485,7 +485,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                                 SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
                                 SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R, glow.G, glow.B) |> ignore
                                 SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A) |> ignore
-                                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, ref sourceRect, ref destRect, rotation, ref rotationCenter, tileFlip)
+                                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
                                 if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + "."))
                 tiles
         else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
