@@ -476,6 +476,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             tileDestRectRef := destRect
                             tileRotationCenterRef := rotationCenter
                             if color.A <> byte 0 then
+                                SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
                                 SDL.SDL_SetTextureColorMod (tileSetTexture, color.R, color.G, color.B) |> ignore
                                 SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A) |> ignore
                                 let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
