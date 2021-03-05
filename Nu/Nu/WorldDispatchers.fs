@@ -947,15 +947,21 @@ module JointFacetModule =
 module TileMapFacetModule =
 
     type Entity with
-        member this.GetTileMap world : TileMap AssetTag = this.Get Property? TileMap world
-        member this.SetTileMap (value : TileMap AssetTag) world = this.Set Property? TileMap value world
-        member this.TileMap = lens Property? TileMap this.GetTileMap this.SetTileMap this
-        member this.GetTileLayerClearance world : single = this.Get Property? TileLayerClearance world
-        member this.SetTileLayerClearance (value : single) world = this.Set Property? TileLayerClearance value world
-        member this.TileLayerClearance = lens Property? TileLayerClearance this.GetTileLayerClearance this.SetTileLayerClearance this
+        member this.GetColor world : Color = this.Get Property? Color world
+        member this.SetColor (value : Color) world = this.Set Property? Color value world
+        member this.Color = lens Property? Color this.GetColor this.SetColor this
+        member this.GetGlow world : Color = this.Get Property? Glow world
+        member this.SetGlow (value : Color) world = this.Set Property? Glow value world
+        member this.Glow = lens Property? Glow this.GetGlow this.SetGlow this
         member this.GetParallax world : single = this.Get Property? Parallax world
         member this.SetParallax (value : single) world = this.Set Property? Parallax value world
         member this.Parallax = lens Property? Parallax this.GetParallax this.SetParallax this
+        member this.GetTileLayerClearance world : single = this.Get Property? TileLayerClearance world
+        member this.SetTileLayerClearance (value : single) world = this.Set Property? TileLayerClearance value world
+        member this.TileLayerClearance = lens Property? TileLayerClearance this.GetTileLayerClearance this.SetTileLayerClearance this
+        member this.GetTileMap world : TileMap AssetTag = this.Get Property? TileMap world
+        member this.SetTileMap (value : TileMap AssetTag) world = this.Set Property? TileMap value world
+        member this.TileMap = lens Property? TileMap this.GetTileMap this.SetTileMap this
 
     type TileMapFacet () =
         inherit Facet ()
@@ -967,9 +973,11 @@ module TileMapFacetModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMap Assets.Default.TileMap
-             define Entity.TileLayerClearance 2.0f
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
              define Entity.Parallax 0.0f
+             define Entity.TileLayerClearance 2.0f
+             define Entity.TileMap Assets.Default.TileMap
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
@@ -1023,10 +1031,12 @@ module TileMapFacetModule =
                             (World.getTickTime world)
                             absolute
                             viewBounds
-                            (entity.GetTileLayerClearance world)
                             (entity.GetPosition world)
                             (entity.GetElevation world)
+                            (entity.GetColor world)
+                            (entity.GetGlow world)
                             (entity.GetParallax world)
+                            (entity.GetTileLayerClearance world)
                             tileMap
                     World.enqueueRenderLayeredMessages tileMapMessages world
                 | None -> world
@@ -1055,9 +1065,11 @@ module TmxMapFacetModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TmxMap (TmxMap Assets.Default.TmxFilePath)
-             define Entity.TileLayerClearance 2.0f
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
              define Entity.Parallax 0.0f
+             define Entity.TileLayerClearance 2.0f
+             define Entity.TmxMap (TmxMap Assets.Default.TmxFilePath)
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
@@ -1107,10 +1119,12 @@ module TmxMapFacetModule =
                         (World.getTickTime world)
                         absolute
                         viewBounds
-                        (entity.GetTileLayerClearance world)
                         (entity.GetPosition world)
                         (entity.GetElevation world)
+                        (entity.GetColor world)
+                        (entity.GetGlow world)
                         (entity.GetParallax world)
+                        (entity.GetTileLayerClearance world)
                         (entity.GetTmxMap world)
                 World.enqueueRenderLayeredMessages tileMapMessages world
             else world
@@ -1329,12 +1343,6 @@ module StaticSpriteFacetModule =
         member this.GetStaticImage world : Image AssetTag = this.Get Property? StaticImage world
         member this.SetStaticImage (value : Image AssetTag) world = this.Set Property? StaticImage value world
         member this.StaticImage = lens Property? StaticImage this.GetStaticImage this.SetStaticImage this
-        member this.GetColor world : Color = this.Get Property? Color world
-        member this.SetColor (value : Color) world = this.Set Property? Color value world
-        member this.Color = lens Property? Color this.GetColor this.SetColor this
-        member this.GetGlow world : Color = this.Get Property? Glow world
-        member this.SetGlow (value : Color) world = this.Set Property? Glow value world
-        member this.Glow = lens Property? Glow this.GetGlow this.SetGlow this
         member this.GetInsetOpt world : Vector4 option = this.Get Property? Inset world
         member this.SetInsetOpt (value : Vector4 option) world = this.Set Property? Inset value world
         member this.InsetOpt = lens Property? Inset this.GetInsetOpt this.SetInsetOpt this
@@ -2327,8 +2335,11 @@ module TileMapDispatcherModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TileMap Assets.Default.TileMap
-             define Entity.Parallax 0.0f]
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
+             define Entity.Parallax 0.0f
+             define Entity.TileLayerClearance 2.0f
+             define Entity.TileMap Assets.Default.TileMap]
 
 [<AutoOpen>]
 module TmxMapDispatcherModule =
@@ -2345,8 +2356,11 @@ module TmxMapDispatcherModule =
              define Entity.Restitution 0.0f
              define Entity.CollisionCategories "1"
              define Entity.CollisionMask "@"
-             define Entity.TmxMap (TmxMap Assets.Default.TmxFilePath)
-             define Entity.Parallax 0.0f]
+             define Entity.Color Color.White
+             define Entity.Glow Color.Zero
+             define Entity.Parallax 0.0f
+             define Entity.TileLayerClearance 2.0f
+             define Entity.TmxMap (TmxMap Assets.Default.TmxFilePath)]
 
 [<AutoOpen>]
 module GroupDispatcherModule =

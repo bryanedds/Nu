@@ -82,6 +82,8 @@ type [<NoEquality; NoComparison>] SpriteDescriptor =
 type [<NoEquality; NoComparison>] TileLayerDescriptor =
     { Transform : Transform
       Absolute : bool
+      Color : Color
+      Glow : Color
       MapSize : Vector2i
       Tiles : TmxLayerTile array
       TileSourceSize : Vector2i
@@ -393,6 +395,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         (eyeSize : Vector2)
         (transform : Transform)
         (absolute : bool)
+        (color : Color)
+        (glow : Color)
         (mapSize : Vector2i)
         (tiles : TmxLayerTile array)
         (tileSourceSize : Vector2i)
@@ -471,15 +475,24 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             tileSourceRectRef := sourceRect
                             tileDestRectRef := destRect
                             tileRotationCenterRef := rotationCenter
-                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
-                            if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + "."))
+                            if color.A <> byte 0 then
+                                SDL.SDL_SetTextureColorMod (tileSetTexture, color.R, color.G, color.B) |> ignore
+                                SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A) |> ignore
+                                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
+                                if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
+                            if glow.A <> byte 0 then
+                                SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
+                                SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R, glow.G, glow.B) |> ignore
+                                SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A) |> ignore
+                                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, ref sourceRect, ref destRect, rotation, ref rotationCenter, tileFlip)
+                                if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + "."))
                 tiles
         else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
     static member private renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize (tileLayer : TileLayerDescriptor) renderer =
         SdlRenderer.renderTileLayer
             viewAbsolute viewRelative eyeCenter eyeSize
-            tileLayer.Transform tileLayer.Absolute tileLayer.MapSize tileLayer.Tiles tileLayer.TileSourceSize tileLayer.TileSize tileLayer.TileAssets
+            tileLayer.Transform tileLayer.Absolute tileLayer.Color tileLayer.Glow tileLayer.MapSize tileLayer.Tiles tileLayer.TileSourceSize tileLayer.TileSize tileLayer.TileAssets
             renderer
 
     /// Render text.
