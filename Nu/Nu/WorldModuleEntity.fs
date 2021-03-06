@@ -944,11 +944,11 @@ module WorldModuleEntity =
         /// the entity's existence. Consider using World.destroyEntity instead.
         static member destroyEntityImmediate entity world =
 
+            // attempt to remove from destruction list
+            let world = World.tryRemoveSimulantFromDestruction entity world
+
             // ensure entity exists in the world
             if World.getEntityExists entity world then
-
-                // remove from destruction
-                let world = World.tryRemoveSimulantFromDestruction entity world
 
                 // unregister entity
                 let world = World.unregisterEntity entity world
