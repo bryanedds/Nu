@@ -200,11 +200,11 @@ module WorldSimulantModule =
 
         /// Attempt to convert an address to a concrete simulant reference.
         static member tryDerive address =
-            match Address.getNames address with
-            | [||] -> Some (Simulants.Game :> Simulant)
-            | [|_|] -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
-            | [|_; _|] -> Some (Group (Address.changeType<obj, Group> address) :> Simulant)
-            | [|_; _; _|] -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)
+            match address |> Address.getNames |> Array.length with
+            | 0 -> Some (Simulants.Game :> Simulant)
+            | 1 -> Some (Screen (Address.changeType<obj, Screen> address) :> Simulant)
+            | 2 -> Some (Group (Address.changeType<obj, Group> address) :> Simulant)
+            | 3 -> Some (Entity (Address.changeType<obj, Entity> address) :> Simulant)
             | _ -> None
 
         /// Convert an address to a concrete simulant reference.
