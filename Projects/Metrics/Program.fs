@@ -237,6 +237,34 @@ type ElmishGameDispatcher () =
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
 #endif
 
+#if TESTBED
+type [<ReferenceEquality>] StringsOpt =
+    { StringsOpt : Map<int, string> option }
+
+type TestBedGameDispatcher () =
+    inherit GameDispatcher<StringsOpt, unit, unit> ({ StringsOpt = None })
+
+    override this.Channel (_, game) =
+        [game.UpdateEvent => msg ()]
+
+    override this.Message (stringsOpt, message, _, world) =
+        match message with
+        | () ->
+            match World.getTickTime world % 3L with
+            | 0L -> just { StringsOpt = None }
+            | 1L -> just { StringsOpt = None }
+            | 2L -> just { StringsOpt = Some (Map.ofList [(0,"0"); (1,"1"); (2,"2")]) }
+
+    override this.Content (stringsOpt, _) =
+        [Content.screen Gen.name Vanilla []
+            [Content.group Gen.name []
+                [Content.entityOpt stringsOpt (fun stringsOpt -> stringsOpt.StringsOpt) $ fun strings _ ->
+                    Content.entities strings id constant $ fun i str _ ->
+                       Content.text Gen.name
+                           [Entity.Position == v2 (single i * 120.0f - 180.0f) 0.0f
+                            Entity.Text <== str --> id]]]]
+#endif
+
 #if PHANTOM
 type [<ReferenceEquality>] Phantom =
     { mutable PhantomTransform : Transform
@@ -303,7 +331,11 @@ type MetricsPlugin () =
   #if PHANTOM
     override this.GetGameDispatcher () = typeof<PhantomGameDispatcher>
   #else
+    #if TESTBED
+    override this.GetGameDispatcher () = typeof<TestBedGameDispatcher>
+    #else
     override this.GetGameDispatcher () = typeof<MyGameDispatcher>
+    #endif
   #endif
 #endif
 
