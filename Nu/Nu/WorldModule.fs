@@ -166,13 +166,13 @@ module WorldModule =
 
         /// Make the world.
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
-            let propertyBindings = if AmbientState.getStandAlone ambientState then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+            let elmishBindingsMap = if AmbientState.getStandAlone ambientState then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
             let entityStates = if AmbientState.getStandAlone ambientState then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
             let groupStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let screenStates = UMap.makeEmpty Constants.Engine.SimulantMapConfig
             let gameState = GameState.make activeGameDispatcher
             let world =
-                { PropertyBindingsMap = propertyBindings
+                { ElmishBindingsMap = elmishBindingsMap
                   EventSystemDelegate = eventDelegate
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Address.empty<Entity>, entityStates)) Unchecked.defaultof<EntityState>
                   EntityTree = MutantCache.make id spatialTree
@@ -654,19 +654,100 @@ module WorldModule =
             callback eventAddress subscriber world =
             World.choose (EventSystem.monitor<'a, 's, World> callback eventAddress subscriber world)
 
-    type World with // PropertyBindingsMap
+    type World with // ElmishBindingsMap
+
+        static member internal removeSynchronizedSimulants simulantMapKey removed world =
+            Seq.fold (fun world keyAndLens ->
+                let (key, _) = PartialComparable.unmake keyAndLens
+                match World.tryGetKeyedValue simulantMapKey world with
+                | Some simulantMap ->
+                    match Map.tryFind key simulantMap with
+                    | Some simulant ->
+                        let simulantMap = Map.remove key simulantMap
+                        let world =
+                            if Map.isEmpty simulantMap
+                            then World.removeKeyedValue simulantMapKey world
+                            else World.addKeyedValue simulantMapKey simulantMap world
+                        destroy simulant world
+                    | None -> world
+                | None -> world)
+                world removed
+
+        static member internal addSynchronizedSimulants
+            (contentMapper : IComparable -> Lens<obj, World> -> World -> SimulantContent)
+            (mapGeneralized : MapGeneralized)
+            (simulantMapKey : Guid)
+            added
+            origin
+            owner
+            parent
+            world =
+            Seq.fold (fun world keyAndLens ->
+                let (key, lens) = PartialComparable.unmake keyAndLens
+                match mapGeneralized.TryGetValue key with
+                | (true, _) ->
+                    let content = contentMapper key lens world
+                    let (simulantOpt, world) = expandContent Unchecked.defaultof<_> content origin owner parent world
+                    match World.tryGetKeyedValue simulantMapKey world with
+                    | None ->
+                        match simulantOpt with
+                        | Some simulant -> World.addKeyedValue simulantMapKey (Map.singleton key simulant) world
+                        | None -> Log.debug "Expected simulant to be created from expandContent, but none was created."; world
+                    | Some simulantMap ->
+                        match simulantOpt with
+                        | Some simulant -> World.addKeyedValue simulantMapKey (Map.add key simulant simulantMap) world
+                        | None -> Log.debug "Expected simulant to be created from expandContent, but none was created."; world
+                | (false, _) -> world)
+                world added
+
+        static member internal synchronizeSimulants contentMapper mapGeneralized simulantMapKey previous current origin owner parent world =
+            let added = USet.differenceFast current previous
+            let removed = USet.differenceFast previous current
+            let changed = added.Count <> 0 || removed.Count <> 0
+            if changed then
+                let world = World.removeSynchronizedSimulants simulantMapKey removed world
+                let world = World.addSynchronizedSimulants contentMapper mapGeneralized simulantMapKey added origin owner parent world
+                world
+            else world
 
         static member internal publishBindingChange propertyName simulant world =
             let propertyAddress = PropertyAddress.make propertyName simulant
-            match world.PropertyBindingsMap.TryGetValue propertyAddress with
-            | (true, propertyBindings) ->
-                UMap.fold (fun world _ propertyBinding ->
-                    if  Option.isNone propertyBinding.PBRight.PayloadOpt && // lenses with payloads are from simulant synchronization, not bindings
-                        propertyBinding.PBRight.Validate world then
-                        let setter = Option.get propertyBinding.PBLeft.SetOpt
-                        setter (propertyBinding.PBRight.GetWithoutValidation world) world
-                    else world)
-                    world propertyBindings
+            match world.ElmishBindingsMap.TryGetValue propertyAddress with
+            | (true, elmishBindings) ->
+                UMap.fold (fun world _ elmishBinding ->
+                    match elmishBinding with
+                    | PropertyBinding binding ->
+                        if  binding.PBRight.Validate world then
+                            let setter = Option.get binding.PBLeft.SetOpt
+                            setter (binding.PBRight.GetWithoutValidation world) world
+                        else world
+                    | CollectionBinding binding ->
+                        if  Lens.validate binding.CBSource world then
+                            let mapGeneralized = Lens.get binding.CBSource world
+                            let mutable current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
+                            let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
+                            while enr.MoveNext () do
+                                let key = fst enr.Current
+                                let lens' = Lens.map (fun keyed -> keyed.TryGetValue key) binding.CBSource
+                                match Lens.get lens' world with
+                                | (true, _) ->
+                                    let validateOpt =
+                                        match lens'.ValidateOpt with
+                                        | Some validate -> Some (fun world -> if validate world then (match Lens.get lens' world with (exists, _) -> exists) else false)
+                                        | None -> Some (fun world -> match Lens.get lens' world with (exists, _) -> exists)
+                                    let lens'' = { Lens.map snd lens' with ValidateOpt = validateOpt }
+                                    let item = PartialComparable.make key lens''
+                                    current <- USet.add item current
+                                | (false, _) -> ()
+                            let previous =
+                                match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> binding.CBSetKey world with
+                                | Some previous -> previous
+                                | None -> USet.makeEmpty Functional
+                            let world = World.synchronizeSimulants binding.CBMapper mapGeneralized binding.CBMapKey previous current binding.CBOrigin binding.CBOwner binding.CBParent world
+                            let world = World.addKeyedValue binding.CBSetKey current world
+                            world
+                        else world)
+                    world elmishBindings
             | (false, _) -> world
 
     type World with // Scripting

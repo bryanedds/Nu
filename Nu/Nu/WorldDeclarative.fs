@@ -3,24 +3,8 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open Prime
 open Nu
-
-/// Efficiently emulates root type casting of a Map.
-type [<NoEquality; NoComparison>] MapGeneralized =
-    { ToSeq : (IComparable * obj) seq
-      TryGetValue : IComparable -> bool * obj }
-
-    static member make (map : Map<'k, 'v>) =
-        { ToSeq =
-            Seq.map (fun (kvp : KeyValuePair<'k, 'v>) ->
-                (kvp.Key :> IComparable, kvp.Value :> obj))
-                map
-          TryGetValue = fun (key : IComparable) ->
-            match Map.tryGetValue (key :?> 'k) map with
-            | (true, value) -> (true, value :> obj)
-            | (false, _) -> (false, null) }
 
 /// Describes the behavior of a screen.
 type [<NoEquality; NoComparison>] ScreenBehavior =
@@ -169,51 +153,6 @@ module WorldDeclarative =
 
     type World with
 
-        static member internal removeSynchronizedSimulants simulantMapId removed world =
-            Seq.fold (fun world keyAndLens ->
-                let (key, _) = PartialComparable.unmake keyAndLens
-                match World.tryGetKeyedValue simulantMapId world with
-                | Some simulantMap ->
-                    match Map.tryFind key simulantMap with
-                    | Some simulant ->
-                        let simulantMap = Map.remove key simulantMap
-                        let world =
-                            if Map.isEmpty simulantMap
-                            then World.removeKeyedValue simulantMapId world
-                            else World.addKeyedValue simulantMapId simulantMap world
-                        WorldModule.destroy simulant world
-                    | None -> world
-                | None -> world)
-                world removed
-
-        static member internal addSynchronizedSimulants mapper monitorMapper simulantMapId added origin owner parent world =
-            Seq.fold (fun world keyAndLens ->
-                let (key, lens) = PartialComparable.unmake keyAndLens
-                let payloadOpt = ((Gen.id, monitorMapper) : Payload) :> obj |> Some
-                let lens = { lens with PayloadOpt = payloadOpt }
-                let content = mapper key lens world
-                let (simulantOpt, world) = WorldModule.expandContent Unchecked.defaultof<_> content origin owner parent world
-                match World.tryGetKeyedValue simulantMapId world with
-                | None ->
-                    match simulantOpt with
-                    | Some simulant -> World.addKeyedValue simulantMapId (Map.singleton key simulant) world
-                    | None -> Log.debug "Expected simulant to be created from expandContent, but none was created."; world
-                | Some simulantMap ->
-                    match simulantOpt with
-                    | Some simulant -> World.addKeyedValue simulantMapId (Map.add key simulant simulantMap) world
-                    | None -> Log.debug "Expected simulant to be created from expandContent, but none was created."; world)
-                world added
-
-        static member internal synchronizeSimulants mapper monitorMapper simulantMapId previous current origin owner parent world =
-            let added = USet.differenceFast current previous
-            let removed = USet.differenceFast previous current
-            let changed = added.Count <> 0 || removed.Count <> 0
-            if changed then
-                let world = World.removeSynchronizedSimulants simulantMapId removed world
-                let world = World.addSynchronizedSimulants mapper monitorMapper simulantMapId added origin owner parent world
-                world
-            else world
-
         /// Turn a lens into a series of live simulants.
         /// OPTIMIZATION: lots of optimizations going on in here including inlining and mutation!
         static member expandSimulants
@@ -225,8 +164,6 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
-            let previousSetKey = Gen.id
-            let simulantMapKey = Gen.id
             let lensGeneralized =
                 let mutable lensResult = Unchecked.defaultof<obj>
                 let mutable sieveResultOpt = None
@@ -241,64 +178,47 @@ module WorldDeclarative =
                             | (None, None) -> let b = sieve a in (b, unfold b world)
                         else
                             match (sieveResultOpt, unfoldResultOpt) with
-                            | (Some sieveResult, Some unfoldResult) ->
-                                let b = sieve a in if b === sieveResult then (b, unfoldResult) else (b, unfold b world)
-                            | (Some _, None) ->
-                                let b = sieve a in (b, unfold b world)
-                            | (None, Some _) ->
-                                failwithumf ()
-                            | (None, None) ->
-                                let b = sieve a in (b, unfold b world)
+                            | (Some sieveResult, Some unfoldResult) -> let b = sieve a in if b === sieveResult then (b, unfoldResult) else (b, unfold b world)
+                            | (Some _, None) -> let b = sieve a in (b, unfold b world)
+                            | (None, Some _) -> failwithumf ()
+                            | (None, None) -> let b = sieve a in (b, unfold b world)
                     lensResult <- a
                     sieveResultOpt <- Some b
                     unfoldResultOpt <- Some c
                     c)
                     lens
-            let monitorMapper =
-                let mutable monitorResult = Unchecked.defaultof<obj>
-                let mutable sieveResultOpt = None
-                fun a _ world ->
-                    let b =
-                        if a.Value === monitorResult then
-                            match sieveResultOpt with
-                            | Some sieveResult -> sieveResult
-                            | None -> if Lens.validate lens world then sieve (Lens.get lens world) else sieve a.Value
-                        elif Lens.validate lens world then sieve (Lens.get lens world)
-                        else sieve a.Value
-                    monitorResult <- a.Value
-                    sieveResultOpt <- Some b
-                    b
-            let monitorFilter =
-                fun a a2Opt _ ->
-                    match a2Opt with
-                    | Some a2 -> a =/= a2
-                    | None -> true
-            let subscription = fun _ world ->
-                if Lens.validate lensGeneralized world then
-                    let mapGeneralized = Lens.get lensGeneralized world
-                    let mutable current = USet.makeEmpty Functional
-                    let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
-                    while enr.MoveNext () do
-                        let key = fst enr.Current
-                        let lens' = Lens.map (fun keyed -> keyed.TryGetValue key) lensGeneralized
-                        match Lens.get lens' world with
-                        | (true, _) ->
-                            let validateOpt =
-                                match lens'.ValidateOpt with
-                                | Some validate -> Some (fun world -> if validate world then (match Lens.get lens' world with (exists, _) -> exists) else false)
-                                | None -> Some (fun world -> match Lens.get lens' world with (exists, _) -> exists)
-                            let lens'' = { Lens.map snd lens' with ValidateOpt = validateOpt }
-                            let item = PartialComparable.make key lens''
-                            current <- USet.add item current
-                        | (false, _) -> ()
-                    let previous =
-                        match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> previousSetKey world with
-                        | Some previous -> previous
-                        | None -> USet.makeEmpty Functional
-                    let world = World.synchronizeSimulants mapper monitorMapper simulantMapKey previous current origin owner parent world
-                    let world = World.addKeyedValue previousSetKey current world
-                    (Cascade, world)
-                else (Cascade, world)
-            let (_, world) = subscription Unchecked.defaultof<_> world // expand simulants immediately rather than waiting for parent registration
-            let (_, world) = World.monitorCompressed Gen.id (Some monitorMapper) (Some monitorFilter) None (Left subscription) lens.ChangeEvent parent world
+            let lensBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBSetKey = Gen.id; CBMapKey = Gen.id }
+            let lensAddress = PropertyAddress.make lens.Name lens.This
+            let world =
+                { world with
+                    ElmishBindingsMap =
+                        match world.ElmishBindingsMap.TryGetValue lensAddress with
+                        | (true, elmishBindings) -> 
+                            let elmishBindings = UMap.add lensBinding.CBMapKey (CollectionBinding lensBinding) elmishBindings // TODO: make sure this is using the correct key!
+                            UMap.add lensAddress elmishBindings world.ElmishBindingsMap
+                        | (false, _) ->
+                            let elmishBindings = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+                            let elmishBindings = UMap.add lensBinding.CBMapKey (CollectionBinding lensBinding) elmishBindings // TODO: make sure this is using the correct key!
+                            UMap.add lensAddress elmishBindings world.ElmishBindingsMap }
+            let world =
+                if Lens.validate lensGeneralized world
+                then World.publishBindingChange lens.Name lens.This world // expand simulants immediately rather than waiting for parent registration
+                else world
+            let world =
+                World.monitor
+                    (fun _ world ->
+                        let world =
+                            { world with
+                                ElmishBindingsMap =
+                                    match world.ElmishBindingsMap.TryGetValue lensAddress with
+                                    | (true, elmishBindings) -> 
+                                        let elmishBindings = UMap.remove lensBinding.CBMapKey elmishBindings // TODO: make sure this is using the correct key!
+                                        if UMap.isEmpty elmishBindings
+                                        then UMap.remove lensAddress world.ElmishBindingsMap
+                                        else UMap.add lensAddress elmishBindings world.ElmishBindingsMap
+                                    | (false, _) -> world.ElmishBindingsMap }
+                        (Cascade, world))
+                    (Events.Unregistering --> owner.SimulantAddress) // TODO: make sure that owner unregistration is the correct trigger!
+                    owner // TODO: make sure this is the correct event source as well!
+                    world
             world

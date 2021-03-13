@@ -26,6 +26,19 @@ open TiledSharp
 open Prime
 open Nu
 
+/// Efficiently emulates root type casting of a Map.
+type [<NoEquality; NoComparison>] MapGeneralized =
+    { ToSeq : (IComparable * obj) seq
+      TryGetValue : IComparable -> bool * obj }
+
+    /// Make a generalized map.
+    static member make (map : Map<'k, 'v>) =
+        { ToSeq = Seq.map (fun (kvp : KeyValuePair<'k, 'v>) -> (kvp.Key :> IComparable, kvp.Value :> obj)) map
+          TryGetValue = fun (key : IComparable) ->
+            match Map.tryGetValue (key :?> 'k) map with
+            | (true, value) -> (true, value :> obj)
+            | (false, _) -> (false, null) }
+
 /// Describes a Tiled tile.
 type [<StructuralEquality; NoComparison>] TileDescriptor =
     { Tile : TmxLayerTile
@@ -1058,9 +1071,23 @@ module WorldTypes =
         { PBLeft : World Lens
           PBRight : World Lens }
 
-    /// Describes property bindings for Nu's optimized Elmish implementation.
-    and internal PropertyBindings =
-        UMap<Guid, PropertyBinding>
+    /// Describes a collection binding for Nu's optimized Elmish implementation.
+    and [<NoEquality; NoComparison>] internal CollectionBinding =
+        { CBMapper : IComparable -> Lens<obj, World> -> World -> SimulantContent
+          CBSource : Lens<MapGeneralized, World>
+          CBOrigin : ContentOrigin
+          CBOwner : Simulant
+          CBParent : Simulant
+          CBSetKey : Guid
+          CBMapKey : Guid }
+
+    /// Describes an binding for Nu's optimized Elmish implementation.
+    and [<NoEquality; NoComparison>] internal ElmishBinding =
+        | PropertyBinding of PropertyBinding
+        | CollectionBinding of CollectionBinding
+
+    /// Describes bindings for Nu's optimized Elmish implementation.
+    and internal ElmishBindings = UMap<Guid, ElmishBinding>
 
     /// The world's dispatchers (including facets).
     /// 
@@ -1096,7 +1123,7 @@ module WorldTypes =
     and [<ReferenceEquality; NoComparison>] World =
         internal
             { // cache line 1
-              PropertyBindingsMap : UMap<PropertyAddress, PropertyBindings> // TODO: P1: put this behind a world API rather than accessing / updating it directly...
+              ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: P1: put this behind a world API rather than accessing / updating it directly...
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState>
               EntityTree : Entity SpatialTree MutantCache

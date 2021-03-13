@@ -35,7 +35,7 @@ module Content =
         (sieve : 'a -> 'b)
         (unfold : 'b -> World -> Map<'k, 'c>)
         (mapper : 'k -> Lens<'c, World> -> World -> GroupContent) =
-        let lens = lens.Map box
+        let lens = lens --> box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
         let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> --> cast<'c>) world
@@ -52,9 +52,10 @@ module Content =
         groupIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a group to be optionally instantiated from a lens.
-    let groupOpt lens sieve (mapper : Lens<'a, World> -> World -> GroupContent) =
-        let mapper = fun _ a world -> mapper (a --> Option.get) world
-        groups lens sieve (fun a _ -> if Option.isSome a then Map.singleton 0 a else Map.empty) mapper
+    let groupOpt (lens : Lens<'a, World>) (sieve : 'a -> 'b option) (mapper : Lens<'b, World> -> World -> GroupContent) =
+        let (sieve : 'a -> Map<int, 'b>) = fun a -> match sieve a with Some b -> Map.singleton 0 b | None -> Map.empty
+        let mapper = fun _ b w -> mapper b w
+        groups lens sieve constant mapper
 
     /// Describe a group to be loaded from a file.
     let groupFromFile<'d when 'd :> GroupDispatcher> groupName filePath =
@@ -70,7 +71,7 @@ module Content =
         (sieve : 'a -> 'b)
         (unfold : 'b -> World -> Map<'k, 'c>)
         (mapper : 'k -> Lens<'c, World> -> World -> EntityContent) =
-        let lens = lens.Map box
+        let lens = lens --> box
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
         let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> --> cast<'c>) world
@@ -87,9 +88,10 @@ module Content =
         entityIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
-    let entityOpt lens sieve (mapper : Lens<'a, World> -> World -> EntityContent) =
-        let mapper = fun _ a world -> mapper (a --> Option.get) world
-        entities lens sieve (fun a _ -> if Option.isSome a then Map.singleton 0 a else Map.empty) mapper
+    let entityOpt (lens : Lens<'a, World>) (sieve : 'a -> 'b option) (mapper : Lens<'b, World> -> World -> EntityContent) =
+        let (sieve : 'a -> Map<int, 'b>) = fun a -> match sieve a with Some b -> Map.singleton 0 b | None -> Map.empty
+        let mapper = fun _ b w -> mapper b w
+        entities lens sieve constant mapper
 
     /// Describe an entity to be loaded from a file.
     let entityFromFile<'d when 'd :> EntityDispatcher> entityName filePath =
