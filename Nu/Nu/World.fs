@@ -39,22 +39,22 @@ module Nu =
         then tryPropagateByLens left right world
         else tryPropagateByName simulant left.Name right world
 
-    let internal unbind propertyBindingId propertyAddress world =
+    let internal unbind propertyBindingKey propertyAddress world =
 
-        // add binding to map
+        // add property binding to map
         let world =
-            match world.PropertyBindingsMap.TryGetValue propertyAddress with
+            match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, propertyBindings) ->
-                let propertyBindings = UMap.remove propertyBindingId propertyBindings
+                let propertyBindings = UMap.remove propertyBindingKey propertyBindings
                 if UMap.notEmpty propertyBindings then
-                    let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
-                    World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+                    let elmishBindingsMap = UMap.add propertyAddress propertyBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
                 else
-                    let propertyBindingsMap = UMap.remove propertyAddress world.PropertyBindingsMap
-                    World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+                    let elmishBindingsMap = UMap.remove propertyAddress world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
             | (false, _) -> world
 
-        // decrease bind counter
+        // decrease property bind counter
         let world =
             match propertyAddress.PASimulant with
             | :? Entity as entity ->
@@ -439,9 +439,9 @@ module Nu =
                     else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant
                 let rightFixup = { Lens.makeReadOnly right.Name right.GetWithoutValidation right.This with ValidateOpt = right.ValidateOpt }
                 let world = tryPropagateByLens leftFixup rightFixup world // propagate immediately to start things out synchronized
-                let propertyBindingId = Gen.id
+                let propertyBindingKey = Gen.id
                 let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
-                let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingId propertyAddress world)) (Events.Unregistering --> simulant.SimulantAddress) simulant world
+                let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingKey propertyAddress world)) (Events.Unregistering --> simulant.SimulantAddress) simulant world
                 let world = World.monitor (fun _ world -> (Cascade, tryPropagate simulant leftFixup rightFixup world)) (Events.Register --> right.This.SimulantAddress) simulant world
                 let world =
                     match right.This with
@@ -464,17 +464,17 @@ module Nu =
                             let world = if entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
                             World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                     | _ -> world
-                match world.PropertyBindingsMap.TryGetValue propertyAddress with
-                | (true, propertyBindings) ->
-                    let propertyBindings = UMap.add propertyBindingId { PBLeft = leftFixup; PBRight = rightFixup } propertyBindings
-                    let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
-                    World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+                match world.ElmishBindingsMap.TryGetValue propertyAddress with
+                | (true, elmishBindings) ->
+                    let elmishBindings = UMap.add propertyBindingKey (PropertyBinding { PBLeft = leftFixup; PBRight = rightFixup }) elmishBindings
+                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
                 | (false, _) ->
                     let config = if World.getStandAlone world then Imperative else Functional
-                    let propertyBindings = UMap.makeEmpty config
-                    let propertyBindings = UMap.add propertyBindingId { PBLeft = leftFixup; PBRight = rightFixup } propertyBindings
-                    let propertyBindingsMap = UMap.add propertyAddress propertyBindings world.PropertyBindingsMap
-                    World.choose { world with PropertyBindingsMap = propertyBindingsMap }
+                    let elmishBindings = UMap.makeEmpty config
+                    let elmishBindings = UMap.add propertyBindingKey (PropertyBinding { PBLeft = leftFixup; PBRight = rightFixup }) elmishBindings
+                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
+                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
 
             // init miscellaneous reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world

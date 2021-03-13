@@ -250,10 +250,11 @@ type TestBedGameDispatcher () =
     override this.Message (stringsOpt, message, _, world) =
         match message with
         | () ->
-            match World.getTickTime world % 3L with
+            match World.getTickTime world % 4L with
             | 0L -> just { StringsOpt = None }
             | 1L -> just { StringsOpt = None }
             | 2L -> just { StringsOpt = Some (Map.ofList [(0,"0"); (1,"1"); (2,"2")]) }
+            | 3L -> just { StringsOpt = Some (Map.ofList [(0,"0"); (1,"1"); (2,"2")]) }
 
     override this.Content (stringsOpt, _) =
         [Content.screen Gen.name Vanilla []
@@ -262,7 +263,7 @@ type TestBedGameDispatcher () =
                     Content.entities strings id constant $ fun i str _ ->
                        Content.text Gen.name
                            [Entity.Position == v2 (single i * 120.0f - 180.0f) 0.0f
-                            Entity.Text <== str --> id]]]]
+                            (*Entity.Text <== str --> id*)]]]]
 #endif
 
 #if PHANTOM
