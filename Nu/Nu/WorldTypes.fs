@@ -1084,7 +1084,8 @@ module WorldTypes =
 
     /// The lens payload used in the optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ElmishPayload =
-        { ContentKey : Guid }
+        { ContentKey : Guid
+          Finalizer : World -> World }
 
     /// The world's dispatchers (including facets).
     /// 

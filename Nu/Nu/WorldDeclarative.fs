@@ -164,7 +164,16 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
-            let payload = { ContentKey = Gen.id }
+            let contentKey = Gen.id
+            let finalizer =
+                fun world ->
+                    let current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
+                    let previous =
+                        match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> contentKey world with
+                        | Some previous -> previous
+                        | None -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
+                    World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) previous current origin owner parent world
+            let payload = { ContentKey = contentKey; Finalizer = finalizer }
             let lensGeneralized =
                 let mutable lensResult = Unchecked.defaultof<obj>
                 let mutable sieveResultOpt = None
