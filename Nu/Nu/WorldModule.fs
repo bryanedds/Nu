@@ -724,10 +724,6 @@ module WorldModule =
                             setter (binding.PBRight.GetWithoutValidation world) world
                         else world
                     | ContentBinding binding ->
-                        let payload =
-                            match binding.CBSource.PayloadOpt with
-                            | Some (:? ElmishPayload as payload) -> payload
-                            | _ -> failwithumf ()
                         if Lens.validate binding.CBSource world then
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
                             let mutable current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
@@ -747,13 +743,13 @@ module WorldModule =
                                     | (false, _) -> ()
                                 else ()
                             let previous =
-                                match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> payload.ContentKey world with
+                                match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> binding.CBContentKey world with
                                 | Some previous -> previous
                                 | None -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
-                            let world = World.synchronizeSimulants binding.CBMapper payload.ContentKey mapGeneralized previous current binding.CBOrigin binding.CBOwner binding.CBParent world
-                            let world = World.addKeyedValue payload.ContentKey current world
+                            let world = World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized previous current binding.CBOrigin binding.CBOwner binding.CBParent world
+                            let world = World.addKeyedValue binding.CBContentKey current world
                             world
-                        else payload.Finalizer world)
+                        else binding.CBFinalizer world)
                     world elmishBindings
             | (false, _) -> world
 

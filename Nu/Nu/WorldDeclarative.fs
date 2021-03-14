@@ -173,12 +173,11 @@ module WorldDeclarative =
                         | Some previous -> previous
                         | None -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
                     World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) previous current origin owner parent world
-            let payload = { ContentKey = contentKey; Finalizer = finalizer }
             let lensGeneralized =
                 let mutable lensResult = Unchecked.defaultof<obj>
                 let mutable sieveResultOpt = None
                 let mutable unfoldResultOpt = None
-                { Lens.mapWorld (fun a world ->
+                Lens.mapWorld (fun a world ->
                     let (b, c) =
                         if a === lensResult then
                             match (sieveResultOpt, unfoldResultOpt) with
@@ -197,8 +196,7 @@ module WorldDeclarative =
                     unfoldResultOpt <- Some c
                     c)
                     lens
-                    with PayloadOpt = Some (box payload) }
-            let lensBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent }
+            let lensBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBContentKey = contentKey; CBFinalizer = finalizer }
             let lensAddress = PropertyAddress.make lensGeneralized.Name lensGeneralized.This
             let simulantKey = Gen.id
             let world =
