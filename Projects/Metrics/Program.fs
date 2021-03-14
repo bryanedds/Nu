@@ -263,7 +263,7 @@ type TestBedGameDispatcher () =
                     Content.entities strings id constant $ fun i str _ ->
                        Content.text Gen.name
                            [Entity.Position == v2 (single i * 120.0f - 180.0f) 0.0f
-                            (*Entity.Text <== str --> id*)]]]]
+                            Entity.Text <== str --> id]]]]
 #endif
 
 #if PHANTOM

@@ -182,12 +182,7 @@ module WorldTypes =
     let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
     /// Represents an unsubscription operation for an event.
-    type Unsubscription =
-        World -> World
-
-    /// The payload that is passed with the lens as a hack to improve performance for the Elmish implementation.
-    and internal Payload =
-        Guid * (ChangeData -> obj option -> World -> obj)
+    type Unsubscription = World -> World
 
     /// The data for a change in the world's ambient state.
     and [<StructuralEquality; NoComparison>] AmbientChangeData = 
@@ -1071,20 +1066,20 @@ module WorldTypes =
         { PBLeft : World Lens
           PBRight : World Lens }
 
-    /// Describes a collection binding for Nu's optimized Elmish implementation.
-    and [<NoEquality; NoComparison>] internal CollectionBinding =
+    /// Describes a content binding for Nu's optimized Elmish implementation.
+    and [<NoEquality; NoComparison>] internal ContentBinding =
         { CBMapper : IComparable -> Lens<obj, World> -> World -> SimulantContent
           CBSource : Lens<MapGeneralized, World>
           CBOrigin : ContentOrigin
           CBOwner : Simulant
           CBParent : Simulant
           CBSetKey : Guid
-          CBMapKey : Guid }
+          CBKey : Guid }
 
     /// Describes an binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ElmishBinding =
         | PropertyBinding of PropertyBinding
-        | CollectionBinding of CollectionBinding
+        | ContentBinding of ContentBinding
 
     /// Describes bindings for Nu's optimized Elmish implementation.
     and internal ElmishBindings = UMap<Guid, ElmishBinding>
@@ -1330,9 +1325,6 @@ module WorldTypes =
 
 /// Represents an unsubscription operation for an event.
 type Unsubscription = WorldTypes.Unsubscription
-
-/// The payload that is passed with the lens as a hack to performance from the Elmish implementation.
-type internal Payload = WorldTypes.Payload
 
 /// The data for a change in the world's ambient state.
 type AmbientChangeData = WorldTypes.AmbientChangeData

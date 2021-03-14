@@ -35,10 +35,10 @@ module Content =
         (sieve : 'a -> 'b)
         (unfold : 'b -> World -> Map<'k, 'c>)
         (mapper : 'k -> Lens<'c, World> -> World -> GroupContent) =
-        let lens = lens --> box
+        let lens = Lens.map box lens
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
         let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
-        let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> --> cast<'c>) world
+        let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> |> Lens.map cast<'c>) world
         GroupsFromStream (lens, sieve, unfold, mapper)
 
     /// Describe a group to be optionally instantiated from a lens.
@@ -71,10 +71,10 @@ module Content =
         (sieve : 'a -> 'b)
         (unfold : 'b -> World -> Map<'k, 'c>)
         (mapper : 'k -> Lens<'c, World> -> World -> EntityContent) =
-        let lens = lens --> box
+        let lens = Lens.map box lens
         let sieve = fun (a : obj) -> sieve (a :?> 'a) :> obj
         let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
-        let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> --> cast<'c>) world
+        let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> |> Lens.map cast<'c>) world
         EntitiesFromStream (lens, sieve, unfold, mapper)
 
     /// Describe an entity to be optionally instantiated from a lens.
