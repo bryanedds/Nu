@@ -164,8 +164,8 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
-            let lensKey = Gen.id
-            let contentKey = match lens.PayloadOpt with Some (:? Guid as key) -> key | _ -> lensKey
+            let lensKey = Gen.id // a unique key for each lens given to the user
+            let contentKey = match lens.PayloadOpt with Some (:? Guid as key) -> key | _ -> lensKey // a unique key for each content binding
             let lensGeneralized =
                 let mutable lensResult = Unchecked.defaultof<obj>
                 let mutable sieveResultOpt = None
