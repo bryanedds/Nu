@@ -724,8 +724,11 @@ module WorldModule =
                             setter (binding.PBRight.GetWithoutValidation world) world
                         else world
                     | ContentBinding binding ->
+                        let payload =
+                            match binding.CBSource.PayloadOpt with
+                            | Some (:? ElmishPayload as payload) -> payload
+                            | _ -> failwithumf ()
                         if Lens.validate binding.CBSource world then
-                            let payload = match binding.CBSource.PayloadOpt with Some (:? ElmishPayload as payload) -> payload | _ -> failwithumf ()
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
                             let mutable current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
                             let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
@@ -750,7 +753,7 @@ module WorldModule =
                             let world = World.synchronizeSimulants binding.CBMapper payload.ContentKey mapGeneralized previous current binding.CBOrigin binding.CBOwner binding.CBParent world
                             let world = World.addKeyedValue payload.ContentKey current world
                             world
-                        else world)
+                        else payload.Finalizer world)
                     world elmishBindings
             | (false, _) -> world
 
