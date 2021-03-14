@@ -164,11 +164,12 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
+            let lensKey = Gen.id
             let lensGeneralized =
                 let mutable lensResult = Unchecked.defaultof<obj>
                 let mutable sieveResultOpt = None
                 let mutable unfoldResultOpt = None
-                Lens.mapWorld (fun a world ->
+                { Lens.mapWorld (fun a world ->
                     let (b, c) =
                         if a === lensResult then
                             match (sieveResultOpt, unfoldResultOpt) with
@@ -187,23 +188,25 @@ module WorldDeclarative =
                     unfoldResultOpt <- Some c
                     c)
                     lens
-            let lensBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBSetKey = Gen.id; CBMapKey = Gen.id }
-            let lensAddress = PropertyAddress.make lens.Name lens.This
+                    with PayloadOpt = Some (box lensKey) }
+            let lensBindingKey = match lens.PayloadOpt with Some (:? Guid as key) -> key | _ -> lensKey
+            let lensBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBSetKey = lensBindingKey; CBKey = Gen.id }
+            let lensAddress = PropertyAddress.make lensGeneralized.Name lensGeneralized.This
             let world =
                 { world with
                     ElmishBindingsMap =
                         match world.ElmishBindingsMap.TryGetValue lensAddress with
-                        | (true, elmishBindings) -> 
-                            let elmishBindings = UMap.add lensBinding.CBMapKey (CollectionBinding lensBinding) elmishBindings // TODO: make sure this is using the correct key!
+                        | (true, elmishBindings) ->
+                            let elmishBindings = UMap.add lensBinding.CBKey (ContentBinding lensBinding) elmishBindings
                             UMap.add lensAddress elmishBindings world.ElmishBindingsMap
                         | (false, _) ->
                             let elmishBindings = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
-                            let elmishBindings = UMap.add lensBinding.CBMapKey (CollectionBinding lensBinding) elmishBindings // TODO: make sure this is using the correct key!
+                            let elmishBindings = UMap.add lensBinding.CBKey (ContentBinding lensBinding) elmishBindings
                             UMap.add lensAddress elmishBindings world.ElmishBindingsMap }
-            let world =
-                if Lens.validate lensGeneralized world
-                then World.publishBindingChange lens.Name lens.This world // expand simulants immediately rather than waiting for parent registration
-                else world
+            //let world =
+            //    if Lens.validate lensGeneralized world
+            //    then World.publishBindingChange lensGeneralized.Name lensGeneralized.This world // expand simulants immediately rather than waiting for parent registration
+            //    else world
             let world =
                 World.monitor
                     (fun _ world ->
@@ -212,7 +215,7 @@ module WorldDeclarative =
                                 ElmishBindingsMap =
                                     match world.ElmishBindingsMap.TryGetValue lensAddress with
                                     | (true, elmishBindings) -> 
-                                        let elmishBindings = UMap.remove lensBinding.CBMapKey elmishBindings // TODO: make sure this is using the correct key!
+                                        let elmishBindings = UMap.remove lensBinding.CBKey elmishBindings
                                         if UMap.isEmpty elmishBindings
                                         then UMap.remove lensAddress world.ElmishBindingsMap
                                         else UMap.add lensAddress elmishBindings world.ElmishBindingsMap
