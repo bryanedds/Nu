@@ -1073,8 +1073,7 @@ module WorldTypes =
           CBOrigin : ContentOrigin
           CBOwner : Simulant
           CBParent : Simulant
-          CBSetKey : Guid
-          CBKey : Guid }
+          CBSetKey : Guid }
 
     /// Describes an binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ElmishBinding =
