@@ -656,18 +656,19 @@ module WorldModule =
 
     type World with // ElmishBindingsMap
 
-        static member internal removeSynchronizedSimulants simulantMapKey removed world =
+        static member internal removeSynchronizedSimulants lensKey removed world =
+            let lensKey = Gen.idDeterministic 1 lensKey
             Seq.fold (fun world keyAndLens ->
                 let (key, _) = PartialComparable.unmake keyAndLens
-                match World.tryGetKeyedValue simulantMapKey world with
+                match World.tryGetKeyedValue lensKey world with
                 | Some simulantMap ->
                     match Map.tryFind key simulantMap with
                     | Some simulant ->
                         let simulantMap = Map.remove key simulantMap
                         let world =
                             if Map.isEmpty simulantMap
-                            then World.removeKeyedValue simulantMapKey world
-                            else World.addKeyedValue simulantMapKey simulantMap world
+                            then World.removeKeyedValue lensKey world
+                            else World.addKeyedValue lensKey simulantMap world
                         destroy simulant world
                     | None -> world
                 | None -> world)
@@ -675,38 +676,39 @@ module WorldModule =
 
         static member internal addSynchronizedSimulants
             (contentMapper : IComparable -> Lens<obj, World> -> World -> SimulantContent)
+            (lensKey : Guid)
             (mapGeneralized : MapGeneralized)
-            (simulantMapKey : Guid)
             added
             origin
             owner
             parent
             world =
+            let lensKey = Gen.idDeterministic 1 lensKey
             Seq.fold (fun world keyAndLens ->
                 let (key, lens) = PartialComparable.unmake keyAndLens
                 match mapGeneralized.TryGetValue key with
                 | (true, _) ->
                     let content = contentMapper key lens world
                     let (simulantOpt, world) = expandContent Unchecked.defaultof<_> content origin owner parent world
-                    match World.tryGetKeyedValue simulantMapKey world with
+                    match World.tryGetKeyedValue lensKey world with
                     | None ->
                         match simulantOpt with
-                        | Some simulant -> World.addKeyedValue simulantMapKey (Map.singleton key simulant) world
+                        | Some simulant -> World.addKeyedValue lensKey (Map.singleton key simulant) world
                         | None -> world
                     | Some simulantMap ->
                         match simulantOpt with
-                        | Some simulant -> World.addKeyedValue simulantMapKey (Map.add key simulant simulantMap) world
+                        | Some simulant -> World.addKeyedValue lensKey (Map.add key simulant simulantMap) world
                         | None -> Log.debug "Expected simulant to be created from expandContent, but none was created."; world
                 | (false, _) -> world)
                 world added
 
-        static member internal synchronizeSimulants contentMapper mapGeneralized simulantMapKey previous current origin owner parent world =
+        static member internal synchronizeSimulants contentMapper lensKey mapGeneralized previous current origin owner parent world =
             let added = USet.differenceFast current previous
             let removed = USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
             if changed then
-                let world = World.removeSynchronizedSimulants simulantMapKey removed world
-                let world = World.addSynchronizedSimulants contentMapper mapGeneralized simulantMapKey added origin owner parent world
+                let world = World.removeSynchronizedSimulants lensKey removed world
+                let world = World.addSynchronizedSimulants contentMapper lensKey mapGeneralized added origin owner parent world
                 world
             else world
 
@@ -723,6 +725,7 @@ module WorldModule =
                         else world
                     | ContentBinding binding ->
                         if  Lens.validate binding.CBSource world then
+                            let lensKey = match binding.CBSource.PayloadOpt with Some (:? Guid as key) -> key | _ -> failwithumf ()
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
                             let mutable current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
                             let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
@@ -744,7 +747,7 @@ module WorldModule =
                                 match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> binding.CBSetKey world with
                                 | Some previous -> previous
                                 | None -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
-                            let world = World.synchronizeSimulants binding.CBMapper mapGeneralized binding.CBKey previous current binding.CBOrigin binding.CBOwner binding.CBParent world
+                            let world = World.synchronizeSimulants binding.CBMapper lensKey mapGeneralized previous current binding.CBOrigin binding.CBOwner binding.CBParent world
                             let world = World.addKeyedValue binding.CBSetKey current world
                             world
                         else world)
