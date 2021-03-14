@@ -1072,8 +1072,7 @@ module WorldTypes =
           CBSource : Lens<MapGeneralized, World>
           CBOrigin : ContentOrigin
           CBOwner : Simulant
-          CBParent : Simulant
-          CBSetKey : Guid }
+          CBParent : Simulant }
 
     /// Describes an binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ElmishBinding =
@@ -1082,6 +1081,10 @@ module WorldTypes =
 
     /// Describes bindings for Nu's optimized Elmish implementation.
     and internal ElmishBindings = UMap<Guid, ElmishBinding>
+
+    /// The lens payload used in the optimized Elmish implementation.
+    and [<NoEquality; NoComparison>] internal ElmishPayload =
+        { ContentKey : Guid }
 
     /// The world's dispatchers (including facets).
     /// 

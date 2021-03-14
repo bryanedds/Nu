@@ -164,8 +164,7 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
-            let lensKey = Gen.id // a unique key for each lens given to the user
-            let contentKey = match lens.PayloadOpt with Some (:? Guid as key) -> key | _ -> lensKey // a unique key for each content binding
+            let payload = { ContentKey = Gen.id }
             let lensGeneralized =
                 let mutable lensResult = Unchecked.defaultof<obj>
                 let mutable sieveResultOpt = None
@@ -189,23 +188,25 @@ module WorldDeclarative =
                     unfoldResultOpt <- Some c
                     c)
                     lens
-                    with PayloadOpt = Some (box lensKey) }
-            let lensBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBSetKey = contentKey }
+                    with PayloadOpt = Some (box payload) }
+            let lensBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent }
             let lensAddress = PropertyAddress.make lensGeneralized.Name lensGeneralized.This
+            let simulantKey = Gen.id
             let world =
                 { world with
                     ElmishBindingsMap =
                         match world.ElmishBindingsMap.TryGetValue lensAddress with
                         | (true, elmishBindings) ->
-                            let elmishBindings = UMap.add lensKey (ContentBinding lensBinding) elmishBindings
+                            let elmishBindings = UMap.add simulantKey (ContentBinding lensBinding) elmishBindings
                             UMap.add lensAddress elmishBindings world.ElmishBindingsMap
                         | (false, _) ->
                             let elmishBindings = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
-                            let elmishBindings = UMap.add lensKey (ContentBinding lensBinding) elmishBindings
+                            let elmishBindings = UMap.add simulantKey (ContentBinding lensBinding) elmishBindings
                             UMap.add lensAddress elmishBindings world.ElmishBindingsMap }
             //let world =
-            //    if Lens.validate lensGeneralized world
-            //    then World.publishBindingChange lensGeneralized.Name lensGeneralized.This world // expand simulants immediately rather than waiting for parent registration
+            //    // expand simulants immediately rather than waiting for parent registration if this is the first time through
+            //    if Lens.validate lensGeneralized world && Option.isNone lens.PayloadOpt
+            //    then World.publishBindingChange lensGeneralized.Name lensGeneralized.This world 
             //    else world
             let world =
                 World.monitor
@@ -215,7 +216,7 @@ module WorldDeclarative =
                                 ElmishBindingsMap =
                                     match world.ElmishBindingsMap.TryGetValue lensAddress with
                                     | (true, elmishBindings) -> 
-                                        let elmishBindings = UMap.remove lensKey elmishBindings
+                                        let elmishBindings = UMap.remove simulantKey elmishBindings
                                         if UMap.isEmpty elmishBindings
                                         then UMap.remove lensAddress world.ElmishBindingsMap
                                         else UMap.add lensAddress elmishBindings world.ElmishBindingsMap
