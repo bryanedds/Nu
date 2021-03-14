@@ -253,17 +253,18 @@ type TestBedGameDispatcher () =
             match World.getTickTime world % 4L with
             | 0L -> just { StringsOpt = None }
             | 1L -> just { StringsOpt = None }
-            | 2L -> just { StringsOpt = Some (Map.ofList [(0,"0"); (1,"1"); (2,"2")]) }
-            | 3L -> just { StringsOpt = Some (Map.ofList [(0,"0"); (1,"1"); (2,"2")]) }
+            | 2L -> just { StringsOpt = Some (Map.ofList [(0, "0"); (1, "1"); (2, "2")]) }
+            | 3L -> just { StringsOpt = Some (Map.ofList [(0, "3"); (1, "4"); (2, "5")]) }
 
     override this.Content (stringsOpt, _) =
         [Content.screen Gen.name Vanilla []
             [Content.group Gen.name []
-                [Content.entityOpt stringsOpt (fun stringsOpt -> stringsOpt.StringsOpt) $ fun strings _ ->
-                    Content.entities strings id constant $ fun i str _ ->
-                       Content.text Gen.name
-                           [Entity.Position == v2 (single i * 120.0f - 180.0f) 0.0f
-                            Entity.Text <== str]]]]
+                [Content.entityOpt stringsOpt (fun stringsOpt -> stringsOpt.StringsOpt) $ fun strings _ -> // new content key, new simulant key (but it won't be used)
+                    Content.panel Gen.name []
+                        [Content.entities strings id constant $ fun i str _ -> // new content key, new simulant key (also won't be used)
+                           Content.text Gen.name // same content key, new simulant key
+                               [Entity.Position == v2 (single i * 120.0f - 180.0f) 0.0f
+                                Entity.Text <== str]]]]]
 #endif
 
 #if PHANTOM
