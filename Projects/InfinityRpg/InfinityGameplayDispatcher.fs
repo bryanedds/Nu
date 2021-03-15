@@ -386,19 +386,19 @@ module GameplayDispatcher =
 
                      // pickups
                      Content.entities gameplay
-                        (fun gameplay -> gameplay.Chessboard.Pickups)
+                        (fun gameplay _ -> gameplay.Chessboard.Pickups)
                         (fun pickups _ -> pickups |> Map.toSeqBy (fun positionM pickupType -> Pickup.ofPickupType pickupType positionM) |> Map.indexed)
                         (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Pickup <== pickup])
 
                      // props
                      Content.entities gameplay
-                        (fun gameplay -> (gameplay.Chessboard.Props, gameplay.Puppeteer, gameplay.Time))
+                        (fun gameplay _ -> (gameplay.Chessboard.Props, gameplay.Puppeteer, gameplay.Time))
                         (fun (props, puppeteer, time) _ -> Puppeteer.getPropMap props puppeteer time)
                         (fun index prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Prop <== prop])
 
                      // characters
                      Content.entities gameplay
-                        (fun gameplay -> (gameplay.Chessboard.Characters, gameplay.Puppeteer, gameplay.Time))
+                        (fun gameplay _ -> (gameplay.Chessboard.Characters, gameplay.Puppeteer, gameplay.Time))
                         (fun (characters, puppeteer, time) _ -> Puppeteer.getCharacterMap characters puppeteer time)
                         (fun index character _ ->
                             let name =
@@ -482,7 +482,7 @@ module GameplayDispatcher =
                  Content.panel Gen.name
                     [Entity.Position == v2 400.0f 200.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f]
                         [Content.entities gameplay
-                           (fun gameplay -> gameplay.Inventory)
+                           (fun gameplay _ -> gameplay.Inventory)
                            (fun inventory _ -> if Inventory.containsItem (Special MagicMissile) inventory then Map.singleton 0 () else Map.empty )
                            (fun _ _ _ ->
                                Content.button "MagicMissileButton"

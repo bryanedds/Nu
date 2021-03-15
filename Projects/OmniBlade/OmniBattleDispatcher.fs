@@ -915,16 +915,16 @@ module BattleDispatcher =
 
                  // allies
                  Content.entities battle
-                    (fun battle -> Battle.getAllies battle) constant
+                    (fun battle _ -> Battle.getAllies battle) constant
                     (fun index battle _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== battle])
 
                  // enemies
                  Content.entities battle
-                    (fun battle -> Battle.getEnemies battle) constant
+                    (fun battle _ -> Battle.getEnemies battle) constant
                     (fun index battle _ -> Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.Character <== battle])]
 
              // input groups
-             Content.groups battle (fun battle -> Battle.getAllies battle) constant $ fun index ally _ ->
+             Content.groups battle (fun battle _ -> Battle.getAllies battle) constant $ fun index ally _ ->
 
                 // input group
                 let inputName = "Input" + "+" + CharacterIndex.toEntityName index

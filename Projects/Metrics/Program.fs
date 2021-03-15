@@ -259,9 +259,9 @@ type TestBedGameDispatcher () =
     override this.Content (stringsOpt, _) =
         [Content.screen Gen.name Vanilla []
             [Content.group Gen.name []
-                [Content.entityOpt stringsOpt (fun stringsOpt -> stringsOpt.StringsOpt) $ fun strings _ ->
+                [Content.entityOpt stringsOpt (fun stringsOpt _ -> stringsOpt.StringsOpt) $ fun strings _ ->
                     Content.panel Gen.name []
-                        [Content.entities strings id constant $ fun i str _ ->
+                        [Content.entities strings constant constant $ fun i str _ ->
                             Content.text Gen.name
                                 [Entity.Position == v2 (single i * 120.0f - 180.0f) 0.0f
                                  Entity.Text <== str]]]]]

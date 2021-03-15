@@ -237,7 +237,7 @@ module FieldDispatcher =
 
         static let team (position : Vector2) elevation rows (field : Lens<Field, World>) filter fieldMsg =
             Content.entities field
-                (fun field -> (field.Team, field.Submenu))
+                (fun field _ -> (field.Team, field.Submenu))
                 (fun (team, submenu) _ -> Map.filter (flip filter submenu) team)
                 (fun index teammateLens world ->
                     let teammate = Lens.get teammateLens world
@@ -250,7 +250,7 @@ module FieldDispatcher =
 
         static let items (position : Vector2) elevation field fieldMsg =
             Content.entities field
-                (fun (field : Field) -> (field.Submenu, field.ShopOpt, field.Inventory))
+                (fun (field : Field) _ -> (field.Submenu, field.ShopOpt, field.Inventory))
                 (fun (submenu, shopOpt, inventory : Inventory) _ ->
                     match submenu.SubmenuState with
                     | SubmenuItem submenu -> pageItems submenu.ItemPage 10 (Inventory.indexItems inventory)
@@ -661,7 +661,7 @@ module FieldDispatcher =
 
                  // props
                  Content.entities field
-                    (fun field -> (field.FieldType, field.OmniSeedState, field.Advents, field.PropStates))
+                    (fun field _ -> (field.FieldType, field.OmniSeedState, field.Advents, field.PropStates))
                     (fun (fieldType, rotatedSeedState, advents, propStates) world ->
                         match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
