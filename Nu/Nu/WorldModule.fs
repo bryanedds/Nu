@@ -742,7 +742,6 @@ module WorldModule =
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, elmishBindings) ->
                 OMap.fold (fun world _ elmishBinding ->
-                    Console.WriteLine propertyName
                     match elmishBinding with
                     | PropertyBinding binding ->
                         if binding.PBRight.Validate world then

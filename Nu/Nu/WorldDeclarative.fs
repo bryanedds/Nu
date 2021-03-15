@@ -154,7 +154,6 @@ module WorldDeclarative =
     type World with
 
         /// Turn a lens into a series of live simulants.
-        /// OPTIMIZATION: lots of optimizations going on in here including inlining and mutation!
         static member expandSimulants
             (lens : Lens<obj, World>)
             (sieve : obj -> World -> obj)
@@ -194,8 +193,8 @@ module WorldDeclarative =
             let contentKey = Gen.id
             let finalizer =
                 fun world ->
-                    let current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
-                    World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) current origin owner parent world
+                    let lensesCurrent = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
+                    World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) lensesCurrent origin owner parent world
             let contentBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBContentKey = contentKey; CBFinalizer = finalizer }
 
             // increase bind counter
@@ -282,8 +281,8 @@ module WorldDeclarative =
             let world =
                 if Lens.validate contentBinding.CBSource world then
                     let mapGeneralized = Lens.getWithoutValidation contentBinding.CBSource world
-                    let current = World.mapGeneralizedToCurrent mapGeneralized contentBinding.CBSource world
-                    World.synchronizeSimulants contentBinding.CBMapper contentBinding.CBContentKey mapGeneralized current contentBinding.CBOrigin contentBinding.CBOwner contentBinding.CBParent world
+                    let lensesCurrent = World.mapGeneralizedToCurrent mapGeneralized contentBinding.CBSource world
+                    World.synchronizeSimulants contentBinding.CBMapper contentBinding.CBContentKey mapGeneralized lensesCurrent contentBinding.CBOrigin contentBinding.CBOwner contentBinding.CBParent world
                 else contentBinding.CBFinalizer world
 
             // fin
