@@ -15,7 +15,7 @@ type [<NoEquality; NoComparison>] ScreenBehavior =
 
 /// Describes the content of an entity.
 type [<NoEquality; NoComparison>] EntityContent =
-    | EntitiesFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> MapGeneralized) * (obj -> Lens<obj, World> -> World -> EntityContent)
+    | EntitiesFromStream of Lens<obj, World> * (obj -> World -> obj) * (obj -> World -> MapGeneralized) * (obj -> Lens<obj, World> -> World -> EntityContent)
     | EntityFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | EntityFromFile of string * string
     interface SimulantContent
@@ -33,7 +33,7 @@ type [<NoEquality; NoComparison>] EntityContent =
 
 /// Describes the content of a group.
 type [<NoEquality; NoComparison>] GroupContent =
-    | GroupsFromStream of Lens<obj, World> * (obj -> obj) * (obj -> World -> MapGeneralized) * (obj -> Lens<obj, World> -> World -> GroupContent)
+    | GroupsFromStream of Lens<obj, World> * (obj -> World -> obj) * (obj -> World -> MapGeneralized) * (obj -> Lens<obj, World> -> World -> GroupContent)
     | GroupFromInitializers of string * string * PropertyInitializer list * EntityContent list
     | GroupFromFile of string * string
     interface SimulantContent
@@ -157,7 +157,7 @@ module WorldDeclarative =
         /// OPTIMIZATION: lots of optimizations going on in here including inlining and mutation!
         static member expandSimulants
             (lens : Lens<obj, World>)
-            (sieve : obj -> obj)
+            (sieve : obj -> World -> obj)
             (unfold : obj -> World -> MapGeneralized)
             (mapper : IComparable -> Lens<obj, World> -> World -> SimulantContent)
             (origin : ContentOrigin)
@@ -184,13 +184,13 @@ module WorldDeclarative =
                             | (Some sieveResult, Some unfoldResult) -> (sieveResult, unfoldResult)
                             | (Some sieveResult, None) -> (sieveResult, unfold sieveResult world)
                             | (None, Some _) -> failwithumf ()
-                            | (None, None) -> let b = sieve a in (b, unfold b world)
+                            | (None, None) -> let b = sieve a world in (b, unfold b world)
                         else
                             match (sieveResultOpt, unfoldResultOpt) with
-                            | (Some sieveResult, Some unfoldResult) -> let b = sieve a in if b === sieveResult then (b, unfoldResult) else (b, unfold b world)
-                            | (Some _, None) -> let b = sieve a in (b, unfold b world)
+                            | (Some sieveResult, Some unfoldResult) -> let b = sieve a world in if b === sieveResult then (b, unfoldResult) else (b, unfold b world)
+                            | (Some _, None) -> let b = sieve a world in (b, unfold b world)
                             | (None, Some _) -> failwithumf ()
-                            | (None, None) -> let b = sieve a in (b, unfold b world)
+                            | (None, None) -> let b = sieve a world in (b, unfold b world)
                     lensResult <- a
                     sieveResultOpt <- Some b
                     unfoldResultOpt <- Some c
