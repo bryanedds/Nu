@@ -1082,7 +1082,7 @@ module WorldTypes =
         | ContentBinding of ContentBinding
 
     /// Describes bindings for Nu's optimized Elmish implementation.
-    and internal ElmishBindings = UMap<Guid, ElmishBinding>
+    and internal ElmishBindings = OMap<Guid, ElmishBinding>
 
     /// The world's dispatchers (including facets).
     /// 

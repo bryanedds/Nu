@@ -153,6 +153,17 @@ module KeyedArray =
         for (key, value) in arr do add key value karr |> ignore
         karr
 
+    /// Fold over a keyed array.
+    let fold folder state karr =
+        let arr = karr.Values_
+        let length = Array.length arr
+        let mutable state = state
+        let mutable index = 0
+        while index < length do
+            let struct (exists, key, value) = arr.[index]
+            if exists then state <- folder state key value
+        state
+
 /// A garbage-collected keyed array.
 /// TODO: once this is well-tested, let's consider moving into Prime.
 type KeyedArray<'k, 'v when 'k : equality> = KeyedArray.KeyedArray<'k, 'v>

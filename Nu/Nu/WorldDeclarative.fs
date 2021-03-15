@@ -233,16 +233,16 @@ module WorldDeclarative =
                     ElmishBindingsMap =
                         match world.ElmishBindingsMap.TryGetValue bindingAddress  with
                         | (true, elmishBindings) ->
-                            let elmishBindings = UMap.add simulantKey (ContentBinding contentBinding) elmishBindings
+                            let elmishBindings = OMap.add simulantKey (ContentBinding contentBinding) elmishBindings
                             UMap.add bindingAddress elmishBindings world.ElmishBindingsMap
                         | (false, _) ->
-                            let elmishBindings = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
-                            let elmishBindings = UMap.add simulantKey (ContentBinding contentBinding) elmishBindings
+                            let elmishBindings = if World.getStandAlone world then OMap.makeEmpty Imperative else OMap.makeEmpty Functional
+                            let elmishBindings = OMap.add simulantKey (ContentBinding contentBinding) elmishBindings
                             UMap.add bindingAddress elmishBindings world.ElmishBindingsMap }
 
             //let world =
             //    // expand simulants immediately rather than waiting for parent registration if this is the first time through
-            //    if Lens.validate lensGeneralized world && Option.isNone lens.PayloadOpt
+            //    if Lens.validate lensGeneralized world
             //    then World.publishBindingChange lensGeneralized.Name lensGeneralized.This world 
             //    else world
 
@@ -256,8 +256,8 @@ module WorldDeclarative =
                                 ElmishBindingsMap =
                                     match world.ElmishBindingsMap.TryGetValue bindingAddress  with
                                     | (true, elmishBindings) -> 
-                                        let elmishBindings = UMap.remove simulantKey elmishBindings
-                                        if UMap.isEmpty elmishBindings
+                                        let elmishBindings = OMap.remove simulantKey elmishBindings
+                                        if OMap.isEmpty elmishBindings
                                         then UMap.remove bindingAddress world.ElmishBindingsMap
                                         else UMap.add bindingAddress elmishBindings world.ElmishBindingsMap
                                     | (false, _) -> world.ElmishBindingsMap }

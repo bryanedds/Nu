@@ -45,8 +45,8 @@ module Nu =
         let world =
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, propertyBindings) ->
-                let propertyBindings = UMap.remove propertyBindingKey propertyBindings
-                if UMap.notEmpty propertyBindings then
+                let propertyBindings = OMap.remove propertyBindingKey propertyBindings
+                if OMap.notEmpty propertyBindings then
                     let elmishBindingsMap = UMap.add propertyAddress propertyBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
                 else
@@ -466,13 +466,13 @@ module Nu =
                     | _ -> world
                 match world.ElmishBindingsMap.TryGetValue propertyAddress with
                 | (true, elmishBindings) ->
-                    let elmishBindings = UMap.add propertyBindingKey (PropertyBinding { PBLeft = leftFixup; PBRight = rightFixup }) elmishBindings
+                    let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = leftFixup; PBRight = rightFixup }) elmishBindings
                     let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
                 | (false, _) ->
                     let config = if World.getStandAlone world then Imperative else Functional
-                    let elmishBindings = UMap.makeEmpty config
-                    let elmishBindings = UMap.add propertyBindingKey (PropertyBinding { PBLeft = leftFixup; PBRight = rightFixup }) elmishBindings
+                    let elmishBindings = OMap.makeEmpty config
+                    let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = leftFixup; PBRight = rightFixup }) elmishBindings
                     let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                     World.choose { world with ElmishBindingsMap = elmishBindingsMap }
 
