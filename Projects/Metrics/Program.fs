@@ -226,9 +226,9 @@ type ElmishGameDispatcher () =
 
     override this.Content (intss, _) =
         [Content.screen "Screen" Vanilla []
-            [Content.groups intss (fun intss -> intss.Intss) constant (fun i intss _ ->
+            [Content.groups intss (fun intss _ -> intss.Intss) constant (fun i intss _ ->
                 Content.group (string i) []
-                    [Content.entities intss (fun ints -> ints.Ints) constant (fun j int _ ->
+                    [Content.entities intss (fun ints _ -> ints.Ints) constant (fun j int _ ->
                         Content.staticSprite (string j)
                             [Entity.Omnipresent == true
                              Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
