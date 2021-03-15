@@ -195,11 +195,7 @@ module WorldDeclarative =
             let finalizer =
                 fun world ->
                     let current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
-                    let previous =
-                        match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> contentKey world with
-                        | Some previous -> previous
-                        | None -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
-                    World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) previous current origin owner parent world
+                    World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) current origin owner parent world
             let contentBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBContentKey = contentKey; CBFinalizer = finalizer }
 
             // increase bind counter
@@ -240,12 +236,7 @@ module WorldDeclarative =
                             let elmishBindings = OMap.add simulantKey (ContentBinding contentBinding) elmishBindings
                             UMap.add bindingAddress elmishBindings world.ElmishBindingsMap }
 
-            //let world =
-            //    // expand simulants immediately rather than waiting for parent registration if this is the first time through
-            //    if Lens.validate lensGeneralized world
-            //    then World.publishBindingChange lensGeneralized.Name lensGeneralized.This world 
-            //    else world
-
+            // handle owner unregristration
             let world =
                 World.monitor
                     (fun _ world ->
@@ -283,8 +274,17 @@ module WorldDeclarative =
 
                         // fin
                         (Cascade, world))
-
-                    (Events.Unregistering --> owner.SimulantAddress) // TODO: make sure that owner unregistration is the correct trigger!
-                    owner // TODO: make sure this is the correct monitor target as well!
+                    (Events.Unregistering --> owner.SimulantAddress)
+                    owner
                     world
+
+            // synchronize simulants immediately rather than waiting for parent registration if this is the first time through
+            let world =
+                if Lens.validate contentBinding.CBSource world then
+                    let mapGeneralized = Lens.getWithoutValidation contentBinding.CBSource world
+                    let current = World.mapGeneralizedToCurrent mapGeneralized contentBinding.CBSource world
+                    World.synchronizeSimulants contentBinding.CBMapper contentBinding.CBContentKey mapGeneralized current contentBinding.CBOrigin contentBinding.CBOwner contentBinding.CBParent world
+                else contentBinding.CBFinalizer world
+
+            // fin
             world

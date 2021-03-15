@@ -702,15 +702,40 @@ module WorldModule =
                 | (false, _) -> world)
                 world added
 
-        static member internal synchronizeSimulants contentMapper contentKey mapGeneralized previous current origin owner parent world =
+        static member internal synchronizeSimulants contentMapper contentKey mapGeneralized current origin owner parent world =
+            let previous =
+                match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> contentKey world with
+                | Some previous -> previous
+                | None -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
             let added = USet.differenceFast current previous
             let removed = USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
-            if changed then
-                let world = World.removeSynchronizedSimulants contentKey removed world
-                let world = World.addSynchronizedSimulants contentMapper contentKey mapGeneralized added origin owner parent world
-                world
-            else world
+            let world =
+                if changed then
+                    let world = World.removeSynchronizedSimulants contentKey removed world
+                    let world = World.addSynchronizedSimulants contentMapper contentKey mapGeneralized added origin owner parent world
+                    world
+                else world
+            World.addKeyedValue contentKey current world
+
+        static member internal mapGeneralizedToCurrent mapGeneralized lenGeneralized world =
+            let mutable current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
+            let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
+            while enr.MoveNext () do
+                let key = fst enr.Current
+                let lensExistenceAndValue = Lens.map (fun keyed -> keyed.TryGetValue key) lenGeneralized
+                if Lens.validate lensExistenceAndValue world then
+                    match Lens.getWithoutValidation lensExistenceAndValue world with
+                    | (true, _) ->
+                        let validateOpt =
+                            match lensExistenceAndValue.ValidateOpt with
+                            | Some validate -> Some (fun world -> if validate world then (match Lens.getWithoutValidation lensExistenceAndValue world with (exists, _) -> exists) else false)
+                            | None -> Some (fun world -> match Lens.getWithoutValidation lensExistenceAndValue world with (exists, _) -> exists)
+                        let item = PartialComparable.make key { Lens.map snd lensExistenceAndValue with ValidateOpt = validateOpt }
+                        current <- USet.add item current
+                    | (false, _) -> ()
+                else ()
+            current
 
         static member internal publishBindingChange propertyName simulant world =
             let propertyAddress = PropertyAddress.make propertyName simulant
@@ -728,29 +753,8 @@ module WorldModule =
                     | ContentBinding binding ->
                         if Lens.validate binding.CBSource world then
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
-                            let mutable current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
-                            let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
-                            while enr.MoveNext () do
-                                let key = fst enr.Current
-                                let lensExistenceAndValue = Lens.map (fun keyed -> keyed.TryGetValue key) binding.CBSource
-                                if Lens.validate lensExistenceAndValue world then
-                                    match Lens.getWithoutValidation lensExistenceAndValue world with
-                                    | (true, _) ->
-                                        let validateOpt =
-                                            match lensExistenceAndValue.ValidateOpt with
-                                            | Some validate -> Some (fun world -> if validate world then (match Lens.getWithoutValidation lensExistenceAndValue world with (exists, _) -> exists) else false)
-                                            | None -> Some (fun world -> match Lens.getWithoutValidation lensExistenceAndValue world with (exists, _) -> exists)
-                                        let item = PartialComparable.make key { Lens.map snd lensExistenceAndValue with ValidateOpt = validateOpt }
-                                        current <- USet.add item current
-                                    | (false, _) -> ()
-                                else ()
-                            let previous =
-                                match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> binding.CBContentKey world with
-                                | Some previous -> previous
-                                | None -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
-                            let world = World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized previous current binding.CBOrigin binding.CBOwner binding.CBParent world
-                            let world = World.addKeyedValue binding.CBContentKey current world
-                            world
+                            let current = World.mapGeneralizedToCurrent mapGeneralized binding.CBSource world
+                            World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
                         else binding.CBFinalizer world)
                     world elmishBindings
             | (false, _) -> world
