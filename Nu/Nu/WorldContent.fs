@@ -32,7 +32,7 @@ module Content =
     /// Describe groups to be instantiated from a lens.
     let groups
         (lens : Lens<'a, World>)
-        (sieve : 'a -> 'b)
+        (sieve : 'a -> World -> 'b)
         (unfold : 'b -> World -> Map<'k, 'c>)
         (mapper : 'k -> Lens<'c, World> -> World -> GroupContent) =
         let lens = Lens.map box lens
@@ -44,7 +44,7 @@ module Content =
     /// Describe a group to be optionally instantiated from a lens.
     let groupIf lens predicate (mapper : Lens<'a, World> -> World -> GroupContent) =
         let mapper = fun _ a world -> mapper a world
-        groups lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) id mapper
+        groups lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) constant mapper
 
     /// Describe a group to be instantiated when a screen is selected.
     let groupIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> GroupContent) =
@@ -52,8 +52,8 @@ module Content =
         groupIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe a group to be optionally instantiated from a lens.
-    let groupOpt (lens : Lens<'a, World>) (sieve : 'a -> 'b option) (mapper : Lens<'b, World> -> World -> GroupContent) =
-        let (sieve : 'a -> Map<int, 'b>) = fun a -> match sieve a with Some b -> Map.singleton 0 b | None -> Map.empty
+    let groupOpt (lens : Lens<'a, World>) (sieve : 'a -> World -> 'b option) (mapper : Lens<'b, World> -> World -> GroupContent) =
+        let (sieve : 'a -> World -> Map<int, 'b>) = fun a w -> match sieve a w with Some b -> Map.singleton 0 b | None -> Map.empty
         let mapper = fun _ b w -> mapper b w
         groups lens sieve constant mapper
 
@@ -68,7 +68,7 @@ module Content =
     /// Describe entities to be instantiated from a lens.
     let entities
         (lens : Lens<'a, World>)
-        (sieve : 'a -> 'b)
+        (sieve : 'a -> World -> 'b)
         (unfold : 'b -> World -> Map<'k, 'c>)
         (mapper : 'k -> Lens<'c, World> -> World -> EntityContent) =
         let lens = Lens.map box lens
@@ -80,7 +80,7 @@ module Content =
     /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
         let mapper = fun _ a world -> mapper a world
-        entities lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) id mapper
+        entities lens (fun a _ -> if predicate a then Map.singleton 0 a else Map.empty) constant mapper
 
     /// Describe an entity to be instantiated when a screen is selected.
     let entityIfScreenSelected (screen : Screen) (mapper : Lens<unit, World> -> World -> EntityContent) =
@@ -88,8 +88,8 @@ module Content =
         entityIf Simulants.Game.SelectedScreenOpt (fun screenOpt -> screenOpt = Some screen) mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
-    let entityOpt (lens : Lens<'a, World>) (sieve : 'a -> 'b option) (mapper : Lens<'b, World> -> World -> EntityContent) =
-        let (sieve : 'a -> Map<int, 'b>) = fun a -> match sieve a with Some b -> Map.singleton 0 b | None -> Map.empty
+    let entityOpt (lens : Lens<'a, World>) (sieve : 'a -> World -> 'b option) (mapper : Lens<'b, World> -> World -> EntityContent) =
+        let (sieve : 'a -> World -> Map<int, 'b>) = fun a w -> match sieve a w with Some b -> Map.singleton 0 b | None -> Map.empty
         let mapper = fun _ b w -> mapper b w
         entities lens sieve constant mapper
 
