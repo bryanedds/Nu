@@ -164,15 +164,8 @@ module WorldDeclarative =
             (owner : Simulant)
             (parent : Simulant)
             world =
-            let contentKey = Gen.id
-            let finalizer =
-                fun world ->
-                    let current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
-                    let previous =
-                        match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> contentKey world with
-                        | Some previous -> previous
-                        | None -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
-                    World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) previous current origin owner parent world
+
+            // construct the generalized lens with internal caching
             let lensGeneralized =
                 let mutable lensResult = Unchecked.defaultof<obj>
                 let mutable sieveResultOpt = None
@@ -196,39 +189,101 @@ module WorldDeclarative =
                     unfoldResultOpt <- Some c
                     c)
                     lens
-            let lensBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBContentKey = contentKey; CBFinalizer = finalizer }
-            let lensAddress = PropertyAddress.make lensGeneralized.Name lensGeneralized.This
+
+            // construct the content binding            
+            let contentKey = Gen.id
+            let finalizer =
+                fun world ->
+                    let current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
+                    let previous =
+                        match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> contentKey world with
+                        | Some previous -> previous
+                        | None -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
+                    World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) previous current origin owner parent world
+            let contentBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBContentKey = contentKey; CBFinalizer = finalizer }
+
+            // increase bind counter
+            let world =
+                match lensGeneralized.This with
+                | :? Entity as entity ->
+                    match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
+                    | Some entityBindingCounts ->
+                        match UMap.tryFind entity.EntityAddress entityBindingCounts with
+                        | Some entityBindingCount ->
+                            let entityBindingCount = inc entityBindingCount
+                            let entityBindingCounts = UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
+                            let world = if entityBindingCount = 1 && World.getEntityExists entity world then World.setEntityPublishChangeBindings true entity world else world
+                            World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                        | None ->
+                            let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
+                            let world = if World.getEntityExists entity world then World.setEntityPublishChangeBindings true entity world else world
+                            World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                    | None ->
+                        let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+                        let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
+                        let world = if World.getEntityExists entity world then World.setEntityPublishChangeBindings true entity world else world
+                        World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                | _ -> world
+
+            // add content binding to the world
+            let bindingAddress = PropertyAddress.make lensGeneralized.Name lensGeneralized.This
             let simulantKey = Gen.id
             let world =
                 { world with
                     ElmishBindingsMap =
-                        match world.ElmishBindingsMap.TryGetValue lensAddress with
+                        match world.ElmishBindingsMap.TryGetValue bindingAddress  with
                         | (true, elmishBindings) ->
-                            let elmishBindings = UMap.add simulantKey (ContentBinding lensBinding) elmishBindings
-                            UMap.add lensAddress elmishBindings world.ElmishBindingsMap
+                            let elmishBindings = UMap.add simulantKey (ContentBinding contentBinding) elmishBindings
+                            UMap.add bindingAddress elmishBindings world.ElmishBindingsMap
                         | (false, _) ->
                             let elmishBindings = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
-                            let elmishBindings = UMap.add simulantKey (ContentBinding lensBinding) elmishBindings
-                            UMap.add lensAddress elmishBindings world.ElmishBindingsMap }
+                            let elmishBindings = UMap.add simulantKey (ContentBinding contentBinding) elmishBindings
+                            UMap.add bindingAddress elmishBindings world.ElmishBindingsMap }
+
             //let world =
             //    // expand simulants immediately rather than waiting for parent registration if this is the first time through
             //    if Lens.validate lensGeneralized world && Option.isNone lens.PayloadOpt
             //    then World.publishBindingChange lensGeneralized.Name lensGeneralized.This world 
             //    else world
+
             let world =
                 World.monitor
                     (fun _ world ->
+
+                        // remove content binding from the world
                         let world =
                             { world with
                                 ElmishBindingsMap =
-                                    match world.ElmishBindingsMap.TryGetValue lensAddress with
+                                    match world.ElmishBindingsMap.TryGetValue bindingAddress  with
                                     | (true, elmishBindings) -> 
                                         let elmishBindings = UMap.remove simulantKey elmishBindings
                                         if UMap.isEmpty elmishBindings
-                                        then UMap.remove lensAddress world.ElmishBindingsMap
-                                        else UMap.add lensAddress elmishBindings world.ElmishBindingsMap
+                                        then UMap.remove bindingAddress world.ElmishBindingsMap
+                                        else UMap.add bindingAddress elmishBindings world.ElmishBindingsMap
                                     | (false, _) -> world.ElmishBindingsMap }
+
+                        // decrease property bind counter
+                        let world =
+                            match bindingAddress.PASimulant with
+                            | :? Entity as entity ->
+                                match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
+                                | Some entityBindingCounts ->
+                                    match UMap.tryFind entity.EntityAddress entityBindingCounts with
+                                    | Some entityBindingCount ->
+                                        let entityBindingCount = dec entityBindingCount
+                                        let entityBindingCounts =
+                                            if entityBindingCount = 0
+                                            then UMap.remove entity.EntityAddress entityBindingCounts
+                                            else UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
+                                        let world = if entityBindingCount = 0 && World.getEntityExists entity world then World.setEntityPublishChangeBindings false entity world else world
+                                        World.addKeyedValue EntityBindingCountsId entityBindingCounts world
+                                    | None -> failwithumf ()
+                                | None -> failwithumf ()
+                            | _ -> world
+
+                        // fin
                         (Cascade, world))
+
                     (Events.Unregistering --> owner.SimulantAddress) // TODO: make sure that owner unregistration is the correct trigger!
                     owner // TODO: make sure this is the correct monitor target as well!
                     world

@@ -721,7 +721,8 @@ module WorldModule =
                     | PropertyBinding binding ->
                         if binding.PBRight.Validate world then
                             let setter = Option.get binding.PBLeft.SetOpt
-                            setter (binding.PBRight.GetWithoutValidation world) world
+                            let value = binding.PBRight.GetWithoutValidation world
+                            setter value world
                         else world
                     | ContentBinding binding ->
                         if Lens.validate binding.CBSource world then

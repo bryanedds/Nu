@@ -41,7 +41,7 @@ module Nu =
 
     let internal unbind propertyBindingKey propertyAddress world =
 
-        // add property binding to map
+        // remove property binding to map
         let world =
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, propertyBindings) ->
