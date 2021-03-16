@@ -109,9 +109,11 @@ module WorldModuleGroup =
 
         static member private updateGroupState updater propertyName propertyValue group world =
             let (changed, world) = World.updateGroupStateWithoutEvent updater group world
-            if changed
-            then World.publishGroupChange propertyName propertyValue group world
-            else world
+            let world =
+                if changed
+                then World.publishGroupChange propertyName propertyValue group world
+                else world
+            (changed, world)
 
         /// Check that a group exists in the world.
         static member internal getGroupExists group world =
@@ -167,10 +169,12 @@ module WorldModuleGroup =
         static member internal trySetGroupProperty propertyName property group world =
             if World.getGroupExists group world then
                 match GroupSetters.TryGetValue propertyName with
-                | (true, setter) -> setter property group world
+                | (true, setter) ->
+                    let (changed, world) = setter property group world
+                    (true, changed, world)
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let world =
+                    let (changed, world) =
                         World.updateGroupState
                             (fun groupState ->
                                 let mutable propertyOld = Unchecked.defaultof<_>
@@ -183,16 +187,13 @@ module WorldModuleGroup =
                                     else None
                                 | false -> None)
                             propertyName property.PropertyValue group world
-                    (success, world)
-            else (false, world)
+                    (success, changed, world)
+            else (false, false, world)
 
         static member internal setGroupProperty propertyName property group world =
             if World.getGroupExists group world then
                 match GroupSetters.TryGetValue propertyName with
-                | (true, setter) ->
-                    match setter property group world with
-                    | (true, world) -> world
-                    | (false, _) -> failwith ("Cannot change group property " + propertyName + ".")
+                | (true, setter) -> setter property group world
                 | (false, _) ->
                     World.updateGroupState
                         (fun groupState ->
@@ -201,13 +202,15 @@ module WorldModuleGroup =
                             then Some (GroupState.setProperty propertyName property groupState)
                             else None)
                         propertyName property.PropertyValue group world
-            else world
+            else (false, world)
 
         static member internal attachGroupProperty propertyName property group world =
             if World.getGroupExists group world then
-                World.updateGroupState
-                    (fun groupState -> Some (GroupState.attachProperty propertyName property groupState))
-                    propertyName property.PropertyValue group world
+                let (_, world) =
+                    World.updateGroupState
+                        (fun groupState -> Some (GroupState.attachProperty propertyName property groupState))
+                        propertyName property.PropertyValue group world
+                world
             else failwith ("Cannot attach group property '" + propertyName + "'; group '" + group.Name + "' is not found.")
 
         static member internal detachGroupProperty propertyName group world =
@@ -304,9 +307,9 @@ module WorldModuleGroup =
         
     /// Initialize property setters.
     let private initSetters () =
-        GroupSetters.Add ("Model", fun property group world -> if World.getGroupModel group world =/= property.PropertyValue then (true, World.setGroupModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world) else (false, world))
-        GroupSetters.Add ("Visible", fun property group world -> if World.getGroupVisible group world =/= property.PropertyValue then (true, World.setGroupVisible (property.PropertyValue :?> bool) group world) else (false, world))
-        GroupSetters.Add ("Persistent", fun property group world -> if World.getGroupPersistent group world =/= property.PropertyValue then (true, World.setGroupPersistent (property.PropertyValue :?> bool) group world) else (false, world))
+        GroupSetters.Add ("Model", fun property group world -> World.setGroupModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
+        GroupSetters.Add ("Visible", fun property group world -> World.setGroupVisible (property.PropertyValue :?> bool) group world)
+        GroupSetters.Add ("Persistent", fun property group world -> World.setGroupPersistent (property.PropertyValue :?> bool) group world)
         
     /// Initialize getters and setters
     let internal init () =

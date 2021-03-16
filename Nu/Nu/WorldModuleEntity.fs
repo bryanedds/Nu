@@ -194,9 +194,11 @@ module WorldModuleEntity =
         static member private updateEntityState updater propertyName propertyValue entity world =
             let entityState = World.getEntityState entity world
             let (changed, world) = World.updateEntityStateInternal updater entityState entity world
-            if changed
-            then World.publishEntityChange propertyName propertyValue entity world
-            else world
+            let world =
+                if changed
+                then World.publishEntityChange propertyName propertyValue entity world
+                else world
+            (changed, world)
 
         static member private updateEntityStatePlus updater propertyName propertyValue entity world =
 
@@ -220,9 +222,11 @@ module WorldModuleEntity =
                 else World.updateEntityStateInternal updater oldEntityState entity world
 
             // publish entity change event if needed
-            if changed
-            then World.publishEntityChange propertyName propertyValue entity world
-            else world
+            let world =
+                if changed
+                then World.publishEntityChange propertyName propertyValue entity world
+                else world
+            (changed, world)
 
         static member private publishEntityChanges entity world =
             let entityState = World.getEntityState entity world
@@ -435,37 +439,37 @@ module WorldModuleEntity =
                     let world = if sizeChanged then World.publishEntityChange Property? Size valueInRef.Size entity world else world
                     let world = if rotationChanged then World.publishEntityChange Property? Rotation valueInRef.Rotation entity world else world
                     let world = if elevationChanged then World.publishEntityChange Property? Elevation valueInRef.Elevation entity world else world
-                    world
-                else world
-            else world
+                    (changed, world)
+                else (changed, world)
+            else (changed, world)
 
         static member internal setEntityPosition value entity world =
             let mutable transform = (World.getEntityState entity world).Transform
             if v2Neq value transform.Position then
                 transform.Position <- value
                 World.setEntityTransformByRef (&transform, entity, world)
-            else world
+            else (false, world)
         
         static member internal setEntitySize value entity world =
             let mutable transform = (World.getEntityState entity world).Transform
             if v2Neq value transform.Size then
                 transform.Size <- value
                 World.setEntityTransformByRef (&transform, entity, world)
-            else world
+            else (false, world)
         
         static member internal setEntityRotation value entity world =
             let mutable transform = (World.getEntityState entity world).Transform
             if value <> transform.Rotation then
                 transform.Rotation <- value
                 World.setEntityTransformByRef (&transform, entity, world)
-            else world
+            else (false, world)
         
         static member internal setEntityElevation value entity world =
             let mutable transform = (World.getEntityState entity world).Transform
             if value <> transform.Elevation then
                 transform.Elevation <- value
                 World.setEntityTransformByRef (&transform, entity, world)
-            else world
+            else (false, world)
 
         static member internal getEntityBounds entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
@@ -479,7 +483,7 @@ module WorldModuleEntity =
                 transform.Position <- position
                 transform.Size <- size
                 World.setEntityTransformByRef (&transform, entity, world)
-            else world
+            else (false, world)
 
         static member internal getEntityCenter entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
@@ -491,7 +495,7 @@ module WorldModuleEntity =
             if v2Neq transform.Position position then
                 transform.Position <- position
                 World.setEntityTransformByRef (&transform, entity, world)
-            else world
+            else (false, world)
 
         static member internal getEntityBottom entity world =
             let mutable transform = &(World.getEntityState entity world).Transform
@@ -503,7 +507,7 @@ module WorldModuleEntity =
             if v2Neq transform.Position position then
                 transform.Position <- position
                 World.setEntityTransformByRef (&transform, entity, world)
-            else world
+            else (false, world)
 
         static member private tryGetFacet facetName world =
             let facets = World.getFacets world
@@ -662,7 +666,7 @@ module WorldModuleEntity =
                 | None -> false
             if World.getEntityExists entity world
             then setFlag publishUpdates entity world
-            else world
+            else (false, world)
 
         static member internal trySetFacetNames facetNames entityState entityOpt world =
             let intrinsicFacetNames = World.getEntityIntrinsicFacetNames entityState
@@ -727,77 +731,80 @@ module WorldModuleEntity =
             | true -> property
             | false -> failwithf "Could not find property '%s'." propertyName
 
-        static member internal trySetEntityPropertyWithoutEvent propertyName property entity world =
+        static member internal trySetStaticEntityPropertyWithoutEvent propertyName property entity world =
             let entityStateOpt = World.getEntityStateOpt entity world
             match entityStateOpt :> obj with
             | null -> (false, false, world)
             | _ ->
-                match EntitySetters.TryGetValue propertyName with
-                | (false, _) ->
-                    let mutable propertyOld = Unchecked.defaultof<_>
-                    let (success, changed, world) =
-                        match EntityState.tryGetProperty (propertyName, entityStateOpt, &propertyOld) with
-                        | true ->
-                            match propertyOld.PropertyValue with
-                            | :? ComputedProperty as cp ->
-                                match cp.ComputedSetOpt with
-                                | Some computedSet ->
-                                    if property.PropertyValue =/= cp.ComputedGet (box entity) (box world)
-                                    then (true, true, computedSet property.PropertyValue entity world :?> World)
-                                    else (true, false, world)
-                                | None -> (false, false, world)
-                            | :? DesignerProperty as dp ->
-                                if property.PropertyValue =/= dp.DesignerValue then
-                                    let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
-                                    match EntityState.trySetProperty propertyName property entityStateOpt with
-                                    | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
-                                    | (false, _) -> (false, false, world)
+                let mutable propertyOld = Unchecked.defaultof<_>
+                let (success, changed, world) =
+                    match EntityState.tryGetProperty (propertyName, entityStateOpt, &propertyOld) with
+                    | true ->
+                        match propertyOld.PropertyValue with
+                        | :? ComputedProperty as cp ->
+                            match cp.ComputedSetOpt with
+                            | Some computedSet ->
+                                if property.PropertyValue =/= cp.ComputedGet (box entity) (box world)
+                                then (true, true, computedSet property.PropertyValue entity world :?> World)
                                 else (true, false, world)
-                            | _ ->
-                                if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    match EntityState.trySetProperty propertyName property entityStateOpt with
-                                    | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
-                                    | (false, _) -> (false, false, world)
-                                else (true, false, world)
-                        | false -> (false, false, world)
-                    (success, changed, world)
-                | (true, setter) ->
-                    let (changed, world) = setter property entity world
-                    (true, changed, world)
+                            | None -> (false, false, world)
+                        | :? DesignerProperty as dp ->
+                            if property.PropertyValue =/= dp.DesignerValue then
+                                let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
+                                match EntityState.trySetProperty propertyName property entityStateOpt with
+                                | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
+                                | (false, _) -> (false, false, world)
+                            else (true, false, world)
+                        | _ ->
+                            if property.PropertyValue =/= propertyOld.PropertyValue then
+                                match EntityState.trySetProperty propertyName property entityStateOpt with
+                                | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
+                                | (false, _) -> (false, false, world)
+                            else (true, false, world)
+                    | false -> (false, false, world)
+                (success, changed, world)
 
-        static member internal setEntityPropertyWithoutEvent propertyName property entity world =
-            match World.trySetEntityPropertyWithoutEvent propertyName property entity world with
+        static member internal setStaticEntityPropertyWithoutEvent propertyName property entity world =
+            match World.trySetStaticEntityPropertyWithoutEvent propertyName property entity world with
             | (true, changed, world) -> (true, changed, world)
             | (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityProperty propertyName property entity world =
-            match World.trySetEntityPropertyWithoutEvent propertyName property entity world with
-            | (true, changed, world) ->
-                let world =
-                    if changed
-                    then World.updateEntityState Some propertyName property.PropertyValue entity world
-                    else world
-                (true, world)
-            | (false, _, world) -> (false, world)
+            match EntitySetters.TryGetValue propertyName with
+            | (true, setter) ->
+                let (changed, world) = setter property entity world
+                (true, changed, world)
+            | (false, _) ->
+                match World.trySetStaticEntityPropertyWithoutEvent propertyName property entity world with
+                | (true, changed, world) ->
+                    let world =
+                        if changed
+                        then World.publishEntityChange propertyName property.PropertyValue entity world
+                        else world
+                    (true, changed, world)
+                | (false, changed, world) -> (false, changed, world)
 
         static member internal setEntityProperty propertyName property entity world =
             match World.trySetEntityProperty propertyName property entity world with
-            | (true, world) -> world
-            | (false, _) -> failwithf "Could not find property '%s'." propertyName
+            | (true, changed, world) -> (changed, world)
+            | (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
         static member internal attachEntityProperty propertyName property entity world =
             if World.getEntityExists entity world then
-                World.updateEntityState
-                    (fun entityState -> Some (EntityState.attachProperty propertyName property entityState))
-                    propertyName property.PropertyValue entity world
+                let (_, world) =
+                    World.updateEntityState
+                        (fun entityState -> Some (EntityState.attachProperty propertyName property entityState))
+                        propertyName property.PropertyValue entity world
+                world
             else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + entity.Name + "' is not found.")
 
         static member internal detachEntityProperty propertyName entity world =
             if World.getEntityExists entity world then
-                World.updateEntityStateWithoutEvent
-                    (fun entityState -> Some (EntityState.detachProperty propertyName entityState))
-                    entity world |>
-                snd
+                let (_, world) =
+                    World.updateEntityStateWithoutEvent
+                        (fun entityState -> Some (EntityState.detachProperty propertyName entityState))
+                        entity world
+                world
             else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + entity.Name + "' is not found.")
 
         static member internal getEntityDefaultOverlayName dispatcherName world =
@@ -872,7 +879,7 @@ module WorldModuleEntity =
                     then facet.RegisterPhysics (entity, world)
                     else world)
                     world facets
-            let world = World.updateEntityPublishFlags entity world
+            let (_, world) = World.updateEntityPublishFlags entity world
             let eventTrace = EventTrace.debug "World" "registerEntity" "" EventTrace.empty
             let eventAddresses = EventSystemDelegate.getEventAddresses1 (rtoa<unit> [|"Register"; "Event"|] --> entity)
             let world = Array.fold (fun world eventAddress -> World.publish () eventAddress eventTrace entity world) world eventAddresses
@@ -1069,7 +1076,7 @@ module WorldModuleEntity =
                 World.createEntity5 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt overlayDescriptor group world
             let world =
                 List.fold (fun world (propertyName, property) ->
-                    World.setEntityProperty propertyName property entity world)
+                    World.setEntityProperty propertyName property entity world |> snd)
                     world descriptor.SimulantProperties
             let world =
                 if WorldModule.isSelected entity world
@@ -1395,27 +1402,23 @@ module WorldModuleEntity =
 
     /// Initialize property setters.
     let private initSetters () =
-        EntitySetters.Add ("Transform", fun property entity world ->
-            let transformOld = &(World.getEntityState entity world).Transform
-            let mutable transform = property.PropertyValue :?> Transform
-            if not (Transform.equalsByRef (&transform, &transformOld)) then (true, World.setEntityTransformByRef (&transform, entity, world)) else (false, world))
-        EntitySetters.Add ("Bounds", fun property entity world -> if property.PropertyValue =/= World.getEntityBounds entity world then (true, World.setEntityBounds (property.PropertyValue :?> Vector4) entity world) else (false, world))
-        EntitySetters.Add ("Position", fun property entity world -> if property.PropertyValue =/= World.getEntityPosition entity world then (true, World.setEntityPosition (property.PropertyValue :?> Vector2) entity world) else (false, world))
-        EntitySetters.Add ("Center", fun property entity world -> if property.PropertyValue =/= World.getEntityCenter entity world then (true, World.setEntityCenter (property.PropertyValue :?> Vector2) entity world) else (false, world))
-        EntitySetters.Add ("Bottom", fun property entity world -> if property.PropertyValue =/= World.getEntityBottom entity world then (true, World.setEntityBottom (property.PropertyValue :?> Vector2) entity world) else (false, world))
-        EntitySetters.Add ("Size", fun property entity world -> if property.PropertyValue =/= World.getEntitySize entity world then (true, World.setEntitySize (property.PropertyValue :?> Vector2) entity world) else (false, world))
-        EntitySetters.Add ("Rotation", fun property entity world -> if property.PropertyValue =/= World.getEntityRotation entity world then (true, World.setEntityRotation (property.PropertyValue :?> single) entity world) else (false, world))
-        EntitySetters.Add ("Elevation", fun property entity world -> if property.PropertyValue =/= World.getEntityElevation entity world then (true, World.setEntityElevation (property.PropertyValue :?> single) entity world) else (false, world))
-        EntitySetters.Add ("Omnipresent", fun property entity world -> if property.PropertyValue =/= World.getEntityOmnipresent entity world then (true, World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world) else (false, world))
-        EntitySetters.Add ("Absolute", fun property entity world -> if property.PropertyValue =/= World.getEntityAbsolute entity world then (true, World.setEntityAbsolute (property.PropertyValue :?> bool) entity world) else (false, world))
-        EntitySetters.Add ("Model", fun property entity world -> if property.PropertyValue =/= World.getEntityModel entity world then (true, World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world) else (false, world))
-        EntitySetters.Add ("Overflow", fun property entity world -> if property.PropertyValue =/= World.getEntityOverflow entity world then (true, World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world) else (false, world))
-        EntitySetters.Add ("Imperative", fun property entity world -> if property.PropertyValue =/= World.getEntityImperative entity world then (true, World.setEntityImperative (property.PropertyValue :?> bool) entity world) else (false, world))
-        EntitySetters.Add ("Enabled", fun property entity world -> if property.PropertyValue =/= World.getEntityEnabled entity world then (true, World.setEntityEnabled (property.PropertyValue :?> bool) entity world) else (false, world))
-        EntitySetters.Add ("Visible", fun property entity world -> if property.PropertyValue =/= World.getEntityVisible entity world then (true, World.setEntityVisible (property.PropertyValue :?> bool) entity world) else (false, world))
-        EntitySetters.Add ("AlwaysUpdate", fun property entity world -> if property.PropertyValue =/= World.getEntityAlwaysUpdate entity world then (true, World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world) else (false, world))
-        EntitySetters.Add ("Persistent", fun property entity world -> if property.PropertyValue =/= World.getEntityPersistent entity world then (true, World.setEntityPersistent (property.PropertyValue :?> bool) entity world) else (false, world))
-        EntitySetters.Add ("FacetNames", fun _ _ world -> (false, world)) // TODO: consider logging an error?
+        EntitySetters.Add ("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, entity, world))
+        EntitySetters.Add ("Bounds", fun property entity world -> World.setEntityBounds (property.PropertyValue :?> Vector4) entity world)
+        EntitySetters.Add ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector2) entity world)
+        EntitySetters.Add ("Center", fun property entity world -> World.setEntityCenter (property.PropertyValue :?> Vector2) entity world)
+        EntitySetters.Add ("Bottom", fun property entity world -> World.setEntityBottom (property.PropertyValue :?> Vector2) entity world)
+        EntitySetters.Add ("Size", fun property entity world -> World.setEntitySize (property.PropertyValue :?> Vector2) entity world)
+        EntitySetters.Add ("Rotation", fun property entity world -> World.setEntityRotation (property.PropertyValue :?> single) entity world)
+        EntitySetters.Add ("Elevation", fun property entity world -> World.setEntityElevation (property.PropertyValue :?> single) entity world)
+        EntitySetters.Add ("Omnipresent", fun property entity world -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Add ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Add ("Model", fun property entity world -> World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
+        EntitySetters.Add ("Overflow", fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world)
+        EntitySetters.Add ("Imperative", fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Add ("Enabled", fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Add ("Visible", fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Add ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Add ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
 
     /// Initialize getters and setters
     let internal init () =

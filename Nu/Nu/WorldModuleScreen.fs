@@ -92,9 +92,11 @@ module WorldModuleScreen =
 
         static member private updateScreenState updater propertyName propertyValue screen world =
             let (changed, world) = World.updateScreenStateWithoutEvent updater screen world
-            if changed
-            then World.publishScreenChange propertyName propertyValue screen world
-            else world
+            let world =
+                if changed
+                then World.publishScreenChange propertyName propertyValue screen world
+                else world
+            (changed, world)
 
         /// Check that a screen exists in the world.
         static member internal getScreenExists screen world =
@@ -157,10 +159,12 @@ module WorldModuleScreen =
         static member internal trySetScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
                 match ScreenSetters.TryGetValue propertyName with
-                | (true, setter) -> setter property screen world
+                | (true, setter) ->
+                    let (changed, world) = setter property screen world
+                    (true, changed, world)
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let world =
+                    let (changed, world) =
                         World.updateScreenState
                             (fun screenState ->
                                 let mutable propertyOld = Unchecked.defaultof<_>
@@ -173,16 +177,13 @@ module WorldModuleScreen =
                                     else None
                                 | false -> None)
                             propertyName property.PropertyValue screen world
-                    (success, world)
-            else (false, world)
+                    (success, changed, world)
+            else (false, false, world)
 
         static member internal setScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
                 match ScreenSetters.TryGetValue propertyName with
-                | (true, setter) ->
-                    match setter property screen world with
-                    | (true, world) -> world
-                    | (false, _) -> failwith ("Cannot change screen property " + propertyName + ".")
+                | (true, setter) -> setter property screen world
                 | (false, _) ->
                     World.updateScreenState
                         (fun screenState ->
@@ -191,13 +192,15 @@ module WorldModuleScreen =
                             then Some (ScreenState.setProperty propertyName property screenState)
                             else None)
                         propertyName property.PropertyValue screen world
-            else world
+            else (false, world)
 
         static member internal attachScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
-                World.updateScreenState
-                    (fun screenState -> Some (ScreenState.attachProperty propertyName property screenState))
-                    propertyName property.PropertyValue screen world
+                let (_, world) =
+                    World.updateScreenState
+                        (fun screenState -> Some (ScreenState.attachProperty propertyName property screenState))
+                        propertyName property.PropertyValue screen world
+                world
             else failwith ("Cannot attach screen property '" + propertyName + "'; screen '" + screen.Name + "' is not found.")
 
         static member internal detachScreenProperty propertyName screen world =
@@ -300,12 +303,12 @@ module WorldModuleScreen =
         
     /// Initialize property setters.
     let private initSetters () =
-        ScreenSetters.Add ("Model", fun property screen world -> if World.getScreenModel screen world =/= property.PropertyValue then (true, World.setScreenModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world) else (false, world))
-        ScreenSetters.Add ("TransitionState", fun property screen world -> if World.getScreenTransitionState screen world =/= property.PropertyValue then (true, World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world) else (false, world))
-        ScreenSetters.Add ("TransitionTicks", fun property screen world -> if World.getScreenTransitionTicks screen world =/= property.PropertyValue then (true, World.setScreenTransitionTicks (property.PropertyValue :?> int64) screen world) else (false, world))
-        ScreenSetters.Add ("Incoming", fun property screen world -> if World.getScreenIncoming screen world =/= property.PropertyValue then (true, World.setScreenIncoming (property.PropertyValue :?> Transition) screen world) else (false, world))
-        ScreenSetters.Add ("Outgoing", fun property screen world -> if World.getScreenOutgoing screen world =/= property.PropertyValue then (true, World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world) else (false, world))
-        ScreenSetters.Add ("Persistent", fun property screen world -> if World.getScreenPersistent screen world =/= property.PropertyValue then (true, World.setScreenPersistent (property.PropertyValue :?> bool) screen world) else (false, world))
+        ScreenSetters.Add ("Model", fun property screen world -> World.setScreenModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world)
+        ScreenSetters.Add ("TransitionState", fun property screen world -> World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world)
+        ScreenSetters.Add ("TransitionTicks", fun property screen world -> World.setScreenTransitionTicks (property.PropertyValue :?> int64) screen world)
+        ScreenSetters.Add ("Incoming", fun property screen world -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
+        ScreenSetters.Add ("Outgoing", fun property screen world -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)
+        ScreenSetters.Add ("Persistent", fun property screen world -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world)
         
     /// Initialize getters and setters
     let internal init () =

@@ -149,8 +149,8 @@ module WorldScripting =
                     | Some propertyValue ->
                         let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
                         match World.trySetProperty propertyName property simulant world with
-                        | (true, world) -> struct (Unit, world)
-                        | (false, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
+                        | (true, _, world) -> struct (Unit, world)
+                        | (false, _, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
                     | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
                 | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
             | Left error -> error
@@ -174,7 +174,7 @@ module WorldScripting =
                                             match ScriptingSystem.tryExport property.PropertyType expr world with
                                             | Some propertyValue ->
                                                 let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                                                let (_, world) = World.trySetProperty propertyName property simulant world
+                                                let (_, _, world) = World.trySetProperty propertyName property simulant world
                                                 (Cascade, world)
                                             | None -> (Cascade, world)
                                         | None -> (Cascade, world)

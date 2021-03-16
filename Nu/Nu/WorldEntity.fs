@@ -16,61 +16,61 @@ module WorldEntityModule =
         member this.GetDispatcher world = World.getEntityDispatcher this world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetModel<'a> world = World.getEntityModel<'a> this world
-        member this.SetModel<'a> value world = World.setEntityModel<'a> value this world
+        member this.SetModel<'a> value world = World.setEntityModel<'a> value this world |> snd
         member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
         member this.GetEcs world = World.getScreenEcs this.Parent.Parent world
         member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = lensReadOnly Property? Facets this.GetFacets this
         member this.GetTransform world = (World.getEntityState this world).Transform
-        member this.SetTransform value world = World.setEntityTransformByRef (&value, this, world)
+        member this.SetTransform value world = World.setEntityTransformByRef (&value, this, world) |> snd
         member this.Transform = lens Property? Transform this.GetTransform this.SetTransform this
         member this.GetBounds world = World.getEntityBounds this world
-        member this.SetBounds value world = World.setEntityBounds value this world
+        member this.SetBounds value world = World.setEntityBounds value this world |> snd
         member this.Bounds = lens Property? Bounds this.GetBounds this.SetBounds this
         member this.GetPosition world = World.getEntityPosition this world
-        member this.SetPosition value world = World.setEntityPosition value this world
+        member this.SetPosition value world = World.setEntityPosition value this world |> snd
         member this.Position = lens Property? Position this.GetPosition this.SetPosition this
         member this.GetCenter world = World.getEntityCenter this world
-        member this.SetCenter value world = World.setEntityCenter value this world
+        member this.SetCenter value world = World.setEntityCenter value this world |> snd
         member this.Center = lens Property? Center this.GetCenter this.SetCenter this
         member this.GetBottom world = World.getEntityBottom this world
-        member this.SetBottom value world = World.setEntityBottom value this world
+        member this.SetBottom value world = World.setEntityBottom value this world |> snd
         member this.Bottom = lens Property? Bottom this.GetBottom this.SetBottom this
         member this.GetSize world = World.getEntitySize this world
-        member this.SetSize value world = World.setEntitySize value this world
+        member this.SetSize value world = World.setEntitySize value this world |> snd
         member this.Size = lens Property? Size this.GetSize this.SetSize this
         member this.GetRotation world = World.getEntityRotation this world
-        member this.SetRotation value world = World.setEntityRotation value this world
+        member this.SetRotation value world = World.setEntityRotation value this world |> snd
         member this.Rotation = lens Property? Rotation this.GetRotation this.SetRotation this
         member this.GetElevation world = World.getEntityElevation this world
-        member this.SetElevation value world = World.setEntityElevation value this world
+        member this.SetElevation value world = World.setEntityElevation value this world |> snd
         member this.Elevation = lens Property? Elevation this.GetElevation this.SetElevation this
         member this.GetFlags world = World.getEntityFlags this world
         member this.Flags = lensReadOnly Property? Flags this.GetFlags this
         member this.GetOmnipresent world = World.getEntityOmnipresent this world
-        member this.SetOmnipresent value world = World.setEntityOmnipresent value this world
+        member this.SetOmnipresent value world = World.setEntityOmnipresent value this world |> snd
         member this.Omnipresent = lens Property? Omnipresent this.GetOmnipresent this.SetOmnipresent this
         member this.GetAbsolute world = World.getEntityAbsolute this world
-        member this.SetAbsolute value world = World.setEntityAbsolute value this world
+        member this.SetAbsolute value world = World.setEntityAbsolute value this world |> snd
         member this.Absolute = lens Property? Absolute this.GetAbsolute this.SetAbsolute this
         member this.GetOverflow world = World.getEntityOverflow this world
-        member this.SetOverflow value world = World.setEntityOverflow value this world
+        member this.SetOverflow value world = World.setEntityOverflow value this world |> snd
         member this.Overflow = lens Property? Overflow this.GetOverflow this.SetOverflow this
         member this.GetImperative world = World.getEntityImperative this world
-        member this.SetImperative value world = World.setEntityImperative value this world
+        member this.SetImperative value world = World.setEntityImperative value this world |> snd
         member this.Imperative = lens Property? Imperative this.GetImperative this.SetImperative this
         member this.GetEnabled world = World.getEntityEnabled this world
-        member this.SetEnabled value world = World.setEntityEnabled value this world
+        member this.SetEnabled value world = World.setEntityEnabled value this world |> snd
         member this.Enabled = lens Property? Enabled this.GetEnabled this.SetEnabled this
         member this.GetVisible world = World.getEntityVisible this world
-        member this.SetVisible value world = World.setEntityVisible value this world
+        member this.SetVisible value world = World.setEntityVisible value this world |> snd
         member this.Visible = lens Property? Visible this.GetVisible this.SetVisible this
         member this.GetAlwaysUpdate world = World.getEntityAlwaysUpdate this world
-        member this.SetAlwaysUpdate value world = World.setEntityAlwaysUpdate value this world
+        member this.SetAlwaysUpdate value world = World.setEntityAlwaysUpdate value this world |> snd
         member this.AlwaysUpdate = lens Property? AlwaysUpdate this.GetAlwaysUpdate this.SetAlwaysUpdate this
         member this.GetPersistent world = World.getEntityPersistent this world
-        member this.SetPersistent value world = World.setEntityPersistent value this world
+        member this.SetPersistent value world = World.setEntityPersistent value this world |> snd
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
         member this.GetOptimized world = World.getEntityOptimized this world
         member this.Optimized = lensReadOnly Property? Optimized this.GetOptimized this
@@ -148,7 +148,7 @@ module WorldEntityModule =
 
         /// Set a property value with explicit type.
         member this.SetProperty propertyName property world =
-            World.setEntityProperty propertyName property this world
+            World.setEntityProperty propertyName property this world |> snd
 
         /// Attach a property.
         member this.AttachProperty propertyName property world =
@@ -161,12 +161,12 @@ module WorldEntityModule =
         /// Set a property value.
         member this.Set<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setEntityProperty propertyName property this world
+            World.setEntityProperty propertyName property this world |> snd
 
-        /// Set a property value with publishing an event.
-        member this.SetWithoutEvent<'a> propertyName (value : 'a) world =
+        /// Set a static (non-xtension) property value with publishing an event.
+        member internal this.SetStaticPropertyWithoutEvent<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            let (_, _, world) = World.setEntityPropertyWithoutEvent propertyName property this world
+            let (_, _, world) = World.setStaticEntityPropertyWithoutEvent propertyName property this world
             world
 
         /// Get an entity's sorting priority.
@@ -378,7 +378,7 @@ module WorldEntityModule =
                             // only set parent node if one was not specified by the descriptor properties
                             if not (List.exists (fun (name, _) -> name = Property? ParentNodeOpt) descriptor.SimulantProperties) then
                                 let property = { PropertyType = typeof<Entity Relation option>; PropertyValue = Some (relate entity parent) }
-                                entity.TrySetProperty Property? ParentNodeOpt property world |> snd
+                                entity.TrySetProperty Property? ParentNodeOpt property world |> __c
                             else world
                         | _ -> world
                     let world =
