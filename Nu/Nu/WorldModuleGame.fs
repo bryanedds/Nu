@@ -50,9 +50,11 @@ module WorldModuleGame =
 
         static member private updateGameState updater propertyName propertyValue world =
             let (changed, world) = World.updateGameStateWithoutEvent updater world
-            if changed
-            then World.publishGameChange propertyName propertyValue world
-            else world
+            let world =
+                if changed
+                then World.publishGameChange propertyName propertyValue world
+                else world
+            (changed, world)
 
         static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
@@ -84,20 +86,26 @@ module WorldModuleGame =
         static member getEyeCenter world =
             (World.getGameState world).EyeCenter
 
+        static member internal setEyeCenterInternal value world =
+            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeCenter then Some { gameState with EyeCenter = value } else None) Property? EyeCenter value world
+
         /// Set the current eye center.
         [<FunctionBinding>]
         static member setEyeCenter value world =
-            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeCenter then Some { gameState with EyeCenter = value } else None) Property? EyeCenter value world
+            World.setEyeCenterInternal value world |> snd
 
         /// Get the current eye size.
         [<FunctionBinding>]
         static member getEyeSize world =
             (World.getGameState world).EyeSize
 
+        static member internal setEyeSizeInternal value world =
+            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeSize then Some { gameState with EyeSize = value } else None) Property? EyeSize value world
+
         /// Set the current eye size.
         [<FunctionBinding>]
         static member setEyeSize value world =
-            World.updateGameState (fun gameState -> if v2Neq value gameState.EyeSize then Some { gameState with EyeSize = value } else None) Property? EyeSize value world
+            World.setEyeSizeInternal value world |> snd
 
         /// Get the current eye bounds
         [<FunctionBinding>]
@@ -111,21 +119,27 @@ module WorldModuleGame =
         static member getOmniScreenOpt world =
             (World.getGameState world).OmniScreenOpt
         
+        static member internal setOmniScreenOptInternal value world =
+            if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set OmniScreen to SelectedScreen."
+            World.updateGameState (fun gameState -> if value <> gameState.OmniScreenOpt then Some { gameState with OmniScreenOpt = value } else None) Property? OmniScreenOpt value world
+
         /// Set the omni-screen or None.
         [<FunctionBinding>]
         static member setOmniScreenOpt value world =
-            if Option.isSome value && World.getSelectedScreenOpt world = value then failwith "Cannot set OmniScreen to SelectedScreen."
-            World.updateGameState (fun gameState -> if value <> gameState.OmniScreenOpt then Some { gameState with OmniScreenOpt = value } else None) Property? OmniScreenOpt value world
+            World.setOmniScreenOptInternal value world |> snd
 
         /// Get the omniScreen (failing with an exception if there isn't one).
         [<FunctionBinding>]
         static member getOmniScreen world =
             Option.get (World.getOmniScreenOpt world)
+
+        static member internal setOmniScreenInternal value world =
+            World.setOmniScreenOptInternal (Some value) world
         
         /// Set the omniScreen.
         [<FunctionBinding>]
         static member setOmniScreen value world =
-            World.setOmniScreenOpt (Some value) world
+            World.setOmniScreenInternal value world |> snd
 
         /// Get the currently selected screen, if any.
         [<FunctionBinding>]
@@ -146,10 +160,7 @@ module WorldModuleGame =
                          else eyeBounds.Y))
             World.setEyeCenter eyeBoundsConstrained.Center world
 
-        /// Set the currently selected screen or None. Be careful using this function directly as
-        /// you may be wanting to use the higher-level World.transitionScreen function instead.
-        [<FunctionBinding>]
-        static member setSelectedScreenOpt value world =
+        static member internal setSelectedScreenOptInternal value world =
 
             // disallow omni-screen selection
             if  Option.isSome value &&
@@ -157,7 +168,7 @@ module WorldModuleGame =
                 failwith "Cannot set SelectedScreen to OmniScreen."
 
             // raise change event for none selection
-            let world = World.updateGameState Some Property? SelectedScreenOpt None world
+            let (_, world) = World.updateGameState Some Property? SelectedScreenOpt None world
 
             // clear out singleton states
             let world =
@@ -186,31 +197,39 @@ module WorldModuleGame =
                 let world = WorldModule.registerScreenPhysics screen world
 
                 // raise change event for some selection
-                World.updateGameState Some Property? SelectedScreenOpt (Some screen) world
+                let world = World.updateGameState Some Property? SelectedScreenOpt (Some screen) world |> snd
+                (true, world)
 
             // fin
-            | None -> world
+            | None -> (true, world)
+
+        /// Set the currently selected screen or None. Be careful using this function directly as
+        /// you may be wanting to use the higher-level World.transitionScreen function instead.
+        [<FunctionBinding>]
+        static member setSelectedScreenOpt value world =
+            World.setSelectedScreenOptInternal value world |> snd
 
         /// Get the currently selected screen (failing with an exception if there isn't one).
         [<FunctionBinding>]
         static member getSelectedScreen world =
             Option.get (World.getSelectedScreenOpt world)
+
+        static member internal setSelectedScreenInternal value world =
+            World.setSelectedScreenOptInternal (Some value) world
         
         /// Set the currently selected screen. Be careful using this function directly as you may
         /// be wanting to use the higher-level World.transitionScreen function instead.
         [<FunctionBinding>]
         static member setSelectedScreen value world =
-            World.setSelectedScreenOpt (Some value) world
+            World.setSelectedScreenInternal value world |> snd
 
         /// Get the current destination screen if a screen transition is currently underway.
-        [<FunctionBinding>]
         static member getScreenTransitionDestinationOpt world =
             (World.getGameState world).ScreenTransitionDestinationOpt
 
         /// Set the current destination screen or None. Be careful using this function as calling
         /// it is predicated that no screen transition is currently underway.
         /// TODO: consider asserting such predication here.
-        [<FunctionBinding>]
         static member internal setScreenTransitionDestinationOpt destination world =
             World.updateGameState
                 (fun gameState ->
@@ -328,10 +347,12 @@ module WorldModuleGame =
 
         static member internal trySetGameProperty propertyName property world =
             match GameSetters.TryGetValue propertyName with
-            | (true, setter) -> setter property world
+            | (true, setter) ->
+                let (changed, world) = setter property world
+                (true, changed, world)
             | (false, _) ->
                 let mutable success = false // bit of a hack to get additional state out of the lambda
-                let world =
+                let (changed, world) =
                     World.updateGameState
                         (fun gameState ->
                             let mutable propertyOld = Unchecked.defaultof<_>
@@ -344,14 +365,11 @@ module WorldModuleGame =
                                 else None
                             | false -> None)
                         propertyName property.PropertyValue world
-                (success, world)
+                (success, changed, world)
 
         static member internal setGameProperty propertyName property world =
             match GameSetters.TryGetValue propertyName with
-            | (true, setter) ->
-                match setter property world with
-                | (true, world) -> world
-                | (false, _) -> failwith ("Cannot change game property " + propertyName + ".")
+            | (true, setter) -> setter property world
             | (false, _) ->
                 World.updateGameState
                     (fun gameState ->
@@ -362,9 +380,11 @@ module WorldModuleGame =
                     propertyName property.PropertyValue world
 
         static member internal attachGameProperty propertyName property world =
-            World.updateGameState
-                (fun gameState -> Some (GameState.attachProperty propertyName property gameState))
-                propertyName property.PropertyValue world
+            let (_, world) =
+                World.updateGameState
+                    (fun gameState -> Some (GameState.attachProperty propertyName property gameState))
+                    propertyName property.PropertyValue world
+            world
 
         static member internal detachGameProperty propertyName world =
             World.updateGameStateWithoutEvent
@@ -419,7 +439,6 @@ module WorldModuleGame =
         GameGetters.Add ("Model", fun world -> let designerProperty = World.getGameModelProperty world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
         GameGetters.Add ("OmniScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getOmniScreenOpt world })
         GameGetters.Add ("SelectedScreenOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getSelectedScreenOpt world })
-        GameGetters.Add ("ScreenTransitionDestinationOpt", fun world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getScreenTransitionDestinationOpt world })
         GameGetters.Add ("EyeCenter", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeCenter world })
         GameGetters.Add ("EyeSize", fun world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEyeSize world })
         GameGetters.Add ("ScriptFrame", fun world -> { PropertyType = typeof<Scripting.ProceduralFrame list>; PropertyValue = World.getGameScriptFrame world })
@@ -428,12 +447,10 @@ module WorldModuleGame =
 
     /// Initialize property setters.
     let private initSetters () =
-        GameSetters.Add ("Model", fun property world -> if World.getGameModel world =/= property.PropertyValue then (true, World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world) else (false, world))
-        GameSetters.Add ("OmniScreenOpt", fun property world -> if World.getOmniScreenOpt world =/= property.PropertyValue then (true, World.setOmniScreenOpt (property.PropertyValue :?> Screen option) world) else (false, world))
-        GameSetters.Add ("SelectedScreenOpt", fun property world -> if World.getSelectedScreenOpt world =/= property.PropertyValue then (true, World.setSelectedScreenOpt (property.PropertyValue :?> Screen option) world) else (false, world))
-        GameSetters.Add ("ScreenTransitionDestinationOpt", fun property world -> if World.getScreenTransitionDestinationOpt world =/= property.PropertyValue then (true, World.setScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) world) else (false, world))
-        GameSetters.Add ("EyeCenter", fun property world -> if World.getEyeCenter world =/= property.PropertyValue then (true, World.setEyeCenter (property.PropertyValue :?> Vector2) world) else (false, world))
-        GameSetters.Add ("EyeSize", fun property world -> if World.getEyeSize world =/= property.PropertyValue then (true, World.setEyeSize (property.PropertyValue :?> Vector2) world) else (false, world))
+        GameSetters.Add ("Model", fun property world -> World.setGameModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } world)
+        GameSetters.Add ("OmniScreenOpt", fun property world -> World.setOmniScreenOptInternal (property.PropertyValue :?> Screen option) world)
+        GameSetters.Add ("EyeCenter", fun property world -> World.setEyeCenterInternal (property.PropertyValue :?> Vector2) world)
+        GameSetters.Add ("EyeSize", fun property world -> World.setEyeSizeInternal (property.PropertyValue :?> Vector2) world)
 
     /// Initialize getters and setters
     let internal init () =

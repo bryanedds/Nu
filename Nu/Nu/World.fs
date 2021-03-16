@@ -29,7 +29,7 @@ module Nu =
             | Some property ->
                 if property.PropertyValue =/= value then
                     let property = { property with PropertyValue = value }
-                    World.trySetProperty leftName property simulant world |> snd
+                    World.trySetProperty leftName property simulant world |> __c
                 else world
             | None -> world
         else world
@@ -198,7 +198,7 @@ module Nu =
                                 ("Subscribing to entity update events with a wildcard is not supported. " +
                                  "This will cause a bug where some entity update events are not published.")
 #endif
-                        World.updateEntityPublishUpdateFlag entity world :> obj
+                        World.updateEntityPublishUpdateFlag entity world |> snd :> obj
 #if !DISABLE_ENTITY_POST_UPDATE
                     | "PostUpdate" ->
 #if DEBUG
@@ -207,7 +207,7 @@ module Nu =
                                 ("Subscribing to entity post-update events with a wildcard is not supported. " +
                                  "This will cause a bug where some entity post-update events are not published.")
 #endif
-                        World.updateEntityPublishPostUpdateFlag entity world :> obj
+                        World.updateEntityPublishPostUpdateFlag entity world |> snd :> obj
 #endif
                     | _ -> world :> obj
                 | eventNames when eventNames.Length >= 3 ->
@@ -230,19 +230,19 @@ module Nu =
                                             else UMap.add entityAddress entityChangeCount entityChangeCounts
                                         let world =
                                             if entity.Exists world then
-                                                if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world
-                                                elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world
+                                                if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> snd
+                                                elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> snd
                                                 else world
                                             else world
                                         World.addKeyedValue EntityChangeCountsId entityChangeCounts world
                                     | (false, _) ->
                                         if not subscribing then failwithumf ()
-                                        let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world else world
+                                        let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd else world
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                                 | None ->
                                     if not subscribing then failwithumf ()
                                     let entityChangeCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
-                                    let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world else world
+                                    let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd else world
                                     World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                             else world
                         if  eventSecondName <> "ParentNodeOpt" &&
@@ -401,7 +401,7 @@ module Nu =
                                 | None -> failwithumf ())
                             (fun propertyValue world ->
                                 match World.tryGetProperty left.Name simulant world with
-                                | Some property -> snd (World.trySetProperty left.Name { property with PropertyValue = propertyValue } simulant world)
+                                | Some property -> World.trySetProperty left.Name { property with PropertyValue = propertyValue } simulant world |> __c
                                 | None -> world)
                             simulant
                     else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant

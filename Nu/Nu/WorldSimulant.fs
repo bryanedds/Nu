@@ -61,7 +61,7 @@ module WorldSimulantModule =
             | :? Group as group -> World.trySetGroupProperty name property group world
             | :? Screen as screen -> World.trySetScreenProperty name property screen world
             | :? Game -> World.trySetGameProperty name property world
-            | _ -> (false, world)
+            | _ -> (false, false, world)
 
         static member internal setProperty name property (simulant : Simulant) world =
             match simulant with

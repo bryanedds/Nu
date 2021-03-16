@@ -162,16 +162,25 @@ module WorldDeclarative =
                     | Some entityBindingCount ->
                         let entityBindingCount = inc entityBindingCount
                         let entityBindingCounts = UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
-                        let world = if entityBindingCount = 1 && World.getEntityExists entity world then World.setEntityPublishChangeBindings true entity world else world
+                        let world =
+                            if entityBindingCount = 1 && World.getEntityExists entity world
+                            then World.setEntityPublishChangeBindings true entity world |> snd
+                            else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                     | None ->
                         let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
-                        let world = if World.getEntityExists entity world then World.setEntityPublishChangeBindings true entity world else world
+                        let world =
+                            if World.getEntityExists entity world
+                            then World.setEntityPublishChangeBindings true entity world |> snd
+                            else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                 | None ->
                     let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
                     let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
-                    let world = if World.getEntityExists entity world then World.setEntityPublishChangeBindings true entity world else world
+                    let world =
+                        if World.getEntityExists entity world
+                        then World.setEntityPublishChangeBindings true entity world |> snd
+                        else world
                     World.addKeyedValue EntityBindingCountsId entityBindingCounts world
             | _ -> world
 
@@ -187,7 +196,10 @@ module WorldDeclarative =
                             if entityBindingCount = 0
                             then UMap.remove entity.EntityAddress entityBindingCounts
                             else UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
-                        let world = if entityBindingCount = 0 && World.getEntityExists entity world then World.setEntityPublishChangeBindings false entity world else world
+                        let world =
+                            if entityBindingCount = 0 && World.getEntityExists entity world
+                            then World.setEntityPublishChangeBindings false entity world |> snd
+                            else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                     | None -> failwithumf ()
                 | None -> failwithumf ()

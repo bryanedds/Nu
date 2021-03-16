@@ -15,20 +15,20 @@ module WorldGameModule =
         member this.GetDispatcher world = World.getGameDispatcher world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetModel<'a> world = World.getGameModel<'a> world
-        member this.SetModel<'a> value world = World.setGameModel<'a> value world
+        member this.SetModel<'a> value world = World.setGameModel<'a> value world |> snd
         member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
         member this.GetOmniScreenOpt world = World.getOmniScreenOpt world
-        member this.SetOmniScreenOpt value world = World.setOmniScreenOpt value world
+        member this.SetOmniScreenOpt value world = World.setOmniScreenOptInternal value world |> snd
         member this.OmniScreenOpt = lens Property? OmniScreenOpt this.GetOmniScreenOpt this.SetOmniScreenOpt this
         member this.GetSelectedScreenOpt world = World.getSelectedScreenOpt world
         member this.SelectedScreenOpt = lensReadOnly Property? SelectedScreenOpt this.GetSelectedScreenOpt this
         member this.GetScreenTransitionDestinationOpt world = World.getScreenTransitionDestinationOpt world
         member this.ScreenTransitionDestinationOpt = lensReadOnly Property? ScreenTransitionDestinationOpt this.GetScreenTransitionDestinationOpt this
         member this.GetEyeCenter world = World.getEyeCenter world
-        member this.SetEyeCenter value world = World.setEyeCenter value world
+        member this.SetEyeCenter value world = World.setEyeCenterInternal value world |> snd
         member this.EyeCenter = lens Property? EyeCenter this.GetEyeCenter this.SetEyeCenter this
         member this.GetEyeSize world = World.getEyeSize world
-        member this.SetEyeSize value world = World.setEyeSize value world
+        member this.SetEyeSize value world = World.setEyeSizeInternal value world |> snd
         member this.EyeSize = lens Property? EyeSize this.GetEyeSize this.SetEyeSize this
         member this.GetScriptFrame world = World.getGameScriptFrame world
         member this.ScriptFrame = lensReadOnly Property? Script this.GetScriptFrame this
@@ -85,10 +85,10 @@ module WorldGameModule =
         member this.TrySetProperty propertyName property world = World.trySetGameProperty propertyName property world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setGameProperty propertyName property world
+        member this.SetProperty propertyName property world = World.setGameProperty propertyName property world |> snd
 
         /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setGameProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } world
+        member this.Set<'a> propertyName (value : 'a) world = World.setGameProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } world |> snd
 
         /// Get the view of the eye in absolute terms (world space).
         member this.GetViewAbsolute (_ : World) = World.getViewAbsolute

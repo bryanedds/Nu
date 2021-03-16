@@ -16,24 +16,24 @@ module WorldScreenModule =
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetModel<'a> world = World.getScreenModel<'a> this world
-        member this.SetModel<'a> value world = World.setScreenModel<'a> value this world
+        member this.SetModel<'a> value world = World.setScreenModel<'a> value this world |> snd
         member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
         member this.GetEcs world = World.getScreenEcs this world
         member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
         member this.GetTransitionState world = World.getScreenTransitionState this world
-        member this.SetTransitionState value world = World.setScreenTransitionState value this world
+        member this.SetTransitionState value world = World.setScreenTransitionState value this world |> snd
         member this.TransitionState = lens Property? TransitionState this.GetTransitionState this.SetTransitionState this
         member this.GetTransitionTicks world = World.getScreenTransitionTicks this world
-        member this.SetTransitionTicks value world = World.setScreenTransitionTicks value this world
+        member this.SetTransitionTicks value world = World.setScreenTransitionTicks value this world |> snd
         member this.TransitionTicks = lens Property? TransitionTicks this.GetTransitionTicks this.SetTransitionTicks this
         member this.GetIncoming world = World.getScreenIncoming this world
-        member this.SetIncoming value world = World.setScreenIncoming value this world
+        member this.SetIncoming value world = World.setScreenIncoming value this world |> snd
         member this.Incoming = lens Property? Incoming this.GetIncoming this.SetIncoming this
         member this.GetOutgoing world = World.getScreenOutgoing this world
-        member this.SetOutgoing value world = World.setScreenOutgoing value this world
+        member this.SetOutgoing value world = World.setScreenOutgoing value this world |> snd
         member this.Outgoing = lens Property? Outgoing this.GetOutgoing this.SetOutgoing this
         member this.GetPersistent world = World.getScreenPersistent this world
-        member this.SetPersistent value world = World.setScreenPersistent value this world
+        member this.SetPersistent value world = World.setScreenPersistent value this world |> snd
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
         member this.GetDestroying world = World.getScreenDestroying this world
         member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
@@ -73,10 +73,10 @@ module WorldScreenModule =
         member this.TrySetProperty propertyName property world = World.trySetScreenProperty propertyName property this world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setScreenProperty propertyName property this world
+        member this.SetProperty propertyName property world = World.setScreenProperty propertyName property this world |> snd
 
         /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setScreenProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world
+        member this.Set<'a> propertyName (value : 'a) world = World.setScreenProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world |> snd
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.IsIdling world = match this.GetTransitionState world with IdlingState -> true | _ -> false
@@ -209,7 +209,7 @@ module WorldScreenModule =
                 World.createScreen3 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt world
             let world =
                 List.fold (fun world (propertyName, property) ->
-                    World.setScreenProperty propertyName property screen world)
+                    World.setScreenProperty propertyName property screen world |> snd)
                     world descriptor.SimulantProperties
             let world =
                 List.fold (fun world childDescriptor ->
