@@ -656,8 +656,29 @@ module WorldModule =
 
     type World with // ElmishBindingsMap
 
-        static member internal removeSynchronizedSimulants contentKey removed world =
-            let contentKey = Gen.idDeterministic 1 contentKey
+        static member internal makeLensesCurrent mapGeneralized lensGeneralized world =
+            let mutable current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
+            let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
+            while enr.MoveNext () do
+                let key = fst enr.Current
+                let lensExistenceAndValue = Lens.map (fun keyed -> keyed.TryGetValue key) lensGeneralized
+                if Lens.validate lensExistenceAndValue world then
+                    match Lens.getWithoutValidation lensExistenceAndValue world with
+                    | (true, _) ->
+                        let validateOpt =
+                            match lensExistenceAndValue.ValidateOpt with
+                            | Some validate -> Some (fun world -> if validate world then (match Lens.getWithoutValidation lensExistenceAndValue world with (exists, _) -> exists) else false)
+                            | None -> Some (fun world -> match Lens.getWithoutValidation lensExistenceAndValue world with (exists, _) -> exists)
+                        let item = PartialComparable.make key { Lens.map snd lensExistenceAndValue with ValidateOpt = validateOpt }
+                        current <- USet.add item current
+                    | (false, _) -> ()
+                else ()
+            current
+
+        static member internal removeSynchronizedSimulants
+            (contentKey : Guid)
+            (removed : _ HashSet)
+            world =
             Seq.fold (fun world keyAndLens ->
                 let (key, _) = PartialComparable.unmake keyAndLens
                 match World.tryGetKeyedValue contentKey world with
@@ -678,12 +699,11 @@ module WorldModule =
             (contentMapper : IComparable -> Lens<obj, World> -> World -> SimulantContent)
             (contentKey : Guid)
             (mapGeneralized : MapGeneralized)
-            added
-            origin
-            owner
-            parent
+            (added : _ HashSet)
+            (origin : ContentOrigin)
+            (owner : Simulant)
+            (parent : Simulant)
             world =
-            let contentKey = Gen.idDeterministic 1 contentKey
             Seq.fold (fun world keyAndLens ->
                 let (key, lens) = PartialComparable.unmake keyAndLens
                 match mapGeneralized.TryGetValue key with
@@ -698,7 +718,7 @@ module WorldModule =
                     | Some simulantMap ->
                         match simulantOpt with
                         | Some simulant -> World.addKeyedValue contentKey (Map.add key simulant simulantMap) world
-                        | None -> Log.debug "Expected simulant to be created from expandContent, but none was created."; world
+                        | None -> world
                 | (false, _) -> world)
                 world added
 
@@ -712,30 +732,12 @@ module WorldModule =
             let changed = added.Count <> 0 || removed.Count <> 0
             let world =
                 if changed then
-                    let world = World.removeSynchronizedSimulants contentKey removed world
-                    let world = World.addSynchronizedSimulants contentMapper contentKey mapGeneralized added origin owner parent world
+                    let contentKey' = Gen.idDeterministic 1 contentKey // we need to use content key for an additional purpose, so we inc it
+                    let world = World.removeSynchronizedSimulants contentKey' removed world
+                    let world = World.addSynchronizedSimulants contentMapper contentKey' mapGeneralized added origin owner parent world
                     world
                 else world
             World.addKeyedValue contentKey current world
-
-        static member internal mapGeneralizedToCurrent mapGeneralized lenGeneralized world =
-            let mutable current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional // TODO: see if we can just use a mutable HashSet here.
-            let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
-            while enr.MoveNext () do
-                let key = fst enr.Current
-                let lensExistenceAndValue = Lens.map (fun keyed -> keyed.TryGetValue key) lenGeneralized
-                if Lens.validate lensExistenceAndValue world then
-                    match Lens.getWithoutValidation lensExistenceAndValue world with
-                    | (true, _) ->
-                        let validateOpt =
-                            match lensExistenceAndValue.ValidateOpt with
-                            | Some validate -> Some (fun world -> if validate world then (match Lens.getWithoutValidation lensExistenceAndValue world with (exists, _) -> exists) else false)
-                            | None -> Some (fun world -> match Lens.getWithoutValidation lensExistenceAndValue world with (exists, _) -> exists)
-                        let item = PartialComparable.make key { Lens.map snd lensExistenceAndValue with ValidateOpt = validateOpt }
-                        current <- USet.add item current
-                    | (false, _) -> ()
-                else ()
-            current
 
         static member internal publishBindingChange propertyName simulant world =
             let propertyAddress = PropertyAddress.make propertyName simulant
@@ -752,7 +754,7 @@ module WorldModule =
                     | ContentBinding binding ->
                         if Lens.validate binding.CBSource world then
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
-                            let current = World.mapGeneralizedToCurrent mapGeneralized binding.CBSource world
+                            let current = World.makeLensesCurrent mapGeneralized binding.CBSource world
                             World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
                         else binding.CBFinalizer world)
                     world elmishBindings
