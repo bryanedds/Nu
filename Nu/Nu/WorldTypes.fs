@@ -1074,8 +1074,7 @@ module WorldTypes =
           CBOwner : Simulant
           CBParent : Simulant
           CBSimulantKey : Guid
-          CBContentKey : Guid
-          CBFinalizer : World -> World }
+          CBContentKey : Guid }
 
     /// Describes an binding for Nu's optimized Elmish implementation.
     and [<NoEquality; NoComparison>] internal ElmishBinding =
