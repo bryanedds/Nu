@@ -756,7 +756,9 @@ module WorldModule =
                             let mapGeneralized = Lens.getWithoutValidation binding.CBSource world
                             let current = World.makeLensesCurrent mapGeneralized binding.CBSource world
                             World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
-                        else binding.CBFinalizer world)
+                        else 
+                            let lensesCurrent = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
+                            World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world)
                     world elmishBindings
             | (false, _) -> world
 

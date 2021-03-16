@@ -281,11 +281,7 @@ module WorldDeclarative =
 
             // add content binding
             let contentKey = Gen.id
-            let finalizer =
-                fun world ->
-                    let lensesCurrent = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
-                    World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) lensesCurrent origin owner parent world // this will lead to the destruction of all the content's simulants
-            let contentBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBSimulantKey = Gen.id; CBContentKey = contentKey; CBFinalizer = finalizer }
+            let contentBinding = { CBMapper = mapper; CBSource = lensGeneralized; CBOrigin = origin; CBOwner = owner; CBParent = parent; CBSimulantKey = Gen.id; CBContentKey = contentKey }
             let world = World.increaseBindingCount lensGeneralized.This world
             let world = World.addContentBinding contentBinding world
 
@@ -304,7 +300,9 @@ module WorldDeclarative =
                     let mapGeneralized = Lens.getWithoutValidation contentBinding.CBSource world
                     let lensesCurrent = World.makeLensesCurrent mapGeneralized contentBinding.CBSource world
                     World.synchronizeSimulants contentBinding.CBMapper contentBinding.CBContentKey mapGeneralized lensesCurrent contentBinding.CBOrigin contentBinding.CBOwner contentBinding.CBParent world
-                else contentBinding.CBFinalizer world
+                else
+                    let lensesCurrent = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
+                    World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) lensesCurrent origin owner parent world
 
             // fin
             world
