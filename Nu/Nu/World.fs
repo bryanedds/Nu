@@ -40,40 +40,8 @@ module Nu =
         else tryPropagateByName simulant left.Name right world
 
     let internal unbind propertyBindingKey propertyAddress world =
-
-        // remove property binding to map
-        let world =
-            match world.ElmishBindingsMap.TryGetValue propertyAddress with
-            | (true, propertyBindings) ->
-                let propertyBindings = OMap.remove propertyBindingKey propertyBindings
-                if OMap.notEmpty propertyBindings then
-                    let elmishBindingsMap = UMap.add propertyAddress propertyBindings world.ElmishBindingsMap
-                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
-                else
-                    let elmishBindingsMap = UMap.remove propertyAddress world.ElmishBindingsMap
-                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
-            | (false, _) -> world
-
-        // decrease property bind counter
-        let world =
-            match propertyAddress.PASimulant with
-            | :? Entity as entity ->
-                match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
-                | Some entityBindingCounts ->
-                    match UMap.tryFind entity.EntityAddress entityBindingCounts with
-                    | Some entityBindingCount ->
-                        let entityBindingCount = dec entityBindingCount
-                        let entityBindingCounts =
-                            if entityBindingCount = 0
-                            then UMap.remove entity.EntityAddress entityBindingCounts
-                            else UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
-                        let world = if entityBindingCount = 0 && entity.Exists world then World.setEntityPublishChangeBindings false entity world else world
-                        World.addKeyedValue EntityBindingCountsId entityBindingCounts world
-                    | None -> failwithumf ()
-                | None -> failwithumf ()
-            | _ -> world
-
-        // fin
+        let world = World.removePropertyBinding propertyBindingKey propertyAddress world
+        let world = World.decreaseBindingCount propertyAddress.PASimulant world
         world
 
     /// Initialize the Nu game engine.
@@ -443,38 +411,8 @@ module Nu =
                 let propertyAddress = PropertyAddress.make rightFixup.Name rightFixup.This
                 let world = World.monitor (fun _ world -> (Cascade, unbind propertyBindingKey propertyAddress world)) (Events.Unregistering --> simulant.SimulantAddress) simulant world
                 let world = World.monitor (fun _ world -> (Cascade, tryPropagate simulant leftFixup rightFixup world)) (Events.Register --> right.This.SimulantAddress) simulant world
-                let world =
-                    match right.This with
-                    | :? Entity as entity ->
-                        match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
-                        | Some entityBindingCounts ->
-                            match UMap.tryFind entity.EntityAddress entityBindingCounts with
-                            | Some entityBindingCount ->
-                                let entityBindingCount = inc entityBindingCount
-                                let entityBindingCounts = UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
-                                let world = if entityBindingCount = 1 && entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
-                                World.addKeyedValue EntityBindingCountsId entityBindingCounts world
-                            | None ->
-                                let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
-                                let world = if entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
-                                World.addKeyedValue EntityBindingCountsId entityBindingCounts world
-                        | None ->
-                            let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
-                            let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
-                            let world = if entity.Exists world then World.setEntityPublishChangeBindings true entity world else world
-                            World.addKeyedValue EntityBindingCountsId entityBindingCounts world
-                    | _ -> world
-                match world.ElmishBindingsMap.TryGetValue propertyAddress with
-                | (true, elmishBindings) ->
-                    let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = leftFixup; PBRight = rightFixup }) elmishBindings
-                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
-                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
-                | (false, _) ->
-                    let config = if World.getStandAlone world then Imperative else Functional
-                    let elmishBindings = OMap.makeEmpty config
-                    let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = leftFixup; PBRight = rightFixup }) elmishBindings
-                    let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
-                    World.choose { world with ElmishBindingsMap = elmishBindingsMap }
+                let world = World.increaseBindingCount right.This world
+                World.addPropertyBinding propertyBindingKey propertyAddress leftFixup rightFixup world
 
             // init miscellaneous reach-arounds
             WorldModule.register <- fun simulant world -> World.register simulant world

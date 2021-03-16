@@ -1073,6 +1073,7 @@ module WorldTypes =
           CBOrigin : ContentOrigin
           CBOwner : Simulant
           CBParent : Simulant
+          CBSimulantKey : Guid
           CBContentKey : Guid
           CBFinalizer : World -> World }
 
