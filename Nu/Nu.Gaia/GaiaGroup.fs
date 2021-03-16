@@ -88,7 +88,7 @@ and GroupPropertyDescriptor (propertyDescriptor, attributes) =
                             ignore
                         world
                     | _ ->
-                        let (_, world) = PropertyDescriptor.trySetValue propertyDescriptor value group world
+                        let (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value group world
                         world
                 Globals.World <- world // must be set for property grid
                 groupTds.Form.groupPropertyGrid.Refresh ()
