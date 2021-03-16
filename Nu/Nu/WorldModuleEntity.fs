@@ -857,11 +857,11 @@ module WorldModuleEntity =
 #endif
 
         static member internal updateEntityPublishFlags entity world =
-            let world = World.updateEntityPublishUpdateFlag entity world
+            let (changed, world) = World.updateEntityPublishUpdateFlag entity world
 #if !DISABLE_ENTITY_POST_UPDATE
-            let world = World.updateEntityPublishPostUpdateFlag entity world
+            let (changed2, world) = World.updateEntityPublishPostUpdateFlag entity world
 #endif
-            world
+            (changed || changed2, world)
 
         static member internal divergeEntity entity world =
             let entityState = World.getEntityState entity world
