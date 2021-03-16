@@ -258,7 +258,7 @@ module WorldEntityModule =
                 if Array.isEmpty facets then world
                 else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
             if World.getEntityPublishPostUpdates entity world then
-                let eventTrace = EventTrace.recordDebug "World" "postUpdateEntity" EventTrace.empty
+                let eventTrace = EventTrace.debug "World" "postUpdateEntity" "" EventTrace.empty
                 World.publishPlus () entity.PostUpdateEventCached eventTrace Simulants.Game false world
             else world
 #endif
