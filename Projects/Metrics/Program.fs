@@ -255,6 +255,7 @@ type TestBedGameDispatcher () =
             | 1L -> just { StringsOpt = None }
             | 2L -> just { StringsOpt = Some (Map.ofList [(0, "0"); (1, "1"); (2, "2")]) }
             | 3L -> just { StringsOpt = Some (Map.ofList [(0, "3"); (1, "4"); (2, "5")]) }
+            | _ -> failwithumf ()
 
     override this.Content (stringsOpt, _) =
         [Content.screen Gen.name Vanilla []

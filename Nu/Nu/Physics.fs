@@ -79,7 +79,7 @@ module BodyShapeProperties =
 
 /// The shape of a physics body box.
 type [<StructuralEquality; NoComparison>] BodyBox =
-    { Extent : Vector2 // TODO: P1: consider if this should instead be size?
+    { Extent : Vector2
       Center : Vector2 // TODO: P1: consider if these should be called Offset instead?
       PropertiesOpt : BodyShapeProperties option }
 

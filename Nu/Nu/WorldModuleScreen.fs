@@ -85,10 +85,10 @@ module WorldModuleScreen =
             World.screenStateSetter screenState screen world
 
         static member private updateScreenStateWithoutEvent updater screen world =
-            let screenState = World.getScreenState screen world
-            match updater screenState with
-            | Some screenState -> (true, World.setScreenState screenState screen world)
-            | None -> (false, world)
+            let screenStateOpt = updater (World.getScreenState screen world)
+            match screenStateOpt :> obj with
+            | null -> (false, world)
+            | _ -> (true, World.setScreenState screenStateOpt screen world)
 
         static member private updateScreenState updater propertyName propertyValue screen world =
             let (changed, world) = World.updateScreenStateWithoutEvent updater screen world
@@ -107,19 +107,19 @@ module WorldModuleScreen =
         static member internal getScreenModel<'a> screen world = (World.getScreenState screen world).Model.DesignerValue :?> 'a
         static member internal getScreenEcs screen world = (World.getScreenState screen world).Ecs
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
-        static member internal setScreenTransitionState value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionState then Some { screenState with TransitionState = value } else None) Property? TransitionState value screen world
+        static member internal setScreenTransitionState value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionState then { screenState with TransitionState = value } else Unchecked.defaultof<_>) Property? TransitionState value screen world
         static member internal getScreenTransitionTicks screen world = (World.getScreenState screen world).TransitionTicks
-        static member internal setScreenTransitionTicks value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionTicks then Some { screenState with TransitionTicks = value } else None) Property? TransitionTicks value screen world
+        static member internal setScreenTransitionTicks value screen world = World.updateScreenState (fun screenState -> if value <> screenState.TransitionTicks then { screenState with TransitionTicks = value } else Unchecked.defaultof<_>) Property? TransitionTicks value screen world
         static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
-        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> Some { screenState with Incoming = value }) Property? Incoming value screen world
+        static member internal setScreenIncoming value screen world = World.updateScreenState (fun screenState -> { screenState with Incoming = value }) Property? Incoming value screen world
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
-        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> Some { screenState with Outgoing = value }) Property? Outgoing value screen world
+        static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing value screen world
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
-        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Persistent then Some { screenState with Persistent = value } else None) Property? Persistent value screen world
+        static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Persistent then { screenState with Persistent = value } else Unchecked.defaultof<_>) Property? Persistent value screen world
         static member internal getScreenDestroying (screen : Screen) world = List.exists ((=) (screen :> Simulant)) world.DestructionListRev
         static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenScriptFrame screen world = (World.getScreenState screen world).ScriptFrame
-        static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> if value <> screenState.ScriptFrame then Some { screenState with ScriptFrame = value } else None) Property? ScriptFrame value screen world
+        static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> if value <> screenState.ScriptFrame then { screenState with ScriptFrame = value } else Unchecked.defaultof<_>) Property? ScriptFrame value screen world
         static member internal getScreenName screen world = (World.getScreenState screen world).Name
         static member internal getScreenId screen world = (World.getScreenState screen world).Id
 
@@ -127,8 +127,8 @@ module WorldModuleScreen =
             World.updateScreenState
                 (fun screenState ->
                     if value.DesignerValue =/= screenState.Model.DesignerValue
-                    then Some { screenState with Model = { screenState.Model with DesignerValue = value.DesignerValue }}
-                    else None)
+                    then { screenState with Model = { screenState.Model with DesignerValue = value.DesignerValue }}
+                    else Unchecked.defaultof<_>)
                 Property? Model value.DesignerValue screen world
 
         static member internal setScreenModel<'a> (value : 'a) screen world =
@@ -136,8 +136,8 @@ module WorldModuleScreen =
                 (fun screenState ->
                     let valueObj = value :> obj
                     if valueObj =/= screenState.Model.DesignerValue
-                    then Some { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
-                    else None)
+                    then { screenState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
+                    else Unchecked.defaultof<_>)
                 Property? Model value screen world
 
         static member internal tryGetScreenProperty (propertyName, screen, world, property : _ outref) =
@@ -173,9 +173,9 @@ module WorldModuleScreen =
                                     if property.PropertyValue =/= propertyOld.PropertyValue then
                                         let (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
                                         success <- successInner
-                                        Some gameState
-                                    else None
-                                | false -> None)
+                                        gameState
+                                    else Unchecked.defaultof<_>
+                                | false -> Unchecked.defaultof<_>)
                             propertyName property.PropertyValue screen world
                     (success, changed, world)
             else (false, false, world)
@@ -183,32 +183,33 @@ module WorldModuleScreen =
         static member internal setScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
                 match ScreenSetters.TryGetValue propertyName with
-                | (true, setter) -> setter property screen world
                 | (false, _) ->
                     World.updateScreenState
                         (fun screenState ->
                             let propertyOld = ScreenState.getProperty propertyName screenState
                             if property.PropertyValue =/= propertyOld.PropertyValue
-                            then Some (ScreenState.setProperty propertyName property screenState)
-                            else None)
+                            then ScreenState.setProperty propertyName property screenState
+                            else Unchecked.defaultof<_>)
                         propertyName property.PropertyValue screen world
+                | (true, setter) -> setter property screen world
             else (false, world)
 
         static member internal attachScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
                 let (_, world) =
                     World.updateScreenState
-                        (fun screenState -> Some (ScreenState.attachProperty propertyName property screenState))
+                        (fun screenState -> ScreenState.attachProperty propertyName property screenState)
                         propertyName property.PropertyValue screen world
                 world
             else failwith ("Cannot attach screen property '" + propertyName + "'; screen '" + screen.Name + "' is not found.")
 
         static member internal detachScreenProperty propertyName screen world =
             if World.getScreenExists screen world then
-                World.updateScreenStateWithoutEvent
-                    (fun screenState -> Some (ScreenState.detachProperty propertyName screenState))
-                    screen world |>
-                snd
+                let (_, world) =
+                    World.updateScreenStateWithoutEvent
+                        (fun screenState -> ScreenState.detachProperty propertyName screenState)
+                        screen world
+                world
             else failwith ("Cannot detach screen property '" + propertyName + "'; screen '" + screen.Name + "' is not found.")
 
         static member internal registerScreen screen world =
@@ -300,7 +301,7 @@ module WorldModuleScreen =
         ScreenGetters.Add ("CreationTimeStamp", fun screen world -> { PropertyType = typeof<int64>; PropertyValue = World.getScreenCreationTimeStamp screen world })
         ScreenGetters.Add ("Name", fun screen world -> { PropertyType = typeof<string>; PropertyValue = World.getScreenName screen world })
         ScreenGetters.Add ("Id", fun screen world -> { PropertyType = typeof<Guid>; PropertyValue = World.getScreenId screen world })
-        
+
     /// Initialize property setters.
     let private initSetters () =
         ScreenSetters.Add ("Model", fun property screen world -> World.setScreenModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } screen world)
@@ -309,7 +310,7 @@ module WorldModuleScreen =
         ScreenSetters.Add ("Incoming", fun property screen world -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
         ScreenSetters.Add ("Outgoing", fun property screen world -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)
         ScreenSetters.Add ("Persistent", fun property screen world -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world)
-        
+
     /// Initialize getters and setters
     let internal init () =
         initGetters ()

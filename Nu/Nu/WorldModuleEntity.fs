@@ -179,12 +179,13 @@ module WorldModuleEntity =
 
         // NOTE: P1: I think we could use an in ref in updater to avoid allocation on every call...
         static member private updateEntityStateInternal updater (entityState : EntityState) entity world =
-            match updater entityState with
-            | Some (entityState : EntityState) ->
-                if entityState.ShouldMutate
+            let entityStateOpt = updater entityState : EntityState
+            match entityStateOpt :> obj with
+            | null -> (false, world)
+            | _ ->
+                if entityStateOpt.ShouldMutate
                 then (true, world)
-                else (true, World.setEntityState entityState entity world)
-            | None -> (false, world)
+                else (true, World.setEntityState entityStateOpt entity world)
 
         static member private updateEntityStateWithoutEvent updater entity world =
             let entityState = World.getEntityState entity world
@@ -272,15 +273,15 @@ module WorldModuleEntity =
                             let xtension = Xtension.make properties false true true
                             entityState.Xtension <- xtension
                             entityState.Imperative <- true
-                            Some entityState
+                            entityState
                         else
                             let properties = UMap.makeFromSeq Functional (Xtension.toSeq entityState.Xtension)
                             let xtension = Xtension.make properties false true false
                             let entityState = EntityState.diverge entityState
                             entityState.Xtension <- xtension
                             entityState.Imperative <- false
-                            Some entityState
-                    else None)
+                            entityState
+                    else Unchecked.defaultof<_>)
                 Property? Imperative value entity world
 
         static member internal getEntityModelProperty entity world =
@@ -297,8 +298,8 @@ module WorldModuleEntity =
                     if value.DesignerValue =/= entityState.Model.DesignerValue then
                         let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
                         entityState.Model <- { DesignerType = value.DesignerType; DesignerValue = value.DesignerValue }
-                        Some entityState
-                    else None)
+                        entityState
+                    else Unchecked.defaultof<_>)
                 Property? Model value.DesignerValue entity world
 
         static member internal setEntityModel<'a> (value : 'a) entity world =
@@ -308,8 +309,8 @@ module WorldModuleEntity =
                     if valueObj =/= entityState.Model.DesignerValue then
                         let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
                         entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = valueObj }
-                        Some entityState
-                    else None)
+                        entityState
+                    else Unchecked.defaultof<_>)
                 Property? Model value entity world
                 
         static member internal getEntityScriptFrame entity world =
@@ -327,8 +328,8 @@ module WorldModuleEntity =
                 let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
                 if value <> entityState.ScriptFrameOpt then
                     entityState.ScriptFrameOpt <- value
-                    Some entityState
-                else None)
+                    entityState
+                else Unchecked.defaultof<_>)
                 Property? ScriptFrame value entity world
 
         // NOTE: wouldn't macros be nice?
@@ -358,17 +359,17 @@ module WorldModuleEntity =
         static member internal getEntityCreationTimeStamp entity world = (World.getEntityState entity world).CreationTimeStamp
         static member internal getEntityName entity world = (World.getEntityState entity world).Name
         static member internal getEntityId entity world = (World.getEntityState entity world).Id
-        static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Omnipresent <- value; entityState) else None) Property? Omnipresent value entity world
-        static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Absolute <- value; entityState) else None) Property? Absolute value entity world
-        static member internal setEntityPublishChangeEvents value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeEvents then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishChangeEvents <- value; entityState) else None) Property? PublishChangeEvents value entity world
-        static member internal setEntityPublishChangeBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeBindings then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishChangeBindings <- value; entityState) else None) Property? PublishChangeBindings value entity world
-        static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Enabled then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Enabled <- value; entityState) else None) Property? Enabled value entity world
-        static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Visible then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Visible <- value; entityState) else None) Property? Visible value entity world
-        static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.AlwaysUpdate then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.AlwaysUpdate <- value; entityState) else None) Property? AlwaysUpdate value entity world
-        static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishUpdates <- value; entityState) else None) Property? PublishUpdates value entity world
-        static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else None) Property? PublishPostUpdates value entity world
-        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else None) Property? Persistent value entity world
-        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then Some (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else None) Property? Overflow value entity world
+        static member internal setEntityOmnipresent value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Omnipresent then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Omnipresent <- value; entityState) else Unchecked.defaultof<_>) Property? Omnipresent value entity world
+        static member internal setEntityAbsolute value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.Absolute then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Absolute <- value; entityState) else Unchecked.defaultof<_>) Property? Absolute value entity world
+        static member internal setEntityPublishChangeEvents value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeEvents then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishChangeEvents <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeEvents value entity world
+        static member internal setEntityPublishChangeBindings value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishChangeBindings then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishChangeBindings <- value; entityState) else Unchecked.defaultof<_>) Property? PublishChangeBindings value entity world
+        static member internal setEntityEnabled value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Enabled then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Enabled <- value; entityState) else Unchecked.defaultof<_>) Property? Enabled value entity world
+        static member internal setEntityVisible value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Visible then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Visible <- value; entityState) else Unchecked.defaultof<_>) Property? Visible value entity world
+        static member internal setEntityAlwaysUpdate value entity world = World.updateEntityStatePlus (fun entityState -> if value <> entityState.AlwaysUpdate then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.AlwaysUpdate <- value; entityState) else Unchecked.defaultof<_>) Property? AlwaysUpdate value entity world
+        static member internal setEntityPublishUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishUpdates then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishUpdates <- value; entityState) else Unchecked.defaultof<_>) Property? PublishUpdates value entity world
+        static member internal setEntityPublishPostUpdates value entity world = World.updateEntityState (fun entityState -> if value <> entityState.PublishPostUpdates then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.PublishPostUpdates <- value; entityState) else Unchecked.defaultof<_>) Property? PublishPostUpdates value entity world
+        static member internal setEntityPersistent value entity world = World.updateEntityState (fun entityState -> if value <> entityState.Persistent then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Persistent <- value; entityState) else Unchecked.defaultof<_>) Property? Persistent value entity world
+        static member internal setEntityOverflow value entity world = World.updateEntityStatePlus (fun entityState -> if v2Neq value entityState.Overflow then (let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState in entityState.Overflow <- value; entityState) else Unchecked.defaultof<_>) Property? Overflow value entity world
 
         static member internal setEntityTransformByRefWithoutEvent (valueInRef : Transform inref, entity, world) =
             let oldWorld = world
@@ -381,8 +382,8 @@ module WorldModuleEntity =
                 World.updateEntityStateWithoutEvent
                     (fun entityState ->
                         if not (Transform.equalsByRef (&value, &entityState.Transform))
-                        then Some (EntityState.setTransformByRef (&value, entityState))
-                        else None)
+                        then EntityState.setTransformByRef (&value, entityState)
+                        else Unchecked.defaultof<_>)
                     entity world
             if changed then
                 let ignoredFlags = TransformMasks.InvalidatedMask ||| TransformMasks.DirtyMask
@@ -403,8 +404,8 @@ module WorldModuleEntity =
                     World.updateEntityStateWithoutEvent
                         (fun entityState ->
                             if not (Transform.equalsByRef (&value, &entityState.Transform))
-                            then Some (EntityState.setTransformByRef (&value, entityState))
-                            else None)
+                            then EntityState.setTransformByRef (&value, entityState)
+                            else Unchecked.defaultof<_>)
                         entity world
                 else
                     let oldAbsolute = oldEntityState.Absolute
@@ -414,8 +415,8 @@ module WorldModuleEntity =
                         World.updateEntityStateWithoutEvent
                             (fun entityState ->
                                 if not (Transform.equalsByRef (&value, &entityState.Transform))
-                                then Some (EntityState.setTransformByRef (&value, entityState))
-                                else None)
+                                then EntityState.setTransformByRef (&value, entityState)
+                                else Unchecked.defaultof<_>)
                             entity world
                     let world = World.updateEntityInEntityTree oldOmnipresent oldAbsolute oldBoundsMax entity oldWorld world
                     (changed, world)
@@ -793,7 +794,7 @@ module WorldModuleEntity =
             if World.getEntityExists entity world then
                 let (_, world) =
                     World.updateEntityState
-                        (fun entityState -> Some (EntityState.attachProperty propertyName property entityState))
+                        (fun entityState -> EntityState.attachProperty propertyName property entityState)
                         propertyName property.PropertyValue entity world
                 world
             else failwith ("Cannot attach entity property '" + propertyName + "'; entity '" + entity.Name + "' is not found.")
@@ -802,7 +803,7 @@ module WorldModuleEntity =
             if World.getEntityExists entity world then
                 let (_, world) =
                     World.updateEntityStateWithoutEvent
-                        (fun entityState -> Some (EntityState.detachProperty propertyName entityState))
+                        (fun entityState -> EntityState.detachProperty propertyName entityState)
                         entity world
                 world
             else failwith ("Cannot detach entity property '" + propertyName + "'; entity '" + entity.Name + "' is not found.")
