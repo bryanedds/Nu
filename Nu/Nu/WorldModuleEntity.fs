@@ -157,16 +157,17 @@ module WorldModuleEntity =
             // fin
             world
 
-        static member private getEntityStateOpt entity world =
+        static member inline private getEntityStateOpt entity world =
             World.entityStateFinder entity world
 
-        static member internal getEntityState entity world =
 #if DEBUG
+        static member internal getEntityState entity world =
             let entityStateOpt = World.entityStateFinder entity world
             match entityStateOpt :> obj with
             | null -> failwith ("Could not find entity with address '" + scstring entity.EntityAddress + "'.")
             | _ -> entityStateOpt
 #else
+        static member inline internal getEntityState entity world =
             World.entityStateFinder entity world
 #endif
 
@@ -174,7 +175,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             entityState.Xtension |> Xtension.toSeq |> Seq.toList
 
-        static member private setEntityState entityState entity world =
+        static member inline private setEntityState entityState entity world =
             World.entityStateSetter entityState entity world
 
         // NOTE: P1: I think we could use an in ref in updater to avoid allocation on every call...
