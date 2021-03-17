@@ -102,10 +102,10 @@ module WorldModuleGroup =
             World.groupStateSetter groupState group world
 
         static member private updateGroupStateWithoutEvent updater group world =
-            let groupState = World.getGroupState group world
-            match updater groupState with
-            | Some groupState -> (true, World.setGroupState groupState group world)
-            | None -> (false, world)
+            let groupStateOpt = updater (World.getGroupState group world)
+            match groupStateOpt :> obj with
+            | null -> (false, world)
+            | _ -> (true, World.setGroupState groupStateOpt group world)
 
         static member private updateGroupState updater propertyName propertyValue group world =
             let (changed, world) = World.updateGroupStateWithoutEvent updater group world
@@ -123,13 +123,13 @@ module WorldModuleGroup =
         static member internal getGroupModel<'a> group world = (World.getGroupState group world).Model.DesignerValue :?> 'a
         static member internal getGroupDispatcher group world = (World.getGroupState group world).Dispatcher
         static member internal getGroupVisible group world = (World.getGroupState group world).Visible
-        static member internal setGroupVisible value group world = World.updateGroupState (fun groupState -> if value <> groupState.Visible then Some { groupState with Visible = value } else None) Property? Visible value group world
+        static member internal setGroupVisible value group world = World.updateGroupState (fun groupState -> if value <> groupState.Visible then { groupState with Visible = value } else Unchecked.defaultof<_>) Property? Visible value group world
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
-        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> if value <> groupState.Persistent then Some { groupState with Persistent = value } else None) Property? Persistent value group world
+        static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> if value <> groupState.Persistent then { groupState with Persistent = value } else Unchecked.defaultof<_>) Property? Persistent value group world
         static member internal getGroupDestroying (group : Group) world = List.exists ((=) (group :> Simulant)) world.DestructionListRev
         static member internal getGroupCreationTimeStamp group world = (World.getGroupState group world).CreationTimeStamp
         static member internal getGroupScriptFrame group world = (World.getGroupState group world).ScriptFrame
-        static member internal setGroupScriptFrame value group world = World.updateGroupState (fun groupState -> if value <> groupState.ScriptFrame then Some { groupState with ScriptFrame = value } else None) Property? ScriptFrame value group world
+        static member internal setGroupScriptFrame value group world = World.updateGroupState (fun groupState -> if value <> groupState.ScriptFrame then { groupState with ScriptFrame = value } else Unchecked.defaultof<_>) Property? ScriptFrame value group world
         static member internal getGroupName group world = (World.getGroupState group world).Name
         static member internal getGroupId group world = (World.getGroupState group world).Id
         
@@ -137,8 +137,8 @@ module WorldModuleGroup =
             World.updateGroupState
                 (fun groupState ->
                     if value.DesignerValue =/= groupState.Model.DesignerValue
-                    then Some { groupState with Model = { groupState.Model with DesignerValue = value.DesignerValue }}
-                    else None)
+                    then { groupState with Model = { groupState.Model with DesignerValue = value.DesignerValue }}
+                    else Unchecked.defaultof<_>)
                 Property? Model value.DesignerValue group world
 
         static member internal setGroupModel<'a> (value : 'a) group world =
@@ -146,8 +146,8 @@ module WorldModuleGroup =
                 (fun groupState ->
                     let valueObj = value :> obj
                     if valueObj =/= groupState.Model.DesignerValue
-                    then Some { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
-                    else None)
+                    then { groupState with Model = { DesignerType = typeof<'a>; DesignerValue = valueObj }}
+                    else Unchecked.defaultof<_>)
                 Property? Model value group world
 
         static member internal tryGetGroupProperty (propertyName, group, world, property : _ outref) =
@@ -183,9 +183,9 @@ module WorldModuleGroup =
                                     if property.PropertyValue =/= propertyOld.PropertyValue then
                                         let (successInner, gameState) = GroupState.trySetProperty propertyName property groupState
                                         success <- successInner
-                                        Some gameState
-                                    else None
-                                | false -> None)
+                                        gameState
+                                    else Unchecked.defaultof<_>
+                                | false -> Unchecked.defaultof<_>)
                             propertyName property.PropertyValue group world
                     (success, changed, world)
             else (false, false, world)
@@ -193,32 +193,33 @@ module WorldModuleGroup =
         static member internal setGroupProperty propertyName property group world =
             if World.getGroupExists group world then
                 match GroupSetters.TryGetValue propertyName with
-                | (true, setter) -> setter property group world
                 | (false, _) ->
                     World.updateGroupState
                         (fun groupState ->
                             let propertyOld = GroupState.getProperty propertyName groupState
                             if property.PropertyValue =/= propertyOld.PropertyValue
-                            then Some (GroupState.setProperty propertyName property groupState)
-                            else None)
+                            then GroupState.setProperty propertyName property groupState
+                            else Unchecked.defaultof<_>)
                         propertyName property.PropertyValue group world
+                | (true, setter) -> setter property group world
             else (false, world)
 
         static member internal attachGroupProperty propertyName property group world =
             if World.getGroupExists group world then
                 let (_, world) =
                     World.updateGroupState
-                        (fun groupState -> Some (GroupState.attachProperty propertyName property groupState))
+                        (fun groupState -> GroupState.attachProperty propertyName property groupState)
                         propertyName property.PropertyValue group world
                 world
             else failwith ("Cannot attach group property '" + propertyName + "'; group '" + group.Name + "' is not found.")
 
         static member internal detachGroupProperty propertyName group world =
             if World.getGroupExists group world then
-                World.updateGroupStateWithoutEvent
-                    (fun groupState -> Some (GroupState.detachProperty propertyName groupState))
-                    group world |>
-                snd
+                let (_, world) =
+                    World.updateGroupStateWithoutEvent
+                        (fun groupState -> GroupState.detachProperty propertyName groupState)
+                        group world
+                world
             else failwith ("Cannot detach group property '" + propertyName + "'; group '" + group.Name + "' is not found.")
 
         static member internal registerGroup group world =
