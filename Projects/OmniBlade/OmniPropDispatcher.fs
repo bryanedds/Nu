@@ -159,6 +159,7 @@ module PropDispatcher =
                           InsetOpt = insetOpt
                           Image = image
                           Color = Color.White
+                          Blend = Transparent
                           Glow = Color.Zero
                           Flip = FlipNone })
             else View.empty

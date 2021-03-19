@@ -192,6 +192,7 @@ module AvatarDispatcher =
                           InsetOpt = Some (getSpriteInset entity world)
                           Image = avatar.AnimationSheet
                           Color = Color.White
+                          Blend = Transparent
                           Glow = Color.Zero
                           Flip = FlipNone })
             else View.empty

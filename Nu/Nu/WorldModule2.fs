@@ -797,6 +797,7 @@ module WorldModule2 =
                               InsetOpt = None
                               Image = dissolveImage
                               Color = color
+                              Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
                     world

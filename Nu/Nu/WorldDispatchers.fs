@@ -560,7 +560,9 @@ module EffectFacetModule =
                       Effects.Offset = entity.GetEffectSliceOffset world
                       Effects.InsetOpt = None
                       Effects.Color = Color.White
+                      Effects.Blend = Transparent
                       Effects.Glow = Color.Zero
+                      Effects.Flip = FlipNone
                       Effects.Enabled = true
                       Effects.Volume = Constants.Audio.SoundVolumeDefault }
                 let effectHistory = entity.GetEffectHistory world
@@ -1346,6 +1348,9 @@ module StaticSpriteFacetModule =
         member this.GetInsetOpt world : Vector4 option = this.Get Property? Inset world
         member this.SetInsetOpt (value : Vector4 option) world = this.Set Property? Inset value world
         member this.InsetOpt = lens Property? Inset this.GetInsetOpt this.SetInsetOpt this
+        member this.GetBlend world : Blend = this.Get Property? Blend world
+        member this.SetBlend (value : Blend) world = this.Set Property? Blend value world
+        member this.Blend = lens Property? Blend this.GetBlend this.SetBlend this
         member this.GetFlip world : Flip = this.Get Property? Flip world
         member this.SetFlip (value : Flip) world = this.Set Property? Flip value world
         member this.Flip = lens Property? Flip this.GetFlip this.SetFlip this
@@ -1356,6 +1361,7 @@ module StaticSpriteFacetModule =
         static member Properties =
             [define Entity.StaticImage Assets.Default.Image4
              define Entity.Color Color.White
+             define Entity.Blend Transparent
              define Entity.Glow Color.Zero
              define Entity.InsetOpt None
              define Entity.Flip FlipNone]
@@ -1376,6 +1382,7 @@ module StaticSpriteFacetModule =
                               InsetOpt = entity.GetInsetOpt world
                               Image = staticImage
                               Color = entity.GetColor world
+                              Blend = entity.GetBlend world
                               Glow = entity.GetGlow world
                               Flip = entity.GetFlip world }}
                     world
@@ -1430,6 +1437,7 @@ module AnimatedSpriteFacetModule =
              define Entity.AnimationDelay 4L
              define Entity.AnimationSheet Assets.Default.Image7
              define Entity.Color Color.White
+             define Entity.Blend Transparent
              define Entity.Glow Color.Zero
              define Entity.Flip FlipNone]
 
@@ -1449,6 +1457,7 @@ module AnimatedSpriteFacetModule =
                               InsetOpt = getSpriteInsetOpt entity world
                               Image = animationSheet
                               Color = entity.GetColor world
+                              Blend = entity.GetBlend world
                               Glow = entity.GetGlow world
                               Flip = entity.GetFlip world }}
                     world
@@ -1569,7 +1578,7 @@ module EffectDispatcherModule =
             [typeof<EffectFacet>]
 
         static member Properties =
-            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] FlipNone [] Nil]]]]")]
+            [define Entity.Effect (scvalue<Effect> "[Effect None [] [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]")]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -1794,6 +1803,7 @@ module ButtonDispatcherModule =
                               InsetOpt = None
                               Image = image
                               Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
                     world
@@ -1836,6 +1846,7 @@ module LabelDispatcherModule =
                               InsetOpt = None
                               Image = labelImage
                               Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
                     world
@@ -1886,6 +1897,7 @@ module TextDispatcherModule =
                                   InsetOpt = None
                                   Image = image
                                   Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                                  Blend = Transparent
                                   Glow = Color.Zero
                                   Flip = FlipNone }}
                         world
@@ -2004,6 +2016,7 @@ module ToggleDispatcherModule =
                               InsetOpt = None
                               Image = image
                               Color = if entity.GetEnabled world then Color.White else entity.GetDisabledColor world
+                              Blend = Transparent
                               Glow = Color.Zero
                               Flip = FlipNone }}
                     world
@@ -2177,6 +2190,7 @@ module FillBarDispatcherModule =
                                   InsetOpt = None
                                   Image = borderImage
                                   Color = fillBarColor
+                                  Blend = Transparent
                                   Glow = Color.Zero
                                   Flip = FlipNone }}
                         world
@@ -2193,6 +2207,7 @@ module FillBarDispatcherModule =
                                     InsetOpt = None
                                     Image = fillImage
                                     Color = fillBarColor
+                                    Blend = Transparent
                                     Glow = Color.Zero
                                     Flip = FlipNone }}
                         world
@@ -2315,6 +2330,7 @@ module CharacterDispatcherModule =
                               InsetOpt = insetOpt
                               Image = image
                               Color = Color.White
+                              Blend = Transparent
                               Glow = Color.Zero
                               Flip = if facingLeft then FlipH else FlipNone }}
                     world

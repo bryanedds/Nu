@@ -44,7 +44,9 @@ module Effects =
           Offset : Vector2
           InsetOpt : Vector4 option
           Color : Color
+          Blend : Blend
           Glow : Color
+          Flip : Flip
           Volume : single
           Enabled : bool }
 
@@ -129,7 +131,9 @@ module Effects =
         | Elevation of single
         | Inset of Vector4
         | Color of Color
+        | Blend of Blend
         | Glow of Color
+        | Flip of Flip
         | Volume of single
         | Enableds of LogicApplicator * Playback * LogicKeyFrame array
         | Positions of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
@@ -147,8 +151,8 @@ module Effects =
 
     and [<NoEquality; NoComparison>] Content =
         | Nil // first to make default value when missing
-        | StaticSprite of Resource * Flip * Aspect array * Content
-        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Flip * Aspect array * Content
+        | StaticSprite of Resource * Aspect array * Content
+        | AnimatedSprite of Resource * Vector2i * int * int * int64 * Playback * Aspect array * Content
         | TextSprite of Resource * string * Aspect array * Content
         | SoundEffect of Resource * Aspect array * Content
         | Mount of Shift * Aspect array * Content
@@ -395,7 +399,9 @@ module EffectSystem =
         | Offset offset -> { slice with Offset = offset }
         | Inset inset -> { slice with InsetOpt = Some inset }
         | Color color -> { slice with Color = color }
+        | Blend blend -> { slice with Blend = blend }
         | Glow glow -> { slice with Glow = glow }
+        | Flip flip -> { slice with Flip = flip }
         | Volume volume -> { slice with Volume = volume }
         | Enableds (applicator, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
@@ -516,7 +522,7 @@ module EffectSystem =
             | _ -> Log.info ("Expected Content for definition '" + definitionName + "'."); effectSystem
         | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); effectSystem
 
-    and private evalStaticSprite resource flip aspects content slice history effectSystem =
+    and private evalStaticSprite resource aspects content slice history effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -542,15 +548,16 @@ module EffectSystem =
                               InsetOpt = slice.InsetOpt
                               Image = AssetTag.specialize<Image> image
                               Color = slice.Color
+                              Blend = slice.Blend
                               Glow = slice.Glow
-                              Flip = flip })
+                              Flip = slice.Flip })
                 addView spriteView effectSystem
             else effectSystem
 
         // build implicitly mounted content
         evalContent content slice history effectSystem
 
-    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount delay playback flip aspects content slice history effectSystem =
+    and private evalAnimatedSprite resource (celSize : Vector2i) celRun celCount delay playback aspects content slice history effectSystem =
 
         // pull image from resource
         let image = evalResource resource effectSystem
@@ -565,7 +572,7 @@ module EffectSystem =
             let cel = int (effectSystem.EffectTime / delay)
 
             // eval inset
-            let inset = evalInset celSize celRun celCount delay playback flip effectSystem
+            let inset = evalInset celSize celRun celCount delay playback slice.Flip effectSystem
 
             // build animated sprite views
             let effectSystem =
@@ -586,8 +593,9 @@ module EffectSystem =
                                  InsetOpt = Some inset
                                  Image = AssetTag.specialize<Image> image
                                  Color = slice.Color
+                                 Blend = slice.Blend
                                  Glow = slice.Glow
-                                 Flip = flip })
+                                 Flip = slice.Flip })
                     addView animatedSpriteView effectSystem
                 else effectSystem
 
@@ -734,10 +742,10 @@ module EffectSystem =
         match content with
         | Nil ->
             effectSystem
-        | StaticSprite (resource, flip, aspects, content) ->
-            evalStaticSprite resource flip aspects content slice history effectSystem
-        | AnimatedSprite (resource, celSize, celRun, celCount, delay, playback, flip, aspects, content) ->
-            evalAnimatedSprite resource celSize celRun celCount delay playback flip aspects content slice history effectSystem
+        | StaticSprite (resource, aspects, content) ->
+            evalStaticSprite resource aspects content slice history effectSystem
+        | AnimatedSprite (resource, celSize, celRun, celCount, delay, playback, aspects, content) ->
+            evalAnimatedSprite resource celSize celRun celCount delay playback aspects content slice history effectSystem
         | TextSprite (resource, text, aspects, content) ->
             evalTextSprite resource text aspects content slice history effectSystem
         | SoundEffect (resource, aspects, content) ->

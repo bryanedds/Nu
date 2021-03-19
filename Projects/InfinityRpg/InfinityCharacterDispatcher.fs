@@ -94,6 +94,7 @@ module CharacterDispatcherModule =
                             InsetOpt = getSpriteInsetOpt animationState time
                             Image = animationSheet
                             Color = Color.White
+                            Blend = Transparent
                             Glow = Color.Zero
                             Flip = FlipNone }}
                 World.enqueueRenderLayeredMessage message world
