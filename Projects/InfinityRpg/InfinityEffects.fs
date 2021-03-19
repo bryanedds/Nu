@@ -19,7 +19,7 @@ module Effects =
         let animationSprite =
             AnimatedSprite
                 (Resource (AssetTag.toPair resource),
-                 v2iDup 144, 2, 2, Constants.Gameplay.CharacterAnimationActingDelay, Once, FlipNone, [||], Nil)
+                 v2iDup 144, 2, 2, Constants.Gameplay.CharacterAnimationActingDelay, Once, [||], Nil)
 
         { EffectName = "SwordStrike"
           LifeTimeOpt = Some (Constants.Gameplay.CharacterAnimationActingDelay * 2L)
@@ -31,7 +31,7 @@ module Effects =
         let animationSprite =
             AnimatedSprite
                 (Resource (AssetTag.toPair Assets.Gameplay.MagicMissileImpact),
-                 v2iDup 48, 2, 2, Constants.Gameplay.CharacterAnimationActingDelay, Once, FlipNone, [||], Nil)
+                 v2iDup 48, 2, 2, Constants.Gameplay.CharacterAnimationActingDelay, Once, [||], Nil)
 
         { EffectName = "MagicMissileImpact"
           LifeTimeOpt = Some (Constants.Gameplay.CharacterAnimationActingDelay * 2L)

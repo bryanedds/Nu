@@ -71,6 +71,7 @@ module FieldDispatcher =
                                       InsetOpt = tileInsetOpt
                                       Image = image
                                       Color = Color.White
+                                      Blend = Transparent
                                       Glow = Color.Zero
                                       Flip = FlipNone }
                                 sprite :: sprites

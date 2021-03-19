@@ -47,6 +47,7 @@ module PropDispatcher =
                           InsetOpt = getSpriteInsetOpt prop
                           Image = prop.PropImage
                           Color = Color.White
+                          Blend = Transparent
                           Glow = Color.Zero
                           Flip = FlipNone })
             else View.empty

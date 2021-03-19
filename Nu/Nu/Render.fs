@@ -75,6 +75,7 @@ type [<NoEquality; NoComparison>] SpriteDescriptor =
       InsetOpt : Vector4 option
       Image : Image AssetTag
       Color : Color
+      Blend : Blend
       Glow : Color
       Flip : Flip }
 
@@ -327,6 +328,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         (insetOpt : Vector4 option)
         (image : Image AssetTag)
         (color : Color)
+        (blend : Blend)
         (glow : Color)
         (flip : Flip)
         renderer =
@@ -335,6 +337,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let positionView = position * view
         let sizeView = transform.Size * view.ExtractScaleMatrix ()
         let image = AssetTag.generalize image
+        let blend = Blend.toSdlBlendMode blend
         let flip = Flip.toSdlFlip flip
         match SdlRenderer.tryFindRenderAsset image renderer with
         | Some renderAsset ->
@@ -363,7 +366,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
                 rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
                 if color.A <> byte 0 then
-                    SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
+                    SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
                     SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
                     SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
                     let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
@@ -380,7 +383,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member private renderSpriteDescriptor viewAbsolute viewRelative eyeCenter eyeSize (sprite : SpriteDescriptor) renderer =
         SdlRenderer.renderSprite
             viewAbsolute viewRelative eyeCenter eyeSize
-            sprite.Transform sprite.Absolute sprite.Offset sprite.InsetOpt sprite.Image sprite.Color sprite.Glow sprite.Flip
+            sprite.Transform sprite.Absolute sprite.Offset sprite.InsetOpt sprite.Image sprite.Color sprite.Blend sprite.Glow sprite.Flip
             renderer
 
     static member private renderSpriteDescriptors viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
