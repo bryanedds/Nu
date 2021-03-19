@@ -317,10 +317,9 @@ module EffectSystem =
         | Ratio -> div (value, value2)
         | Set -> value2
 
-    let private evalInset (celSize : Vector2i) celRun celCount delay playback flip effectSystem =
+    let private evalInset (celSize : Vector2i) celRun celCount delay playback effectSystem =
         // TODO: make sure Bounce playback works as intended!
         // TODO: stop assuming that animation sheets are fully and evenly populated when flipping!
-        let celRuns = celCount % celRun
         let celUnmodulated = int (effectSystem.EffectTime / delay)
         let cel = celUnmodulated % celCount
         let celI = cel % celRun
@@ -333,13 +332,6 @@ module EffectSystem =
             if bouncing
             then (celRun - celI, (celRun % celCount) - celJ)
             else (celI, celJ)
-        let (celI, celJ) =
-            // NOTE: this assumes that animation sheets are fully and evenly populated!
-            match flip with
-            | FlipNone -> (celI, celJ)
-            | FlipH -> (celRun - celI, celJ)
-            | FlipV -> (celI, celRuns - celJ)
-            | FlipHV -> (celRun - celI, celRuns - celJ)
         let celX = celI * celSize.X
         let celY = celJ * celSize.Y
         let celPosition = Vector2 (single celX, single celY)
@@ -572,7 +564,7 @@ module EffectSystem =
             let cel = int (effectSystem.EffectTime / delay)
 
             // eval inset
-            let inset = evalInset celSize celRun celCount delay playback slice.Flip effectSystem
+            let inset = evalInset celSize celRun celCount delay playback effectSystem
 
             // build animated sprite views
             let effectSystem =
