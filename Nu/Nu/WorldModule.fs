@@ -676,7 +676,6 @@ module WorldModule =
                       ValidateOpt = validateOpt
                       GetWithoutValidation = getWithoutValidation
                       SetOpt = None
-                      PayloadOpt = None
                       This = lensGeneralized.This }
                 let item = PartialComparable.make key lensItem
                 current <- USet.add item current
