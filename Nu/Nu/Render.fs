@@ -127,7 +127,7 @@ type [<NoEquality; NoComparison>] RenderDescriptor =
     | TileLayerDescriptor of TileLayerDescriptor
     | TextDescriptor of TextDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
-    | RenderCallback of (Matrix3x3 -> Matrix3x3 -> Vector2 -> Vector2 -> Renderer -> unit)
+    | RenderCallback of (Matrix3x3 * Matrix3x3 * Vector2 * Vector2 * Renderer -> unit)
 
 /// A layered message to the rendering system.
 and [<NoEquality; NoComparison>] RenderLayeredMessage =
@@ -666,7 +666,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | TileLayerDescriptor descriptor -> SdlRenderer.renderTileLayerDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, descriptor, renderer)
         | TextDescriptor descriptor -> SdlRenderer.renderTextDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, descriptor, renderer)
         | ParticlesDescriptor descriptor -> SdlRenderer.renderParticlesDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, descriptor, renderer)
-        | RenderCallback callback -> callback viewAbsolute viewRelative eyeCenter eyeSize renderer
+        | RenderCallback callback -> callback (viewAbsolute, viewRelative, eyeCenter, eyeSize, renderer)
 
     static member private renderLayeredMessages eyeCenter eyeSize (messages : RenderLayeredMessage List) renderer =
         let renderContext = renderer.RenderContext
