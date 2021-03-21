@@ -609,8 +609,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     let position = transform.Position - Vector2.Multiply (descriptor.Offset, transform.Size)
                     let positionView = position + positionOffset
                     let sizeView = transform.Size * view.ExtractScaleMatrix ()
-                    let color = descriptor.Color
-                    let glow = descriptor.Glow
+                    let color = &descriptor.Color
+                    let glow = &descriptor.Glow
                     let flip = Flip.toSdlFlip descriptor.Flip
                     let inset = descriptor.Inset
                     if inset.X = 0.0f && inset.Y = 0.0f && inset.Z = 0.0f && inset.W = 0.0f then
