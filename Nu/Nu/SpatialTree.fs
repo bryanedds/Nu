@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections
 open System.Collections.Generic
 open System.Numerics
 open Prime
@@ -90,8 +91,60 @@ type internal SpatialNode<'e when 'e : equality> = SpatialNode.SpatialNode<'e>
 [<RequireQualifiedAccess>]
 module SpatialTree =
 
-    /// A spatial structure that organizes elements on a 2D plane.
-    /// TODO: document this.
+    /// Provides an enumerator interface to spatial tree queries.
+    type internal SpatialTreeEnumerator<'e when 'e : equality> (localElements : 'e HashSet, omnipresentElements : 'e HashSet) =
+
+        let localList = List localElements // eagerly convert to list to keep iteration valid
+        let omnipresentList = List omnipresentElements // eagerly convert to list to keep iteration valid
+        let mutable localEnrValid = false
+        let mutable omnipresentEnrValid = false
+        let mutable localEnr = Unchecked.defaultof<_>
+        let mutable omnipresentEnr = Unchecked.defaultof<_>
+
+        interface 'e IEnumerator with
+            member this.MoveNext () =
+                if not localEnrValid then
+                    localEnr <- localList.GetEnumerator ()
+                    localEnrValid <- true
+                    if not (localEnr.MoveNext ()) then
+                        omnipresentEnr <- omnipresentList.GetEnumerator ()
+                        omnipresentEnrValid <- true
+                        omnipresentEnr.MoveNext ()
+                    else true
+                else
+                    if not (localEnr.MoveNext ()) then
+                        if not omnipresentEnrValid then
+                            omnipresentEnr <- omnipresentList.GetEnumerator ()
+                            omnipresentEnrValid <- true
+                            omnipresentEnr.MoveNext ()
+                        else omnipresentEnr.MoveNext ()
+                    else true
+
+            member this.Current =
+                if omnipresentEnrValid then omnipresentEnr.Current
+                elif localEnrValid then localEnr.Current
+                else failwithumf ()
+
+            member this.Current =
+                (this :> 'e IEnumerator).Current :> obj
+
+            member this.Reset () =
+                localEnrValid <- false
+                omnipresentEnrValid <- false
+                localEnr <- Unchecked.defaultof<_>
+                omnipresentEnr <- Unchecked.defaultof<_>
+
+            member this.Dispose () =
+                localEnr <- Unchecked.defaultof<_>
+                omnipresentEnr <- Unchecked.defaultof<_>
+            
+    /// Provides an enumerable interface to spatial tree queries.
+    type internal SpatialTreeEnumerable<'e when 'e : equality> (enr : 'e SpatialTreeEnumerator) =
+        interface IEnumerable<'e> with
+            member this.GetEnumerator () = enr :> 'e IEnumerator
+            member this.GetEnumerator () = enr :> IEnumerator
+
+    /// A spatial structure that organizes elements on a 2D plane. TODO: document this.
     type [<NoEquality; NoComparison>] SpatialTree<'e when 'e : equality> =
         private
             { Node : 'e SpatialNode
@@ -137,12 +190,12 @@ module SpatialTree =
     let getElementsAtPoint point tree =
         let set = HashSet HashIdentity.Structural
         SpatialNode.getElementsAtPoint point tree.Node set
-        Seq.append tree.OmnipresentElements set
+        new SpatialTreeEnumerable<'e> (new SpatialTreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
 
     let getElementsInBounds bounds tree =
         let set = HashSet HashIdentity.Structural
         SpatialNode.getElementsInBounds bounds tree.Node set
-        Seq.append tree.OmnipresentElements set
+        new SpatialTreeEnumerable<'e> (new SpatialTreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
 
     let getDepth tree =
         SpatialNode.getDepth tree.Node
@@ -154,6 +207,6 @@ module SpatialTree =
     let make<'e when 'e : equality> granularity depth bounds =
         { Node = SpatialNode.make<'e> granularity depth bounds
           OmnipresentElements = HashSet HashIdentity.Structural }
-
-/// A spatial structure that organizes elements on a 2D plane.
+          
+/// A spatial structure that organizes elements on a 2D plane. TODO: document this.
 type SpatialTree<'e when 'e : equality> = SpatialTree.SpatialTree<'e>
