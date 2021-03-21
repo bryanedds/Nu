@@ -72,9 +72,11 @@ type MetricsEntityDispatcher () =
              SpriteDescriptor
                 { Transform = transform
                   Offset = Vector2.Zero
+                  Absolute = false
                   InsetOpt = None
                   Image = staticImage
                   Color = colWhite
+                  Blend = Transparent
                   Glow = colZero
                   Flip = FlipNone })
 #else
@@ -199,6 +201,26 @@ type MyGameDispatcher () =
         world
 
 #if ELMISH
+type ElmishEntityDispatcher () =
+    inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
+
+    override this.View (staticImage, entity, world) =
+        let transform = entity.GetTransform world
+        View.Render
+            (transform.Elevation,
+             transform.Position.Y,
+             AssetTag.generalize staticImage,
+             SpriteDescriptor
+                { Transform = transform
+                  Offset = Vector2.Zero
+                  Absolute = false
+                  InsetOpt = None
+                  Image = staticImage
+                  Color = colWhite
+                  Blend = Transparent
+                  Glow = colZero
+                  Flip = FlipNone })
+
 type [<ReferenceEquality>] Ints =
     { Ints : Map<int, int> }
     static member init n =
@@ -229,7 +251,7 @@ type ElmishGameDispatcher () =
             [Content.groups intss (fun intss _ -> intss.Intss) constant (fun i intss _ ->
                 Content.group (string i) []
                     [Content.entities intss (fun ints _ -> ints.Ints) constant (fun j int _ ->
-                        Content.staticSprite (string j)
+                        Content.entity<ElmishEntityDispatcher> (string j)
                             [Entity.Omnipresent == true
                              Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
                              Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12))])])
