@@ -318,20 +318,20 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
     /// Render sprite.
     static member renderSprite
-        (viewAbsolute : Matrix3x3)
-        (viewRelative : Matrix3x3)
-        (_ : Vector2)
-        (eyeSize : Vector2)
-        (transform : Transform)
-        (absolute : bool)
-        (offset : Vector2)
-        (insetOpt : Vector4 option)
-        (image : Image AssetTag)
-        (color : Color)
-        (blend : Blend)
-        (glow : Color)
-        (flip : Flip)
-        renderer =
+        (viewAbsolute : Matrix3x3 inref,
+         viewRelative : Matrix3x3 inref,
+         _ : Vector2,
+         eyeSize : Vector2,
+         transform : Transform inref,
+         absolute : bool,
+         offset : Vector2,
+         insetOpt : Vector4 option,
+         image : Image AssetTag,
+         color : Color inref,
+         blend : Blend,
+         glow : Color inref,
+         flip : Flip,
+         renderer) =
         let view = if absolute then viewAbsolute else viewRelative
         let position = transform.Position - Vector2.Multiply (offset, transform.Size)
         let positionView = position * view
@@ -380,32 +380,32 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
-    static member private renderSpriteDescriptor viewAbsolute viewRelative eyeCenter eyeSize (sprite : SpriteDescriptor) renderer =
+    static member private renderSpriteDescriptor (viewAbsolute : Matrix3x3 inref, viewRelative : Matrix3x3 inref, eyeCenter, eyeSize, sprite : SpriteDescriptor, renderer) =
         SdlRenderer.renderSprite
-            viewAbsolute viewRelative eyeCenter eyeSize
-            sprite.Transform sprite.Absolute sprite.Offset sprite.InsetOpt sprite.Image sprite.Color sprite.Blend sprite.Glow sprite.Flip
-            renderer
+            (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
+             &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
+             renderer)
 
-    static member private renderSpriteDescriptors viewAbsolute viewRelative eyeCenter eyeSize sprites renderer =
+    static member private renderSpriteDescriptors (viewAbsolute : Matrix3x3 inref, viewRelative : Matrix3x3 inref, eyeCenter, eyeSize, sprites, renderer) =
         for sprite in sprites do
-            SdlRenderer.renderSpriteDescriptor viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
+            SdlRenderer.renderSpriteDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, sprite, renderer)
 
     /// Render tile layer.
     static member renderTileLayer
-        (viewAbsolute : Matrix3x3)
-        (viewRelative : Matrix3x3)
-        (_ : Vector2)
-        (eyeSize : Vector2)
-        (transform : Transform)
-        (absolute : bool)
-        (color : Color)
-        (glow : Color)
-        (mapSize : Vector2i)
-        (tiles : TmxLayerTile array)
-        (tileSourceSize : Vector2i)
-        (tileSize : Vector2)
-        (tileAssets : (TmxTileset * Image AssetTag) array)
-        renderer =
+        (viewAbsolute : Matrix3x3 inref,
+         viewRelative : Matrix3x3 inref,
+         _ : Vector2,
+         eyeSize : Vector2,
+         transform : Transform inref,
+         absolute : bool,
+         color : Color inref,
+         glow : Color inref,
+         mapSize : Vector2i,
+         tiles : TmxLayerTile array,
+         tileSourceSize : Vector2i,
+         tileSize : Vector2,
+         tileAssets : (TmxTileset * Image AssetTag) array,
+         renderer) =
         let view = if absolute then viewAbsolute else viewRelative
         let positionView = transform.Position * view
         let sizeView = transform.Size * view.ExtractScaleMatrix ()
@@ -423,95 +423,97 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             let tileSourceRectRef = ref (SDL.SDL_Rect ())
             let tileDestRectRef = ref (SDL.SDL_Rect ())
             let tileRotationCenterRef = ref (SDL.SDL_Point ())
-            Array.iteri
-                (fun n (tile : TmxLayerTile) ->
-                    if tile.Gid <> 0 then // not the empty tile
-                        let mapRun = mapSize.X
-                        let (i, j) = (n % mapRun, n / mapRun)
-                        let tilePosition =
+            let tilesLength = Array.length tiles
+            let mutable tileIndex = 0
+            while tileIndex < tilesLength do
+                let tile = &tiles.[tileIndex] // iteration would be faster if TmxLayerTile were a struct...
+                if tile.Gid <> 0 then // not the empty tile
+                    let mapRun = mapSize.X
+                    let (i, j) = (tileIndex % mapRun, tileIndex / mapRun)
+                    let tilePosition =
+                        v2
+                            (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f)
+                            (-(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
+                    let tileBounds = v4Bounds tilePosition tileSize
+                    let viewBounds = v4Bounds Vector2.Zero eyeSize
+                    if Math.isBoundsIntersectingBounds tileBounds viewBounds then
+                        let tileFlip =
+                            match (tile.HorizontalFlip, tile.VerticalFlip) with
+                            | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
+                            | (true, false) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
+                            | (false, true) -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+                            | (true, true) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+                        let mutable tileOffset = 1 // gid 0 is the empty tile
+                        let mutable tileSetIndex = 0
+                        let mutable tileSetWidth = 0
+                        let mutable tileSetTexture = nativeint 0
+                        for (set, _, texture) in tileSetTextures do
+                            let tileCountOpt = set.TileCount
+                            let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
+                            if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
+                                not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
+                                tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
+                                tileSetTexture <- texture
+                            if  tileSetTexture = nativeint 0 then
+                                tileSetIndex <- inc tileSetIndex
+                                tileOffset <- tileOffset + tileCount
+                        let tileId = tile.Gid - tileOffset
+                        let tileIdPosition = tileId * tileSourceSize.X
+                        let tileSourcePosition =
                             v2
-                                (positionView.X + tileSize.X * single i + eyeSize.X * 0.5f)
-                                (-(positionView.Y - tileSize.Y * single j + sizeView.Y) + eyeSize.Y * 0.5f) // negation for right-handedness
-                        let tileBounds = v4Bounds tilePosition tileSize
-                        let viewBounds = v4Bounds Vector2.Zero eyeSize
-                        if Math.isBoundsIntersectingBounds tileBounds viewBounds then
-                            let tileFlip =
-                                match (tile.HorizontalFlip, tile.VerticalFlip) with
-                                | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
-                                | (true, false) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
-                                | (false, true) -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-                                | (true, true) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-                            let mutable tileOffset = 1 // gid 0 is the empty tile
-                            let mutable tileSetIndex = 0
-                            let mutable tileSetWidth = 0
-                            let mutable tileSetTexture = nativeint 0
-                            for (set, _, texture) in tileSetTextures do
-                                let tileCountOpt = set.TileCount
-                                let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
-                                if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
-                                    not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
-                                    tileSetWidth <- let tileSetWidthOpt = set.Image.Width in tileSetWidthOpt.Value
-                                    tileSetTexture <- texture
-                                if  tileSetTexture = nativeint 0 then
-                                    tileSetIndex <- inc tileSetIndex
-                                    tileOffset <- tileOffset + tileCount
-                            let tileId = tile.Gid - tileOffset
-                            let tileIdPosition = tileId * tileSourceSize.X
-                            let tileSourcePosition =
-                                v2
-                                    (single (tileIdPosition % tileSetWidth))
-                                    (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
-                            let mutable sourceRect = SDL.SDL_Rect ()
-                            sourceRect.x <- int tileSourcePosition.X
-                            sourceRect.y <- int tileSourcePosition.Y
-                            sourceRect.w <- tileSourceSize.X
-                            sourceRect.h <- tileSourceSize.Y
-                            let mutable destRect = SDL.SDL_Rect ()
-                            destRect.x <- int tilePosition.X * Constants.Render.VirtualScalar
-                            destRect.y <- int tilePosition.Y * Constants.Render.VirtualScalar
-                            destRect.w <- int tileSize.X * Constants.Render.VirtualScalar
-                            destRect.h <- int tileSize.Y * Constants.Render.VirtualScalar
-                            let rotation = double -tileRotation * Constants.Math.RadiansToDegrees // negation for right-handedness
-                            let mutable rotationCenter = SDL.SDL_Point ()
-                            rotationCenter.x <- int (tileSize.X * 0.5f) * Constants.Render.VirtualScalar
-                            rotationCenter.y <- int (tileSize.Y * 0.5f) * Constants.Render.VirtualScalar
-                            tileSourceRectRef := sourceRect
-                            tileDestRectRef := destRect
-                            tileRotationCenterRef := rotationCenter
-                            if color.A <> byte 0 then
-                                SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
-                                SDL.SDL_SetTextureColorMod (tileSetTexture, color.R, color.G, color.B) |> ignore
-                                SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A) |> ignore
-                                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
-                                if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
-                            if glow.A <> byte 0 then
-                                SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                                SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R, glow.G, glow.B) |> ignore
-                                SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A) |> ignore
-                                let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
-                                if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + "."))
-                tiles
+                                (single (tileIdPosition % tileSetWidth))
+                                (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
+                        let mutable sourceRect = SDL.SDL_Rect ()
+                        sourceRect.x <- int tileSourcePosition.X
+                        sourceRect.y <- int tileSourcePosition.Y
+                        sourceRect.w <- tileSourceSize.X
+                        sourceRect.h <- tileSourceSize.Y
+                        let mutable destRect = SDL.SDL_Rect ()
+                        destRect.x <- int tilePosition.X * Constants.Render.VirtualScalar
+                        destRect.y <- int tilePosition.Y * Constants.Render.VirtualScalar
+                        destRect.w <- int tileSize.X * Constants.Render.VirtualScalar
+                        destRect.h <- int tileSize.Y * Constants.Render.VirtualScalar
+                        let rotation = double -tileRotation * Constants.Math.RadiansToDegrees // negation for right-handedness
+                        let mutable rotationCenter = SDL.SDL_Point ()
+                        rotationCenter.x <- int (tileSize.X * 0.5f) * Constants.Render.VirtualScalar
+                        rotationCenter.y <- int (tileSize.Y * 0.5f) * Constants.Render.VirtualScalar
+                        tileSourceRectRef := sourceRect
+                        tileDestRectRef := destRect
+                        tileRotationCenterRef := rotationCenter
+                        if color.A <> byte 0 then
+                            SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
+                            SDL.SDL_SetTextureColorMod (tileSetTexture, color.R, color.G, color.B) |> ignore
+                            SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A) |> ignore
+                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
+                            if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
+                        if glow.A <> byte 0 then
+                            SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
+                            SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R, glow.G, glow.B) |> ignore
+                            SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A) |> ignore
+                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
+                            if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
+                tileIndex <- inc tileIndex
         else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
-    static member private renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize (tileLayer : TileLayerDescriptor) renderer =
+    static member private renderTileLayerDescriptor (viewAbsolute : Matrix3x3 inref, viewRelative : Matrix3x3 inref, eyeCenter, eyeSize, tileLayer : TileLayerDescriptor, renderer) =
         SdlRenderer.renderTileLayer
-            viewAbsolute viewRelative eyeCenter eyeSize
-            tileLayer.Transform tileLayer.Absolute tileLayer.Color tileLayer.Glow tileLayer.MapSize tileLayer.Tiles tileLayer.TileSourceSize tileLayer.TileSize tileLayer.TileAssets
-            renderer
+            (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
+             &tileLayer.Transform, tileLayer.Absolute, &tileLayer.Color, &tileLayer.Glow, tileLayer.MapSize, tileLayer.Tiles, tileLayer.TileSourceSize, tileLayer.TileSize, tileLayer.TileAssets,
+             renderer)
 
     /// Render text.
     static member renderText
-        (viewAbsolute : Matrix3x3)
-        (viewRelative : Matrix3x3)
-        (_ : Vector2)
-        (eyeSize : Vector2)
-        (transform : Transform)
-        (absolute : bool)
-        (text : string)
-        (font : Font AssetTag)
-        (color : Color)
-        (justification : Justification)
-        renderer =
+        (viewAbsolute : Matrix3x3 inref,
+         viewRelative : Matrix3x3 inref,
+         _ : Vector2,
+         eyeSize : Vector2,
+         transform : Transform inref,
+         absolute : bool,
+         text : string,
+         font : Font AssetTag,
+         color : Color inref,
+         justification : Justification,
+         renderer) =
         let view = if absolute then viewAbsolute else viewRelative
         let positionView = transform.Position * view
         let sizeView = transform.Size * view.ExtractScaleMatrix ()
@@ -570,25 +572,25 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | _ -> Log.debug "Cannot render text with a non-font asset."
         | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
 
-    static member private renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize (text : TextDescriptor) renderer =
+    static member private renderTextDescriptor (viewAbsolute : Matrix3x3 inref, viewRelative : Matrix3x3 inref, eyeCenter, eyeSize, text : TextDescriptor, renderer) =
         SdlRenderer.renderText
-            viewAbsolute viewRelative eyeCenter eyeSize
-            text.Transform text.Absolute text.Text text.Font text.Color text.Justification
-            renderer
+            (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
+             &text.Transform, text.Absolute, text.Text, text.Font, &text.Color, text.Justification,
+             renderer)
 
     /// Render particles.
     static member renderParticles
-        (viewAbsolute : Matrix3x3)
-        (viewRelative : Matrix3x3)
-        (_ : Vector2)
-        (eyeSize : Vector2)
-        (_ : single)
-        (_ : single)
-        (absolute : bool)
-        (blend : Blend)
-        (image : Image AssetTag)
-        (particles : ParticleDescriptor array)
-        renderer =
+        (viewAbsolute : Matrix3x3 inref,
+         viewRelative : Matrix3x3 inref,
+         _ : Vector2,
+         eyeSize : Vector2,
+         _ : single,
+         _ : single,
+         absolute : bool,
+         blend : Blend,
+         image : Image AssetTag,
+         particles : ParticleDescriptor array,
+         renderer) =
         let view = if absolute then viewAbsolute else viewRelative
         let positionOffset = -(v2Zero * view)
         let blend = Blend.toSdlBlendMode blend
@@ -645,25 +647,25 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | _ -> Log.trace "Cannot render particle with a non-texture asset."
         | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
 
-    static member private renderParticlesDescriptor viewAbsolute viewRelative eyeCenter eyeSize (particles : ParticlesDescriptor) renderer =
+    static member private renderParticlesDescriptor (viewAbsolute : Matrix3x3 inref, viewRelative : Matrix3x3 inref, eyeCenter, eyeSize, particles : ParticlesDescriptor, renderer) =
         SdlRenderer.renderParticles
-            viewAbsolute viewRelative eyeCenter eyeSize
-            particles.Elevation particles.PositionY particles.Absolute particles.Blend particles.Image particles.Particles
-            renderer
+            (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
+             particles.Elevation, particles.PositionY, particles.Absolute, particles.Blend, particles.Image, particles.Particles,
+             renderer)
 
     static member private renderDescriptor
-        (viewAbsolute : Matrix3x3)
-        (viewRelative : Matrix3x3)
-        (eyeCenter : Vector2)
-        (eyeSize : Vector2)
-        descriptor
-        renderer =
+        (viewAbsolute : Matrix3x3 inref,
+         viewRelative : Matrix3x3 inref,
+         eyeCenter : Vector2,
+         eyeSize : Vector2,
+         descriptor,
+         renderer) =
         match descriptor with
-        | SpriteDescriptor sprite -> SdlRenderer.renderSpriteDescriptor viewAbsolute viewRelative eyeCenter eyeSize sprite renderer
-        | SpritesDescriptor sprites -> SdlRenderer.renderSpriteDescriptors viewAbsolute viewRelative eyeCenter eyeSize sprites renderer
-        | TileLayerDescriptor descriptor -> SdlRenderer.renderTileLayerDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
-        | TextDescriptor descriptor -> SdlRenderer.renderTextDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
-        | ParticlesDescriptor descriptor -> SdlRenderer.renderParticlesDescriptor viewAbsolute viewRelative eyeCenter eyeSize descriptor renderer
+        | SpriteDescriptor sprite -> SdlRenderer.renderSpriteDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, sprite, renderer)
+        | SpritesDescriptor sprites -> SdlRenderer.renderSpriteDescriptors (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, sprites, renderer)
+        | TileLayerDescriptor descriptor -> SdlRenderer.renderTileLayerDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, descriptor, renderer)
+        | TextDescriptor descriptor -> SdlRenderer.renderTextDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, descriptor, renderer)
+        | ParticlesDescriptor descriptor -> SdlRenderer.renderParticlesDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, descriptor, renderer)
         | RenderCallback callback -> callback viewAbsolute viewRelative eyeCenter eyeSize renderer
 
     static member private renderLayeredMessages eyeCenter eyeSize (messages : RenderLayeredMessage List) renderer =
@@ -676,7 +678,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
             messages.Sort SdlRenderer.compareDescriptors
             for message in messages do
-                SdlRenderer.renderDescriptor viewAbsolute viewRelative eyeCenter eyeSize message.RenderDescriptor renderer
+                SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, message.RenderDescriptor, renderer)
         | _ ->
             Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
 
