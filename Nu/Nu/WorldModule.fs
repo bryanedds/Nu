@@ -661,18 +661,25 @@ module WorldModule =
             let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
             while enr.MoveNext () do
                 let key = fst enr.Current
-                let lensExistenceAndValue = Lens.map (fun keyed -> keyed.TryGetValue key) lensGeneralized
-                if Lens.validate lensExistenceAndValue world then
-                    match Lens.getWithoutValidation lensExistenceAndValue world with
-                    | (true, _) ->
-                        let validateOpt =
-                            match lensExistenceAndValue.ValidateOpt with
-                            | Some validate -> Some (fun world -> if validate world then (match Lens.getWithoutValidation lensExistenceAndValue world with (exists, _) -> exists) else false)
-                            | None -> Some (fun world -> match Lens.getWithoutValidation lensExistenceAndValue world with (exists, _) -> exists)
-                        let item = PartialComparable.make key { Lens.map snd lensExistenceAndValue with ValidateOpt = validateOpt }
-                        current <- USet.add item current
-                    | (false, _) -> ()
-                else ()
+                let validateOpt =
+                    match lensGeneralized.ValidateOpt with
+                    | Some validate -> Some (fun world ->
+                        if validate world
+                        then (Lens.getWithoutValidation lensGeneralized world).ContainsKey key
+                        else false)
+                    | None -> Some (fun world ->
+                        (Lens.getWithoutValidation lensGeneralized world).ContainsKey key)
+                let getWithoutValidation =
+                    fun world -> (lensGeneralized.GetWithoutValidation world).GetValue key
+                let lensItem =
+                    { Name = lensGeneralized.Name
+                      ValidateOpt = validateOpt
+                      GetWithoutValidation = getWithoutValidation
+                      SetOpt = None
+                      PayloadOpt = None
+                      This = lensGeneralized.This }
+                let item = PartialComparable.make key lensItem
+                current <- USet.add item current
             current
 
         static member internal removeSynchronizedSimulants
@@ -706,8 +713,7 @@ module WorldModule =
             world =
             Seq.fold (fun world keyAndLens ->
                 let (key, lens) = PartialComparable.unmake keyAndLens
-                match mapGeneralized.TryGetValue key with
-                | (true, _) ->
+                if mapGeneralized.ContainsKey key then
                     let content = contentMapper key lens world
                     let (simulantOpt, world) = expandContent Unchecked.defaultof<_> content origin owner parent world
                     match World.tryGetKeyedValue contentKey world with
@@ -719,7 +725,7 @@ module WorldModule =
                         match simulantOpt with
                         | Some simulant -> World.addKeyedValue contentKey (Map.add key simulant simulantMap) world
                         | None -> world
-                | (false, _) -> world)
+                else world)
                 world added
 
         static member internal synchronizeSimulants contentMapper contentKey mapGeneralized current origin owner parent world =
