@@ -27,17 +27,25 @@ open Prime
 open Nu
 
 /// Efficiently emulates root type casting of a Map.
+/// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
+/// uses them separately. A more generalized impl would only provide ToSeq and TryGetValue.
 type [<NoEquality; NoComparison>] MapGeneralized =
     { ToSeq : (IComparable * obj) seq
-      TryGetValue : IComparable -> bool * obj }
+      ContainsKey : IComparable -> bool
+      GetValue : IComparable -> obj }
 
     /// Make a generalized map.
     static member make (map : Map<'k, 'v>) =
-        { ToSeq = Seq.map (fun (kvp : KeyValuePair<'k, 'v>) -> (kvp.Key :> IComparable, kvp.Value :> obj)) map
-          TryGetValue = fun (key : IComparable) ->
-            match Map.tryGetValue (key :?> 'k) map with
-            | (true, value) -> (true, value :> obj)
-            | (false, _) -> (false, null) }
+        { ToSeq =
+            Seq.map (fun (kvp : KeyValuePair<'k, 'v>) ->
+                (kvp.Key :> IComparable, kvp.Value :> obj))
+                map
+          ContainsKey = fun (key : IComparable) ->
+            Map.containsKey (key :?> 'k) map
+          GetValue = fun (key : IComparable) ->
+            match map.TryGetValue (key :?> 'k) with
+            | (true, value) -> value :> obj
+            | (false, _) -> failwithumf () }
 
 /// Describes a Tiled tile.
 type [<StructuralEquality; NoComparison>] TileDescriptor =
