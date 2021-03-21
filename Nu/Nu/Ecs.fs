@@ -245,7 +245,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 
     let mutable components = ecs.AllocateArray<'c> ()
     let mutable freeIndex = 0
-    let freeList = HashSet<int> ()
+    let freeList = HashSet<int> HashIdentity.Structural
 
     new (ecs) = SystemUncorrelated (typeof<'c>.Name, ecs)
 
@@ -343,7 +343,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     let mutable components = ecs.AllocateArray<'c> ()
     let mutable junctions = Unchecked.defaultof<'c>.AllocateJunctions ecs
     let mutable freeIndex = 0
-    let freeList = HashSet<int> ()
+    let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> []
     let correlationsBack = dictPlus<int, Guid> []
 
