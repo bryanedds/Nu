@@ -277,11 +277,12 @@ module AssetGraph =
 
     /// Attempt to load all the available assets from a package.
     let tryLoadAssetsFromPackage usingRawAssets associationOpt packageName assetGraph =
-        match Map.tryGetValue packageName assetGraph.PackageDescriptors with
-        | (true, packageDescriptor) ->
+        let mutable packageDescriptor = Unchecked.defaultof<PackageDescriptor>
+        match Map.tryGetValue (packageName, assetGraph.PackageDescriptors, &packageDescriptor) with
+        | true ->
             let assets = loadAssetsFromPackageDescriptor4 usingRawAssets associationOpt packageName packageDescriptor
             Right assets
-        | (false, _) -> Left ("Could not find package '" + packageName + "' in asset graph.")
+        | false -> Left ("Could not find package '" + packageName + "' in asset graph.")
 
     /// Load all the available assets from an asset graph document.
     let loadAssets usingRawAssets associationOpt assetGraph =
