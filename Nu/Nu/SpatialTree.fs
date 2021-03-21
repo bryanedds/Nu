@@ -135,12 +135,12 @@ module SpatialTree =
             ()
 
     let getElementsAtPoint point tree =
-        let set = HashSet ()
+        let set = HashSet HashIdentity.Structural
         SpatialNode.getElementsAtPoint point tree.Node set
         Seq.append tree.OmnipresentElements set
 
     let getElementsInBounds bounds tree =
-        let set = HashSet ()
+        let set = HashSet HashIdentity.Structural
         SpatialNode.getElementsInBounds bounds tree.Node set
         Seq.append tree.OmnipresentElements set
 
