@@ -762,6 +762,9 @@ module WorldTypes =
         // check that address is of correct length for a game
         do if Address.length gameAddress <> 0 then failwith "Game address must be length of 0."
 
+        // cache the simulant address to avoid allocation
+        let simulantAddress = atoa<Game, Simulant> gameAddress
+
         /// Create a game reference.
         new () = Game (Address.empty)
 
@@ -795,7 +798,7 @@ module WorldTypes =
             Address.hash this.GameAddress
 
         interface Simulant with
-            member this.SimulantAddress = atoa<Game, Simulant> this.GameAddress
+            member this.SimulantAddress = simulantAddress
             end
 
         interface Game IComparable with
@@ -814,6 +817,9 @@ module WorldTypes =
 
         // check that address is of correct length for a screen
         do if Address.length screenAddress <> 1 then failwith "Screen address must be length of 1."
+
+        // cache the simulant address to avoid allocation
+        let simulantAddress = atoa<Screen, Simulant> screenAddress
 
         /// Create a screen reference from a name string.
         new (screenName : string) = Screen (ntoa screenName)
@@ -857,7 +863,7 @@ module WorldTypes =
             Address.hash this.ScreenAddress
 
         interface Simulant with
-            member this.SimulantAddress = atoa<Screen, Simulant> this.ScreenAddress
+            member this.SimulantAddress = simulantAddress
             end
 
         interface Screen IComparable with
@@ -875,6 +881,9 @@ module WorldTypes =
 
         // check that address is of correct length for a group
         do if Address.length groupAddress <> 2 then failwith "Group address must be length of 2."
+
+        // cache the simulant address to avoid allocation
+        let simulantAddress = atoa<Group, Simulant> groupAddress
 
         /// Create a group reference from an address string.
         new (groupAddressStr : string) = Group (stoa groupAddressStr)
@@ -927,7 +936,7 @@ module WorldTypes =
             Address.hash this.GroupAddress
 
         interface Simulant with
-            member this.SimulantAddress = atoa<Group, Simulant> this.GroupAddress
+            member this.SimulantAddress = simulantAddress
             end
 
         interface Group IComparable with
@@ -947,8 +956,10 @@ module WorldTypes =
     and Entity (entityAddress) =
 
         // check that address is of correct length for an entity
-        do if Address.length entityAddress <> 3 then
-            failwith "Entity address must be length of 3."
+        do if Address.length entityAddress <> 3 then failwith "Entity address must be length of 3."
+
+        // cache the simulant address to avoid allocation
+        let simulantAddress = atoa<Entity, Simulant> entityAddress
 
         /// The entity's update event.
         let updateEvent =
@@ -1027,7 +1038,7 @@ module WorldTypes =
             Address.hash this.EntityAddress
 
         interface Simulant with
-            member this.SimulantAddress = atoa<Entity, Simulant> this.EntityAddress
+            member this.SimulantAddress = simulantAddress
             end
 
         interface Entity IComparable with
