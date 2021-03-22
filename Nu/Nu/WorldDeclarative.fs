@@ -272,19 +272,19 @@ module WorldDeclarative =
                 let mutable sieveResultOpt = None
                 let mutable unfoldResultOpt = None
                 Lens.mapWorld (fun a world ->
-                    let (b, c) =
+                    let struct (b, c) =
                         if a === lensResult then
                             match (sieveResultOpt, unfoldResultOpt) with
-                            | (Some sieveResult, Some unfoldResult) -> (sieveResult, unfoldResult)
-                            | (Some sieveResult, None) -> (sieveResult, unfold sieveResult world)
+                            | (Some sieveResult, Some unfoldResult) -> struct (sieveResult, unfoldResult)
+                            | (Some sieveResult, None) -> struct (sieveResult, unfold sieveResult world)
                             | (None, Some _) -> failwithumf ()
-                            | (None, None) -> let b = sieve a world in (b, unfold b world)
+                            | (None, None) -> let b = sieve a world in struct (b, unfold b world)
                         else
                             match (sieveResultOpt, unfoldResultOpt) with
-                            | (Some sieveResult, Some unfoldResult) -> let b = sieve a world in if b === sieveResult then (b, unfoldResult) else (b, unfold b world)
-                            | (Some _, None) -> let b = sieve a world in (b, unfold b world)
+                            | (Some sieveResult, Some unfoldResult) -> let b = sieve a world in if b === sieveResult then struct (b, unfoldResult) else struct (b, unfold b world)
+                            | (Some _, None) -> let b = sieve a world in struct (b, unfold b world)
                             | (None, Some _) -> failwithumf ()
-                            | (None, None) -> let b = sieve a world in (b, unfold b world)
+                            | (None, None) -> let b = sieve a world in struct (b, unfold b world)
                     lensResult <- a
                     sieveResultOpt <- Some b
                     unfoldResultOpt <- Some c
