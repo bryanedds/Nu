@@ -661,16 +661,19 @@ module WorldModule =
             let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
             while enr.MoveNext () do
                 let key = fst enr.Current
+                let mutable mapCached = Unchecked.defaultof<MapGeneralized> // OPTIMIATION: ensure map is extracted during validation only
                 let validateOpt =
                     match lensGeneralized.ValidateOpt with
                     | Some validate -> Some (fun world ->
-                        if validate world
-                        then (Lens.getWithoutValidation lensGeneralized world).ContainsKey key
+                        if validate world then
+                            mapCached <- Lens.getWithoutValidation lensGeneralized world
+                            mapCached.ContainsKey key
                         else false)
                     | None -> Some (fun world ->
-                        (Lens.getWithoutValidation lensGeneralized world).ContainsKey key)
+                        mapCached <- Lens.getWithoutValidation lensGeneralized world
+                        mapCached.ContainsKey key)
                 let getWithoutValidation =
-                    fun world -> (lensGeneralized.GetWithoutValidation world).GetValue key
+                    fun _ -> mapCached.GetValue key
                 let lensItem =
                     { Name = lensGeneralized.Name
                       ValidateOpt = validateOpt
