@@ -753,7 +753,7 @@ module WorldModule =
                 else world
             World.addKeyedValue contentKey current world
 
-        static member internal publishBindingChange propertyName simulant world =
+        static member internal publishChangeBinding propertyName simulant world =
             let propertyAddress = PropertyAddress.make propertyName simulant
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, elmishBindings) ->

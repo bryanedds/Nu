@@ -73,7 +73,7 @@ module WorldModuleGroup =
 
             // publish change binding
             let world =
-                World.publishBindingChange propertyName group world
+                World.publishChangeBinding propertyName group world
 
             // publish event binding
             let world =

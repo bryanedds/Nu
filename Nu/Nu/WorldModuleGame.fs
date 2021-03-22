@@ -24,7 +24,7 @@ module WorldModuleGame =
 
             // publish change binding
             let world =
-                World.publishBindingChange propertyName game world
+                World.publishChangeBinding propertyName game world
 
             // publish change event
             let world =
