@@ -155,11 +155,11 @@ type MyGameDispatcher () =
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS_PURE
-        let positions = // 9,900 entity positions (goal: 60FPS)
+        let positions = // 11,045 entity positions (goal: 60FPS)
             seq {
-                for i in 0 .. 74 do
-                    for j in 0 .. 43 do
-                        for k in 0 .. 2 do
+                for i in 0 .. 46 do
+                    for j in 0 .. 46 do
+                        for k in 0 .. 4 do
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
             Seq.fold (fun world position ->
@@ -221,6 +221,29 @@ type ElmishEntityDispatcher () =
                   Glow = colZero
                   Flip = FlipNone })
 
+#if PROPERTIES
+type ElmishGameDispatcher () =
+    inherit GameDispatcher<int, int, unit> (0)
+
+    override this.Channel (_, game) =
+        [game.UpdateEvent => msg 0]
+
+    override this.Message (int, message, _, _) =
+        match message with
+        | 0 -> just (inc int)
+        | _ -> just int
+
+    override this.Content (int, _) =
+        [Content.screen Gen.name Vanilla []
+            [Content.group Gen.name []
+                [Content.entity<ElmishEntityDispatcher> Gen.name
+                    (seq {
+                        yield Entity.Omnipresent == true
+                        for _ in 0 .. 25000 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12)) } |> // 25,000 property bindings (goal: 60FPS)
+                        Seq.toList)]
+             Content.group Gen.name []
+                [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
+#else
 type [<ReferenceEquality>] Ints =
     { Ints : Map<int, int> }
     static member init n =
@@ -247,7 +270,7 @@ type ElmishGameDispatcher () =
         | _ -> just intss
 
     override this.Content (intss, _) =
-        [Content.screen "Screen" Vanilla []
+        [Content.screen Gen.name Vanilla []
             [Content.groups intss (fun intss _ -> intss.Intss) constant (fun i intss _ ->
                 Content.group (string i) []
                     [Content.entities intss (fun ints _ -> ints.Ints) constant (fun j int _ ->
@@ -257,8 +280,9 @@ type ElmishGameDispatcher () =
                                 yield Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
                                 for _ in 0 .. 0 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12)) } |>
                                 Seq.toList))])
-             Content.group "Group" []
+             Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
+#endif
 #endif
 
 #if TESTBED
