@@ -28,18 +28,18 @@ open Nu
 
 /// Efficiently emulates root type casting of a Map.
 /// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
-/// uses them separately. A more generalized impl would only provide ToSeq and TryGetValue.
+/// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
 type [<NoEquality; NoComparison>] MapGeneralized =
-    { ToSeq : (IComparable * obj) seq
+    { ToKeys : List<IComparable>
       ContainsKey : IComparable -> bool
       GetValue : IComparable -> obj }
 
     /// Make a generalized map.
     static member make (map : Map<'k, 'v>) =
-        { ToSeq =
-            Seq.map (fun (kvp : KeyValuePair<'k, 'v>) ->
-                (kvp.Key :> IComparable, kvp.Value :> obj))
-                map
+        { ToKeys =
+            let list = List ()
+            for entry in map do list.Add (entry.Key :> IComparable)
+            list
           ContainsKey = fun (key : IComparable) ->
             Map.containsKey (key :?> 'k) map
           GetValue = fun (key : IComparable) ->

@@ -39,37 +39,37 @@ module WorldSimulantModule =
         static member internal tryGetProperty name (simulant : Simulant) world =
             let mutable property = Unchecked.defaultof<_>
             let found =
-                match simulant with
-                | :? Entity as entity -> World.tryGetEntityProperty (name, entity, world, &property)
-                | :? Group as group -> World.tryGetGroupProperty (name, group, world, &property)
-                | :? Screen as screen -> World.tryGetScreenProperty (name, screen, world, &property)
-                | :? Game -> World.tryGetGameProperty (name, world, &property)
+                match simulant.SimulantAddress |> Address.getNames |> Array.length with
+                | 0 -> World.tryGetGameProperty (name, world, &property)
+                | 1 -> World.tryGetScreenProperty (name, simulant :?> Screen, world, &property)
+                | 2 -> World.tryGetGroupProperty (name, simulant :?> Group, world, &property)
+                | 3 -> World.tryGetEntityProperty (name, simulant :?> Entity, world, &property)
                 | _ -> false
             if found then Some property else None
 
         static member internal getProperty name (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> World.getEntityProperty name entity world
-            | :? Group as group -> World.getGroupProperty name group world
-            | :? Screen as screen -> World.getScreenProperty name screen world
-            | :? Game -> World.getGameProperty name world
+            match simulant.SimulantAddress |> Address.getNames |> Array.length with
+            | 0 -> World.getGameProperty name world
+            | 1 -> World.getScreenProperty name (simulant :?> Screen) world
+            | 2 -> World.getGroupProperty name (simulant :?> Group) world
+            | 3 -> World.getEntityProperty name (simulant :?> Entity) world
             | _ -> failwithumf ()
 
         static member internal trySetProperty name property (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> World.trySetEntityProperty name property entity world
-            | :? Group as group -> World.trySetGroupProperty name property group world
-            | :? Screen as screen -> World.trySetScreenProperty name property screen world
-            | :? Game -> World.trySetGameProperty name property world
+            match simulant.SimulantAddress |> Address.getNames |> Array.length with
+            | 0 -> World.trySetGameProperty name property world
+            | 1 -> World.trySetScreenProperty name property (simulant :?> Screen) world
+            | 2 -> World.trySetGroupProperty name property (simulant :?> Group) world
+            | 3 -> World.trySetEntityProperty name property (simulant :?> Entity) world
             | _ -> (false, false, world)
 
         static member internal setProperty name property (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> World.setEntityProperty name property entity world
-            | :? Group as group -> World.setGroupProperty name property group world
-            | :? Screen as screen -> World.setScreenProperty name property screen world
-            | :? Game -> World.setGameProperty name property world
-            | _ -> failwithumf ()
+            match simulant.SimulantAddress |> Address.getNames |> Array.length with
+            | 0 -> World.setGameProperty name property world
+            | 1 -> World.setScreenProperty name property (simulant :?> Screen) world
+            | 2 -> World.setGroupProperty name property (simulant :?> Group) world
+            | 3 -> World.setEntityProperty name property (simulant :?> Entity) world
+            | _ -> (false, world)
 
         static member internal attachProperty name property (simulant : Simulant) world =
             match simulant with
