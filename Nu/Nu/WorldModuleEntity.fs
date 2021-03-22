@@ -128,7 +128,7 @@ module WorldModuleEntity =
             // publish change binding
             let world =
                 if World.getEntityPublishChangeBindings entity world
-                then World.publishBindingChange propertyName entity world
+                then World.publishChangeBinding propertyName entity world
                 else world
 
             // publish change event

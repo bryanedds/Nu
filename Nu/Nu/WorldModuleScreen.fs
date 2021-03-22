@@ -61,7 +61,7 @@ module WorldModuleScreen =
 
             // publish change binding
             let world =
-                World.publishBindingChange propertyName screen world
+                World.publishChangeBinding propertyName screen world
 
             // publish change event
             let world =

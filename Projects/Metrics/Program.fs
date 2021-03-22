@@ -255,7 +255,7 @@ type ElmishGameDispatcher () =
                             (seq {
                                 yield Entity.Omnipresent == true
                                 yield Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
-                                for _ in 0 .. 15000 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12)) } |>
+                                for _ in 0 .. 20000 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12)) } |>
                                 Seq.toList))])
              Content.group "Group" []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
