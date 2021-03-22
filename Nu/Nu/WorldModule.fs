@@ -656,11 +656,9 @@ module WorldModule =
 
     type World with // ElmishBindingsMap
 
-        static member internal makeLensesCurrent mapGeneralized lensGeneralized world =
+        static member internal makeLensesCurrent (mapGeneralized : MapGeneralized) lensGeneralized world =
             let mutable current = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
-            let mutable enr = mapGeneralized.ToSeq.GetEnumerator ()
-            while enr.MoveNext () do
-                let key = fst enr.Current
+            for key in mapGeneralized.ToKeys do
                 // OPTIMIZATION: ensure map is extracted during validation only.
                 // This creates a strong dependency on the map being used in a perfectly predictable way (one validate, one getWithoutValidation).
                 // Any violation of this implicit invariant will result in a NullReferenceException.
@@ -761,8 +759,8 @@ module WorldModule =
                     match elmishBinding with
                     | PropertyBinding binding ->
                         if binding.PBRight.Validate world then
-                            let setter = Option.get binding.PBLeft.SetOpt
                             let value = binding.PBRight.GetWithoutValidation world
+                            let setter = Option.get binding.PBLeft.SetOpt
                             setter value world
                         else world
                     | ContentBinding binding ->
