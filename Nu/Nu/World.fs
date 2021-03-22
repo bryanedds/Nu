@@ -25,13 +25,13 @@ module Nu =
     let private tryPropagateByName simulant leftName (right : World Lens) world =
         if right.Validate world then
             let value = right.GetWithoutValidation world
-            match World.tryGetProperty leftName simulant world with
-            | Some property ->
+            match World.tryGetProperty (leftName, simulant, world) with
+            | (true, property) ->
                 if property.PropertyValue =/= value then
                     let property = { property with PropertyValue = value }
                     World.trySetProperty leftName property simulant world |> __c
                 else world
-            | None -> world
+            | (false, _) -> world
         else world
 
     let private tryPropagate simulant (left : World Lens) (right : World Lens) world =
@@ -75,9 +75,9 @@ module Nu =
             WorldTypes.getPropertyOpt <- fun propertyName propertied world ->
                 match propertied with
                 | :? Simulant as simulant ->
-                    match World.tryGetProperty propertyName simulant (world :?> World) with
-                    | Some property -> Some property.PropertyValue
-                    | None -> None
+                    match World.tryGetProperty (propertyName, simulant, world :?> World) with
+                    | (true, property) -> Some property.PropertyValue
+                    | (false, _) -> None
                 | _ -> None
 
             // init setPropertyOpt F# reach-around
@@ -396,13 +396,13 @@ module Nu =
                         Lens.make
                             left.Name
                             (fun world ->
-                                match World.tryGetProperty left.Name simulant world with
-                                | Some property -> property.PropertyValue
-                                | None -> failwithumf ())
+                                match World.tryGetProperty (left.Name, simulant, world) with
+                                | (true, property) -> property.PropertyValue
+                                | (false, _) -> failwithumf ())
                             (fun propertyValue world ->
-                                match World.tryGetProperty left.Name simulant world with
-                                | Some property -> World.trySetProperty left.Name { property with PropertyValue = propertyValue } simulant world |> __c
-                                | None -> world)
+                                match World.tryGetProperty (left.Name, simulant, world) with
+                                | (true, property) -> World.trySetProperty left.Name { property with PropertyValue = propertyValue } simulant world |> __c
+                                | (false, _) -> world)
                             simulant
                     else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant
                 let rightFixup = { Lens.makeReadOnly right.Name right.GetWithoutValidation right.This with ValidateOpt = right.ValidateOpt }

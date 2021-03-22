@@ -36,16 +36,13 @@ module WorldSimulantModule =
             | :? Game -> World.getGameState world :> SimulantState
             | _ -> failwithumf ()
 
-        static member internal tryGetProperty name (simulant : Simulant) world =
-            let mutable property = Unchecked.defaultof<_>
-            let found =
-                match simulant.SimulantAddress |> Address.getNames |> Array.length with
-                | 0 -> World.tryGetGameProperty (name, world, &property)
-                | 1 -> World.tryGetScreenProperty (name, simulant :?> Screen, world, &property)
-                | 2 -> World.tryGetGroupProperty (name, simulant :?> Group, world, &property)
-                | 3 -> World.tryGetEntityProperty (name, simulant :?> Entity, world, &property)
-                | _ -> false
-            if found then Some property else None
+        static member internal tryGetProperty (name, simulant : Simulant, world, property : Property outref) =
+            match simulant.SimulantAddress |> Address.getNames |> Array.length with
+            | 0 -> World.tryGetGameProperty (name, world, &property)
+            | 1 -> World.tryGetScreenProperty (name, simulant :?> Screen, world, &property)
+            | 2 -> World.tryGetGroupProperty (name, simulant :?> Group, world, &property)
+            | 3 -> World.tryGetEntityProperty (name, simulant :?> Entity, world, &property)
+            | _ -> false
 
         static member internal getProperty name (simulant : Simulant) world =
             match simulant.SimulantAddress |> Address.getNames |> Array.length with
@@ -282,9 +279,9 @@ module PropertyDescriptor =
     /// Attempt to get the simulant's property value.
     let tryGetValue propertyDescriptor simulant world =
         let propertyName = propertyDescriptor.PropertyName
-        match World.tryGetProperty propertyName simulant world with
-        | Some property -> Some property.PropertyValue
-        | None -> None
+        match World.tryGetProperty (propertyName, simulant, world) with
+        | (true, property) -> Some property.PropertyValue
+        | (false, _) -> None
 
     /// Attempt to set the simulant's property value.
     let trySetValue propertyDescriptor propertyValue simulant world =

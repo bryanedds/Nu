@@ -117,12 +117,12 @@ module WorldScripting =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
-                match World.tryGetProperty propertyName simulant world with
-                | Some property ->
+                match World.tryGetProperty (propertyName, simulant, world) with
+                | (true, property) ->
                     match ScriptingSystem.tryImport property.PropertyType property.PropertyValue world with
                     | Some propertyValue -> struct (propertyValue, world)
                     | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be imported into scripting environment.", originOpt), world)
-                | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Simulant or property value could not be found.", originOpt), world)
+                | (false, _) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Simulant or property value could not be found.", originOpt), world)
             | Left error -> error
 
         static member internal evalGetAsStream fnName propertyName relationOpt originOpt world =
@@ -132,9 +132,9 @@ module WorldScripting =
                 let stream =
                     Stream.make (Events.Change propertyName --> simulant.SimulantAddress) |>
                     Stream.mapEvent (fun (evt : Event<ChangeData, _>) world ->
-                        match World.tryGetProperty evt.Data.Name simulant world with
-                        | Some property -> ScriptingSystem.tryImport property.PropertyType property.PropertyValue world |> box
-                        | None -> None :> obj)
+                        match World.tryGetProperty (evt.Data.Name, simulant, world) with
+                        | (true, property) -> ScriptingSystem.tryImport property.PropertyType property.PropertyValue world |> box
+                        | (false, _) -> None :> obj)
                 struct (Pluggable { Stream = stream }, world)
             | Left error -> error
 
@@ -142,8 +142,8 @@ module WorldScripting =
             let context = World.getScriptContext world
             match World.tryResolveRelationOpt fnName relationOpt originOpt context world with
             | Right struct (simulant, world) ->
-                match World.tryGetProperty propertyName simulant world with
-                | Some property ->
+                match World.tryGetProperty (propertyName, simulant, world) with
+                | (true, property) ->
                     let struct (propertyValue, world) = World.evalInternal propertyValueExpr world
                     match ScriptingSystem.tryExport property.PropertyType propertyValue world with
                     | Some propertyValue ->
@@ -152,7 +152,7 @@ module WorldScripting =
                         | (true, _, world) -> struct (Unit, world)
                         | (false, _, world) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
                     | None -> struct (Violation (["InvalidPropertyValue"; String.capitalize fnName], "Property value could not be exported into Simulant property.", originOpt), world)
-                | None -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
+                | (false, _) -> struct (Violation (["InvalidProperty"; String.capitalize fnName], "Property value could not be set.", originOpt), world)
             | Left error -> error
 
         static member internal evalSetAsStream fnName propertyName relationOpt stream originOpt world =
@@ -169,15 +169,15 @@ module WorldScripting =
                                 | :? (Expr option) as exprOpt ->
                                     match exprOpt with
                                     | Some expr ->
-                                        match World.tryGetProperty propertyName simulant world with
-                                        | Some property ->
+                                        match World.tryGetProperty (propertyName, simulant, world) with
+                                        | (true, property) ->
                                             match ScriptingSystem.tryExport property.PropertyType expr world with
                                             | Some propertyValue ->
                                                 let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
                                                 let (_, _, world) = World.trySetProperty propertyName property simulant world
                                                 (Cascade, world)
                                             | None -> (Cascade, world)
-                                        | None -> (Cascade, world)
+                                        | (false, _) -> (Cascade, world)
                                     | None -> (Cascade, world)
                                 | _ -> (Cascade, world))
                                 simulant
