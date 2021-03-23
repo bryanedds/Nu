@@ -155,10 +155,10 @@ type MyGameDispatcher () =
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS_PURE
-        let positions = // 11,045 entity positions (goal: 60FPS)
+        let positions = // 13,520 entity positions (goal: 60FPS)
             seq {
-                for i in 0 .. 46 do
-                    for j in 0 .. 46 do
+                for i in 0 .. 51 do
+                    for j in 0 .. 51 do
                         for k in 0 .. 4 do
                             yield v2 (single i * 12.0f + single k) (single j * 12.0f + single k) }
         let world =
@@ -276,9 +276,9 @@ type ElmishGameDispatcher () =
                     [Content.entities intss (fun ints _ -> ints.Ints) constant (fun j int _ ->
                         Content.entity<ElmishEntityDispatcher> (string j)
                             (seq {
-                                //yield Entity.Omnipresent == true
+                                yield Entity.Omnipresent == true
                                 yield Entity.Position == v2 (single i * 12.0f - 480.0f) (single j * 12.0f - 272.0f)
-                                for _ in 0 .. 0 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12)) } |>
+                                yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (int % 12)) } |>
                                 Seq.toList))])
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
