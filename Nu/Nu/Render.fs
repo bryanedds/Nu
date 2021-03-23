@@ -369,13 +369,13 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
                     SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
                     SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
-                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
+                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
                     if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
                 if glow.A <> byte 0 then
                     SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
                     SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
                     SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore
-                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
+                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
                     if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
@@ -420,9 +420,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             Array.definitizePlus
         if allFound then
             // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
-            let tileSourceRectRef = ref (SDL.SDL_Rect ())
-            let tileDestRectRef = ref (SDL.SDL_Rect ())
-            let tileRotationCenterRef = ref (SDL.SDL_Point ())
             let tilesLength = Array.length tiles
             let mutable tileIndex = 0
             while tileIndex < tilesLength do
@@ -477,20 +474,17 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                         let mutable rotationCenter = SDL.SDL_Point ()
                         rotationCenter.x <- int (tileSize.X * 0.5f) * Constants.Render.VirtualScalar
                         rotationCenter.y <- int (tileSize.Y * 0.5f) * Constants.Render.VirtualScalar
-                        tileSourceRectRef := sourceRect
-                        tileDestRectRef := destRect
-                        tileRotationCenterRef := rotationCenter
                         if color.A <> byte 0 then
                             SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
                             SDL.SDL_SetTextureColorMod (tileSetTexture, color.R, color.G, color.B) |> ignore
                             SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A) |> ignore
-                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
+                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
                             if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
                         if glow.A <> byte 0 then
                             SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
                             SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R, glow.G, glow.B) |> ignore
                             SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A) |> ignore
-                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, tileSourceRectRef, tileDestRectRef, rotation, tileRotationCenterRef, tileFlip)
+                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
                             if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
                 tileIndex <- inc tileIndex
         else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
@@ -540,18 +534,19 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                         (Vector2.Zero, textSurface)
                     | Justified (h, v) ->
                         let textSurface = SDL_ttf.TTF_RenderText_Blended (font, text, renderColor)
-                        let (width, height) = (ref 0, ref 0)
-                        SDL_ttf.TTF_SizeText (font, text, width, height) |> ignore
+                        let mutable width = 0
+                        let mutable height = 0
+                        SDL_ttf.TTF_SizeText (font, text, &width, &height) |> ignore
                         let offsetX =
                             match h with
                             | JustifyLeft -> 0.0f
-                            | JustifyCenter -> (sizeView.X - single !width) * 0.5f
-                            | JustifyRight -> sizeView.X - single !width
+                            | JustifyCenter -> (sizeView.X - single width) * 0.5f
+                            | JustifyRight -> sizeView.X - single width
                         let offsetY =
                             match v with
                             | JustifyTop -> 0.0f
-                            | JustifyMiddle -> (sizeView.Y - single !height) * 0.5f
-                            | JustifyBottom -> sizeView.Y - single !height
+                            | JustifyMiddle -> (sizeView.Y - single height) * 0.5f
+                            | JustifyBottom -> sizeView.Y - single height
                         (v2 offsetX offsetY, textSurface)
                 if textSurface <> IntPtr.Zero then
                     let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
@@ -566,7 +561,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     destRect.y <- int (-positionView.Y + offset.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
                     destRect.w <- textureSizeX * Constants.Render.VirtualScalar
                     destRect.h <- textureSizeY * Constants.Render.VirtualScalar
-                    if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, ref sourceRect, ref destRect) |> ignore
+                    if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, &sourceRect, &destRect) |> ignore
                     SDL.SDL_DestroyTexture textTexture
                     SDL.SDL_FreeSurface textSurface
             | _ -> Log.debug "Cannot render text with a non-font asset."
@@ -635,13 +630,13 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                         SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
                         SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
                         SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
-                        let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
+                        let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
                         if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
                     if glow.A <> byte 0 then
                         SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
                         SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
                         SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore
-                        let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, ref sourceRect, ref destRect, rotation, ref rotationCenter, flip)
+                        let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
                         if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
                     index <- inc index
             | _ -> Log.trace "Cannot render particle with a non-texture asset."
