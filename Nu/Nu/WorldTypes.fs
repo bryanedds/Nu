@@ -490,8 +490,8 @@ module WorldTypes =
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property gameState =
             match Xtension.trySetProperty propertyName property gameState.Xtension with
-            | (true, xtension) -> (true, { gameState with Xtension = xtension })
-            | (false, _) -> (false, gameState)
+            | struct (true, xtension) -> struct (true, { gameState with Xtension = xtension })
+            | struct (false, _) -> struct (false, gameState)
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property gameState =
@@ -557,8 +557,8 @@ module WorldTypes =
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property screenState =
             match Xtension.trySetProperty propertyName property screenState.Xtension with
-            | (true, xtension) -> (true, { screenState with Xtension = xtension })
-            | (false, _) -> (false, screenState)
+            | struct (true, xtension) -> struct (true, { screenState with Xtension = xtension })
+            | struct (false, _) -> struct (false, screenState)
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property screenState =
@@ -616,8 +616,8 @@ module WorldTypes =
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property groupState =
             match Xtension.trySetProperty propertyName property groupState.Xtension with
-            | (true, xtension) -> (true, { groupState with Xtension = xtension })
-            | (false, _) -> (false, groupState)
+            | struct (true, xtension) -> struct (true, { groupState with Xtension = xtension })
+            | struct (false, _) -> struct (false, groupState)
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property groupState =
@@ -699,10 +699,10 @@ module WorldTypes =
         static member trySetProperty propertyName property (entityState : EntityState) =
             let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
             match Xtension.trySetProperty propertyName property entityState.Xtension with
-            | (true, xtension) ->
+            | struct (true, xtension) ->
                 entityState.Xtension <- xtension // redundant if xtension is imperative
-                (true, entityState)
-            | (false, _) -> (false, entityState)
+                struct (true, entityState)
+            | struct (false, _) -> struct (false, entityState)
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property (entityState : EntityState) =

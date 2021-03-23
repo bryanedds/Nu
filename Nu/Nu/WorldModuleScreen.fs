@@ -12,7 +12,7 @@ module WorldModuleScreen =
 
     /// Dynamic property getters / setters.
     let internal ScreenGetters = Dictionary<string, Screen -> World -> Property> HashIdentity.Structural
-    let internal ScreenSetters = Dictionary<string, Property -> Screen -> World -> bool * World> HashIdentity.Structural
+    let internal ScreenSetters = Dictionary<string, Property -> Screen -> World -> struct (bool * World)> HashIdentity.Structural
 
     type World with
     
@@ -87,16 +87,16 @@ module WorldModuleScreen =
         static member private updateScreenStateWithoutEvent updater screen world =
             let screenStateOpt = updater (World.getScreenState screen world)
             match screenStateOpt :> obj with
-            | null -> (false, world)
-            | _ -> (true, World.setScreenState screenStateOpt screen world)
+            | null -> struct (false, world)
+            | _ -> struct (true, World.setScreenState screenStateOpt screen world)
 
         static member private updateScreenState updater propertyName propertyValue screen world =
-            let (changed, world) = World.updateScreenStateWithoutEvent updater screen world
+            let struct (changed, world) = World.updateScreenStateWithoutEvent updater screen world
             let world =
                 if changed
                 then World.publishScreenChange propertyName propertyValue screen world
                 else world
-            (changed, world)
+            struct (changed, world)
 
         /// Check that a screen exists in the world.
         static member internal getScreenExists screen world =
@@ -159,17 +159,17 @@ module WorldModuleScreen =
         static member internal trySetScreenPropertyFast propertyName property screen world =
             if World.getScreenExists screen world then
                 match ScreenSetters.TryGetValue propertyName with
-                | (true, setter) -> setter property screen world |> snd
+                | (true, setter) -> setter property screen world |> snd'
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let (_, world) =
+                    let struct (_, world) =
                         World.updateScreenState
                             (fun screenState ->
                                 let mutable propertyOld = Unchecked.defaultof<_>
                                 match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
                                 | true ->
                                     if property.PropertyValue =/= propertyOld.PropertyValue then
-                                        let (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
+                                        let struct (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
                                         success <- successInner
                                         gameState
                                     else Unchecked.defaultof<_>
@@ -182,24 +182,24 @@ module WorldModuleScreen =
             if World.getScreenExists screen world then
                 match ScreenSetters.TryGetValue propertyName with
                 | (true, setter) ->
-                    let (changed, world) = setter property screen world
-                    (true, changed, world)
+                    let struct (changed, world) = setter property screen world
+                    struct (true, changed, world)
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let (changed, world) =
+                    let struct (changed, world) =
                         World.updateScreenState
                             (fun screenState ->
                                 let mutable propertyOld = Unchecked.defaultof<_>
                                 match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
                                 | true ->
                                     if property.PropertyValue =/= propertyOld.PropertyValue then
-                                        let (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
+                                        let struct (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
                                         success <- successInner
                                         gameState
                                     else Unchecked.defaultof<_>
                                 | false -> Unchecked.defaultof<_>)
                             propertyName property.PropertyValue screen world
-                    (success, changed, world)
+                    struct (success, changed, world)
             else (false, false, world)
 
         static member internal setScreenProperty propertyName property screen world =
@@ -214,11 +214,11 @@ module WorldModuleScreen =
                             else Unchecked.defaultof<_>)
                         propertyName property.PropertyValue screen world
                 | (true, setter) -> setter property screen world
-            else (false, world)
+            else struct (false, world)
 
         static member internal attachScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
-                let (_, world) =
+                let struct (_, world) =
                     World.updateScreenState
                         (fun screenState -> ScreenState.attachProperty propertyName property screenState)
                         propertyName property.PropertyValue screen world
@@ -227,7 +227,7 @@ module WorldModuleScreen =
 
         static member internal detachScreenProperty propertyName screen world =
             if World.getScreenExists screen world then
-                let (_, world) =
+                let struct (_, world) =
                     World.updateScreenStateWithoutEvent
                         (fun screenState -> ScreenState.detachProperty propertyName screenState)
                         screen world

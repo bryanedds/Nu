@@ -111,7 +111,7 @@ module FacetModule =
                 match initializer with
                 | PropertyDefinition def ->
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
-                    World.setProperty def.PropertyName property entity world |> snd
+                    World.setProperty def.PropertyName property entity world |> snd'
                 | EventHandlerDefinition (handler, partialAddress) ->
                     let eventAddress = partialAddress --> entity
                     World.monitor (fun (evt : Event) world ->
@@ -676,7 +676,7 @@ module ScriptFacetModule =
             let entity = evt.Subscriber : Entity
             let script = entity.GetScript world
             let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
-            let world = World.setEntityScriptFrame scriptFrame entity world |> snd
+            let world = World.setEntityScriptFrame scriptFrame entity world |> snd'
             let world = evalManyWithLogging script scriptFrame entity world |> snd'
             (Cascade, world)
 
@@ -1517,7 +1517,7 @@ module EntityDispatcherModule =
                 match initializer with
                 | PropertyDefinition def ->
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
-                    World.setProperty def.PropertyName property entity world |> snd
+                    World.setProperty def.PropertyName property entity world |> snd'
                 | EventHandlerDefinition (handler, partialAddress) ->
                     let eventAddress = partialAddress --> entity
                     World.monitor (fun (evt : Event) world ->
@@ -2429,7 +2429,7 @@ module GroupDispatcherModule =
                 match initializer with
                 | PropertyDefinition def ->
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
-                    World.setProperty def.PropertyName property group world |> snd
+                    World.setProperty def.PropertyName property group world |> snd'
                 | EventHandlerDefinition (handler, partialAddress) ->
                     let eventAddress = partialAddress --> group
                     World.monitor (fun (evt : Event) world ->
@@ -2519,7 +2519,7 @@ module ScreenDispatcherModule =
                 match initializer with
                 | PropertyDefinition def ->
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
-                    World.setProperty def.PropertyName property screen world |> snd
+                    World.setProperty def.PropertyName property screen world |> snd'
                 | EventHandlerDefinition (handler, partialAddress) ->
                     let eventAddress = partialAddress --> screen
                     World.monitor (fun (evt : Event) world ->
