@@ -354,6 +354,26 @@ module WorldModuleGame =
                 | false -> failwithf "Could not find property '%s'." propertyName
             | (true, getter) -> getter world
 
+        static member internal trySetGamePropertyFast propertyName property world =
+            match GameSetters.TryGetValue propertyName with
+            | (true, setter) -> setter property world |> snd
+            | (false, _) ->
+                let mutable success = false // bit of a hack to get additional state out of the lambda
+                let (_, world) =
+                    World.updateGameState
+                        (fun gameState ->
+                            let mutable propertyOld = Unchecked.defaultof<_>
+                            match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
+                            | true ->
+                                if property.PropertyValue =/= propertyOld.PropertyValue then
+                                    let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
+                                    success <- successInner
+                                    gameState
+                                else Unchecked.defaultof<_>
+                            | false -> Unchecked.defaultof<_>)
+                        propertyName property.PropertyValue world
+                world
+
         static member internal trySetGameProperty propertyName property world =
             match GameSetters.TryGetValue propertyName with
             | (true, setter) ->

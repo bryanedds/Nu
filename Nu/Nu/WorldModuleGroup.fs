@@ -166,6 +166,28 @@ module WorldModuleGroup =
                 | false -> failwithf "Could not find property '%s'." propertyName
             | (true, getter) -> getter group world
 
+        static member internal trySetGroupPropertyFast propertyName property group world =
+            if World.getGroupExists group world then
+                match GroupSetters.TryGetValue propertyName with
+                | (true, setter) -> setter property group world |> snd
+                | (false, _) ->
+                    let mutable success = false // bit of a hack to get additional state out of the lambda
+                    let (_, world) =
+                        World.updateGroupState
+                            (fun groupState ->
+                                let mutable propertyOld = Unchecked.defaultof<_>
+                                match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
+                                | true ->
+                                    if property.PropertyValue =/= propertyOld.PropertyValue then
+                                        let (successInner, gameState) = GroupState.trySetProperty propertyName property groupState
+                                        success <- successInner
+                                        gameState
+                                    else Unchecked.defaultof<_>
+                                | false -> Unchecked.defaultof<_>)
+                            propertyName property.PropertyValue group world
+                    world
+            else world
+
         static member internal trySetGroupProperty propertyName property group world =
             if World.getGroupExists group world then
                 match GroupSetters.TryGetValue propertyName with

@@ -1140,7 +1140,7 @@ module WorldTypes =
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: P1: put this behind a world API rather than accessing / updating it directly...
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState>
-              EntityTree : Entity SpatialTree MutantCache
+              mutable EntityTree : Entity SpatialTree MutantCache // NOTE: mutated when StandAlone.
               EntityStates : UMap<Entity Address, EntityState>
               GroupStates : UMap<Group Address, GroupState>
               ScreenStates : UMap<Screen Address, ScreenState>

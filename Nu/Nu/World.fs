@@ -29,7 +29,7 @@ module Nu =
             | (true, property) ->
                 if property.PropertyValue =/= value then
                     let property = { property with PropertyValue = value }
-                    World.trySetProperty leftName property simulant world |> __c
+                    World.trySetPropertyFast leftName property simulant world
                 else world
             | (false, _) -> world
         else world
@@ -219,8 +219,8 @@ module Nu =
                             if eventNames.Length = 6 then
                                 let entityAddress = rtoa (Array.skip 3 eventNames)
                                 let entity = Entity entityAddress
-                                match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityChangeCountsId world with
-                                | Some entityChangeCounts ->
+                                match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+                                | (true, entityChangeCounts) ->
                                     match entityChangeCounts.TryGetValue entityAddress with
                                     | (true, entityChangeCount) ->
                                         let entityChangeCount = if subscribing then inc entityChangeCount else dec entityChangeCount
@@ -239,7 +239,7 @@ module Nu =
                                         if not subscribing then failwithumf ()
                                         let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd else world
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
-                                | None ->
+                                | (false, _) ->
                                     if not subscribing then failwithumf ()
                                     let entityChangeCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
                                     let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd else world
@@ -401,7 +401,7 @@ module Nu =
                                 | (false, _) -> failwithumf ())
                             (fun propertyValue world ->
                                 match World.tryGetProperty (left.Name, simulant, world) with
-                                | (true, property) -> World.trySetProperty left.Name { property with PropertyValue = propertyValue } simulant world |> __c
+                                | (true, property) -> World.trySetPropertyFast left.Name { property with PropertyValue = propertyValue } simulant world
                                 | (false, _) -> world)
                             simulant
                     else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant

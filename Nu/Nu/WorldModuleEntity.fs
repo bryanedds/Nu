@@ -179,7 +179,8 @@ module WorldModuleEntity =
             World.entityStateSetter entityState entity world
 
         // NOTE: P1: I think we could use an in ref in updater to avoid allocation on every call...
-        static member private updateEntityStateInternal updater (entityState : EntityState) entity world =
+        // OPTIMIZATION: Inlined to elide updater closure allocation.
+        static member inline private updateEntityStateInternal updater (entityState : EntityState) entity world =
             let entityStateOpt = updater entityState : EntityState
             match entityStateOpt :> obj with
             | null -> (false, world)
@@ -188,12 +189,14 @@ module WorldModuleEntity =
                 then (true, world)
                 else (true, World.setEntityState entityStateOpt entity world)
 
-        static member private updateEntityStateWithoutEvent updater entity world =
+        // OPTIMIZATION: Inlined to elide updater closure allocation.
+        static member inline private updateEntityStateWithoutEvent updater entity world =
             let entityState = World.getEntityState entity world
             let (changed, world) = World.updateEntityStateInternal updater entityState entity world
             (changed, world)
 
-        static member private updateEntityState updater propertyName propertyValue entity world =
+        // OPTIMIZATION: Inlined to elide updater closure allocation.
+        static member inline private updateEntityState updater propertyName propertyValue entity world =
             let entityState = World.getEntityState entity world
             let (changed, world) = World.updateEntityStateInternal updater entityState entity world
             let world =
@@ -202,7 +205,8 @@ module WorldModuleEntity =
                 else world
             (changed, world)
 
-        static member private updateEntityStatePlus updater propertyName propertyValue entity world =
+        // OPTIMIZATION: Inlined to elide updater closure allocation.
+        static member inline private updateEntityStatePlus updater propertyName propertyValue entity world =
 
             // cache old values
             let oldWorld = world
@@ -771,6 +775,17 @@ module WorldModuleEntity =
             | (true, changed, world) -> (true, changed, world)
             | (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
+        static member internal trySetEntityPropertyFast propertyName property entity world =
+            match EntitySetters.TryGetValue propertyName with
+            | (true, setter) -> setter property entity world |> snd
+            | (false, _) ->
+                match World.trySetStaticEntityPropertyWithoutEvent propertyName property entity world with
+                | (true, changed, world) ->
+                    if changed
+                    then World.publishEntityChange propertyName property.PropertyValue entity world
+                    else world
+                | (false, _, world) -> world
+
         static member internal trySetEntityProperty propertyName property entity world =
             match EntitySetters.TryGetValue propertyName with
             | (true, setter) ->
@@ -1054,14 +1069,14 @@ module WorldModuleEntity =
             let entityAddress = group.GroupAddress <-- ntoa<Entity> entityState.Name
 
             // apply publish bindings state
-            match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
-            | Some entityBindingCounts -> if UMap.containsKey entityAddress entityBindingCounts then entityState.PublishChangeBindings <- true
-            | None -> ()
+            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityBindingCountsId, world) with
+            | (true, entityBindingCounts) -> if UMap.containsKey entityAddress entityBindingCounts then entityState.PublishChangeBindings <- true
+            | (false, _) -> ()
 
             // apply publish changes state
-            match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityChangeCountsId world with
-            | Some entityChangeCounts -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
-            | None -> ()
+            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+            | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
+            | (false, _) -> ()
 
             // add entity's state to world
             let entity = Entity entityAddress

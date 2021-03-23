@@ -174,7 +174,7 @@ module WorldScripting =
                                             match ScriptingSystem.tryExport property.PropertyType expr world with
                                             | Some propertyValue ->
                                                 let property = { PropertyType = property.PropertyType; PropertyValue = propertyValue }
-                                                let (_, _, world) = World.trySetProperty propertyName property simulant world
+                                                let world = World.trySetPropertyFast propertyName property simulant world
                                                 (Cascade, world)
                                             | None -> (Cascade, world)
                                         | (false, _) -> (Cascade, world)
