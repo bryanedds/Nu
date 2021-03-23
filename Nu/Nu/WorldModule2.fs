@@ -851,11 +851,11 @@ module WorldModule2 =
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
                 let mutable result = (Live, world)
-                let polledEvent = ref (SDL.SDL_Event ())
+                let mutable polledEvent = SDL.SDL_Event ()
                 while
-                    SDL.SDL_PollEvent polledEvent <> 0 &&
+                    SDL.SDL_PollEvent &polledEvent <> 0 &&
                     (match fst result with Live -> true | Dead -> false) do
-                    result <- World.processInput2 !polledEvent (snd result)
+                    result <- World.processInput2 polledEvent (snd result)
                 result
             else (Dead, world)
 
