@@ -562,8 +562,7 @@ module WorldModule =
             sorted
             (world : World) =
 
-            // OPTIMIZATION: potentially box and generalize these only once
-            let eventDataObj = eventData :> obj
+            // OPTIMIZATION: generalize only once
             let eventAddressObj = Address.generalize eventAddress
 
 #if DEBUG
@@ -590,39 +589,25 @@ module WorldModule =
                 let mutable going = true
                 let mutable enr = subscriptionsOpt.GetEnumerator ()
                 while going && enr.MoveNext () do
-                    let (_, subscription) = enr.Current
+                    let (_, subscriptionEntry) = enr.Current
                     if  (match fst result with Cascade -> true | Resolve -> false) &&
                         (match World.getLiveness (snd result) with Live -> true | Dead -> false) then
-                        let mapped =
-                            match subscription.MapperOpt with
-                            | Some mapper -> mapper eventDataObj subscription.PreviousDataOpt (snd result)
-                            | None -> eventDataObj
-                        let filtered =
-                            match subscription.FilterOpt with
-                            | Some filter -> filter mapped subscription.PreviousDataOpt (snd result)
-                            | None -> true
-                        subscription.PreviousDataOpt <- Some mapped
-                        if filtered then
-                            // OPTIMIZATION: inlined fold for speed.
-                            let mutable enr2 = (subscription.Callbacks :> seq<Guid * Simulant * Callback>).GetEnumerator ()
-                            while (match fst result with Cascade -> true | Resolve -> false) && enr2.MoveNext () do
-                                let (_, subscriber, callback) = enr2.Current
-                                match callback with
-                                | UserDefinedCallback callback ->
-                                    // OPTIMIZATION: avoids the dynamic dispatch and goes straight to the user-defined callback
-                                    result <- WorldTypes.handleUserDefinedCallback callback mapped (snd result) |> mapSnd cast<World>
-                                | FunctionCallback callback ->
-                                    result <-
-                                        // OPTIMIZATION: unrolled PublishEventHook here for speed.
-                                        // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
-                                        match subscriber with
-                                        | :? Entity -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
-                                        | :? Group -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
-                                        | :? Screen -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
-                                        | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
-                                        | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callback (snd result)
-                                        | _ -> failwithumf ()
-                                    result |> snd |> World.choose |> ignore
+                        result <-
+                            // OPTIMIZATION: unrolled PublishEventHook here for speed.
+                            // NOTE: this actually compiles down to an if-else chain, which is not terribly efficient
+                            let subscriber = subscriptionEntry.Subscriber
+                            let callbackBoxed = subscriptionEntry.CallbackBoxed
+                            match Array.length subscriber.SimulantAddress.Names with
+                            | 0 ->
+                                match subscriber with
+                                | :? Game -> EventSystem.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace callbackBoxed (snd result)
+                                | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace callbackBoxed (snd result)
+                                | _ -> failwithumf ()
+                            | 1 -> EventSystem.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace callbackBoxed (snd result)
+                            | 2 -> EventSystem.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace callbackBoxed (snd result)
+                            | 3 -> EventSystem.publishEvent<'a, 'p, Entity, World> subscriber publisher eventData eventAddress eventTrace callbackBoxed (snd result)
+                            | _ -> failwithumf ()
+                        result |> snd |> World.choose |> ignore
                     else going <- false
                 snd result
             else world
@@ -637,12 +622,7 @@ module WorldModule =
             World.choose (EventSystem.unsubscribe<World> subscriptionId world)
 
         /// Subscribe to an event using the given subscriptionId, and be provided with an unsubscription callback.
-        static member subscribeCompressed<'a, 'b, 's when 's :> Simulant>
-            subscriptionId compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.subscribeCompressed<'a, 'b, 's, World> subscriptionId compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
-
-        /// Subscribe to an event using the given subscriptionId, and be provided with an unsubscription callback.
-        static member subscribeWith<'a, 's when 's :> Simulant>
+        static member subscribePlus<'a, 's when 's :> Simulant>
             subscriptionId callback eventAddress subscriber world =
             mapSnd World.choose (EventSystem.subscribePlus<'a, 's, World> subscriptionId callback eventAddress subscriber world)
 
@@ -651,12 +631,7 @@ module WorldModule =
             callback eventAddress subscriber world =
             World.choose (EventSystem.subscribe<'a, 's, World> callback eventAddress subscriber world)
 
-        /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback.
-        static member monitorCompressed<'a, 'b, 's when 's :> Simulant>
-            compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.monitorCompressed<'a, 'b, 's, World> compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
-
-        /// Keep active a subscription for the lifetime of a simulant.
+        /// Keep active a subscription for the lifetime of a simulant, and be provided with an unsubscription callback..
         static member monitorPlus<'a, 's when 's :> Simulant>
             callback eventAddress subscriber world =
             mapSnd World.choose (EventSystem.monitorPlus<'a, 's, World> callback eventAddress subscriber world)

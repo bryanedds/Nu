@@ -136,12 +136,12 @@ module WorldModule2 =
                 world
             | IncomingState
             | OutgoingState ->
-                let world = World.subscribeWith ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game world |> snd
-                let world = World.subscribeWith ScreenTransitionMouseCenterId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game world |> snd
-                let world = World.subscribeWith ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game world |> snd
-                let world = World.subscribeWith ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game world |> snd
-                let world = World.subscribeWith ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game world |> snd
-                let world = World.subscribeWith ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Left/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseCenterId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Center/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> "Mouse/Right/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X1/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> "Mouse/X2/@/Event") Simulants.Game world |> snd
+                let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> "KeyboardKey/@/Event") Simulants.Game world |> snd
                 world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
@@ -187,7 +187,7 @@ module WorldModule2 =
                         | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
                     let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
-                    let world = World.subscribeWith<unit, Screen> subscriptionId subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
+                    let world = World.subscribePlus<unit, Screen> subscriptionId subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
                     (true, world)
                 else (false, world)
             | None ->
@@ -299,7 +299,7 @@ module WorldModule2 =
             let world = World.unsubscribe SplashScreenUpdateId world
             if ticks < idlingTime then
                 let subscription = World.handleSplashScreenIdleUpdate idlingTime (inc ticks)
-                let world = World.subscribeWith SplashScreenUpdateId subscription evt.Address evt.Subscriber world |> snd
+                let world = World.subscribePlus SplashScreenUpdateId subscription evt.Address evt.Subscriber world |> snd
                 (Cascade, world)
             else
                 match World.getSelectedScreenOpt world with
@@ -316,7 +316,7 @@ module WorldModule2 =
 
         static member private handleSplashScreenIdle idlingTime destination (splashScreen : Screen) evt world =
             let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
-            let world = World.subscribeWith SplashScreenUpdateId (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
+            let world = World.subscribePlus SplashScreenUpdateId (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
             (Cascade, world)
 
         /// Set the splash aspects of a screen.
@@ -344,8 +344,8 @@ module WorldModule2 =
                         let world = splashSprite.SetStaticImage Assets.Default.Image10 world
                         let world = splashSprite.SetVisible false world
                         world
-                let (unsub, world) = World.monitorCompressed Gen.id None None None (Left (World.handleSplashScreenIdle splashDescriptor.IdlingTime destination screen)) (Events.IncomingFinish --> screen) screen world
-                let (unsub2, world) = World.monitorCompressed Gen.id None None None (Left (World.handleAsScreenTransitionFromSplash destination)) (Events.OutgoingFinish --> screen) screen world
+                let (unsub, world) = World.monitorPlus (World.handleSplashScreenIdle splashDescriptor.IdlingTime destination screen) (Events.IncomingFinish --> screen) screen world
+                let (unsub2, world) = World.monitorPlus (World.handleAsScreenTransitionFromSplash destination) (Events.OutgoingFinish --> screen) screen world
                 let world = World.monitor (fun _ -> unsub >> unsub2 >> pair Cascade) (Events.Unregistering --> splashGroup) screen world
                 world
             | None -> world
