@@ -638,8 +638,8 @@ module WorldModule =
 
         /// Subscribe to an event using the given subscriptionId, and be provided with an unsubscription callback.
         static member subscribeCompressed<'a, 'b, 's when 's :> Simulant>
-            compressionId subscriptionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
-            mapSnd World.choose (EventSystem.subscribeCompressed<'a, 'b, 's, World> compressionId subscriptionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
+            subscriptionId compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world =
+            mapSnd World.choose (EventSystem.subscribeCompressed<'a, 'b, 's, World> subscriptionId compressionId mapperOpt filterOpt stateOpt callback eventAddress subscriber world)
 
         /// Subscribe to an event using the given subscriptionId, and be provided with an unsubscription callback.
         static member subscribeWith<'a, 's when 's :> Simulant>
