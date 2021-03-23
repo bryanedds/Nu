@@ -179,7 +179,7 @@ module WorldModuleEntity =
             World.entityStateSetter entityState entity world
 
         // NOTE: P1: I think we could use an in ref in updater to avoid allocation on every call...
-        // OPTIMIZATION: Inlined to elide updater closure allocation.
+        // OPTIMIZATION: inlined to elide updater closure allocation.
         static member inline private updateEntityStateInternal updater (entityState : EntityState) entity world =
             let entityStateOpt = updater entityState : EntityState
             match entityStateOpt :> obj with
@@ -189,13 +189,13 @@ module WorldModuleEntity =
                 then (true, world)
                 else (true, World.setEntityState entityStateOpt entity world)
 
-        // OPTIMIZATION: Inlined to elide updater closure allocation.
+        // OPTIMIZATION: inlined to elide updater closure allocation.
         static member inline private updateEntityStateWithoutEvent updater entity world =
             let entityState = World.getEntityState entity world
             let (changed, world) = World.updateEntityStateInternal updater entityState entity world
             (changed, world)
 
-        // OPTIMIZATION: Inlined to elide updater closure allocation.
+        // OPTIMIZATION: inlined to elide updater closure allocation.
         static member inline private updateEntityState updater propertyName propertyValue entity world =
             let entityState = World.getEntityState entity world
             let (changed, world) = World.updateEntityStateInternal updater entityState entity world
@@ -205,7 +205,7 @@ module WorldModuleEntity =
                 else world
             (changed, world)
 
-        // OPTIMIZATION: Inlined to elide updater closure allocation.
+        // OPTIMIZATION: inlined to elide updater closure allocation.
         static member inline private updateEntityStatePlus updater propertyName propertyValue entity world =
 
             // cache old values
