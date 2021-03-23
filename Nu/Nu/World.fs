@@ -95,7 +95,7 @@ module Nu =
                             let world = if not (World.getGroupExists group world) then World.createGroup None screen world |> snd else world
                             let world = if not (World.getEntityExists entity world) then World.createEntity None DefaultOverlay group world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
-                            setter property entity world |> snd |> box
+                            setter property entity world |> snd' |> box
                         | (Some value, (false, _)) ->
                             let group = entity.Parent
                             let screen = group.Parent
@@ -115,7 +115,7 @@ module Nu =
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let world = if not (World.getGroupExists group world) then World.createGroup None screen world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
-                            setter property group world |> snd |> box
+                            setter property group world |> snd' |> box
                         | (Some value, (false, _)) ->
                             let screen = group.Parent
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
@@ -131,7 +131,7 @@ module Nu =
                         | (Some value, (true, setter)) ->
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
-                            setter property screen world |> snd |> box
+                            setter property screen world |> snd' |> box
                         | (Some value, (false, _)) ->
                             let world = if not (World.getScreenExists screen world) then World.createScreen None world |> snd else world
                             let property = { PropertyValue = value; PropertyType = ty }
@@ -144,7 +144,7 @@ module Nu =
                         match (valueOpt, WorldModuleGame.GameSetters.TryGetValue propertyName) with
                         | (Some value, (true, setter)) ->
                             let property = { PropertyValue = value; PropertyType = ty }
-                            setter property world |> snd |> box
+                            setter property world |> snd' |> box
                         | (Some value, (false, _)) ->
                             let property = { PropertyValue = value; PropertyType = ty }
                             World.attachGameProperty propertyName property world |> box
@@ -198,7 +198,7 @@ module Nu =
                                 ("Subscribing to entity update events with a wildcard is not supported. " +
                                  "This will cause a bug where some entity update events are not published.")
 #endif
-                        World.updateEntityPublishUpdateFlag entity world |> snd :> obj
+                        World.updateEntityPublishUpdateFlag entity world |> snd' :> obj
 #if !DISABLE_ENTITY_POST_UPDATE
                     | "PostUpdate" ->
 #if DEBUG
@@ -207,7 +207,7 @@ module Nu =
                                 ("Subscribing to entity post-update events with a wildcard is not supported. " +
                                  "This will cause a bug where some entity post-update events are not published.")
 #endif
-                        World.updateEntityPublishPostUpdateFlag entity world |> snd :> obj
+                        World.updateEntityPublishPostUpdateFlag entity world |> snd' :> obj
 #endif
                     | _ -> world :> obj
                 | eventNames when eventNames.Length >= 3 ->
@@ -230,19 +230,19 @@ module Nu =
                                             else UMap.add entityAddress entityChangeCount entityChangeCounts
                                         let world =
                                             if entity.Exists world then
-                                                if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> snd
-                                                elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> snd
+                                                if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> snd'
+                                                elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> snd'
                                                 else world
                                             else world
                                         World.addKeyedValue EntityChangeCountsId entityChangeCounts world
                                     | (false, _) ->
                                         if not subscribing then failwithumf ()
-                                        let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd else world
+                                        let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                                 | (false, _) ->
                                     if not subscribing then failwithumf ()
                                     let entityChangeCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
-                                    let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd else world
+                                    let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                     World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                             else world
                         if  eventSecondName <> "ParentNodeOpt" &&

@@ -13,7 +13,7 @@ module WorldModuleGame =
 
     /// Dynamic property getters / setters.
     let internal GameGetters = Dictionary<string, World -> Property> HashIdentity.Structural
-    let internal GameSetters = Dictionary<string, Property -> World -> bool * World> HashIdentity.Structural
+    let internal GameSetters = Dictionary<string, Property -> World -> struct (bool * World)> HashIdentity.Structural
 
     type World with
 
@@ -45,16 +45,16 @@ module WorldModuleGame =
         static member private updateGameStateWithoutEvent updater world =
             let gameStateOpt = updater (World.getGameState world)
             match gameStateOpt :> obj with
-            | null -> (false, world)
-            | _ -> (true, World.setGameState gameStateOpt world)
+            | null -> struct (false, world)
+            | _ -> struct (true, World.setGameState gameStateOpt world)
 
         static member private updateGameState updater propertyName propertyValue world =
-            let (changed, world) = World.updateGameStateWithoutEvent updater world
+            let struct (changed, world) = World.updateGameStateWithoutEvent updater world
             let world =
                 if changed
                 then World.publishGameChange propertyName propertyValue world
                 else world
-            (changed, world)
+            struct (changed, world)
 
         static member internal getGameId world = (World.getGameState world).Id
         static member internal getGameCreationTimeStamp world = (World.getGameState world).CreationTimeStamp
@@ -93,7 +93,7 @@ module WorldModuleGame =
         /// Set the current eye center.
         [<FunctionBinding>]
         static member setEyeCenter value world =
-            World.setEyeCenterPlus value world |> snd
+            World.setEyeCenterPlus value world |> snd'
 
         /// Get the current eye size.
         [<FunctionBinding>]
@@ -107,7 +107,7 @@ module WorldModuleGame =
         /// Set the current eye size.
         [<FunctionBinding>]
         static member setEyeSize value world =
-            World.setEyeSizePlus value world |> snd
+            World.setEyeSizePlus value world |> snd'
 
         /// Get the current eye bounds
         [<FunctionBinding>]
@@ -129,7 +129,7 @@ module WorldModuleGame =
         /// Set the omni-screen or None.
         [<FunctionBinding>]
         static member setOmniScreenOpt value world =
-            World.setOmniScreenOptPlus value world |> snd
+            World.setOmniScreenOptPlus value world |> snd'
 
         /// Get the omniScreen (failing with an exception if there isn't one).
         [<FunctionBinding>]
@@ -143,7 +143,7 @@ module WorldModuleGame =
         /// Set the omniScreen.
         [<FunctionBinding>]
         static member setOmniScreen value world =
-            World.setOmniScreenPlus value world |> snd
+            World.setOmniScreenPlus value world |> snd'
 
         /// Get the currently selected screen, if any.
         [<FunctionBinding>]
@@ -175,7 +175,7 @@ module WorldModuleGame =
                 failwith "Cannot set SelectedScreen to OmniScreen."
 
             // raise change event for none selection
-            let (_, world) = World.updateGameState id Property? SelectedScreenOpt None world
+            let struct (_, world) = World.updateGameState id Property? SelectedScreenOpt None world
 
             // clear out singleton states
             let world =
@@ -187,7 +187,7 @@ module WorldModuleGame =
                 | None -> world
                 
             // actually set selected screen (no events)
-            let (_, world) =
+            let struct (_, world) =
                 World.updateGameStateWithoutEvent
                     (fun gameState ->
                         if value <> gameState.SelectedScreenOpt
@@ -204,7 +204,7 @@ module WorldModuleGame =
                 let world = WorldModule.registerScreenPhysics screen world
 
                 // raise change event for some selection
-                let world = World.updateGameState id Property? SelectedScreenOpt (Some screen) world |> snd
+                let world = World.updateGameState id Property? SelectedScreenOpt (Some screen) world |> snd'
                 (true, world)
 
             // fin
@@ -356,17 +356,17 @@ module WorldModuleGame =
 
         static member internal trySetGamePropertyFast propertyName property world =
             match GameSetters.TryGetValue propertyName with
-            | (true, setter) -> setter property world |> snd
+            | (true, setter) -> setter property world |> snd'
             | (false, _) ->
                 let mutable success = false // bit of a hack to get additional state out of the lambda
-                let (_, world) =
+                let struct (_, world) =
                     World.updateGameState
                         (fun gameState ->
                             let mutable propertyOld = Unchecked.defaultof<_>
                             match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
                             | true ->
                                 if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
+                                    let struct (successInner, gameState) = GameState.trySetProperty propertyName property gameState
                                     success <- successInner
                                     gameState
                                 else Unchecked.defaultof<_>
@@ -377,24 +377,24 @@ module WorldModuleGame =
         static member internal trySetGameProperty propertyName property world =
             match GameSetters.TryGetValue propertyName with
             | (true, setter) ->
-                let (changed, world) = setter property world
-                (true, changed, world)
+                let struct (changed, world) = setter property world
+                struct (true, changed, world)
             | (false, _) ->
                 let mutable success = false // bit of a hack to get additional state out of the lambda
-                let (changed, world) =
+                let struct (changed, world) =
                     World.updateGameState
                         (fun gameState ->
                             let mutable propertyOld = Unchecked.defaultof<_>
                             match GameState.tryGetProperty (propertyName, gameState, &propertyOld) with
                             | true ->
                                 if property.PropertyValue =/= propertyOld.PropertyValue then
-                                    let (successInner, gameState) = GameState.trySetProperty propertyName property gameState
+                                    let struct (successInner, gameState) = GameState.trySetProperty propertyName property gameState
                                     success <- successInner
                                     gameState
                                 else Unchecked.defaultof<_>
                             | false -> Unchecked.defaultof<_>)
                         propertyName property.PropertyValue world
-                (success, changed, world)
+                struct (success, changed, world)
 
         static member internal setGameProperty propertyName property world =
             match GameSetters.TryGetValue propertyName with
@@ -409,14 +409,14 @@ module WorldModuleGame =
             | (true, setter) -> setter property world
 
         static member internal attachGameProperty propertyName property world =
-            let (_, world) =
+            let struct (_, world) =
                 World.updateGameState
                     (fun gameState -> GameState.attachProperty propertyName property gameState)
                     propertyName property.PropertyValue world
             world
 
         static member internal detachGameProperty propertyName world =
-            let (_, world) =
+            let struct (_, world) =
                 World.updateGameStateWithoutEvent
                     (fun gameState -> GameState.detachProperty propertyName gameState)
                     world

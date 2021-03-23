@@ -16,15 +16,15 @@ module WorldGroupModule =
         member this.GetDispatcher world = World.getGroupDispatcher this world
         member this.Dispatcher = lensReadOnly Property? Dispatcher this.GetDispatcher this
         member this.GetModel<'a> world = World.getGroupModel<'a> this world
-        member this.SetModel<'a> value world = World.setGroupModel<'a> value this world |> snd
+        member this.SetModel<'a> value world = World.setGroupModel<'a> value this world |> snd'
         member this.Model<'a> () = lens Property? Model this.GetModel<'a> this.SetModel<'a> this
         member this.GetEcs world = World.getScreenEcs this.Parent world
         member this.Ecs = lensReadOnly Property? Ecs this.GetEcs this
         member this.GetVisible world = World.getGroupVisible this world
-        member this.SetVisible value world = World.setGroupVisible value this world |> snd
+        member this.SetVisible value world = World.setGroupVisible value this world |> snd'
         member this.Visible = lens Property? Visible this.GetVisible this.SetVisible this
         member this.GetPersistent world = World.getGroupPersistent this world
-        member this.SetPersistent value world = World.setGroupPersistent value this world |> snd
+        member this.SetPersistent value world = World.setGroupPersistent value this world |> snd'
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
         member this.GetDestroying world = World.getGroupDestroying this world
         member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
@@ -58,10 +58,10 @@ module WorldGroupModule =
         member this.TrySetProperty propertyName property world = World.trySetGroupProperty propertyName property this world
 
         /// Set a property value with explicit type.
-        member this.SetProperty propertyName property world = World.setGroupProperty propertyName property this world |> snd
+        member this.SetProperty propertyName property world = World.setGroupProperty propertyName property this world |> snd'
 
         /// Set a property value.
-        member this.Set<'a> propertyName (value : 'a) world = World.setGroupProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world |> snd
+        member this.Set<'a> propertyName (value : 'a) world = World.setGroupProperty propertyName { PropertyType = typeof<'a>; PropertyValue = value } this world |> snd'
 
         /// Check that a group is selected.
         member this.IsSelected world =
@@ -159,7 +159,7 @@ module WorldGroupModule =
                 World.createGroup4 descriptor.SimulantDispatcherName descriptor.SimulantNameOpt screen world
             let world =
                 List.fold (fun world (propertyName, property) ->
-                    World.setGroupProperty propertyName property group world |> snd)
+                    World.setGroupProperty propertyName property group world |> snd')
                     world descriptor.SimulantProperties
             let world =
                 List.fold (fun world childDescriptor ->

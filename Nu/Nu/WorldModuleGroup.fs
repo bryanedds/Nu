@@ -12,7 +12,7 @@ module WorldModuleGroup =
 
     /// Dynamic property getters / setters.
     let internal GroupGetters = Dictionary<string, Group -> World -> Property> HashIdentity.Structural
-    let internal GroupSetters = Dictionary<string, Property -> Group -> World -> bool * World> HashIdentity.Structural
+    let internal GroupSetters = Dictionary<string, Property -> Group -> World -> struct (bool * World)> HashIdentity.Structural
 
     type World with
     
@@ -104,16 +104,16 @@ module WorldModuleGroup =
         static member private updateGroupStateWithoutEvent updater group world =
             let groupStateOpt = updater (World.getGroupState group world)
             match groupStateOpt :> obj with
-            | null -> (false, world)
-            | _ -> (true, World.setGroupState groupStateOpt group world)
+            | null -> struct (false, world)
+            | _ -> struct (true, World.setGroupState groupStateOpt group world)
 
         static member private updateGroupState updater propertyName propertyValue group world =
-            let (changed, world) = World.updateGroupStateWithoutEvent updater group world
+            let struct (changed, world) = World.updateGroupStateWithoutEvent updater group world
             let world =
                 if changed
                 then World.publishGroupChange propertyName propertyValue group world
                 else world
-            (changed, world)
+            struct (changed, world)
 
         /// Check that a group exists in the world.
         static member internal getGroupExists group world =
@@ -169,17 +169,17 @@ module WorldModuleGroup =
         static member internal trySetGroupPropertyFast propertyName property group world =
             if World.getGroupExists group world then
                 match GroupSetters.TryGetValue propertyName with
-                | (true, setter) -> setter property group world |> snd
+                | (true, setter) -> setter property group world |> snd'
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let (_, world) =
+                    let struct (_, world) =
                         World.updateGroupState
                             (fun groupState ->
                                 let mutable propertyOld = Unchecked.defaultof<_>
                                 match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
                                 | true ->
                                     if property.PropertyValue =/= propertyOld.PropertyValue then
-                                        let (successInner, gameState) = GroupState.trySetProperty propertyName property groupState
+                                        let struct (successInner, gameState) = GroupState.trySetProperty propertyName property groupState
                                         success <- successInner
                                         gameState
                                     else Unchecked.defaultof<_>
@@ -192,24 +192,24 @@ module WorldModuleGroup =
             if World.getGroupExists group world then
                 match GroupSetters.TryGetValue propertyName with
                 | (true, setter) ->
-                    let (changed, world) = setter property group world
-                    (true, changed, world)
+                    let struct (changed, world) = setter property group world
+                    struct (true, changed, world)
                 | (false, _) ->
                     let mutable success = false // bit of a hack to get additional state out of the lambda
-                    let (changed, world) =
+                    let struct (changed, world) =
                         World.updateGroupState
                             (fun groupState ->
                                 let mutable propertyOld = Unchecked.defaultof<_>
                                 match GroupState.tryGetProperty (propertyName, groupState, &propertyOld) with
                                 | true ->
                                     if property.PropertyValue =/= propertyOld.PropertyValue then
-                                        let (successInner, gameState) = GroupState.trySetProperty propertyName property groupState
+                                        let struct (successInner, gameState) = GroupState.trySetProperty propertyName property groupState
                                         success <- successInner
                                         gameState
                                     else Unchecked.defaultof<_>
                                 | false -> Unchecked.defaultof<_>)
                             propertyName property.PropertyValue group world
-                    (success, changed, world)
+                    struct (success, changed, world)
             else (false, false, world)
 
         static member internal setGroupProperty propertyName property group world =
@@ -224,11 +224,11 @@ module WorldModuleGroup =
                             else Unchecked.defaultof<_>)
                         propertyName property.PropertyValue group world
                 | (true, setter) -> setter property group world
-            else (false, world)
+            else struct (false, world)
 
         static member internal attachGroupProperty propertyName property group world =
             if World.getGroupExists group world then
-                let (_, world) =
+                let struct (_, world) =
                     World.updateGroupState
                         (fun groupState -> GroupState.attachProperty propertyName property groupState)
                         propertyName property.PropertyValue group world
@@ -237,7 +237,7 @@ module WorldModuleGroup =
 
         static member internal detachGroupProperty propertyName group world =
             if World.getGroupExists group world then
-                let (_, world) =
+                let struct (_, world) =
                     World.updateGroupStateWithoutEvent
                         (fun groupState -> GroupState.detachProperty propertyName groupState)
                         group world

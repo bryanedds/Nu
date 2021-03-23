@@ -181,17 +181,17 @@ module WorldModule2 =
                         match World.getScreenTransitionDestinationOpt world with
                         | Some destination ->
                             let world = World.unsubscribe subscriptionId world
-                            let world = World.setScreenTransitionDestinationOpt None world |> snd
+                            let world = World.setScreenTransitionDestinationOpt None world |> snd'
                             let world = World.selectScreen destination world
                             (Cascade, world)
                         | None -> failwith "No valid ScreenTransitionDestinationOpt during screen transition!"
-                    let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd
+                    let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
                     let world = World.setScreenTransitionStatePlus OutgoingState selectedScreen world
                     let world = World.subscribeWith<unit, Screen> subscriptionId subscription (Events.OutgoingFinish --> selectedScreen) selectedScreen world |> snd
                     (true, world)
                 else (false, world)
             | None ->
-                let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd
+                let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
                 let world = World.setScreenTransitionStatePlus IncomingState destination world
                 (true, world)
 
@@ -315,7 +315,7 @@ module WorldModule2 =
                     (Resolve, World.exit world)
 
         static member private handleSplashScreenIdle idlingTime destination (splashScreen : Screen) evt world =
-            let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd
+            let world = World.setScreenTransitionDestinationOpt (Some destination) world |> snd'
             let world = World.subscribeWith SplashScreenUpdateId (World.handleSplashScreenIdleUpdate idlingTime 0L) (Events.Update --> splashScreen) evt.Subscriber world |> snd
             (Cascade, world)
 
@@ -1105,7 +1105,7 @@ module GameDispatcherModule =
                 match initializer with
                 | PropertyDefinition def ->
                     let property = { PropertyType = def.PropertyType; PropertyValue = PropertyExpr.eval def.PropertyExpr world }
-                    World.setProperty def.PropertyName property game world |> snd
+                    World.setProperty def.PropertyName property game world |> snd'
                 | EventHandlerDefinition (handler, partialAddress) ->
                     let eventAddress = partialAddress --> game
                     World.monitor (fun (evt : Event) world ->

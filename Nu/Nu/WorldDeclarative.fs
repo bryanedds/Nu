@@ -164,14 +164,14 @@ module WorldDeclarative =
                         let entityBindingCounts = UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
                         let world =
                             if entityBindingCount = 1 && World.getEntityExists entity world
-                            then World.setEntityPublishChangeBindings true entity world |> snd
+                            then World.setEntityPublishChangeBindings true entity world |> snd'
                             else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                     | (false, _) ->
                         let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
                         let world =
                             if World.getEntityExists entity world
-                            then World.setEntityPublishChangeBindings true entity world |> snd
+                            then World.setEntityPublishChangeBindings true entity world |> snd'
                             else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                 | (false, _) ->
@@ -179,7 +179,7 @@ module WorldDeclarative =
                     let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
                     let world =
                         if World.getEntityExists entity world
-                        then World.setEntityPublishChangeBindings true entity world |> snd
+                        then World.setEntityPublishChangeBindings true entity world |> snd'
                         else world
                     World.addKeyedValue EntityBindingCountsId entityBindingCounts world
             | _ -> world
@@ -198,7 +198,7 @@ module WorldDeclarative =
                             else UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
                         let world =
                             if entityBindingCount = 0 && World.getEntityExists entity world
-                            then World.setEntityPublishChangeBindings false entity world |> snd
+                            then World.setEntityPublishChangeBindings false entity world |> snd'
                             else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                     | (false, _) -> failwithumf ()
