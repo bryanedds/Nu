@@ -52,6 +52,14 @@ module WorldSimulantModule =
             | 3 -> World.getEntityProperty name (simulant :?> Entity) world
             | _ -> failwithumf ()
 
+        static member internal trySetPropertyFast name property (simulant : Simulant) world =
+            match simulant.SimulantAddress |> Address.getNames |> Array.length with
+            | 0 -> World.trySetGamePropertyFast name property world
+            | 1 -> World.trySetScreenPropertyFast name property (simulant :?> Screen) world
+            | 2 -> World.trySetGroupPropertyFast name property (simulant :?> Group) world
+            | 3 -> World.trySetEntityPropertyFast name property (simulant :?> Entity) world
+            | _ -> world
+
         static member internal trySetProperty name property (simulant : Simulant) world =
             match simulant.SimulantAddress |> Address.getNames |> Array.length with
             | 0 -> World.trySetGameProperty name property world

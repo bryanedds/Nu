@@ -156,6 +156,28 @@ module WorldModuleScreen =
                 | false -> failwithf "Could not find property '%s'." propertyName
             | (true, getter) -> getter screen world
 
+        static member internal trySetScreenPropertyFast propertyName property screen world =
+            if World.getScreenExists screen world then
+                match ScreenSetters.TryGetValue propertyName with
+                | (true, setter) -> setter property screen world |> snd
+                | (false, _) ->
+                    let mutable success = false // bit of a hack to get additional state out of the lambda
+                    let (_, world) =
+                        World.updateScreenState
+                            (fun screenState ->
+                                let mutable propertyOld = Unchecked.defaultof<_>
+                                match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
+                                | true ->
+                                    if property.PropertyValue =/= propertyOld.PropertyValue then
+                                        let (successInner, gameState) = ScreenState.trySetProperty propertyName property screenState
+                                        success <- successInner
+                                        gameState
+                                    else Unchecked.defaultof<_>
+                                | false -> Unchecked.defaultof<_>)
+                            propertyName property.PropertyValue screen world
+                    world
+            else world
+
         static member internal trySetScreenProperty propertyName property screen world =
             if World.getScreenExists screen world then
                 match ScreenSetters.TryGetValue propertyName with

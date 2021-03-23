@@ -156,10 +156,10 @@ module WorldDeclarative =
         static member internal increaseBindingCount (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity ->
-                match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
-                | Some entityBindingCounts ->
-                    match UMap.tryFind entity.EntityAddress entityBindingCounts with
-                    | Some entityBindingCount ->
+                match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityBindingCountsId, world) with
+                | (true, entityBindingCounts) ->
+                    match entityBindingCounts.TryGetValue entity.EntityAddress with
+                    | (true, entityBindingCount) ->
                         let entityBindingCount = inc entityBindingCount
                         let entityBindingCounts = UMap.add entity.EntityAddress entityBindingCount entityBindingCounts
                         let world =
@@ -167,14 +167,14 @@ module WorldDeclarative =
                             then World.setEntityPublishChangeBindings true entity world |> snd
                             else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
-                    | None ->
+                    | (false, _) ->
                         let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
                         let world =
                             if World.getEntityExists entity world
                             then World.setEntityPublishChangeBindings true entity world |> snd
                             else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
-                | None ->
+                | (false, _) ->
                     let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
                     let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
                     let world =
@@ -187,10 +187,10 @@ module WorldDeclarative =
         static member internal decreaseBindingCount (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity ->
-                match World.tryGetKeyedValue<UMap<Entity Address, int>> EntityBindingCountsId world with
-                | Some entityBindingCounts ->
-                    match UMap.tryFind entity.EntityAddress entityBindingCounts with
-                    | Some entityBindingCount ->
+                match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityBindingCountsId, world) with
+                | (true, entityBindingCounts) ->
+                    match entityBindingCounts.TryGetValue entity.EntityAddress with
+                    | (true, entityBindingCount) ->
                         let entityBindingCount = dec entityBindingCount
                         let entityBindingCounts =
                             if entityBindingCount = 0
@@ -201,8 +201,8 @@ module WorldDeclarative =
                             then World.setEntityPublishChangeBindings false entity world |> snd
                             else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
-                    | None -> failwithumf ()
-                | None -> failwithumf ()
+                    | (false, _) -> failwithumf ()
+                | (false, _) -> failwithumf ()
             | _ -> world
 
         static member internal addPropertyBinding propertyBindingKey propertyAddress left right world =

@@ -201,17 +201,6 @@ module WorldModule =
         static member internal getScreenDirectory world =
             world.ScreenDirectory
 
-    type World with // EntityTree
-
-        static member internal getEntityTree world =
-            world.EntityTree
-
-        static member internal setEntityTree entityTree world =
-            World.choose { world with EntityTree = entityTree }
-
-        static member internal updateEntityTree updater world =
-            World.setEntityTree (updater (World.getEntityTree world))
-
     type World with // Dispatchers
 
         /// Get the game dispatchers of the world.
@@ -367,6 +356,15 @@ module WorldModule =
         static member internal updateKeyValueStore updater world =
             World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
 
+        static member tryGetKeyedValueFast<'a> (key, world, value : 'a outref) =
+            let ambientState = World.getAmbientState world
+            let kvs = AmbientState.getKeyValueStore ambientState
+            let mutable valueObj = Unchecked.defaultof<obj>
+            if kvs.TryGetValue (key, &valueObj) then
+                value <- valueObj :?> 'a
+                true
+            else false
+
         static member tryGetKeyedValue<'a> key world =
             match World.getKeyValueStoreBy (UMap.tryFind key) world with
             | Some value -> Some (value :?> 'a)
@@ -499,6 +497,20 @@ module WorldModule =
             entityDispatchers |>
             Map.toValueList |>
             List.map (fun dispatcher -> (getTypeName dispatcher, None))
+
+    type World with // EntityTree
+
+        static member internal getEntityTree world =
+            world.EntityTree
+
+        static member internal setEntityTree entityTree world =
+            if World.getStandAlone world then
+                world.EntityTree <- entityTree
+                world
+            else World.choose { world with EntityTree = entityTree }
+
+        static member internal updateEntityTree updater world =
+            World.setEntityTree (updater (World.getEntityTree world))
 
     type World with // Subsystems
 
@@ -694,18 +706,18 @@ module WorldModule =
             world =
             Seq.fold (fun world keyAndLens ->
                 let (key, _) = PartialComparable.unmake keyAndLens
-                match World.tryGetKeyedValue contentKey world with
-                | Some simulantMap ->
-                    match Map.tryFind key simulantMap with
-                    | Some simulant ->
+                match World.tryGetKeyedValueFast (contentKey, world) with
+                | (true, simulantMap : Map<'a, Simulant>) ->
+                    match simulantMap.TryGetValue key with
+                    | (true, simulant) ->
                         let simulantMap = Map.remove key simulantMap
                         let world =
                             if Map.isEmpty simulantMap
                             then World.removeKeyedValue contentKey world
                             else World.addKeyedValue contentKey simulantMap world
                         destroy simulant world
-                    | None -> world
-                | None -> world)
+                    | (false, _) -> world
+                | (false, _) -> world)
                 world removed
 
         static member internal addSynchronizedSimulants
@@ -722,12 +734,12 @@ module WorldModule =
                 if mapGeneralized.ContainsKey key then
                     let content = contentMapper key lens world
                     let (simulantOpt, world) = expandContent Unchecked.defaultof<_> content origin owner parent world
-                    match World.tryGetKeyedValue contentKey world with
-                    | None ->
+                    match World.tryGetKeyedValueFast (contentKey, world) with
+                    | (false, _) ->
                         match simulantOpt with
                         | Some simulant -> World.addKeyedValue contentKey (Map.singleton key simulant) world
                         | None -> world
-                    | Some simulantMap ->
+                    | (true, simulantMap) ->
                         match simulantOpt with
                         | Some simulant -> World.addKeyedValue contentKey (Map.add key simulant simulantMap) world
                         | None -> world
@@ -736,17 +748,17 @@ module WorldModule =
 
         static member internal synchronizeSimulants contentMapper contentKey mapGeneralized current origin owner parent world =
             let previous =
-                match World.tryGetKeyedValue<PartialComparable<IComparable, Lens<obj, World>> USet> contentKey world with
-                | Some previous -> previous
-                | None -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
+                match World.tryGetKeyedValueFast<PartialComparable<IComparable, Lens<obj, World>> USet> (contentKey, world) with
+                | (true, previous) -> previous
+                | (false, _) -> if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
             let added = USet.differenceFast current previous
             let removed = USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
             let world =
                 if changed then
-                    let contentKey' = Gen.idDeterministic 1 contentKey // we need to use content key for an additional purpose, so we inc it
-                    let world = World.removeSynchronizedSimulants contentKey' removed world
-                    let world = World.addSynchronizedSimulants contentMapper contentKey' mapGeneralized added origin owner parent world
+                    let contentKeyInc = Gen.idDeterministic 1 contentKey // we need to use content key for an additional purpose, so we inc it
+                    let world = World.removeSynchronizedSimulants contentKeyInc removed world
+                    let world = World.addSynchronizedSimulants contentMapper contentKeyInc mapGeneralized added origin owner parent world
                     world
                 else world
             World.addKeyedValue contentKey current world
