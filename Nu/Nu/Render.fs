@@ -67,6 +67,18 @@ type [<StructuralEquality; NoComparison>] Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
 
+/// Describes how to render a sprite to the rendering system with a value type.
+type [<NoEquality; NoComparison; Struct>] SpriteDescriptorFast =
+    { Transform : Transform
+      Absolute : bool
+      Offset : Vector2
+      InsetOpt : Vector4 option
+      Image : Image AssetTag
+      Color : Color
+      Blend : Blend
+      Glow : Color
+      Flip : Flip }
+
 /// Describes how to render a sprite to the rendering system.
 type [<NoEquality; NoComparison>] SpriteDescriptor =
     { Transform : Transform
@@ -101,7 +113,7 @@ type [<NoEquality; NoComparison>] TextDescriptor =
       Justification : Justification }
 
 /// Describes a particle.
-/// OPTIMIZATION: mutable for speed.
+/// OPTIMIZATION: mutable value type for use in an array.
 type [<NoEquality; NoComparison; Struct>] ParticleDescriptor =
     { mutable Transform : Transform
       mutable Absolute : bool
@@ -123,7 +135,7 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
 /// Describes how to render something to the rendering system.
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
-    | SpritesDescriptor of SpriteDescriptor array
+    | SpritesDescriptor of SpriteDescriptorFast array
     | TileLayerDescriptor of TileLayerDescriptor
     | TextDescriptor of TextDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
