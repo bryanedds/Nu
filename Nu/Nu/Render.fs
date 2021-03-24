@@ -101,6 +101,10 @@ type [<NoEquality; NoComparison>] SpriteDescriptor =
       Glow : Color
       Flip : Flip }
 
+/// Describes how to render multiple sprites to the rendering system.
+type [<NoEquality; NoComparison>] SpritesDescriptor =
+    { Sprites : Sprite array }
+
 /// Describes how to render a tile map layer to the rendering system.
 type [<NoEquality; NoComparison>] TileLayerDescriptor =
     { Transform : Transform
@@ -134,7 +138,7 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
 /// Describes how to render something to the rendering system.
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
-    | SpritesDescriptor of Sprite array
+    | SpritesDescriptor of SpritesDescriptor
     | TileLayerDescriptor of TileLayerDescriptor
     | TextDescriptor of TextDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
@@ -645,8 +649,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                  &descriptor.Transform, descriptor.Absolute, descriptor.Offset, descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
                  renderer)
         | SpritesDescriptor descriptor ->
-            for index in 0 .. descriptor.Length - 1 do
-                let sprite = &descriptor.[index]
+            let sprites = descriptor.Sprites
+            for index in 0 .. sprites.Length - 1 do
+                let sprite = &sprites.[index]
                 SdlRenderer.renderSprite
                     (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
                      &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
