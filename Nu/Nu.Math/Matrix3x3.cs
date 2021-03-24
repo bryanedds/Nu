@@ -910,7 +910,13 @@ namespace Nu
             return m;
         }
 
-        public static Vector2 operator *(Vector2 v, Matrix3x3 m)
+        public static Matrix3x3 ExtractScaleMatrix(in Matrix3x3 m)
+        {
+            var scale = new Vector3(m.Row0.X, m.Row1.Y, m.Row2.Z);
+            return Matrix3x3.CreateScale(scale);
+        }
+
+        public static Vector2 Mult(in Vector2 v, in Matrix3x3 m)
         {
             var x = v.X * m.M11 + v.Y * m.M12 + m.M13;
             var y = v.X * m.M21 + v.Y * m.M22 + m.M23;
@@ -918,10 +924,9 @@ namespace Nu
             return new Vector2(x / z, y / z);
         }
 
-        public Matrix3x3 ExtractScaleMatrix()
+        public static Vector2 operator *(Vector2 v, Matrix3x3 m)
         {
-            var scale = new Vector3(Row0.X, Row1.Y, Row2.Z);
-            return Matrix3x3.CreateScale(scale);
+            return Mult(in v, in m);
         }
 
         #endregion

@@ -347,10 +347,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          glow : Color inref,
          flip : Flip,
          renderer) =
-        let view = if absolute then viewAbsolute else viewRelative
+        let view = if absolute then &viewAbsolute else &viewRelative
+        let viewScale = Matrix3x3.ExtractScaleMatrix &view
         let position = transform.Position - Vector2.Multiply (offset, transform.Size)
-        let positionView = position * view
-        let sizeView = transform.Size * view.ExtractScaleMatrix ()
+        let positionView = Matrix3x3.Mult (&position, &view)
+        let sizeView = Matrix3x3.Mult (&transform.Size, &viewScale)
         let image = AssetTag.generalize image
         let blend = Blend.toSdlBlendMode blend
         let flip = Flip.toSdlFlip flip
@@ -410,9 +411,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          tileSize : Vector2,
          tileAssets : (TmxTileset * Image AssetTag) array,
          renderer) =
-        let view = if absolute then viewAbsolute else viewRelative
-        let positionView = transform.Position * view
-        let sizeView = transform.Size * view.ExtractScaleMatrix ()
+        let view = if absolute then &viewAbsolute else &viewRelative
+        let viewScale = Matrix3x3.ExtractScaleMatrix &view
+        let positionView = Matrix3x3.Mult (&transform.Position, &view)
+        let sizeView = Matrix3x3.Mult (&transform.Size, &viewScale)
         let tileRotation = transform.Rotation
         let (allFound, tileSetTextures) =
             tileAssets |>
@@ -506,9 +508,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          color : Color inref,
          justification : Justification,
          renderer) =
-        let view = if absolute then viewAbsolute else viewRelative
-        let positionView = transform.Position * view
-        let sizeView = transform.Size * view.ExtractScaleMatrix ()
+        let view = if absolute then &viewAbsolute else &viewRelative
+        let viewScale = Matrix3x3.ExtractScaleMatrix &view
+        let positionView = Matrix3x3.Mult (&transform.Position, &view)
+        let sizeView = Matrix3x3.Mult (&transform.Size, &viewScale)
         let font = AssetTag.generalize font
         match SdlRenderer.tryFindRenderAsset font renderer with
         | Some renderAsset ->
@@ -578,7 +581,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          image : Image AssetTag,
          particles : Particle array,
          renderer) =
-        let view = if absolute then viewAbsolute else viewRelative
+        let view = if absolute then &viewAbsolute else &viewRelative
         let positionOffset = -(v2Zero * view)
         let blend = Blend.toSdlBlendMode blend
         let image = AssetTag.generalize image
@@ -595,7 +598,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     let transform = &particle.Transform
                     let position = transform.Position - Vector2.Multiply (particle.Offset, transform.Size)
                     let positionView = position + positionOffset
-                    let sizeView = transform.Size * view.ExtractScaleMatrix ()
+                    let sizeView = transform.Size * Matrix3x3.CreateScale(Vector3(view.Row0.X, view.Row1.Y, view.Row2.Z))
                     let color = &particle.Color
                     let glow = &particle.Glow
                     let flip = Flip.toSdlFlip particle.Flip
