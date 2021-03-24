@@ -814,8 +814,9 @@ module Math =
 
     /// Snap an Transform value to an offset.
     let snapTransform positionSnap rotationSnap transform =
-        let transform = { transform with Position = snap2F positionSnap transform.Position }
-        { transform with Rotation = snapR rotationSnap transform.Rotation }
+        { transform with
+            Position = snap2F positionSnap transform.Position
+            Rotation = snapR rotationSnap transform.Rotation }
 
     /// Check that a point is within the given bounds.
     let isPointInBounds (point : Vector2) (bounds : Vector4) =

@@ -119,6 +119,14 @@ module WorldEntityModule =
             let world = this.SetOmnipresent true world
             world
 
+        /// Set the transform of an entity.
+        member this.SetTransformByRef (transform : Transform inref, world) =
+            World.setEntityTransformByRef (&transform, this, world)
+
+        /// Set the transform of an entity without generating any change events.
+        member this.SetTransformByRefWithoutEvent (transform : Transform inref, world) =
+            World.setEntityTransformByRefWithoutEvent (&transform, this, world)
+
         /// Set the transform of an entity without generating any change events.
         member this.SetTransformWithoutEvent transform world =
             World.setEntityTransformByRefWithoutEvent (&transform, this, world)
@@ -199,6 +207,20 @@ module WorldEntityModule =
 
         /// Set an entity's size by its quick size.
         member this.QuickSize world = World.setEntitySize (this.GetQuickSize world) this world
+
+        /// Apply physics changes to an entity.
+        member this.ApplyPhysics position rotation linearVelocity angularVelocity world =
+            let transform = this.GetTransform world
+            let world =
+                if  transform.Position <> position ||
+                    transform.Rotation <> rotation then
+                    let transform = { transform with Position = position; Rotation = rotation }
+                    this.SetTransformByRefWithoutEvent (&transform, world)
+                else world
+            let world = this.SetStaticPropertyWithoutEvent Property? LinearVelocity linearVelocity world
+            let world = this.SetStaticPropertyWithoutEvent Property? AngularVelocity angularVelocity world
+            let dispatcher = this.GetDispatcher world
+            dispatcher.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, this, world)
 
         /// Propagate entity physics properties into the physics system.
         member this.PropagatePhysics world =
