@@ -340,7 +340,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          transform : Transform inref,
          absolute : bool,
          offset : Vector2,
-         inset : Vector4,
+         inset : Vector4 inref,
          image : Image AssetTag,
          color : Color inref,
          blend : Blend,
@@ -646,7 +646,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             let inset = match descriptor.InsetOpt with Some inset -> inset | None -> v4Zero
             SdlRenderer.renderSprite
                 (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-                 &descriptor.Transform, descriptor.Absolute, descriptor.Offset, inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
+                 &descriptor.Transform, descriptor.Absolute, descriptor.Offset, &inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
                  renderer)
         | SpritesDescriptor descriptor ->
             let sprites = descriptor.Sprites
@@ -654,7 +654,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let sprite = &sprites.[index]
                 SdlRenderer.renderSprite
                     (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-                     &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
+                     &sprite.Transform, sprite.Absolute, sprite.Offset, &sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
                      renderer)
         | TileLayerDescriptor descriptor ->
             SdlRenderer.renderTileLayer
