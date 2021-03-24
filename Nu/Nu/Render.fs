@@ -51,19 +51,19 @@ type [<StructuralEquality; NoComparison; Struct>] Blend =
         | Overwrite -> SDL.SDL_BlendMode.SDL_BLENDMODE_NONE
 
 /// Horizontal justification.
-type [<StructuralEquality; StructuralComparison>] JustificationH =
+type [<StructuralEquality; NoComparison; Struct>] JustificationH =
     | JustifyLeft
     | JustifyCenter
     | JustifyRight
 
 /// Vertical justification.
-type [<StructuralEquality; StructuralComparison>] JustificationV =
+type [<StructuralEquality; NoComparison; Struct>] JustificationV =
     | JustifyTop
     | JustifyMiddle
     | JustifyBottom
 
 /// Justification (such as for text alignement).
-type [<StructuralEquality; StructuralComparison>] Justification =
+type [<StructuralEquality; NoComparison>] Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
 
@@ -380,16 +380,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
-    static member private renderSpriteDescriptor (viewAbsolute : Matrix3x3 inref, viewRelative : Matrix3x3 inref, eyeCenter, eyeSize, sprite : SpriteDescriptor, renderer) =
-        SdlRenderer.renderSprite
-            (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-             &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
-             renderer)
-
-    static member private renderSpriteDescriptors (viewAbsolute : Matrix3x3 inref, viewRelative : Matrix3x3 inref, eyeCenter, eyeSize, sprites, renderer) =
-        for sprite in sprites do
-            SdlRenderer.renderSpriteDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, sprite, renderer)
-
     /// Render tile layer.
     static member renderTileLayer
         (viewAbsolute : Matrix3x3 inref,
@@ -489,12 +479,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 tileIndex <- inc tileIndex
         else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
-    static member private renderTileLayerDescriptor (viewAbsolute : Matrix3x3 inref, viewRelative : Matrix3x3 inref, eyeCenter, eyeSize, tileLayer : TileLayerDescriptor, renderer) =
-        SdlRenderer.renderTileLayer
-            (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-             &tileLayer.Transform, tileLayer.Absolute, &tileLayer.Color, &tileLayer.Glow, tileLayer.MapSize, tileLayer.Tiles, tileLayer.TileSourceSize, tileLayer.TileSize, tileLayer.TileAssets,
-             renderer)
-
     /// Render text.
     static member renderText
         (viewAbsolute : Matrix3x3 inref,
@@ -567,12 +551,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | _ -> Log.debug "Cannot render text with a non-font asset."
         | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
 
-    static member private renderTextDescriptor (viewAbsolute : Matrix3x3 inref, viewRelative : Matrix3x3 inref, eyeCenter, eyeSize, text : TextDescriptor, renderer) =
-        SdlRenderer.renderText
-            (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-             &text.Transform, text.Absolute, text.Text, text.Font, &text.Color, text.Justification,
-             renderer)
-
     /// Render particles.
     static member renderParticles
         (viewAbsolute : Matrix3x3 inref,
@@ -642,12 +620,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | _ -> Log.trace "Cannot render particle with a non-texture asset."
         | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
 
-    static member private renderParticlesDescriptor (viewAbsolute : Matrix3x3 inref, viewRelative : Matrix3x3 inref, eyeCenter, eyeSize, particles : ParticlesDescriptor, renderer) =
-        SdlRenderer.renderParticles
-            (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-             particles.Elevation, particles.PositionY, particles.Absolute, particles.Blend, particles.Image, particles.Particles,
-             renderer)
-
     static member private renderDescriptor
         (viewAbsolute : Matrix3x3 inref,
          viewRelative : Matrix3x3 inref,
@@ -656,12 +628,35 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          descriptor,
          renderer) =
         match descriptor with
-        | SpriteDescriptor sprite -> SdlRenderer.renderSpriteDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, sprite, renderer)
-        | SpritesDescriptor sprites -> SdlRenderer.renderSpriteDescriptors (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, sprites, renderer)
-        | TileLayerDescriptor descriptor -> SdlRenderer.renderTileLayerDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, descriptor, renderer)
-        | TextDescriptor descriptor -> SdlRenderer.renderTextDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, descriptor, renderer)
-        | ParticlesDescriptor descriptor -> SdlRenderer.renderParticlesDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, descriptor, renderer)
-        | RenderCallback callback -> callback (viewAbsolute, viewRelative, eyeCenter, eyeSize, renderer)
+        | SpriteDescriptor sprite ->
+            SdlRenderer.renderSprite
+                (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
+                 &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
+                 renderer)
+        | SpritesDescriptor sprites ->
+            for index in 0 .. sprites.Length - 1 do
+                let sprite = sprites.[index]
+                SdlRenderer.renderSprite
+                    (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
+                     &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
+                     renderer)
+        | TileLayerDescriptor tileLayer ->
+            SdlRenderer.renderTileLayer
+                (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
+                 &tileLayer.Transform, tileLayer.Absolute, &tileLayer.Color, &tileLayer.Glow, tileLayer.MapSize, tileLayer.Tiles, tileLayer.TileSourceSize, tileLayer.TileSize, tileLayer.TileAssets,
+                 renderer)
+        | TextDescriptor text ->
+            SdlRenderer.renderText
+                (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
+                 &text.Transform, text.Absolute, text.Text, text.Font, &text.Color, text.Justification,
+                 renderer)
+        | ParticlesDescriptor particles ->
+            SdlRenderer.renderParticles
+                (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
+                 particles.Elevation, particles.PositionY, particles.Absolute, particles.Blend, particles.Image, particles.Particles,
+                 renderer)
+        | RenderCallback callback ->
+            callback (viewAbsolute, viewRelative, eyeCenter, eyeSize, renderer)
 
     static member private renderLayeredMessages eyeCenter eyeSize (messages : RenderLayeredMessage List) renderer =
         let renderContext = renderer.RenderContext
