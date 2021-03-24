@@ -388,6 +388,10 @@ module WorldTypes =
         abstract GetQuickSize : Entity * World -> Vector2
         default this.GetQuickSize (_, _) = Constants.Engine.EntitySizeDefault
 
+        /// Apply physics changes to an entity.
+        abstract ApplyPhysics : Vector2 * single * Vector2 * single * Entity * World -> World
+        default this.ApplyPhysics (_, _, _, _, _, world) = world
+
         /// Try to send a signal to an entity's facet.
         abstract TrySignalFacet : obj * string * Entity * World -> World
         default this.TrySignalFacet (_, _, _, world) = world

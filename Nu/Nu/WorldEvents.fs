@@ -58,7 +58,6 @@ module Events =
     let PostUpdate = stoa<unit> "PostUpdate/Event"
     let Select = stoa<unit> "Select/Event"
     let Deselect = stoa<unit> "Deselect/Event"
-    let Transform = stoa<TransformData> "Transform/Event"
     let Collision = stoa<CollisionData> "Collision/Event"
     let Separation = stoa<SeparationData> "Separation/Event"
     let Click = stoa<unit> "Click/Event"

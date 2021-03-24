@@ -629,19 +629,9 @@ module WorldModule2 =
                     let rotation = bodyTransformMessage.Rotation
                     let angularVelocity = bodyTransformMessage.AngularVelocity
                     let linearVelocity = bodyTransformMessage.LinearVelocity
-                    let world =
-                        if bodyTransformMessage.BodySource.BodyId = Gen.idEmpty then
-                            let transform2 = { transform with Position = position; Rotation = rotation }
-                            if trNeq transform transform2
-                            then entity.SetTransformWithoutEvent transform2 world
-                            else world
-                        else world
-                    let world = entity.SetStaticPropertyWithoutEvent Entity.Lens.AngularVelocity.Name angularVelocity world
-                    let world = entity.SetStaticPropertyWithoutEvent Entity.Lens.LinearVelocity.Name linearVelocity world
-                    let transformAddress = Events.Transform --> entity.EntityAddress
-                    let transformData = { BodySource = BodySource.fromInternal bodySource; Position = position; Rotation = rotation }
-                    let eventTrace = EventTrace.debug "World" "handleIntegrationMessage" "" EventTrace.empty
-                    World.publish transformData transformAddress eventTrace Simulants.Game world
+                    if bodySource.BodyId = Gen.idEmpty
+                    then entity.ApplyPhysics position rotation linearVelocity angularVelocity world
+                    else world
             | Dead -> world
 
         static member private getEntities3 getElementsFromTree world =

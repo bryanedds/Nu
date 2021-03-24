@@ -1528,6 +1528,12 @@ module EntityDispatcherModule =
                     WorldModule.bind5 entity left right world)
                 world initializers
 
+        override this.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, entity, world) =
+            let model = this.GetModel entity world
+            let (signals, model) = this.Physics (position, rotation, linearVelocity, angularVelocity, model, entity, world)
+            let world = this.SetModel model entity world
+            Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
+
         override this.Actualize (entity, world) =
             let view = this.View (this.GetModel entity world, entity, world)
             World.actualizeView view world
@@ -1546,6 +1552,9 @@ module EntityDispatcherModule =
 
         abstract member Channel : Lens<'model, World> * Entity -> Channel<'message, 'command, Entity, World> list
         default this.Channel (_, _) = []
+
+        abstract member Physics : Vector2 * single * Vector2 * single * 'model * Entity * World -> Signal<'message, 'command> list * 'model
+        default this.Physics (_, _, _, _, model, _, _) = just model
 
         abstract member Message : 'model * 'message * Entity * World -> Signal<'message, 'command> list * 'model
         default this.Message (model, _, _, _) = just model

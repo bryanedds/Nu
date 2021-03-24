@@ -118,7 +118,8 @@ and EntityPropertyDescriptor (propertyDescriptor, attributes) =
                         | (Right (), world) -> world
                         | (Left error, world) -> Log.trace error; world
                     | _ ->
-                        PropertyDescriptor.trySetValue propertyDescriptor value entity world |> __c
+                        let struct (_, _, world) = PropertyDescriptor.trySetValue propertyDescriptor value entity world
+                        world
                 Globals.World <- world // must be set for property grid
                 entityTds.Form.entityPropertyGrid.Refresh ()
                 world

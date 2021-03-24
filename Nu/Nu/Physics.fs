@@ -370,8 +370,8 @@ type [<NoEquality; NoComparison; Struct>] BodyTransformMessage =
     { BodySource : BodySourceInternal
       Position : Vector2
       Rotation : single
-      AngularVelocity : single
-      LinearVelocity : Vector2 }
+      LinearVelocity : Vector2
+      AngularVelocity : single }
 
 /// Tracks physics bodies by their PhysicsIds.
 type BodyDictionary = Dictionary<PhysicsId, single * Dynamics.Body>
@@ -806,8 +806,8 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
                         { BodySource = body.Tag :?> BodySourceInternal
                           Position = AetherPhysicsEngine.toPixelV2 body.Position
                           Rotation = body.Rotation
-                          AngularVelocity = body.AngularVelocity
-                          LinearVelocity = AetherPhysicsEngine.toPixelV2 body.LinearVelocity }
+                          LinearVelocity = AetherPhysicsEngine.toPixelV2 body.LinearVelocity
+                          AngularVelocity = body.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
     static member private applyGravity physicsStepAmount physicsEngine =

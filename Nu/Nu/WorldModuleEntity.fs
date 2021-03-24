@@ -382,7 +382,7 @@ module WorldModuleEntity =
             let oldAbsolute = oldEntityState.Absolute
             let oldBoundsMax = if not oldEntityState.Omnipresent then World.getEntityStateBoundsMax oldEntityState else v4Zero
             let struct (changed, world) =
-                let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier.
+                let (value : Transform) = valueInRef // NOTE: unfortunately, a Transform copy is required to pass the lambda barrier, even if this is inlined...
                 World.updateEntityStateWithoutEvent
                     (fun entityState ->
                         if not (Transform.equalsByRef (&value, &entityState.Transform))
