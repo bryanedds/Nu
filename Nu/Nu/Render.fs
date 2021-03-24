@@ -413,8 +413,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          renderer) =
         let view = if absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let positionView = Matrix3x3.Mult (&transform.Position, &view)
-        let sizeView = Matrix3x3.Mult (&transform.Size, &viewScale)
+        let positionView = Matrix3x3.Multiply (&transform.Position, &view)
+        let sizeView = Matrix3x3.Multiply (&transform.Size, &viewScale)
         let tileRotation = transform.Rotation
         let (allFound, tileSetTextures) =
             tileAssets |>
@@ -510,8 +510,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          renderer) =
         let view = if absolute then &viewAbsolute else &viewRelative
         let viewScale = Matrix3x3.ExtractScaleMatrix &view
-        let positionView = Matrix3x3.Mult (&transform.Position, &view)
-        let sizeView = Matrix3x3.Mult (&transform.Size, &viewScale)
+        let positionView = Matrix3x3.Multiply (&transform.Position, &view)
+        let sizeView = Matrix3x3.Multiply (&transform.Size, &viewScale)
         let font = AssetTag.generalize font
         match SdlRenderer.tryFindRenderAsset font renderer with
         | Some renderAsset ->
