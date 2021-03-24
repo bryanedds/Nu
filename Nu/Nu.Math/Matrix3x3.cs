@@ -613,7 +613,7 @@ namespace Nu
         /// <param name="left">The left operand of the multiplication.</param>
         /// <param name="right">The right operand of the multiplication.</param>
         /// <returns>A new instance that is the result of the multiplication</returns>
-        public static Matrix3x3 Mult(Matrix3x3 left, Matrix3x3 right)
+        public static Matrix3x3 Multiply(Matrix3x3 left, Matrix3x3 right)
         {
             Matrix3x3 result;
             Mult(ref left, ref right, out result);
@@ -814,7 +814,7 @@ namespace Nu
         /// <returns>A new Matrix3d which holds the result of the multiplication</returns>
         public static Matrix3x3 operator *(Matrix3x3 left, Matrix3x3 right)
         {
-            return Matrix3x3.Mult(left, right);
+            return Matrix3x3.Multiply(left, right);
         }
 
         /// <summary>
