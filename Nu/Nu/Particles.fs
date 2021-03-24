@@ -111,15 +111,15 @@ module Particles =
     /// Describes the body of an instance value.
     type [<StructuralEquality; NoComparison; Struct>] Body =
         { mutable Position : Vector2
-          mutable LinearVelocity : Vector2
           mutable Rotation : single
+          mutable LinearVelocity : Vector2
           mutable AngularVelocity : single }
 
         /// The default body.
         static member defaultBody =
             { Position = v2Zero
-              LinearVelocity = v2Zero
               Rotation = 0.0f
+              LinearVelocity = v2Zero
               AngularVelocity = 0.0f }
 
     /// The base particle type.
@@ -757,8 +757,8 @@ module Particles =
             let particleInitializer = fun _ (emitter : BasicEmitter) ->
                 let particle = emitter.ParticleSeed
                 particle.Body.Position <- emitter.Body.Position
-                particle.Body.LinearVelocity <- (v2 Gen.randomf Gen.randomf * 10.0f).Rotate emitter.Body.Rotation
                 particle.Body.Rotation <- emitter.Body.Rotation
+                particle.Body.LinearVelocity <- (v2 Gen.randomf Gen.randomf * 10.0f).Rotate emitter.Body.Rotation
                 particle.Body.AngularVelocity <- Gen.randomf
                 particle
             let particleBehavior = fun time emitter ->

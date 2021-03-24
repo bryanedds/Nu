@@ -138,11 +138,11 @@ type [<StructuralEquality; NoComparison>] BodyProperties =
       Density : single
       Friction : single
       Restitution : single
-      FixedRotation : bool
-      AngularVelocity : single
-      AngularDamping : single
       LinearVelocity : Vector2
       LinearDamping : single
+      AngularVelocity : single
+      AngularDamping : single
+      FixedRotation : bool
       Inertia : single
       GravityScale : single
       CollisionCategories : int
@@ -165,11 +165,11 @@ module BodyProperties =
           Density = Constants.Physics.DensityDefault
           Friction = 0.2f
           Restitution = 0.0f
-          FixedRotation = false
-          AngularVelocity = 0.0f
-          AngularDamping = 0.0f
           LinearVelocity = Vector2.Zero
           LinearDamping = 0.0f
+          AngularVelocity = 0.0f
+          AngularDamping = 0.0f
+          FixedRotation = false
           Inertia = 0.0f
           GravityScale = 1.0f
           CollisionCategories = 1
@@ -328,16 +328,6 @@ type [<StructuralEquality; NoComparison>] SetBodyRotationMessage =
     { PhysicsId : PhysicsId
       Rotation : single }
 
-/// A message to the physics system to set the angular velocity of a body.
-type [<StructuralEquality; NoComparison>] SetBodyAngularVelocityMessage =
-    { PhysicsId : PhysicsId
-      AngularVelocity : single }
-
-/// A message to the physics system to apply a angular impulse to a body.
-type [<StructuralEquality; NoComparison>] ApplyBodyAngularImpulseMessage =
-    { PhysicsId : PhysicsId
-      AngularImpulse : single }
-
 /// A message to the physics system to set the linear velocity of a body.
 type [<StructuralEquality; NoComparison>] SetBodyLinearVelocityMessage =
     { PhysicsId : PhysicsId
@@ -347,6 +337,16 @@ type [<StructuralEquality; NoComparison>] SetBodyLinearVelocityMessage =
 type [<StructuralEquality; NoComparison>] ApplyBodyLinearImpulseMessage =
     { PhysicsId : PhysicsId
       LinearImpulse : Vector2 }
+
+/// A message to the physics system to set the angular velocity of a body.
+type [<StructuralEquality; NoComparison>] SetBodyAngularVelocityMessage =
+    { PhysicsId : PhysicsId
+      AngularVelocity : single }
+
+/// A message to the physics system to apply a angular impulse to a body.
+type [<StructuralEquality; NoComparison>] ApplyBodyAngularImpulseMessage =
+    { PhysicsId : PhysicsId
+      AngularImpulse : single }
 
 /// A message to the physics system to apply a force to a body.
 type [<StructuralEquality; NoComparison>] ApplyBodyForceMessage =
@@ -536,11 +536,11 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         body.Rotation <- bodyProperties.Rotation
         body.SetFriction bodyProperties.Friction
         body.SetRestitution bodyProperties.Restitution
-        body.FixedRotation <- bodyProperties.FixedRotation
-        body.AngularVelocity <- bodyProperties.AngularVelocity
-        body.AngularDamping <- bodyProperties.AngularDamping
         body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 bodyProperties.LinearVelocity
         body.LinearDamping <- bodyProperties.LinearDamping
+        body.AngularVelocity <- bodyProperties.AngularVelocity
+        body.AngularDamping <- bodyProperties.AngularDamping
+        body.FixedRotation <- bodyProperties.FixedRotation
         body.Inertia <- bodyProperties.Inertia
         body.IgnoreGravity <- true // we do all gravity processing ourselves due to: https://github.com/tainicom/Aether.Physics2D/issues/85#issuecomment-716051707
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
@@ -739,16 +739,6 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         | (true, (_, body)) -> body.Rotation <- setBodyRotationMessage.Rotation
         | (false, _) -> Log.debug ("Could not set rotation of non-existent body with PhysicsId = " + scstring setBodyRotationMessage.PhysicsId + "'.")
 
-    static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.PhysicsId with
-        | (true, (_, body)) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
-        | (false, _) -> Log.debug ("Could not set angular velocity of non-existent body with PhysicsId = " + scstring setBodyAngularVelocityMessage.PhysicsId + "'.")
-
-    static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue applyBodyAngularImpulseMessage.PhysicsId with
-        | (true, (_, body)) -> body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse)
-        | (false, _) -> Log.debug ("Could not apply angular impulse to non-existent body with PhysicsId = " + scstring applyBodyAngularImpulseMessage.PhysicsId + "'.")
-
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.PhysicsId with
         | (true, (_, body)) -> body.LinearVelocity <- AetherPhysicsEngine.toPhysicsV2 setBodyLinearVelocityMessage.LinearVelocity
@@ -758,6 +748,16 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.PhysicsId with
         | (true, (_, body)) -> body.ApplyLinearImpulse (AetherPhysicsEngine.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
         | (false, _) -> Log.debug ("Could not apply linear impulse to non-existent body with PhysicsId = " + scstring applyBodyLinearImpulseMessage.PhysicsId + "'.")
+
+    static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.PhysicsId with
+        | (true, (_, body)) -> body.AngularVelocity <- setBodyAngularVelocityMessage.AngularVelocity
+        | (false, _) -> Log.debug ("Could not set angular velocity of non-existent body with PhysicsId = " + scstring setBodyAngularVelocityMessage.PhysicsId + "'.")
+
+    static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue applyBodyAngularImpulseMessage.PhysicsId with
+        | (true, (_, body)) -> body.ApplyAngularImpulse (applyBodyAngularImpulseMessage.AngularImpulse)
+        | (false, _) -> Log.debug ("Could not apply angular impulse to non-existent body with PhysicsId = " + scstring applyBodyAngularImpulseMessage.PhysicsId + "'.")
 
     static member private applyBodyForce applyBodyForceMessage physicsEngine =
         match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.PhysicsId with
