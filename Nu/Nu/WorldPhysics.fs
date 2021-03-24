@@ -131,29 +131,29 @@ module WorldPhysics =
             let setBodyRotationMessage = SetBodyRotationMessage { PhysicsId = physicsId; Rotation = rotation }
             World.enqueuePhysicsMessage setBodyRotationMessage world
 
-        /// Send a message to the physics system to set the angular velocity of a body with the given physics id.
-        [<FunctionBinding>]
-        static member setBodyAngularVelocity angularVelocity physicsId world =
-            let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { PhysicsId = physicsId; AngularVelocity = angularVelocity }
-            World.enqueuePhysicsMessage setBodyAngularVelocityMessage world
-
         /// Send a message to the physics system to set the linear velocity of a body with the given physics id.
         [<FunctionBinding>]
         static member setBodyLinearVelocity linearVelocity physicsId world =
             let setBodyLinearVelocityMessage = SetBodyLinearVelocityMessage { PhysicsId = physicsId; LinearVelocity = linearVelocity }
             World.enqueuePhysicsMessage setBodyLinearVelocityMessage world
 
-        /// Send a message to the physics system to apply angular impulse to a body with the given physics id.
-        [<FunctionBinding>]
-        static member applyBodyAngularImpulse angularImpulse physicsId world =
-            let applyBodyAngularImpulseMessage = ApplyBodyAngularImpulseMessage { PhysicsId = physicsId; AngularImpulse = angularImpulse }
-            World.enqueuePhysicsMessage applyBodyAngularImpulseMessage world
-
         /// Send a message to the physics system to apply linear impulse to a body with the given physics id.
         [<FunctionBinding>]
         static member applyBodyLinearImpulse linearImpulse physicsId world =
             let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { PhysicsId = physicsId; LinearImpulse = linearImpulse }
             World.enqueuePhysicsMessage applyBodyLinearImpulseMessage world
+
+        /// Send a message to the physics system to set the angular velocity of a body with the given physics id.
+        [<FunctionBinding>]
+        static member setBodyAngularVelocity angularVelocity physicsId world =
+            let setBodyAngularVelocityMessage = SetBodyAngularVelocityMessage { PhysicsId = physicsId; AngularVelocity = angularVelocity }
+            World.enqueuePhysicsMessage setBodyAngularVelocityMessage world
+
+        /// Send a message to the physics system to apply angular impulse to a body with the given physics id.
+        [<FunctionBinding>]
+        static member applyBodyAngularImpulse angularImpulse physicsId world =
+            let applyBodyAngularImpulseMessage = ApplyBodyAngularImpulseMessage { PhysicsId = physicsId; AngularImpulse = angularImpulse }
+            World.enqueuePhysicsMessage applyBodyAngularImpulseMessage world
 
         /// Send a message to the physics system to apply force to a body with the given physics id.
         [<FunctionBinding>]

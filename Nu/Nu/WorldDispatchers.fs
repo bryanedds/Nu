@@ -218,8 +218,8 @@ module BasicEmitterFacetModule =
                 { emitter with
                     Body =
                         { Position = entity.GetCenter world + entity.GetEmitterOffset world
-                          LinearVelocity = v2Zero
                           Rotation = entity.GetRotation world + entity.GetEmitterTwist world
+                          LinearVelocity = v2Zero
                           AngularVelocity = 0.0f }
                     Elevation = entity.GetElevation world
                     Absolute = entity.GetAbsolute world
@@ -793,21 +793,21 @@ module RigidBodyFacetModule =
         member this.GetRestitution world : single = this.Get Property? Restitution world
         member this.SetRestitution (value : single) world = this.Set Property? Restitution value world
         member this.Restitution = lens Property? Restitution this.GetRestitution this.SetRestitution this
-        member this.GetFixedRotation world : bool = this.Get Property? FixedRotation world
-        member this.SetFixedRotation (value : bool) world = this.Set Property? FixedRotation value world
-        member this.FixedRotation = lens Property? FixedRotation this.GetFixedRotation this.SetFixedRotation this
-        member this.GetAngularVelocity world : single = this.Get Property? AngularVelocity world
-        member this.SetAngularVelocity (value : single) world = this.Set Property? AngularVelocity value world
-        member this.AngularVelocity = lens Property? AngularVelocity this.GetAngularVelocity this.SetAngularVelocity this
-        member this.GetAngularDamping world : single = this.Get Property? AngularDamping world
-        member this.SetAngularDamping (value : single) world = this.Set Property? AngularDamping value world
-        member this.AngularDamping = lens Property? AngularDamping this.GetAngularDamping this.SetAngularDamping this
         member this.GetLinearVelocity world : Vector2 = this.Get Property? LinearVelocity world
         member this.SetLinearVelocity (value : Vector2) world = this.Set Property? LinearVelocity value world
         member this.LinearVelocity = lens Property? LinearVelocity this.GetLinearVelocity this.SetLinearVelocity this
         member this.GetLinearDamping world : single = this.Get Property? LinearDamping world
         member this.SetLinearDamping (value : single) world = this.Set Property? LinearDamping value world
         member this.LinearDamping = lens Property? LinearDamping this.GetLinearDamping this.SetLinearDamping this
+        member this.GetAngularVelocity world : single = this.Get Property? AngularVelocity world
+        member this.SetAngularVelocity (value : single) world = this.Set Property? AngularVelocity value world
+        member this.AngularVelocity = lens Property? AngularVelocity this.GetAngularVelocity this.SetAngularVelocity this
+        member this.GetAngularDamping world : single = this.Get Property? AngularDamping world
+        member this.SetAngularDamping (value : single) world = this.Set Property? AngularDamping value world
+        member this.AngularDamping = lens Property? AngularDamping this.GetAngularDamping this.SetAngularDamping this
+        member this.GetFixedRotation world : bool = this.Get Property? FixedRotation world
+        member this.SetFixedRotation (value : bool) world = this.Set Property? FixedRotation value world
+        member this.FixedRotation = lens Property? FixedRotation this.GetFixedRotation this.SetFixedRotation this
         member this.GetInertia world : single = this.Get Property? Inertia world
         member this.SetInertia (value : single) world = this.Set Property? Inertia value world
         member this.Inertia = lens Property? Inertia this.GetInertia this.SetInertia this
@@ -850,11 +850,11 @@ module RigidBodyFacetModule =
              define Entity.Density Constants.Physics.DensityDefault
              define Entity.Friction 0.2f
              define Entity.Restitution 0.0f
-             define Entity.FixedRotation false
-             define Entity.AngularVelocity 0.0f
-             define Entity.AngularDamping 0.0f
              define Entity.LinearVelocity Vector2.Zero
              define Entity.LinearDamping 0.0f
+             define Entity.AngularVelocity 0.0f
+             define Entity.AngularDamping 0.0f
+             define Entity.FixedRotation false
              define Entity.Inertia 0.0f
              define Entity.GravityScale 1.0f
              define Entity.CollisionCategories "1"
@@ -873,10 +873,11 @@ module RigidBodyFacetModule =
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Density) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Friction) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Restitution) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularVelocity) entity world
-            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularDamping) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? LinearVelocity) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? LinearDamping) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularVelocity) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? AngularDamping) entity world
+            let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? FixedRotation) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? Inertia) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? GravityScale) entity world
             let world = World.monitor (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent Property? CollisionCategories) entity world
@@ -899,11 +900,11 @@ module RigidBodyFacetModule =
                   Density = entity.GetDensity world
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
-                  FixedRotation = entity.GetFixedRotation world
-                  AngularVelocity = entity.GetAngularVelocity world
-                  AngularDamping = entity.GetAngularDamping world
                   LinearVelocity = entity.GetLinearVelocity world
                   LinearDamping = entity.GetLinearDamping world
+                  AngularVelocity = entity.GetAngularVelocity world
+                  AngularDamping = entity.GetAngularDamping world
+                  FixedRotation = entity.GetFixedRotation world
                   Inertia = entity.GetInertia world
                   GravityScale = entity.GetGravityScale world
                   CollisionCategories = PhysicsEngine.categorizeCollisionMask (entity.GetCollisionCategories world)

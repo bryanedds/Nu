@@ -627,8 +627,8 @@ module WorldModule2 =
                     let transform = entity.GetTransform world
                     let position = bodyTransformMessage.Position - transform.Size * 0.5f
                     let rotation = bodyTransformMessage.Rotation
-                    let angularVelocity = bodyTransformMessage.AngularVelocity
                     let linearVelocity = bodyTransformMessage.LinearVelocity
+                    let angularVelocity = bodyTransformMessage.AngularVelocity
                     if bodySource.BodyId = Gen.idEmpty
                     then entity.ApplyPhysics position rotation linearVelocity angularVelocity world
                     else world
