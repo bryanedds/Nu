@@ -635,7 +635,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                  renderer)
         | SpritesDescriptor sprites ->
             for index in 0 .. sprites.Length - 1 do
-                let sprite = sprites.[index]
+                let sprite = &sprites.[index]
                 SdlRenderer.renderSprite
                     (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
                      &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
