@@ -72,7 +72,7 @@ type [<NoEquality; NoComparison; Struct>] Sprite =
     { mutable Transform : Transform
       mutable Absolute : bool
       mutable Offset : Vector2
-      mutable InsetOpt : Vector4 option
+      mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection.
       mutable Image : Image AssetTag
       mutable Color : Color
       mutable Blend : Blend
@@ -340,7 +340,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          transform : Transform inref,
          absolute : bool,
          offset : Vector2,
-         insetOpt : Vector4 option,
+         inset : Vector4,
          image : Image AssetTag,
          color : Color inref,
          blend : Blend,
@@ -360,17 +360,16 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             | TextureAsset texture ->
                 let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
                 let mutable sourceRect = SDL.SDL_Rect ()
-                match insetOpt with
-                | Some inset ->
-                    sourceRect.x <- int inset.X
-                    sourceRect.y <- int inset.Y
-                    sourceRect.w <- int inset.Z
-                    sourceRect.h <- int inset.W
-                | None ->
+                if inset.X = 0.0f && inset.Y = 0.0f && inset.Z = 0.0f && inset.W = 0.0f then
                     sourceRect.x <- 0
                     sourceRect.y <- 0
                     sourceRect.w <- textureSizeX
                     sourceRect.h <- textureSizeY
+                else
+                    sourceRect.x <- int inset.X
+                    sourceRect.y <- int inset.Y
+                    sourceRect.w <- int inset.Z
+                    sourceRect.h <- int inset.W
                 let mutable destRect = SDL.SDL_Rect ()
                 destRect.x <- int (+positionView.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
                 destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
@@ -644,9 +643,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          renderer) =
         match descriptor with
         | SpriteDescriptor descriptor ->
+            let inset = match descriptor.InsetOpt with Some inset -> inset | None -> v4Zero
             SdlRenderer.renderSprite
                 (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-                 &descriptor.Transform, descriptor.Absolute, descriptor.Offset, descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
+                 &descriptor.Transform, descriptor.Absolute, descriptor.Offset, inset, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
                  renderer)
         | SpritesDescriptor descriptor ->
             let sprites = descriptor.Sprites
@@ -654,7 +654,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let sprite = &sprites.[index]
                 SdlRenderer.renderSprite
                     (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-                     &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
+                     &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.Inset, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
                      renderer)
         | TileLayerDescriptor descriptor ->
             SdlRenderer.renderTileLayer
