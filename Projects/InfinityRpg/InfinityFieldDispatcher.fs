@@ -17,10 +17,10 @@ module FieldDispatcher =
     type FieldDispatcher () =
         inherit EntityDispatcher<Field, unit, unit> (Field.initial)
 
-        static let getTileInsetOpt (tileSheetCoordinates : Vector2i) =
+        static let getTileInset (tileSheetCoordinates : Vector2i) =
             let tileOffset = vctovf tileSheetCoordinates
             let tileInset = v4Bounds tileOffset Constants.Layout.TileSize
-            Some tileInset
+            tileInset
 
         static let viewBoundsToMapUnits (viewBounds : Vector4) =
             let right = int viewBounds.X + int viewBounds.Z
@@ -62,13 +62,13 @@ module FieldDispatcher =
                         (fun tileCoordinates tile sprites ->
                             if tilePositionInView tileCoordinates mInViewBounds then
                                 let tilePosition = vctovf tileCoordinates // NOTE: field position assumed at origin
-                                let tileInsetOpt = getTileInsetOpt tile.TileSheetCoordinates
                                 let tileTransform = { tileTransform with Position = tilePosition }
+                                let tileInset = getTileInset tile.TileSheetCoordinates
                                 let sprite : Sprite =
                                     { Transform = tileTransform
                                       Absolute = entity.GetAbsolute world
                                       Offset = v2Zero
-                                      InsetOpt = tileInsetOpt
+                                      Inset = tileInset
                                       Image = image
                                       Color = Color.White
                                       Blend = Transparent
