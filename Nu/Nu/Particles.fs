@@ -696,26 +696,26 @@ module Particles =
                 Array.append
                     (if emitter.ParticleWatermark > emitter.ParticleIndex then Array.skip emitter.ParticleIndex emitter.ParticleRing else [||])
                     (Array.take emitter.ParticleIndex emitter.ParticleRing)
-            let descriptors =
-                Array.zeroCreate<ParticleDescriptor> particles.Length
-            for index in 0 .. descriptors.Length - 1 do
+            let particles' =
+                Array.zeroCreate<Nu.Particle> particles.Length
+            for index in 0 .. particles.Length - 1 do
                 let particle = &particles.[index]
                 if Life.getLiveness time particle.Life then
-                    let descriptor = &descriptors.[index]
-                    descriptor.Transform.Position <- particle.Body.Position
-                    descriptor.Transform.Rotation <- particle.Body.Rotation
-                    descriptor.Transform.Size <- particle.Size
-                    descriptor.Color <- particle.Color
-                    descriptor.Glow <- particle.Glow
-                    descriptor.Offset <- particle.Offset
-                    descriptor.Inset <- particle.Inset
-                    descriptor.Flip <- particle.Flip
+                    let particle' = &particles'.[index]
+                    particle'.Transform.Position <- particle.Body.Position
+                    particle'.Transform.Rotation <- particle.Body.Rotation
+                    particle'.Transform.Size <- particle.Size
+                    particle'.Color <- particle.Color
+                    particle'.Glow <- particle.Glow
+                    particle'.Offset <- particle.Offset
+                    particle'.Inset <- particle.Inset
+                    particle'.Flip <- particle.Flip
             { Elevation = emitter.Elevation
               PositionY = emitter.Body.Position.Y
               Absolute = emitter.Absolute
               Blend = emitter.Blend
               Image = emitter.Image
-              Particles = descriptors }
+              Particles = particles' }
 
         /// Resize the emitter.
         let resize particleMax (emitter : BasicEmitter) =

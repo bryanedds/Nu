@@ -67,17 +67,27 @@ type [<StructuralEquality; NoComparison>] Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
 
-/// Describes how to render a sprite to the rendering system with a value type.
-type [<NoEquality; NoComparison; Struct>] SpriteDescriptorFast =
-    { Transform : Transform
-      Absolute : bool
-      Offset : Vector2
-      InsetOpt : Vector4 option
-      Image : Image AssetTag
-      Color : Color
-      Blend : Blend
-      Glow : Color
-      Flip : Flip }
+/// A mutable sprite value.
+type [<NoEquality; NoComparison; Struct>] Sprite =
+    { mutable Transform : Transform
+      mutable Absolute : bool
+      mutable Offset : Vector2
+      mutable InsetOpt : Vector4 option
+      mutable Image : Image AssetTag
+      mutable Color : Color
+      mutable Blend : Blend
+      mutable Glow : Color
+      mutable Flip : Flip }
+
+/// A mutable particle value.
+type [<NoEquality; NoComparison; Struct>] Particle =
+    { mutable Transform : Transform
+      mutable Absolute : bool
+      mutable Offset : Vector2
+      mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection.
+      mutable Color : Color
+      mutable Glow : Color
+      mutable Flip : Flip }
 
 /// Describes how to render a sprite to the rendering system.
 type [<NoEquality; NoComparison>] SpriteDescriptor =
@@ -112,17 +122,6 @@ type [<NoEquality; NoComparison>] TextDescriptor =
       Color : Color
       Justification : Justification }
 
-/// Describes a particle.
-/// OPTIMIZATION: mutable value type for use in an array.
-type [<NoEquality; NoComparison; Struct>] ParticleDescriptor =
-    { mutable Transform : Transform
-      mutable Absolute : bool
-      mutable Offset : Vector2
-      mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection.
-      mutable Color : Color
-      mutable Glow : Color
-      mutable Flip : Flip }
-
 /// Describes particles.
 type [<NoEquality; NoComparison>] ParticlesDescriptor =
     { Elevation : single
@@ -130,12 +129,12 @@ type [<NoEquality; NoComparison>] ParticlesDescriptor =
       Absolute : bool
       Blend : Blend
       Image : Image AssetTag
-      Particles : ParticleDescriptor array }
+      Particles : Particle array }
 
 /// Describes how to render something to the rendering system.
 type [<NoEquality; NoComparison>] RenderDescriptor =
     | SpriteDescriptor of SpriteDescriptor
-    | SpritesDescriptor of SpriteDescriptorFast array
+    | SpritesDescriptor of Sprite array
     | TileLayerDescriptor of TileLayerDescriptor
     | TextDescriptor of TextDescriptor
     | ParticlesDescriptor of ParticlesDescriptor
@@ -574,7 +573,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          absolute : bool,
          blend : Blend,
          image : Image AssetTag,
-         particles : ParticleDescriptor array,
+         particles : Particle array,
          renderer) =
         let view = if absolute then viewAbsolute else viewRelative
         let positionOffset = -(v2Zero * view)
@@ -589,15 +588,15 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let mutable destRect = SDL.SDL_Rect ()
                 let mutable index = 0
                 while index < particles.Length do
-                    let descriptor = &particles.[index]
-                    let transform = &descriptor.Transform
-                    let position = transform.Position - Vector2.Multiply (descriptor.Offset, transform.Size)
+                    let particle = &particles.[index]
+                    let transform = &particle.Transform
+                    let position = transform.Position - Vector2.Multiply (particle.Offset, transform.Size)
                     let positionView = position + positionOffset
                     let sizeView = transform.Size * view.ExtractScaleMatrix ()
-                    let color = &descriptor.Color
-                    let glow = &descriptor.Glow
-                    let flip = Flip.toSdlFlip descriptor.Flip
-                    let inset = descriptor.Inset
+                    let color = &particle.Color
+                    let glow = &particle.Glow
+                    let flip = Flip.toSdlFlip particle.Flip
+                    let inset = particle.Inset
                     if inset.X = 0.0f && inset.Y = 0.0f && inset.Z = 0.0f && inset.W = 0.0f then
                         sourceRect.x <- 0
                         sourceRect.y <- 0
@@ -640,32 +639,32 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
          descriptor,
          renderer) =
         match descriptor with
-        | SpriteDescriptor sprite ->
+        | SpriteDescriptor descriptor ->
             SdlRenderer.renderSprite
                 (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-                 &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
+                 &descriptor.Transform, descriptor.Absolute, descriptor.Offset, descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Glow, descriptor.Flip,
                  renderer)
-        | SpritesDescriptor sprites ->
-            for index in 0 .. sprites.Length - 1 do
-                let sprite = &sprites.[index]
+        | SpritesDescriptor descriptor ->
+            for index in 0 .. descriptor.Length - 1 do
+                let sprite = &descriptor.[index]
                 SdlRenderer.renderSprite
                     (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
                      &sprite.Transform, sprite.Absolute, sprite.Offset, sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Glow, sprite.Flip,
                      renderer)
-        | TileLayerDescriptor tileLayer ->
+        | TileLayerDescriptor descriptor ->
             SdlRenderer.renderTileLayer
                 (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-                 &tileLayer.Transform, tileLayer.Absolute, &tileLayer.Color, &tileLayer.Glow, tileLayer.MapSize, tileLayer.Tiles, tileLayer.TileSourceSize, tileLayer.TileSize, tileLayer.TileAssets,
+                 &descriptor.Transform, descriptor.Absolute, &descriptor.Color, &descriptor.Glow, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
                  renderer)
-        | TextDescriptor text ->
+        | TextDescriptor descriptor ->
             SdlRenderer.renderText
                 (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-                 &text.Transform, text.Absolute, text.Text, text.Font, &text.Color, text.Justification,
+                 &descriptor.Transform, descriptor.Absolute, descriptor.Text, descriptor.Font, &descriptor.Color, descriptor.Justification,
                  renderer)
-        | ParticlesDescriptor particles ->
+        | ParticlesDescriptor descriptor ->
             SdlRenderer.renderParticles
                 (&viewAbsolute, &viewRelative, eyeCenter, eyeSize,
-                 particles.Elevation, particles.PositionY, particles.Absolute, particles.Blend, particles.Image, particles.Particles,
+                 descriptor.Elevation, descriptor.PositionY, descriptor.Absolute, descriptor.Blend, descriptor.Image, descriptor.Particles,
                  renderer)
         | RenderCallback callback ->
             callback (viewAbsolute, viewRelative, eyeCenter, eyeSize, renderer)

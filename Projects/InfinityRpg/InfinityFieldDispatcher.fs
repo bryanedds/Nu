@@ -64,8 +64,8 @@ module FieldDispatcher =
                                 let tilePosition = vctovf tileCoordinates // NOTE: field position assumed at origin
                                 let tileInsetOpt = getTileInsetOpt tile.TileSheetCoordinates
                                 let tileTransform = { tileTransform with Position = tilePosition }
-                                let sprite =
-                                    { SpriteDescriptorFast.Transform = tileTransform
+                                let sprite : Sprite =
+                                    { Transform = tileTransform
                                       Absolute = entity.GetAbsolute world
                                       Offset = v2Zero
                                       InsetOpt = tileInsetOpt
