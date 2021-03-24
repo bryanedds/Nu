@@ -72,7 +72,7 @@ type [<NoEquality; NoComparison; Struct>] Sprite =
     { mutable Transform : Transform
       mutable Absolute : bool
       mutable Offset : Vector2
-      mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection.
+      mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection; v4Zero is full texture.
       mutable Image : Image AssetTag
       mutable Color : Color
       mutable Blend : Blend
@@ -84,7 +84,7 @@ type [<NoEquality; NoComparison; Struct>] Particle =
     { mutable Transform : Transform
       mutable Absolute : bool
       mutable Offset : Vector2
-      mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection.
+      mutable Inset : Vector4 // OPTIMIZATION: elides optionality to avoid pointer indirection; v4Zero is full texture.
       mutable Color : Color
       mutable Glow : Color
       mutable Flip : Flip }
