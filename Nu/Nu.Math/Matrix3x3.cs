@@ -616,7 +616,7 @@ namespace Nu
         public static Matrix3x3 Multiply(Matrix3x3 left, Matrix3x3 right)
         {
             Matrix3x3 result;
-            Mult(ref left, ref right, out result);
+            Multiply(ref left, ref right, out result);
             return result;
         }
 
@@ -626,7 +626,7 @@ namespace Nu
         /// <param name="left">The left operand of the multiplication.</param>
         /// <param name="right">The right operand of the multiplication.</param>
         /// <param name="result">A new instance that is the result of the multiplication</param>
-        public static void Mult(ref Matrix3x3 left, ref Matrix3x3 right, out Matrix3x3 result)
+        public static void Multiply(ref Matrix3x3 left, ref Matrix3x3 right, out Matrix3x3 result)
         {
             float   lM11 = left.Row0.X, lM12 = left.Row0.Y, lM13 = left.Row0.Z,
             lM21 = left.Row1.X, lM22 = left.Row1.Y, lM23 = left.Row1.Z,
@@ -916,7 +916,7 @@ namespace Nu
             return Matrix3x3.CreateScale(scale);
         }
 
-        public static Vector2 Mult(in Vector2 v, in Matrix3x3 m)
+        public static Vector2 Multiply(in Vector2 v, in Matrix3x3 m)
         {
             var x = v.X * m.M11 + v.Y * m.M12 + m.M13;
             var y = v.X * m.M21 + v.Y * m.M22 + m.M23;
@@ -926,7 +926,7 @@ namespace Nu
 
         public static Vector2 operator *(Vector2 v, Matrix3x3 m)
         {
-            return Mult(in v, in m);
+            return Multiply(in v, in m);
         }
 
         #endregion
