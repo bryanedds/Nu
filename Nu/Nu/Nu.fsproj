@@ -198,11 +198,89 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Aardvark.Application">
+      <HintPath>..\..\packages\Aardvark.Application.5.1.7\lib\netstandard2.0\Aardvark.Application.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Application.OpenVR">
+      <HintPath>..\..\packages\Aardvark.Application.OpenVR.5.1.7\lib\netstandard2.0\Aardvark.Application.OpenVR.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Application.OpenVR.GL">
+      <HintPath>..\..\packages\Aardvark.Application.OpenVR.GL.5.1.7\lib\netstandard2.0\Aardvark.Application.OpenVR.GL.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Application.OpenVR.Vulkan">
+      <HintPath>..\..\packages\Aardvark.Application.OpenVR.Vulkan.5.1.7\lib\netstandard2.0\Aardvark.Application.OpenVR.Vulkan.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Application.Slim">
+      <HintPath>..\..\packages\Aardvark.Application.Slim.5.1.7\lib\netstandard2.0\Aardvark.Application.Slim.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Application.Slim.GL">
+      <HintPath>..\..\packages\Aardvark.Application.Slim.GL.5.1.7\lib\netstandard2.0\Aardvark.Application.Slim.GL.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Application.Slim.Vulkan">
+      <HintPath>..\..\packages\Aardvark.Application.Slim.Vulkan.5.1.7\lib\netstandard2.0\Aardvark.Application.Slim.Vulkan.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Application.Utilities">
+      <HintPath>..\..\packages\Aardvark.Application.Utilities.5.1.7\lib\netstandard2.0\Aardvark.Application.Utilities.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Base">
+      <HintPath>..\..\packages\Aardvark.Base.5.1.6\lib\netstandard2.0\Aardvark.Base.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Base.Essentials">
+      <HintPath>..\..\packages\Aardvark.Base.Essentials.5.1.6\lib\netstandard2.0\Aardvark.Base.Essentials.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Base.FSharp">
+      <HintPath>..\..\packages\Aardvark.Base.FSharp.5.1.6\lib\netstandard2.0\Aardvark.Base.FSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Base.Incremental">
+      <HintPath>..\..\packages\Aardvark.Base.Incremental.5.1.6\lib\netstandard2.0\Aardvark.Base.Incremental.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Base.Runtime">
+      <HintPath>..\..\packages\Aardvark.Base.Runtime.5.1.6\lib\netstandard2.0\Aardvark.Base.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Base.Telemetry">
+      <HintPath>..\..\packages\Aardvark.Base.Telemetry.5.1.6\lib\netstandard2.0\Aardvark.Base.Telemetry.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Base.Tensors">
+      <HintPath>..\..\packages\Aardvark.Base.Tensors.5.1.6\lib\netstandard2.0\Aardvark.Base.Tensors.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Base.Tensors.CSharp">
+      <HintPath>..\..\packages\Aardvark.Base.Tensors.5.1.6\lib\netstandard2.0\Aardvark.Base.Tensors.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Base.TypeProviders">
+      <HintPath>..\..\packages\Aardvark.Base.TypeProviders.4.5.15\lib\net45\Aardvark.Base.TypeProviders.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Geometry">
+      <HintPath>..\..\packages\Aardvark.Geometry.5.1.6\lib\netstandard2.0\Aardvark.Geometry.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.PixImage.DevIL">
+      <HintPath>..\..\packages\Aardvark.PixImage.DevIL.5.1.6\lib\netstandard2.0\Aardvark.PixImage.DevIL.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Rendering">
+      <HintPath>..\..\packages\Aardvark.Rendering.5.1.7\lib\netstandard2.0\Aardvark.Rendering.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Rendering.GL">
+      <HintPath>..\..\packages\Aardvark.Rendering.GL.5.1.7\lib\netstandard2.0\Aardvark.Rendering.GL.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Rendering.Text">
+      <HintPath>..\..\packages\Aardvark.Rendering.Text.5.1.7\lib\netstandard2.0\Aardvark.Rendering.Text.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.Rendering.Vulkan">
+      <HintPath>..\..\packages\Aardvark.Rendering.Vulkan.5.1.7\lib\netstandard2.0\Aardvark.Rendering.Vulkan.dll</HintPath>
+    </Reference>
+    <Reference Include="Aardvark.SceneGraph">
+      <HintPath>..\..\packages\Aardvark.SceneGraph.5.1.7\lib\netstandard2.0\Aardvark.SceneGraph.dll</HintPath>
+    </Reference>
     <Reference Include="Aether.Physics2D">
       <HintPath>..\..\packages\Aether.Physics2D.1.5.0\lib\net40\Aether.Physics2D.dll</HintPath>
     </Reference>
+    <Reference Include="CommonMark">
+      <HintPath>..\..\packages\CommonMark.NET.0.15.1\lib\net45\CommonMark.dll</HintPath>
+    </Reference>
     <Reference Include="Csv">
       <HintPath>..\..\packages\Csv.1.0.58\lib\net40\Csv.dll</HintPath>
+    </Reference>
+    <Reference Include="DevILSharp">
+      <HintPath>..\..\packages\DevILSharp.0.2.11\lib\netstandard2.0\DevILSharp.dll</HintPath>
     </Reference>
     <Reference Include="FParsec">
       <HintPath>..\..\packages\FParsec.1.0.3\lib\net40-client\FParsec.dll</HintPath>
@@ -216,8 +294,23 @@
     <Reference Include="FsCheck.Xunit">
       <HintPath>..\..\packages\FsCheck.Xunit.2.11.0\lib\net452\FsCheck.Xunit.dll</HintPath>
     </Reference>
+    <Reference Include="FShade.Core">
+      <HintPath>..\..\packages\FShade.Core.5.1.7\lib\netstandard2.0\FShade.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="FShade.GLSL">
+      <HintPath>..\..\packages\FShade.GLSL.5.1.7\lib\netstandard2.0\FShade.GLSL.dll</HintPath>
+    </Reference>
+    <Reference Include="FShade.Imperative">
+      <HintPath>..\..\packages\FShade.Imperative.5.1.7\lib\netstandard2.0\FShade.Imperative.dll</HintPath>
+    </Reference>
+    <Reference Include="FShade.SpirV">
+      <HintPath>..\..\packages\FShade.SpirV.5.1.7\lib\netstandard2.0\FShade.SpirV.dll</HintPath>
+    </Reference>
     <Reference Include="FSharp.Core">
       <HintPath>..\..\packages\FSharp.Core.4.7.2\lib\net45\FSharp.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharp.Data.Adaptive">
+      <HintPath>..\..\packages\FSharp.Data.Adaptive.1.2.0\lib\netstandard2.0\FSharp.Data.Adaptive.dll</HintPath>
     </Reference>
     <Reference Include="FSharpx.Collections">
       <HintPath>..\..\packages\FSharpx.Collections.2.1.3\lib\net45\FSharpx.Collections.dll</HintPath>
@@ -225,13 +318,40 @@
     <Reference Include="FSharpx.Core">
       <HintPath>..\..\packages\FSharpx.Core.1.8.32\lib\40\FSharpx.Core.dll</HintPath>
     </Reference>
+    <Reference Include="FsPickler">
+      <HintPath>..\..\packages\FsPickler.5.3.2\lib\net45\FsPickler.dll</HintPath>
+    </Reference>
+    <Reference Include="GLSLangSharp">
+      <HintPath>..\..\packages\GLSLangSharp.0.4.6\lib\netstandard2.0\GLSLangSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="LibTessDotNet">
+      <HintPath>..\..\packages\Unofficial.LibTessDotNet.2.0.2\lib\netstandard2.0\LibTessDotNet.dll</HintPath>
+    </Reference>
     <Reference Include="Magick.NET-Q8-x64">
       <HintPath>..\..\packages\Magick.NET-Q8-x64.7.5.0.1\lib\net40\Magick.NET-Q8-x64.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces">
+      <HintPath>..\..\packages\Microsoft.Bcl.AsyncInterfaces.1.1.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.DotNet.PlatformAbstractions">
+      <HintPath>..\..\packages\Microsoft.DotNet.PlatformAbstractions.3.1.1\lib\net45\Microsoft.DotNet.PlatformAbstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyModel">
+      <HintPath>..\..\packages\Microsoft.Extensions.DependencyModel.3.1.1\lib\net451\Microsoft.Extensions.DependencyModel.dll</HintPath>
+    </Reference>
     <Reference Include="mscorlib" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="Nito.Collections.Deque">
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK">
+      <HintPath>..\..\packages\Unofficial.OpenTK.3.0.19\lib\netstandard2.0\OpenTK.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenVR">
+      <HintPath>..\..\packages\Unofficial.OpenVR.1.1.0\lib\netstandard2.0\OpenVR.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
       <HintPath>..\..\packages\Prime.6.20.0\lib\net472\Prime.dll</HintPath>
@@ -242,16 +362,73 @@
     <Reference Include="SDL2-CS">
       <HintPath>..\..\packages\SDL2-CS.dll.2.0.0.0\lib\net20\SDL2-CS.dll</HintPath>
     </Reference>
+    <Reference Include="Silk.NET.Core">
+      <HintPath>..\..\packages\Silk.NET.Core.1.7.0\lib\netstandard2.0\Silk.NET.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Silk.NET.GLFW">
+      <HintPath>..\..\packages\Silk.NET.GLFW.1.7.0\lib\netstandard2.0\Silk.NET.GLFW.dll</HintPath>
+    </Reference>
+    <Reference Include="SixLabors.ImageSharp">
+      <HintPath>..\..\packages\SixLabors.ImageSharp.1.0.2\lib\net472\SixLabors.ImageSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Buffers">
+      <HintPath>..\..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>..\..\packages\System.Collections.Immutable.1.7.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
+    </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Memory">
+      <HintPath>..\..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors">
+      <HintPath>..\..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive">
+      <HintPath>..\..\packages\System.Reactive.4.3.1\lib\net46\System.Reactive.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reflection.Metadata">
+      <HintPath>..\..\packages\System.Reflection.Metadata.1.8.0\lib\netstandard2.0\System.Reflection.Metadata.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>..\..\packages\System.Runtime.CompilerServices.Unsafe.4.7.1\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web">
+      <HintPath>..\..\packages\System.Text.Encodings.Web.4.7.1\lib\net461\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json">
+      <HintPath>..\..\packages\System.Text.Json.4.7.2\lib\net461\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions">
+      <HintPath>..\..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Windows" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="TiledSharp">
       <HintPath>..\..\packages\TiledSharp.1.0.1\lib\netstandard2.0\TiledSharp.dll</HintPath>
     </Reference>
+    <Reference Include="Ultz.SuperInvoke">
+      <HintPath>..\..\packages\Ultz.SuperInvoke.1.1.0\lib\net461\Ultz.SuperInvoke.dll</HintPath>
+    </Reference>
+    <Reference Include="Ultz.SuperInvoke.Loader">
+      <HintPath>..\..\packages\Ultz.SuperInvoke.Loader.1.1.0\lib\netstandard2.0\Ultz.SuperInvoke.Loader.dll</HintPath>
+    </Reference>
+    <Reference Include="Unofficial.Typography">
+      <HintPath>..\..\packages\Unofficial.Typography.0.1.0\lib\netstandard2.0\Unofficial.Typography.dll</HintPath>
+    </Reference>
+    <Reference Include="WindowsBase" />
     <Reference Include="xunit.abstractions">
       <HintPath>..\..\packages\xunit.abstractions.2.0.3\lib\net35\xunit.abstractions.dll</HintPath>
     </Reference>
