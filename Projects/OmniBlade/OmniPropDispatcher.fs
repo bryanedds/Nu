@@ -12,16 +12,13 @@ open OmniBlade
 [<AutoOpen>]
 module PropDispatcher =
 
-    type PropMessage =
-        | Update
-
     type Entity with
         member this.GetProp = this.GetModel<Prop>
         member this.SetProp = this.SetModel<Prop>
         member this.Prop = this.Model<Prop> ()
 
     type PropDispatcher () =
-        inherit EntityDispatcher<Prop, PropMessage, unit> (Prop.empty)
+        inherit EntityDispatcher<Prop, unit, unit> (Prop.empty)
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -29,9 +26,6 @@ module PropDispatcher =
         static member Properties =
             [define Entity.FixedRotation true
              define Entity.GravityScale 0.0f]
-
-        override this.Channel (_, entity) =
-            [entity.UpdateEvent => msg Update]
 
         override this.Initializers (prop, entity) =
             [entity.BodyType == Static
@@ -67,11 +61,9 @@ module PropDispatcher =
                 | ChestSpawn | EmptyProp ->
                     BodyEmpty]
 
-        override this.Message (prop, message, entity, world) =
-            match message with
-            | Update ->
-                let prop = Prop.updateBounds (constant (entity.GetBounds world)) prop
-                just prop
+        override this.Physics (position, _, _, _, prop, _, _) =
+            let prop = Prop.updatePosition (constant position) prop
+            just prop
 
         override this.View (prop, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
