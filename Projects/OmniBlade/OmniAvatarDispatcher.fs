@@ -15,7 +15,6 @@ module AvatarDispatcher =
     type [<StructuralEquality; NoComparison>] AvatarMessage =
         | Update
         | PostUpdate
-        | SynchronizeBounds
         | Collision of CollisionData
         | Separation of SeparationData
         | Face of Direction
@@ -77,8 +76,7 @@ module AvatarDispatcher =
              entity.BodyShape == bodyShapes]
 
         override this.Channel (_, entity) =
-            [entity.UpdateEvent => msg SynchronizeBounds
-             entity.UpdateEvent =|> fun _ ->
+            [entity.UpdateEvent =|> fun _ ->
                 let force = v2Zero
                 let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.WalkForce 0.0f + force else force
                 let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.WalkForce 0.0f + force else force
@@ -92,7 +90,6 @@ module AvatarDispatcher =
                 elif KeyboardState.isKeyDown KeyboardKey.Down then msg (Face Downward)
                 else msg Nil
              entity.UpdateEvent => msg Update
-             entity.Parent.PostUpdateEvent => msg SynchronizeBounds
              entity.Parent.PostUpdateEvent => msg PostUpdate
              entity.CollisionEvent =|> fun evt -> msg (Collision evt.Data)
              entity.SeparationEvent =|> fun evt -> msg (Separation evt.Data)]
@@ -120,12 +117,6 @@ module AvatarDispatcher =
                 // clear all temporary body shapes
                 let avatar = Avatar.updateCollidedBodyShapes (constant []) avatar
                 let avatar = Avatar.updateSeparatedBodyShapes (constant []) avatar
-                just avatar
-
-            | SynchronizeBounds ->
-
-                // synchronize bounds
-                let avatar = Avatar.updateBounds (constant (entity.GetBounds world)) avatar
                 just avatar
 
             | Face direction ->
@@ -180,6 +171,10 @@ module AvatarDispatcher =
                     let world = World.publish (entity.GetLinearVelocity world) entity.TraverseEvent eventTrace entity world
                     just world
                 else just world
+
+        override this.Physics (position, _, _, _, avatar, _, _) =
+            let avatar = Avatar.updatePosition (constant position) avatar
+            just avatar
 
         override this.View (avatar, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
