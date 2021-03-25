@@ -263,7 +263,7 @@ module WorldEntityModule =
             let facets = entity.GetFacets world
             let world =
                 // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                if Array.isEmpty facets then world
+                if facets.Length = 0 then world
                 else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
             if World.getEntityPublishUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
@@ -277,7 +277,7 @@ module WorldEntityModule =
             let facets = entity.GetFacets world
             let world =
                 // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                if Array.isEmpty facets then world
+                if facets.Length = 0 then world
                 else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
             if World.getEntityPublishPostUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "postUpdateEntity" "" EventTrace.empty
@@ -291,7 +291,7 @@ module WorldEntityModule =
             let facets = entity.GetFacets world
             let world =
                 // OPTIMIZATION: elide Array.fold overhead for empty arrays
-                if Array.isEmpty facets then world
+                if facets.Length = 0 then world
                 else Array.fold (fun world (facet : Facet) -> facet.Actualize (entity, world)) world facets
             world
 
