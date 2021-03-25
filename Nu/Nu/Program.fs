@@ -228,15 +228,15 @@ module Packing =
 [<EntryPoint>]
 let main argv =
 
-    let win = SDL.SDL_CreateWindow ("Window", SDL.SDL_WINDOWPOS_UNDEFINED, SDL.SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN)
+    Aardvark.Init ()
+    let result = SDL.SDL_Init SDL.SDL_INIT_EVERYTHING
+    let win = SDL.SDL_CreateWindow ("Window", SDL.SDL_WINDOWPOS_UNDEFINED, SDL.SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL ||| SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN)
     let gl = SDL.SDL_GL_CreateContext win
     let windowInfo = new Nu.SdlWindowInfo (win)
     let graphicsContext = new Nu.SdlGraphicsContext (gl, win)
     let runtime = new Runtime ()
     let context = new Context (runtime, fun () -> ContextHandle (graphicsContext, windowInfo))
     runtime.Initialize context
-
-    Aardvark.Init() // assume this is needed first
 
     let win =
         window {
