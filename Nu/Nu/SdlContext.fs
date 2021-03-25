@@ -67,8 +67,8 @@ type [<AllowNullLiteral>] SdlGraphicsContext (gl : nativeint, win : nativeint) a
                 if OpenTK.Graphics.GraphicsContext.CurrentContextHandle <> handle then failwith "overriding context"
                 SDL.SDL_GL_MakeCurrent (nativeint 0, gl) |> ignore
             else
-                //let handle = OpenTK.Graphics.GraphicsContext.CurrentContextHandle
-                //if handle.Handle <> nativeint 0 then failwith "overriding context"
+                let handle = OpenTK.Graphics.GraphicsContext.CurrentContextHandle
+                if handle.Handle <> nativeint 0 then failwith "overriding context"
                 SDL.SDL_GL_MakeCurrent (win, gl) |> ignore
 
         member this.SwapBuffers () =
