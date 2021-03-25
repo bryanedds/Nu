@@ -171,10 +171,10 @@ module WorldEntityModule =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
             World.setEntityProperty propertyName property this world |> snd'
 
-        /// Set a static (non-xtension) property value with publishing an event.
-        member internal this.SetStaticPropertyWithoutEvent<'a> propertyName (value : 'a) world =
+        /// Set an xtension property value without publishing an event.
+        member internal this.SetXtensionPropertyWithoutEvent<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            let (_, _, world) = World.setStaticEntityPropertyWithoutEvent propertyName property this world
+            let (_, _, world) = World.setEntityXtensionPropertyWithoutEvent propertyName property this world
             world
 
         /// Get an entity's sorting priority.
@@ -217,8 +217,8 @@ module WorldEntityModule =
                     let transform = { transform with Position = position; Rotation = rotation }
                     this.SetTransformByRefWithoutEvent (&transform, world)
                 else world
-            let world = this.SetStaticPropertyWithoutEvent Property? LinearVelocity linearVelocity world
-            let world = this.SetStaticPropertyWithoutEvent Property? AngularVelocity angularVelocity world
+            let world = this.SetXtensionPropertyWithoutEvent Property? LinearVelocity linearVelocity world
+            let world = this.SetXtensionPropertyWithoutEvent Property? AngularVelocity angularVelocity world
             let dispatcher = this.GetDispatcher world
             dispatcher.ApplyPhysics (position, rotation, linearVelocity, angularVelocity, this, world)
 
