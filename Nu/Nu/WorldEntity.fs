@@ -259,8 +259,8 @@ module WorldEntityModule =
 
         static member internal updateEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcher world
-            let facets = entity.GetFacets world
             let world = dispatcher.Update (entity, world)
+            let facets = entity.GetFacets world
             let world =
                 // OPTIMIZATION: elide Array.fold overhead for empty arrays
                 if Array.isEmpty facets then world
@@ -273,8 +273,8 @@ module WorldEntityModule =
 #if !DISABLE_ENTITY_POST_UPDATE
         static member internal postUpdateEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcher world
-            let facets = entity.GetFacets world
             let world = dispatcher.PostUpdate (entity, world)
+            let facets = entity.GetFacets world
             let world =
                 // OPTIMIZATION: elide Array.fold overhead for empty arrays
                 if Array.isEmpty facets then world
@@ -287,8 +287,8 @@ module WorldEntityModule =
 
         static member internal actualizeEntity (entity : Entity) world =
             let dispatcher = entity.GetDispatcher world
-            let facets = entity.GetFacets world
             let world = dispatcher.Actualize (entity, world)
+            let facets = entity.GetFacets world
             let world =
                 // OPTIMIZATION: elide Array.fold overhead for empty arrays
                 if Array.isEmpty facets then world
