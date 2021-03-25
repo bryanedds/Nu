@@ -115,7 +115,6 @@ module SdlDeps =
                 (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
             | Left error -> Left error
             | Right (window, destroy) ->
-                SDL2.SDL.SDL_GL_CreateContext
                 match attemptMakeSdlResource
                     (fun () -> SDL.SDL_CreateRenderer (window, -1, sdlConfig.RendererFlags))
                     (fun renderContext -> SDL.SDL_DestroyRenderer renderContext; destroy window) with
