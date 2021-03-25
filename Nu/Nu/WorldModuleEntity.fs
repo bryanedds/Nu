@@ -722,8 +722,8 @@ module WorldModuleEntity =
                 match EntityState.tryGetProperty (propertyName, entityStateOpt, &property) with
                 | true ->
                     match property.PropertyValue with
-                    | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
                     | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
+                    | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
                     | _ -> true
                 | false ->
                     match EntityGetters.TryGetValue propertyName with
@@ -736,7 +736,7 @@ module WorldModuleEntity =
             | true -> property
             | false -> failwithf "Could not find property '%s'." propertyName
 
-        static member internal trySetStaticEntityPropertyWithoutEvent propertyName property entity world =
+        static member internal trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world =
             let entityStateOpt = World.getEntityStateOpt entity world
             match entityStateOpt :> obj with
             | null -> struct (false, false, world)
@@ -746,13 +746,6 @@ module WorldModuleEntity =
                     match EntityState.tryGetProperty (propertyName, entityStateOpt, &propertyOld) with
                     | true ->
                         match propertyOld.PropertyValue with
-                        | :? ComputedProperty as cp ->
-                            match cp.ComputedSetOpt with
-                            | Some computedSet ->
-                                if property.PropertyValue =/= cp.ComputedGet (box entity) (box world)
-                                then struct (true, true, computedSet property.PropertyValue entity world :?> World)
-                                else struct (true, false, world)
-                            | None -> struct (false, false, world)
                         | :? DesignerProperty as dp ->
                             if property.PropertyValue =/= dp.DesignerValue then
                                 let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
@@ -760,6 +753,13 @@ module WorldModuleEntity =
                                 | (true, entityState) -> struct (true, true, World.setEntityState entityState entity world)
                                 | (false, _) -> struct (false, false, world)
                             else (true, false, world)
+                        | :? ComputedProperty as cp ->
+                            match cp.ComputedSetOpt with
+                            | Some computedSet ->
+                                if property.PropertyValue =/= cp.ComputedGet (box entity) (box world)
+                                then struct (true, true, computedSet property.PropertyValue entity world :?> World)
+                                else struct (true, false, world)
+                            | None -> struct (false, false, world)
                         | _ ->
                             if property.PropertyValue =/= propertyOld.PropertyValue then
                                 match EntityState.trySetProperty propertyName property entityStateOpt with
@@ -769,8 +769,8 @@ module WorldModuleEntity =
                     | false -> struct (false, false, world)
                 (success, changed, world)
 
-        static member internal setStaticEntityPropertyWithoutEvent propertyName property entity world =
-            match World.trySetStaticEntityPropertyWithoutEvent propertyName property entity world with
+        static member internal setEntityXtensionPropertyWithoutEvent propertyName property entity world =
+            match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
             | (true, changed, world) -> (true, changed, world)
             | (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
@@ -778,7 +778,7 @@ module WorldModuleEntity =
             match EntitySetters.TryGetValue propertyName with
             | (true, setter) -> setter property entity world |> snd'
             | (false, _) ->
-                match World.trySetStaticEntityPropertyWithoutEvent propertyName property entity world with
+                match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
                 | (true, changed, world) ->
                     if changed
                     then World.publishEntityChange propertyName property.PropertyValue entity world
@@ -791,7 +791,7 @@ module WorldModuleEntity =
                 let struct (changed, world) = setter property entity world
                 struct (true, changed, world)
             | (false, _) ->
-                match World.trySetStaticEntityPropertyWithoutEvent propertyName property entity world with
+                match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
                 | struct (true, changed, world) ->
                     let world =
                         if changed
