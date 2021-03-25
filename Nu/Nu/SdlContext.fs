@@ -18,11 +18,9 @@ type [<AllowNullLiteral>] SdlGraphicsContext (gl : nativeint, win : nativeint) a
     let mutable win = win
     let handle = ContextHandle win
 
-    // reflected functions
+    // static initialization
     static let addContext = typeof<GraphicsContext>.GetMethod ("AddContext", BindingFlags.NonPublic ||| BindingFlags.Static)
     static let remContext = typeof<GraphicsContext>.GetMethod ("RemoveContext", BindingFlags.NonPublic ||| BindingFlags.Static)
-
-    // static initialization
     static let mutable inited = false
     do  if not inited then
             inited <- true
@@ -35,12 +33,10 @@ type [<AllowNullLiteral>] SdlGraphicsContext (gl : nativeint, win : nativeint) a
 
     // common load all function
     member this.LoadAll () =
-        let t = typeof<OpenTK.Graphics.OpenGL4.GL>
-        let m = t.GetMethod("LoadEntryPoints", BindingFlags.NonPublic ||| BindingFlags.Instance)
+        let m = typeof<OpenTK.Graphics.OpenGL4.GL>.GetMethod("LoadEntryPoints", BindingFlags.NonPublic ||| BindingFlags.Instance)
         let gl = OpenTK.Graphics.OpenGL4.GL ()
         m.Invoke(gl, null) |> ignore
-        let t = typeof<OpenTK.Graphics.OpenGL.GL>
-        let m = t.GetMethod("LoadEntryPoints", BindingFlags.NonPublic ||| BindingFlags.Instance)
+        let m = typeof<OpenTK.Graphics.OpenGL.GL>.GetMethod("LoadEntryPoints", BindingFlags.NonPublic ||| BindingFlags.Instance)
         let gl = OpenTK.Graphics.OpenGL.GL ()
         m.Invoke(gl, null) |> ignore
     
