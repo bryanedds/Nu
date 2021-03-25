@@ -130,9 +130,11 @@ This way we can objects packed into large vertex buffers at once while providing
 and efficient instancing.
 *)
 
+open FSharp.Data.Adaptive
+open SDL2
 open Aardvark.Base
 open Aardvark.Rendering
-open FSharp.Data.Adaptive
+open Aardvark.Rendering.GL
 open Aardvark.SceneGraph
 open Aardvark.Application
 
@@ -224,10 +226,17 @@ module Packing =
           indices = packedIndices.ToArray(); ranges = ranges }
             
 [<EntryPoint>]
-let main argv = 
-    
-    
-    Aardvark.Init()
+let main argv =
+
+    let win = SDL.SDL_CreateWindow ("Window", SDL.SDL_WINDOWPOS_UNDEFINED, SDL.SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN)
+    let gl = SDL.SDL_GL_CreateContext win
+    let windowInfo = new Nu.SdlWindowInfo (win)
+    let graphicsContext = new Nu.SdlGraphicsContext (gl, win)
+    let runtime = new Runtime ()
+    let context = new Context (runtime, fun () -> ContextHandle (graphicsContext, windowInfo))
+    runtime.Initialize context
+
+    Aardvark.Init() // assume this is needed first
 
     let win =
         window {
@@ -252,7 +261,7 @@ let main argv =
     let normals = BufferView(ArrayBuffer(packedGeometry.normals) :> IBuffer |> AVal.constant,typeof<V3f>)
 
     // adjust this size for testing different problem sizes.
-    let size = 7
+    let size = 11
     let trafos =
         [|
             for x in -size .. size do
@@ -286,16 +295,12 @@ let main argv =
         )
 
     let sg = 
-        // standard scene graph construction for indirect buffer based rendering
         Sg.indirectDraw IndexedGeometryMode.TriangleList (AVal.constant indirectBuffer)
         |> Sg.vertexBuffer DefaultSemantic.Positions vertices
         |> Sg.vertexBuffer DefaultSemantic.Normals   normals
-        // attach storage buffers to uniform slots
         |> Sg.uniform "ObjectColors" objectColors
         |> Sg.uniform "MeshTrafo"    perKindAnimation
-        // not to forget the index buffer
         |> Sg.index' packedGeometry.indices
-        // and the instance array
         |> Sg.instanceArray DefaultSemantic.InstanceTrafo (trafos |> Array.map (fun t -> t.Forward |> M44f.op_Explicit))
         |> Sg.shader {
             do! Shader.objectColor // adjusts per mesh data
@@ -303,6 +308,8 @@ let main argv =
             do! DefaultSurfaces.trafo     // proceed with standard trafo shaders (transform into projective space)
             do! DefaultSurfaces.simpleLighting // apply simple lighting
         }
+
+    Sg.compile
 
     win.Scene <- sg
     win.Run()

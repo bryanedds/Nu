@@ -126,6 +126,7 @@
     <Compile Include="SpatialTreeTests.fs" />
     <Compile Include="EffectTests.fs" />
     <Compile Include="WorldTests.fs" />
+    <Compile Include="SdlContext.fs" />
     <Compile Include="Program.fs" />
     <None Include="Interactive.fsx" />
     <None Include="GenerateInputBindings.fsx" />
