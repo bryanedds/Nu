@@ -56,30 +56,7 @@ type [<NoEquality; NoComparison; Struct>] Mover =
         member this.Disjunction index junctions ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
 #endif
 
-#if FACETLESS
-type MetricsEntityDispatcher () =
-    inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
-
-    override this.Update (entity, world) =
-        entity.SetRotation (entity.GetRotation world + 0.03f) world
-
-    override this.View (staticImage, entity, world) =
-        let transform = entity.GetTransform world
-        View.Render
-            (transform.Elevation,
-             transform.Position.Y,
-             AssetTag.generalize staticImage,
-             SpriteDescriptor
-                { Transform = transform
-                  Offset = Vector2.Zero
-                  Absolute = false
-                  InsetOpt = None
-                  Image = staticImage
-                  Color = colWhite
-                  Blend = Transparent
-                  Glow = colZero
-                  Flip = FlipNone })
-#else
+#if FACETED
 type MetricsEntityDispatcher () =
     inherit EntityDispatcher ()
 
@@ -104,6 +81,29 @@ type MetricsEntityDispatcher () =
         let _ : bool = ecs.UnregisterCorrelated<StaticSpriteComponent> (entity.GetId world)
         world
   #endif
+#else
+type MetricsEntityDispatcher () =
+    inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
+
+    override this.Update (entity, world) =
+        entity.SetRotation (entity.GetRotation world + 0.03f) world
+
+    override this.View (staticImage, entity, world) =
+        let transform = entity.GetTransform world
+        View.Render
+            (transform.Elevation,
+             transform.Position.Y,
+             AssetTag.generalize staticImage,
+             SpriteDescriptor
+                { Transform = transform
+                  Offset = Vector2.Zero
+                  Absolute = false
+                  InsetOpt = None
+                  Image = staticImage
+                  Color = colWhite
+                  Blend = Transparent
+                  Glow = colZero
+                  Flip = FlipNone })
 #endif
 
 type MyGameDispatcher () =
