@@ -742,7 +742,7 @@ module WorldModule =
             let propertyAddress = PropertyAddress.make propertyName simulant
             match world.ElmishBindingsMap.TryGetValue propertyAddress with
             | (true, elmishBindings) ->
-                OMap.fold (fun world _ elmishBinding ->
+                OMap.foldv (fun world elmishBinding ->
                     match elmishBinding with
                     | PropertyBinding binding ->
                         if binding.PBRight.Validate world then
