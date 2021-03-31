@@ -215,7 +215,7 @@ module AmbientState =
           OverlayRouter = overlayRouter
           Overlayer = overlayer
           SymbolStore = symbolStore
-          KeyValueStore = UMap.makeEmpty Constants.Engine.KeyValueMapConfig
+          KeyValueStore = UMap.makeEmpty HashIdentity.Structural Constants.Engine.KeyValueMapConfig
           SdlDepsOpt = sdlDepsOpt }
 
 /// The ambient state of the world.

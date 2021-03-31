@@ -14,7 +14,7 @@ open Nu
 module Nu =
 
     let mutable private Initialized = false
-    let private LoadedAssemblies = Dictionary<string, Assembly> HashIdentity.Structural
+    let private LoadedAssemblies = Dictionary<string, Assembly> StringComparer.Ordinal
 
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
         if right.Validate world then
@@ -241,7 +241,7 @@ module Nu =
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                                 | (false, _) ->
                                     if not subscribing then failwithumf ()
-                                    let entityChangeCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+                                    let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
                                     let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                     World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                             else world

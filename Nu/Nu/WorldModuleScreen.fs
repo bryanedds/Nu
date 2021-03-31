@@ -11,8 +11,8 @@ open Nu
 module WorldModuleScreen =
 
     /// Dynamic property getters / setters.
-    let internal ScreenGetters = Dictionary<string, Screen -> World -> Property> HashIdentity.Structural
-    let internal ScreenSetters = Dictionary<string, Property -> Screen -> World -> struct (bool * World)> HashIdentity.Structural
+    let internal ScreenGetters = Dictionary<string, Screen -> World -> Property> StringComparer.Ordinal
+    let internal ScreenSetters = Dictionary<string, Property -> Screen -> World -> struct (bool * World)> StringComparer.Ordinal
 
     type World with
     
@@ -29,7 +29,7 @@ module WorldModuleScreen =
                         let groupDirectory = KeyValuePair (screen.ScreenAddress, groupDirectory.Value)
                         UMap.add screenName groupDirectory world.ScreenDirectory
                     | None ->
-                        let groupDirectory = KeyValuePair (screen.ScreenAddress, UMap.makeEmpty Constants.Engine.SimulantMapConfig)
+                        let groupDirectory = KeyValuePair (screen.ScreenAddress, UMap.makeEmpty StringComparer.Ordinal Constants.Engine.SimulantMapConfig)
                         UMap.add screenName groupDirectory world.ScreenDirectory
                 | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
             let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates

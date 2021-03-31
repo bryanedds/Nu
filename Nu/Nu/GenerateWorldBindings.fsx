@@ -326,7 +326,7 @@ let generateInitBindings bindings =
     "            [\n" +
     bindingDispatchers +
     "            ] |>\n" +
-    "            dictPlus\n" +
+    "            dictPlus StringComparer.Ordinal\n" +
     "        WorldScripting.Bindings <- bindings\n"
 
 let generateBindingSyntax bindings =

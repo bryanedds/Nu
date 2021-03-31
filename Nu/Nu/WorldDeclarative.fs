@@ -175,7 +175,7 @@ module WorldDeclarative =
                             else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                 | (false, _) ->
-                    let entityBindingCounts = if World.getStandAlone world then UMap.makeEmpty Imperative else UMap.makeEmpty Functional
+                    let entityBindingCounts = UMap.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
                     let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
                     let world =
                         if World.getEntityExists entity world
@@ -213,7 +213,7 @@ module WorldDeclarative =
                 World.choose { world with ElmishBindingsMap = elmishBindingsMap }
             | (false, _) ->
                 let config = if World.getStandAlone world then Imperative else Functional
-                let elmishBindings = OMap.makeEmpty config
+                let elmishBindings = OMap.makeEmpty HashIdentity.Structural config
                 let elmishBindings = OMap.add propertyBindingKey (PropertyBinding { PBLeft = left; PBRight = right }) elmishBindings
                 let elmishBindingsMap = UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 World.choose { world with ElmishBindingsMap = elmishBindingsMap }
@@ -238,7 +238,7 @@ module WorldDeclarative =
                     let elmishBindings = OMap.add contentBinding.CBSimulantKey (ContentBinding contentBinding) elmishBindings
                     UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 | (false, _) ->
-                    let elmishBindings = if World.getStandAlone world then OMap.makeEmpty Imperative else OMap.makeEmpty Functional
+                    let elmishBindings = OMap.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
                     let elmishBindings = OMap.add contentBinding.CBSimulantKey (ContentBinding contentBinding) elmishBindings
                     UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
             World.choose { world with ElmishBindingsMap = bindingsMap }
@@ -313,7 +313,7 @@ module WorldDeclarative =
                     let lensesCurrent = World.makeLensesCurrent mapGeneralized contentBinding.CBSource world
                     World.synchronizeSimulants contentBinding.CBMapper contentBinding.CBContentKey mapGeneralized lensesCurrent contentBinding.CBOrigin contentBinding.CBOwner contentBinding.CBParent world
                 else
-                    let lensesCurrent = if World.getStandAlone world then USet.makeEmpty Imperative else USet.makeEmpty Functional
+                    let lensesCurrent = USet.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
                     World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) lensesCurrent origin owner parent world
 
             // fin

@@ -18,6 +18,7 @@ module Reflection =
     /// A dictionary of properties that are never serialized.
     let private NonPersistentPropertyNames =
         dictPlus
+            StringComparer.Ordinal
             [// misc properties
              ("Dispatcher", true)
              ("Facets", true)

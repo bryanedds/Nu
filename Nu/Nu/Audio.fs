@@ -125,7 +125,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                     for (key, value) in audioAssets do audioAssetDict.ForceAdd (key, value)
                     audioPlayer.AudioPackages.ForceAdd (packageName, audioAssetDict)
                 | None ->
-                    let audioAssetDict = dictPlus audioAssets
+                    let audioAssetDict = dictPlus StringComparer.Ordinal audioAssets
                     audioPlayer.AudioPackages.ForceAdd (packageName, audioAssetDict)
             | Left error ->
                 Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
@@ -235,7 +235,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
             failwith "Cannot create an AudioPlayer without SDL audio initialized."
         let audioPlayer =
             { AudioContext = ()
-              AudioPackages = dictPlus []
+              AudioPackages = dictPlus StringComparer.Ordinal []
               AudioMessages = List ()
               MasterAudioVolume = 1.0f
               MasterSoundVolume = 1.0f

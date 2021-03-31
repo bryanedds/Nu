@@ -13,8 +13,8 @@ open Nu
 module WorldModuleEntity =
 
     /// Dynamic property getters / setters.
-    let internal EntityGetters = Dictionary<string, Entity -> World -> Property> HashIdentity.Structural
-    let internal EntitySetters = Dictionary<string, Property -> Entity -> World -> struct (bool * World)> HashIdentity.Structural
+    let internal EntityGetters = Dictionary<string, Entity -> World -> Property> StringComparer.Ordinal
+    let internal EntitySetters = Dictionary<string, Property -> Entity -> World -> struct (bool * World)> StringComparer.Ordinal
 
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
@@ -273,13 +273,13 @@ module WorldModuleEntity =
                 (fun entityState ->
                     if value <> entityState.Imperative then
                         if value then
-                            let properties = UMap.makeFromSeq Imperative (Xtension.toSeq entityState.Xtension)
+                            let properties = UMap.makeFromSeq StringComparer.Ordinal Imperative (Xtension.toSeq entityState.Xtension)
                             let xtension = Xtension.make properties false true true
                             entityState.Xtension <- xtension
                             entityState.Imperative <- true
                             entityState
                         else
-                            let properties = UMap.makeFromSeq Functional (Xtension.toSeq entityState.Xtension)
+                            let properties = UMap.makeFromSeq StringComparer.Ordinal Functional (Xtension.toSeq entityState.Xtension)
                             let xtension = Xtension.make properties false true false
                             let entityState = EntityState.diverge entityState
                             entityState.Xtension <- xtension
@@ -322,7 +322,7 @@ module WorldModuleEntity =
             match entityState.ScriptFrameOpt with
             | null ->
                 let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
-                let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+                let scriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
                 entityState.ScriptFrameOpt <- scriptFrame
                 scriptFrame
             | scriptFrame -> scriptFrame

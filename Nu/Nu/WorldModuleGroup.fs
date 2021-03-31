@@ -11,8 +11,8 @@ open Nu
 module WorldModuleGroup =
 
     /// Dynamic property getters / setters.
-    let internal GroupGetters = Dictionary<string, Group -> World -> Property> HashIdentity.Structural
-    let internal GroupSetters = Dictionary<string, Property -> Group -> World -> struct (bool * World)> HashIdentity.Structural
+    let internal GroupGetters = Dictionary<string, Group -> World -> Property> StringComparer.Ordinal
+    let internal GroupSetters = Dictionary<string, Property -> Group -> World -> struct (bool * World)> StringComparer.Ordinal
 
     type World with
     
@@ -33,8 +33,8 @@ module WorldModuleGroup =
                         | None ->
                             let entityDirectory' =
                                 if World.getStandAlone world
-                                then (KeyValuePair (group.GroupAddress, UMap.makeEmpty Imperative))
-                                else (KeyValuePair (group.GroupAddress, UMap.makeEmpty Functional))
+                                then (KeyValuePair (group.GroupAddress, UMap.makeEmpty StringComparer.Ordinal Imperative))
+                                else (KeyValuePair (group.GroupAddress, UMap.makeEmpty StringComparer.Ordinal Functional))
                             let groupDirectory' = UMap.add groupName entityDirectory' groupDirectory.Value
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
                     | None -> failwith ("Cannot add group '" + scstring group.GroupAddress + "' to non-existent screen.")

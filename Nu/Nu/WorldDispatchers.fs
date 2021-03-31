@@ -675,7 +675,7 @@ module ScriptFacetModule =
         static let handleScriptChanged evt world =
             let entity = evt.Subscriber : Entity
             let script = entity.GetScript world
-            let scriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+            let scriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
             let world = World.setEntityScriptFrame scriptFrame entity world |> snd'
             let world = evalManyWithLogging script scriptFrame entity world |> snd'
             (Cascade, world)

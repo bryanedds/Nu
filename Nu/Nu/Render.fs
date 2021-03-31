@@ -262,7 +262,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     for (key, value) in renderAssets do renderAssetDict.ForceAdd (key, value)
                     renderer.RenderPackages.ForceAdd (packageName, renderAssetDict)
                 | None ->
-                    let renderAssetDict = dictPlus renderAssets
+                    let renderAssetDict = dictPlus StringComparer.Ordinal renderAssets
                     renderer.RenderPackages.ForceAdd (packageName, renderAssetDict)
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
@@ -699,7 +699,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member make renderContext =
         let renderer =
             { RenderContext = renderContext
-              RenderPackages = dictPlus []
+              RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCachedOpt = Unchecked.defaultof<_>
               RenderMessages = List ()

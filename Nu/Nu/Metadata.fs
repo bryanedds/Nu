@@ -29,7 +29,7 @@ type [<NoEquality; NoComparison>] AssetMetadata =
 module TmxExtensions =
 
     // OPTIMIZATION: cache tileset image assets.
-    let ImageAssetsMemo = dictPlus<TmxTileset, Image AssetTag> []
+    let ImageAssetsMemo = dictPlus<TmxTileset, Image AssetTag> HashIdentity.Structural []
 
     type TmxTileset with
         member this.ImageAsset =
@@ -99,18 +99,18 @@ module Metadata =
     let private tryGenerateMetadataSubmap packageName assetGraph =
         match AssetGraph.tryLoadAssetsFromPackage true None packageName assetGraph with
         | Right assets ->
-            let submap = assets |> List.map generateAssetMetadata |> UMap.makeFromSeq Constants.Metadata.MetadatMapConfig
+            let submap = assets |> List.map generateAssetMetadata |> UMap.makeFromSeq HashIdentity.Structural Constants.Metadata.MetadatMapConfig
             (packageName, submap)
         | Left error ->
             Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
-            (packageName, UMap.makeEmpty Constants.Metadata.MetadatMapConfig)
+            (packageName, UMap.makeEmpty HashIdentity.Structural Constants.Metadata.MetadatMapConfig)
 
     let private makeMetadataMap packageNames assetGraph =
         List.fold
             (fun metadata packageName ->
                 let (packageName, submap) = tryGenerateMetadataSubmap packageName assetGraph
                 UMap.add packageName submap metadata)
-            (UMap.makeEmpty Constants.Metadata.MetadatMapConfig)
+            (UMap.makeEmpty HashIdentity.Structural Constants.Metadata.MetadatMapConfig)
             packageNames
 
     /// Try to get the metadata of the given asset.
@@ -185,7 +185,7 @@ module Metadata =
 
     /// The empty metadata.
     let makeEmpty () =
-        { MetadataMap = UMap.makeEmpty Constants.Metadata.MetadatMapConfig }
+        { MetadataMap = UMap.makeEmpty HashIdentity.Structural Constants.Metadata.MetadatMapConfig }
 
 /// Stores metadata for game assets.
 type Metadata = Metadata.Metadata
