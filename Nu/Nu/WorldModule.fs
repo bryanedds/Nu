@@ -50,7 +50,7 @@ module WorldModuleOperators =
 module WorldModule =
 
     /// Declarative lens comparable.
-    /// TODO: P1: remove this fake comparison implementation after upgrading Prime.
+    /// TODO: P1: remove the fake IEquatable and IComparable implementations after upgrading Prime.
     type [<CustomEquality; CustomComparison>] internal LensComparable<'k when 'k : equality> =
         { LensHash : int
           LensKey : 'k
