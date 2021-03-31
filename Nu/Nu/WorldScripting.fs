@@ -820,5 +820,5 @@ module WorldScripting =
                  ("blank", { Fn = World.evalBlank; Pars = [||]; DocOpt = None })
                  ("info_String", { Fn = World.evalInfo; Pars = [||]; DocOpt = None })
                  ("info_Keyword", { Fn = World.evalInfo; Pars = [||]; DocOpt = None })] |>
-                dictPlus
+                dictPlus StringComparer.Ordinal
             Extrinsics <- extrinsics

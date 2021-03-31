@@ -4360,5 +4360,5 @@ module WorldBindings =
              ("getTextureSizeF", { Fn = evalGetTextureSizeFBinding; Pars = [|"assetTag"|]; DocOpt = None })
              ("reloadSymbols", { Fn = evalReloadSymbolsBinding; Pars = [||]; DocOpt = None })
             ] |>
-            dictPlus
+            dictPlus StringComparer.Ordinal
         WorldScripting.Bindings <- bindings

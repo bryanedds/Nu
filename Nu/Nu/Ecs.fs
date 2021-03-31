@@ -89,11 +89,11 @@ and System<'w when 'w :> Freezable> (name : string) =
 /// on this 'w Ecs type.
 and Ecs<'w when 'w :> Freezable> () as this =
 
-    let arrayObjs = dictPlus<string, obj List> []
-    let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> []
-    let systemsUnordered = dictPlus<string, 'w System> []
+    let arrayObjs = dictPlus<string, obj List> StringComparer.Ordinal []
+    let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
+    let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
-    let correlations = dictPlus<Guid, string List> []
+    let correlations = dictPlus<Guid, string List> HashIdentity.Structural []
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
     let globalSystem = System<'w> "Global"
     
@@ -150,7 +150,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             subscriptions.Add (subscriptionId, this.BoxCallback<'d> callback)
             subscriptionId
         | (false, _) ->
-            let subscriptions = dictPlus [(subscriptionId, this.BoxCallback<'d> callback)]
+            let subscriptions = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d> callback)]
             systemSubscriptions.Add (eventName, subscriptions)
             subscriptionId
 
@@ -344,8 +344,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     let mutable junctions = Unchecked.defaultof<'c>.AllocateJunctions ecs
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
-    let correlations = dictPlus<Guid, int> []
-    let correlationsBack = dictPlus<int, Guid> []
+    let correlations = dictPlus<Guid, int> HashIdentity.Structural []
+    let correlationsBack = dictPlus<int, Guid> HashIdentity.Structural []
 
     new (ecs) = SystemCorrelated (typeof<'c>.Name, ecs)
 
@@ -460,7 +460,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
         member this.GetSystemsCorrelated entityId =
             this.Correlations.[entityId] |>
             Seq.map (fun systemName -> (systemName, this.IndexSystem<'w System> systemName)) |>
-            dictPlus
+            dictPlus StringComparer.Ordinal 
 
         member this.GetEntitiesCorrelated<'c when 'c : struct and 'c :> 'c Component> () =
             let systemName = typeof<'c>.Name
@@ -638,7 +638,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
     inherit System<'w> (name)
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
-    let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> []
+    let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
 
     new (ecs) = SystemHierarchical (typeof<'c>.Name, ecs)
 

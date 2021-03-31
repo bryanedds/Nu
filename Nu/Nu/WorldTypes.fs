@@ -480,7 +480,7 @@ module WorldTypes =
               ScreenTransitionDestinationOpt = None
               EyeCenter = eyeCenter
               EyeSize = eyeSize
-              ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               CreationTimeStamp = Core.getUniqueTimeStamp () }
 
         /// Try to get an xtension property and its type information.
@@ -545,7 +545,7 @@ module WorldTypes =
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
               Persistent = true
-              ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Id = id
               Name = name }
@@ -604,7 +604,7 @@ module WorldTypes =
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Visible = true
               Persistent = true
-              ScriptFrame = Scripting.DeclarationFrame HashIdentity.Structural
+              ScriptFrame = Scripting.DeclarationFrame StringComparer.Ordinal
               CreationTimeStamp = Core.getUniqueTimeStamp ()
               Id = id
               Name = name }

@@ -12,8 +12,8 @@ open Nu
 module WorldModuleGame =
 
     /// Dynamic property getters / setters.
-    let internal GameGetters = Dictionary<string, World -> Property> HashIdentity.Structural
-    let internal GameSetters = Dictionary<string, Property -> World -> struct (bool * World)> HashIdentity.Structural
+    let internal GameGetters = Dictionary<string, World -> Property> StringComparer.Ordinal
+    let internal GameSetters = Dictionary<string, Property -> World -> struct (bool * World)> StringComparer.Ordinal
 
     type World with
 
