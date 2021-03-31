@@ -49,6 +49,22 @@ module WorldModuleOperators =
 [<AutoOpen; ModuleBinding>]
 module WorldModule =
 
+    /// Declarative lens comparable.
+    type [<CustomEquality; CustomComparison>] internal LensComparable<'k when 'k : equality> =
+        { LensHash : int
+          LensKey : 'k
+          LensItem : Lens<obj, World> }
+        override this.Equals _ = failwithnie ()
+        override this.GetHashCode () = failwithnie ()
+        interface IEquatable<'k LensComparable> with member this.Equals _ = failwithnie ()
+        interface IComparable<'k LensComparable> with member this.CompareTo _ = failwithnie ()
+
+    /// Declarative lens comparer.
+    type internal LensComparer<'k when 'k : equality> () =
+        interface IEqualityComparer<'k LensComparable> with
+            member this.Equals (left, right) = left.LensKey = right.LensKey
+            member this.GetHashCode value = value.LensHash
+
     /// F# reach-around for evaluating a script expression.
     let mutable internal eval : Scripting.Expr -> Scripting.DeclarationFrame -> Simulant -> World -> struct (Scripting.Expr * World) =
         Unchecked.defaultof<_>
@@ -644,7 +660,7 @@ module WorldModule =
     type World with // ElmishBindingsMap
 
         static member internal makeLensesCurrent (mapGeneralized : MapGeneralized) lensGeneralized world =
-            let mutable current = USet.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
+            let mutable current = USet.makeEmpty (LensComparer ()) (if World.getStandAlone world then Imperative else Functional)
             for key in mapGeneralized.ToKeys do
                 // OPTIMIZATION: ensure map is extracted during validation only.
                 // This creates a strong dependency on the map being used in a perfectly predictable way (one validate, one getWithoutValidation).
@@ -671,7 +687,7 @@ module WorldModule =
                       GetWithoutValidation = getWithoutValidation
                       SetOpt = None
                       This = lensGeneralized.This }
-                let item = PartialComparable.make key lensItem
+                let item = { LensHash = key.GetHashCode (); LensKey = key; LensItem = lensItem }
                 current <- USet.add item current
             current
 
@@ -679,8 +695,8 @@ module WorldModule =
             (contentKey : Guid)
             (removed : _ HashSet)
             world =
-            Seq.fold (fun world keyAndLens ->
-                let (key, _) = PartialComparable.unmake keyAndLens
+            Seq.fold (fun world lensComparable ->
+                let key = lensComparable.LensKey
                 match World.tryGetKeyedValueFast (contentKey, world) with
                 | (true, simulantMap : Map<'a, Simulant>) ->
                     match simulantMap.TryGetValue key with
@@ -704,8 +720,9 @@ module WorldModule =
             (owner : Simulant)
             (parent : Simulant)
             world =
-            Seq.fold (fun world keyAndLens ->
-                let (key, lens) = PartialComparable.unmake keyAndLens
+            Seq.fold (fun world lensComparable ->
+                let key = lensComparable.LensKey
+                let lens = lensComparable.LensItem
                 if mapGeneralized.ContainsKey key then
                     let content = contentMapper key lens world
                     let (simulantOpt, world) = expandContent Unchecked.defaultof<_> content origin owner parent world
@@ -723,9 +740,9 @@ module WorldModule =
 
         static member internal synchronizeSimulants contentMapper contentKey mapGeneralized current origin owner parent world =
             let previous =
-                match World.tryGetKeyedValueFast<PartialComparable<IComparable, Lens<obj, World>> USet> (contentKey, world) with
+                match World.tryGetKeyedValueFast<IComparable LensComparable USet> (contentKey, world) with
                 | (true, previous) -> previous
-                | (false, _) -> USet.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
+                | (false, _) -> USet.makeEmpty (LensComparer ()) (if World.getStandAlone world then Imperative else Functional)
             let added = USet.differenceFast current previous
             let removed = USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
@@ -756,7 +773,7 @@ module WorldModule =
                             let current = World.makeLensesCurrent mapGeneralized binding.CBSource world
                             World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
                         else 
-                            let lensesCurrent = USet.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
+                            let lensesCurrent = USet.makeEmpty (LensComparer ()) (if World.getStandAlone world then Imperative else Functional)
                             World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world)
                     world elmishBindings
             | (false, _) -> world

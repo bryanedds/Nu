@@ -313,7 +313,7 @@ module WorldDeclarative =
                     let lensesCurrent = World.makeLensesCurrent mapGeneralized contentBinding.CBSource world
                     World.synchronizeSimulants contentBinding.CBMapper contentBinding.CBContentKey mapGeneralized lensesCurrent contentBinding.CBOrigin contentBinding.CBOwner contentBinding.CBParent world
                 else
-                    let lensesCurrent = USet.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
+                    let lensesCurrent = USet.makeEmpty (LensComparer ()) (if World.getStandAlone world then Imperative else Functional)
                     World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) lensesCurrent origin owner parent world
 
             // fin
