@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Linq
 open System.Numerics
 open System.IO
 open SDL2
@@ -180,6 +181,17 @@ and Renderer =
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> Renderer
 
+type RenderLayeredMessageComparer () =
+    interface IComparer<RenderLayeredMessage> with
+        member this.Compare (left, right) =
+            let elevationCompare = left.Elevation.CompareTo right.Elevation
+            if elevationCompare <> 0 then elevationCompare else
+            let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
+            if positionYCompare <> 0 then positionYCompare else
+            let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
+            if assetNameCompare <> 0 then assetNameCompare else
+            strCmp left.AssetTag.PackageName right.AssetTag.PackageName
+
 /// The mock implementation of Renderer.
 type [<ReferenceEquality; NoComparison>] MockRenderer =
     private
@@ -205,15 +217,6 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
           mutable RenderAssetCachedOpt : string * RenderAsset
           mutable RenderMessages : RenderMessage List
           RenderLayeredMessages : RenderLayeredMessage List }
-
-    static member private compareDescriptors (left : RenderLayeredMessage) (right : RenderLayeredMessage) =
-        let elevationCompare = left.Elevation.CompareTo right.Elevation
-        if elevationCompare <> 0 then elevationCompare else
-        let positionYCompare = -(left.PositionY.CompareTo right.PositionY)
-        if positionYCompare <> 0 then positionYCompare else
-        let assetNameCompare = strCmp left.AssetTag.AssetName right.AssetTag.AssetName
-        if assetNameCompare <> 0 then assetNameCompare else
-        strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -685,7 +688,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
             let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
             let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
-            messages.Sort SdlRenderer.compareDescriptors
+            //messages.Sort (RenderLayeredMessageComparer ())
+            let messages = messages.AsParallel().OrderBy(id, RenderLayeredMessageComparer ())
             for message in messages do
                 SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, message.RenderDescriptor, renderer)
         | _ ->
