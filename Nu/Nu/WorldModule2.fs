@@ -663,12 +663,6 @@ module WorldModule2 =
         static member getEntitiesAtPoint point world =
             World.getEntities3 (SpatialTree.getElementsAtPoint point) world
 
-        /// Reconstruct omnipresent entities so that they are roughly contiguous in memory.
-        [<FunctionBinding>]
-        static member linearizeOmnipresentEntities world =  
-            let (entities, world) = World.getEntitiesOmnipresent world
-            Seq.fold (flip World.divergeEntity) world entities
-
         static member private updateScreenTransition world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen -> World.updateScreenTransition2 selectedScreen world
