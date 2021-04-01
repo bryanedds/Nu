@@ -26,13 +26,13 @@ module WorldModuleEntity =
     // OPTIMIZATION: avoids closure allocation in tight-loop.
     type private KeyEquality () =
         inherit OptimizedClosures.FSharpFunc<
-            KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>,
-            KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>,
+            KeyValuePair<Entity, UMap<Entity, EntityState>>,
+            KeyValuePair<Entity, UMap<Entity, EntityState>>,
             bool> ()
         override this.Invoke _ = failwithumf ()
         override this.Invoke
-            (entityStateKey : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>,
-             entityStateKey2 : KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>) =
+            (entityStateKey : KeyValuePair<Entity, UMap<Entity, EntityState>>,
+             entityStateKey2 : KeyValuePair<Entity, UMap<Entity, EntityState>>) =
             refEq entityStateKey.Key entityStateKey2.Key &&
             refEq entityStateKey.Value entityStateKey2.Value
     let private keyEquality = KeyEquality ()
@@ -42,8 +42,8 @@ module WorldModuleEntity =
     let mutable private getFreshKeyAndValueWorld = Unchecked.defaultof<World>
     let private getFreshKeyAndValue () =
         let mutable entityStateOpt = Unchecked.defaultof<_>
-        let _ = UMap.tryGetValue (getFreshKeyAndValueEntity.EntityAddress, getFreshKeyAndValueWorld.EntityStates, &entityStateOpt)
-        KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity.EntityAddress, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
+        let _ = UMap.tryGetValue (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates, &entityStateOpt)
+        KeyValuePair (KeyValuePair (getFreshKeyAndValueEntity, getFreshKeyAndValueWorld.EntityStates), entityStateOpt)
     let private getFreshKeyAndValueCached =
         getFreshKeyAndValue
 
@@ -63,7 +63,7 @@ module WorldModuleEntity =
                     KeyedCache.getValueFast
                         keyEquality
                         getFreshKeyAndValueCached
-                        (KeyValuePair (entity.EntityAddress, world.EntityStates))
+                        (KeyValuePair (entity, world.EntityStates))
                         (World.getEntityCachedOpt world)
                 getFreshKeyAndValueEntity <- Unchecked.defaultof<Entity>
                 getFreshKeyAndValueWorld <- Unchecked.defaultof<World>
@@ -83,13 +83,13 @@ module WorldModuleEntity =
                     | Some groupDirectory ->
                         match UMap.tryFind groupName groupDirectory.Value with
                         | Some entityDirectory ->
-                            let entityDirectory' = UMap.add entityName entity.EntityAddress entityDirectory.Value
+                            let entityDirectory' = UMap.add entityName entity entityDirectory.Value
                             let groupDirectory' = UMap.add groupName (KeyValuePair (entityDirectory.Key, entityDirectory')) groupDirectory.Value
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
-                        | None -> failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent group.")
-                    | None -> failwith ("Cannot add entity '" + scstring entity.EntityAddress + "' to non-existent screen.")
+                        | None -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent group.")
+                    | None -> failwith ("Cannot add entity '" + scstring entity + "' to non-existent screen.")
                 | _ -> failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
-            let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
+            let entityStates = UMap.add entity entityState world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
         static member private entityStateRemover (entity : Entity) world =
@@ -103,18 +103,18 @@ module WorldModuleEntity =
                             let entityDirectory' = UMap.remove entityName entityDirectory.Value
                             let groupDirectory' = UMap.add groupName (KeyValuePair (entityDirectory.Key, entityDirectory')) groupDirectory.Value
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
-                        | None -> failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent group.")
-                    | None -> failwith ("Cannot remove entity '" + scstring entity.EntityAddress + "' from non-existent screen.")
+                        | None -> failwith ("Cannot remove entity '" + scstring entity + "' from non-existent group.")
+                    | None -> failwith ("Cannot remove entity '" + scstring entity + "' from non-existent screen.")
                 | _ -> failwith ("Invalid entity address '" + scstring entity.EntityAddress + "'.")
-            let entityStates = UMap.remove entity.EntityAddress world.EntityStates
+            let entityStates = UMap.remove entity world.EntityStates
             World.choose { world with ScreenDirectory = screenDirectory; EntityStates = entityStates }
 
         static member private entityStateSetter entityState (entity : Entity) world =
 #if DEBUG
-            if not (UMap.containsKey entity.EntityAddress world.EntityStates) then
-                failwith ("Cannot set the state of a non-existent entity '" + scstring entity.EntityAddress + "'")
+            if not (UMap.containsKey entity world.EntityStates) then
+                failwith ("Cannot set the state of a non-existent entity '" + scstring entity + "'")
 #endif
-            let entityStates = UMap.add entity.EntityAddress entityState world.EntityStates
+            let entityStates = UMap.add entity entityState world.EntityStates
             World.choose { world with EntityStates = entityStates }
 
         static member private addEntityState entityState (entity : Entity) world =
@@ -164,7 +164,7 @@ module WorldModuleEntity =
         static member internal getEntityState entity world =
             let entityStateOpt = World.entityStateFinder entity world
             match entityStateOpt :> obj with
-            | null -> failwith ("Could not find entity with address '" + scstring entity.EntityAddress + "'.")
+            | null -> failwith ("Could not find entity '" + scstring entity + "'.")
             | _ -> entityStateOpt
 #else
         static member inline internal getEntityState entity world =
@@ -963,7 +963,7 @@ module WorldModuleEntity =
                 else world
 
             // handle failure
-            else failwith ("Adding an entity that the world already contains at address '" + scstring entity.EntityAddress + "'.")
+            else failwith ("Adding an entity that the world already contains '" + scstring entity + "'.")
 
         /// Destroy an entity in the world immediately. Can be dangerous if existing in-flight publishing depends on
         /// the entity's existence. Consider using World.destroyEntity instead.

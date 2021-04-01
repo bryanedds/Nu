@@ -17,7 +17,7 @@ module WorldModuleScreen =
     type World with
     
         static member private screenStateFinder (screen : Screen) world =
-            UMap.tryFind screen.ScreenAddress world.ScreenStates
+            UMap.tryFind screen world.ScreenStates
 
         static member private screenStateAdder screenState (screen : Screen) world =
             let screenDirectory =
@@ -26,13 +26,13 @@ module WorldModuleScreen =
                     match UMap.tryFind screenName world.ScreenDirectory with
                     | Some groupDirectory ->
                         // NOTE: this is logically a redundant operation...
-                        let groupDirectory = KeyValuePair (screen.ScreenAddress, groupDirectory.Value)
+                        let groupDirectory = KeyValuePair (screen, groupDirectory.Value)
                         UMap.add screenName groupDirectory world.ScreenDirectory
                     | None ->
-                        let groupDirectory = KeyValuePair (screen.ScreenAddress, UMap.makeEmpty StringComparer.Ordinal Constants.Engine.SimulantMapConfig)
+                        let groupDirectory = KeyValuePair (screen, UMap.makeEmpty StringComparer.Ordinal Constants.Engine.SimulantMapConfig)
                         UMap.add screenName groupDirectory world.ScreenDirectory
                 | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
-            let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
+            let screenStates = UMap.add screen screenState world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
         static member private screenStateRemover (screen : Screen) world =
@@ -40,15 +40,15 @@ module WorldModuleScreen =
                 match Address.getNames screen.ScreenAddress with
                 | [|screenName|] -> UMap.remove screenName world.ScreenDirectory
                 | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
-            let screenStates = UMap.remove screen.ScreenAddress world.ScreenStates
+            let screenStates = UMap.remove screen world.ScreenStates
             World.choose { world with ScreenDirectory = screenDirectory; ScreenStates = screenStates }
 
         static member private screenStateSetter screenState (screen : Screen) world =
 #if DEBUG
-            if not (UMap.containsKey screen.ScreenAddress world.ScreenStates) then
-                failwith ("Cannot set the state of a non-existent screen '" + scstring screen.ScreenAddress + "'")
+            if not (UMap.containsKey screen world.ScreenStates) then
+                failwith ("Cannot set the state of a non-existent screen '" + scstring screen + "'")
 #endif
-            let screenStates = UMap.add screen.ScreenAddress screenState world.ScreenStates
+            let screenStates = UMap.add screen screenState world.ScreenStates
             World.choose { world with ScreenStates = screenStates }
 
         static member private addScreenState screenState screen world =
@@ -79,7 +79,7 @@ module WorldModuleScreen =
         static member internal getScreenState screen world =
             match World.getScreenStateOpt screen world with
             | Some screenState -> screenState
-            | None -> failwith ("Could not find screen with address '" + scstring screen.ScreenAddress + "'.")
+            | None -> failwith ("Could not find screen with '" + scstring screen + "'.")
 
         static member internal setScreenState screenState screen world =
             World.screenStateSetter screenState screen world
@@ -251,7 +251,7 @@ module WorldModuleScreen =
             if isNew || mayReplace then
                 let world = World.addScreenState screenState screen world
                 if isNew then World.registerScreen screen world else world
-            else failwith ("Adding a screen that the world already contains at address '" + scstring screen.ScreenAddress + "'.")
+            else failwith ("Adding a screen that the world already contains '" + scstring screen + "'.")
 
         static member internal removeScreen3 removeGroups screen world =
             if World.getScreenExists screen world then

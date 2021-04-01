@@ -303,8 +303,7 @@ module WorldEntityModule =
                 match UMap.tryFind screenName (World.getScreenDirectory world) with
                 | Some groupDirectory ->
                     match UMap.tryFind groupName groupDirectory.Value with
-                    | Some entityDirectory ->
-                        UMap.fold (fun state _ (entityAddress : _ Address) -> Entity entityAddress :: state) [] entityDirectory.Value :> _ seq
+                    | Some entityDirectory -> entityDirectory.Value |> UMap.toSeq |> Seq.map snd
                     | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
                 | None -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
             | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")

@@ -380,47 +380,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryReloadAssets' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let getEntitiesInView2 world =
-        let oldWorld = world
-        try
-            let result = World.getEntitiesInView2 world
-            let (value, world) = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesInView2' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let getEntitiesInBounds3 bounds world =
-        let oldWorld = world
-        try
-            let bounds =
-                match ScriptingSystem.tryExport typeof<Vector4> bounds world with
-                | Some value -> value :?> Vector4
-                | None -> failwith "Invalid argument type for 'bounds'; expecting a value convertable to Vector4."
-            let result = World.getEntitiesInBounds3 bounds world
-            let (value, world) = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesInBounds3' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let getEntitiesAtPoint3 point world =
-        let oldWorld = world
-        try
-            let point =
-                match ScriptingSystem.tryExport typeof<Vector2> point world with
-                | Some value -> value :?> Vector2
-                | None -> failwith "Invalid argument type for 'point'; expecting a value convertable to Vector2."
-            let result = World.getEntitiesAtPoint3 point world
-            let (value, world) = result
-            let value = Scripting.Ring (Set.ofSeq (Seq.map (fun value -> let str = scstring value in if Symbol.shouldBeExplicit str then Scripting.String str else Scripting.Keyword str) value))
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEntitiesAtPoint3' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
     let getEntitiesInView world =
         let oldWorld = world
         try
@@ -2774,39 +2733,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetEntitiesInView2Binding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> getEntitiesInView2 world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalGetEntitiesInBounds3Binding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|bounds|] -> getEntitiesInBounds3 bounds world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalGetEntitiesAtPoint3Binding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|point|] -> getEntitiesAtPoint3 point world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalGetEntitiesInViewBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4229,9 +4155,6 @@ module WorldBindings =
              ("createSplashScreen", { Fn = evalCreateSplashScreenBinding; Pars = [|"nameOpt"; "splashDescriptor"; "destination"|]; DocOpt = None })
              ("reloadExistingAssets", { Fn = evalReloadExistingAssetsBinding; Pars = [||]; DocOpt = None })
              ("tryReloadAssets", { Fn = evalTryReloadAssetsBinding; Pars = [||]; DocOpt = None })
-             ("getEntitiesInView2", { Fn = evalGetEntitiesInView2Binding; Pars = [||]; DocOpt = None })
-             ("getEntitiesInBounds3", { Fn = evalGetEntitiesInBounds3Binding; Pars = [|"bounds"|]; DocOpt = None })
-             ("getEntitiesAtPoint3", { Fn = evalGetEntitiesAtPoint3Binding; Pars = [|"point"|]; DocOpt = None })
              ("getEntitiesInView", { Fn = evalGetEntitiesInViewBinding; Pars = [||]; DocOpt = None })
              ("getEntitiesInBounds", { Fn = evalGetEntitiesInBoundsBinding; Pars = [|"bounds"|]; DocOpt = None })
              ("getEntitiesAtPoint", { Fn = evalGetEntitiesAtPointBinding; Pars = [|"point"|]; DocOpt = None })

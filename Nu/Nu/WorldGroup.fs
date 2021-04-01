@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open FSharpx.Collections
 open Prime
@@ -126,10 +127,7 @@ module WorldGroupModule =
             match Address.getNames screen.ScreenAddress with
             | [|screenName|] ->
                 match UMap.tryFind screenName (World.getScreenDirectory world) with
-                | Some groupDirectory ->
-                    groupDirectory.Value |>
-                    UMap.fold (fun state _ groupDirectory -> Group groupDirectory.Key :: state) [] :>
-                    _ seq
+                | Some groupDirectory -> groupDirectory.Value |> UMap.toSeq |> Seq.map (fun (_, entry) -> entry.Key)
                 | None -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
             | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
 

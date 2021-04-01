@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open FSharpx.Collections
 open Prime
@@ -155,9 +156,7 @@ module WorldScreenModule =
         /// Get all the world's screens.
         [<FunctionBinding>]
         static member getScreens world =
-            World.getScreenDirectory world |>
-            UMap.fold (fun state _ screenDirectory -> Screen screenDirectory.Key :: state) [] :>
-            _ seq
+            World.getScreenDirectory world |> UMap.toSeq |> Seq.map (fun (_, entry) -> entry.Key)
 
         /// Set the dissolve properties of a screen.
         [<FunctionBinding>]
