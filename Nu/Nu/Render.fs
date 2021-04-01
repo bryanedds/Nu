@@ -688,8 +688,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
             let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
             let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
-            //messages.Sort (RenderLayeredMessageComparer ())
+#if MULTITHREAD_RENDER_SORT
             let messages = messages.AsParallel().OrderBy(id, RenderLayeredMessageComparer ())
+#else
+            messages.Sort (RenderLayeredMessageComparer ())
+#endif
             for message in messages do
                 SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, message.RenderDescriptor, renderer)
         | _ ->
