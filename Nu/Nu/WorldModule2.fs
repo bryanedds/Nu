@@ -640,46 +640,34 @@ module WorldModule2 =
             let world = World.setEntityTree entityTree world
             let entities : Entity seq = getElementsFromTree spatialTree
             (entities, world)
-
-        [<FunctionBinding>]
-        static member getEntitiesInView2 world =
+            
+        /// Get all entities in the current view, including all omnipresent entities.
+        static member getEntitiesInView world =
             let viewBounds = World.getViewBoundsRelative world
             World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) world
-
-        [<FunctionBinding>]
-        static member getEntitiesInBounds3 bounds world =
+            
+        /// Get all entities in the given bounds, including all omnipresent entities.
+        static member getEntitiesInBounds bounds world =
             World.getEntities3 (SpatialTree.getElementsInBounds bounds) world
-
-        [<FunctionBinding>]
-        static member getEntitiesAtPoint3 point world =
+            
+        /// Get all entities at the given point, including all omnipresent entities.
+        static member getEntitiesAtPoint point world =
             World.getEntities3 (SpatialTree.getElementsAtPoint point) world
 
+        /// Reconstruct entities in a group such that they are all roughly contiguous in memory.
         [<FunctionBinding>]
-        static member getEntitiesInView world =
-            let entities = HashSet<Entity> HashIdentity.Structural
-            let world =
-                let (entities2, world) = World.getEntitiesInView2 world
-                entities.UnionWith entities2
-                world
-            (entities, world)
-
+        static member linearizeEntities group world =
+            let entities = World.getEntities group world
+            Seq.fold (flip World.divergeEntity) world entities
+            
+        /// Reconstruct entities in the current screen such that they are all roughly contiguous in memory.
         [<FunctionBinding>]
-        static member getEntitiesInBounds bounds world =
-            let entities = HashSet<Entity> HashIdentity.Structural
-            let world =
-                let (entities2, world) = World.getEntitiesInBounds3 bounds world
-                entities.UnionWith entities2
-                world
-            (entities, world)
-
-        [<FunctionBinding>]
-        static member getEntitiesAtPoint point world =
-            let entities = HashSet<Entity> HashIdentity.Structural
-            let world =
-                let (entities2, world) = World.getEntitiesAtPoint3 point world
-                entities.UnionWith entities2
-                world
-            (entities, world)
+        static member linearizeEntities1 world =
+            match World.getSelectedScreenOpt world with
+            | Some screen ->
+                let groups = World.getGroups screen world
+                Seq.fold (flip World.linearizeEntities) world groups
+            | None -> world
 
         static member private updateScreenTransition world =
             match World.getSelectedScreenOpt world with
@@ -694,7 +682,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (entities, world) = World.getEntitiesInView2 world
+            let (entities, world) = World.getEntitiesInView world
             UpdateGatherTimer.Stop ()
 
             // update game
@@ -811,7 +799,7 @@ module WorldModule2 =
             let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
             let screens = List.rev screens
             let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-            let (entities, world) = World.getEntitiesInView2 world
+            let (entities, world) = World.getEntitiesInView world
             ActualizeGatherTimer.Stop ()
 
             // actualize simulants breadth-first

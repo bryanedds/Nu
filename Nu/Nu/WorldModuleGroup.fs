@@ -17,7 +17,7 @@ module WorldModuleGroup =
     type World with
     
         static member private groupStateFinder (group : Group) world =
-            UMap.tryFind group.GroupAddress world.GroupStates
+            UMap.tryFind group world.GroupStates
 
         static member private groupStateAdder groupState (group : Group) world =
             let screenDirectory =
@@ -33,13 +33,13 @@ module WorldModuleGroup =
                         | None ->
                             let entityDirectory' =
                                 if World.getStandAlone world
-                                then (KeyValuePair (group.GroupAddress, UMap.makeEmpty StringComparer.Ordinal Imperative))
-                                else (KeyValuePair (group.GroupAddress, UMap.makeEmpty StringComparer.Ordinal Functional))
+                                then (KeyValuePair (group, UMap.makeEmpty StringComparer.Ordinal Imperative))
+                                else (KeyValuePair (group, UMap.makeEmpty StringComparer.Ordinal Functional))
                             let groupDirectory' = UMap.add groupName entityDirectory' groupDirectory.Value
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
-                    | None -> failwith ("Cannot add group '" + scstring group.GroupAddress + "' to non-existent screen.")
+                    | None -> failwith ("Cannot add group '" + scstring group + "' to non-existent screen.")
                 | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
-            let groupStates = UMap.add group.GroupAddress groupState world.GroupStates
+            let groupStates = UMap.add group groupState world.GroupStates
             World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
         static member private groupStateRemover (group : Group) world =
@@ -50,17 +50,17 @@ module WorldModuleGroup =
                     | Some groupDirectory ->
                         let groupDirectory' = UMap.remove groupName groupDirectory.Value
                         UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
-                    | None -> failwith ("Cannot remove group '" + scstring group.GroupAddress + "' from non-existent screen.")
+                    | None -> failwith ("Cannot remove group '" + scstring group + "' from non-existent screen.")
                 | _ -> failwith ("Invalid group address '" + scstring group.GroupAddress + "'.")
-            let groupStates = UMap.remove group.GroupAddress world.GroupStates
+            let groupStates = UMap.remove group world.GroupStates
             World.choose { world with ScreenDirectory = screenDirectory; GroupStates = groupStates }
 
         static member private groupStateSetter groupState (group : Group) world =
 #if DEBUG
-            if not (UMap.containsKey group.GroupAddress world.GroupStates) then
-                failwith ("Cannot set the state of a non-existent group '" + scstring group.GroupAddress + "'")
+            if not (UMap.containsKey group world.GroupStates) then
+                failwith ("Cannot set the state of a non-existent group '" + scstring group + "'")
 #endif
-            let groupStates = UMap.add group.GroupAddress groupState world.GroupStates
+            let groupStates = UMap.add group groupState world.GroupStates
             World.choose { world with GroupStates = groupStates }
 
         static member private addGroupState groupState group world =
@@ -92,7 +92,7 @@ module WorldModuleGroup =
         static member internal getGroupState group world =
             match World.getGroupStateOpt group world with
             | Some groupState -> groupState
-            | None -> failwith ("Could not find group with address '" + scstring group.GroupAddress + "'.")
+            | None -> failwith ("Could not find group '" + scstring group + "'.")
 
         static member internal getGroupXtensionProperties group world =
             let groupState = World.getGroupState group world
@@ -261,7 +261,7 @@ module WorldModuleGroup =
             if isNew || mayReplace then
                 let world = World.addGroupState groupState group world
                 if isNew then World.registerGroup group world else world
-            else failwith ("Adding a group that the world already contains at address '" + scstring group.GroupAddress + "'.")
+            else failwith ("Adding a group that the world already contains '" + scstring group + "'.")
 
         static member internal removeGroup3 removeEntities group world =
             if World.getGroupExists group world then

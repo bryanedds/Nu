@@ -1144,16 +1144,16 @@ module WorldTypes =
             { // cache line 1
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: P1: put this behind a world API rather than accessing / updating it directly...
               EventSystemDelegate : World EventSystemDelegate
-              EntityCachedOpt : KeyedCache<KeyValuePair<Entity Address, UMap<Entity Address, EntityState>>, EntityState>
+              EntityCachedOpt : KeyedCache<KeyValuePair<Entity, UMap<Entity, EntityState>>, EntityState>
               mutable EntityTree : Entity SpatialTree MutantCache // NOTE: mutated when StandAlone.
-              EntityStates : UMap<Entity Address, EntityState>
-              GroupStates : UMap<Group Address, GroupState>
-              ScreenStates : UMap<Screen Address, ScreenState>
+              EntityStates : UMap<Entity, EntityState>
+              GroupStates : UMap<Group, GroupState>
+              ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
               // cache line 2
               AmbientState : World AmbientState
               Subsystems : Subsystems
-              ScreenDirectory : UMap<string, KeyValuePair<Screen Address, UMap<string, KeyValuePair<Group Address, UMap<string, Entity Address>>>>>
+              ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, UMap<string, Entity>>>>>
               Dispatchers : Dispatchers
               ScriptingEnv : Scripting.Env
               ScriptingContext : Simulant
@@ -1187,9 +1187,9 @@ module WorldTypes =
                 | 3 ->
                     let entity = simulant :?> Entity
                     notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
-                    UMap.containsKey (simulant :?> Entity).EntityAddress this.EntityStates
-                | 2 -> UMap.containsKey (simulant :?> Group).GroupAddress this.GroupStates
-                | 1 -> UMap.containsKey (simulant :?> Screen).ScreenAddress this.ScreenStates
+                    UMap.containsKey (simulant :?> Entity) this.EntityStates
+                | 2 -> UMap.containsKey (simulant :?> Group) this.GroupStates
+                | 1 -> UMap.containsKey (simulant :?> Screen) this.ScreenStates
                 | 0 -> true
                 | _  -> false
 
