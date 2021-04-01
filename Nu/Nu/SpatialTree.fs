@@ -187,6 +187,10 @@ module SpatialTree =
             // staying out of bounds
             ()
 
+    let getElementsOmnipresent tree =
+        let set = HashSet HashIdentity.Structural
+        new SpatialTreeEnumerable<'e> (new SpatialTreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
+
     let getElementsAtPoint point tree =
         let set = HashSet HashIdentity.Structural
         SpatialNode.getElementsAtPoint point tree.Node set

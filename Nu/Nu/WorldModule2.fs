@@ -642,6 +642,10 @@ module WorldModule2 =
             (entities, world)
             
         /// Get all entities in the current view, including all omnipresent entities.
+        static member getEntitiesOmnipresent world =
+            World.getEntities3 SpatialTree.getElementsOmnipresent world
+            
+        /// Get all entities in the current view, including all omnipresent entities.
         static member getEntitiesInView world =
             let viewBounds = World.getViewBoundsRelative world
             World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) world
@@ -654,20 +658,12 @@ module WorldModule2 =
         static member getEntitiesAtPoint point world =
             World.getEntities3 (SpatialTree.getElementsAtPoint point) world
 
-        /// Reconstruct entities in a group such that they are all roughly contiguous in memory.
+        /// Reconstruct omnipresent entities so that they are all roughly contiguous in memory (GC ordering variance
+        /// notwithstanding).
         [<FunctionBinding>]
-        static member linearizeEntities group world =
-            let entities = World.getEntities group world
+        static member linearizeEntities world =  
+            let (entities, world) = World.getEntitiesOmnipresent world
             Seq.fold (flip World.divergeEntity) world entities
-            
-        /// Reconstruct entities in the current screen such that they are all roughly contiguous in memory.
-        [<FunctionBinding>]
-        static member linearizeEntities1 world =
-            match World.getSelectedScreenOpt world with
-            | Some screen ->
-                let groups = World.getGroups screen world
-                Seq.fold (flip World.linearizeEntities) world groups
-            | None -> world
 
         static member private updateScreenTransition world =
             match World.getSelectedScreenOpt world with
