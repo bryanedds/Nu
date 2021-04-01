@@ -640,28 +640,32 @@ module WorldModule2 =
             let world = World.setEntityTree entityTree world
             let entities : Entity seq = getElementsFromTree spatialTree
             (entities, world)
-            
-        /// Get all entities in the current view, including all omnipresent entities.
+
+        /// Get all cullable (non-omnipresent) entities.
+        static member getEntitiesCullable world =
+            let entities = world |> World.getEntities1 |> Seq.filter (fun entity -> not (entity.GetOmnipresent world))
+            (entities, world)
+
+        /// Get all omnipresent (non-cullable) entities.
         static member getEntitiesOmnipresent world =
             World.getEntities3 SpatialTree.getElementsOmnipresent world
-            
+
         /// Get all entities in the current view, including all omnipresent entities.
         static member getEntitiesInView world =
             let viewBounds = World.getViewBoundsRelative world
             World.getEntities3 (SpatialTree.getElementsInBounds viewBounds) world
-            
+
         /// Get all entities in the given bounds, including all omnipresent entities.
         static member getEntitiesInBounds bounds world =
             World.getEntities3 (SpatialTree.getElementsInBounds bounds) world
-            
+
         /// Get all entities at the given point, including all omnipresent entities.
         static member getEntitiesAtPoint point world =
             World.getEntities3 (SpatialTree.getElementsAtPoint point) world
 
-        /// Reconstruct omnipresent entities so that they are all roughly contiguous in memory (GC ordering variance
-        /// notwithstanding).
+        /// Reconstruct omnipresent entities so that they are roughly contiguous in memory.
         [<FunctionBinding>]
-        static member linearizeEntities world =  
+        static member linearizeOmnipresentEntities world =  
             let (entities, world) = World.getEntitiesOmnipresent world
             Seq.fold (flip World.divergeEntity) world entities
 

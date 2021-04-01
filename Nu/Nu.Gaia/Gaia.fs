@@ -34,7 +34,7 @@ module Gaia =
 
     let private getPickableEntities world =
         let selectedGroup = (getEditorState world).SelectedGroup
-        let (entities, world) = World.getEntitiesInView2 world
+        let (entities, world) = World.getEntitiesInView world
         let entitiesInGroup =
             Enumerable.ToList
                 (Enumerable.Where
