@@ -6,7 +6,7 @@ open Prime
 open Nu
 open Nu.Declarative
 
-#if ECS
+#if ECS_HYBRID
 type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
     { mutable Active : bool
       mutable Entity : Entity
@@ -20,7 +20,7 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
         member this.Disjunction _ _ _ = ()
 #endif
 
-#if ECS_PURE
+#if ECS
 type [<NoEquality; NoComparison; Struct>] Velocity =
     { mutable Active : bool
       mutable Velocity : Vector2 }
@@ -60,7 +60,7 @@ type [<NoEquality; NoComparison; Struct>] Mover =
 type MetricsEntityDispatcher () =
     inherit EntityDispatcher ()
 
-  #if !ECS && !ECS_PURE
+  #if !ECS_HYBRID && !ECS
     static member Facets =
         [typeof<StaticSpriteFacet>]
 
@@ -68,7 +68,7 @@ type MetricsEntityDispatcher () =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
   #endif
 
-  #if ECS
+  #if ECS_HYBRID
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
         let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { Active = false; Entity = entity; Sprite = Assets.Default.Image4 } (entity.GetId world)
@@ -81,13 +81,13 @@ type MetricsEntityDispatcher () =
   #endif
 #else
 type MetricsEntityDispatcher () =
-  #if ECS
+  #if ECS_HYBRID
     inherit EntityDispatcher ()
   #else
     inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
   #endif
 
-  #if !ECS && !ECS_PURE
+  #if !ECS_HYBRID && !ECS
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
 
@@ -109,7 +109,7 @@ type MetricsEntityDispatcher () =
                   Flip = FlipNone })
   #endif
 
-  #if ECS
+  #if ECS_HYBRID
     override this.Register (entity, world) =
         let ecs = entity.Parent.Parent.GetEcs world
         let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { Active = false; Entity = entity; Sprite = Assets.Default.Image4 } (entity.GetId world)
@@ -130,14 +130,14 @@ type MyGameDispatcher () =
     override this.Register (game, world) =
         let world = base.Register (game, world)
         let (screen, world) = World.createScreen (Some Simulants.DefaultScreen.Name) world
-#if ECS
+#if ECS_HYBRID
         // grab ecs from current screen
         let ecs = screen.GetEcs world
 
         // create static sprite system
         ecs.RegisterSystem (SystemCorrelated<StaticSpriteComponent, World> ecs)
 #endif
-#if ECS_PURE
+#if ECS
         // get ecs
         let ecs = screen.GetEcs world
 
@@ -170,7 +170,7 @@ type MyGameDispatcher () =
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
-#if !ECS_PURE
+#if !ECS
         let positions = // 15,125 entity positions (goal: 60FPS, current: 57FPS)
             seq {
                 for i in 0 .. 54 do
@@ -187,7 +187,7 @@ type MyGameDispatcher () =
                 world positions
 #endif
         let world = World.selectScreen Simulants.DefaultScreen world
-#if ECS
+#if ECS_HYBRID
         // define update for static sprites
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
