@@ -63,9 +63,7 @@ type MetricsEntityDispatcher () =
   #if !ECS && !ECS_PURE
     static member Facets =
         [typeof<StaticSpriteFacet>]
-  #endif
 
-  #if !ECS && !ECS_PURE
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
   #endif
@@ -83,8 +81,13 @@ type MetricsEntityDispatcher () =
   #endif
 #else
 type MetricsEntityDispatcher () =
+  #if ECS
+    inherit EntityDispatcher ()
+  #else
     inherit EntityDispatcher<Image AssetTag, unit, unit> (Assets.Default.Image)
+  #endif
 
+  #if !ECS && !ECS_PURE
     override this.Update (entity, world) =
         entity.SetRotation (entity.GetRotation world + 0.03f) world
 
@@ -104,6 +107,19 @@ type MetricsEntityDispatcher () =
                   Blend = Transparent
                   Glow = colZero
                   Flip = FlipNone })
+  #endif
+
+  #if ECS
+    override this.Register (entity, world) =
+        let ecs = entity.Parent.Parent.GetEcs world
+        let _ : Guid = ecs.RegisterCorrelated<StaticSpriteComponent> { Active = false; Entity = entity; Sprite = Assets.Default.Image4 } (entity.GetId world)
+        world
+
+    override this.Unregister (entity, world) =
+        let ecs = entity.Parent.Parent.GetEcs world
+        let _ : bool = ecs.UnregisterCorrelated<StaticSpriteComponent> (entity.GetId world)
+        world
+  #endif
 #endif
 
 type MyGameDispatcher () =
@@ -176,10 +192,10 @@ type MyGameDispatcher () =
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
             for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
                 for i in 0 .. components.Length - 1 do
-                    let mutable comp = &components.[i]
+                    let comp = &components.[i]
                     if comp.Active then
-                        let entity = comp.Entity.State world
-                        entity.Rotation <- entity.Rotation + 0.03f
+                        let state = comp.Entity.State world
+                        state.Rotation <- state.Rotation + 0.03f
             world)
 
         // define actualize for static sprites
@@ -187,14 +203,14 @@ type MyGameDispatcher () =
             let messages = List ()
             for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
                 for i in 0 .. components.Length - 1 do
-                    let mutable comp = &components.[i]
+                    let comp = &components.[i]
                     if comp.Active then
-                        let entity = comp.Entity.State world
-                        if entity.Visible then
-                            let spriteDescriptor = SpriteDescriptor { Transform = entity.Transform; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Glow = Color.Zero; Flip = FlipNone }
-                            let layeredMessage = { Elevation = entity.Elevation; PositionY = entity.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
+                        let state = comp.Entity.State world
+                        if state.Visible then
+                            let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
+                            let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
                             messages.Add layeredMessage
-            World.enqueueGroupedMessages messages world)
+            World.enqueueRenderLayeredMessages messages world)
 #else
         ignore screen
 #endif
