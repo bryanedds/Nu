@@ -171,7 +171,6 @@ type MyGameDispatcher () =
                 world positions
 #endif
         let world = World.selectScreen Simulants.DefaultScreen world
-        let world = World.linearizeOmnipresentEntities world
 #if ECS
         // define update for static sprites
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
