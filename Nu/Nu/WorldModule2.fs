@@ -908,7 +908,7 @@ module WorldModule2 =
                                                     PerFrameTimer.Stop ()
                                                     match World.getLiveness world with
                                                     | Live ->
-#if MULTITHREAD
+#if MULTITHREAD_RUN_LOOP
                                                         // attempt to finish renderer thread
                                                         let world =
                                                             match rendererThreadOpt with
@@ -1012,7 +1012,7 @@ module WorldModule2 =
                     Log.trace (scstring exn)
                     World.cleanUp world
                     Constants.Engine.FailureExitCode
-#if MULTITHREAD
+#if MULTITHREAD_RUN_LOOP
             // stops background threads
             Environment.Exit result
 #endif
