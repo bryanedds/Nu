@@ -1019,7 +1019,7 @@ module WorldModuleEntity =
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
-                | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
+                | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
 
             // compute the optional overlay name
             let overlayNameOpt =
@@ -1121,7 +1121,7 @@ module WorldModuleEntity =
                     let dispatcher =
                         match Map.tryFind dispatcherName dispatchers with
                         | Some dispatcher -> dispatcher
-                        | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
+                        | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
                     (dispatcherName, dispatcher)
 
             // get the default overlay name option

@@ -285,7 +285,7 @@ module WorldModuleGroup =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ("Could not find GroupDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
+                    Log.info ("Could not find GroupDispatcher '" + dispatcherName + "'.")
                     let dispatcherName = typeof<GroupDispatcher>.Name
                     Map.find dispatcherName dispatchers
 
