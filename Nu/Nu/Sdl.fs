@@ -85,7 +85,7 @@ module SdlDeps =
         else Left error
 
     /// Attempt to initalize an SDL resource.
-    let internal attemptMakeSdlResource create destroy =
+    let internal tryMakeSdlResource create destroy =
         let resource = create ()
         if resource <> IntPtr.Zero then Right (resource, destroy)
         else
@@ -93,7 +93,7 @@ module SdlDeps =
             Left error
 
     /// Attempt to initalize a global SDL resource.
-    let internal attemptMakeSdlGlobalResource create destroy =
+    let internal tryMakeSdlGlobalResource create destroy =
         let resource = create ()
         if resource = 0 then Right ((), destroy)
         else
@@ -101,13 +101,13 @@ module SdlDeps =
             Left error
 
     /// Attempt to make an SdlDeps instance.
-    let attemptMake sdlConfig =
+    let tryMake sdlConfig =
         match attemptPerformSdlInit
             (fun () -> SDL.SDL_Init SDL.SDL_INIT_EVERYTHING)
             (fun () -> SDL.SDL_Quit ()) with
         | Left error -> Left error
         | Right ((), destroy) ->
-            match attemptMakeSdlResource
+            match tryMakeSdlResource
                 (fun () ->
                     match sdlConfig.ViewConfig with
                     | NewWindow windowConfig -> SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
@@ -115,17 +115,17 @@ module SdlDeps =
                 (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
             | Left error -> Left error
             | Right (window, destroy) ->
-                match attemptMakeSdlResource
+                match tryMakeSdlResource
                     (fun () -> SDL.SDL_CreateRenderer (window, -1, sdlConfig.RendererFlags))
                     (fun renderContext -> SDL.SDL_DestroyRenderer renderContext; destroy window) with
                 | Left error -> Left error
                 | Right (renderContext, destroy) ->
-                    match attemptMakeSdlGlobalResource
+                    match tryMakeSdlGlobalResource
                         (fun () -> SDL_ttf.TTF_Init ())
                         (fun () -> SDL_ttf.TTF_Quit (); destroy renderContext) with
                     | Left error -> Left error
                     | Right ((), destroy) ->
-                        match attemptMakeSdlGlobalResource
+                        match tryMakeSdlGlobalResource
 #if MIX_INIT_OGG
                             (fun () -> SDL_mixer.Mix_Init SDL_mixer.MIX_InitFlags.MIX_INIT_OGG) // NOTE: for some reason this line fails on 32-bit builds.. WHY?
 #else
@@ -134,7 +134,7 @@ module SdlDeps =
                             (fun () -> SDL_mixer.Mix_Quit (); destroy ()) with
                         | Left error -> Left error
                         | Right ((), destroy) ->
-                            match attemptMakeSdlGlobalResource
+                            match tryMakeSdlGlobalResource
                                 (fun () -> SDL_mixer.Mix_OpenAudio (Constants.Audio.Frequency, SDL_mixer.MIX_DEFAULT_FORMAT, SDL_mixer.MIX_DEFAULT_CHANNELS, sdlConfig.AudioChunkSize))
                                 (fun () -> SDL_mixer.Mix_CloseAudio (); destroy ()) with
                             | Left error -> Left error

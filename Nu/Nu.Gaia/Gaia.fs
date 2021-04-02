@@ -1705,6 +1705,18 @@ module Gaia =
             Right world
         | Left error -> Left error
 
+    /// Attempt to make Gaia's SDL dependencies.
+    let tryMakeSdlDeps (form : GaiaForm) =
+        let sdlConfig =
+            { ViewConfig = ExistingWindow form.displayPanel.Handle
+              ViewW = form.displayPanel.MaximumSize.Width
+              ViewH = form.displayPanel.MaximumSize.Height
+              RendererFlags = Constants.Render.RendererFlagsDefault
+              AudioChunkSize = Constants.Audio.BufferSizeDefault }
+        match SdlDeps.tryMake sdlConfig with
+        | Left msg -> Left msg
+        | Right sdlDeps -> Right (sdlConfig, sdlDeps)
+
     /// Run Gaia from the F# evaluator.
     let runFromRepl runWhile targetDir sdlDeps form world =
         Globals.World <- world
@@ -1716,14 +1728,8 @@ module Gaia =
         let (savedState, targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         use form = createForm ()
         Globals.Form <- form
-        let sdlConfig =
-            { ViewConfig = ExistingWindow form.displayPanel.Handle
-              ViewW = form.displayPanel.MaximumSize.Width
-              ViewH = form.displayPanel.MaximumSize.Height
-              RendererFlags = Constants.Render.RendererFlagsDefault
-              AudioChunkSize = Constants.Audio.BufferSizeDefault }
-        match SdlDeps.attemptMake sdlConfig with
-        | Right sdlDeps ->
+        match tryMakeSdlDeps form with
+        | Right (sdlConfig, sdlDeps) ->
             let worldConfig =
                 { Imperative = savedState.UseImperativeExecution
                   StandAlone = false

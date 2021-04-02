@@ -679,7 +679,7 @@ module WorldModule3 =
 
         /// Run the game engine as a stand-alone application.
         static member run worldConfig plugin =
-            match SdlDeps.attemptMake worldConfig.SdlConfig with
+            match SdlDeps.tryMake worldConfig.SdlConfig with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 match World.tryMake sdlDeps worldConfig plugin with
