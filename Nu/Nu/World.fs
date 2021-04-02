@@ -547,11 +547,11 @@ module WorldModule3 =
                 let symbolStore = SymbolStore.makeEmpty ()
                 AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) overlayRouter Overlayer.empty symbolStore None
 
-            // make the world's spatial tree
-            let spatialTree = World.makeEntityTree ()
+            // make the world's entity tree
+            let entityTree = World.makeEntityTree ()
 
             // make the world
-            let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree (snd defaultGameDispatcher)
+            let world = World.make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState entityTree (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame world
@@ -647,11 +647,11 @@ module WorldModule3 =
                         let symbolStore = SymbolStore.makeEmpty ()
                         AmbientState.make config.Imperative config.StandAlone config.TickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps)
 
-                    // make the world's spatial tree
-                    let spatialTree = World.makeEntityTree ()
+                    // make the world's entity tree
+                    let entityTree = World.makeEntityTree ()
 
                     // make the world
-                    let world = World.make plugin eventSystem dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher
+                    let world = World.make plugin eventSystem dispatchers subsystems scriptingEnv ambientState entityTree activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world
