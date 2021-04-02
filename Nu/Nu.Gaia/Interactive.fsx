@@ -49,10 +49,10 @@ form.Closing.Add (fun args ->
         args.Cancel <- true)
 
 // initialize sdl dependencies using the form as its rendering surface
-let sdlDeps = Gaia.tryMakeSdlDeps form |> Either.getRightValue
+let (sdlConfig, sdlDeps) = Gaia.tryMakeSdlDeps form |> Either.getRightValue
 
 // make world ready for use in Gaia
-let world = Gaia.tryMakeWorld false sdlDeps WorldConfig.defaultConfig plugin |> Either.getRightValue
+let world = Gaia.tryMakeWorld false sdlDeps { WorldConfig.defaultConfig with SdlConfig = sdlConfig } plugin |> Either.getRightValue
 
 // stop world from ticking (new variable since you can't shadow in repl for some reason...)
 let world' = World.setTickRate 0L world
