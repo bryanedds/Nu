@@ -35,12 +35,13 @@
             this.defaultButton = new System.Windows.Forms.Button();
             this.useGameplayScreenCheckBox = new System.Windows.Forms.CheckBox();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            this.useImperativeExecutionCheckBox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // binaryFilePathText
             // 
             this.binaryFilePathText.Location = new System.Drawing.Point(14, 45);
-            this.binaryFilePathText.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.binaryFilePathText.Margin = new System.Windows.Forms.Padding(2);
             this.binaryFilePathText.Name = "binaryFilePathText";
             this.binaryFilePathText.Size = new System.Drawing.Size(411, 20);
             this.binaryFilePathText.TabIndex = 0;
@@ -58,7 +59,7 @@
             // selectExecutable
             // 
             this.selectExecutable.Location = new System.Drawing.Point(429, 45);
-            this.selectExecutable.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.selectExecutable.Margin = new System.Windows.Forms.Padding(2);
             this.selectExecutable.Name = "selectExecutable";
             this.selectExecutable.Size = new System.Drawing.Size(24, 20);
             this.selectExecutable.TabIndex = 2;
@@ -89,7 +90,7 @@
             // useGameplayScreenCheckBox
             // 
             this.useGameplayScreenCheckBox.AutoSize = true;
-            this.useGameplayScreenCheckBox.Location = new System.Drawing.Point(14, 91);
+            this.useGameplayScreenCheckBox.Location = new System.Drawing.Point(14, 82);
             this.useGameplayScreenCheckBox.Name = "useGameplayScreenCheckBox";
             this.useGameplayScreenCheckBox.Size = new System.Drawing.Size(132, 17);
             this.useGameplayScreenCheckBox.TabIndex = 5;
@@ -100,6 +101,16 @@
             // 
             this.openFileDialog.Filter = "EXE files|*.exe|All files|*.*";
             // 
+            // useImperativeExecutionCheckBox
+            // 
+            this.useImperativeExecutionCheckBox.AutoSize = true;
+            this.useImperativeExecutionCheckBox.Location = new System.Drawing.Point(14, 109);
+            this.useImperativeExecutionCheckBox.Name = "useImperativeExecutionCheckBox";
+            this.useImperativeExecutionCheckBox.Size = new System.Drawing.Size(284, 17);
+            this.useImperativeExecutionCheckBox.TabIndex = 6;
+            this.useImperativeExecutionCheckBox.Text = "Use Imperative Execution (faster, but no Undo / Redo)";
+            this.useImperativeExecutionCheckBox.UseVisualStyleBackColor = true;
+            // 
             // StartForm
             // 
             this.AcceptButton = this.customButton;
@@ -108,13 +119,14 @@
             this.CancelButton = this.defaultButton;
             this.ClientSize = new System.Drawing.Size(467, 179);
             this.ControlBox = false;
+            this.Controls.Add(this.useImperativeExecutionCheckBox);
             this.Controls.Add(this.useGameplayScreenCheckBox);
             this.Controls.Add(this.defaultButton);
             this.Controls.Add(this.customButton);
             this.Controls.Add(this.selectExecutable);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.binaryFilePathText);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "StartForm";
@@ -134,5 +146,6 @@
         public System.Windows.Forms.TextBox binaryFilePathText;
         public System.Windows.Forms.CheckBox useGameplayScreenCheckBox;
         public System.Windows.Forms.OpenFileDialog openFileDialog;
+        public System.Windows.Forms.CheckBox useImperativeExecutionCheckBox;
     }
 }

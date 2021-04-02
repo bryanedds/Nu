@@ -1500,15 +1500,17 @@ module Gaia =
     let selectTargetDirAndMakeNuPlugin () =
         let savedState =
             try scvalue (File.ReadAllText Constants.Editor.SavedStateFilePath)
-            with _ -> { BinaryFilePath = ""; UseGameplayScreen = false }
+            with _ -> { BinaryFilePath = ""; UseGameplayScreen = false; UseImperativeExecution = false }
         use startForm = new StartForm ()
         startForm.binaryFilePathText.Text <- savedState.BinaryFilePath
         startForm.useGameplayScreenCheckBox.Checked <- savedState.UseGameplayScreen
+        startForm.useImperativeExecutionCheckBox.Checked <- savedState.UseImperativeExecution
         if  startForm.ShowDialog () = DialogResult.OK &&
             not (String.IsNullOrWhiteSpace (startForm.binaryFilePathText.Text)) then
             let savedState =
                 { BinaryFilePath = startForm.binaryFilePathText.Text
-                  UseGameplayScreen = startForm.useGameplayScreenCheckBox.Checked }
+                  UseGameplayScreen = startForm.useGameplayScreenCheckBox.Checked
+                  UseImperativeExecution = startForm.useImperativeExecutionCheckBox.Checked }
             try File.WriteAllText (Constants.Editor.SavedStateFilePath, (scstring savedState))
             with _ -> Log.info "Could not save editor state."
             let (targetDir, plugIn) = selectTargetDirAndMakeNuPluginFromFilePath startForm.binaryFilePathText.Text
@@ -1703,17 +1705,6 @@ module Gaia =
             Right world
         | Left error -> Left error
 
-    /// Attempt to make SdlDeps needed to use in the Gaia form.
-    let tryMakeSdlDeps (form : GaiaForm) =
-        let sdlViewConfig = ExistingWindow form.displayPanel.Handle
-        let sdlConfig =
-            { ViewConfig = sdlViewConfig
-              ViewW = form.displayPanel.MaximumSize.Width
-              ViewH = form.displayPanel.MaximumSize.Height
-              RendererFlags = Constants.Render.RendererFlagsDefault
-              AudioChunkSize = Constants.Audio.BufferSizeDefault }
-        SdlDeps.attemptMake sdlConfig
-
     /// Run Gaia from the F# evaluator.
     let runFromRepl runWhile targetDir sdlDeps form world =
         Globals.World <- world
@@ -1721,12 +1712,24 @@ module Gaia =
         Globals.World
 
     /// Run Gaia in isolation.
-    let run worldConfig =
+    let run nuConfig =
         let (savedState, targetDir, plugin) = selectTargetDirAndMakeNuPlugin ()
         use form = createForm ()
         Globals.Form <- form
-        match tryMakeSdlDeps form with
+        let sdlConfig =
+            { ViewConfig = ExistingWindow form.displayPanel.Handle
+              ViewW = form.displayPanel.MaximumSize.Width
+              ViewH = form.displayPanel.MaximumSize.Height
+              RendererFlags = Constants.Render.RendererFlagsDefault
+              AudioChunkSize = Constants.Audio.BufferSizeDefault }
+        match SdlDeps.attemptMake sdlConfig with
         | Right sdlDeps ->
+            let worldConfig =
+                { Imperative = savedState.UseImperativeExecution
+                  StandAlone = false
+                  TickRate = 0L
+                  NuConfig = nuConfig
+                  SdlConfig = sdlConfig }
             match tryMakeWorld savedState.UseGameplayScreen sdlDeps worldConfig plugin with
             | Right world ->
                 Globals.World <- world
