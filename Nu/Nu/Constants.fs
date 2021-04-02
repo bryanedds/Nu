@@ -41,11 +41,6 @@ module Associations =
     let [<Literal>] Audio = "Audio"
 
 [<RequireQualifiedAccess>]
-module SymbolStore =
-
-    let (*Literal*) SymbolMapConfig = Functional
-
-[<RequireQualifiedAccess>]
 module Render =
 
     let [<Literal>] VirtualResolutionX = 960
@@ -66,7 +61,6 @@ module Audio =
     let [<Literal>] SoundVolumeDefault = 0.5f
     let [<Literal>] BufferSizeDefault = 1024
     let [<Literal>] FadeOutMsDefault = 500
-    let (*Literal*) AssetMapConfig = Functional
 
 [<RequireQualifiedAccess>]
 module Physics =
@@ -76,7 +70,6 @@ module Physics =
     let (*Literal*) PixelToPhysicsRatio = 1.0f / PhysicsToPixelRatio
     let [<Literal>] DensityDefault = 1.0f
     let (*Literal*) GravityDefault = Engine.GravityDefault * PhysicsToPixelRatio
-    let (*Literal*) MessageListConfig = Functional
 
 [<RequireQualifiedAccess>]
 module TileMap =
@@ -85,11 +78,6 @@ module TileMap =
     let [<Literal>] CollisionPropertyName = "C"
     let [<Literal>] ElevationPropertyName = "E"
     let [<Literal>] InfoPropertyName = "I"
-
-[<RequireQualifiedAccess>]
-module Metadata =
-
-    let (*Literal*) MetadatMapConfig = Functional
 
 [<RequireQualifiedAccess>]
 module Effects =

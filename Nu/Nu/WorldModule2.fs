@@ -443,7 +443,7 @@ module WorldModule2 =
 
                     // build assets reload asset metadata
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
-                    let metadata = Metadata.make assetGraph
+                    let metadata = Metadata.make (World.getStandAlone world) assetGraph
                     let world = World.setMetadata metadata world
                     let world = World.reloadExistingAssets world
                     let world = World.publish () Events.AssetsReload (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Simulants.Game world

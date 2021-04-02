@@ -817,12 +817,13 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
                 body.LinearVelocity + physicsStepAmount * gravityScale * physicsEngine.PhysicsContext.Gravity
 
     /// Make a physics engine.
-    static member make gravity =
+    static member make standAlone gravity =
+        let config = if standAlone then Imperative else Functional
         let physicsEngine =
             { PhysicsContext = World (AetherPhysicsEngine.toPhysicsV2 gravity)
               Bodies = BodyDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
               Joints = JointDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)
-              PhysicsMessages = UList.makeEmpty Constants.Physics.MessageListConfig
+              PhysicsMessages = UList.makeEmpty config
               IntegrationMessages = List<IntegrationMessage> ()
               RebuildingHack = false }
         physicsEngine :> PhysicsEngine
