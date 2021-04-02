@@ -1143,10 +1143,10 @@ module WorldTypes =
     and [<ReferenceEquality; NoComparison>] World =
         internal
             { // cache line 1
-              ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: P1: put this behind a world API rather than accessing / updating it directly...
+              ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings>
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity, UMap<Entity, EntityState>>, EntityState>
-              mutable EntityTree : Entity SpatialTree MutantCache // NOTE: mutated when Imperative.
+              mutable EntityTree : Entity SpatialTree MutantCache // TODO: figure out why EntityTree is in World rather than per-Screen.
               EntityStates : UMap<Entity, EntityState>
               GroupStates : UMap<Group, GroupState>
               ScreenStates : UMap<Screen, ScreenState>
