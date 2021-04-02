@@ -175,7 +175,8 @@ module WorldDeclarative =
                             else world
                         World.addKeyedValue EntityBindingCountsId entityBindingCounts world
                 | (false, _) ->
-                    let entityBindingCounts = UMap.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
+                    let config = if World.getStandAlone world then Imperative else Functional
+                    let entityBindingCounts = UMap.makeEmpty HashIdentity.Structural config
                     let entityBindingCounts = UMap.add entity.EntityAddress 1 entityBindingCounts
                     let world =
                         if World.getEntityExists entity world
@@ -238,7 +239,8 @@ module WorldDeclarative =
                     let elmishBindings = OMap.add contentBinding.CBSimulantKey (ContentBinding contentBinding) elmishBindings
                     UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
                 | (false, _) ->
-                    let elmishBindings = OMap.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
+                    let config = if World.getStandAlone world then Imperative else Functional
+                    let elmishBindings = OMap.makeEmpty HashIdentity.Structural config
                     let elmishBindings = OMap.add contentBinding.CBSimulantKey (ContentBinding contentBinding) elmishBindings
                     UMap.add propertyAddress elmishBindings world.ElmishBindingsMap
             World.choose { world with ElmishBindingsMap = bindingsMap }
@@ -313,7 +315,8 @@ module WorldDeclarative =
                     let lensesCurrent = World.makeLensesCurrent mapGeneralized contentBinding.CBSource world
                     World.synchronizeSimulants contentBinding.CBMapper contentBinding.CBContentKey mapGeneralized lensesCurrent contentBinding.CBOrigin contentBinding.CBOwner contentBinding.CBParent world
                 else
-                    let lensesCurrent = USet.makeEmpty (LensComparer ()) (if World.getStandAlone world then Imperative else Functional)
+                    let config = if World.getStandAlone world then Imperative else Functional
+                    let lensesCurrent = USet.makeEmpty (LensComparer ()) config
                     World.synchronizeSimulants mapper contentKey (MapGeneralized.make Map.empty) lensesCurrent origin owner parent world
 
             // fin

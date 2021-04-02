@@ -31,9 +31,6 @@ module Engine =
     let (*Literal*) EntityTreeBounds = Vector4 (EntityTreeSize.X * -0.5f, EntityTreeSize.Y * -0.5f, EntityTreeSize.X, EntityTreeSize.Y)
     let (*Literal*) ParticleSizeDefault = Vector2 12.0f
     let (*Literal*) InvalidId = Guid.Empty
-    let (*Literal*) TaskletListConfig = Functional
-    let (*Literal*) SimulantMapConfig = Functional
-    let (*Literal*) KeyValueMapConfig = Functional
     let (*Literal*) GravityDefault = Vector2 (0.0f, -9.80665f)
 
 [<RequireQualifiedAccess>]
