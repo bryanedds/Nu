@@ -545,7 +545,7 @@ module WorldModule3 =
                 let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                 let overlayRouter = OverlayRouter.make overlayRoutes
                 let symbolStore = SymbolStore.makeEmpty ()
-                AmbientState.make config.StandAlone 1L (Metadata.makeEmpty ()) overlayRouter Overlayer.empty symbolStore None
+                AmbientState.make config.StandAlone 1L (Metadata.makeEmpty config.StandAlone) overlayRouter Overlayer.empty symbolStore None
 
             // make the world's spatial tree
             let spatialTree = World.makeEntityTree ()
@@ -614,7 +614,7 @@ module WorldModule3 =
                 // make the world's subsystems
                 let subsystems =
                     let physicsEngine =
-                        AetherPhysicsEngine.make Constants.Physics.GravityDefault
+                        AetherPhysicsEngine.make config.StandAlone Constants.Physics.GravityDefault
                     let renderer =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
@@ -639,7 +639,7 @@ module WorldModule3 =
 
                     // make the world's ambient state
                     let ambientState =
-                        let assetMetadataMap = Metadata.make assetGraph
+                        let assetMetadataMap = Metadata.make config.StandAlone assetGraph
                         let intrinsicOverlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                         let userOverlayRoutes = plugin.MakeOverlayRoutes ()
                         let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes

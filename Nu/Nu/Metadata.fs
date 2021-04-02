@@ -96,21 +96,24 @@ module Metadata =
             | _ -> InvalidMetadata ("Could not load asset metadata '" + scstring asset + "' due to unknown extension '" + extension + "'.")
         (asset.AssetTag.AssetName, metadata)
 
-    let private tryGenerateMetadataSubmap packageName assetGraph =
+    let private tryGenerateMetadataSubmap standAlone packageName assetGraph =
         match AssetGraph.tryLoadAssetsFromPackage true None packageName assetGraph with
         | Right assets ->
-            let submap = assets |> List.map generateAssetMetadata |> UMap.makeFromSeq HashIdentity.Structural Constants.Metadata.MetadatMapConfig
+            let config = if standAlone then Imperative else Functional
+            let submap = assets |> List.map generateAssetMetadata |> UMap.makeFromSeq HashIdentity.Structural config
             (packageName, submap)
         | Left error ->
             Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
-            (packageName, UMap.makeEmpty HashIdentity.Structural Constants.Metadata.MetadatMapConfig)
+            let config = if standAlone then Imperative else Functional
+            (packageName, UMap.makeEmpty HashIdentity.Structural config)
 
-    let private makeMetadataMap packageNames assetGraph =
+    let private makeMetadataMap standAlone packageNames assetGraph =
+        let config = if standAlone then Imperative else Functional
         List.fold
             (fun metadata packageName ->
-                let (packageName, submap) = tryGenerateMetadataSubmap packageName assetGraph
+                let (packageName, submap) = tryGenerateMetadataSubmap standAlone packageName assetGraph
                 UMap.add packageName submap metadata)
-            (UMap.makeEmpty HashIdentity.Structural Constants.Metadata.MetadatMapConfig)
+            (UMap.makeEmpty HashIdentity.Structural config)
             packageNames
 
     /// Try to get the metadata of the given asset.
@@ -178,14 +181,15 @@ module Metadata =
         assetMap
 
     /// Generate metadata from the given asset graph.
-    let make assetGraph =
+    let make standAlone assetGraph =
         let packageNames = AssetGraph.getPackageNames assetGraph
-        let metadataMap = makeMetadataMap packageNames assetGraph
+        let metadataMap = makeMetadataMap standAlone packageNames assetGraph
         { MetadataMap = metadataMap }
 
-    /// The empty metadata.
-    let makeEmpty () =
-        { MetadataMap = UMap.makeEmpty HashIdentity.Structural Constants.Metadata.MetadatMapConfig }
+    /// Make empty metadata.
+    let makeEmpty standAlone =
+        let config = if standAlone then Imperative else Functional
+        { MetadataMap = UMap.makeEmpty HashIdentity.Structural config }
 
 /// Stores metadata for game assets.
 type Metadata = Metadata.Metadata
