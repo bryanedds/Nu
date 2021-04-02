@@ -182,7 +182,7 @@ module WorldModule =
             ignore world
 
         /// Make the world.
-        static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
+        static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState entityTree activeGameDispatcher =
             let config = AmbientState.getCollectionConfig ambientState
             let elmishBindingsMap = UMap.makeEmpty HashIdentity.Structural config
             let entityStates = UMap.makeEmpty HashIdentity.Structural config
@@ -193,7 +193,7 @@ module WorldModule =
                 { ElmishBindingsMap = elmishBindingsMap
                   EventSystemDelegate = eventDelegate
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
-                  EntityTree = MutantCache.make id spatialTree
+                  EntityTree = MutantCache.make id entityTree
                   EntityStates = entityStates
                   GroupStates = groupStates
                   ScreenStates = screenStates

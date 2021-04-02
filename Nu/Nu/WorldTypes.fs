@@ -1146,7 +1146,7 @@ module WorldTypes =
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings>
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity, UMap<Entity, EntityState>>, EntityState>
-              mutable EntityTree : Entity SpatialTree MutantCache // TODO: figure out why EntityTree is in World rather than per-Screen.
+              mutable EntityTree : Entity SpatialTree MutantCache
               EntityStates : UMap<Entity, EntityState>
               GroupStates : UMap<Group, GroupState>
               ScreenStates : UMap<Screen, ScreenState>
