@@ -241,7 +241,8 @@ module Nu =
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                                 | (false, _) ->
                                     if not subscribing then failwithumf ()
-                                    let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural (if World.getStandAlone world then Imperative else Functional)
+                                    let config = if World.getStandAlone world then Imperative else Functional
+                                    let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural config
                                     let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                     World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                             else world

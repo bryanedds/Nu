@@ -29,7 +29,8 @@ module WorldModuleScreen =
                         let groupDirectory = KeyValuePair (screen, groupDirectory.Value)
                         UMap.add screenName groupDirectory world.ScreenDirectory
                     | None ->
-                        let groupDirectory = KeyValuePair (screen, UMap.makeEmpty StringComparer.Ordinal Constants.Engine.SimulantMapConfig)
+                        let config = if World.getStandAlone world then Imperative else Functional
+                        let groupDirectory = KeyValuePair (screen, UMap.makeEmpty StringComparer.Ordinal config)
                         UMap.add screenName groupDirectory world.ScreenDirectory
                 | _ -> failwith ("Invalid screen address '" + scstring screen.ScreenAddress + "'.")
             let screenStates = UMap.add screen screenState world.ScreenStates

@@ -31,10 +31,8 @@ module WorldModuleGroup =
                             let entityDirectory' = KeyValuePair (groupDirectory.Key, groupDirectory')
                             UMap.add screenName entityDirectory' world.ScreenDirectory
                         | None ->
-                            let entityDirectory' =
-                                if World.getStandAlone world
-                                then (KeyValuePair (group, UMap.makeEmpty StringComparer.Ordinal Imperative))
-                                else (KeyValuePair (group, UMap.makeEmpty StringComparer.Ordinal Functional))
+                            let config = if World.getStandAlone world then Imperative else Functional
+                            let entityDirectory' = (KeyValuePair (group, UMap.makeEmpty StringComparer.Ordinal config))
                             let groupDirectory' = UMap.add groupName entityDirectory' groupDirectory.Value
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory
                     | None -> failwith ("Cannot add group '" + scstring group + "' to non-existent screen.")

@@ -204,18 +204,19 @@ module AmbientState =
 
     /// Make an ambient state value.
     let make standAlone tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
+        let config = if standAlone then Imperative else Functional
         StandAlone <- standAlone
         { Liveness = Live
           TickRate = tickRate
           TickTime = 0L
           ClockDelta = 1.0f
           ClockTime = DateTimeOffset.Now
-          Tasklets = UList.makeEmpty Constants.Engine.TaskletListConfig
+          Tasklets = UList.makeEmpty config
           Metadata = assetMetadataMap
           OverlayRouter = overlayRouter
           Overlayer = overlayer
           SymbolStore = symbolStore
-          KeyValueStore = UMap.makeEmpty HashIdentity.Structural Constants.Engine.KeyValueMapConfig
+          KeyValueStore = UMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt }
 
 /// The ambient state of the world.

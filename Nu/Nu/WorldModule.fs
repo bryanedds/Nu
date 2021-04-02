@@ -183,10 +183,11 @@ module WorldModule =
 
         /// Make the world.
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
-            let elmishBindingsMap = UMap.makeEmpty HashIdentity.Structural (if AmbientState.getStandAlone ambientState then Imperative else Functional)
-            let entityStates = UMap.makeEmpty HashIdentity.Structural (if AmbientState.getStandAlone ambientState then Imperative else Functional)
-            let groupStates = UMap.makeEmpty HashIdentity.Structural Constants.Engine.SimulantMapConfig
-            let screenStates = UMap.makeEmpty HashIdentity.Structural Constants.Engine.SimulantMapConfig
+            let config = if AmbientState.getStandAlone ambientState then Imperative else Functional
+            let elmishBindingsMap = UMap.makeEmpty HashIdentity.Structural config
+            let entityStates = UMap.makeEmpty HashIdentity.Structural config
+            let groupStates = UMap.makeEmpty HashIdentity.Structural config
+            let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
             let world =
                 { ElmishBindingsMap = elmishBindingsMap
@@ -199,7 +200,7 @@ module WorldModule =
                   GameState = gameState
                   AmbientState = ambientState
                   Subsystems = subsystems
-                  ScreenDirectory = UMap.makeEmpty StringComparer.Ordinal Constants.Engine.SimulantMapConfig
+                  ScreenDirectory = UMap.makeEmpty StringComparer.Ordinal config
                   Dispatchers = dispatchers
                   ScriptingEnv = scriptingEnv
                   ScriptingContext = Game ()
@@ -661,7 +662,8 @@ module WorldModule =
     type World with // ElmishBindingsMap
 
         static member internal makeLensesCurrent (mapGeneralized : MapGeneralized) lensGeneralized world =
-            let mutable current = USet.makeEmpty (LensComparer ()) (if World.getStandAlone world then Imperative else Functional)
+            let config = if World.getStandAlone world then Imperative else Functional
+            let mutable current = USet.makeEmpty (LensComparer ()) config
             for key in mapGeneralized.ToKeys do
                 // OPTIMIZATION: ensure map is extracted during validation only.
                 // This creates a strong dependency on the map being used in a perfectly predictable way (one validate, one getWithoutValidation).
@@ -742,8 +744,10 @@ module WorldModule =
         static member internal synchronizeSimulants contentMapper contentKey mapGeneralized current origin owner parent world =
             let previous =
                 match World.tryGetKeyedValueFast<IComparable LensComparable USet> (contentKey, world) with
+                | (false, _) ->
+                    let config = if World.getStandAlone world then Imperative else Functional
+                    USet.makeEmpty (LensComparer ()) config
                 | (true, previous) -> previous
-                | (false, _) -> USet.makeEmpty (LensComparer ()) (if World.getStandAlone world then Imperative else Functional)
             let added = USet.differenceFast current previous
             let removed = USet.differenceFast previous current
             let changed = added.Count <> 0 || removed.Count <> 0
@@ -774,7 +778,8 @@ module WorldModule =
                             let current = World.makeLensesCurrent mapGeneralized binding.CBSource world
                             World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
                         else 
-                            let lensesCurrent = USet.makeEmpty (LensComparer ()) (if World.getStandAlone world then Imperative else Functional)
+                            let config = if World.getStandAlone world then Imperative else Functional
+                            let lensesCurrent = USet.makeEmpty (LensComparer ()) config
                             World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world)
                     world elmishBindings
             | (false, _) -> world
