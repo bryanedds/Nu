@@ -241,7 +241,7 @@ module Nu =
                                         World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
                                 | (false, _) ->
                                     if not subscribing then failwithumf ()
-                                    let config = if World.getStandAlone world then Imperative else Functional
+                                    let config = World.getCollectionConfig world
                                     let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural config
                                     let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                     World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
@@ -514,7 +514,7 @@ module WorldModule3 =
                 let eventFilter = Core.getEventFilter ()
                 let globalSimulant = Simulants.Game
                 let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
-                let eventConfig = if config.StandAlone then Imperative else Functional
+                let eventConfig = if config.Imperative then Imperative else Functional
                 EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized eventConfig
 
             // make the default game dispatcher
@@ -545,7 +545,7 @@ module WorldModule3 =
                 let overlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                 let overlayRouter = OverlayRouter.make overlayRoutes
                 let symbolStore = SymbolStore.makeEmpty ()
-                AmbientState.make config.StandAlone 1L (Metadata.makeEmpty config.StandAlone) overlayRouter Overlayer.empty symbolStore None
+                AmbientState.make config.Imperative config.StandAlone 1L (Metadata.makeEmpty config.Imperative) overlayRouter Overlayer.empty symbolStore None
 
             // make the world's spatial tree
             let spatialTree = World.makeEntityTree ()
@@ -583,7 +583,7 @@ module WorldModule3 =
                     let eventFilter = Core.getEventFilter ()
                     let globalSimulant = Simulants.Game
                     let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
-                    let eventConfig = if config.StandAlone then Imperative else Functional
+                    let eventConfig = if config.Imperative then Imperative else Functional
                     EventSystemDelegate.make eventTracerOpt eventFilter globalSimulant globalSimulantGeneralized eventConfig
                     
                 // make plug-in facets and dispatchers
@@ -614,7 +614,7 @@ module WorldModule3 =
                 // make the world's subsystems
                 let subsystems =
                     let physicsEngine =
-                        AetherPhysicsEngine.make config.StandAlone Constants.Physics.GravityDefault
+                        AetherPhysicsEngine.make config.Imperative Constants.Physics.GravityDefault
                     let renderer =
                         match SdlDeps.getRenderContextOpt sdlDeps with
                         | Some renderContext -> SdlRenderer.make renderContext :> Renderer
@@ -639,13 +639,13 @@ module WorldModule3 =
 
                     // make the world's ambient state
                     let ambientState =
-                        let assetMetadataMap = Metadata.make config.StandAlone assetGraph
+                        let assetMetadataMap = Metadata.make config.Imperative assetGraph
                         let intrinsicOverlayRoutes = World.dispatchersToOverlayRoutes dispatchers.EntityDispatchers
                         let userOverlayRoutes = plugin.MakeOverlayRoutes ()
                         let overlayRoutes = intrinsicOverlayRoutes @ userOverlayRoutes
                         let overlayRouter = OverlayRouter.make overlayRoutes
                         let symbolStore = SymbolStore.makeEmpty ()
-                        AmbientState.make config.StandAlone config.TickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps)
+                        AmbientState.make config.Imperative config.StandAlone config.TickRate assetMetadataMap overlayRouter overlayer symbolStore (Some sdlDeps)
 
                     // make the world's spatial tree
                     let spatialTree = World.makeEntityTree ()

@@ -31,7 +31,7 @@ module WorldModuleGroup =
                             let entityDirectory' = KeyValuePair (groupDirectory.Key, groupDirectory')
                             UMap.add screenName entityDirectory' world.ScreenDirectory
                         | None ->
-                            let config = if World.getStandAlone world then Imperative else Functional
+                            let config = World.getCollectionConfig world
                             let entityDirectory' = (KeyValuePair (group, UMap.makeEmpty StringComparer.Ordinal config))
                             let groupDirectory' = UMap.add groupName entityDirectory' groupDirectory.Value
                             UMap.add screenName (KeyValuePair (groupDirectory.Key, groupDirectory')) world.ScreenDirectory

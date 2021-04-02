@@ -15,7 +15,10 @@ type [<NoEquality; NoComparison>] 'w Tasklet =
 [<AutoOpen>]
 module AmbientState =
 
-    /// Tracks whether the game is running stand alone.
+    /// Tracks whether the engine is running imperatively.
+    let mutable private Imperative = true
+
+    /// Tracks whether the engine is running stand-alone.
     let mutable private StandAlone = true
 
     /// Tracks the state of tasklet processing.
@@ -39,9 +42,17 @@ module AmbientState =
               Overlayer : Overlayer
               OverlayRouter : OverlayRouter }
 
-    /// Get whether the game is running in an editor.
+    /// Get whether the engine is running imperatively.
+    let getImperative (_ : 'w AmbientState) =
+        Imperative
+
+    /// Get whether the engine is running stand-alone.
     let getStandAlone (_ : 'w AmbientState) =
         StandAlone
+
+    /// Get the collection config value.
+    let getCollectionConfig (_ : 'w AmbientState) =
+        if Imperative then TConfig.Imperative else TConfig.Functional
 
     /// Get the the liveness state of the engine.
     let getLiveness state =
@@ -203,9 +214,10 @@ module AmbientState =
         by state.OverlayRouter
 
     /// Make an ambient state value.
-    let make standAlone tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
-        let config = if standAlone then Imperative else Functional
+    let make imperative standAlone tickRate assetMetadataMap overlayRouter overlayer symbolStore sdlDepsOpt =
+        Imperative <- imperative
         StandAlone <- standAlone
+        let config = if imperative then TConfig.Imperative else TConfig.Functional
         { Liveness = Live
           TickRate = tickRate
           TickTime = 0L

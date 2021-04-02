@@ -183,7 +183,7 @@ module WorldModule =
 
         /// Make the world.
         static member internal make plugin eventDelegate dispatchers subsystems scriptingEnv ambientState spatialTree activeGameDispatcher =
-            let config = if AmbientState.getStandAlone ambientState then Imperative else Functional
+            let config = AmbientState.getCollectionConfig ambientState
             let elmishBindingsMap = UMap.makeEmpty HashIdentity.Structural config
             let entityStates = UMap.makeEmpty HashIdentity.Structural config
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
@@ -252,10 +252,20 @@ module WorldModule =
         static member internal updateAmbientState updater world =
             World.choose { world with AmbientState = updater world.AmbientState }
 
-        /// Get whether the game is running stand alone.
+        /// Get whether the engine is running imperatively.
+        [<FunctionBinding>]
+        static member getImperative world =
+            World.getAmbientStateBy AmbientState.getImperative world
+
+        /// Get whether the engine is running stand-alone.
         [<FunctionBinding>]
         static member getStandAlone world =
             World.getAmbientStateBy AmbientState.getStandAlone world
+
+        /// Get collection config value.
+        [<FunctionBinding>]
+        static member getCollectionConfig world =
+            World.getAmbientStateBy AmbientState.getCollectionConfig world
 
         /// Get the the liveness state of the engine.
         [<FunctionBinding>]
@@ -522,7 +532,7 @@ module WorldModule =
             world.EntityTree
 
         static member internal setEntityTree entityTree world =
-            if World.getStandAlone world then
+            if World.getImperative world then
                 world.EntityTree <- entityTree
                 world
             else World.choose { world with EntityTree = entityTree }
@@ -662,7 +672,7 @@ module WorldModule =
     type World with // ElmishBindingsMap
 
         static member internal makeLensesCurrent (mapGeneralized : MapGeneralized) lensGeneralized world =
-            let config = if World.getStandAlone world then Imperative else Functional
+            let config = World.getCollectionConfig world
             let mutable current = USet.makeEmpty (LensComparer ()) config
             for key in mapGeneralized.ToKeys do
                 // OPTIMIZATION: ensure map is extracted during validation only.
@@ -745,7 +755,7 @@ module WorldModule =
             let previous =
                 match World.tryGetKeyedValueFast<IComparable LensComparable USet> (contentKey, world) with
                 | (false, _) ->
-                    let config = if World.getStandAlone world then Imperative else Functional
+                    let config = World.getCollectionConfig world
                     USet.makeEmpty (LensComparer ()) config
                 | (true, previous) -> previous
             let added = USet.differenceFast current previous
@@ -778,7 +788,7 @@ module WorldModule =
                             let current = World.makeLensesCurrent mapGeneralized binding.CBSource world
                             World.synchronizeSimulants binding.CBMapper binding.CBContentKey mapGeneralized current binding.CBOrigin binding.CBOwner binding.CBParent world
                         else 
-                            let config = if World.getStandAlone world then Imperative else Functional
+                            let config = World.getCollectionConfig world
                             let lensesCurrent = USet.makeEmpty (LensComparer ()) config
                             World.synchronizeSimulants binding.CBMapper binding.CBContentKey (MapGeneralized.make Map.empty) lensesCurrent binding.CBOrigin binding.CBOwner binding.CBParent world)
                     world elmishBindings
