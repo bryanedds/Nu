@@ -439,7 +439,7 @@ module WorldModuleGame =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None ->
-                    Log.info ("Could not find GameDispatcher '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
+                    Log.info ("Could not find GameDispatcher '" + dispatcherName + "'.")
                     let dispatcherName = typeof<GameDispatcher>.Name
                     Map.find dispatcherName dispatchers
 

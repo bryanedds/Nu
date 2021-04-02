@@ -138,7 +138,7 @@ module WorldGroupModule =
             let dispatcher =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
-                | None -> failwith ("Could not find a GroupDispatcher named '" + dispatcherName + "'. Did you forget to provide this dispatcher from your NuPlugin?")
+                | None -> failwith ("Could not find a GroupDispatcher named '" + dispatcherName + "'.")
             let groupState = GroupState.make nameOpt dispatcher
             let groupState = Reflection.attachProperties GroupState.copy groupState.Dispatcher groupState world
             let group = Group (screen.ScreenAddress <-- ntoa<Group> groupState.Name)
