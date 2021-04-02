@@ -817,8 +817,8 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
                 body.LinearVelocity + physicsStepAmount * gravityScale * physicsEngine.PhysicsContext.Gravity
 
     /// Make a physics engine.
-    static member make standAlone gravity =
-        let config = if standAlone then Imperative else Functional
+    static member make imperative gravity =
+        let config = if imperative then Imperative else Functional
         let physicsEngine =
             { PhysicsContext = World (AetherPhysicsEngine.toPhysicsV2 gravity)
               Bodies = BodyDictionary (HashIdentity.FromFunctions PhysicsId.hash PhysicsId.equals)

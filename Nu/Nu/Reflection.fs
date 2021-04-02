@@ -33,7 +33,6 @@ module Reflection =
              ("PublishPostUpdates", true)
              ("CreationTimeStamp", true)
              ("Optimized", true)
-             ("ShouldMutate", true)
              ("ScriptFrame", true)
              ("ScriptFrameOpt", true)
              ("ScriptUnsubscriptions", true)

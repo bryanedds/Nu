@@ -412,6 +412,10 @@ module Program =
     let [<EntryPoint; STAThread>] main _ =
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
-        let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
+#if FUNCTIONAL
+        let worldConfig = { WorldConfig.defaultConfig with Imperative = false; SdlConfig = sdlConfig }
+#else
+        let worldConfig = { WorldConfig.defaultConfig with Imperative = true; SdlConfig = sdlConfig }
+#endif
         Nu.init worldConfig.NuConfig
         World.run worldConfig (MetricsPlugin ())

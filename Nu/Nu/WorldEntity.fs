@@ -74,8 +74,6 @@ module WorldEntityModule =
         member this.Persistent = lens Property? Persistent this.GetPersistent this.SetPersistent this
         member this.GetOptimized world = World.getEntityOptimized this world
         member this.Optimized = lensReadOnly Property? Optimized this.GetOptimized this
-        member this.GetShouldMutate world = World.getEntityShouldMutate this world
-        member this.ShouldMutate = lensReadOnly Property? ShouldMutate this.GetShouldMutate this
         member this.GetDestroying world = World.getEntityDestroying this world
         member this.Destroying = lensReadOnly Property? Destroying this.GetDestroying this
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
@@ -103,7 +101,7 @@ module WorldEntityModule =
         member this.State world =
             let entityState = World.getEntityState this world
 #if DEBUG
-            if World.getStandAlone world && not entityState.Optimized then
+            if World.getImperative world && not entityState.Optimized then
                 failwith "Can get the entity state of an entity only if it is Optimized (Imperative, Omnipresent, and not PublishChangeEvents)."
 #endif
             entityState

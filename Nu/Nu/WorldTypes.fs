@@ -147,17 +147,19 @@ type [<StructuralEquality; NoComparison>] NuConfig =
 
 /// Configuration parameters for the world.
 type [<StructuralEquality; NoComparison>] WorldConfig =
-    { NuConfig : NuConfig
-      SdlConfig : SdlConfig
+    { Imperative : bool
+      StandAlone : bool
       TickRate : int64
-      StandAlone : bool }
+      SdlConfig : SdlConfig
+      NuConfig : NuConfig }
 
     /// The default configuration of the world.
     static member defaultConfig =
-        { NuConfig = NuConfig.defaultConfig
-          SdlConfig = SdlConfig.defaultConfig
+        { Imperative = true
+          StandAlone = true
           TickRate = 1L
-          StandAlone = true }
+          SdlConfig = SdlConfig.defaultConfig
+          NuConfig = NuConfig.defaultConfig }
 
 /// Extensions for EventTrace.
 module EventTrace =
@@ -663,10 +665,10 @@ module WorldTypes =
             member this.GetXtension () = this.Xtension
 
         /// Make an entity state value.
-        static member make nameOpt imperative overlayNameOpt (dispatcher : EntityDispatcher) =
-            let (id, name) = Gen.idAndNameIf nameOpt
+        static member make imperative nameOpt overlayNameOpt (dispatcher : EntityDispatcher) =
             let mutable transform = Transform.makeDefault ()
             transform.Imperative <- imperative
+            let (id, name) = Gen.idAndNameIf nameOpt
             { Transform = transform
               Dispatcher = dispatcher
               Facets = [||]
@@ -701,7 +703,7 @@ module WorldTypes =
 
         /// Try to set an xtension property with explicit type information.
         static member trySetProperty propertyName property (entityState : EntityState) =
-            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
             match Xtension.trySetProperty propertyName property entityState.Xtension with
             | struct (true, xtension) ->
                 entityState.Xtension <- xtension // redundant if xtension is imperative
@@ -710,21 +712,21 @@ module WorldTypes =
 
         /// Set an xtension property with explicit type information.
         static member setProperty propertyName property (entityState : EntityState) =
-            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
             let xtension = Xtension.setProperty propertyName property entityState.Xtension
             entityState.Xtension <- xtension // redundant if xtension is imperative
             entityState
 
         /// Attach an xtension property.
         static member attachProperty name property (entityState : EntityState) =
-            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
             let xtension = Xtension.attachProperty name property entityState.Xtension
             entityState.Xtension <- xtension // redundant if xtension is imperative
             entityState
 
         /// Detach an xtension property.
         static member detachProperty name (entityState : EntityState) =
-            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
             let xtension = Xtension.detachProperty name entityState.Xtension
             entityState.Xtension <- xtension // redundant if xtension is imperative
             entityState
@@ -735,7 +737,7 @@ module WorldTypes =
 
         /// Set an entity state's transform.
         static member setTransformByRef (value : Transform inref, entityState : EntityState) =
-            let entityState = if entityState.ShouldMutate then entityState else EntityState.diverge entityState
+            let entityState = if entityState.Imperative then entityState else EntityState.diverge entityState
             Transform.assignByRef (&value, &entityState.Transform)
             entityState
 
@@ -759,7 +761,6 @@ module WorldTypes =
         member this.PublishPostUpdates with get () = this.Transform.PublishPostUpdates and set value = this.Transform.PublishPostUpdates <- value
         member this.Persistent with get () = this.Transform.Persistent and set value = this.Transform.Persistent <- value
         member this.Optimized with get () = this.Transform.Optimized
-        member this.ShouldMutate with get () = this.Transform.ShouldMutate
 
     /// The game type that hosts the various screens used to navigate through a game.
     and Game (gameAddress) =
@@ -1145,7 +1146,7 @@ module WorldTypes =
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings> // TODO: P1: put this behind a world API rather than accessing / updating it directly...
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity, UMap<Entity, EntityState>>, EntityState>
-              mutable EntityTree : Entity SpatialTree MutantCache // NOTE: mutated when StandAlone.
+              mutable EntityTree : Entity SpatialTree MutantCache // NOTE: mutated when Imperative.
               EntityStates : UMap<Entity, EntityState>
               GroupStates : UMap<Group, GroupState>
               ScreenStates : UMap<Screen, ScreenState>
