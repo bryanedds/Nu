@@ -1129,37 +1129,37 @@ module WorldTypes =
           Renderer : Renderer
           AudioPlayer : AudioPlayer }
 
+    /// Keeps the World from occupying more than two cache lines.
+    and [<ReferenceEquality; NoComparison>] WorldExtension =
+        { DestructionListRev : Simulant list
+          Plugin : NuPlugin }
+
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general
     /// configuration data.
-    ///
-    /// Unfortunately, in a 64-bit context, this is larger than a single cache line. We can decompose
-    /// this type further, but the trade-off is introducing additional pointer indrections in some
-    /// cases. Fortunately, we currently have the most accessed parts in a single cache line. Still,
-    /// it might be worth the extra decomposition.
     ///
     /// NOTE: this would be better as private, but there is just too much code to fit in this file
     /// for that.
     and [<ReferenceEquality; NoComparison>] World =
         internal
             { // cache line 1
-              ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings>
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity, UMap<Entity, EntityState>>, EntityState>
-              mutable EntityTree : Entity SpatialTree MutantCache
               EntityStates : UMap<Entity, EntityState>
               GroupStates : UMap<Group, GroupState>
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
+              mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
+              mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
               // cache line 2
+              ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings>
               AmbientState : World AmbientState
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, UMap<string, Entity>>>>>
               Dispatchers : Dispatchers
               ScriptingEnv : Scripting.Env
               ScriptingContext : Simulant
-              DestructionListRev : Simulant list
-              Plugin : NuPlugin }
+              WorldExtension : WorldExtension }
 
         interface World EventSystem with
 

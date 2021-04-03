@@ -86,6 +86,11 @@ module WorldModule =
     let mutable internal isSelected : Simulant -> World -> bool =
         Unchecked.defaultof<_>
 
+    /// F# reach-around for getting a screen's Ecs.
+    let mutable internal getScreenEcs : Screen -> World -> World Ecs =
+        Unchecked.defaultof<_>
+
+    /// F# reach-around for sorting subscriptions by elevation.
     let mutable internal sortSubscriptionsByElevation : (Guid * SubscriptionEntry) seq -> obj -> (Guid * SubscriptionEntry) seq =
         Unchecked.defaultof<_>
 
@@ -189,23 +194,24 @@ module WorldModule =
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
+            let worldExtension = { DestructionListRev = []; Plugin = plugin }
             let world =
-                { ElmishBindingsMap = elmishBindingsMap
-                  EventSystemDelegate = eventDelegate
+                { EventSystemDelegate = eventDelegate
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
-                  EntityTree = MutantCache.make id entityTree
                   EntityStates = entityStates
                   GroupStates = groupStates
                   ScreenStates = screenStates
                   GameState = gameState
+                  SelectedEcsOpt = Unchecked.defaultof<_>
+                  EntityTree = MutantCache.make id entityTree
+                  ElmishBindingsMap = elmishBindingsMap
                   AmbientState = ambientState
                   Subsystems = subsystems
                   ScreenDirectory = UMap.makeEmpty StringComparer.Ordinal config
                   Dispatchers = dispatchers
                   ScriptingEnv = scriptingEnv
                   ScriptingContext = Game ()
-                  DestructionListRev = []
-                  Plugin = plugin }
+                  WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world
 
@@ -526,6 +532,22 @@ module WorldModule =
             Map.toValueList |>
             List.map (fun dispatcher -> (getTypeName dispatcher, None))
 
+    type World with // SelectedEcsOpt
+
+        static member getSelectedEcsOpt world =
+            world.SelectedEcsOpt
+
+        static member getSelectedEcs world =
+            match  world.SelectedEcsOpt with
+            | Some selectedEcsOpt -> selectedEcsOpt
+            | None -> failwith "Cannot get Ecs when no screen is selected."
+
+        static member internal setSelectedEcsOpt selectedEcsOpt world =
+            if World.getImperative world then
+                world.SelectedEcsOpt <- selectedEcsOpt
+                world
+            else World.choose { world with SelectedEcsOpt = selectedEcsOpt }
+
     type World with // EntityTree
 
         static member internal getEntityTree world =
@@ -836,24 +858,30 @@ module WorldModule =
     type World with // Destruction
 
         static member internal addSimulantToDestruction simulant world =
-            { world with DestructionListRev = simulant :: world.DestructionListRev }
+            { world with
+                WorldExtension =
+                    { world.WorldExtension with
+                        DestructionListRev = simulant :: world.WorldExtension.DestructionListRev }}
 
         static member internal tryRemoveSimulantFromDestruction simulant world =
-            { world with DestructionListRev = List.remove ((=) simulant) world.DestructionListRev }
+            { world with
+                WorldExtension =
+                    { world.WorldExtension with
+                        DestructionListRev = List.remove ((=) simulant) world.WorldExtension.DestructionListRev }}
 
     type World with // Plugin
 
         static member tryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle world =
-            world.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
+            world.WorldExtension.Plugin.TryMakeEmitter time lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax emitterStyle
 
         static member internal preFrame world =
-            world.Plugin.PreFrame world
+            world.WorldExtension.Plugin.PreFrame world
 
         static member internal perFrame world =
-            world.Plugin.PerFrame world
+            world.WorldExtension.Plugin.PerFrame world
 
         static member internal postFrame world =
-            world.Plugin.PostFrame world
+            world.WorldExtension.Plugin.PostFrame world
 
     type World with // Debugging
 

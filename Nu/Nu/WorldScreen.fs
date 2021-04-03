@@ -189,7 +189,7 @@ module WorldScreenModule =
                 match Map.tryFind dispatcherName dispatchers with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find ScreenDispatcher '" + dispatcherName + "'. Did you forget to expose this dispatcher from your NuPlugin?")
-            let ecs = world.Plugin.MakeEcs ()
+            let ecs = world.WorldExtension.Plugin.MakeEcs ()
             let screenState = ScreenState.make nameOpt dispatcher ecs
             let screenState = Reflection.attachProperties ScreenState.copy screenState.Dispatcher screenState world
             let screen = ntos screenState.Name
