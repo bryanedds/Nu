@@ -117,7 +117,7 @@ module WorldModuleScreen =
         static member internal setScreenOutgoing value screen world = World.updateScreenState (fun screenState -> { screenState with Outgoing = value }) Property? Outgoing value screen world
         static member internal getScreenPersistent screen world = (World.getScreenState screen world).Persistent
         static member internal setScreenPersistent value screen world = World.updateScreenState (fun screenState -> if value <> screenState.Persistent then { screenState with Persistent = value } else Unchecked.defaultof<_>) Property? Persistent value screen world
-        static member internal getScreenDestroying (screen : Screen) world = List.exists ((=) (screen :> Simulant)) world.DestructionListRev
+        static member internal getScreenDestroying (screen : Screen) world = List.exists ((=) (screen :> Simulant)) world.WorldExtension.DestructionListRev
         static member internal getScreenCreationTimeStamp screen world = (World.getScreenState screen world).CreationTimeStamp
         static member internal getScreenScriptFrame screen world = (World.getScreenState screen world).ScriptFrame
         static member internal setScreenScriptFrame value screen world = World.updateScreenState (fun screenState -> if value <> screenState.ScriptFrame then { screenState with ScriptFrame = value } else Unchecked.defaultof<_>) Property? ScriptFrame value screen world
@@ -283,7 +283,7 @@ module WorldModuleScreen =
                     Map.find dispatcherName dispatchers
 
             // make the ecs
-            let ecs = world.Plugin.MakeEcs ()
+            let ecs = world.WorldExtension.Plugin.MakeEcs ()
 
             // make the screen state and populate its properties
             let screenState = ScreenState.make None dispatcher ecs

@@ -124,7 +124,7 @@ module WorldModuleGroup =
         static member internal setGroupVisible value group world = World.updateGroupState (fun groupState -> if value <> groupState.Visible then { groupState with Visible = value } else Unchecked.defaultof<_>) Property? Visible value group world
         static member internal getGroupPersistent group world = (World.getGroupState group world).Persistent
         static member internal setGroupPersistent value group world = World.updateGroupState (fun groupState -> if value <> groupState.Persistent then { groupState with Persistent = value } else Unchecked.defaultof<_>) Property? Persistent value group world
-        static member internal getGroupDestroying (group : Group) world = List.exists ((=) (group :> Simulant)) world.DestructionListRev
+        static member internal getGroupDestroying (group : Group) world = List.exists ((=) (group :> Simulant)) world.WorldExtension.DestructionListRev
         static member internal getGroupCreationTimeStamp group world = (World.getGroupState group world).CreationTimeStamp
         static member internal getGroupScriptFrame group world = (World.getGroupState group world).ScriptFrame
         static member internal setGroupScriptFrame value group world = World.updateGroupState (fun groupState -> if value <> groupState.ScriptFrame then { groupState with ScriptFrame = value } else Unchecked.defaultof<_>) Property? ScriptFrame value group world

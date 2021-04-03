@@ -320,6 +320,10 @@ module Nu =
             WorldModule.isSelected <- 
                 World.isSelected
 
+            // init getScreenEcs F# reach-around
+            WorldModule.getScreenEcs <- 
+                World.getScreenEcs
+
             // init sortSubscriptionByElevation F# reach-around
             WorldModule.sortSubscriptionsByElevation <- fun subscriptions worldObj ->
                 let world = worldObj :?> World

@@ -195,6 +195,12 @@ module WorldModuleGame =
                         else Unchecked.defaultof<_>)
                     world
 
+            // set selected ecs opt
+            let world =
+                match value with
+                | Some screen -> World.setSelectedEcsOpt (Some (WorldModule.getScreenEcs screen world)) world
+                | None -> World.setSelectedEcsOpt None world
+
             // handle some case
             match value with
             | Some screen ->

@@ -509,9 +509,9 @@ module WorldModule2 =
             let world =
                 List.foldBack (fun simulant world ->
                     World.destroyImmediate simulant world)
-                    world.DestructionListRev
+                    world.WorldExtension.DestructionListRev
                     world
-            if List.notEmpty world.DestructionListRev
+            if List.notEmpty world.WorldExtension.DestructionListRev
             then World.destroySimulants world
             else world
 
