@@ -1149,8 +1149,8 @@ module WorldTypes =
               GroupStates : UMap<Group, GroupState>
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
-              mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
               mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
+              mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
               // cache line 2
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings>
               AmbientState : World AmbientState
