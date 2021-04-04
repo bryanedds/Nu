@@ -21,30 +21,30 @@ module BlazeDispatcherModule =
 
         // here we channel from events to signals
         override this.Channel (_, _) =
-            [Simulants.Splash.SelectEvent => cmd PlaySplashSound
-             Simulants.TitleCredits.ClickEvent => cmd ShowCredits
-             Simulants.TitlePlay.ClickEvent => cmd ShowGameplay
-             Simulants.TitleExit.ClickEvent => cmd ExitGame
-             Simulants.CreditsBack.ClickEvent => cmd ShowTitle
-             Simulants.GameplayBack.ClickEvent => cmd ShowTitle]
+            [Simulants.Splash.Screen.SelectEvent => cmd PlaySplashSound
+             Simulants.Title.Gui.Credits.ClickEvent => cmd ShowCredits
+             Simulants.Title.Gui.Play.ClickEvent => cmd ShowGameplay
+             Simulants.Title.Gui.Exit.ClickEvent => cmd ExitGame
+             Simulants.Credits.Gui.Back.ClickEvent => cmd ShowTitle
+             Simulants.Gameplay.Gui.Back.ClickEvent => cmd ShowTitle]
 
         // here we handle the above commands
         override this.Command (_, command, _, world) =
             let world =
                 match command with
                 | PlaySplashSound -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gui.SplashSound world
-                | ShowTitle -> World.transitionScreen Simulants.Title world
-                | ShowCredits -> World.transitionScreen Simulants.Credits world
-                | ShowGameplay -> World.transitionScreen Simulants.Gameplay world
+                | ShowTitle -> World.transitionScreen Simulants.Title.Screen world
+                | ShowCredits -> World.transitionScreen Simulants.Credits.Screen world
+                | ShowGameplay -> World.transitionScreen Simulants.Gameplay.Screen world
                 | ExitGame -> World.exit world
             just world
 
         // here we describe the content of the game including all of its screens.
         override this.Content (_, _) =
-            [Content.screen Simulants.Splash.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title)) [] []
-             Content.screenFromGroupFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath
-             Content.screenFromGroupFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath
-             Content.screenFromGroupFile<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.Gameplay.DeadBlazeSong))) Assets.Gui.GameplayGroupFilePath]
+            [Content.screen Simulants.Splash.Screen.Name (Splash (Constants.Dissolve.Default, Constants.Splash.Default, None, Simulants.Title.Screen)) [] []
+             Content.screenFromGroupFile Simulants.Title.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.TitleGroupFilePath
+             Content.screenFromGroupFile Simulants.Credits.Screen.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.MachinerySong)) Assets.Gui.CreditsGroupFilePath
+             Content.screenFromGroupFile<GameplayDispatcher> Simulants.Gameplay.Screen.Name (Dissolve (Constants.Dissolve.Default, (Some Assets.Gameplay.DeadBlazeSong))) Assets.Gui.GameplayGroupFilePath]
 
         // here we hint to the renderer and audio system that the 'Gui' package should be loaded
         override this.Register (game, world) =

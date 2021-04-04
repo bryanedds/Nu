@@ -964,29 +964,33 @@ module Gaia =
 
     let private handleFormUndo (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            match Globals.PastWorlds with
-            | [] -> world
-            | pastWorld :: pastWorlds ->
-                let futureWorld = World.shelve world
-                let world = World.unshelve pastWorld
-                Globals.PastWorlds <- pastWorlds
-                Globals.FutureWorlds <- futureWorld :: Globals.FutureWorlds
-                let world = World.setTickRate 0L world
-                refreshFormOnUndoRedo form world
-                world
+            if not (World.getImperative world) then
+                match Globals.PastWorlds with
+                | pastWorld :: pastWorlds ->
+                    let futureWorld = World.shelve world
+                    let world = World.unshelve pastWorld
+                    Globals.PastWorlds <- pastWorlds
+                    Globals.FutureWorlds <- futureWorld :: Globals.FutureWorlds
+                    let world = World.setTickRate 0L world
+                    refreshFormOnUndoRedo form world
+                    world
+                | [] -> world
+            else world
 
     let private handleFormRedo (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
-            match Globals.FutureWorlds with
-            | [] -> world
-            | futureWorld :: futureWorlds ->
-                let pastWorld = World.shelve world
-                let world = World.unshelve futureWorld
-                Globals.PastWorlds <- pastWorld :: Globals.PastWorlds
-                Globals.FutureWorlds <- futureWorlds
-                let world = World.setTickRate 0L world
-                refreshFormOnUndoRedo form world
-                world
+            if not (World.getImperative world) then
+                match Globals.FutureWorlds with
+                | futureWorld :: futureWorlds ->
+                    let pastWorld = World.shelve world
+                    let world = World.unshelve futureWorld
+                    Globals.PastWorlds <- pastWorld :: Globals.PastWorlds
+                    Globals.FutureWorlds <- futureWorlds
+                    let world = World.setTickRate 0L world
+                    refreshFormOnUndoRedo form world
+                    world
+                | [] -> world
+            else world
 
     let private handleFormTickingChanged (form : GaiaForm) (_ : EventArgs) =
         addWorldChanger $ fun world ->
@@ -1371,23 +1375,23 @@ module Gaia =
         | DragCameraNone -> world
 
     // TODO: remove code duplication with below
-    let private updateUndoButton (form : GaiaForm) =
+    let private updateUndoButton (form : GaiaForm) world =
         if form.undoToolStripMenuItem.Enabled then
             if List.isEmpty Globals.PastWorlds then
                 form.undoButton.Enabled <- false
                 form.undoToolStripMenuItem.Enabled <- false
         elif not (List.isEmpty Globals.PastWorlds) then
-            form.undoButton.Enabled <- true
-            form.undoToolStripMenuItem.Enabled <- true
+            form.undoButton.Enabled <- not (World.getImperative world)
+            form.undoToolStripMenuItem.Enabled <- not (World.getImperative world)
 
-    let private updateRedoButton (form : GaiaForm) =
+    let private updateRedoButton (form : GaiaForm) world =
         if form.redoToolStripMenuItem.Enabled then
             if List.isEmpty Globals.FutureWorlds then
                 form.redoButton.Enabled <- false
                 form.redoToolStripMenuItem.Enabled <- false
         elif not (List.isEmpty Globals.FutureWorlds) then
-            form.redoButton.Enabled <- true
-            form.redoToolStripMenuItem.Enabled <- true
+            form.redoButton.Enabled <- not (World.getImperative world)
+            form.redoToolStripMenuItem.Enabled <- not (World.getImperative world)
 
     let private updateEditorWorld form world =
         let worldChangersCopy = List.ofSeq Globals.WorldChangers
@@ -1395,8 +1399,8 @@ module Gaia =
         let world = List.fold (fun world worldChanger -> worldChanger world) world worldChangersCopy
         let world = updateEntityDrag form world
         let world = updateCameraDrag form world
-        updateUndoButton form
-        updateRedoButton form
+        updateUndoButton form world
+        updateRedoButton form world
         if not form.propertyValueTextBox.Focused &&
            not form.applyPropertyButton.Focused &&
            not form.IsClosing then
@@ -1463,9 +1467,9 @@ module Gaia =
         refreshHierarchyTreeView form Globals.World
         refreshGroupTabs form Globals.World
         selectGroup defaultGroup form Globals.World
-        form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
         form.tickingButton.CheckState <- CheckState.Unchecked
         form.songPlaybackButton.CheckState <- if World.getMasterSongVolume world = 0.0f then CheckState.Unchecked else CheckState.Checked
+        form.displayPanel.Focus () |> ignore // keeps user from having to manually click on displayPanel to interact
         form.add_LowLevelKeyboardHook (fun nCode wParam lParam ->
             let WM_KEYDOWN = 0x0100
             let WM_SYSKEYDOWN = 0x0104

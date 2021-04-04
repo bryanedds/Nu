@@ -12,4 +12,4 @@ type BlazePlugin () =
 
     // specify the screen dispatcher to use in the editor
     override this.GetEditorScreenDispatcher () =
-        (Simulants.Gameplay, typeof<GameplayDispatcher>)
+        (Simulants.Gameplay.Screen, typeof<GameplayDispatcher>)

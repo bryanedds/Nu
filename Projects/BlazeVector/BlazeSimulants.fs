@@ -1,35 +1,54 @@
 ﻿namespace BlazeVector
 open Nu
 
+// this module provides global handles to the game's key simulants.
+// having a Simulants module for your game is optional, but can be nice to avoid duplicating string literals across
+// the code base.
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // same as above, but for the splash screen
-    let Splash = Screen "Splash"
+    [<RequireQualifiedAccess>]
+    module Splash =
 
-    // same as above, but for the title screen
-    let Title = Screen "Title"
+        let Screen = Screen "Splash"
 
-    // this is the group that is loaded into the title screen that contains all of its gui
-    // entities. You'll notice that the group is built from a combination of the title screen as
-    // well as its own individual name as found in its document, 'Assets/Gui/Title.nugroup'.
-    let TitleGui = Title / "Gui"
+    [<RequireQualifiedAccess>]
+    module Title =
 
-    // this is like the above, but for the play button found in the above group
-    let TitlePlay = TitleGui / "Play"
+        let Screen = Screen "Title"
 
-    // and so on for the title screens credits and exit buttons
-    let TitleCredits = TitleGui / "Credits"
-    let TitleExit = TitleGui / "Exit"
+        [<RequireQualifiedAccess>]
+        module Gui =
 
-    // like those proceeding them, these are the various simulants of the credits screen
-    let Credits = Screen "Credits"
-    let CreditsGui = Credits / "Gui"
-    let CreditsBack = CreditsGui / "Back"
+            let Group = Screen / "Gui"
+            let Play = Group / "Play"
+            let Credits = Group / "Credits"
+            let Exit = Group / "Exit"
 
-    // gameplay simulants
-    let Gameplay = Screen "Gameplay"
-    let GameplayGui = Gameplay / "Gui"
-    let GameplayBack = GameplayGui / "Back"
-    let Scene = Gameplay / "Scene"
-    let Player = Scene / "Player"
+    [<RequireQualifiedAccess>]
+    module Credits =
+        
+        let Screen = Screen "Credits"
+
+        [<RequireQualifiedAccess>]
+        module Gui =
+
+            let Group = Screen / "Gui"
+            let Back = Group / "Back"
+
+    [<RequireQualifiedAccess>]
+    module Gameplay =
+
+        let Screen = Screen "Gameplay"
+
+        [<RequireQualifiedAccess>]
+        module Gui =
+
+            let Group = Screen / "Gui"
+            let Back = Group / "Back"
+
+        [<RequireQualifiedAccess>]
+        module Scene =
+
+            let Group = Screen / "Scene"
+            let Player = Group / "Player"

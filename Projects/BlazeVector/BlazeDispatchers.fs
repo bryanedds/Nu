@@ -253,18 +253,18 @@ module SceneModule =
                 match command with
                 | AdjustCamera ->
                     if World.getTickRate world <> 0L then
-                        let playerPosition = Simulants.Player.GetPosition world
-                        let playerSize = Simulants.Player.GetSize world
+                        let playerPosition = Simulants.Gameplay.Scene.Player.GetPosition world
+                        let playerSize = Simulants.Gameplay.Scene.Player.GetSize world
                         let eyeCenter = World.getEyeCenter world
                         let eyeSize = World.getEyeSize world
                         let eyeCenter = Vector2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f, eyeCenter.Y)
                         Game.SetEyeCenter eyeCenter world
                     else world
                 | PlayerFall ->
-                    if Simulants.Player.HasFallen world && World.isSelectedScreenIdling world then
+                    if Simulants.Gameplay.Scene.Player.HasFallen world && World.isSelectedScreenIdling world then
                         let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
-                        if Simulants.Title.Exists world
-                        then World.transitionScreen Simulants.Title world
+                        if Simulants.Title.Screen.Exists world
+                        then World.transitionScreen Simulants.Title.Screen world
                         else world
                     else world
             just world
@@ -307,7 +307,7 @@ module GameplayModule =
                 [0 .. SectionCount - 1]
 
         static let createScene gameplay world =
-            World.readGroupFromFile Assets.Gameplay.SceneGroupFilePath (Some Simulants.Scene.Name) gameplay world |> snd
+            World.readGroupFromFile Assets.Gameplay.SceneGroupFilePath (Some Simulants.Gameplay.Scene.Group.Name) gameplay world |> snd
 
         override this.Channel (_, gameplay) =
             [gameplay.SelectEvent => cmd StartPlay
@@ -321,7 +321,7 @@ module GameplayModule =
                     createSectionGroups gameplay world
                 | StopPlay ->
                     let sectionNames = [for i in 0 .. SectionCount - 1 do yield SectionName + scstring i]
-                    let groupNames = Simulants.Scene.Name :: sectionNames
+                    let groupNames = Simulants.Gameplay.Scene.Group.Name :: sectionNames
                     let groups = List.map (fun groupName -> gameplay / groupName) groupNames
                     World.destroyGroups groups world
             just world
