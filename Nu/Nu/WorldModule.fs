@@ -202,8 +202,8 @@ module WorldModule =
                   GroupStates = groupStates
                   ScreenStates = screenStates
                   GameState = gameState
-                  SelectedEcsOpt = Unchecked.defaultof<_>
                   EntityTree = MutantCache.make id entityTree
+                  SelectedEcsOpt = None
                   ElmishBindingsMap = elmishBindingsMap
                   AmbientState = ambientState
                   Subsystems = subsystems
@@ -532,6 +532,20 @@ module WorldModule =
             Map.toValueList |>
             List.map (fun dispatcher -> (getTypeName dispatcher, None))
 
+    type World with // EntityTree
+
+        static member internal getEntityTree world =
+            world.EntityTree
+
+        static member internal setEntityTree entityTree world =
+            if World.getImperative world then
+                world.EntityTree <- entityTree
+                world
+            else World.choose { world with EntityTree = entityTree }
+
+        static member internal updateEntityTree updater world =
+            World.setEntityTree (updater (World.getEntityTree world))
+
     type World with // SelectedEcsOpt
 
         static member getSelectedEcsOpt world =
@@ -547,20 +561,6 @@ module WorldModule =
                 world.SelectedEcsOpt <- selectedEcsOpt
                 world
             else World.choose { world with SelectedEcsOpt = selectedEcsOpt }
-
-    type World with // EntityTree
-
-        static member internal getEntityTree world =
-            world.EntityTree
-
-        static member internal setEntityTree entityTree world =
-            if World.getImperative world then
-                world.EntityTree <- entityTree
-                world
-            else World.choose { world with EntityTree = entityTree }
-
-        static member internal updateEntityTree updater world =
-            World.setEntityTree (updater (World.getEntityTree world))
 
     type World with // Subsystems
 
