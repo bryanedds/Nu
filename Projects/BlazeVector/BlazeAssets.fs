@@ -1,9 +1,12 @@
 ﻿namespace BlazeVector
 open Nu
 
+// this module contains asset constants that are used by the game.
+// having an assets module is optional, but can prevent you from duplicating string literals across the code base.
 [<RequireQualifiedAccess>]
 module Assets =
 
+    // these are assets from the Gui package.
     [<RequireQualifiedAccess>]
     module Gui =
 
@@ -14,6 +17,7 @@ module Assets =
         let CreditsGroupFilePath = "Assets/Gui/Credits.nugroup"
         let GameplayGroupFilePath = "Assets/Gui/Gameplay.nugroup"
 
+    // these are assets from the Gameplay package.
     [<RequireQualifiedAccess>]
     module Gameplay =
         
