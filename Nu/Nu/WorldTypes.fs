@@ -182,11 +182,6 @@ module EventTrace =
 [<AutoOpen>]
 module WorldTypes =
 
-    // Property category reach-arounds.
-    let mutable internal getPropertyOpt : string -> Propertied -> obj -> obj option = Unchecked.defaultof<_>
-    let mutable internal setPropertyOpt : string -> Propertied -> obj option -> Type -> obj -> obj = Unchecked.defaultof<_>
-    let mutable internal handlePropertyChange : string -> Propertied -> obj -> obj -> obj * obj = Unchecked.defaultof<_>
-
     // EventSystem reach-arounds.
     let mutable internal handleUserDefinedCallback : obj -> obj -> obj -> Handling * obj = Unchecked.defaultof<_>
     let mutable internal handleSubscribeAndUnsubscribeEventHook : bool -> obj Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
@@ -1162,22 +1157,6 @@ module WorldTypes =
               WorldExtension : WorldExtension }
 
         interface World EventSystem with
-
-            member this.GetPropertyOpt<'a> propertyName simulant =
-                match getPropertyOpt propertyName simulant (box this) with
-                | Some a -> Some (a :?> 'a)
-                | None -> None
-
-            member this.SetPropertyOpt<'a> propertyName simulant (value : 'a option) =
-                let world =
-                    match value with
-                    | Some a -> setPropertyOpt propertyName simulant (Some (box a)) typeof<'a> (box this)
-                    | None -> setPropertyOpt propertyName simulant None typeof<'a> (box this)
-                world :?> World
-
-            member this.HandlePropertyChange propertyName simulant handler =
-                let (unsubscribe, world) = handlePropertyChange propertyName simulant (box handler) (box this)
-                (unsubscribe :?> World -> World, world :?> World)
 
             member this.GetLiveness () =
                 AmbientState.getLiveness this.AmbientState
