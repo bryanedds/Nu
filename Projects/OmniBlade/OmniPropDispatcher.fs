@@ -34,30 +34,34 @@ module PropDispatcher =
              entity.Bounds <== prop --> fun prop -> prop.Bounds
              entity.IsSensor <== prop --> fun prop ->
                 match prop.PropData with
-                | Sensor _ | Portal _ | SavePoint -> true
+                | Portal _ | Sensor _ | SavePoint -> true
                 | _ -> false
              entity.BodyShape <== prop --> fun prop ->
                 match prop.PropData with
-                | Chest _ ->
+                | Portal _ | Switch _ | SavePoint _ ->
                     BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                 | Door _ ->
                     match prop.PropState with
                     | DoorState true -> BodyEmpty
                     | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
-                | Sensor (_, shapeOpt, _, _) ->
+                | Chest _ ->
+                    BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                | Sensor (_, shapeOpt, _, _, _) ->
                     match shapeOpt with
                     | Some shape -> shape
                     | None -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
-                | Npc _ ->
+                | Seal _ ->
                     match prop.PropState with
-                    | NpcState true -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
+                    | SealState false -> BodyEmpty
+                    | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
+                | Npc _ | NpcBranching _ ->
+                    match prop.PropState with
+                    | NpcState (_, _, _, _, true) -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     | _ -> BodyEmpty
                 | Shopkeep _ ->
                     match prop.PropState with
                     | ShopkeepState true -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     | _ -> BodyEmpty
-                | Portal _ | Switch _ | SavePoint _ ->
-                    BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
                 | ChestSpawn | EmptyProp ->
                     BodyEmpty]
 
@@ -68,8 +72,34 @@ module PropDispatcher =
         override this.View (prop, entity, world) =
             if entity.GetVisible world && entity.GetInView world then
                 let transform = entity.GetTransform world
-                let (background, insetOpt, image) =
+                let (background, color, glow, insetOpt, image) =
                     match prop.PropData with
+                    | Portal (portalType, _, direction, _, _, _, _) ->
+                        match prop.PropState with
+                        | PortalState active ->
+                            if active then
+                                match portalType with
+                                | AirPortal -> (false, colWhite, colZero, None, Assets.Default.EmptyImage)
+                                | StairsPortal descending ->
+                                    let offsetY = if descending then Constants.Gameplay.TileSize.Y else 0.0f
+                                    let offsetX =
+                                        match direction with
+                                        | Upward -> 0.0f
+                                        | Rightward -> Constants.Gameplay.TileSize.X
+                                        | Downward -> Constants.Gameplay.TileSize.X * 2.0f
+                                        | Leftward -> Constants.Gameplay.TileSize.X * 3.0f
+                                    let offset = v2 offsetX offsetY
+                                    (true, colWhite, colZero, Some (v4Bounds offset Constants.Gameplay.TileSize), Assets.Field.StairsImage)
+                            else (false, colWhite, colZero, None, Assets.Default.EmptyImage)
+                        | _ -> (false, colWhite, colZero, None, Assets.Default.EmptyImage)
+                    | Door (doorType, _, _, _) ->
+                        let image =
+                            match doorType with
+                            | WoodenDoor ->
+                                match prop.PropState with
+                                | DoorState opened -> if opened then Assets.Field.WoodenDoorOpenedImage else Assets.Field.WoodenDoorClosedImage
+                                | _ -> failwithumf ()
+                        (false, colWhite, colZero, None, image)
                     | Chest (chestType, _, chestId, _, _, _) ->
                         let image =
                             match chestType with
@@ -81,65 +111,76 @@ module PropDispatcher =
                                 if Set.contains (Opened chestId) prop.Advents
                                 then Assets.Field.BrassChestOpenedImage
                                 else Assets.Field.BrassChestClosedImage
-                        (false, None, image)
-                    | Door (doorType, _, _) ->
-                        let image =
-                            match doorType with
-                            | WoodenDoor ->
-                                match prop.PropState with
-                                | DoorState opened -> if opened then Assets.Field.WoodenDoorOpenedImage else Assets.Field.WoodenDoorClosedImage
-                                | _ -> failwithumf ()
-                        (false, None, image)
-                    | Portal (_, _, _, _, _) ->
-                        (false, None, Assets.Default.EmptyImage)
-                    | Switch (switchType, _, _) ->
+                        (false, colWhite, colZero, None, image)
+                    | Switch (switchType, _, _, _) ->
                         let image =
                             match switchType with
                             | ThrowSwitch ->
                                 match prop.PropState with
                                 | SwitchState on -> if on then Assets.Field.ThrowSwitchOnImage else Assets.Field.ThrowSwitchOffImage
                                 | _ -> failwithumf ()
-                        (false, None, image)
-                    | Sensor (sensorType, _, _, _) ->
+                        (false, colWhite, colZero, None, image)
+                    | Sensor (sensorType, _, _, _, _) ->
                         match sensorType with
-                        | AirSensor -> (true, None, Assets.Default.EmptyImage)
-                        | HiddenSensor -> (true, None, Assets.Default.EmptyImage)
-                        | StepPlateSensor -> (true, None, Assets.Field.StepPlateImage)
-                    | Npc (npcType, _, direction, _, _) ->
+                        | AirSensor -> (true, colWhite, colZero, None, Assets.Default.EmptyImage)
+                        | HiddenSensor -> (true, colWhite, colZero, None, Assets.Default.EmptyImage)
+                        | StepPlateSensor -> (true, colWhite, colZero, None, Assets.Field.StepPlateImage)
+                    | Seal (color, _, _) ->
                         match prop.PropState with
-                        | NpcState true ->
-                            let image = Assets.Field.NpcAnimationSheet
+                        | SealState true ->
+                            let time = World.getTickTime world
+                            let localTime = time / 20L
+                            let celSize = v2 96.0f 96.0f // TODO: P1: put this in Constants.
+                            let celColumn = single (localTime % 4L)
+                            let inset = v4Bounds (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: P1: turn this into a general animation function if one doesn't already exist...
+                            let image = Assets.Field.SealAnimationSheet
+                            (false, color, colZero, Some inset, image)
+                        | _ -> (false, colWhite, colZero, None, Assets.Default.EmptyImage)
+                    | Npc (_, _, _, _) | NpcBranching (_, _, _, _) ->
+                        match prop.PropState with
+                        | NpcState (npcType, direction, color, glow, true) ->
+                            let image =
+                                match npcType with
+                                | GarrouNpc -> Assets.Field.GarrouAnimationSheet
+                                | MaelNpc -> Assets.Field.MaelAnimationSheet
+                                | RiainNpc -> Assets.Field.RiainAnimationSheet
+                                | PericNpc -> Assets.Field.PericAnimationSheet
+                                | _ -> Assets.Field.NpcAnimationSheet
                             let (row, column) =
                                 match npcType with
-                                | VillageMan -> (0, 0)
-                                | VillageWoman -> (1, 0)
-                                | VillageBoy -> (2, 0)
-                                | VillageGirl -> (3, 0)
+                                | GarrouNpc
+                                | MaelNpc
+                                | RiainNpc
+                                | PericNpc -> (10, 0)
+                                | RavelNpc -> (0, 0)
+                                | AdvenNpc -> (1, 0)
+                                | EildaenNpc -> (2, 0)
+                                | ShamanaNpc -> (3, 0)
                                 | FireGoblinNpc -> (4, 0)
                             let column = column + CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
-                            (false, Some inset, image)
-                        | _ -> (false, None, Assets.Default.EmptyImage)
+                            (false, color, glow, Some inset, image)
+                        | _ -> (false, colWhite, colZero, None, Assets.Default.EmptyImage)
                     | Shopkeep (shopkeepType, direction, _, _) ->
                         match prop.PropState with
                         | ShopkeepState true ->
                             let image = Assets.Field.ShopkeepAnimationSheet
-                            let row = match shopkeepType with ShopkeepMan -> 0
+                            let row = match shopkeepType with RobehnShopkeep -> 0 | SchaalShopkeep -> 1
                             let column = CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
-                            (false, Some inset, image)
-                        | _ -> (false, None, Assets.Default.EmptyImage)
+                            (false, colWhite, colZero, Some inset, image)
+                        | _ -> (false, colWhite, colZero, None, Assets.Default.EmptyImage)
                     | SavePoint ->
                         let time = World.getTickTime world
                         let image = Assets.Field.SavePointImage
                         let column = (int time / 15) % 4
                         let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileSize
                         let inset = v4Bounds insetPosition Constants.Gameplay.TileSize
-                        (false, Some inset, image)
+                        (false, colWhite, colZero, Some inset, image)
                     | ChestSpawn | EmptyProp ->
-                        (false, None, Assets.Default.EmptyImage)
+                        (false, colWhite, colZero, None, Assets.Default.EmptyImage)
                 let elevation = if background then Constants.Field.BackgroundElevation else Constants.Field.ForegroundElevation
                 let positionY = transform.Position.Y
                 let assetTag = AssetTag.generalize image
@@ -150,8 +191,8 @@ module PropDispatcher =
                           Offset = Vector2.Zero
                           InsetOpt = insetOpt
                           Image = image
-                          Color = Color.White
+                          Color = color
                           Blend = Transparent
-                          Glow = Color.Zero
+                          Glow = glow
                           Flip = FlipNone })
             else View.empty

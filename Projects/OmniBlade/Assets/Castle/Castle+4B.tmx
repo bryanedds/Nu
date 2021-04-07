@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="3" nextobjectid="1">
+ <tileset firstgid="1" source="Castle.tsx"/>
+ <layer id="2" name="Floor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwwEJAAAMA6DByy/2ehwFe0lVVVXV1wdg6ywf
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt100OwiAQBWACmSP0Am70YGpMTavez41eyI3dWxaEQlRmRmAW8pK36/AlXfDTaaU6QgdQH3MA2lrUHuf1L0K+s++6vr+0p8p+bG9MPZ9i9/N324x+s//DPoEv1rY5QzjL7U37Ym2bqw5nuX0uirVtHtEst2vji7VtViac5balRTJ7+K3jl/vQu/TRfI79mmLnOi8w97Ea9oTwS9qpPbPZeToI2s6Xsp0vZTs/lZLvvx1ivy39/k39B47/Aog2oQQ=
+  </data>
+ </layer>
+</map>

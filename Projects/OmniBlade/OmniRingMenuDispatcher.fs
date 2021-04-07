@@ -34,7 +34,7 @@ module RingMenuDispatcher =
         inherit GuiDispatcher<RingMenu, unit, RingMenuCommand> ({ Items = Map.empty; ItemCancelOpt = None })
 
         static member Properties =
-            [define Entity.Radius 84.0f
+            [define Entity.Radius Constants.Battle.RingMenuRadius
              define Entity.Rotation 0.0f
              define Entity.SwallowMouseLeft false
              define Entity.Visible false]

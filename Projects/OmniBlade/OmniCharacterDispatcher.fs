@@ -31,7 +31,7 @@ module CharacterDispatcher =
         static let getSpriteColor (entity : Entity) world =
             let character = entity.GetCharacter world
             let color =
-                if character.AnimationCycle = CharacterAnimationCycle.WoundCycle && character.IsEnemy then
+                if character.CharacterAnimationType = WoundAnimation && character.IsEnemy then
                     match Character.getAnimationProgressOpt (World.getTickTime world) character with
                     | Some progress -> Color (byte 255, byte 128, byte 255, byte 255 - (byte (progress * 255.0f))) // purple
                     | None -> failwithumf ()

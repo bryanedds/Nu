@@ -74,6 +74,16 @@
    <property name="C" value=""/>
   </properties>
  </tile>
+ <tile id="690">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="691">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
  <tile id="732">
   <properties>
    <property name="C" value=""/>
@@ -85,6 +95,16 @@
   </properties>
  </tile>
  <tile id="734">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="741">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="742">
   <properties>
    <property name="C" value=""/>
   </properties>

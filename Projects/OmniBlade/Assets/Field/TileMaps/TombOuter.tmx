@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="8">
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="48" tileheight="48" infinite="0" nextlayerid="7" nextobjectid="13">
  <tileset firstgid="1" source="TombOuter.tsx"/>
  <tileset firstgid="513" source="Tent.tsx"/>
  <layer id="2" name="Floor" width="80" height="80">
@@ -20,17 +20,37 @@
  <objectgroup id="4" name="Props">
   <object id="4" gid="443" x="2016" y="3168" width="96" height="48">
    <properties>
-    <property name="I" value="[Portal South Downward TombGround South]"/>
+    <property name="I" value="[Portal AirPortal South Downward TombGround South]"/>
    </properties>
   </object>
   <object id="6" gid="443" x="3168" y="3360" width="144" height="144">
    <properties>
-    <property name="I" value="[Shopkeep ShopkeepMan Leftward Chemist]"/>
+    <property name="I" value="[Shopkeep SchaalShopkeep Downward Chemist]"/>
    </properties>
   </object>
   <object id="7" gid="443" x="480" y="3072" width="144" height="144">
    <properties>
-    <property name="I" value="[Shopkeep ShopkeepMan Downward Armory]"/>
+    <property name="I" value="[Shopkeep RobehnShopkeep Downward Armory]"/>
+   </properties>
+  </object>
+  <object id="8" gid="443" x="3120" y="1536" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc MaelNpc Downward [Prompt &quot;I can make your acquaintence... at a price. $FEE gold.&quot; [&quot;Yes&quot; [Recruit Mael]] [&quot;No&quot; Nil]]]"/>
+   </properties>
+  </object>
+  <object id="10" gid="443" x="2928" y="1104" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc PericNpc Downward [Prompt &quot;I hope we can work together, but I cannot work for free. My fee is $FEE gold...&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Nil]]]"/>
+   </properties>
+  </object>
+  <object id="11" gid="443" x="2592" y="1440" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc RiainNpc Downward [Prompt &quot;... $FEE... gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Nil]]]"/>
+   </properties>
+  </object>
+  <object id="12" gid="443" x="1056" y="624" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc GarrouNpc Downward [Prompt &quot;We can combine our efforts... for $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Garrou]] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
  </objectgroup>

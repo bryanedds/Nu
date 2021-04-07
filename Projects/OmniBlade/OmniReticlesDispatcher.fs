@@ -2,6 +2,7 @@
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace OmniBlade
+open System.Numerics
 open Prime
 open Nu
 open Nu.Declarative
@@ -10,9 +11,8 @@ open OmniBlade
 [<AutoOpen>]
 module ReticlesDispatcher =
 
-    type [<StructuralEquality; NoComparison>] Reticles =
-        { Battle : Battle // TODO: P1: let's see if we can make this reference something smaller.
-          AimType : AimType }
+    type Reticles =
+        Map<CharacterIndex, Vector2>
 
     type ReticlesCommand =
         | TargetCancel
@@ -25,7 +25,7 @@ module ReticlesDispatcher =
         member this.TargetSelectEvent = Events.TargetSelect --> this
 
     type ReticlesDispatcher () =
-        inherit GuiDispatcher<Reticles, unit, ReticlesCommand> ({ Battle = Battle.empty; AimType = EnemyAim true })
+        inherit GuiDispatcher<Reticles, unit, ReticlesCommand> (Map.empty)
 
         static member Properties =
             [define Entity.SwallowMouseLeft false
@@ -47,16 +47,13 @@ module ReticlesDispatcher =
                  Entity.UpImage == asset Assets.Battle.PackageName "CancelUp"
                  Entity.DownImage == asset Assets.Battle.PackageName "CancelDown"
                  Entity.ClickEvent ==> cmd TargetCancel]
-             Content.entities reticles
-                (fun reticles _ -> (reticles.AimType, reticles.Battle))
-                (fun (aimType, battle) _ -> Battle.getTargets aimType battle)
-                (fun index character world ->
-                    let buttonName = rets.Name + "+Reticle+" + scstring index
-                    let button = rets.Parent / buttonName
-                    Content.button button.Name
-                        [Entity.ParentNodeOpt == None
-                         Entity.Size == v2 96.0f 96.0f
-                         Entity.Center <== character --> fun (character : Character) -> character.CenterOffset
-                         Entity.UpImage == asset Assets.Battle.PackageName "ReticleUp"
-                         Entity.DownImage == asset Assets.Battle.PackageName "ReticleDown"
-                         Entity.ClickEvent ==> cmd (TargetSelect (character.Get world).CharacterIndex)])]
+             Content.entities reticles constant constant $ fun index center _ ->
+                let buttonName = rets.Name + "+Reticle+" + CharacterIndex.toEntityName index
+                let button = rets.Parent / buttonName
+                Content.button button.Name
+                    [Entity.ParentNodeOpt == None
+                     Entity.Size == v2 96.0f 96.0f
+                     Entity.Center <== center
+                     Entity.UpImage == asset Assets.Battle.PackageName "ReticleUp"
+                     Entity.DownImage == asset Assets.Battle.PackageName "ReticleDown"
+                     Entity.ClickEvent ==> cmd (TargetSelect index)]]

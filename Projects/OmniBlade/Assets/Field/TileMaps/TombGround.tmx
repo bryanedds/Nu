@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="5">
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="13">
  <tileset firstgid="1" source="TombInner.tsx"/>
+ <tileset firstgid="1480" source="../../Castle/Castle.tsx"/>
  <layer id="2" name="Floor" width="64" height="64">
   <data encoding="base64" compression="zlib">
-   eJzt1FuuwjAMBFDE0tj/ovikqkLqx9geJxnpfnEbz3EDr9ca+bx/f7vlal9pB1LPyN99DxrLzN9pBxbH0zNddmAxSO1Mfk3nmcHzbEU87rvBu7vsIOwef2fzsR77sfP5q73Hvre9ItXmKvex27vtbNecsbJfeg6bXdr7/n+es5js1s6oHTAk4t4y2xG/VRIDm3vWKep3i8k+6hPt1/aJzvFz2LP33NmOmFtpRn/nLH1WMVs6Zrgzvdq+K7sl3Vd3PzmQ9mqfZQcof/a99cyVPl9l90Q7g8WPTKa/0vx0ltcv6Zvljuho7c9mlsyr9Ec6pXMr/BXmfx20n0XZs9yS9xzVicluvRtof7VV0pPdPwtzz+i7ZZmD3mWWH9FdGzb/zIC2WyxV/mi7dFaGXzsn0ut9Lwh/5DuPvpdR9x+VLv6oIHp1tWv7I85gs0v7I85gtY/i6dbdjshu3lF2dV9z/HX+LwoFF+M=
+   eJzt2k0OgjAQBWDjynN5Ju/ENQ0LIiGVznTe/LaTsBKm72uLBuLjUaPez98xW53tleaA6jnO+bzqzEPL1Dt3a/gzzUEr+9bxt67JOAcjBqo9kp+T+c4gudajJO6rQTp31oWwS/yZzcu67Msez+/tXfa57R7lbfZyW9hbz66Z7JJr9+Pfs2tmO6dHxbXn9olmp+a+nifpFcnOzcx5V5XBvhcn7/U7TNLTqxDfVRRDNPc5E+W3GLGGkeznPL3fYqv713p+kHt/dj8yR+9+rGzn3I+eds+xpXmqmEcyWrgtvdy8ld2U7NXdPQfS7u0bmQOU33rfSsalXu9llxR3jCh+ZFn6Pc29XlI/Ja+VWyMjtS/ifYCmmTKexC99H6DppI4r8Wu4NcdtZeB+pmW3clPWWStTJPvo3kD7va2UnNH9dxU5p/beGhkHPZdWfkR2bkXz3xnQ9hGLl1/bTh3Lws8dR9MrXReEX3PNj16j/1Hy2v+oOvpRnoM8/VqFyJXVzs2P6BHNTs2P6BHV3ipJtux2RM3mbdWs7nMtv5//C2ZnHPs=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="64" height="64">
   <data encoding="base64" compression="zlib">
-   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
+   eJztmuFtGzEMhZ2bwXa7UeJ6q46T5G/GcYO0i/QOMFGC4CMpSifJQAkQgYGzo+9RR5GSTsvhcPrvD+3X1bn9mGBMvZi25y6rv9+ff13/Pq/+cvdH1EJjOoJnz6u/iWffmD8/iAZXFrOLwqTxk06/Vv+8P3u7fya3tJvFiYNi9q4wSQY5R5Bp350hxtyJg2JG3NyO4nfoO9qz1ndHcvMYc49wHJcc+2h+Prd5jLlHOCiPnR32r6fD4bfwb4PiLed2NF6a0bp2cdhHssr8HZ3bEdvy2OuC890odu2d9nIZH7Ocq5v/ecIaaL83kl17pyPxtsb8fcEaaNY7v2VycGm8zsHf7R37WvbNIjWpx/81ILe3YN+McrnX08zC3ZJ9M8rlx0Xv82iN19h7c0fZtVxu5bDb8m89l72rtsbPzq6Nzcvj1KvK3lXGfhT7aYnVm9bYLA2oV5W9q/xfI+v3s8EeHVt0Lcvo24PfMpTD5Bzw8sGM7BF+lMO0ta2krpuBPcKPchh6LzwNRq3vJzCPPX6Uw6y8gDQYHXNed/C1OGNeXqScMHKfwuPX1uJW/DM6X+vQWtyT/yo+77mPb/UcpVbzHmt7Z5vJcx3utbpE99I95pr3GO0Ro3MdecZTo4NX4+7BLPcN0R4xOtfhLnUo1cKrcRF3DbMW52y+IW34HCmZEyV7TaXciBnFucb4HCEtRu01ae9zdF+4hfE54Wlg8Zfmcsndk1mzW0ADxF/CjrhrmdEZQUk/6WmA+KM1jHbGV8MdXVdkDe3ttyENNP6S2J8bcNfWD6RHRgONvzT22XOQ1r2Pt9fC954t/ui9GbRXHeHes9+zdJB3QjR+mifcpB4lsW9ZK1qu7b1pGnj88rxZ6z+iPUOmH7JqRcu1uk/TwOMnZqv/8HqGyDy37gShWtFyVPdJxgg/P2/X+g+PHXFHYputm1Ddl+HPGmJHPW72TpBlMs/34rfYLwrznjUxnTGS5tw4f+l9C8u8e6pZ5mwdjPYx5ThbaWDdU62JtVWPlJwxWuNsoYH2uxT7GvN6uFZnSyU9hWaIv1U+q9WgtBbhekS0QPwtTKvdtfesFTvSwtKhhv9nUAOrj+9xP9KaZxl+4v4I6qDNAZRjW/Ra0XNRpLHHL7k/0IN30+70a7FvFfPouai19kfM47a49jxPjZ6L1vJHrffZavRcNHvnocRG3BGIjj9z52F2dvR+SZbI2LL3oEaze/HM1FSROm2muyFWPDNjs+4Azcq75xyacY73cL42PuKdoUfn/wtq5qfV
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="64" height="64">
@@ -19,17 +20,57 @@
  <objectgroup id="3" name="Props">
   <object id="2" gid="235" x="1584" y="3072" width="96" height="48">
    <properties>
-    <property name="I" value="[Portal South Upward TombOuter South]"/>
+    <property name="I" value="[Portal AirPortal South Upward TombOuter South]"/>
    </properties>
   </object>
-  <object id="3" gid="235" x="1920" y="1368" width="144" height="48">
+  <object id="3" gid="235" x="1968" y="1368" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [IX 0] Downward Cave South]"/>
+    <property name="I" value="[Portal AirPortal [IX 0] Downward CastleConnector South true]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="2640" y="2496" width="48" height="48">
+  <object id="4" gid="235" x="2592" y="2544" width="48" height="48">
    <properties>
     <property name="I" value="[SavePoint]"/>
+   </properties>
+  </object>
+  <object id="5" gid="235" x="408" y="2064" width="96" height="96">
+   <properties>
+    <property name="I" value="[Seal [0 255 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 ForestUnsealed]] [&quot;Refuse&quot;]]]] [ForestUnsealed]]"/>
+   </properties>
+  </object>
+  <object id="6" gid="235" x="2424" y="192" width="96" height="96">
+   <properties>
+    <property name="I" value="[Seal [255 255 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 DesertUnsealed]] [&quot;Refuse&quot;]]]] [DesertUnsealed]]"/>
+   </properties>
+  </object>
+  <object id="7" gid="235" x="1896" y="240" width="96" height="96">
+   <properties>
+    <property name="I" value="[Seal [255 0 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 CastleUnsealed]] [&quot;Refuse&quot;]]]] [CastleUnsealed]]"/>
+   </properties>
+  </object>
+  <object id="8" gid="235" x="1608" y="912" width="96" height="96">
+   <properties>
+    <property name="I" value="[Seal [0 255 255 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 RuinsUnsealed]] [&quot;Refuse&quot;]]]] [RuinsUnsealed]]"/>
+   </properties>
+  </object>
+  <object id="9" gid="235" x="888" y="1152" width="96" height="96">
+   <properties>
+    <property name="I" value="[Seal [0 0 255 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 DeadSeaUnsealed]] [&quot;Refuse&quot;]]]] [DeadSeaUnsealed]]"/>
+   </properties>
+  </object>
+  <object id="10" gid="235" x="216" y="1296" width="96" height="96">
+   <properties>
+    <property name="I" value="[Seal [160 135 0 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 MountainUnsealed]] [&quot;Refuse&quot;]]]] [MountainUnsealed]]"/>
+   </properties>
+  </object>
+  <object id="11" gid="235" x="504" y="2688" width="96" height="96">
+   <properties>
+    <property name="I" value="[Seal [0 200 200 127] [Sequence [[Prompt &quot;Unseal entry for a 100 gold?&quot; [&quot;Pay...&quot; [Unseal 100 FactoryUnsealed]] [&quot;Refuse&quot;]]]] [FactoryUnsealed]]"/>
+   </properties>
+  </object>
+  <object id="12" gid="235" x="2928" y="960" width="96" height="96">
+   <properties>
+    <property name="I" value="[Seal [255 255 255 127] [Sequence [[Prompt &quot;Are you here to find riches?&quot; [&quot;Yes...&quot; [Unseal 0 CastleUnsealed]] [&quot;No&quot;]]]] [CastleUnsealed]]"/>
    </properties>
   </object>
  </objectgroup>

@@ -1,7 +1,7 @@
 Type,BattleAllyPositions,BattleEnemies,BattleBackground,BattleSongOpt
-DebugBattle,[[-192 -60] [-96 -342] [-90 240]],[[BlueGoblin [18 -144]] [BlueGoblin [36 24]]],[Field FieldBattle],[Some [Battle Battle]]
-CaveBattle,[[-192 -60] [-96 -342] [-90 240]],[[BlueGoblin [42 -60]]],[Cave CaveBattle],[Some [Battle Battle]]
-CaveBattle2,[[-192 -60] [-96 -342] [-90 240]],[[BlueGoblin [18 -144]] [BlueGoblin [36 24]]],[Cave CaveBattle],[Some [Battle Battle]]
-CaveBattle3,[[-192 -60] [-96 -342] [-90 240]],[[PoisonGoblin [42 -60]]],[Cave CaveBattle],[Some [Battle Battle]]
-CaveBattle4,[[-192 -60] [-96 -342] [-90 240]],[[BlueGoblin [66 -180]] [PoisonGoblin [126 -54]] [BlueGoblin [54 60]]],[Cave CaveBattle],[Some [Battle Battle]]
-FireGoblinBattle,[[-192 -60] [-96 -342] [-90 240]],[[PoisonGoblin [84 -174]] [FireGoblin [12 -60]] [BlueGoblin [108 48]]],[Cave CaveBattle],[Some [Cave CaveBoss]]
+DebugBattle,[[240 -48] [-384 72] [-384 -156]],[[DebugGoblin [48 -84]] [DebugGoblin [-168 -120]] [DebugGoblin [-60 60]]],[Field DebugBattle],[Some [Battle Battle]]
+CastleBattle,[[240 -48] [-384 72] [-384 -156]],[[BlueGoblin [-72 -48]]],[Castle CastleBattle],None
+CastleBattle2,[[240 -48] [-384 72] [-384 -156]],[[BlueGoblin [48 -60]] [BlueGoblin [-156 -48]]],[Castle CastleBattle],None
+CastleBattle3,[[240 -48] [-384 72] [-384 -156]],[[PoisonGoblin [-72 -48]]],[Castle CastleBattle],None
+CastleBattle4,[[240 -48] [-384 72] [-384 -156]],[[BlueGoblin [48 -84]] [PoisonGoblin [-168 -120]] [BlueGoblin [-60 60]]],[Castle CastleBattle],None
+FireGoblinBattle,[[240 -48] [-384 72] [-384 -156]],[[FireGoblin [48 -48]] [PoisonGoblin [-96 -96]] [PoisonGoblin [-216 -12]]],[Castle CastleBattle],[Some [Battle Battle]]
