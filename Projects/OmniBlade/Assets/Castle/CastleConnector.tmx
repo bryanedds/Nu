@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="7">
+ <tileset firstgid="1" source="../Field/TileMaps/TombInner.tsx"/>
+ <tileset firstgid="1480" source="Castle.tsx"/>
+ <layer id="2" name="Floor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt0aERACAQBLEb3Dto6fsvigowOJiIiNXbI2l4yKpk1rn5m/8AAHBnA17WDrw=
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt1W0KQEAQBuC1f1zA142Ei0qutCQXMaJMG4ryDpmpyf7y7L7ZEVtj4gudUB9VdPFdd1p99dVX3686NKYLn/cz6jGQOftZBkjfz2CgdQr0eQYSNveRue/5OT1LsF1RF6vfWPwe5rO3q+/ssgf0/evt9v07oM+zl7j/PHspvxf2/ULOoLfNfokZ6GeA9nkGf///qP9tfwLbpGFG
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props">
+  <properties>
+   <property name="I" value="[Sensor StepPlateSensor [BodyBox [[0.5 0.5]  [0.5 0.5]] [RemoveAdvent CastleUnsealed]]"/>
+  </properties>
+  <object id="3" gid="235" x="864" y="720" width="48" height="48">
+   <properties>
+    <property name="I" value="[Sensor StepPlateSensor None [If [CastleUnsealed] [Sequence [[PlaySound 0.5 [Field Sealed]] [Dialog &quot;Castle seal reactivated...&quot;] [RemoveAdvent CastleUnsealed]]]]]"/>
+   </properties>
+  </object>
+  <object id="4" gid="235" x="720" y="1536" width="48" height="48">
+   <properties>
+    <property name="I" value="[Portal AirPortal South Upward TombGround [IX 0]]"/>
+   </properties>
+  </object>
+  <object id="6" gid="235" x="624" y="48" width="288" height="48">
+   <properties>
+    <property name="I" value="[Portal AirPortal North Downward [Castle 0] South]"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

@@ -6,12 +6,12 @@ overall, I want to have a looting style of gameplay
 the fights will be lightly randomly encountered and chests will have many monster-in-a-boxes.
 if the player dies, they go back to the main menu. high stakes gameplay is a key design point.
 and you can only save outside of a dungeon
-all dungeons are accessible from the start, but in order to enter all but the first one, you have to use a key to get in which can be bought from the shop. and whenever the player leaves the dungeon, the door is relocked.
+all dungeons are accessible from the start, but in order to enter all but the first one, you have to use a key to get in which can be bought from the shop. and whenever the player leaves the dungeon, the door is relocked (so you need to buy another key).
 higher level dungeons require more expensive keys
 
 Party Structure -
 
-you can hire a new party member in any order, but each consecutive hire costs significantly more so that you won't be able to acquire them all until stage 4 or 5.
+you can hire a new party member in any order, but each consecutive hire costs significantly more so that you won't be able to acquire them all until stage 6 or 7.
 
 Story / Progress Structure -
 
@@ -29,13 +29,35 @@ The journey through each stage is a series of encounters with the 'echo' of a pe
 
 Ultimately, you learn that you were called there for the same reason as those who are trapped. It is by your own pathological desires that you were drawn there - material desire and a hatred for suffering. If you choose to take the OmniBlade at the end of the game, you will be succumb to possession and your soul becomes a portal through which the army of Hell emerges to destroy the world.
 
-And of course, the mysterious NPC who is helping you is really himself possessed and trying to ensnare you. He planned for you to liberate the souls of the possessed people with the treasures you had found in the tomb as a loss leader to tempt you with possession of its ultimate weapon, OmniBlade. He argues that with the this weapon, you will be able to liberate the souls of not just a few, but the whole world from the endless cycle of suffering.
+And of course, the mysterious NPC who is helping you is really himself possessed and trying to ensnare you. He planned for you to liberate the souls of the possessed people with the treasures you had found in the tomb as a loss leader to tempt you with possession of its ultimate weapon, OmniBlade. He argues that with this weapon, you will be able to liberate the souls of not just a few, but the whole world from the endless cycle of suffering.
+
+As for music, you can see generally how the tracks will progress on each level. One important caveat is that the music for the next action section will either start during the echo encounter on the current section or at the end of it. The music is organized specifically to drive the narrative structure.
 
 Levels -
 
 Cave (The Girl who was Never Free) -
 
-She never knew freedom. She was a servent of a servent of a Queen who, many suspect, killed the King. She poisoned her master and took her place. Through treachery and cunning, she rose through the servant ranks. When a vassal from another kingdom offered her freedom as his bride, she turned him down. Not because he was unseemly, but because of all of the power she had come to wield other those who once humiliated her. Later, after hearing news of his death, she turned her thoughts back to him. She became enraged and devoted the rest of her life to being as wicked as she could be to those below her.
+Part 1 -
+
+"What is freedom...? It must be the death of purpose... I was born a servent of a servent. My master is cruel, but unlike the world, her cruelty is predictable. It is something to which I am accustomed. It is the chaos beyond these walls that I could not bear..."
+
+"Why does every day get worse? Why must I be humiliated at every opportunity? The fortunes of other servents rise, but I am kept at the bottom... Nothing I do goes uncriticized. She may be my master, but she herself serves under the Queen. She is cruel not because she doesn't understand what it is like... she is cruel because she understands exactly... They all do..."
+
+Part 2 -
+
+"They have always treated me this way. Things cannot be put right. Things can only be put in my favor. You are either the donkey or you are the whip. A life time of poison is what she has given to me; I shall give it back to her all in one moment. By the custom of succession, I will take her stead. Imagine their faces when they see the lowest servent become the highest... their victim will become their tormentor... Things could not be put right..."
+
+"He told me that my beauty was why I suffered their cruelty all these years... No one ever said anything like that to me before. He said he would take me from this place... But how can I leave now? For a fleeting moment my heart's desire can be heard over my lust for vengeance. Vengeance and numbness is all I have ever felt. How can I leave now..."
+
+Part 3 -
+
+"It is done. Everyone wears a blank face now. The Queen's messenger has informed me that I will take my master's stead. No one knows of my plan, not even Jean. He has proposed that he leave his post that we may again meet. I long for his company, but I asked him to defer his leave for another week. My title will be made official and throughout that night I will hear them weep the way they once heard me... They know what price their cruelty has brought them due... It cannot be undone."
+
+"No... You're lying. You cruel liar... You stupid liar! Jean is not dead!... Stop it... Jean's not dead. He's not dead..."
+
+"Wickedness. Darkness. There's nothing left of my heart now. Blackness. Creulty... I will show them a creulty that they have never witnessed... My master taught me well... but even her I shall surpass... Darkness. Wickedness. Until one of them gives me the same end as I gave to her..."
+
+She never knew freedom. She was a servent of a servent of a Queen who, many suspect, killed the King. She poisoned her master and took her place. Through treachery and cunning, she rose through the servant ranks. When a vassal from another kingdom offered her freedom as his bride, she turned him down. Not because he was unseemly, but because of all of the power she had come to wield other those who once humiliated her. Later, after hearing news of his death, she turned her thoughts back to him. She became enraged and, in her grief, she devoted the rest of her life to being as wicked as she could be to those below her.
 
 When she passed, her lingering soul became a portal for the Demon of Entanglement (Spider) to return to the world.
 
@@ -63,9 +85,9 @@ Her soul came into possession Demon of Despair (Hydra)
 
 (Resolution) "I saw your eyes in a dream... I'm sorry. I miss you..."
 
-Jungle (The Boy who could not Forgive - Demon of Revenge) -
+Jungle (The Boy who could not Forgive - Demon of Retribution) -
 
-A frail boy with a gentle heart living under the yoke of a devouring monster. He would do anything for protection, but even those who would protect him turned against him out of fear. There is no cost too high to pay for vengenace... (pathological vengeance-seeking - demon of hatred).
+A frail boy with a gentle heart living under the yoke of a devouring monster. He would do anything for protection, but even those who would protect him turned against him out of fear. There is no cost too high to pay for vengenace... (pathological vengeance-seeking - demon of retribution).
 
 Mountain (The Prince Who Would Have Nothing) -
 
@@ -84,6 +106,31 @@ On his father's side, the West. On his mother's, the East. A leader with divided
 Volcano (The Girl With The Endless Dream) -
 
 She could not face reality, so she locked herself in a dream... (pathological escapism - demon of delusion)
+
+Characters -
+
+Riain (Dimensionalist) - Riain is actually schizo qt 3.14. her mind is barely able to connect with people.
+so her words are minimal and direct
+the rest of them are spot on, tho.
+as a conjuror, she moved a part of her mind into another dimension;
+that's how she pulls idealized forms and archetypal beings into this dimension.
+but having her mind split across dimensions makes it hard for her to communicate.
+the permanency of her condition was an accident, however - most conjurers have a sufficiently mild form of which they can go in and out at will
+given the severity of her condition, and the embarrassment it caused her guild, she was locked away until "something could be figured out,"
+nothing was ever figured out, however.
+after escaping, however, her otherworldly visions led her here.
+to symbolize her duality of being / sight, I'm going to make one of her eyes green and the other blue
+the green eye sees what's in this world, the blue eye sees what's in the other
+i would also like the idea that her compromised/aberrant condition among conjurers has as corollary a (potential) savant level of power.
+bryaneddsToday at 6:16 PM
+that's basically what it is, and the reason they locked her away
+too dangerous
+deanjleeToday at 6:18 PM
+more power, less control.
+bryaneddsToday at 6:19 PM
+well, initially she couldn't tell what was 'real' and what was not, so she was justifiably terrifed
+she learned some discipline and self-control over the long period of time she was effectively imprisoned
+had she not, should would've not been able to escape
 
 Dev Notes -
 

@@ -8,172 +8,6 @@ open System.Numerics
 open FSharpx.Collections
 open Prime
 open Nu
-open Nu.Declarative
-
-type [<ReferenceEquality; NoComparison>] SubmenuUse =
-    { SubmenuUseSelection : int * ItemType
-      SubmenuUseLine1 : string
-      SubmenuUseLine2 : string }
-
-    static member make selection line1 line2 =
-        { SubmenuUseSelection = selection
-          SubmenuUseLine1 = line1
-          SubmenuUseLine2 = line2 }
-
-    static member makeFromConsumableData selection (cd : ConsumableData) =
-        let prompt = "Use " + string cd.ConsumableType + " on whom?"
-        let effect = "(Effect: " + cd.Description + ")"
-        SubmenuUse.make selection prompt effect
-
-    static member makeFromWeaponData selection (wd : WeaponData) =
-        let prompt = "Equip " + wd.WeaponType + " to whom?"
-        let stats = "(Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + ")"
-        SubmenuUse.make selection prompt stats
-
-    static member makeFromArmorData selection (ad : ArmorData) =
-        let prompt = "Equip " + ad.ArmorType + " to whom?"
-        let stats = "(HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + ")"
-        SubmenuUse.make selection prompt stats
-
-    static member makeFromAccessoryData selection (ad : AccessoryData) =
-        let prompt = "Equip " + ad.AccessoryType + " to whom?"
-        let stats = "(Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + ")"
-        SubmenuUse.make selection prompt stats
-
-    static member tryMakeFromSelection selection =
-        match snd selection with
-        | Consumable ty ->
-            match Map.tryFind ty Data.Value.Consumables with
-            | Some cd -> SubmenuUse.makeFromConsumableData selection cd |> Some
-            | None -> None
-        | Equipment ty ->
-            match ty with
-            | WeaponType name ->
-                match Map.tryFind name Data.Value.Weapons with
-                | Some wd -> SubmenuUse.makeFromWeaponData selection wd |> Some
-                | None -> None
-            | ArmorType name ->
-                match Map.tryFind name Data.Value.Armors with
-                | Some ad -> SubmenuUse.makeFromArmorData selection ad |> Some
-                | None -> None
-            | AccessoryType name ->
-                match Map.tryFind name Data.Value.Accessories with
-                | Some ad -> SubmenuUse.makeFromAccessoryData selection ad |> Some
-                | None -> None
-        | KeyItem _ | Stash _ -> None
-
-type [<ReferenceEquality; NoComparison>] SubmenuTeam =
-    { TeamIndex : int
-      TeamIndices : int list }
-      
-    static member tryGetTeammate (team : Team) submenuTeam =
-        Map.tryFind submenuTeam.TeamIndex team
-
-    static member tryGetTeammateAndTeamData team submenuTeam =
-        match SubmenuTeam.tryGetTeammate team submenuTeam with
-        | Some teammate ->
-            match Map.tryFind teammate.CharacterType Data.Value.Characters with
-            | Some characterData -> Some (teammate, characterData)
-            | None -> None
-        | None -> None
-
-    static member tryGetTeamData team submenuTeam =
-        let lacdOpt = SubmenuTeam.tryGetTeammateAndTeamData team submenuTeam
-        Option.map snd lacdOpt
-
-type [<ReferenceEquality; NoComparison>] SubmenuItem =
-    { ItemPage : int }
-
-type [<StructuralEquality; NoComparison>] SubmenuState =
-    | SubmenuTeam of SubmenuTeam
-    | SubmenuItem of SubmenuItem
-    | SubmenuClosed
-
-type [<ReferenceEquality; NoComparison>] Submenu =
-    { SubmenuState : SubmenuState
-      SubmenuUseOpt : SubmenuUse option }
-
-type ShopState =
-    | ShopBuying
-    | ShopSelling
-
-type [<ReferenceEquality; NoComparison>] ShopConfirm =
-    { ShopConfirmSelection : int * ItemType
-      ShopConfirmPrice : int
-      ShopConfirmOffer : string
-      ShopConfirmLine1 : string
-      ShopConfirmLine2 : string }
-
-    static member make selection price offer line1 line2 =
-        { ShopConfirmSelection = selection
-          ShopConfirmPrice = price
-          ShopConfirmOffer = offer
-          ShopConfirmLine1 = line1
-          ShopConfirmLine2 = line2 }
-
-    static member makeFromConsumableData buying inventory selection cd =
-        let itemType = snd selection
-        let header = if buying then "Buy " else "Sell "
-        let price = if buying then cd.Cost else cd.Cost / 2
-        let offer = header + ItemType.getName itemType + " for " + string price + "G?"
-        let effect = "Effect: " + cd.Description
-        let stats = "Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirm.make selection price offer effect stats
-
-    static member makeFromWeaponData buying inventory selection (wd : WeaponData) =
-        let itemType = snd selection
-        let header = if buying then "Buy " else "Sell "
-        let price = if buying then wd.Cost else wd.Cost / 2
-        let offer = header + ItemType.getName itemType + " for " + string price + "G?"
-        let effect = "Effect: " + wd.Description
-        let stats = "Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirm.make selection price offer effect stats
-
-    static member makeFromArmorData buying inventory selection (ad : ArmorData) =
-        let itemType = snd selection
-        let header = if buying then "Buy " else "Sell "
-        let price = if buying then ad.Cost else ad.Cost / 2
-        let offer = header + ItemType.getName itemType + " for " + string price + "G?"
-        let effect = "Effect: " + ad.Description
-        let stats = "HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirm.make selection price offer effect stats
-
-    static member makeFromAccessoryData buying inventory selection (ad : AccessoryData) =
-        let itemType = snd selection
-        let header = if buying then "Buy " else "Sell "
-        let price = if buying then ad.Cost else ad.Cost / 2
-        let offer = header + ItemType.getName itemType + " for " + string price + "G?"
-        let effect = "Effect: " + ad.Description
-        let stats = "Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + " | Own: " + string (Inventory.getItemCount itemType inventory)
-        ShopConfirm.make selection price offer effect stats
-
-    static member tryMakeFromSelection buying inventory selection =
-        match snd selection with
-        | Consumable ty ->
-            match Map.tryFind ty Data.Value.Consumables with
-            | Some cd -> ShopConfirm.makeFromConsumableData buying inventory selection cd |> Some
-            | None -> None
-        | Equipment ty ->
-            match ty with
-            | WeaponType name ->
-                match Map.tryFind name Data.Value.Weapons with
-                | Some wd -> ShopConfirm.makeFromWeaponData buying inventory selection wd |> Some
-                | None -> None
-            | ArmorType name ->
-                match Map.tryFind name Data.Value.Armors with
-                | Some ad -> ShopConfirm.makeFromArmorData buying inventory selection ad |> Some
-                | None -> None
-            | AccessoryType name ->
-                match Map.tryFind name Data.Value.Accessories with
-                | Some ad -> ShopConfirm.makeFromAccessoryData buying inventory selection ad |> Some
-                | None -> None
-        | KeyItem _ | Stash _ -> None
-
-type [<ReferenceEquality; NoComparison>] Shop =
-    { ShopType : ShopType
-      ShopState : ShopState
-      ShopPage : int
-      ShopConfirmOpt : ShopConfirm option }
 
 type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
@@ -189,13 +23,14 @@ module Field =
             { FieldType_ : FieldType
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
-              Team_ : Team
-              EncounterCreep_ : single
-              EncounterThresholdScalar_ : single
+              Team_ : Map<int, Teammate>
+              SpiritActivity_ : single
+              Spirits_ : Spirit array
               Advents_ : Advent Set
               PropStates_ : Map<int, PropState>
               Inventory_ : Inventory
-              Submenu_ : Submenu
+              Menu_ : Menu
+              Cue_ : Cue
               ShopOpt_ : Shop option
               FieldTransitionOpt_ : FieldTransition option
               DialogOpt_ : Dialog option
@@ -206,15 +41,25 @@ module Field =
         member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
         member this.Team = this.Team_
-        member this.EncounterCreep = this.EncounterCreep_
+        member this.SpiritActivity = this.SpiritActivity_
+        member this.Spirits = this.Spirits_
         member this.Advents = this.Advents_
         member this.PropStates = this.PropStates_
         member this.Inventory = this.Inventory_
-        member this.Submenu = this.Submenu_
+        member this.Menu = this.Menu_
+        member this.Cue = this.Cue_
         member this.ShopOpt = this.ShopOpt_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
+
+    let getRecruitmentFee (field : Field) =
+        let advents = Set.ofArray [|GarrouRecruited; MaelRecruited; RiainRecruited; PericRecruited|]
+        let recruiteds = Set.intersect advents field.Advents
+        let recruited = Set.count recruiteds
+        match Array.tryItem recruited Constants.Field.RecruitmentFees with
+        | Some recruitmentFee -> recruitmentFee
+        | None -> 0
 
     let getParty field =
         field.Team_ |>
@@ -231,8 +76,7 @@ module Field =
     let updateFieldType updater field =
         { field with
             FieldType_ = updater field.FieldType_
-            EncounterCreep_ = 0.0f
-            EncounterThresholdScalar_ = Gen.randomf + 0.5f }
+            SpiritActivity_ = 0.0f }
 
     let updateAvatar updater field =
         { field with Avatar_ = updater field.Avatar_ }
@@ -249,8 +93,11 @@ module Field =
     let updateInventory updater field =
         { field with Inventory_ = updater field.Inventory_ }
 
-    let updateSubmenu updater field =
-        { field with Submenu_ = updater field.Submenu_ }
+    let updateMenu updater field =
+        { field with Menu_ = updater field.Menu_ }
+
+    let updateCue updater field =
+        { field with Cue_ = updater field.Cue_ }
 
     let updateShopOpt updater field =
         { field with ShopOpt_ = updater field.ShopOpt_ }
@@ -265,42 +112,85 @@ module Field =
         let battleOpt = updater field.BattleOpt_
         { field with
             BattleOpt_ = battleOpt
-            EncounterCreep_ = if Option.isSome battleOpt then 0.0f else field.EncounterCreep_ }
+            SpiritActivity_ = if Option.isSome battleOpt then 0.0f else field.SpiritActivity_ }
 
     let updateReference field =
         { field with FieldType_ = field.FieldType_ }
 
+    let recruit allyType (field : Field) =
+        let index = Map.count field.Team
+        let teammate = Teammate.make index allyType
+        updateTeam (Map.add index teammate) field
+
     let restoreTeam field =
         { field with Team_ = Map.map (fun _ -> Teammate.restore) field.Team_ }
 
-    let tryAdvanceEncounterCreep (velocity : Vector2) (field : Field) world =
+    let hasEncounters (field : Field) =
+        match Data.Value.Fields.TryGetValue field.FieldType with
+        | (true, fieldData) -> Option.isSome fieldData.EncounterTypeOpt
+        | (false, _) -> false
+
+    let advanceSpirits (field : Field) world =
         match field.FieldTransitionOpt with
         | None ->
-            match Data.Value.Fields.TryGetValue field.FieldType with
-            | (true, fieldData) ->
-                match fieldData.EncounterTypeOpt with
-                | Some encounterType ->
-                    match Data.Value.Encounters.TryGetValue encounterType with
-                    | (true, encounterData) ->
-                        let encounterThreshold = encounterData.Threshold * field.EncounterThresholdScalar_
-                        let speed = velocity.Length () / 60.0f
-                        let creep = speed
-                        let field =
-                            if creep <> 0.0f
-                            then { field with EncounterCreep_ = field.EncounterCreep_ + creep }
-                            else field
-                        if field.EncounterCreep_ >= encounterThreshold then
-                            match FieldData.tryGetBattleType field.OmniSeedState field.Avatar.Position encounterData.BattleTypes fieldData world with
-                            | Some battleType ->
-                                match Data.Value.Battles.TryGetValue battleType with
-                                | (true, battleData) -> (Some battleData, field)
-                                | (false, _) -> (None, field)
-                            | None -> (None, field)
-                        else (None, field)
-                    | (false, _) -> (None, field)
-                | None -> (None, field)
-            | (false, _) -> (None, field)
-        | Some _ -> (None, field)
+            let field =
+                { field with
+                    SpiritActivity_ = inc field.SpiritActivity_ }
+            let field =
+                { field with
+                    Spirits_ =
+                        Array.map (Spirit.advance (World.getTickTime world) field.Avatar.Center) field.Spirits_ }
+            let field =
+                { field with
+                    Spirits_ =
+                        Array.filter (fun (spirit : Spirit) ->
+                            let delta = field.Avatar.Bottom - spirit.Center
+                            let distance = delta.Length ()
+                            distance < Constants.Field.SpiritRadius * 1.25f)
+                            field.Spirits }
+            let field =
+                let spiritActivity = max 0.0f (field.SpiritActivity_  - single Constants.Field.SpiritActivityMinimum)
+                let spiritsNeeded = int (spiritActivity / single Constants.Field.SpiritActivityThreshold)
+                let spiritsDeficient = spiritsNeeded - Array.length field.Spirits
+                let spiritsSpawned =
+                    match Data.Value.Fields.TryGetValue field.FieldType with
+                    | (true, fieldData) ->
+                        [|0 .. spiritsDeficient - 1|] |>
+                        Array.map (fun _ ->
+                            match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData world with
+                            | Some spiritType ->
+                                let spiritMovement = SpiritPattern.toSpiritMovement (SpiritPattern.random ())
+                                let spirit = Spirit.spawn (World.getTickTime world) field.Avatar.Bottom spiritType spiritMovement
+                                Some spirit
+                            | None -> None) |>
+                        Array.definitize
+                    | (false, _) -> [||]
+                { field with Spirits_ = Array.append field.Spirits_ spiritsSpawned }
+            match Array.tryFind (fun (spirit : Spirit) -> Math.isPointInBounds spirit.Position field.Avatar.LowerBounds) field.Spirits_ with
+            | Some spirit ->
+                match Data.Value.Fields.TryGetValue field.FieldType with
+                | (true, fieldData) ->
+                    match fieldData.EncounterTypeOpt with
+                    | Some encounterType ->
+                        match Data.Value.Encounters.TryGetValue encounterType with
+                        | (true, encounterData) ->
+                            let battleType =
+                                // TODO: P1: toughen up this code.
+                                match spirit.SpiritType with
+                                | WeakSpirit -> encounterData.BattleTypes.[0]
+                                | NormalSpirit -> encounterData.BattleTypes.[1]
+                                | StrongSpirit -> encounterData.BattleTypes.[2]
+                                | GreatSpirit -> encounterData.BattleTypes.[4]
+                            match Data.Value.Battles.TryGetValue battleType with
+                            | (true, battleData) ->
+                                let field = { field with Spirits_ = [||] }
+                                Left (battleData, field)
+                            | (false, _) -> Right field
+                        | (false, _) -> Right field
+                    | None -> Right field
+                | (false, _) -> Right field
+            | None -> Right field
+        | Some _ -> Right field
 
     let synchronizeTeamFromAllies allies field =
         Map.foldi (fun i field _ (ally : Character) ->
@@ -333,13 +223,14 @@ module Field =
         { FieldType_ = fieldType
           OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = avatar
-          EncounterCreep_ = 0.0f
-          EncounterThresholdScalar_ = 1.0f
+          SpiritActivity_ = 0.0f
+          Spirits_ = [||]
           Team_ = team
           Advents_ = advents
           PropStates_ = Map.empty
           Inventory_ = inventory
-          Submenu_ = { SubmenuState = SubmenuClosed; SubmenuUseOpt = None }
+          Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
+          Cue_ = Cue.Nil
           ShopOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
@@ -350,12 +241,13 @@ module Field =
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty
           Team_ = Map.empty
-          EncounterCreep_ = 0.0f
-          EncounterThresholdScalar_ = 1.0f
+          SpiritActivity_ = 0.0f
+          Spirits_ = [||]
           Advents_ = Set.empty
           PropStates_ = Map.empty
           Inventory_ = { Items = Map.empty; Gold = 0 }
-          Submenu_ = { SubmenuState = SubmenuClosed; SubmenuUseOpt = None }
+          Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
+          Cue_ = Cue.Nil
           ShopOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
@@ -363,14 +255,14 @@ module Field =
 
     let debug =
         { empty with
-            Team_ = Map.singleton 0 Teammate.jinn }
+            Team_ = Map.singleton 0 (Teammate.make 0 Jinn) }
 
     let initial randSeedState =
         { empty with
             FieldType_ = TombOuter
             OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
             Avatar_ = Avatar.initial
-            Team_ = Map.singleton 0 Teammate.jinn
+            Team_ = Map.singleton 0 (Teammate.make 0 Jinn)
             Inventory_ = Inventory.initial }
 
     let save field =

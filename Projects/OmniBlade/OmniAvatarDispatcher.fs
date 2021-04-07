@@ -27,7 +27,6 @@ module AvatarDispatcher =
         member this.GetAvatar = this.GetModel<Avatar>
         member this.SetAvatar = this.SetModel<Avatar>
         member this.Avatar = this.Model<Avatar> ()
-        member this.TraverseEvent = Events.Traverse --> this
 
     type AvatarDispatcher () =
         inherit EntityDispatcher<Avatar, AvatarMessage, AvatarCommand>
@@ -65,10 +64,13 @@ module AvatarDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
+        static member Properties =
+            [define Entity.Omnipresent true]
+
         override this.Initializers (avatar, entity) =
             let bodyShapes =
                 BodyShapes
-                    [BodyCapsule { Height = 0.01f; Radius = 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
+                    [BodyCircle { Radius = 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = coreShapeId }}
                      BodyCircle { Radius = 0.25f; Center = v2 -0.01f -0.36f; PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeId = sensorShapeId; IsSensorOpt = Some true }}]
             [entity.Bounds <== avatar --> fun avatar -> avatar.Bounds
              entity.FixedRotation == true
@@ -105,11 +107,11 @@ module AvatarDispatcher =
                 let speed = velocity.Length ()
                 let avatar =
                     if speed > 10.0f then
-                        if direction <> avatar.Direction || avatar.AnimationCycle = IdleCycle then
+                        if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
                             let avatar = Avatar.updateDirection (constant direction) avatar
-                            Avatar.animate time WalkCycle avatar
+                            Avatar.animate time WalkAnimation avatar
                         else avatar
-                    else Avatar.animate time IdleCycle avatar
+                    else Avatar.animate time IdleAnimation avatar
                 just avatar
 
             | PostUpdate ->
@@ -161,14 +163,11 @@ module AvatarDispatcher =
         override this.Command (_, command, entity, world) =
             match command with
             | TryTravel force ->
-                if not (World.isSelectedScreenTransitioning world) then
-                    let world =
-                        if force <> v2Zero && entity.GetEnabled world then
-                            let physicsId = Simulants.Field.Scene.Avatar.GetPhysicsId world
-                            World.applyBodyForce force physicsId world
-                        else world
-                    let eventTrace = EventTrace.debug "Avatar" "Command" "Traverse" EventTrace.empty
-                    let world = World.publish (entity.GetLinearVelocity world) entity.TraverseEvent eventTrace entity world
+                if  not (World.isSelectedScreenTransitioning world) &&
+                    force <> v2Zero &&
+                    entity.GetEnabled world then
+                    let physicsId = Simulants.Field.Scene.Avatar.GetPhysicsId world
+                    let world = World.applyBodyForce force physicsId world
                     just world
                 else just world
 

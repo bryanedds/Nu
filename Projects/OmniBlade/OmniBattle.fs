@@ -59,6 +59,18 @@ module Battle =
     let getCharacters battle =
         battle.Characters_
 
+    let getCharactersIf pred battle =
+        battle.Characters_|>
+        Map.filter pred
+
+    let getCharactersHealthy battle =
+        getCharacters battle |>
+        Map.filter (fun _ character -> character.IsHealthy)
+
+    let getCharactersWounded battle =
+        getCharacters battle |>
+        Map.filter (fun _ character -> character.IsWounded)
+
     let getAllies battle =
         battle.Characters_ |> Map.toSeq |> Seq.filter (function (AllyIndex _, _) -> true | _ -> false) |> Map.ofSeq
 
@@ -123,16 +135,28 @@ module Battle =
         { battle with Characters_ = Map.remove index battle.Characters_ }
 
     let updateCharactersIf predicate updater (battle : Battle) =
-        { battle with Characters_ = Map.map (fun index character -> if predicate index then updater character else character) battle.Characters_ }
+        { battle with Characters_ = Map.map (fun i c -> if predicate i c then updater c else c) battle.Characters_ }
 
     let updateCharacters updater battle =
-        updateCharactersIf tautology updater battle
+        updateCharactersIf tautology2 updater battle
+
+    let updateCharactersHealthy updater battle =
+        updateCharactersIf (fun _ character -> character.IsHealthy) updater battle
+
+    let updateCharactersWounded updater battle =
+        updateCharactersIf (fun _ character -> character.IsWounded) updater battle
+
+    let updateAlliesIf pred updater battle =
+        updateCharactersIf (fun i c -> pred i c && match i with AllyIndex _ -> true | _ -> false) updater battle
 
     let updateAllies updater battle =
-        updateCharactersIf (function AllyIndex _ -> true | _ -> false) updater battle
+        updateAlliesIf tautology2 updater battle
+
+    let updateEnemiesIf pred updater battle =
+        updateCharactersIf (fun i c -> pred i c && match i with EnemyIndex _ -> true | _ -> false) updater battle
 
     let updateEnemies updater battle =
-        updateCharactersIf (function EnemyIndex _ -> true | _ -> false) updater battle
+        updateEnemiesIf tautology2 updater battle
 
     let tryGetCharacter characterIndex battle =
         Map.tryFind characterIndex battle.Characters_
@@ -177,8 +201,8 @@ module Battle =
     let prependActionCommand command battle =
          { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
-    let makeFromParty party inventory (prizePool : PrizePool) battleData time =
-        let enemies = battleData.BattleEnemies |> List.mapi Character.tryMakeEnemy |> List.definitize
+    let makeFromParty offsetCharacters inventory (prizePool : PrizePool) (party : Party) battleData time =
+        let enemies = battleData.BattleEnemies |> List.mapi (flip Character.tryMakeEnemy offsetCharacters) |> List.definitize
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
@@ -195,27 +219,29 @@ module Battle =
               DialogOpt_ = None }
         battle
 
-    let makeFromTeam (team : Team) inventory prizePool battleData time =
+    let makeFromTeam inventory prizePool (team : Map<int, Teammate>) battleData time =
+        let party = team |> Map.toList |> List.tryTake 3
+        let offsetCharacters = List.hasAtMost 1 party
         let party =
-            team |>
-            Map.toList |>
-            List.tryTake 3 |>
-            List.map
-                (fun (index, leg) ->
-                    match Map.tryFind leg.CharacterType Data.Value.Characters with
+            List.mapi
+                (fun index (teamIndex, teammate) ->
+                    match Map.tryFind teammate.CharacterType Data.Value.Characters with
                     | Some characterData ->
                         // TODO: bounds checking
-                        let bounds = v4Bounds battleData.BattleAllyPositions.[index] Constants.Gameplay.CharacterSize
-                        let characterIndex = AllyIndex index
+                        let size = Constants.Gameplay.CharacterSize
+                        let position = if offsetCharacters then battleData.BattleAllyPositions.[teamIndex] + Constants.Battle.CharacterOffset else battleData.BattleAllyPositions.[teamIndex]
+                        let bounds = v4Bounds position size
+                        let characterIndex = AllyIndex teamIndex
                         let characterType = characterData.CharacterType
-                        let characterState = CharacterState.make characterData leg.HitPoints leg.TechPoints leg.ExpPoints leg.WeaponOpt leg.ArmorOpt leg.Accessories
+                        let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.ofVector2 -bounds.Bottom
-                        let actionTime = Constants.Battle.AllyActionTimeInitial
+                        let actionTime = 1000 - 500 * index // TODO: P1: put this in Constants.
                         let character = Character.make bounds characterIndex characterType characterState animationSheet direction actionTime
                         character
-                    | None -> failwith ("Could not find CharacterData for '" + scstring leg.CharacterType + "'."))
-        let battle = makeFromParty party inventory prizePool battleData time
+                    | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
+                party
+        let battle = makeFromParty offsetCharacters inventory prizePool party battleData time
         battle
 
     let empty =
@@ -228,5 +254,17 @@ module Battle =
           CurrentCommandOpt_ = None
           ActionCommands_ = Queue.empty
           DialogOpt_ = None }
+
+    let debug =
+        match Map.tryFind DebugBattle Data.Value.Battles with
+        | Some battle ->
+            let level = 9
+            let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
+            let team =
+                Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>
+                Map.add 1 (Teammate.makeAtLevel level 1 Riain) |>
+                Map.add 2 (Teammate.makeAtLevel level 2 Peric)
+            makeFromTeam Inventory.initial prizePool team battle 0L
+        | None -> empty
 
 type Battle = Battle.Battle

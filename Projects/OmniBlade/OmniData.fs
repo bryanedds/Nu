@@ -29,7 +29,21 @@ type Advent =
     | DebugSwitch
     | DebugSwitch2
     | Opened of Guid
+    | GarrouRecruited
+    | MaelRecruited
+    | RiainRecruited
+    | PericRecruited
     | FireGoblinDefeated
+    | CastleUnsealed
+    | ForestUnsealed
+    | FactoryUnsealed
+    | MountainUnsealed
+    | DeadSeaUnsealed
+    | RuinsUnsealed
+    | DesertUnsealed
+    | Castle2Unsealed
+    | SeasonsUnsealed
+    | VolcanoUnsealed
 
 type Direction =
     | Upward
@@ -69,28 +83,32 @@ type ElementType =
 
 type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
+    | Blind
     | Silence
     | Sleep
+    | Confuse
+    | Previve
     | Time of bool // true = Haste, false = Slow
     | Counter of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Power of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
-    | Provoke
-    | ProvokeOne of CharacterIndex
+    | Provoke of CharacterIndex
 
     static member enumerate this =
         match this with
         | Poison -> 0
-        | Silence -> 1
-        | Sleep -> 2
-        | Time _ -> 3
-        | Counter (_, _) -> 4
-        | Power (_, _) -> 5
-        | Magic (_, _) -> 6
-        | Shield (_, _) -> 7
-        | Provoke -> 8
-        | ProvokeOne i -> 9 + (match i with AllyIndex i -> i | EnemyIndex i -> i) <<< 6
+        | Blind -> 1
+        | Silence -> 2
+        | Sleep -> 3
+        | Confuse -> 4
+        | Previve -> 5
+        | Time _ -> 6
+        | Counter (_, _) -> 7
+        | Power (_, _) -> 8
+        | Magic (_, _) -> 9
+        | Shield (_, _) -> 10
+        | Provoke i -> 11 + (match i with AllyIndex i -> i | EnemyIndex i -> i) <<< 6
 
     static member compare this that =
         compare
@@ -152,14 +170,37 @@ type TargetType =
     | ProximityTarget of AimType * single
     | RadialTarget of AimType * single
     | LineTarget of AimType * single
+    | SegmentTarget of AimType * single
+    | VerticalTarget of AimType * single
+    | HorizontalTarget of AimType * single
     | AllTarget of AimType
 
 type TechType =
     | Critical
-    | Cyclone
     | Slash
+    | DarkCritical
+    | Cyclone
+    | PowerCut
+    | EmboldenCut
+    | DoubleCut
+    | ProvokeCut
+    | Fire
+    | Flame
+    | Ice
+    | Snowball
     | Bolt
-    | Tremor
+    | BoltBeam
+    | Stone
+    | Quake
+    | Aura
+    | Empower
+    | Enlighten
+    | Protect
+    | Weaken
+    | Muddle
+    | ConjureIfrit
+    | Slow
+    | Purify
 
 type ActionType =
     | Attack
@@ -174,6 +215,7 @@ type ArchetypeType =
     | Fighter
     | Brawler
     | Wizard
+    | Conjuror
     | Cleric
     | Goblin
 
@@ -181,9 +223,8 @@ type WeaponSubtype =
     | Melee
     | Sword
     | Heavesword
-    | Bow
-    | Staff
     | Rod
+    | Bow
 
 type ArmorSubtype =
     | Robe
@@ -200,17 +241,50 @@ type ShopkeepAppearanceType =
     | Female
     | Fancy
 
+type FieldType =
+    | DebugRoom
+    | DebugRoom2
+    | TombOuter
+    | TombGround
+    | TombBasement
+    | Castle of int
+    | CastleConnector
+    | Forest of int
+    | ForestConnector
+    | Factory of int
+    | FactoryConnector
+    | Mountain of int
+    | MountainConnector
+    | DeadSea of int
+    | DeadSeaConnector
+    | Ruins of int
+    | RuinsConnector
+    | Castle2 of int
+    | Castle2Connector
+    | Desert of int
+    | DesertConnector
+    | Seasons of int
+    | SeasonsConnector
+    | Volcano of int
+    | VolcanoConnector
+
+    static member toFieldName (fieldType : FieldType) =
+        match valueToSymbol fieldType with
+        | Symbol.Atom (name, _) -> name
+        | Symbols ([Symbol.Atom (name , _); _], _) -> name
+        | _ -> failwithumf ()
+
 type BattleType =
     | DebugBattle
-    | CaveBattle
-    | CaveBattle2
-    | CaveBattle3
-    | CaveBattle4
+    | CastleBattle
+    | CastleBattle2
+    | CastleBattle3
+    | CastleBattle4
     | FireGoblinBattle
 
 type EncounterType =
     | DebugEncounter
-    | CaveEncounter
+    | CastleEncounter
 
 type LockType =
     | BrassKey
@@ -222,7 +296,7 @@ type ChestType =
 type DoorType =
     | WoodenDoor
 
-type PortalType =
+type PortalIndex =
     | Center
     | North
     | East
@@ -234,35 +308,33 @@ type PortalType =
     | SW
     | IX of int
 
-type NpcType =
-    | VillageMan
-    | VillageWoman
-    | VillageBoy
-    | VillageGirl
-    | FireGoblinNpc
+type PortalType =
+    | AirPortal
+    | StairsPortal of bool
 
-type NpcSpecialty =
-    | NoSpecialty
-    | FireGoblinSpecialty
+type NpcType =
+    | GarrouNpc
+    | MaelNpc
+    | RiainNpc
+    | PericNpc
+    | RavelNpc
+    | AdvenNpc
+    | EildaenNpc
+    | ShamanaNpc
+    | FireGoblinNpc
+    
     static member exists advents specialty =
         match specialty with
-        | NoSpecialty -> true
-        | FireGoblinSpecialty -> not (Set.contains FireGoblinDefeated advents)
-    static member getBattleTypeOpt advents specialty =
-        match specialty with
-        | NoSpecialty -> None
-        | FireGoblinSpecialty -> if not (Set.contains FireGoblinDefeated advents) then Some (Set.singleton FireGoblinDefeated, FireGoblinBattle) else None
+        | GarrouNpc -> not (Set.contains GarrouRecruited advents)
+        | MaelNpc -> not (Set.contains MaelRecruited advents)
+        | RiainNpc -> not (Set.contains RiainRecruited advents)
+        | PericNpc -> not (Set.contains PericRecruited advents)
+        | FireGoblinNpc -> not (Set.contains FireGoblinDefeated advents)
+        | RavelNpc | AdvenNpc | EildaenNpc | ShamanaNpc -> true
 
 type ShopkeepType =
-    | ShopkeepMan
-
-type FieldType =
-    | DebugRoom
-    | DebugRoom2
-    | TombOuter
-    | TombGround
-    | TombBasement
-    | Cave
+    | RobehnShopkeep
+    | SchaalShopkeep
 
 type SwitchType =
     | ThrowSwitch
@@ -283,26 +355,31 @@ type AnimationType =
     | SaturatedWithDirection
     | SaturatedWithoutDirection
 
-type CharacterAnimationCycle =
-    | WalkCycle
-    | CelebrateCycle
-    | ReadyCycle
-    | PoiseCycle of PoiseType
-    | AttackCycle
-    | WoundCycle
-    | SpinCycle
-    | DamageCycle
-    | IdleCycle
-    | CastCycle
-    | Cast2Cycle
-    | SlashCycle
-    | WhirlCycle
-    | BuryCycle
+type CharacterAnimationType =
+    | WalkAnimation
+    | CelebrateAnimation
+    | ReadyAnimation
+    | PoiseAnimation of PoiseType
+    | AttackAnimation
+    | WoundAnimation
+    | SpinAnimation
+    | DamageAnimation
+    | IdleAnimation
+    | CastAnimation
+    | Cast2Animation
+    | SlashAnimation
+    | WhirlAnimation
+    | BuryAnimation // TODO: get rid of this
 
 type AllyType =
     | Jinn
+    | Garrou
+    | Mael
+    | Riain
+    | Peric
 
 type EnemyType =
+    | DebugGoblin
     | BlueGoblin
     | PoisonGoblin
     | FireGoblin
@@ -316,17 +393,96 @@ type CharacterType =
         | Ally ty -> string ty
         | Enemy ty -> string ty
 
+type [<NoEquality; NoComparison>] SpiritType =
+    | WeakSpirit
+    | NormalSpirit
+    | StrongSpirit
+    | GreatSpirit
+
+    static member getColor spiritType =
+        match spiritType with
+        | WeakSpirit -> Color (byte 255, byte 255, byte 255, byte 127)
+        | NormalSpirit -> Color (byte 159, byte 159, byte 255, byte 127)
+        | StrongSpirit -> Color (byte 255, byte 159, byte 255, byte 127)
+        | GreatSpirit -> Color (byte 255, byte 159, byte 159, byte 127)
+
+type [<NoEquality; NoComparison>] CueTarget =
+    | AvatarTarget // (field only)
+    | NpcTarget of NpcType // (field only)
+    | ShopkeepTarget of ShopkeepType // (field only)
+    | AllyTarget of int // (battle only)
+    | EnemyTarget of int // (battle only)
+
+type [<NoEquality; NoComparison>] Cue =
+    | Nil
+    | PlaySound of single * Sound AssetTag
+    | PlaySong of int * single * Song AssetTag
+    | FadeOutSong of int
+    | Face of Direction * CueTarget
+    | Glow of Color * CueTarget
+    | Animate of CharacterAnimationType * CueTarget
+    | Recruit of AllyType
+    | Unseal of int * Advent
+    | AddItem of ItemType
+    | RemoveItem of ItemType
+    | AddAdvent of Advent
+    | RemoveAdvent of Advent
+    | Wait of int64
+    | WaitState of int64
+    | Fade of int64 * bool * CueTarget
+    | FadeState of int64 * int64 * bool * CueTarget
+    | Warp of FieldType * Vector2 * Direction
+    | WarpState
+    | Battle of BattleType * Advent Set // TODO: P1: consider using three Cues (start, end, post) in battle rather than advents directly...
+    | BattleState
+    | Dialog of string
+    | DialogState
+    | Prompt of string * (string * Cue) * (string * Cue)
+    | PromptState
+    | If of Advent Set * Cue * Cue
+    | Not of Advent Set * Cue * Cue
+    | Parallel of Cue list
+    | Sequence of Cue list
+    static member isNil cue = match cue with Nil -> true | _ -> false
+    static member notNil cue = match cue with Nil -> false | _ -> true
+    static member isInterrupting (advents : Advent Set) cue =
+        match cue with
+        | Nil | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | Glow _ | Animate _ | Recruit _ | Unseal _ | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ -> false
+        | Wait _ | WaitState _ | Fade _ | FadeState _ | Warp _ | WarpState _ | Battle _ | BattleState _ | Dialog _ | DialogState _ | Prompt _ | PromptState _ -> true
+        | If (r, c, a) -> if advents.IsSupersetOf r then Cue.isInterrupting advents c else Cue.isInterrupting advents a
+        | Not (r, c, a) -> if not (advents.IsSupersetOf r) then Cue.isInterrupting advents c else Cue.isInterrupting advents a
+        | Parallel cues -> List.exists (Cue.isInterrupting advents) cues
+        | Sequence cues -> List.exists (Cue.isInterrupting advents) cues
+    static member notInterrupting advents cue = not (Cue.isInterrupting advents cue)
+
+type [<NoEquality; NoComparison>] Branch =
+    { Cue : Cue
+      Requirements : Advent Set }
+
 [<RequireQualifiedAccess>]
 module OmniSeedState =
 
     type OmniSeedState =
         private
             { RandSeedState : uint64 }
-    
-    let rotate fieldType state =
-        match fieldType with
-        | DebugRoom | DebugRoom2 | TombOuter | TombGround | TombBasement -> state.RandSeedState
-        | Cave -> rotl64 1 state.RandSeedState
+
+    let rotate isFade fieldType state =
+        if not isFade then
+            match fieldType with
+            | DebugRoom | DebugRoom2 | TombOuter | TombGround | TombBasement
+            | CastleConnector | ForestConnector | FactoryConnector | MountainConnector | DeadSeaConnector
+            | RuinsConnector | Castle2Connector | DesertConnector | SeasonsConnector | VolcanoConnector -> state.RandSeedState
+            | Castle n -> state.RandSeedState <<< n
+            | Forest n -> state.RandSeedState <<< n + 6
+            | Factory n -> state.RandSeedState <<< n + 12
+            | Mountain n -> state.RandSeedState <<< n + 18
+            | DeadSea n -> state.RandSeedState <<< n + 24
+            | Ruins n -> state.RandSeedState <<< n + 30
+            | Castle2 n -> state.RandSeedState <<< n + 36
+            | Desert n -> state.RandSeedState <<< n + 42
+            | Seasons n -> state.RandSeedState <<< n + 48
+            | Volcano n -> state.RandSeedState <<< n + 54
+        else state.RandSeedState <<< 60
 
     let makeFromSeedState randSeedState =
         { RandSeedState = randSeedState }
@@ -374,6 +530,8 @@ type TechData =
       Scalar : single
       SuccessRate : single
       Curative : bool
+      Emboldening : bool
+      Provocative : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster
       ElementTypeOpt : ElementType option
@@ -417,14 +575,52 @@ type [<NoEquality; NoComparison>] ShopData =
     { ShopType : ShopType // key
       ShopItems : ItemType list }
 
+type [<NoEquality; NoComparison>] EnemyData =
+    { EnemyType : EnemyType // key
+      EnemyPosition : Vector2 }
+
+type [<NoEquality; NoComparison>] BattleData =
+    { BattleType : BattleType // key
+      BattleAllyPositions : Vector2 list
+      BattleEnemies : EnemyData list
+      BattleTileMap : TileMap AssetTag
+      BattleSongOpt : Song AssetTag option }
+
+type [<NoEquality; NoComparison>] EncounterData =
+    { EncounterType : EncounterType // key
+      BattleTypes : BattleType list }
+
+type [<NoEquality; NoComparison>] CharacterData =
+    { CharacterType : CharacterType // key
+      ArchetypeType : ArchetypeType
+      LevelBase : int
+      AnimationSheet : Image AssetTag
+      PortraitOpt : Image AssetTag option
+      WeaponOpt : string option
+      ArmorOpt : string option
+      Accessories : string list
+      GoldScalar : single
+      ExpScalar : single
+      Description : string }
+
+type [<NoEquality; NoComparison>] CharacterAnimationData =
+    { CharacterAnimationType : CharacterAnimationType // key
+      AnimationType : AnimationType
+      LengthOpt : int64 option
+      Run : int
+      Delay : int64
+      Offset : Vector2i }
+
 type [<NoEquality; NoComparison>] PropData =
-    | Chest of ChestType * ItemType * Guid * BattleType option * Advent Set * Advent Set
-    | Door of DoorType * Advent Set * Advent Set // for simplicity, we'll just have north / south doors
-    | Portal of PortalType * Direction * FieldType * PortalType * Advent Set // leads to a different portal
-    | Switch of SwitchType * Advent Set * Advent Set // anything that can affect another thing on the field through interaction
-    | Sensor of SensorType * BodyShape option * Advent Set * Advent Set // anything that can affect another thing on the field through traversal
-    | Npc of NpcType * NpcSpecialty * Direction * (string * Advent Set * Advent Set) list * Advent Set
+    | Portal of PortalType * PortalIndex * Direction * FieldType * PortalIndex * bool * Advent Set // leads to a different portal
+    | Door of DoorType * Cue * Cue * Advent Set // for simplicity, we'll just have north / south doors
+    | Chest of ChestType * ItemType * Guid * BattleType option * Cue * Advent Set
+    | Switch of SwitchType * Cue * Cue * Advent Set // anything that can affect another thing on the field through interaction
+    | Sensor of SensorType * BodyShape option * Cue * Cue * Advent Set // anything that can affect another thing on the field through traversal
+    | Npc of NpcType * Direction * Cue * Advent Set
+    | NpcBranching of NpcType * Direction * Branch list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
+    | Seal of Color * Cue * Advent Set
     | SavePoint
     | ChestSpawn
     | EmptyProp
@@ -437,7 +633,8 @@ type [<NoEquality; NoComparison>] PropDescriptor =
 
 type [<NoEquality; NoComparison>] FieldTileMap =
     | FieldStatic of TileMap AssetTag
-    | FieldRandom of int * single * OriginRand * string
+    | FieldConnector of TileMap AssetTag * TileMap AssetTag
+    | FieldRandom of int * single * OriginRand * int * string
 
 type [<NoEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
@@ -479,33 +676,52 @@ module FieldData =
                         (FStack.index index treasures, FStack.removeAt index treasures, rand)
                     else (Consumable GreenHerb, treasures, rand)
                 let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
-                let prop = { prop with PropData = Chest (WoodenChest, treasure, id, None, Set.empty, Set.empty) }
+                let prop = { prop with PropData = Chest (WoodenChest, treasure, id, None, Cue.Nil, Set.empty) }
                 (prop, treasures, rand)
             else ({ prop with PropData = EmptyProp }, treasures, rand)
         | _ -> (prop, treasures, rand)
 
     let tryGetTileMap omniSeedState fieldData world =
-        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
+        let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey tileMapsMemoized with
         | None ->
             let tileMapOpt =
                 match fieldData.FieldTileMap with
-                | FieldStatic fieldAsset ->
+                | FieldStatic fieldAsset
+                | FieldConnector (fieldAsset, _) ->
                     match World.tryGetTileMapMetadata fieldAsset world with
                     | Some (_, _, tileMap) -> Some tileMap
                     | None -> None
-                | FieldRandom (walkLength, bias, origin, fieldPath) ->
+                | FieldRandom (walkLength, bias, origin, floor, fieldPath) ->
                     let rand = Rand.makeFromSeedState rotatedSeedState
-                    let (cursor, mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin rand
-                    let mapTmx = MapRand.toTmx fieldPath origin cursor mapRand
+                    let (cursor, mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin floor rand
+                    let fieldName = FieldType.toFieldName fieldData.FieldType
+                    let mapTmx = MapRand.toTmx fieldName fieldPath origin cursor floor mapRand
                     Some mapTmx
             tileMapsMemoized <- Map.add memoKey tileMapOpt tileMapsMemoized
             tileMapOpt
         | Some tileMapOpt -> tileMapOpt
 
+    let tryGetTileMapFade omniSeedState fieldData world =
+        let rotatedSeedState = OmniSeedState.rotate true fieldData.FieldType omniSeedState
+        let memoKey = (rotatedSeedState, fieldData.FieldType)
+        match Map.tryFind memoKey tileMapsMemoized with
+        | None ->
+            let tileMapOpt =
+                match fieldData.FieldTileMap with
+                | FieldStatic _
+                | FieldRandom _ -> None
+                | FieldConnector (_, fieldFadeAsset) ->
+                    match World.tryGetTileMapMetadata fieldFadeAsset world with
+                    | Some (_, _, tileMap) -> Some tileMap
+                    | None -> None
+            tileMapsMemoized <- Map.add memoKey tileMapOpt tileMapsMemoized
+            tileMapOpt
+        | Some tileMapOpt -> tileMapOpt
+
     let getPropObjects omniSeedState fieldData world =
-        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
+        let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propObjectsMemoized with
         | None ->
@@ -522,7 +738,7 @@ module FieldData =
         | Some propObjects -> propObjects
 
     let getProps omniSeedState fieldData world =
-        let rotatedSeedState = OmniSeedState.rotate fieldData.FieldType omniSeedState
+        let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propsMemoized with
         | None ->
@@ -546,77 +762,38 @@ module FieldData =
         let props = getProps omniSeedState fieldData world
         List.filter (fun prop -> match prop.PropData with Portal _ -> true | _ -> false) props
 
-    let tryGetPortal omniSeedState portalType fieldData world =
+    let tryGetPortal omniSeedState portalIndex fieldData world =
         let portals = getPortals omniSeedState fieldData world
-        List.tryFind (fun prop -> match prop.PropData with Portal (portalType2, _, _, _, _) -> portalType2 = portalType | _ -> failwithumf ()) portals
+        List.tryFind (fun prop -> match prop.PropData with Portal (_, portalIndex2, _, _, _, _, _) -> portalIndex2 = portalIndex | _ -> failwithumf ()) portals
 
-    let tryGetBattleType omniSeedState avatarPosition (battleTypes : BattleType list) fieldData world =
+    let tryGetSpiritType omniSeedState avatarBottom fieldData world =
         match tryGetTileMap omniSeedState fieldData world with
         | Some tmxTileMap ->
             match fieldData.FieldTileMap with
-            | FieldRandom (_, _, origin, _) ->
+            | FieldRandom (_, _, origin, _, _) ->
                 let tileMapBounds = v4Bounds v2Zero (v2 (single tmxTileMap.Width * single tmxTileMap.TileWidth) (single tmxTileMap.Height * single tmxTileMap.TileHeight))
                 let distanceFromOriginMax = let delta = tileMapBounds.Bottom - tileMapBounds.Top in delta.Length ()
                 let distanceFromOrigin =
                     match origin with
-                    | OriginC -> let delta = avatarPosition - tileMapBounds.Center in delta.Length ()
-                    | OriginN -> let delta = avatarPosition - tileMapBounds.Top in delta.Length ()
-                    | OriginE -> let delta = avatarPosition - tileMapBounds.Right in delta.Length ()
-                    | OriginS -> let delta = avatarPosition - tileMapBounds.Bottom in delta.Length ()
-                    | OriginW -> let delta = avatarPosition - tileMapBounds.Left in delta.Length ()
-                    | OriginNE -> let delta = avatarPosition - tileMapBounds.TopRight in delta.Length ()
-                    | OriginNW -> let delta = avatarPosition - tileMapBounds.TopLeft in delta.Length ()
-                    | OriginSE -> let delta = avatarPosition - tileMapBounds.BottomRight in delta.Length ()
-                    | OriginSW -> let delta = avatarPosition - tileMapBounds.BottomLeft in delta.Length ()
-                let battleTypes = battleTypes
-                let battleTypesLength = List.length battleTypes
-                let battleIndex = int (single battleTypesLength / distanceFromOriginMax * distanceFromOrigin)
-                let battleIndex =
-                    if Gen.randomf < Constants.Field.EasierEncounterProbability && battleIndex > 0
-                    then inc battleIndex
-                    else battleIndex
-                if battleIndex >= 0 && battleIndex < battleTypesLength
-                then Some battleTypes.[battleIndex]
-                else List.tryItem (dec battleTypesLength) battleTypes
-            | FieldStatic _ -> Gen.randomItem battleTypes
+                    | OriginC -> let delta = avatarBottom - tileMapBounds.Center in delta.Length ()
+                    | OriginN -> let delta = avatarBottom - tileMapBounds.Top in delta.Length ()
+                    | OriginE -> let delta = avatarBottom - tileMapBounds.Right in delta.Length ()
+                    | OriginS -> let delta = avatarBottom - tileMapBounds.Bottom in delta.Length ()
+                    | OriginW -> let delta = avatarBottom - tileMapBounds.Left in delta.Length ()
+                    | OriginNE -> let delta = avatarBottom - tileMapBounds.TopRight in delta.Length ()
+                    | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
+                    | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
+                    | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
+                let battleIndex = int (4.0f / distanceFromOriginMax * distanceFromOrigin)
+                match battleIndex with
+                | 0 -> Some WeakSpirit
+                | 1 -> Some NormalSpirit
+                | 2 -> Some StrongSpirit
+                | 3 -> Some GreatSpirit
+                | _ -> Some GreatSpirit
+            | FieldConnector _ -> None
+            | FieldStatic _ -> None
         | None -> None
-
-type [<NoEquality; NoComparison>] EnemyData =
-    { EnemyType : EnemyType // key
-      EnemyPosition : Vector2 }
-
-type [<NoEquality; NoComparison>] BattleData =
-    { BattleType : BattleType // key
-      BattleAllyPositions : Vector2 list
-      BattleEnemies : EnemyData list
-      BattleTileMap : TileMap AssetTag
-      BattleSongOpt : Song AssetTag option }
-
-type [<NoEquality; NoComparison>] EncounterData =
-    { EncounterType : EncounterType // key
-      BattleTypes : BattleType list
-      Threshold : single }
-
-type [<NoEquality; NoComparison>] CharacterData =
-    { CharacterType : CharacterType // key
-      ArchetypeType : ArchetypeType
-      LevelBase : int
-      AnimationSheet : Image AssetTag
-      PortraitOpt : Image AssetTag option
-      WeaponOpt : string option
-      ArmorOpt : string option
-      Accessories : string list
-      GoldScalar : single
-      ExpScalar : single
-      Description : string }
-
-type [<NoEquality; NoComparison>] CharacterAnimationData =
-    { CharacterAnimationCycle : CharacterAnimationCycle // key
-      AnimationType : AnimationType
-      LengthOpt : int64 option
-      Run : int
-      Delay : int64
-      Offset : Vector2i }
 
 [<RequireQualifiedAccess>]
 module Data =
@@ -630,11 +807,11 @@ module Data =
           Archetypes : Map<ArchetypeType, ArchetypeData>
           Characters : Map<CharacterType, CharacterData>
           Shops : Map<ShopType, ShopData>
-          Fields : Map<FieldType, FieldData>
           Battles : Map<BattleType, BattleData>
           Encounters : Map<EncounterType, EncounterData>
           TechAnimations : Map<TechType, TechAnimationData>
-          CharacterAnimations : Map<CharacterAnimationCycle, CharacterAnimationData> }
+          CharacterAnimations : Map<CharacterAnimationType, CharacterAnimationData>
+          Fields : Map<FieldType, FieldData> }
 
     let private readSheet<'d, 'k when 'k : comparison> filePath (getKey : 'd -> 'k) =
         Math.init () // HACK: initializing Math type converters for required type converters in fsx script.
@@ -652,11 +829,11 @@ module Data =
           Archetypes = readSheet Assets.Data.ArchetypeDataFilePath (fun data -> data.ArchetypeType)
           Characters = readSheet Assets.Data.CharacterDataFilePath (fun data -> data.CharacterType)
           Shops = readSheet Assets.Data.ShopDataFilePath (fun data -> data.ShopType)
-          Fields = readSheet Assets.Data.FieldDataFilePath (fun data -> data.FieldType)
           Battles = readSheet Assets.Data.BattleDataFilePath (fun data -> data.BattleType)
           Encounters = readSheet Assets.Data.EncounterDataFilePath (fun data -> data.EncounterType)
           TechAnimations = readSheet Assets.Data.TechAnimationDataFilePath (fun data -> data.TechType)
-          CharacterAnimations = readSheet Assets.Data.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationCycle) }
+          CharacterAnimations = readSheet Assets.Data.CharacterAnimationDataFilePath (fun data -> data.CharacterAnimationType)
+          Fields = readSheet Assets.Data.FieldDataFilePath (fun data -> data.FieldType) }
 
     let Value =
         readFromFiles ()

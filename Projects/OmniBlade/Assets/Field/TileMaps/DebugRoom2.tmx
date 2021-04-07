@@ -23,17 +23,17 @@
   </properties>
   <object id="23" gid="488" x="672" y="576" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc VillageWoman NoSpecialty Rightward [[&quot;I swear I heard that chest over there rattling....&quot;]]]"/>
+    <property name="I" value="[Npc ShamanaNpc Rightward [Prompt &quot;Did you hear that chest over there rattling...?&quot; [&quot;Yes&quot; Nil] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="25" gid="488" x="720" y="168" width="96" height="48">
    <properties>
-    <property name="I" value="[Portal North Downward DebugRoom South]"/>
+    <property name="I" value="[Portal AirPortal North Downward DebugRoom South]"/>
    </properties>
   </object>
   <object id="31" gid="813" x="1200" y="528" width="48" height="48">
    <properties>
-    <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 33521205-c327-4bba-9b1c-afc982ba66ac [Some DebugBattle] [DebugSwitch2]]"/>
+    <property name="I" value="[Chest WoodenChest [Consumable GreenHerb] 33521205-c327-4bba-9b1c-afc982ba66ac [Some DebugBattle] Nil [DebugSwitch2]]"/>
    </properties>
   </object>
   <object id="33" gid="488" x="480" y="336" width="48" height="48">
@@ -43,17 +43,17 @@
   </object>
   <object id="34" gid="488" x="912" y="240" width="48" height="96">
    <properties>
-    <property name="I" value="[Switch ThrowSwitch [] [DebugSwitch]]"/>
+    <property name="I" value="[Switch ThrowSwitch [AddAdvent DebugSwitch] [RemoveAdvent DebugSwitch]]"/>
    </properties>
   </object>
   <object id="35" gid="488" x="1008" y="240" width="48" height="96">
    <properties>
-    <property name="I" value="[Switch ThrowSwitch [DebugSwitch] [DebugSwitch2]]"/>
+    <property name="I" value="[Switch ThrowSwitch [AddAdvent DebugSwitch2] [RemoveAdvent DebugSwitch2] [DebugSwitch]]"/>
    </properties>
   </object>
   <object id="36" gid="488" x="1152" y="384" width="144" height="144">
    <properties>
-    <property name="I" value="[Shopkeep ShopkeepMan Downward Chemist]"/>
+    <property name="I" value="[Shopkeep RobehnShopkeep Downward Chemist]"/>
    </properties>
   </object>
   <object id="37" gid="813" x="1104" y="528" width="48" height="48">

@@ -23,12 +23,12 @@
   </properties>
   <object id="23" gid="488" x="720" y="432" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc VillageMan NoSpecialty Downward [[&quot;Welcome to Debug Room!^Aye aye aye!&quot;]]]"/>
+    <property name="I" value="[Npc RavelNpc Downward [Dialog &quot;Welcome to Debug Room!^Aye aye aye!&quot;]]"/>
    </properties>
   </object>
   <object id="25" gid="488" x="720" y="840" width="96" height="48">
    <properties>
-    <property name="I" value="[Portal South Upward DebugRoom2 North]"/>
+    <property name="I" value="[Portal AirPortal South Upward DebugRoom2 North]"/>
    </properties>
   </object>
   <object id="27" gid="488" x="1248" y="240" width="96" height="144">
@@ -48,7 +48,7 @@
   </object>
   <object id="30" gid="488" x="1248" y="168" width="96" height="48">
    <properties>
-    <property name="I" value="[Portal North Downward TombGround [IX 0]]"/>
+    <property name="I" value="[Portal AirPortal North Downward TombGround [IX 0]]"/>
    </properties>
   </object>
  </objectgroup>

@@ -7,6 +7,15 @@ open System.Numerics
 open Prime
 open Nu
 
+type PropState =
+    | PortalState of bool
+    | DoorState of bool
+    | SwitchState of bool
+    | SealState of bool
+    | NpcState of NpcType * Direction * Color * Color * bool
+    | ShopkeepState of bool
+    | NilState
+
 [<RequireQualifiedAccess>]
 module Prop =
 

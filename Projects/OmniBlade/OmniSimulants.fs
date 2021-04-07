@@ -57,49 +57,17 @@ module Simulants =
         let Screen = Simulants.DefaultScreen
 
         [<RequireQualifiedAccess>]
-        module Gui =
-
-            let Group = Screen / "Gui"
-            let Submenu = Group / "Submenu"
-
-        [<RequireQualifiedAccess>]
         module Scene =
 
             let Group = Screen / "Scene"
-            let Backdrop = Group / "Backdrop"
-            let TransitionFade = Group / "TransitionFade"
-            let TileMap = Group / "TileMap"
             let Avatar = Group / "Avatar"
-            let Interact = Group / "Interact"
-            let Dialog = Group / "Dialog"
-
-        [<RequireQualifiedAccess>]
-        module Submenu =
-
-            let Group = Screen / "Submenu"
-            let Team = Group / "Team"
-            let Item = Group / "Item"
-            let Close = Group / "Close"
-            let Use = Group / "Use"
-
-        [<RequireQualifiedAccess>]
-        module Shop =
-
-            let Group = Screen / "Shop"
-            let Panel = Group / "Panel"
+            let TileMap = Group / "TileMap"
 
     [<RequireQualifiedAccess>]
     module Battle =
 
         let Screen = Screen "Battle"
 
-        [<RequireQualifiedAccess>]
-        module Gui =
-    
-            let Group = Screen / "Gui"
-            let Dialog = Group / "Dialog"
-            let Interact = Group / "Interact"
-    
         [<RequireQualifiedAccess>]
         module Scene =
 

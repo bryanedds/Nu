@@ -8,6 +8,214 @@ open FSharp.Reflection
 open Prime
 open Nu
 
+type [<ReferenceEquality; NoComparison>] CharacterState =
+    { ArchetypeType : ArchetypeType
+      ExpPoints : int
+      WeaponOpt : string option
+      ArmorOpt : string option
+      Accessories : string list
+      HitPoints : int
+      TechPoints : int
+      Statuses : Map<StatusType, int>
+      Defending : bool // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
+      Charging : bool
+      GoldPrize : int
+      ExpPrize : int }
+
+    member this.Level = Algorithms.expPointsToLevel this.ExpPoints
+    member this.IsHealthy = this.HitPoints > 0
+    member this.IsWounded = this.HitPoints <= 0
+    member this.HitPointsMax = Algorithms.hitPointsMax this.ArmorOpt this.ArchetypeType this.Level
+    member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
+    member this.Power = Algorithms.power this.WeaponOpt this.Statuses this.ArchetypeType this.Level
+    member this.Magic = Algorithms.magic this.WeaponOpt this.Statuses this.ArchetypeType this.Level
+    member this.Shield effectType = Algorithms.shield effectType this.Accessories this.Statuses this.ArchetypeType this.Level
+    member this.Techs = Algorithms.techs this.ArchetypeType this.Level
+
+    static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
+        let power = source.Power
+        let shield = target.Shield effectType
+        let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
+        let damage = single (power - shield) * defendingScalar |> int |> max 1
+        damage
+
+    static member burndownStatuses burndown state =
+        let statuses =
+            Map.fold (fun statuses status burndown2 ->
+                let burndown3 = burndown2 - burndown
+                if burndown3 <= 0
+                then Map.remove status statuses
+                else Map.add status burndown3 statuses)
+                Map.empty
+                state.Statuses
+        { state with Statuses = statuses }
+
+    static member updateHitPoints updater (state : CharacterState) =
+        let hitPoints = updater state.HitPoints
+        let hitPoints = max 0 hitPoints
+        let hitPoints = min state.HitPointsMax hitPoints
+        { state with HitPoints = hitPoints }
+
+    static member updateTechPoints updater state =
+        let techPoints = updater state.TechPoints
+        let techPoints = max 0 techPoints
+        let techPoints = min state.TechPointsMax techPoints
+        { state with TechPoints = techPoints }
+
+    static member updateExpPoints updater state =
+        let expPoints = updater state.ExpPoints
+        let expPoints = max 0 expPoints
+        { state with ExpPoints = expPoints }
+
+    static member tryGetTechRandom (state : CharacterState) =
+        let techs = state.Techs
+        if Set.notEmpty techs then
+            let techIndex = Gen.random1 techs.Count
+            let tech = Seq.item techIndex techs
+            Some tech
+        else None
+
+    static member getPoiseType state =
+        if state.Defending then Defending
+        elif state.Charging then Charging
+        else Poising
+
+    static member make (characterData : CharacterData) hitPoints techPoints expPoints weaponOpt armorOpt accessories =
+        let archetypeType = characterData.ArchetypeType
+        let level = Algorithms.expPointsToLevel expPoints
+        let characterState =
+            { ArchetypeType = archetypeType
+              ExpPoints = expPoints
+              WeaponOpt = weaponOpt
+              ArmorOpt = armorOpt
+              Accessories = accessories
+              HitPoints = hitPoints
+              TechPoints = techPoints
+              Statuses = Map.empty
+              Defending = false
+              Charging = false
+              GoldPrize = Algorithms.goldPrize characterData.GoldScalar level
+              ExpPrize = Algorithms.expPrize characterData.ExpScalar level }
+        characterState
+
+    static member empty =
+        let characterState =
+            { ArchetypeType = Squire
+              ExpPoints = 0
+              WeaponOpt = None
+              ArmorOpt = None
+              Accessories = []
+              HitPoints = 1
+              TechPoints = 0
+              Statuses = Map.empty
+              Defending = false
+              Charging = false
+              GoldPrize = 0
+              ExpPrize = 0 }
+        characterState
+
+type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
+    { TimeStart : int64
+      AnimationSheet : Image AssetTag
+      CharacterAnimationType : CharacterAnimationType
+      Direction : Direction }
+
+    static member setCharacterAnimationType timeOpt characterAnimationType state =
+        if state.CharacterAnimationType <> characterAnimationType then
+            match timeOpt with
+            | Some time -> { state with TimeStart = time; CharacterAnimationType = characterAnimationType }
+            | None -> { state with CharacterAnimationType = characterAnimationType }
+        else state
+
+    static member directionToInt direction =
+        match direction with
+        | Upward -> 0
+        | Rightward -> 1
+        | Downward -> 2
+        | Leftward -> 3
+
+    static member timeLocal time state =
+        time - state.TimeStart
+
+    static member indexCel delay time state =
+        let timeLocal = CharacterAnimationState.timeLocal time state
+        int (timeLocal / delay)
+
+    static member indexLooped run delay time state =
+        CharacterAnimationState.indexCel delay time state % run
+
+    static member indexSaturated run delay time state =
+        let cel = CharacterAnimationState.indexCel delay time state
+        if cel < dec run then cel else dec run
+
+    static member indexLoopedWithDirection run delay offset time state =
+        let position = CharacterAnimationState.directionToInt state.Direction * run
+        let position = Vector2i (CharacterAnimationState.indexLooped run delay time state + position, 0)
+        let position = position + offset
+        position
+
+    static member indexLoopedWithoutDirection run delay offset time state =
+        let position = CharacterAnimationState.indexLooped run delay time state
+        let position = v2i position 0 + offset
+        position
+
+    static member indexSaturatedWithDirection run delay offset time state =
+        let position = CharacterAnimationState.directionToInt state.Direction * run
+        let position = Vector2i (CharacterAnimationState.indexSaturated run delay time state + position, 0)
+        let position = position + offset
+        position
+
+    static member indexSaturatedWithoutDirection run stutter offset time state =
+        let position = CharacterAnimationState.indexSaturated run stutter time state
+        let position = Vector2i (position, 0)
+        let position = position + offset
+        position
+
+    static member index time state =
+        match Map.tryFind state.CharacterAnimationType Data.Value.CharacterAnimations with
+        | Some animationData ->
+            match animationData.AnimationType with
+            | LoopedWithDirection -> CharacterAnimationState.indexLoopedWithDirection animationData.Run animationData.Delay animationData.Offset time state
+            | LoopedWithoutDirection -> CharacterAnimationState.indexLoopedWithoutDirection animationData.Run animationData.Delay animationData.Offset time state
+            | SaturatedWithDirection -> CharacterAnimationState.indexSaturatedWithDirection animationData.Run animationData.Delay animationData.Offset time state
+            | SaturatedWithoutDirection -> CharacterAnimationState.indexSaturatedWithoutDirection animationData.Run animationData.Delay animationData.Offset time state
+        | None -> v2iZero
+
+    static member progressOpt time state =
+        match Map.tryFind state.CharacterAnimationType Data.Value.CharacterAnimations with
+        | Some animationData ->
+            let timeLocal = CharacterAnimationState.timeLocal time state
+            match animationData.LengthOpt with
+            | Some length -> Some (min 1.0f (single timeLocal / single length))
+            | None -> None
+        | None -> None
+
+    static member getFinished time state =
+        match CharacterAnimationState.progressOpt time state with
+        | Some progress -> progress = 1.0f
+        | None -> false
+
+    static member empty =
+        { TimeStart = 0L
+          AnimationSheet = Assets.Field.JinnAnimationSheet
+          CharacterAnimationType = IdleAnimation
+          Direction = Downward }
+
+    static member initial =
+        { CharacterAnimationState.empty with Direction = Upward }
+
+type CharacterInputState =
+    | NoInput
+    | RegularMenu
+    | TechMenu
+    | ItemMenu
+    | AimReticles of string * AimType
+
+    member this.AimType =
+        match this with
+        | NoInput | RegularMenu | TechMenu | ItemMenu -> NoAim
+        | AimReticles (_, aimType) -> aimType
+
 type [<ReferenceEquality; NoComparison>] AutoBattle =
     { AutoTarget : CharacterIndex
       AutoTechOpt : TechType option }
@@ -22,7 +230,7 @@ module Character =
               CharacterIndex_ : CharacterIndex
               CharacterType_ : CharacterType
               CharacterState_ : CharacterState
-              AnimationState_ : CharacterAnimationState
+              CharacterAnimationState_ : CharacterAnimationState
               AutoBattleOpt_ : AutoBattle option
               ActionTime_ : int
               InputState_ : CharacterInputState }
@@ -78,11 +286,11 @@ module Character =
         member this.GoldPrize = this.CharacterState_.GoldPrize
         member this.ExpPrize = this.CharacterState_.ExpPrize
 
-        (* AnimationState Properties *)
-        member this.TimeStart = this.AnimationState_.TimeStart
-        member this.AnimationSheet = this.AnimationState_.AnimationSheet
-        member this.AnimationCycle = this.AnimationState_.AnimationCycle
-        member this.Direction = this.AnimationState_.Direction
+        (* Animation Properties *)
+        member this.TimeStart = this.CharacterAnimationState_.TimeStart
+        member this.AnimationSheet = this.CharacterAnimationState_.AnimationSheet
+        member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
+        member this.Direction = this.CharacterAnimationState_.Direction
 
         (* Local Properties *)
         member this.AutoBattleOpt = this.AutoBattleOpt_
@@ -136,37 +344,61 @@ module Character =
             Map.filter (fun _ character ->
                 let v = character.Bottom - target.Bottom
                 v.Length () <= radius)
-        | LineTarget (aimType, width) ->
+        | LineTarget (aimType, offset) ->
             characters |>
             evaluateAimType aimType target |>
             Map.filter (fun _ character ->
-                let a = source.Bottom
-                let b = target.Bottom
-                let c = character.Bottom
-                let (ab, ac, bc) = (b - a, c - a, c - b)
-                let e = Vector2.Dot (ac, ab)
-                let d =
-                    if e > 0.0f then
-                        let f = Vector2.Dot(ab, ab);
-                        if e < f
-                        then Vector2.Dot (ac, ac) - e * e / f
-                        else Vector2.Dot (bc, bc)
-                    else Vector2.Dot (ac, ac)
-                d <= width)
+                let a = character.Bottom - source.Bottom
+                let b = target.Bottom - source.Bottom
+                if Vector2.Dot (a, b) > 0.0f then
+                    let r = a - (Vector2.Dot (a, b) / Vector2.Dot (b, b)) * b // vector rejection
+                    let d = r.Length ()
+                    d <= offset 
+                else false)
+        | SegmentTarget (aimType, offset) ->
+            characters |>
+            evaluateAimType aimType target |>
+            Map.filter (fun _ character ->
+                let a = character.Bottom - source.Bottom
+                let b = target.Bottom - source.Bottom
+                if a.Length () <= b.Length () then
+                    if Vector2.Dot (a, b) > 0.0f then
+                        let r = a - (Vector2.Dot (a, b) / Vector2.Dot (b, b)) * b // vector rejection
+                        let d = r.Length ()
+                        d <= offset
+                    else false
+                else false)
+        | VerticalTarget (aimType, width) ->
+            characters |>
+            evaluateAimType aimType target |>
+            Map.filter (fun _ character ->
+                let x = target.Bottom.X
+                character.Bottom.X >= x - width &&
+                character.Bottom.X <= x + width)
+        | HorizontalTarget (aimType, width) ->
+            characters |>
+            evaluateAimType aimType target |>
+            Map.filter (fun _ character ->
+                let y = target.Bottom.Y
+                character.Bottom.Y >= y - width &&
+                character.Bottom.Y <= y + width)
         | AllTarget aimType ->
             characters |>
             evaluateAimType aimType target
 
     let evaluateTech techData source (target : Character) =
-        let power = source.CharacterState_.Power
+        let efficacy =
+            match techData.EffectType with
+            | Physical -> source.CharacterState_.Power
+            | Magical -> source.CharacterState_.Magic
         if techData.Curative then
-            let healing = single power * techData.Scalar |> int |> max 1
+            let healing = single efficacy * techData.Scalar |> int |> max 1
             (target.CharacterIndex, false, healing)
         else
             let cancelled = techData.Cancels && isAutoBattling target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
-            let damage = single (power - shield) * techData.Scalar * defendingScalar |> int |> max 1
+            let damage = single (efficacy - shield) * techData.Scalar * defendingScalar |> int |> max 1
             (target.CharacterIndex, cancelled, -damage)
 
     let evaluateTechMove techData source target characters =
@@ -184,13 +416,13 @@ module Character =
         CharacterState.getAttackResult effectType source.CharacterState_ target.CharacterState_
 
     let getAnimationIndex time character =
-        CharacterAnimationState.index time character.AnimationState_
+        CharacterAnimationState.index time character.CharacterAnimationState_
 
     let getAnimationProgressOpt time character =
-        CharacterAnimationState.progressOpt time character.AnimationState_
+        CharacterAnimationState.progressOpt time character.CharacterAnimationState_
 
     let getAnimationFinished time character =
-        CharacterAnimationState.getFinished time character.AnimationState_
+        CharacterAnimationState.getFinished time character.CharacterAnimationState_
 
     let getInputState character =
         character.InputState_
@@ -248,9 +480,9 @@ module Character =
     let autoBattle (source : Character) (target : Character) =
         let sourceToTarget = target.Position - source.Position
         let direction = Direction.ofVector2 sourceToTarget
-        let animationState = { source.AnimationState_ with Direction = direction }
+        let animationState = { source.CharacterAnimationState_ with Direction = direction }
         let autoBattle = evaluateAutoBattle source target
-        { source with AnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
+        { source with CharacterAnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
 
     let defend character =
         let characterState = character.CharacterState_
@@ -262,47 +494,52 @@ module Character =
         let characterState = { characterState with Defending = false }
         { character with CharacterState_ = characterState }
 
-    let animate time cycle character =
-        { character with AnimationState_ = CharacterAnimationState.setCycle (Some time) cycle character.AnimationState_ }
+    let animate time characterAnimationType character =
+        { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
 
     let make bounds characterIndex characterType (characterState : CharacterState) animationSheet direction actionTime =
-        let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; AnimationCycle = IdleCycle; Direction = direction }
+        let animationType = if characterState.IsHealthy then IdleAnimation else WoundAnimation
+        let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = characterIndex
           CharacterType_ = characterType
           CharacterState_ = characterState
-          AnimationState_ = animationState
+          CharacterAnimationState_ = animationState
           AutoBattleOpt_ = None
           ActionTime_ = actionTime
           InputState_ = NoInput }
 
-    let tryMakeEnemy index enemyData =
+    let tryMakeEnemy index offsetCharacters enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
-            let bounds = v4Bounds enemyData.EnemyPosition Constants.Gameplay.CharacterSize
-            let hitPoints = Algorithms.hitPointsMax None archetypeType characterData.LevelBase
-            let techPoints = Algorithms.techPointsMax None archetypeType characterData.LevelBase
+            let size = Constants.Gameplay.CharacterSize
+            let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
+            let bounds = v4Bounds position size
+            let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
+            let techPoints = Algorithms.techPointsMax characterData.WeaponOpt archetypeType characterData.LevelBase
             let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
             let characterType = characterData.CharacterType
             let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
-            let actionTime = Constants.Battle.EnemyActionTimeInitial
-            let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet Leftward actionTime
+            let actionTime = 250 - 50 * index // NOTE: started enemies in the negative, but I think that works with the algorithm okay. TODO: P1: put this in Constants.
+            let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet Rightward actionTime
             Some enemy
         | None -> None
 
     let empty =
         let bounds = v4Bounds v2Zero Constants.Gameplay.CharacterSize
-        let animationState = { TimeStart = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; AnimationCycle = IdleCycle; Direction = Downward }
+        let characterAnimationState = { TimeStart = 0L; AnimationSheet = Assets.Field.JinnAnimationSheet; CharacterAnimationType = IdleAnimation; Direction = Downward }
         { BoundsOriginal_ = bounds
           Bounds_ = bounds
           CharacterIndex_ = AllyIndex 0
           CharacterType_ = Ally Jinn
           CharacterState_ = CharacterState.empty
-          AnimationState_ = animationState
+          CharacterAnimationState_ = characterAnimationState
           AutoBattleOpt_ = None
           ActionTime_ = 0
           InputState_ = NoInput }
 
 type Character = Character.Character
+
+type Party = Character list

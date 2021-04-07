@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="4">
+ <tileset firstgid="1" source="Castle.tsx"/>
+ <layer id="2" name="Floor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwwEJAAAMA6DByy/2ehwFe0lVVVXV1wdg6ywf
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztlksKgzAQhoMlR/ACbtqD9SEttno/N+2F3NR9IyQQBjOvxEXBgQEhM/m+Pn6wroypkX5YY17Kvln8bqoX9uD6Xem6z3AI7I97/ip7VDrE7Nn18aDrSeEA2Sd3j7YaoUNJttSBYt/d2dX106ZZqRnKgfO5W7/TIXxsBnPoGN957zM9IHxqJnZoAZ/6vUef6cUzZyY4QD71X5t8pmfkbs5McIB8qhqfacyTMxNKyi9dMf+C5IqTO+nOcn4GGUw5cHIn2VljYw6c3MFK7WDslAMnU7DWdjjsNQdupuKCOxI2dJBkKlS8o2FzcsGpHHauQwm21qEkW+qwBZvrsCU7NOf9Y+fv/J3/H/wfVK+vtg==
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props">
+  <object id="2" gid="235" x="696" y="480" width="144" height="144">
+   <properties>
+    <property name="I" value="[Npc FireGoblinNpc Downward [Sequence [[Dialog &quot;Welcome to your doom!&quot;] [Battle FireGoblinBattle [FireGoblinDefeated]]]]]"/>
+   </properties>
+  </object>
+  <object id="3" gid="235" x="744" y="288" width="48" height="48">
+   <properties>
+    <property name="I" value="[Portal [StairsPortal true] [IX 1] Downward [Castle 1] [IX 0] false [FireGoblinDefeated]]"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

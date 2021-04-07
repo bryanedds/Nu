@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="48" tileheight="48" infinite="0" nextlayerid="4" nextobjectid="4">
+ <tileset firstgid="1" source="Castle.tsx"/>
+ <layer id="2" name="Floor" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztwwEJAAAMA6DByy/2ehwFe0lVVVXV1wdg6ywf
+  </data>
+ </layer>
+ <layer id="1" name="Furnishing" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztlE0KgzAQRgdLj+AFumkPplIUrd6vG3shN3XvBBqQEMf8Tjcz8EAk8r5IvpQFQCkIgiBAdwV4MWK6J2Qu+DDdH3z+MqL9/c+9IvcLH3u/cj/wHefs/dxu0/+P8fW3uK45YAjYg/bXjt+PRJenCL9rhjfRZdUfamz/zrz/zjIsRJdXwq/clcVng8pwI7p81B8ft+95OJsQd6oMMe7YDCncoRlSun0z5HC7Zsjp1lD39DOzW/zp/RuVs6TM
+  </data>
+ </layer>
+ <objectgroup id="3" name="Props">
+  <object id="2" gid="235" x="192" y="816" width="48" height="48">
+   <properties>
+    <property name="I" value="[ChestSpawn]"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>
