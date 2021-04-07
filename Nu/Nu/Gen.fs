@@ -36,25 +36,25 @@ module Gen =
         static member randomd =
             lock Lock (fun () -> Random.NextDouble ())
             
-        /// Get the next random number integer below maxValue.
-        static member random1 maxValue =
-            lock Lock (fun () -> Random.Next maxValue)
+        /// Get the next random number integer below ceiling.
+        static member random1 ceiling =
+            lock Lock (fun () -> Random.Next ceiling)
             
-        /// Get the next random number single below maxValue.
-        static member random1y (maxValue : byte) =
-            lock Lock (fun () -> byte (Random.Next (int maxValue)))
+        /// Get the next random number single below ceiling.
+        static member random1y (ceiling : byte) =
+            lock Lock (fun () -> byte (Random.Next (int ceiling)))
             
-        /// Get the next random number single below maxValue.
-        static member random1f maxValue =
-            lock Lock (fun () -> single (Random.NextDouble ()) * single maxValue)
+        /// Get the next random number single below ceiling.
+        static member random1f ceiling =
+            lock Lock (fun () -> single (Random.NextDouble ()) * single ceiling)
             
-        /// Get the next random number single below maxValue.
-        static member random1d maxValue =
-            lock Lock (fun () -> Random.NextDouble () * maxValue)
+        /// Get the next random number single below ceiling.
+        static member random1d ceiling =
+            lock Lock (fun () -> Random.NextDouble () * ceiling)
 
-        /// Get the next random number integer GTE minValue and LT maxValue.
-        static member random2 minValue maxValue =
-            lock Lock (fun () -> Random.Next (minValue, maxValue))
+        /// Get the next random number integer GTE minValue and LT ceiling.
+        static member random2 minValue ceiling =
+            lock Lock (fun () -> Random.Next (minValue, ceiling))
 
         /// Get a random element from a sequence if there are any elements..
         static member randomItem seq =
