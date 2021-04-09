@@ -180,7 +180,7 @@ module Field =
                                 | WeakSpirit -> encounterData.BattleTypes.[0]
                                 | NormalSpirit -> encounterData.BattleTypes.[1]
                                 | StrongSpirit -> encounterData.BattleTypes.[2]
-                                | GreatSpirit -> encounterData.BattleTypes.[4]
+                                | GreatSpirit -> encounterData.BattleTypes.[3]
                             match Data.Value.Battles.TryGetValue battleType with
                             | (true, battleData) ->
                                 let field = { field with Spirits_ = [||] }
