@@ -827,7 +827,7 @@ module BattleDispatcher =
                 let target = Battle.getCharacter targetIndex battle
                 let hopOpt =
                     match techType with
-                    | Critical | PowerCut | ProvokeCut ->
+                    | Critical | DarkCritical | PowerCut | EmboldenCut | DoubleCut | ProvokeCut ->
                         let hopDirection = Direction.ofVector2 (target.Bottom - source.BottomOriginal)
                         let hopStart = target.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
                         Some { HopStart = hopStart; HopStop = source.BottomOriginal }
