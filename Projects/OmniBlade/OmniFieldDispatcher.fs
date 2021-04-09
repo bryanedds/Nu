@@ -548,14 +548,14 @@ module FieldDispatcher =
                     | None ->
                         let sensors = getTouchedSensors field.Avatar world
                         let results =
-                            List.fold (fun (cmds : Signal<FieldMessage, FieldCommand> list, field : Field) (sensorType, cue, requirements) ->
+                            List.fold (fun (signals : Signal<FieldMessage, FieldCommand> list, field : Field) (sensorType, cue, requirements) ->
                                 if field.Advents.IsSupersetOf requirements then
                                     let field = Field.updateCue (constant cue) field
                                     match sensorType with
-                                    | AirSensor -> (cmds, field)
-                                    | HiddenSensor | StepPlateSensor -> (Command (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: cmds, field)
-                                else (cmds, field))
-                                ([], field) sensors
+                                    | AirSensor -> (signals, field)
+                                    | HiddenSensor | StepPlateSensor -> (Command (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
+                                else (signals, field))
+                                (signals, field) sensors
                         results
                     | Some _ -> (signals, field)
 
