@@ -554,8 +554,9 @@ module Gaia =
                         form.propertyValueTextBox.SelectionStart <- selectionStart
                         form.propertyValueTextBox.ScrollCaret ()
                         form.pickPropertyButton.Visible <-
-                            selectedGridItem.PropertyDescriptor.PropertyType = typeof<Image AssetTag> ||
-                            selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option>
+                            selectedGridItem.PropertyDescriptor.PropertyType = typeof<Entity Relation option> ||
+                            (selectedGridItem.PropertyDescriptor.PropertyType.IsGenericType &&
+                             selectedGridItem.PropertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>)
                         form.pickPropertyButton.Click.RemoveHandler propertyPickButtonClickHandler
                         propertyPickButtonClickHandler <- EventHandler (fun _ _ -> addWorldChanger $ handlePropertyPickButton selectedGridItem.PropertyDescriptor selectedEntityTds form)
                         form.pickPropertyButton.Click.AddHandler propertyPickButtonClickHandler
