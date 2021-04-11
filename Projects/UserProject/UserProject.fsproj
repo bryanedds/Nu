@@ -92,8 +92,6 @@
     <None Include="Assets\Default\CharacterWalk.png" />
     <None Include="Assets\Default\Effect.nueffect" />
     <None Include="Assets\Default\Effect2.nueffect" />
-    <None Include="Assets\Default\EmptyImage.png" />
-    <None Include="Assets\Default\EmptyTileMap.tmx" />
     <None Include="Assets\Default\FreeMonoBold.024.ttf" />
     <None Include="Assets\Default\Song.ogg" />
     <None Include="Assets\Default\Sound.wav" />
@@ -109,8 +107,10 @@
     <None Include="Assets\Default\Image10.png" />
     <None Include="Assets\Default\Image11.png" />
     <None Include="Assets\Default\Image12.png" />
+    <None Include="Assets\Default\ImageEmpty.png" />
     <None Include="Assets\Default\TileSet.png" />
     <None Include="Assets\Default\TileMap.tmx" />
+    <None Include="Assets\Default\TileMapEmpty.tmx" />
     <None Include="Assets\Gameplay\Jump.wav" />
     <None Include="Assets\Gameplay\Level.nulyr" />
     <None Include="Assets\Gui\Title.nulyr" />
