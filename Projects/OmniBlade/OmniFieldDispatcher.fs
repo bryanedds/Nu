@@ -897,8 +897,8 @@ module FieldDispatcher =
                         | Some fieldData ->
                             match FieldData.tryGetTileMapFade field.OmniSeedState fieldData world with
                             | Some tileMapFade -> tileMapFade
-                            | None -> World.getTileMapMetadata Assets.Default.TileMap world |> __c
-                        | None -> World.getTileMapMetadata Assets.Default.TileMap world |> __c
+                            | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
+                        | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
                      Entity.TileLayerClearance == 10.0f]
 
                  // avatar
@@ -999,9 +999,9 @@ module FieldDispatcher =
                                    | Some characterData ->
                                        match characterData.PortraitOpt with
                                        | Some portrait -> portrait
-                                       | None -> Assets.Default.EmptyImage
-                                   | None -> Assets.Default.EmptyImage
-                               | _ -> Assets.Default.EmptyImage]
+                                       | None -> Assets.Default.ImageEmpty
+                                   | None -> Assets.Default.ImageEmpty
+                               | _ -> Assets.Default.ImageEmpty]
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 666.0f 372.0f; Entity.ElevationLocal == 1.0f
                             Entity.Text <== field --> fun field ->

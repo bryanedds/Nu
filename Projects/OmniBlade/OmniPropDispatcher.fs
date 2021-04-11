@@ -79,7 +79,7 @@ module PropDispatcher =
                         | PortalState active ->
                             if active then
                                 match portalType with
-                                | AirPortal -> (false, colWhite, colZero, None, Assets.Default.EmptyImage)
+                                | AirPortal -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                                 | StairsPortal descending ->
                                     let offsetY = if descending then Constants.Gameplay.TileSize.Y else 0.0f
                                     let offsetX =
@@ -90,8 +90,8 @@ module PropDispatcher =
                                         | Leftward -> Constants.Gameplay.TileSize.X * 3.0f
                                     let offset = v2 offsetX offsetY
                                     (true, colWhite, colZero, Some (v4Bounds offset Constants.Gameplay.TileSize), Assets.Field.StairsImage)
-                            else (false, colWhite, colZero, None, Assets.Default.EmptyImage)
-                        | _ -> (false, colWhite, colZero, None, Assets.Default.EmptyImage)
+                            else (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
+                        | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Door (doorType, _, _, _) ->
                         let image =
                             match doorType with
@@ -122,8 +122,8 @@ module PropDispatcher =
                         (false, colWhite, colZero, None, image)
                     | Sensor (sensorType, _, _, _, _) ->
                         match sensorType with
-                        | AirSensor -> (true, colWhite, colZero, None, Assets.Default.EmptyImage)
-                        | HiddenSensor -> (true, colWhite, colZero, None, Assets.Default.EmptyImage)
+                        | AirSensor -> (true, colWhite, colZero, None, Assets.Default.ImageEmpty)
+                        | HiddenSensor -> (true, colWhite, colZero, None, Assets.Default.ImageEmpty)
                         | StepPlateSensor -> (true, colWhite, colZero, None, Assets.Field.StepPlateImage)
                     | Seal (color, _, _) ->
                         match prop.PropState with
@@ -135,7 +135,7 @@ module PropDispatcher =
                             let inset = v4Bounds (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: P1: turn this into a general animation function if one doesn't already exist...
                             let image = Assets.Field.SealAnimationSheet
                             (false, color, colZero, Some inset, image)
-                        | _ -> (false, colWhite, colZero, None, Assets.Default.EmptyImage)
+                        | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Npc (_, _, _, _) | NpcBranching (_, _, _, _) ->
                         match prop.PropState with
                         | NpcState (npcType, direction, color, glow, true) ->
@@ -161,7 +161,7 @@ module PropDispatcher =
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
                             (false, color, glow, Some inset, image)
-                        | _ -> (false, colWhite, colZero, None, Assets.Default.EmptyImage)
+                        | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Shopkeep (shopkeepType, direction, _, _) ->
                         match prop.PropState with
                         | ShopkeepState true ->
@@ -171,7 +171,7 @@ module PropDispatcher =
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
                             (false, colWhite, colZero, Some inset, image)
-                        | _ -> (false, colWhite, colZero, None, Assets.Default.EmptyImage)
+                        | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | SavePoint ->
                         let time = World.getTickTime world
                         let image = Assets.Field.SavePointImage
@@ -180,7 +180,7 @@ module PropDispatcher =
                         let inset = v4Bounds insetPosition Constants.Gameplay.TileSize
                         (false, colWhite, colZero, Some inset, image)
                     | ChestSpawn | EmptyProp ->
-                        (false, colWhite, colZero, None, Assets.Default.EmptyImage)
+                        (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                 let elevation = if background then Constants.Field.BackgroundElevation else Constants.Field.ForegroundElevation
                 let positionY = transform.Position.Y
                 let assetTag = AssetTag.generalize image
