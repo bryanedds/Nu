@@ -2,7 +2,7 @@
 open Nu
 
 // this module contains asset constants that are used by the game.
-// having an assets module is optional, but can prevent you from duplicating string literals across the code base.
+// having an Assets module is optional, but can prevent you from duplicating string literals across the code base.
 [<RequireQualifiedAccess>]
 module Assets =
 
