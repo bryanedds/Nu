@@ -470,7 +470,7 @@ module FieldDispatcher =
                          Entity.Text == CharacterType.getName teammate.CharacterType
                          Entity.ClickEvent ==> msg (fieldMsg index)])
 
-        static let items (position : Vector2) elevation field fieldMsg =
+        static let items (position : Vector2) elevation columns field fieldMsg =
             Content.entities field
                 (fun (field : Field) _ -> (field.Menu, field.ShopOpt, field.Inventory))
                 (fun (menu, shopOpt, inventory : Inventory) _ ->
@@ -491,8 +491,8 @@ module FieldDispatcher =
                                 pageItems shop.ShopPage 10
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
-                    let x = if i < 5 then position.X else position.X + 368.0f
-                    let y = position.Y - single (i % 5) * 80.0f
+                    let x = if i < columns then position.X else position.X + 368.0f
+                    let y = position.Y - single (i % columns) * 80.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 336.0f 72.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
@@ -1074,7 +1074,7 @@ module FieldDispatcher =
                         Entity.LabelImage == Assets.Gui.DialogXXLImage
                         Entity.Enabled <== field --> fun field -> Option.isNone field.Menu.MenuUseOpt]
                        [sidebar (v2 24.0f 420.0f) 1.0f field
-                        items (v2 136.0f 420.0f) 1.0f field MenuItemSelect
+                        items (v2 136.0f 420.0f) 1.0f 5 field MenuItemSelect
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 368.0f 3.0f; Entity.ElevationLocal == 1.0f
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
@@ -1123,7 +1123,7 @@ module FieldDispatcher =
                        [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage
                         Entity.Enabled <== field --> fun field -> match field.ShopOpt with Some shop -> Option.isNone shop.ShopConfirmOpt | None -> true]
-                       [items (v2 96.0f 368.0f) 1.0f field ShopSelect
+                       [items (v2 96.0f 350.0f) 1.0f 4 field ShopSelect
                         Content.button Gen.name
                            [Entity.PositionLocal == v2 24.0f 444.0f; Entity.ElevationLocal == 2.0f
                             Entity.Text == "Buy"
