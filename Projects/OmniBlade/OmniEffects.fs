@@ -10,18 +10,16 @@ open Nu.Effects
 [<RequireQualifiedAccess>]
 module Effects =
 
-    let Hop (start, stop, height, hopLength, landLength) =
+    let Hop (start, stop, height, hopLength) =
         Aspects
             [|Positions
                 (Sum, Linear, Once,
                  [|{ TweenValue = start; TweenLength = hopLength }
-                   { TweenValue = stop; TweenLength = landLength }
                    { TweenValue = stop; TweenLength = 0L }|])
               Positions
                 (Sum, SinScaled 0.5f, Once,
                  [|{ TweenValue = v2Zero; TweenLength = hopLength }
-                   { TweenValue = v2 0.0f height; TweenLength = landLength }
-                   { TweenValue = v2Zero; TweenLength = 0L }|])|]
+                   { TweenValue = v2 0.0f height; TweenLength = 0L }|])|]
 
     let Circle (radius, repetitions, length) =
         Aspects
@@ -393,7 +391,7 @@ module Effects =
         { EffectName = "Hop"
           LifeTimeOpt = Some 20L
           Definitions = Map.empty
-          Content = Tag ("Tag", [|Hop (start, stop, 24.0f, 15L, 5L)|], Nil) }
+          Content = Tag ("Tag", [|Hop (start, stop, 24.0f, 20L)|], Nil) }
 
     let makeCircleEffect radius =
         { EffectName = "Circle"
