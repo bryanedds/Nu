@@ -872,7 +872,9 @@ module BattleDispatcher =
                     let battle =
                         let tags = Simulants.Battle.Scene.Ride.GetEffectTags world
                         match Map.tryFind "Tag" tags with
-                        | Some tag -> Battle.updateCharacter (Character.updateBottom (constant tag.Position)) sourceIndex battle
+                        | Some tag ->
+                            printfn "%A" tag.Position
+                            Battle.updateCharacter (Character.updateBottom (constant tag.Position)) sourceIndex battle
                         | None -> battle
                     just battle
                 else just battle
@@ -933,6 +935,7 @@ module BattleDispatcher =
                 just world
             
             | DisplayHop hop ->
+                printfn "%A - %A" hop.HopStart hop.HopStop
                 let effect = Effects.makeHopEffect hop.HopStart hop.HopStop
                 let (entity, world) = World.createEntity<EffectDispatcher> (Some Simulants.Battle.Scene.Ride.Name) DefaultOverlay Simulants.Battle.Scene.Group world
                 let world = entity.SetEffect effect world
