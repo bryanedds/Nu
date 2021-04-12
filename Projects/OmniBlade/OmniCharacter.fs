@@ -19,6 +19,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
       Statuses : Map<StatusType, int>
       Defending : bool // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
       Charging : bool
+      TechProbabilityOpt : single option
       GoldPrize : int
       ExpPrize : int }
 
@@ -94,6 +95,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Statuses = Map.empty
               Defending = false
               Charging = false
+              TechProbabilityOpt = characterData.TechProbabilityOpt
               GoldPrize = Algorithms.goldPrize characterData.GoldScalar level
               ExpPrize = Algorithms.expPrize characterData.ExpScalar level }
         characterState
@@ -110,6 +112,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Statuses = Map.empty
               Defending = false
               Charging = false
+              TechProbabilityOpt = None
               GoldPrize = 0
               ExpPrize = 0 }
         characterState
@@ -309,11 +312,11 @@ module Character =
         | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
         | None -> false
 
-    let evaluateAutoBattle source (target : Character) =
+    let evaluateAutoBattle (source : Character) (target : Character) =
         let techOpt =
-            match Gen.random1 Constants.Battle.AutoBattleTechFrequency with
-            | 0 -> CharacterState.tryGetTechRandom source.CharacterState_
-            | _ -> None
+            if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
+            then CharacterState.tryGetTechRandom source.CharacterState_
+            else None
         { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
 
     let evaluateAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
