@@ -980,7 +980,7 @@ module TileMapFacetModule =
              define Entity.Glow Color.Zero
              define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
-             define Entity.TileMap Assets.Default.TileMapEmpty
+             define Entity.TileMap Assets.Default.TileMap
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
@@ -1072,7 +1072,7 @@ module TmxMapFacetModule =
              define Entity.Glow Color.Zero
              define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
-             define Entity.TmxMap (TmxMap.makeEmpty ())
+             define Entity.TmxMap (TmxMap.makeDefault ())
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
@@ -2365,7 +2365,7 @@ module TileMapDispatcherModule =
              define Entity.Glow Color.Zero
              define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
-             define Entity.TileMap Assets.Default.TileMapEmpty]
+             define Entity.TileMap Assets.Default.TileMap]
 
 [<AutoOpen>]
 module TmxMapDispatcherModule =
@@ -2386,7 +2386,7 @@ module TmxMapDispatcherModule =
              define Entity.Glow Color.Zero
              define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
-             define Entity.TmxMap (TmxMap.makeEmpty ())]
+             define Entity.TmxMap (TmxMap.makeDefault ())]
 
 [<AutoOpen>]
 module GroupDispatcherModule =
