@@ -4,7 +4,9 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.IO
 open System.Numerics
+open System.Text
 open System.Xml.Linq
 open Prime
 open TiledSharp
@@ -12,6 +14,32 @@ open TiledSharp
 [<RequireQualifiedAccess>]
 module TmxMap =
 
+    /// Make a TmxMap from the content of a stream.
+    let makeFromStream (stream : Stream) =
+        TmxMap stream
+
+    /// Make a TmxMap from the content of a text fragment.
+    let makeFromText (text : string) =
+        use stream = new MemoryStream (UTF8Encoding.UTF8.GetBytes text)
+        makeFromStream stream
+
+    /// Make a TmxMap from the content of a .tmx file.
+    let makeFromFilePath (filePath : string) =
+        TmxMap filePath
+
+    /// Make the empty TmxMap.
+    let makeEmpty () =
+        makeFromText
+            """<?xml version="1.0" encoding="UTF-8"?>
+            <map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="1" height="1" tilewidth="48" tileheight="48" infinite="0" nextlayerid="2" nextobjectid="1">
+             <layer id="1" name="Tile Layer 1" width="1" height="1">
+              <data encoding="base64" compression="zlib">
+               eJxjYGBgAAAABAAB
+              </data>
+             </layer>
+            </map>"""
+
+    /// Make a TmxLayerTile.
     let makeLayerTile gid x y hflip vflip dflip =
         let tid =
             gid |||
@@ -21,6 +49,7 @@ module TmxMap =
             uint
         TmxLayerTile (tid, x, y)
 
+    /// Make a TmxObject.
     let makeObject (id : int) (gid : int) (x : float) (y : float) (width : float) (height : float) =
         let xml = XElement (XName.op_Implicit "object")
         xml.Add (XAttribute (XName.op_Implicit "id", id))

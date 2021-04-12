@@ -44,4 +44,3 @@ module Assets =
         let [<Literal>] FontString = "[Default Font]"
         let [<Literal>] SoundString = "[Default Sound]"
         let [<Literal>] SongString = "[Default Song]"
-        let [<Literal>] TmxFilePath = "./Assets/Default/TileMap.tmx" // HACK: need to reach out to this directly due to lack of TmxMap mock object

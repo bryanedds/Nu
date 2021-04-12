@@ -41,4 +41,3 @@ module Assets =
         let (*Literal*) Font = asset<Font> PackageName Assets.Default.FontName
         let (*Literal*) Sound = asset<Sound> PackageName Assets.Default.SoundName
         let (*Literal*) Song = asset<Song> PackageName Assets.Default.SongName
-        let [<Literal>] TmxFilePath = Assets.Default.TmxFilePath
