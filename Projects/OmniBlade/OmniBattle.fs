@@ -47,6 +47,8 @@ module Battle =
               DialogOpt_ : Dialog option }
 
         (* Local Properties *)
+        member this.Running = match this.BattleState with BattleRunning _ -> true | _ -> false
+        member this.NotRunning = not this.Running
         member this.BattleState = this.BattleState_
         member this.Inventory = this.Inventory_
         member this.PrizePool = this.PrizePool_
