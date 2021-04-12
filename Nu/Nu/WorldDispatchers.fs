@@ -1072,7 +1072,7 @@ module TmxMapFacetModule =
              define Entity.Glow Color.Zero
              define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
-             define Entity.TmxMap (TmxMap Assets.Default.TmxFilePath)
+             define Entity.TmxMap (TmxMap.makeEmpty ())
              computed Entity.PhysicsId (fun (entity : Entity) world -> { SourceId = entity.GetId world; CorrelationId = Gen.idEmpty }) None]
 
         override this.Register (entity, world) =
@@ -2386,7 +2386,7 @@ module TmxMapDispatcherModule =
              define Entity.Glow Color.Zero
              define Entity.Parallax 0.0f
              define Entity.TileLayerClearance 2.0f
-             define Entity.TmxMap (TmxMap Assets.Default.TmxFilePath)]
+             define Entity.TmxMap (TmxMap.makeEmpty ())]
 
 [<AutoOpen>]
 module GroupDispatcherModule =
