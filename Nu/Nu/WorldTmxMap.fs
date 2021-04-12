@@ -27,7 +27,7 @@ module TmxMap =
     let makeFromFilePath (filePath : string) =
         TmxMap filePath
 
-    /// Make the empty TmxMap.
+    /// Make an empty TmxMap.
     let makeEmpty () =
         makeFromText
             """<?xml version="1.0" encoding="UTF-8"?>
