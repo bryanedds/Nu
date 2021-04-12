@@ -52,7 +52,6 @@ module TmxMap =
               <tile id="19"><properties><property name="C" value=""/></properties></tile>
               <tile id="20"><properties><property name="C" value=""/></properties></tile>
               <tile id="21"><properties><property name="C" value=""/></properties></tile>
-              <tile id="44"><properties><property name="C" value=""/></properties></tile>
              </tileset>
              <layer id="1" name="Layer" width="8" height="8">
               <data encoding="base64" compression="zlib">
