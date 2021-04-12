@@ -1,10 +1,10 @@
-Type,ArchetypeType,LevelBase,AnimationSheet,PortraiOpt,WeaponOpt,ArmorOpt,Accessories,GoldScalar,ExpScalar,Description
-[Ally Jinn],Fighter,3,[Field Jinn],[Some [Field JinnPortrait]],[Some OakSword],[Some TinMail],[],1,1,The main protagonist.
-[Ally Garrou],Brawler,3,[Field Garrou],[Some [Field GarrouPortrait]],[Some StoneSword],[Some TinMail],[],1,1,A gray knight from an unknown kingdom.
-[Ally Mael],Wizard,3,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],1,1,A dark wizard from the Caelia.
-[Ally Riain],Conjuror,3,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],1,1,A conjuror whose origin eludes all.
-[Ally Peric],Cleric,3,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],1,1,A cleric exiled from the Kingdom of Vorpa.
-[Enemy DebugGoblin],Goblin,1,[Field DebugGoblin],None,None,[Some ThickFur],[],1,1,A goblin for battle debugging.
-[Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],None,[],1,1,A minor goblin from the Golobogos Islands.
-[Enemy PoisonGoblin],Goblin,4,[Castle PoisonGoblin],None,[Some Paws],None,[],1,1,A poisonous goblin evolved from within the earth.
-[Enemy FireGoblin],Goblin,8,[Castle FireGoblin],None,[Some Paws],[Some ThickFur],[],2,2,A goblin borne from the Golobogos Volcano.
+Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Accessories,TechProbabilityOpt,GoldScalar,ExpScalar,Description
+[Ally Jinn],Fighter,3,[Field Jinn],[Some [Field JinnPortrait]],[Some OakSword],[Some TinMail],[],None,1,1,The main protagonist.
+[Ally Garrou],Brawler,3,[Field Garrou],[Some [Field GarrouPortrait]],[Some StoneSword],[Some TinMail],[],None,1,1,A gray knight from an unknown kingdom.
+[Ally Mael],Wizard,3,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A dark wizard from the Caelia.
+[Ally Riain],Conjuror,3,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A conjuror whose origin eludes all.
+[Ally Peric],Cleric,3,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,1,1,A cleric exiled from the Kingdom of Vorpa.
+[Enemy DebugGoblin],Goblin,1,[Field DebugGoblin],None,None,[Some ThickFur],[],[Some 0.5],1,1,An enemy for battle debugging.
+[Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],None,[],[Some 0.25],1,1,A minor goblin from the Golobogos Islands.
+[Enemy PoisonGoblin],Goblin,4,[Castle PoisonGoblin],None,[Some Paws],None,[],[Some 0.25],1,1,A poisonous goblin evolved from within the earth.
+[Enemy FireGoblin],Goblin,8,[Castle FireGoblin],None,[Some Paws],[Some ThickFur],[],[Some 0.25],2,2,A goblin borne from the Golobogos Volcano.

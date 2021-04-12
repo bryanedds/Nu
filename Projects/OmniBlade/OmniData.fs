@@ -599,6 +599,7 @@ type [<NoEquality; NoComparison>] CharacterData =
       WeaponOpt : string option
       ArmorOpt : string option
       Accessories : string list
+      TechProbabilityOpt : single option
       GoldScalar : single
       ExpScalar : single
       Description : string }

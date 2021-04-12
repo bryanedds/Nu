@@ -82,7 +82,6 @@ module Constants =
         let AllyMax = 3
         let ActionTime = 1000
         let AutoBattleReadyTime = 50
-        let AutoBattleTechFrequency = 3
         let AllyActionTimeDelta = 4
         let EnemyActionTimeDelta = 3
         let DefendingDamageScalar = 0.5f
