@@ -1161,7 +1161,6 @@ module BattleDispatcher =
                          Entity.Visible <== ally --> fun ally -> ally.InputState = TechMenu
                          Entity.RingMenu <== ally --> fun ally ->
                             let techs =
-                                let mutable i = 0
                                 ally.Techs |>
                                 Map.ofSeqBy (fun tech ->
                                     let techUsable =
