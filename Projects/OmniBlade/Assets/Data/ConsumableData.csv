@@ -1,4 +1,5 @@
-Type,Scalar,Curative,AimType,Cost,Description
-GreenHerb,50,True,[AllyAim True],10,Heals minor injuries.
-RedHerb,100,True,[AllyAim True],50,Heals medium injuries.
-GoldHerb,999,True,[AllyAim True],100,Heals all injuries.
+Type,Scalar,Curative,StatusesAdded,StatusRemoved,AimType,Cost,Description
+GreenHerb,50,True,[],[],[AllyAim True],10,Heals minor injuries.
+RedHerb,100,True,[],[],[AllyAim True],50,Heals medium injuries.
+GoldHerb,999,True,[],[],[AllyAim True],100,Heals all injuries.
+Remedy,50,True,[],[Poison Silence Sleep [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True] [Provoke [AllyIndex 0]] [Provoke [AllyIndex 1]] [Provoke [AllyIndex 2]]],[AllyAim True],25,Cures status ailments and heals minor injuries.

@@ -66,27 +66,22 @@ type [<ReferenceEquality; NoComparison>] Teammate =
 
     static member tryUseItem itemType teammate =
         if Teammate.canUseItem itemType teammate then
-            match Map.tryFind teammate.CharacterType Data.Value.Characters with
-            | Some characterData ->
-                match itemType with
-                | Consumable consumableType ->
-                    match Data.Value.Consumables.TryGetValue consumableType with
-                    | (true, consumableData) ->
-                        match consumableType with
-                        | GreenHerb | RedHerb | GoldHerb ->
-                            let level = Algorithms.expPointsToLevel teammate.ExpPoints
-                            let hpm = Algorithms.hitPointsMax teammate.ArmorOpt characterData.ArchetypeType level
-                            let teammate = { teammate with HitPoints = min hpm (teammate.HitPoints + int consumableData.Scalar) }
-                            (true, None, teammate)
-                    | (false, _) -> (false, None, teammate)
-                | Equipment equipmentType ->
-                    match equipmentType with
-                    | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) teammate.WeaponOpt, Teammate.equipWeaponOpt (Some weaponType) teammate)
-                    | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) teammate.ArmorOpt, Teammate.equipArmorOpt (Some armorType) teammate)
-                    | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead teammate.Accessories), Teammate.equipAccessory1Opt (Some accessoryType) teammate)
-                | KeyItem _ -> (false, None, teammate)
-                | Stash _ -> (false, None, teammate)
-            | None -> (false, None, teammate)
+            match itemType with
+            | Consumable consumableType ->
+                match Data.Value.Consumables.TryGetValue consumableType with
+                | (true, consumableData) ->
+                    match consumableType with
+                    | GreenHerb | RedHerb | GoldHerb | Remedy ->
+                        let teammate = { teammate with HitPoints = min teammate.HitPointsMax (teammate.HitPoints + int consumableData.Scalar) }
+                        (true, None, teammate)
+                | (false, _) -> (false, None, teammate)
+            | Equipment equipmentType ->
+                match equipmentType with
+                | WeaponType weaponType -> (true, Option.map (Equipment << WeaponType) teammate.WeaponOpt, Teammate.equipWeaponOpt (Some weaponType) teammate)
+                | ArmorType armorType -> (true, Option.map (Equipment << ArmorType) teammate.ArmorOpt, Teammate.equipArmorOpt (Some armorType) teammate)
+                | AccessoryType accessoryType -> (true, Option.map (Equipment << AccessoryType) (List.tryHead teammate.Accessories), Teammate.equipAccessory1Opt (Some accessoryType) teammate)
+            | KeyItem _ -> (false, None, teammate)
+            | Stash _ -> (false, None, teammate)
         else (false, None, teammate)
 
     static member restore teammate =
