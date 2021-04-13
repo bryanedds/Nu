@@ -604,10 +604,12 @@ module BattleDispatcher =
             | ConsumeCharacter2 (consumableType, targetIndex) ->
                 let time = World.getTickTime world
                 match Data.Value.Consumables.TryGetValue consumableType with
-                | (true, consumable) ->
-                    if consumable.Curative then
-                        let healing = int consumable.Scalar
+                | (true, consumableData) ->
+                    if consumableData.Curative then
+                        let healing = int consumableData.Scalar
                         let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, false))) targetIndex battle
+                        let battle = Battle.updateCharacter (Character.updateStatuses (fun statuses -> Map.removeMany consumableData.StatusesRemoved statuses)) targetIndex battle
+                        let battle = Battle.updateCharacter (Character.updateStatuses (fun statuses -> Map.addMany (Seq.map (flip pair Constants.Battle.BurndownTime) consumableData.StatusesAdded) statuses)) targetIndex battle
                         let battle = Battle.updateCharacter (Character.animate time SpinAnimation) targetIndex battle
                         let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
                         let playHealSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)

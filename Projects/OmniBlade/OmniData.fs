@@ -142,6 +142,7 @@ type ConsumableType =
     | GreenHerb
     | RedHerb
     | GoldHerb
+    | Remedy
 
 type KeyItemType =
     | BrassKey
@@ -519,6 +520,8 @@ type ConsumableData =
     { ConsumableType : ConsumableType // key
       Scalar : single
       Curative : bool
+      StatusesAdded : StatusType Set
+      StatusesRemoved : StatusType Set
       AimType : AimType
       Cost : int
       Description : string }

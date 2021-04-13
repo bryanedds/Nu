@@ -13,6 +13,8 @@ Party Structure -
 
 you can hire a new party member in any order, but each consecutive hire costs significantly more so that you won't be able to acquire them all until stage 6 or 7.
 
+you can put allies in any order, but Jinn will always be the map avatar.
+
 Story / Progress Structure -
 
 There were once 9 demons that came together to destroy the world.

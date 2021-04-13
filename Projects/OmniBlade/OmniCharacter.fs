@@ -447,6 +447,10 @@ module Character =
             ActionTime_ = updater character.ActionTime_
             CharacterState_ = CharacterState.burndownStatuses actionTimeDelta character.CharacterState_ }
 
+    let updateStatuses updater character =
+        let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
+        { character with CharacterState_ = characterState }
+
     let updateHitPoints updater character =
         let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
         let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
