@@ -587,7 +587,7 @@ module BattleDispatcher =
                 let source = Battle.getCharacter sourceIndex battle
                 let target = Battle.getCharacter targetIndex battle
                 let damage = Character.getAttackResult Physical source target
-                let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints - damage, false))) targetIndex battle
+                let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints - damage, false)) false) targetIndex battle
                 let (battle, sigs) =
                     if target.HitPoints <= 0
                     then (battle, [Message (ResetCharacter targetIndex)]) // wounded
@@ -607,7 +607,10 @@ module BattleDispatcher =
                 | (true, consumableData) ->
                     if consumableData.Curative then
                         let healing = int consumableData.Scalar
-                        let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, false))) targetIndex battle
+                        let battle =
+                            if consumableData.Techative
+                            then Battle.updateCharacter (Character.updateTechPoints (fun techPoints -> techPoints + healing)) targetIndex battle
+                            else Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, false)) consumableData.Revive) targetIndex battle
                         let battle = Battle.updateCharacter (Character.updateStatuses (fun statuses -> Map.removeMany consumableData.StatusesRemoved statuses)) targetIndex battle
                         let battle = Battle.updateCharacter (Character.updateStatuses (fun statuses -> Map.addMany (Seq.map (flip pair Constants.Battle.BurndownTime) consumableData.StatusesAdded) statuses)) targetIndex battle
                         let battle = Battle.updateCharacter (Character.animate time SpinAnimation) targetIndex battle
@@ -848,7 +851,7 @@ module BattleDispatcher =
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, sigs) =
                         Map.fold (fun (battle, sigs) characterIndex (cancelled, hitPointsChange) ->
-                            let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled))) characterIndex battle
+                            let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled)) false) characterIndex battle
                             let wounded = (Battle.getCharacter characterIndex battle).IsWounded
                             let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
                             let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (characterIndex, hitPointsChange)) :: sigs else sigs

@@ -451,9 +451,13 @@ module Character =
         let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
         { character with CharacterState_ = characterState }
 
-    let updateHitPoints updater character =
-        let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
-        let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
+    let updateHitPoints updater affectWounded character =
+        let (characterState, cancel) =
+            if character.CharacterState_.IsHealthy || affectWounded then
+                let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
+                let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
+                (characterState, cancel)
+            else (character.CharacterState_, false)
         let autoBattleOpt =
             match character.AutoBattleOpt_ with
             | Some autoBattle when cancel -> Some { autoBattle with AutoTechOpt = None }
