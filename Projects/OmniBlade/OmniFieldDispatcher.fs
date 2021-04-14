@@ -460,14 +460,14 @@ module FieldDispatcher =
         static let team (position : Vector2) elevation rows (field : Lens<Field, World>) filter fieldMsg =
             Content.entities field
                 (fun field _ -> (field.Team, field.Menu))
-                (fun (team, menu) _ -> Map.filter (flip filter menu) team)
-                (fun index teammateLens world ->
-                    let teammate = Lens.get teammateLens world
+                (fun (team, menu) _ -> Map.map (fun _ teammate -> (teammate, menu)) team)
+                (fun index teammateAndMenu _ ->
                     let x = position.X + if index >= rows then 256.0f + 48.0f else 0.0f
                     let y = position.Y - single (index % rows) * 72.0f
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 256.0f 72.0f
-                         Entity.Text == CharacterType.getName teammate.CharacterType
+                         Entity.EnabledLocal <== teammateAndMenu --> fun (teammate, menu) -> filter teammate menu
+                         Entity.Text <== teammateAndMenu --> fun (teammate, _) -> CharacterType.getName teammate.CharacterType
                          Entity.ClickEvent ==> msg (fieldMsg index)])
 
         static let items (position : Vector2) elevation columns field fieldMsg =
@@ -989,7 +989,7 @@ module FieldDispatcher =
                        [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
                        [sidebar (v2 24.0f 420.0f) 1.0f field
-                        team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology3 MenuTeamAlly
+                        team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology2 MenuTeamAlly
                         Content.label Gen.name
                            [Entity.PositionLocal == v2 438.0f 288.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 192.0f 192.0f
                             Entity.LabelImage <== field --> fun field ->
@@ -1086,7 +1086,7 @@ module FieldDispatcher =
                        [Entity.Position == v2 -448.0f -192.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v2 896.0f 384.0f
                         Entity.LabelImage == Assets.Gui.DialogXLImage]
                        [team (v2 160.0f 150.0f) 1.0f 3 field
-                           (fun _ menu teammate ->
+                           (fun teammate menu ->
                                match menu.MenuUseOpt with
                                | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
                                | None -> false)

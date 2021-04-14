@@ -111,8 +111,8 @@ module BattleDispatcher =
                     | Some target ->
                         match timeLocal with
                         | 0L ->
-                            if target.IsHealthy
-                            then withMsg (AttackCharacter1 sourceIndex) battle
+                            if target.IsHealthy then
+                                withMsg (AttackCharacter1 sourceIndex) battle
                             else
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                                 withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
