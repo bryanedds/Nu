@@ -47,7 +47,11 @@ type [<ReferenceEquality; NoComparison>] Teammate =
             match Map.tryFind characterData.ArchetypeType Data.Value.Archetypes with
             | Some archetypeData ->
                 match itemType with
-                | Consumable _ -> true
+                | Consumable itemType ->
+                    match itemType with
+                    | GreenHerb | RedHerb | GoldHerb | Remedy -> teammate.HitPoints > 0 && teammate.HitPoints < teammate.HitPointsMax
+                    | Ether | HighEther | TurboEther -> teammate.TechPoints < teammate.TechPointsMax
+                    | Revive -> teammate.HitPoints = 0
                 | Equipment equipmentType ->
                     match equipmentType with
                     | WeaponType weaponType ->
@@ -73,6 +77,12 @@ type [<ReferenceEquality; NoComparison>] Teammate =
                     match consumableType with
                     | GreenHerb | RedHerb | GoldHerb | Remedy ->
                         let teammate = { teammate with HitPoints = min teammate.HitPointsMax (teammate.HitPoints + int consumableData.Scalar) }
+                        (true, None, teammate)
+                    | Ether | HighEther | TurboEther ->
+                        let teammate = { teammate with TechPoints = min teammate.TechPointsMax (teammate.TechPoints + int consumableData.Scalar) }
+                        (true, None, teammate)
+                    | Revive ->
+                        let teammate = { teammate with HitPoints = min teammate.HitPointsMax (int consumableData.Scalar) }
                         (true, None, teammate)
                 | (false, _) -> (false, None, teammate)
             | Equipment equipmentType ->

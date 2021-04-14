@@ -143,6 +143,10 @@ type ConsumableType =
     | RedHerb
     | GoldHerb
     | Remedy
+    | Ether
+    | HighEther
+    | TurboEther
+    | Revive
 
 type KeyItemType =
     | BrassKey
@@ -520,6 +524,8 @@ type ConsumableData =
     { ConsumableType : ConsumableType // key
       Scalar : single
       Curative : bool
+      Techative : bool
+      Revive : bool
       StatusesAdded : StatusType Set
       StatusesRemoved : StatusType Set
       AimType : AimType
