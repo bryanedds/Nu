@@ -487,9 +487,15 @@ module BattleDispatcher =
                 just battle
             
             | ConsumableItemSelect (characterIndex, item) ->
+                let consumableType =
+                    scvalue<ConsumableType> item
+                let aimType =
+                    match Data.Value.Consumables.TryGetValue consumableType with
+                    | (true, consumableData) -> consumableData.AimType
+                    | (false, _) -> NoAim
                 let battle =
                     Battle.updateCharacter
-                        (Character.updateInputState (constant (AimReticles (item, AllyAim true))))
+                        (Character.updateInputState (constant (AimReticles (item, aimType))))
                         characterIndex
                         battle
                 just battle
@@ -503,9 +509,15 @@ module BattleDispatcher =
                 just battle
             
             | TechItemSelect (characterIndex, item) ->
+                let techType =
+                    scvalue<TechType> item
+                let aimType =
+                    match Data.Value.Techs.TryGetValue techType with
+                    | (true, techData) -> techData.AimType
+                    | (false, _) -> NoAim
                 let battle =
                     Battle.updateCharacter
-                        (Character.updateInputState (constant (AimReticles (item, EnemyAim true))))
+                        (Character.updateInputState (constant (AimReticles (item, aimType))))
                         characterIndex
                         battle
                 just battle
