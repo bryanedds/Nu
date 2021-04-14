@@ -118,7 +118,7 @@ module BattleDispatcher =
                                 withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                         | 15L ->
                             withMsg (AttackCharacter2 (sourceIndex, targetIndex)) battle
-                        | _ when Character.getAnimationFinished time target ->
+                        | _ when timeLocal > 15L && Character.getAnimationFinished time target ->
                             let target = Battle.getCharacter targetIndex battle
                             if target.IsHealthy then
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
@@ -161,14 +161,14 @@ module BattleDispatcher =
                 | Some target ->
                     match timeLocal with
                     | 0L ->
-                        if target.IsHealthy
-                        then withMsg (ConsumeCharacter1 (consumable, sourceIndex)) battle
+                        if target.IsHealthy || consumable = Revive then // HACK: should really be checked ConsumableData.
+                            withMsg (ConsumeCharacter1 (consumable, sourceIndex)) battle
                         else
                             let battle = Battle.updateCurrentCommandOpt (constant None) battle
                             withMsgs [ResetCharacter sourceIndex; PoiseCharacter sourceIndex] battle
                     | 30L ->
                         withMsg (ConsumeCharacter2 (consumable, targetIndex)) battle
-                    | _ when Character.getAnimationFinished time target ->
+                    | _ when timeLocal > 30L && Character.getAnimationFinished time target ->
                         let battle = Battle.updateCurrentCommandOpt (constant None) battle
                         withMsgs [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] battle
                     | _ -> just battle
@@ -622,7 +622,7 @@ module BattleDispatcher =
                         let battle =
                             if consumableData.Techative
                             then Battle.updateCharacter (Character.updateTechPoints (fun techPoints -> techPoints + healing)) targetIndex battle
-                            else Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, false)) consumableData.Revive) targetIndex battle
+                            else Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + healing, consumableData.Revive)) consumableData.Revive) targetIndex battle
                         let battle = Battle.updateCharacter (Character.updateStatuses (fun statuses -> Map.removeMany consumableData.StatusesRemoved statuses)) targetIndex battle
                         let battle = Battle.updateCharacter (Character.updateStatuses (fun statuses -> Map.addMany (Seq.map (flip pair Constants.Battle.BurndownTime) consumableData.StatusesAdded) statuses)) targetIndex battle
                         let battle = Battle.updateCharacter (Character.animate time SpinAnimation) targetIndex battle
