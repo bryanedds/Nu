@@ -172,13 +172,24 @@ type AimType =
 
 type TargetType =
     | SingleTarget of AimType
-    | ProximityTarget of AimType * single
-    | RadialTarget of AimType * single
-    | LineTarget of AimType * single
-    | SegmentTarget of AimType * single
-    | VerticalTarget of AimType * single
-    | HorizontalTarget of AimType * single
+    | ProximityTarget of single * AimType
+    | RadialTarget of single * AimType
+    | LineTarget of single * AimType
+    | SegmentTarget of single * AimType
+    | VerticalTarget of single * AimType
+    | HorizontalTarget of single * AimType
     | AllTarget of AimType
+
+    static member getAimType targetType =
+        match targetType with
+        | SingleTarget aimType -> aimType
+        | ProximityTarget (_, aimType) -> aimType
+        | RadialTarget (_, aimType) -> aimType
+        | LineTarget (_, aimType) -> aimType
+        | SegmentTarget (_, aimType) -> aimType
+        | VerticalTarget (_, aimType) -> aimType
+        | HorizontalTarget (_, aimType) -> aimType
+        | AllTarget aimType -> aimType
 
 type TechType =
     | Critical
@@ -548,6 +559,9 @@ type TechData =
       StatusesRemoved : StatusType Set
       TargetType : TargetType
       Description : string }
+
+    member this.AimType =
+        TargetType.getAimType this.TargetType
 
 type ArchetypeData =
     { ArchetypeType : ArchetypeType // key

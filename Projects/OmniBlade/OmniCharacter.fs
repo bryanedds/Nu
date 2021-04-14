@@ -335,19 +335,19 @@ module Character =
         match targetType with
         | SingleTarget _ ->
             Map.singleton target.CharacterIndex target
-        | ProximityTarget (aimType, radius) ->
+        | ProximityTarget (radius, aimType) ->
             characters |>
             evaluateAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - source.Bottom
                 v.Length () <= radius)
-        | RadialTarget (aimType, radius) ->
+        | RadialTarget (radius, aimType) ->
             characters |>
             evaluateAimType aimType target |>
             Map.filter (fun _ character ->
                 let v = character.Bottom - target.Bottom
                 v.Length () <= radius)
-        | LineTarget (aimType, offset) ->
+        | LineTarget (offset, aimType) ->
             characters |>
             evaluateAimType aimType target |>
             Map.filter (fun _ character ->
@@ -358,7 +358,7 @@ module Character =
                     let d = r.Length ()
                     d <= offset 
                 else false)
-        | SegmentTarget (aimType, offset) ->
+        | SegmentTarget (offset, aimType) ->
             characters |>
             evaluateAimType aimType target |>
             Map.filter (fun _ character ->
@@ -371,14 +371,14 @@ module Character =
                         d <= offset
                     else false
                 else false)
-        | VerticalTarget (aimType, width) ->
+        | VerticalTarget (width, aimType) ->
             characters |>
             evaluateAimType aimType target |>
             Map.filter (fun _ character ->
                 let x = target.Bottom.X
                 character.Bottom.X >= x - width &&
                 character.Bottom.X <= x + width)
-        | HorizontalTarget (aimType, width) ->
+        | HorizontalTarget (width, aimType) ->
             characters |>
             evaluateAimType aimType target |>
             Map.filter (fun _ character ->
