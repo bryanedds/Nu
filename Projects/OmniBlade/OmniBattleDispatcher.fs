@@ -649,7 +649,7 @@ module BattleDispatcher =
                         let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
                         let displayCast = DisplayDimensionalCast (0L, sourceIndex)
                         Right [cmd playCharge; cmd displayCast]
-                    | Fire | Flame | Ice | Snowball | Bolt | BoltBeam | Stone | Quake ->
+                    | Fire | TechType.Flame | Ice | Snowball | Bolt | BoltBeam | Stone | Quake ->
                         let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
                         let displayCast = DisplayDimensionalCast (0L, sourceIndex)
                         Right [cmd playCharge; cmd displayCast]
@@ -735,7 +735,7 @@ module BattleDispatcher =
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
                     withCmd (DisplayFire (0L, sourceIndex, targetIndex)) battle
-                | Flame ->
+                | TechType.Flame ->
                     let time = World.getTickTime world
                     let playFlame = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.FlameSound)
                     let displayFlame = DisplayFlame (0L, sourceIndex, targetIndex)

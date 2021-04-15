@@ -70,6 +70,7 @@ module Assets =
         let ThrowSwitchOffImage = asset<Image> PackageName "ThrowSwitchOff" // TODO: P1: Convert art.
         let ThrowSwitchOnImage = asset<Image> PackageName "ThrowSwitchOn" // TODO: P1: Convert art.
         let StepPlateImage = asset<Image> PackageName "StepPlate" // TODO: P1: Convert art.
+        let FlameImage = asset<Image> PackageName "Flame"
         let SavePointImage = asset<Image> PackageName "SavePoint" // TODO: P1: Convert art.
         let StairsImage = asset<Image> PackageName "Stairs"
         let SpiritImage = asset<Image> PackageName "Spirit"
