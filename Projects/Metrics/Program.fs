@@ -255,7 +255,7 @@ type ElmishGameDispatcher () =
                 [Content.entity<ElmishEntityDispatcher> Gen.name
                     (seq {
                         yield Entity.Omnipresent == true
-                        for index in 0 .. 49999 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (index % 12)) } |> // 50,000 property bindings (goal: 60FPS, currently: 50.5FPS)
+                        for index in 0 .. 49999 do yield Entity.Size <== int --> fun int -> v2 (single (int % 12)) (single (index % 12)) } |> // 50,000 property bindings (goal: 60FPS, currently: 59FPS)
                         Seq.toList)]
              Content.group Gen.name []
                 [Content.fps "Fps" [Entity.Position == v2 200.0f -250.0f]]]]
