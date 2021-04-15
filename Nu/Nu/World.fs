@@ -25,13 +25,8 @@ module Nu =
     let private tryPropagateByName simulant leftName (right : World Lens) world =
         if right.Validate world then
             let value = right.GetWithoutValidation world
-            match World.tryGetProperty (leftName, simulant, world) with
-            | (true, property) ->
-                if property.PropertyValue =/= value then
-                    let property = { property with PropertyValue = value }
-                    World.trySetPropertyFast leftName property simulant world
-                else world
-            | (false, _) -> world
+            let property = { PropertyType = right.Type; PropertyValue = value }
+            World.trySetPropertyFast leftName property simulant world
         else world
 
     let private tryPropagate simulant (left : World Lens) (right : World Lens) world =
@@ -306,9 +301,8 @@ module Nu =
                                 | (true, property) -> property.PropertyValue
                                 | (false, _) -> failwithumf ())
                             (fun propertyValue world ->
-                                match World.tryGetProperty (left.Name, simulant, world) with
-                                | (true, property) -> World.trySetPropertyFast left.Name { property with PropertyValue = propertyValue } simulant world
-                                | (false, _) -> world)
+                                let property = { PropertyType = left.Type; PropertyValue = propertyValue }
+                                World.trySetPropertyFast left.Name property simulant world)
                             simulant
                     else Lens.make left.Name left.GetWithoutValidation (Option.get left.SetOpt) simulant
                 let rightFixup = { Lens.makeReadOnly right.Name right.GetWithoutValidation right.This with ValidateOpt = right.ValidateOpt }
