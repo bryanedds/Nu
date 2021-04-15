@@ -106,6 +106,7 @@ module FieldDispatcher =
                 | Npc _ | NpcBranching _ -> Some "Talk"
                 | Shopkeep _ -> Some "Shop"
                 | Seal _ -> Some "Touch"
+                | Flame _ -> None
                 | SavePoint -> None
                 | ChestSpawn -> None
                 | EmptyProp -> None
@@ -797,6 +798,7 @@ module FieldDispatcher =
                             | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements field
                             | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType field
                             | Seal (_, cue, _) -> just (Field.updateCue (constant cue) field)
+                            | Flame _ -> just field
                             | SavePoint -> just field
                             | ChestSpawn -> just field
                             | EmptyProp -> just field
@@ -966,7 +968,7 @@ module FieldDispatcher =
                                     | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
                                     | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
                                     | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
-                                    | Chest _ | Sensor _ | SavePoint | ChestSpawn | EmptyProp -> NilState
+                                    | Chest _ | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
                                 | Some propState -> propState
                             Prop.make prop.PropBounds prop.PropElevation advents prop.PropData propState prop.PropId)
                         Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])

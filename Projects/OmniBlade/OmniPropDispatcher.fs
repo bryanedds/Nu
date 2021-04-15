@@ -62,7 +62,7 @@ module PropDispatcher =
                     match prop.PropState with
                     | ShopkeepState true -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     | _ -> BodyEmpty
-                | ChestSpawn | EmptyProp ->
+                | Flame _ | ChestSpawn | EmptyProp ->
                     BodyEmpty]
 
         override this.Physics (position, _, _, _, prop, _, _) =
@@ -172,6 +172,20 @@ module PropDispatcher =
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
                             (false, colWhite, colZero, Some inset, image)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
+                    | Flame (flameType, mirror) ->
+                        let image = Assets.Field.FlameImage
+                        let origin =
+                            match flameType with
+                            | FatFlame -> v2i 0 (if mirror then 4 else 0)
+                            | SkinnyFlame -> v2i 3 (if mirror then 4 else 0)
+                            | SmallFlame -> v2i 1 (if mirror then 4 else 0)
+                            | LargeFlame -> v2i 2 (if mirror then 4 else 0)
+                        let cel = int (World.getTickTime world / 10L % 4L)
+                        let inset =
+                            v4 // TODO: P1: put the following hard-coded dimensions in Constants.
+                                (single origin.X * 48.0f) (single (origin.Y + cel) * 48.0f)
+                                48.0f 48.0f
+                        (false, colWhite, colZero, Some inset, image)
                     | SavePoint ->
                         let time = World.getTickTime world
                         let image = Assets.Field.SavePointImage

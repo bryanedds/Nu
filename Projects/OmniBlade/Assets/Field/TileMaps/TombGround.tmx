@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="13">
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="17">
  <tileset firstgid="1" source="TombInner.tsx"/>
  <tileset firstgid="1480" source="../../Castle/Castle.tsx"/>
  <layer id="2" name="Floor" width="64" height="64">
@@ -71,6 +71,26 @@
   <object id="12" gid="235" x="2928" y="960" width="96" height="96">
    <properties>
     <property name="I" value="[Seal [255 255 255 127] [Sequence [[Prompt &quot;Are you here to find riches?&quot; [&quot;Yes...&quot; [Unseal 0 CastleUnsealed]] [&quot;No&quot;]]]] [CastleUnsealed]]"/>
+   </properties>
+  </object>
+  <object id="13" gid="235" x="1584" y="2544" width="48" height="48">
+   <properties>
+    <property name="I" value="[Flame SmallFlame]"/>
+   </properties>
+  </object>
+  <object id="14" gid="235" x="1776.33" y="2544" width="48" height="48">
+   <properties>
+    <property name="I" value="[Flame SmallFlame]"/>
+   </properties>
+  </object>
+  <object id="15" gid="235" x="1680" y="2496" width="48" height="48">
+   <properties>
+    <property name="I" value="[Flame SmallFlame]"/>
+   </properties>
+  </object>
+  <object id="16" gid="235" x="1680" y="2592" width="48" height="48">
+   <properties>
+    <property name="I" value="[Flame SmallFlame]"/>
    </properties>
   </object>
  </objectgroup>

@@ -352,6 +352,12 @@ type ShopkeepType =
     | RobehnShopkeep
     | SchaalShopkeep
 
+type FlameType =
+    | FatFlame
+    | SkinnyFlame
+    | SmallFlame
+    | LargeFlame
+
 type SwitchType =
     | ThrowSwitch
     
@@ -645,6 +651,7 @@ type [<NoEquality; NoComparison>] PropData =
     | NpcBranching of NpcType * Direction * Branch list * Advent Set
     | Shopkeep of ShopkeepType * Direction * ShopType * Advent Set
     | Seal of Color * Cue * Advent Set
+    | Flame of FlameType * bool
     | SavePoint
     | ChestSpawn
     | EmptyProp
