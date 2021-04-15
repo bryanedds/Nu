@@ -56,26 +56,23 @@ module RingMenuDispatcher =
                         Map.ofSeq
                     Map.map (constant (Triple.insert (Map.count items))) items)
                 (fun itemName itemIndexAndCountAndEnabled world ->
-                    let buttonName = menu.Name + "+" + scstring itemName
-                    let button = menu.Parent / buttonName
-                    Content.button button.Name
+                    let buttonSize = v2 48.0f 48.0f
+                    Content.button (menu.Name + "+" + scstring itemName)
                         [Entity.EnabledLocal <== itemIndexAndCountAndEnabled --> Triple.thd
                          Entity.PositionLocal <== itemIndexAndCountAndEnabled --> fun (itemIndex, itemCount, _) ->
                             let radius = menu.GetRadius world
                             let progress = single itemIndex / single itemCount
                             let rotation = progress * single Math.PI * 2.0f
                             let position = v2 (radius * sin rotation) (radius * cos rotation)
-                            position - button.GetSize world * 0.5f
-                         Entity.Size == v2 48.0f 48.0f
+                            position - buttonSize * 0.5f
+                         Entity.Size == buttonSize
                          Entity.Elevation <== menu.Elevation
                          Entity.UpImage == asset Assets.Battle.PackageName (itemName + "Up")
                          Entity.DownImage == asset Assets.Battle.PackageName (itemName + "Down")
                          Entity.ClickEvent ==> cmd (ItemSelect itemName)])
              Content.entityOpt ringMenu (fun ringMenu _ -> ringMenu.ItemCancelOpt) $ fun itemCancel world ->
                 let itemCancelValue = itemCancel.Get world
-                let buttonName = menu.Name + "+" + itemCancelValue
-                let button = menu.Parent / buttonName
-                Content.button button.Name
+                Content.button (menu.Name + "+" + itemCancelValue)
                     [Entity.ParentNodeOpt == None
                      Entity.Visible <== menu.Visible
                      Entity.Size == v2 48.0f 48.0f
