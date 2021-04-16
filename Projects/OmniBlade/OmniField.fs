@@ -73,6 +73,42 @@ module Field =
         | (true, fieldData) -> fieldData.FieldSongOpt
         | (false, _) -> None
 
+    let getPropState propDescriptor (advents : Advent Set) propStates =
+        match Map.tryFind propDescriptor.PropId propStates with
+        | None ->
+            match propDescriptor.PropData with
+            | Portal (_, _, _, _, _, _, requirements) -> PortalState (advents.IsSupersetOf requirements)
+            | Door (_, _, _, _) -> DoorState false
+            | Switch (_, _, _, _) -> SwitchState false
+            | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
+            | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
+            | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
+            | Chest (_, _, id, _, _, _) -> ChestState (propDescriptor.PropBounds, id)
+            | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
+        | Some propState -> propState
+
+    let getPropStates (field : Field) world =
+        match Map.tryFind field.FieldType Data.Value.Fields with
+        | Some fieldData ->
+            FieldData.getPropDescriptors field.OmniSeedState fieldData world |>
+            Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, getPropState propDescriptor field.Advents field.PropStates))
+        | None -> Map.empty
+
+    let getProps (field : Field) world =
+        match Map.tryFind field.FieldType Data.Value.Fields with
+        | Some fieldData ->
+            FieldData.getPropDescriptors field.OmniSeedState fieldData world |>
+            Map.ofListBy (fun propDescriptor ->
+                let propState = getPropState propDescriptor field.Advents field.PropStates
+                let prop = Prop.make propDescriptor.PropBounds propDescriptor.PropElevation field.Advents propDescriptor.PropData propState propDescriptor.PropId
+                (propDescriptor.PropId, prop))
+        | None -> Map.empty
+
+    let getChestCenters field world =
+        getPropStates field world |>
+        Map.toValueArray |>
+        Array.choose (function ChestState (bounds, id) -> (if field.Advents.Contains (Opened id) then None else Some bounds.Center) | _ -> None)
+
     let updateFieldType updater field =
         { field with
             FieldType_ = updater field.FieldType_

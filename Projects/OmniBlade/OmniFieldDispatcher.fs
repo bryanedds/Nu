@@ -952,32 +952,20 @@ module FieldDispatcher =
                     (fun (fieldType, rotatedSeedState, advents, propStates) world ->
                         match Map.tryFind fieldType Data.Value.Fields with
                         | Some fieldData ->
-                            FieldData.getProps rotatedSeedState fieldData world |>
-                            List.map (fun prop -> (prop.PropId, (prop, advents, propStates))) |>
-                            Map.ofList
+                            FieldData.getPropDescriptors rotatedSeedState fieldData world |>
+                            Map.ofListBy (fun propDescriptor -> (propDescriptor.PropId, (propDescriptor, advents, propStates)))
                         | None -> Map.empty)
                     (fun _ propLens _ ->
-                        let prop = flip Lens.map propLens (fun (prop, advents, propStates) ->
-                            let propState =
-                                match Map.tryFind prop.PropId propStates with
-                                | None ->
-                                    match prop.PropData with
-                                    | Portal (_, _, _, _, _, _, requirements) -> PortalState (advents.IsSupersetOf requirements)
-                                    | Door (_, _, _, _) -> DoorState false
-                                    | Switch (_, _, _, _) -> SwitchState false
-                                    | Seal (_, _, requirements) -> SealState (not (advents.IsSupersetOf requirements))
-                                    | Npc (npcType, direction, _, requirements) | NpcBranching (npcType, direction, _, requirements) -> NpcState (npcType, direction, colWhite, colZero, advents.IsSupersetOf requirements && NpcType.exists advents npcType)
-                                    | Shopkeep (_, _, _, requirements) -> ShopkeepState (advents.IsSupersetOf requirements)
-                                    | Chest _ | Sensor _ | Flame _ | SavePoint | ChestSpawn | EmptyProp -> NilState
-                                | Some propState -> propState
-                            Prop.make prop.PropBounds prop.PropElevation advents prop.PropData propState prop.PropId)
+                        let prop = flip Lens.map propLens (fun (propDescriptor, advents, propStates) ->
+                            let propState = Field.getPropState propDescriptor advents propStates
+                            Prop.make propDescriptor.PropBounds propDescriptor.PropElevation advents propDescriptor.PropData propState propDescriptor.PropId)
                         Content.entity<PropDispatcher> Gen.name [Entity.Prop <== prop])
 
                  // spirit orb
-                 Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field _ ->
+                 Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field world ->
                     Content.entity<SpiritOrbDispatcher> Gen.name
                         [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
-                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits }]
+                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChestCenters field world }]
 
                  // dialog
                  Content.entityIf field (fun field _ -> Option.isSome field.DialogOpt) $ fun field _ ->
