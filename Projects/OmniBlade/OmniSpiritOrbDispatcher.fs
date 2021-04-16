@@ -43,7 +43,7 @@ module SpiritOrbDispatcher =
                     let transform = { Position = bounds.Position; Size = bounds.Size; Elevation = orbTransform.Elevation + 2.0f; Rotation = 0.0f; Flags = 0 }
                     let colorFadeIn =
                         let distanceNormalized = (Constants.Field.SpiritRadius - distance) / Constants.Field.SpiritRadius
-                        if distanceNormalized < 0.333f then color.MapA (fun a -> single a * (distanceNormalized - 0.667f) / 0.333f |> byte) else color
+                        if distanceNormalized < 0.333f then color.MapA (fun a -> single a * (distanceNormalized / 0.333f) |> byte) else color
                     let descriptor = { Transform = transform; Absolute = orbTransform.Absolute; Offset = v2Zero; InsetOpt = None; Image = image; Blend = Transparent; Color = colorFadeIn; Glow = colZero; Flip = FlipNone }
                     let view = Render (transform.Elevation, transform.Position.Y, AssetTag.generalize image, SpriteDescriptor descriptor)
                     view :: views
