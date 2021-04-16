@@ -41,6 +41,14 @@ module Content =
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> |> Lens.map cast<'c>) world
         GroupsFromStream (lens, sieve, unfold, mapper)
 
+    /// Describe groups to be instantiated from a map lens.
+    /// Unless the lens is very efficiently producing the map, you may want to use the Content.groups function instead
+    /// to cache map creation where possible.
+    let groupMap
+        (lens : Lens<Map<'k, 'v>, World>)
+        (mapper : 'k -> Lens<'v, World> -> World -> GroupContent) =
+        groups lens constant constant mapper
+
     /// Describe a group to be optionally instantiated from a lens.
     let groupIf lens predicate (mapper : Lens<'a, World> -> World -> GroupContent) =
         let mapper = fun _ a world -> mapper a world
@@ -76,6 +84,14 @@ module Content =
         let unfold = fun (b : obj) w -> MapGeneralized.make (unfold (b :?> 'b) w)
         let mapper = fun (key : obj) (c : obj) world -> mapper (key :?> 'k) (c :?> Lens<obj, World> |> Lens.map cast<'c>) world
         EntitiesFromStream (lens, sieve, unfold, mapper)
+
+    /// Describe entities to be instantiated from a map lens.
+    /// Unless the lens is very efficiently producing the map, you may want to use the Content.entities function
+    /// instead to cache map creation where possible.
+    let entityMap
+        (lens : Lens<Map<'k, 'v>, World>)
+        (mapper : 'k -> Lens<'v, World> -> World -> EntityContent) =
+        entities lens constant constant mapper
 
     /// Describe an entity to be optionally instantiated from a lens.
     let entityIf lens predicate mapper =
