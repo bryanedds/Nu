@@ -7,9 +7,10 @@ open System.Numerics
 open Prime
 open Nu
 
-type PropState =
+type [<NoEquality; NoComparison>] PropState =
     | PortalState of bool
     | DoorState of bool
+    | ChestState of Vector4 * Guid
     | SwitchState of bool
     | SealState of bool
     | NpcState of NpcType * Direction * Color * Color * bool

@@ -680,7 +680,7 @@ module FieldData =
 
     let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, TmxMap option>
     let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, (TmxMap * TmxObjectGroup * TmxObject) list>
-    let mutable propsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
+    let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
     let objectToPropOpt (object : TmxObject) (group : TmxObjectGroup) (tileMap : TmxMap) =
         let propPosition = v2 (single object.X) (single tileMap.Height * single tileMap.TileHeight - single object.Y) // invert y
@@ -768,30 +768,27 @@ module FieldData =
             propObjects
         | Some propObjects -> propObjects
 
-    let getProps omniSeedState fieldData world =
+    let getPropDescriptors omniSeedState fieldData world =
         let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
         let memoKey = (rotatedSeedState, fieldData.FieldType)
-        match Map.tryFind memoKey propsMemoized with
+        match Map.tryFind memoKey propDescriptorsMemoized with
         | None ->
             let propObjects = getPropObjects omniSeedState fieldData world
-            let propsUninflated =
-                propObjects |>
-                List.map (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) |>
-                List.definitize
-            let (props, _, _) =
-                List.foldBack (fun prop (props, treasures, rand) ->
-                    let (prop, treasures, rand) = inflateProp prop treasures rand
+            let propsUninflated = List.choose (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) propObjects
+            let (propDescriptors, _, _) =
+                List.foldBack (fun prop (propDescriptors, treasures, rand) ->
+                    let (propDescriptor, treasures, rand) = inflateProp prop treasures rand
                     let treasures = if FStack.isEmpty treasures then FStack.ofSeq fieldData.Treasures else treasures
-                    (prop :: props, treasures, rand))
+                    (propDescriptor :: propDescriptors, treasures, rand))
                     propsUninflated
                     ([], FStack.ofSeq fieldData.Treasures, Rand.makeFromSeedState rotatedSeedState)
-            propsMemoized <- Map.add memoKey props propsMemoized
-            props
-        | Some props -> props
+            propDescriptorsMemoized <- Map.add memoKey propDescriptors propDescriptorsMemoized
+            propDescriptors
+        | Some propDescriptors -> propDescriptors
 
     let getPortals omniSeedState fieldData world =
-        let props = getProps omniSeedState fieldData world
-        List.filter (fun prop -> match prop.PropData with Portal _ -> true | _ -> false) props
+        let propDescriptors = getPropDescriptors omniSeedState fieldData world
+        List.filter (fun propDescriptor -> match propDescriptor.PropData with Portal _ -> true | _ -> false) propDescriptors
 
     let tryGetPortal omniSeedState portalIndex fieldData world =
         let portals = getPortals omniSeedState fieldData world

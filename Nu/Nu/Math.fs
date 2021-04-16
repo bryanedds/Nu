@@ -81,6 +81,9 @@ type [<NoEquality; NoComparison; Struct>] Transform =
     member this.PublishPostUpdates with get () = this.Flags &&& PublishPostUpdatesMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PublishPostUpdatesMask else this.Flags &&& ~~~PublishPostUpdatesMask
     member this.Persistent with get () = this.Flags &&& PersistentMask <> 0 and set value = this.Flags <- if value then this.Flags ||| PersistentMask else this.Flags &&& ~~~PersistentMask
     member this.Optimized with get () = ~~~this.Flags &&& ImperativeMask ||| ~~~this.Flags &&& OmnipresentMask ||| this.Flags &&& PublishChangeEventsMask = 0
+    member this.Bounds with get () = Vector4 (this.Position.X, this.Position.Y, this.Size.X, this.Size.Y)
+    member this.Center with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y + this.Size.Y * 0.5f)
+    member this.Bottom with get () = Vector2 (this.Position.X + this.Size.X * 0.5f, this.Position.Y)
 
     /// Make an empty transform.
     static member makeEmpty () =
