@@ -34,7 +34,7 @@ module SpiritOrbDispatcher =
                 let (position, image, color) =
                     match inhabitant with
                     | SpiritInhabitant spirit -> (spirit.Position, Assets.Field.SpiritImage, SpiritType.getColor spirit.SpiritType)
-                    | ChestInhabitant position -> (position, Assets.Field.SpiritChestImage, colWhite)
+                    | ChestInhabitant position -> (position, Assets.Field.SpiritChestImage, colWhite.WithA (byte 127))
                 let delta = position - avatarLowerCenter
                 let distance = delta.Length ()
                 if distance < Constants.Field.SpiritRadius then
