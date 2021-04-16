@@ -38,8 +38,8 @@ type [<NoEquality; NoComparison>] SpiritPattern =
         | Disinterested -> [|Wander|]
         | Curious -> [|Creep; Scatter|]
         | Confused -> [|Creep; Wander|]
-        | Stalking -> [|Creep; Chase; Chase; Chase|]
-        | Ambushing -> [|Chase; Creep; Chase; Creep|]
+        | Stalking -> [|Creep; Chase|]
+        | Ambushing -> [|Chase|]
 
 type [<ReferenceEquality; NoComparison>] SpiritState =
     { SpiritMovements : SpiritMovement array
