@@ -102,7 +102,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
 
     static member empty =
         let characterState =
-            { ArchetypeType = Squire
+            { ArchetypeType = Apprentice
               ExpPoints = 0
               WeaponOpt = None
               ArmorOpt = None
