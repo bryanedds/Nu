@@ -233,7 +233,62 @@ type ArchetypeType =
     | Wizard
     | Conjuror
     | Cleric
+    | Bat
+    | Spider
+    | Snake
+    | Willowisp
+    | Chillowisp
+    | Fairy
+    | Gel
+    | Beetle
+    | Rat
+    | Scorpion
+    | Plant
     | Goblin
+    | Ghost
+    | Imp
+    | Zombie
+    | Skeleton
+    | Shaman
+    | Glurble
+    | Wolfman
+    | Gorgon
+    | Dryad
+    | Mummy
+    | Tortoise
+    | Robot
+    | Harpy
+    | Witch
+    | Squidly
+    | Merman
+    | Feral
+    | Thief
+    | Lizardman
+    | Trixter
+    | Ninja
+    | Monk
+    | Taur
+    | Dragon
+    | Troll
+    | Mare
+    | Ogre
+    | Djinn
+    | Naga
+    | Avian
+    | Armoros
+    | Golem
+    | Jack
+    | Trap
+    | Vampire
+    | Cerebus
+    | Hydra
+    | FireElemental
+    | IceElemental
+    | LightningElemental
+    | EarthElemental
+    | ShamanBig
+    | RobotBig
+    | Dinoman
 
 type WeaponSubtype =
     | Melee
