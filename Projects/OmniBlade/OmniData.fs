@@ -226,8 +226,7 @@ type ActionType =
     | Wound
 
 type ArchetypeType =
-    | Squire
-    | Mage
+    | Apprentice
     | Fighter
     | Brawler
     | Wizard
@@ -635,7 +634,8 @@ type ArchetypeData =
       Mythos : single // exp scala
       WeaponSubtype : WeaponSubtype
       ArmorSubtype : ArmorSubtype
-      Techs : Map<int, TechType> } // tech availability according to level
+      Techs : Map<int, TechType> // tech availability according to level
+      Description : string }
 
 type TechAnimationData =
     { TechType : TechType // key
