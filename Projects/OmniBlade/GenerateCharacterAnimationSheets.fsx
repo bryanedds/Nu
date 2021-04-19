@@ -197,24 +197,23 @@ let generateBattlerAnimationSheet (sourceFilePath : string) (sourceFilePath2Opt 
     copyCel 6 5 11 sourceImage targetImage metrics // dead
     targetImage.Write (stream, MagickFormat.Png32)
 
-let generateWalkingOnlyAnimationSheet widthSource heightSource (sourceFilePath : string) (sourceFilePath2 : string) (targetFilePath : string) =
+let generateWalkingOnlyAnimationSheet widthSource heightSource (sourceFilePath : string) (targetFilePath : string) =
     use stream = File.OpenWrite targetFilePath
     use sourceImage = new MagickImage (sourceFilePath)
-    use sourceImage2 = new MagickImage (sourceFilePath2)
     use targetImage = new MagickImage (MagickColor.FromRgba (byte 0, byte 0, byte 0, byte 0), 1024, 1024)
     let metrics = { WidthSource = widthSource; HeightSource = heightSource; WidthDest = 48; HeightDest = 48; XOffset = 0; YOffset = 0 }
     copyWalkCels sourceImage targetImage metrics // walk
-    copyTriCelsToQuadCels 0 1 1 sourceImage targetImage metrics // celebrate
-    copyTriCelsToQuadCels 0 1 2 sourceImage targetImage metrics // charging
+    copyTriCelsToQuadCels 0 0 1 sourceImage targetImage metrics // celebrate
+    copyTriCelsToQuadCels 0 0 2 sourceImage targetImage metrics // charging
     copyTriCelsToQuadCels 0 1 3 sourceImage targetImage metrics // poised
     copyTriCelsToQuadCels 0 1 4 sourceImage targetImage metrics // tired
-    copyTriCels 0 1 5 sourceImage2 targetImage metrics // ready
-    copyTriCels 0 1 6 sourceImage2 targetImage metrics // attack
-    copyBiCels 0 1 7 sourceImage2 targetImage metrics // casting
-    copyCels 0 1 8 sourceImage2 targetImage metrics // damage
-    copyCels 0 1 9 sourceImage2 targetImage metrics // defend
+    copyTriCels 0 0 5 sourceImage targetImage metrics // ready
+    copyTriCels 0 0 6 sourceImage targetImage metrics // attack
+    copyBiCels 0 0 7 sourceImage targetImage metrics // casting
+    copyCels 0 3 8 sourceImage targetImage metrics // damage
+    copyCels 0 3 9 sourceImage targetImage metrics // defend
     copyIdleCels 10 sourceImage targetImage metrics // idle
-    copyCel 0 1 11 sourceImage targetImage metrics // dead
+    copyCel 0 3 11 sourceImage targetImage metrics // dead
     targetImage.Write (stream, MagickFormat.Png32)
 
 // generate ally characters
@@ -271,8 +270,8 @@ generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/Splittah.png" None "
 
 // generate walking-only enemy characters
 Directory.CreateDirectory "../../Art/Enemies/WalkingOnly/Out"
-generateWalkingOnlyAnimationSheet 48 48 "../../Art/Enemies/WalkingOnly/144x192/Hawk.png" "../../Art/Enemies/WalkingOnly/144x192/HawkAction.png" "../../Art/Enemies/WalkingOnly/Out/Hawk.png"
-generateWalkingOnlyAnimationSheet 48 48 "../../Art/Enemies/WalkingOnly/144x192/Phoenix.png" "../../Art/Enemies/WalkingOnly/144x192/PhoenixAction.png" "../../Art/Enemies/WalkingOnly/Out/Phoenix.png"
-generateWalkingOnlyAnimationSheet 60 64 "../../Art/Enemies/WalkingOnly/180x256/Bat.png" "../../Art/Enemies/WalkingOnly/180x256/BatAction.png" "../../Art/Enemies/WalkingOnly/Out/Bat.png"
-generateWalkingOnlyAnimationSheet 47 50 "../../Art/Enemies/WalkingOnly/141x200/Minotaur.png" "../../Art/Enemies/WalkingOnly/141x200/MinotaurAction.png" "../../Art/Enemies/WalkingOnly/Out/Minotaur.png"
-generateWalkingOnlyAnimationSheet 26 36 "../../Art/Enemies/WalkingOnly/78x144/Ghost.png" "../../Art/Enemies/WalkingOnly/78x144/GhostAction.png" "../../Art/Enemies/WalkingOnly/Out/Ghost.png"
+generateWalkingOnlyAnimationSheet 48 48 "../../Art/Enemies/WalkingOnly/144x192/Hawk.png" "../../Art/Enemies/WalkingOnly/Out/Hawk.png"
+generateWalkingOnlyAnimationSheet 48 48 "../../Art/Enemies/WalkingOnly/144x192/Phoenix.png" "../../Art/Enemies/WalkingOnly/Out/Phoenix.png"
+generateWalkingOnlyAnimationSheet 60 64 "../../Art/Enemies/WalkingOnly/180x256/Bat.png" "../../Art/Enemies/WalkingOnly/Out/Bat.png"
+generateWalkingOnlyAnimationSheet 47 50 "../../Art/Enemies/WalkingOnly/141x200/Minotaur.png" "../../Art/Enemies/WalkingOnly/Out/Minotaur.png"
+generateWalkingOnlyAnimationSheet 26 36 "../../Art/Enemies/WalkingOnly/78x144/Ghost.png" "../../Art/Enemies/WalkingOnly/Out/Ghost.png"
