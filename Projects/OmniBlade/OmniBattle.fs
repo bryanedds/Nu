@@ -225,7 +225,7 @@ module Battle =
                             | _ -> tryRandomizeEnemy (inc attempts) enemy layout
                         else tryRandomizeEnemy (inc attempts) enemy layout
                     | LargeStature ->
-                        if x > 0 || x < w - 1 || y > 0 || y < h - 1 then
+                        if x > 0 && x < w - 1 && y > 0 && y < h - 1 then
                             match // NOTE: this code could be dramatically improved with in-place array slicing.
                                 (layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1],
                                  layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0],
@@ -239,7 +239,7 @@ module Battle =
                             | _ -> tryRandomizeEnemy (inc attempts) enemy layout
                         else tryRandomizeEnemy (inc attempts) enemy layout
                     | HugeStature ->
-                        if x > 1 || x < w - 2 || y > 0 || y < h - 2 then 
+                        if x > 1 && x < w - 2 && y > 0 && y < h - 2 then 
                             match // NOTE: this code could be dramatically improved with in-place array slicing.
                                 (layout.[x-2].[y+2], layout.[x-1].[y+2], layout.[x+0].[y+2], layout.[x+1].[y+2], layout.[x+2].[y+2],
                                  layout.[x-2].[y+1], layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1], layout.[x+2].[y+1],
