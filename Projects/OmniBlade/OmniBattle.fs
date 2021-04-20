@@ -204,7 +204,7 @@ module Battle =
          { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
     let rec private tryRandomizeEnemy attempts enemy (layout : Either<unit, EnemyType option> array array) =
-        if attempts < 100 then
+        if attempts < 10000 then
             let (w, h) = (layout.Length, layout.[0].Length)
             let (x, y) = (Gen.random1 w, Gen.random1 h)
             match Data.Value.Characters.TryFind (Enemy enemy) with
