@@ -213,10 +213,10 @@ module Field =
                             let battleType =
                                 // TODO: P1: toughen up this code.
                                 match spirit.SpiritType with
-                                | WeakSpirit -> encounterData.BattleTypes.[0]
-                                | NormalSpirit -> encounterData.BattleTypes.[1]
-                                | StrongSpirit -> encounterData.BattleTypes.[2]
-                                | GreatSpirit -> encounterData.BattleTypes.[3]
+                                | WeakSpirit -> encounterData.BattleTypes.[Gen.random2 0 3]
+                                | NormalSpirit -> encounterData.BattleTypes.[Gen.random2 3 6]
+                                | StrongSpirit -> encounterData.BattleTypes.[Gen.random2 6 9]
+                                | GreatSpirit -> encounterData.BattleTypes.[Gen.random2 9 12]
                             match Data.Value.Battles.TryGetValue battleType with
                             | (true, battleData) ->
                                 let field = { field with Spirits_ = [||] }

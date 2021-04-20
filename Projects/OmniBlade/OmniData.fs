@@ -225,6 +225,12 @@ type ActionType =
     | Tech of TechType
     | Wound
 
+type StatureType =
+    | SmallStature
+    | NormalStature
+    | LargeStature
+    | HugeStature
+
 type ArchetypeType =
     | Apprentice
     | Fighter
@@ -251,12 +257,8 @@ type ArchetypeType =
     | Shaman
     | Glurble
     | Wolfman
-    | Gorgon
     | Dryad
     | Mummy
-    | Tortoise
-    | Robot
-    | Harpy
     | Witch
     | Squidly
     | Merman
@@ -266,7 +268,11 @@ type ArchetypeType =
     | Trixter
     | Ninja
     | Monk
-    | Taur
+    | Gorgon
+    | Tortoise
+    | Robot
+    | Harpy
+    | Minotaur
     | Dragon
     | Troll
     | Mare
@@ -350,6 +356,14 @@ type BattleType =
     | CastleBattle2
     | CastleBattle3
     | CastleBattle4
+    | CastleBattle5
+    | CastleBattle6
+    | CastleBattle7
+    | CastleBattle8
+    | CastleBattle9
+    | CastleBattle10
+    | CastleBattle11
+    | CastleBattle12
     | FireGoblinBattle
 
 type EncounterType =
@@ -456,8 +470,9 @@ type AllyType =
 
 type EnemyType =
     | DebugGoblin
+    | DarkBat
     | BlueGoblin
-    | PoisonGoblin
+    | MadMinotaur
     | FireGoblin
 
 type CharacterType =
@@ -635,6 +650,7 @@ type ArchetypeData =
       WeaponSubtype : WeaponSubtype
       ArmorSubtype : ArmorSubtype
       Techs : Map<int, TechType> // tech availability according to level
+      Stature : StatureType
       Description : string }
 
 type TechAnimationData =
@@ -659,14 +675,15 @@ type [<NoEquality; NoComparison>] ShopData =
     { ShopType : ShopType // key
       ShopItems : ItemType list }
 
-type [<NoEquality; NoComparison>] EnemyData =
-    { EnemyType : EnemyType // key
+type [<NoEquality; NoComparison>] EnemyDescriptor =
+    { EnemyType : EnemyType
       EnemyPosition : Vector2 }
 
 type [<NoEquality; NoComparison>] BattleData =
     { BattleType : BattleType // key
       BattleAllyPositions : Vector2 list
-      BattleEnemies : EnemyData list
+      BattleEnemiesRandom : EnemyType list
+      BattleEnemiesStatic : EnemyDescriptor list
       BattleTileMap : TileMap AssetTag
       BattleSongOpt : Song AssetTag option }
 

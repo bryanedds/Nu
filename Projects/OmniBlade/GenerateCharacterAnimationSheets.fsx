@@ -240,7 +240,7 @@ Directory.CreateDirectory "../../Art/Enemies/Walking/Out"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Bedeviler.png" (Some "../../Art/Enemies/Walking/BedevilerWalk.png") "../../Art/Enemies/Walking/Out/Bedeviler.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Cloak.png" (Some "../../Art/Enemies/Walking/CloakWalk.png") "../../Art/Enemies/Walking/Out/Cloak.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Dwarf.png" (Some "../../Art/Enemies/Walking/DwarfWalk.png") "../../Art/Enemies/Walking/Out/Dwarf.png"
-generateBattlerAnimationSheet "../../Art/Enemies/Walking/Elkman.png" (Some "../../Art/Enemies/Walking/ElkmanWalk.png") "../../Art/Enemies/Walking/Out/Elkman.png"
+generateBattlerAnimationSheet "../../Art/Enemies/Walking/Birdman.png" (Some "../../Art/Enemies/Walking/BirdmanWalk.png") "../../Art/Enemies/Walking/Out/Birdman.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Foxess.png" (Some "../../Art/Enemies/Walking/FoxessWalk.png") "../../Art/Enemies/Walking/Out/Foxess.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/General.png" (Some "../../Art/Enemies/Walking/GeneralWalk.png") "../../Art/Enemies/Walking/Out/General.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Goblin.png" (Some "../../Art/Enemies/Walking/GoblinWalk.png") "../../Art/Enemies/Walking/Out/Goblin.png"
@@ -263,7 +263,7 @@ generateBattlerAnimationSheet "../../Art/Enemies/Walking/Wolfman.png" (Some "../
 
 // generate non-walking enemy characters
 Directory.CreateDirectory "../../Art/Enemies/NonWalking/Out"
-generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/BeastMaster.png" None "../../Art/Enemies/NonWalking/Out/BeastMaster.png"
+generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/Feral.png" None "../../Art/Enemies/NonWalking/Out/Feral.png"
 generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/DuneBrigand.png" None "../../Art/Enemies/NonWalking/Out/DuneBrigand.png"
 generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/Sage.png" None "../../Art/Enemies/NonWalking/Out/Sage.png"
 generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/Splittah.png" None "../../Art/Enemies/NonWalking/Out/Splittah.png"
