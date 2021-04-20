@@ -203,8 +203,100 @@ module Battle =
     let prependActionCommand command battle =
          { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
+    let rec private tryRandomizeEnemy attempts enemy (layout : Either<unit, EnemyType option> array array) =
+        if attempts < 100 then
+            let (w, h) = (layout.Length, layout.[0].Length)
+            let (x, y) = (Gen.random1 w, Gen.random1 h)
+            match Data.Value.Characters.TryFind (Enemy enemy) with
+            | Some characterData ->
+                match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
+                | Some archetypeData ->
+                    match archetypeData.Stature with
+                    | SmallStature ->
+                        match layout.[x].[y] with
+                        | Left () -> layout.[x].[y] <- Right (Some enemy)
+                        | Right _ -> tryRandomizeEnemy (inc attempts) enemy layout
+                    | NormalStature ->
+                        if y < h - 1 then
+                            match (layout.[x].[y+0], layout.[x].[y+1]) with
+                            | (Left (), Left ()) ->
+                                layout.[x].[y+0] <- Right (Some enemy)
+                                layout.[x].[y+1] <- Right None
+                            | _ -> tryRandomizeEnemy (inc attempts) enemy layout
+                        else tryRandomizeEnemy (inc attempts) enemy layout
+                    | LargeStature ->
+                        if x > 0 || x < w - 1 || y > 0 || y < h - 1 then
+                            match // NOTE: this code could be dramatically improved with in-place array slicing.
+                                (layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1],
+                                 layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0],
+                                 layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1]) with
+                            |   (Left (), Left (), Left (),
+                                 Left (), Left (), Left (),
+                                 Left (), Left (), Left ()) ->
+                                layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None;         layout.[x+1].[y+1] <- Right None
+                                layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some enemy); layout.[x+1].[y+0] <- Right None
+                                layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None;         layout.[x+1].[y-1] <- Right None
+                            | _ -> tryRandomizeEnemy (inc attempts) enemy layout
+                        else tryRandomizeEnemy (inc attempts) enemy layout
+                    | HugeStature ->
+                        if x > 1 || x < w - 2 || y > 0 || y < h - 2 then 
+                            match // NOTE: this code could be dramatically improved with in-place array slicing.
+                                (layout.[x-2].[y+2], layout.[x-1].[y+2], layout.[x+0].[y+2], layout.[x+1].[y+2], layout.[x+2].[y+2],
+                                 layout.[x-2].[y+1], layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1], layout.[x+2].[y+1],
+                                 layout.[x-2].[y+0], layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0], layout.[x+2].[y+0],
+                                 layout.[x-2].[y-1], layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1], layout.[x+2].[y-1]) with
+                            |   (Left (), Left (), Left (), Left (), Left (),
+                                 Left (), Left (), Left (), Left (), Left (),
+                                 Left (), Left (), Left (), Left (), Left (),
+                                 Left (), Left (), Left (), Left (), Left ()) ->
+                                layout.[x-2].[y+2] <- Right None; layout.[x-1].[y+2] <- Right None; layout.[x+0].[y+2] <- Right None;         layout.[x+1].[y+2] <- Right None; layout.[x+2].[y+2] <- Right None
+                                layout.[x-2].[y+1] <- Right None; layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None;         layout.[x+1].[y+1] <- Right None; layout.[x+2].[y+1] <- Right None
+                                layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some enemy); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
+                                layout.[x-2].[y-1] <- Right None; layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None;         layout.[x+1].[y-1] <- Right None; layout.[x+2].[y-1] <- Right None
+                            | _ -> tryRandomizeEnemy (inc attempts) enemy layout
+                        else tryRandomizeEnemy (inc attempts) enemy layout
+                | None -> ()
+            | None -> ()
+        else Log.debug ("No enemy fit found for '" + scstring enemy + "' in layout.")
+
+    let private randomizeEnemyLayout w h enemies =
+        let layout = Array.init w (fun _ -> Array.init h (fun _ -> Left ()))
+        layout.[0].[0] <- Left () // don't put enemies in the corners
+        layout.[w-1].[0] <- Left ()
+        layout.[0].[h-1] <- Left ()
+        layout.[w-1].[h-1] <- Left ()
+        match enemies with
+        | [enemy] -> layout.[w/2].[h/2] <- Right (Some enemy) // just thrown single enemy in center
+        | _ -> List.iter (fun enemy -> tryRandomizeEnemy 0 enemy layout) enemies
+        layout
+
+    let private randomizeEnemies offsetCharacters enemies =
+        let (w, h) = (9, 7)
+        let origin = v2 -240.0f -192.0f
+        let tile = v2 48.0f 48.0f
+        let layout = randomizeEnemyLayout w h enemies
+        let enemies =
+            let mutable index = -1
+            layout |>
+            Array.mapi (fun x arr ->
+                Array.mapi (fun y enemyOpt ->
+                    match enemyOpt with
+                    | Left () -> None
+                    | Right None -> None
+                    | Right (Some enemy) ->
+                        index <- inc index
+                        let position = v2 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y)
+                        Character.tryMakeEnemy index offsetCharacters { EnemyType = enemy; EnemyPosition = position })
+                    arr) |>
+            Array.concat |>
+            Array.definitize |>
+            Array.toList
+        enemies
+
     let makeFromParty offsetCharacters inventory (prizePool : PrizePool) (party : Party) battleData time =
-        let enemies = battleData.BattleEnemies |> List.mapi (flip Character.tryMakeEnemy offsetCharacters) |> List.definitize
+        let enemiesRandom = randomizeEnemies offsetCharacters battleData.BattleEnemiesRandom
+        let enemiesStatic = battleData.BattleEnemiesStatic |> List.mapi (flip Character.tryMakeEnemy offsetCharacters) |> List.definitize
+        let enemies = enemiesRandom @ enemiesStatic
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
