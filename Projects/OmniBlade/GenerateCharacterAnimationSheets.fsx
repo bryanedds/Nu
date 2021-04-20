@@ -155,7 +155,7 @@ let copyBiCels x y rowDest (sourceImage : MagickImage) (targetImage : MagickImag
     copy width height (width * (x + 0)) (height * y) widthDest heightDest (widthDest * 6) (yOffset + heightDest * rowDest) sourceImage targetImage
     copy width height (width * (x + 1)) (height * y) widthDest heightDest (widthDest * 7) (yOffset + heightDest * rowDest) sourceImage targetImage
 
-let copyCels x y rowDest (sourceImage : MagickImage) (targetImage : MagickImage) metrics =
+let copyMonoCels x y rowDest (sourceImage : MagickImage) (targetImage : MagickImage) metrics =
     let width = metrics.WidthSource
     let height = metrics.HeightSource
     let widthDest = metrics.WidthDest
@@ -172,6 +172,13 @@ let copyCel x y rowDest (sourceImage : MagickImage) (targetImage : MagickImage) 
     let widthDest = metrics.WidthDest
     let heightDest = metrics.HeightDest
     copy width height (width * x) (height * y) widthDest heightDest (widthDest * 0) (heightDest * rowDest) sourceImage targetImage
+
+let flipCel x y rowDest (sourceImage : MagickImage) (targetImage : MagickImage) metrics =
+    let width = metrics.WidthSource
+    let height = metrics.HeightSource
+    let widthDest = metrics.WidthDest
+    let heightDest = metrics.HeightDest
+    flip width height (width * x) (height * y) widthDest heightDest (widthDest * 0) (heightDest * rowDest) sourceImage targetImage
 
 let generateBattlerAnimationSheet (sourceFilePath : string) (sourceFilePath2Opt : string option) (targetFilePath : string) =
     use stream = File.OpenWrite targetFilePath
@@ -192,9 +199,9 @@ let generateBattlerAnimationSheet (sourceFilePath : string) (sourceFilePath2Opt 
     copyTriCels 1 0 5 sourceImage targetImage metrics // ready
     copyTriCels 3 0 6 sourceImage targetImage metrics // attack
     copyBiCels 0 5 7 sourceImage targetImage metrics // casting
-    copyCels 0 4 8 sourceImage targetImage metrics // damage
-    copyCels 3 5 9 sourceImage targetImage metrics // defend
-    copyCel 6 5 11 sourceImage targetImage metrics // dead
+    copyMonoCels 0 4 8 sourceImage targetImage metrics // damage
+    copyMonoCels 3 5 9 sourceImage targetImage metrics // defend
+    copyMonoCels 6 5 11 sourceImage targetImage metrics // dead
     targetImage.Write (stream, MagickFormat.Png32)
 
 let generateWalkingOnlyAnimationSheet widthSource heightSource (sourceFilePath : string) (targetFilePath : string) =
@@ -210,10 +217,10 @@ let generateWalkingOnlyAnimationSheet widthSource heightSource (sourceFilePath :
     copyTriCels 0 0 5 sourceImage targetImage metrics // ready
     copyTriCels 0 0 6 sourceImage targetImage metrics // attack
     copyBiCels 0 0 7 sourceImage targetImage metrics // casting
-    copyCels 0 3 8 sourceImage targetImage metrics // damage
-    copyCels 0 3 9 sourceImage targetImage metrics // defend
+    copyMonoCels 0 3 8 sourceImage targetImage metrics // damage
+    copyMonoCels 0 3 9 sourceImage targetImage metrics // defend
     copyIdleCels 10 sourceImage targetImage metrics // idle
-    copyCel 0 3 11 sourceImage targetImage metrics // dead
+    copyMonoCels 0 3 11 sourceImage targetImage metrics // dead
     targetImage.Write (stream, MagickFormat.Png32)
 
 // generate ally characters
