@@ -316,6 +316,10 @@ module Battle =
     let makeFromTeam inventory prizePool (team : Map<int, Teammate>) battleData time =
         let party = team |> Map.toList |> List.tryTake 3
         let offsetCharacters = List.hasAtMost 1 party
+        let allyPositions =
+            if List.length party < 3
+            then List.take 2 battleData.BattleAllyPositions
+            else List.take 1 battleData.BattleAllyPositions @ List.skip 2 battleData.BattleAllyPositions
         let party =
             List.mapi
                 (fun index (teamIndex, teammate) ->
@@ -323,7 +327,7 @@ module Battle =
                     | Some characterData ->
                         // TODO: bounds checking
                         let size = Constants.Gameplay.CharacterSize
-                        let position = if offsetCharacters then battleData.BattleAllyPositions.[teamIndex] + Constants.Battle.CharacterOffset else battleData.BattleAllyPositions.[teamIndex]
+                        let position = if offsetCharacters then allyPositions.[teamIndex] + Constants.Battle.CharacterOffset else allyPositions.[teamIndex]
                         let bounds = v4Bounds position size
                         let characterIndex = AllyIndex teamIndex
                         let characterType = characterData.CharacterType
