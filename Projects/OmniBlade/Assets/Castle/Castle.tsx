@@ -104,6 +104,21 @@
    <property name="C" value=""/>
   </properties>
  </tile>
+ <tile id="700">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="701">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="702">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
  <tile id="704">
   <properties>
    <property name="C" value=""/>
@@ -134,6 +149,21 @@
    <property name="C" value=""/>
   </properties>
  </tile>
+ <tile id="751">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="752">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="753">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
  <tile id="755">
   <properties>
    <property name="C" value=""/>
@@ -145,6 +175,21 @@
   </properties>
  </tile>
  <tile id="801">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="802">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="803">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="804">
   <properties>
    <property name="C" value=""/>
   </properties>

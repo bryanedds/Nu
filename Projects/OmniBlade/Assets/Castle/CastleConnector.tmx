@@ -4,7 +4,7 @@
  <tileset firstgid="1480" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0aERACAQBLEb3Dto6fsvigowOJiIiNXbI2l4yKpk1rn5m/8AAHBnA17WDrw=
+   eJzt0qENACAQBMEL7h209P0XRQUISHAjRqzfHknDhVXJrHPDT/4DAIA3GwnWDrw=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">

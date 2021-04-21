@@ -24,18 +24,18 @@ type [<ReferenceEquality; NoComparison>] MenuUse =
         MenuUse.make selection prompt effect
 
     static member makeFromWeaponData selection (wd : WeaponData) =
-        let prompt = "Equip " + wd.WeaponType + " to whom?"
+        let prompt = "Equip " + string wd.WeaponType + " to whom?"
         let stats = "(Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + ")"
         MenuUse.make selection prompt stats
 
     static member makeFromArmorData selection (ad : ArmorData) =
-        let prompt = "Equip " + ad.ArmorType + " to whom?"
+        let prompt = "Equip " + string ad.ArmorType + " to whom?"
         let stats = "(HP: " + string ad.HitPointsBase + " | TP: " + string ad.TechPointsBase + ")"
         MenuUse.make selection prompt stats
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
-        let prompt = "Equip " + ad.AccessoryType + " to whom?"
-        let stats = "(Blk: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + ")"
+        let prompt = "Equip " + string ad.AccessoryType + " to whom?"
+        let stats = "(Shd: " + string ad.ShieldBase + " | Ctr: " + string ad.CounterBase + ")"
         MenuUse.make selection prompt stats
 
     static member tryMakeFromSelection selection =

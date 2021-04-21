@@ -14,11 +14,11 @@ module SpiritOrbDispatcher =
     type [<ReferenceEquality; NoComparison>] SpiritOrb =
         { AvatarLowerCenter : Vector2
           Spirits : Spirit array
-          Chests : Vector2 array }
+          Chests : Chest array }
 
     type [<NoEquality; NoComparison>] SpiritOrbInhabitant =
         | SpiritInhabitant of Spirit
-        | ChestInhabitant of Vector2
+        | ChestInhabitant of Chest
 
     type Entity with
         member this.GetSpiritOrb = this.GetModel<SpiritOrb>
@@ -34,7 +34,10 @@ module SpiritOrbDispatcher =
                 let (position, image, color) =
                     match inhabitant with
                     | SpiritInhabitant spirit -> (spirit.Position, Assets.Field.SpiritImage, SpiritType.getColor spirit.SpiritType)
-                    | ChestInhabitant position -> (position, Assets.Field.SpiritChestImage, colWhite.WithA (byte 127))
+                    | ChestInhabitant chest ->
+                        let image = if chest.Opened then Assets.Field.SpiritChestOpenedImage else Assets.Field.SpiritChestClosedImage
+                        let color = colWhite.WithA (byte 127)
+                        (chest.Center, image, color)
                 let delta = position - avatarLowerCenter
                 let distance = delta.Length ()
                 if distance < Constants.Field.SpiritRadius then

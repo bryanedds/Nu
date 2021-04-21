@@ -157,6 +157,7 @@ module PropDispatcher =
                                 | EildaenNpc -> (2, 0)
                                 | ShamanaNpc -> (3, 0)
                                 | FireGoblinNpc -> (4, 0)
+                                | HeavyArmorosNpc -> (5, 0)
                             let column = column + CharacterAnimationState.directionToInt direction
                             let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
                             let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize

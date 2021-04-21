@@ -3,21 +3,21 @@
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztwwEJAAAMA6DByy/2ehwFe0lVVVXV1wdg6ywf
+   eJztzaEJAAAIADDB5y3+7BciuLC8yogCAF7pZdd+APhoAKBTLTc=
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJwTZWJgEB3Fo3gUj+IRiPNZ6YvTWVHtP0hnXIDmhi90xnvQ3KDOTF/8HuqGDKj99AZKUDcMlP0wNwyk/SAwkPZnAe1OGSD7ke0G4TRW+mJku0fxKB7Fo3gUj1wMAN4ql4w=
+   eJztzsEJgDAMhWFROoILKOJiouJFB7RIJ7KIA9hgBM2lPbUHX+CDHAJ/yjzLSgCAH5pVXIP69g3TzHhoIfSe9s1ZxA8ns+z0sELoPe2Hs4of2uJWs9ajFkLvaW+cnX8YuR97Kv4hVf/5IWWfJmV/cu0uUf/dJr2K690GAID/ugD4tpcm
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="3" gid="235" x="1344" y="864" width="48" height="48">
+  <object id="3" gid="235" x="1296" y="912" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="1344" y="768" width="48" height="48">
+  <object id="4" gid="235" x="1296" y="768" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>

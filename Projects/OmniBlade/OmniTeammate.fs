@@ -15,9 +15,9 @@ type [<ReferenceEquality; NoComparison>] Teammate =
       HitPoints : int
       TechPoints : int
       ExpPoints : int
-      WeaponOpt : string option
-      ArmorOpt : string option
-      Accessories : string list }
+      WeaponOpt : WeaponType option
+      ArmorOpt : ArmorType option
+      Accessories : AccessoryType list }
 
     member this.Name = CharacterType.getName this.CharacterType
     member this.Level = Algorithms.expPointsToLevel this.ExpPoints

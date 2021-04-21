@@ -11,9 +11,9 @@ open Nu
 type [<ReferenceEquality; NoComparison>] CharacterState =
     { ArchetypeType : ArchetypeType
       ExpPoints : int
-      WeaponOpt : string option
-      ArmorOpt : string option
-      Accessories : string list
+      WeaponOpt : WeaponType option
+      ArmorOpt : ArmorType option
+      Accessories : AccessoryType list
       HitPoints : int
       TechPoints : int
       Statuses : Map<StatusType, int>
@@ -96,8 +96,8 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Defending = false
               Charging = false
               TechProbabilityOpt = characterData.TechProbabilityOpt
-              GoldPrize = Algorithms.goldPrize characterData.GoldScalar level
-              ExpPrize = Algorithms.expPrize characterData.ExpScalar level }
+              GoldPrize = Algorithms.goldPrize archetypeType characterData.GoldScalar level
+              ExpPrize = Algorithms.expPrize archetypeType characterData.ExpScalar level }
         characterState
 
     static member empty =
@@ -122,6 +122,9 @@ type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
       AnimationSheet : Image AssetTag
       CharacterAnimationType : CharacterAnimationType
       Direction : Direction }
+
+    static member face direction state =
+        { state with Direction = direction }
 
     static member setCharacterAnimationType timeOpt characterAnimationType state =
         if state.CharacterAnimationType <> characterAnimationType then
@@ -505,6 +508,9 @@ module Character =
         let characterState = { characterState with Defending = false }
         { character with CharacterState_ = characterState }
 
+    let face direction character =
+        { character with CharacterAnimationState_ = CharacterAnimationState.face direction character.CharacterAnimationState_ }
+
     let animate time characterAnimationType character =
         { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
 
@@ -529,7 +535,7 @@ module Character =
             let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
             let bounds = v4Bounds position size
             let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
-            let techPoints = Algorithms.techPointsMax characterData.WeaponOpt archetypeType characterData.LevelBase
+            let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
             let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
             let characterType = characterData.CharacterType
             let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories

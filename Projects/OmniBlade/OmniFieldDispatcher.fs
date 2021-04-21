@@ -98,9 +98,7 @@ module FieldDispatcher =
                 match prop with
                 | Portal (_, _, _, _, _, _, _) -> None
                 | Door _ -> Some "Open"
-                | Chest (_, _, chestId, _, _, _) ->
-                    if Set.contains (Opened chestId) advents then None
-                    else Some "Open"
+                | Chest (_, _, chestId, _, _, _) -> if Set.contains (Opened chestId) advents then None else Some "Open"
                 | Switch (_, _, _, _) -> Some "Use"
                 | Sensor (_, _, _, _, _) -> None
                 | Npc _ | NpcBranching _ -> Some "Talk"
@@ -965,7 +963,7 @@ module FieldDispatcher =
                  Content.entityIf field (fun field _ -> Field.hasEncounters field) $ fun field world ->
                     Content.entity<SpiritOrbDispatcher> Gen.name
                         [Entity.Position == v2 -448.0f 48.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v2 192.0f 192.0f
-                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChestCenters field world }]
+                         Entity.SpiritOrb <== field --> fun field -> { AvatarLowerCenter = field.Avatar.LowerCenter; Spirits = field.Spirits; Chests = Field.getChests field world }]
 
                  // dialog
                  Content.entityIf field (fun field _ -> Option.isSome field.DialogOpt) $ fun field _ ->
@@ -1016,7 +1014,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "W: " + Option.getOrDefault "None" teammate.WeaponOpt
+                                   | Some teammate -> "W: " + Option.mapOrDefault string "None" teammate.WeaponOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1025,7 +1023,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "A: " + Option.getOrDefault "None" teammate.ArmorOpt
+                                   | Some teammate -> "A: " + Option.mapOrDefault string "None" teammate.ArmorOpt
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1034,7 +1032,7 @@ module FieldDispatcher =
                                match field.Menu.MenuState with
                                | MenuTeam menu ->
                                    match MenuTeam.tryGetTeammate field.Team menu with
-                                   | Some teammate -> "1: " + Option.getOrDefault "None" (List.tryHead teammate.Accessories)
+                                   | Some teammate -> "1: " + Option.mapOrDefault string "None" (List.tryHead teammate.Accessories)
                                    | None -> ""
                                | _ -> ""]
                         Content.text Gen.name
@@ -1050,9 +1048,12 @@ module FieldDispatcher =
                                        let tpm = Algorithms.techPointsMax teammate.ArmorOpt characterData.ArchetypeType level
                                        let pow = Algorithms.power teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
                                        let mag = Algorithms.magic teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
-                                       "HP  "   + (string teammate.HitPoints).PadLeft 3 + "/" + (string hpm).PadLeft 3 +
-                                       "\nTP  " + (string teammate.TechPoints).PadLeft 3 + "/" + (string tpm).PadLeft 3 +
+                                       let def = Algorithms.shield Physical teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
+                                       let abs = Algorithms.shield Magical teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
+                                       "HP  "   + (string teammate.HitPoints).PadLeft 3 + " /" + (string hpm).PadLeft 3 +
+                                       "\nTP  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string tpm).PadLeft 3 +
                                        "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
+                                       "\nDef " + (string def).PadLeft 3 + "   Abs " + (string abs).PadLeft 3 +
                                        "\nExp " + (string teammate.ExpPoints).PadLeft 3 + "/" + (string (Algorithms.expPointsForNextLevel teammate.ExpPoints)).PadLeft 3
                                    | None -> ""
                                | _ -> ""]]

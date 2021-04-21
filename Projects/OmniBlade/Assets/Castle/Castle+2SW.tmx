@@ -3,21 +3,21 @@
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztwwEJAAAMA6DByy/2ehwFe0lVVVXV1wdg6ywf
+   eJzt0LEJACAMAMGAy6fJzjYuYJMoXPH1weeKSEnX1YnP5/N/9Ku51/zp/3w+n8/nT/gbpo0uJw==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlEEKwjAQRUslR+gFutGz6DVEpaK29+umXqibdu+EJBAGGyZZzCjMhwfZTN5s5jd1VTUFnICXcRwL/yjlDs4BmGpHD++r4XW/4b14RsYdHt69AvudY/Y73Jj81n0Ab0jrd+Dyx+54By7/VtT/f/7QYVSGhL8nzOOOmDKxt7+VkTCPe2rJZE34Z8I87srQYVS+3X5IS5jHXckd3JUSibtSKpL+DtxnIX/stlxMHs9E/3SE+dj9C/2rfvWrX/3ql/F/ADkhmJM=
+   eJztlEEKwjAQRUtKjtALVETPotcQlYra3q8ieqGK6N4pmYEhNCFmkSjMhwchJHmzya9UUVQRrIGzNqwi34jlAM4OuChDC+udTuu+w/qB9AlnOKL7DcxKw4Az7BP5R/cSvJQaZ0jl524+Qyq/K+L/Pz91WCidx98G3Lc74uaAuo3vXZX5+670eMb3ht1TLwfUbXzvqczfd2XAM7437K5clNNQt/G9eTn99yk1nvG9YXdl6thdmSO8K3Mlp78B9yaTn7tHtvo7Tp7+aQLuc/cv9K/4xS9+8Ys/j/8DjN2YPw==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="3" gid="235" x="768" y="240" width="48" height="48">
+  <object id="3" gid="235" x="768" y="288" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="1392" y="816" width="48" height="48">
+  <object id="4" gid="235" x="1344" y="816" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
