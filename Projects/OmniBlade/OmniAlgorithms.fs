@@ -137,12 +137,12 @@ module Algorithms =
             | Some archetypeData -> (archetypeData.Toughness, archetypeData.Intelligence)
             | None -> (1.0f, 1.0f)
         let intermediate =
-            match accessories with
-            | accessory :: _ -> // just the first accessory for now
+            match Seq.tryHead accessories with
+            | Some accessory -> // just the first accessory for now
                 match Map.tryFind accessory Data.Value.Accessories with
                 | Some accessoryData -> single accessoryData.ShieldBase
                 | None -> 0.0f
-            | _ -> 0.0f
+            | None -> 0.0f
         let scalar = match effectType with Magical -> intelligence * 0.5f | Physical -> toughness * 0.5f
         (intermediate + single level) * shieldBuff * scalar |> int |> max 0
 
@@ -155,10 +155,18 @@ module Algorithms =
         | Some index -> techs |> Map.toList |> List.take (inc index) |> List.map snd |> Set.ofList
         | None -> Set.empty
 
-    let goldPrize scalar (level : int) =
+    let goldPrize archetypeType scalar (level : int) =
+        let wealth =
+            match Map.tryFind archetypeType Data.Value.Archetypes with
+            | Some archetypeData -> archetypeData.Wealth
+            | None -> 1.0f
         let algo = single level * 1.5f
-        int (algo * scalar)
+        int (wealth * scalar * algo)
 
-    let expPrize scalar (level : int) =
+    let expPrize archetypeType scalar (level : int) =
+        let mythos =
+            match Map.tryFind archetypeType Data.Value.Archetypes with
+            | Some archetypeData -> archetypeData.Mythos
+            | None -> 1.0f
         let algo = single level * 1.5f
-        int (algo * scalar)
+        int (mythos * scalar * algo)

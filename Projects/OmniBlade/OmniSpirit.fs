@@ -18,16 +18,16 @@ type [<NoEquality; NoComparison>] SpiritPattern =
     | Disinterested
     | Confused
     | Curious
-    | Ambushing
     | Stalking
+    | Ambushing
 
     static member fromInt i =
         match i with
         | 0 -> Disinterested
         | 1 -> Curious
         | 2 -> Confused
-        | 3 -> Ambushing
-        | 4 -> Stalking
+        | 3 -> Stalking
+        | 4 -> Ambushing
         | _ -> failwithumf ()
 
     static member random () =

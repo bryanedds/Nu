@@ -1,11 +1,15 @@
 Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Accessories,TechProbabilityOpt,GoldScalar,ExpScalar,Description
-[Ally Jinn],Fighter,3,[Field Jinn],[Some [Field JinnPortrait]],[Some OakSword],[Some TinMail],[],None,1,1,The main protagonist.
-[Ally Garrou],Brawler,3,[Field Garrou],[Some [Field GarrouPortrait]],[Some StoneSword],[Some TinMail],[],None,1,1,A gray knight from an unknown kingdom.
-[Ally Mael],Wizard,3,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A dark wizard from the Caelia.
-[Ally Riain],Conjuror,3,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A conjuror whose origin eludes all.
-[Ally Peric],Cleric,3,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,1,1,A cleric exiled from the Kingdom of Vorpa.
+[Ally Jinn],Fighter,3,[Field Jinn],[Some [Field JinnPortrait]],[Some ShortSword],[Some TinMail],[],None,1,1,The main protagonist.
+[Ally Garrou],Brawler,1,[Field Garrou],[Some [Field GarrouPortrait]],[Some LongSword],[Some TinMail],[],None,1,1,A gray knight from an unknown kingdom.
+[Ally Mael],Wizard,1,[Field Mael],[Some [Field MaelPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A dark wizard from the Caelia.
+[Ally Riain],Conjuror,1,[Field Riain],[Some [Field RiainPortrait]],[Some OakRod],[Some CottonRobe],[],None,1,1,A conjuror whose origin eludes all.
+[Ally Peric],Cleric,1,[Field Peric],[Some [Field PericPortrait]],[Some OakBow],[Some CottonVest],[],None,1,1,A cleric exiled from the Kingdom of Vorpa.
 [Enemy DebugGoblin],Goblin,1,[Field DebugGoblin],None,None,[Some ThickFur],[],[Some 0.5],1,1,An enemy for battle debugging.
-[Enemy DarkBat],Bat,1,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.25],1,1,A bat from the darkest parts of the tomb.
-[Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],None,[],[Some 0.25],1,1,A minor goblin from the Golobogos Islands.
-[Enemy MadMinotaur],Minotaur,2,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.25],1,1,A minotaur gone mad with vengeance.
-[Enemy FireGoblin],Goblin,7,[Castle FireGoblin],None,[Some Paws],[Some ThickFur],[],[Some 0.25],2,2,A goblin borne from the Golobogos Volcano.
+[Enemy DarkBat],Bat,2,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.25],1,1,A bat from the darkest parts of the tomb.
+[Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],[Some ThinFur],[],[Some 0.333],1,1,A minor goblin from the Golobogos Islands.
+[Enemy MadMinotaur],Minotaur,2,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.333],1,1,A minotaur gone mad with vengeance.
+[Enemy FireGoblin],Goblin,7,[Castle FireGoblin],None,[Some Paws],[Some ThickFur],[],[Some 0.333],2,2,A goblin borne from the Golobogos Volcano.
+[Enemy PoisonGorgon],Gorgon,3,[Castle PoisonGorgon],None,[Some Paws],None,[],[Some 0.25],1,1,A poisonous gorgon.
+[Enemy FacelessSoldier],Fighter,6,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.25],1,1,A soldier whose face is long forgotten.
+[Enemy Hawk],Avian,6,[Castle Hawk],None,[Some Paws],None,[],[Some 0.333],1,1,A vengeful avian.
+[Enemy HeavyArmoros],Armoros,11,[Castle HeavyArmoros],None,[Some Paws],[Some ThickFur],[],[Some 0.333],2,2,The heaviest armoros you’ve ever seen!

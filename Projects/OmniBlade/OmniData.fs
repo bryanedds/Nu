@@ -34,6 +34,7 @@ type Advent =
     | RiainRecruited
     | PericRecruited
     | FireGoblinDefeated
+    | HeavyArmorosDefeated
     | CastleUnsealed
     | ForestUnsealed
     | FactoryUnsealed
@@ -133,10 +134,57 @@ type [<CustomEquality; CustomComparison>] StatusType =
     override this.GetHashCode () =
         StatusType.enumerate this
 
+type WeaponType =
+    | ShortSword
+    | LongSword
+    | OakRod
+    | OakBow
+    | Paws
+    | BronzeSword
+    | HeavySword
+    | BronzeRod
+    | LightBow
+    | Claws
+    | IronSword
+    | BroadSword
+    | SightedBow
+    | IvoryRod
+    | Fangs
+
+type ArmorType =
+    | TinMail
+    | CottonVest
+    | CottonRobe
+    | ThinFur
+    | BronzeMail
+    | LeatherVest
+    | LeatherRobe
+    | ThickFur
+    | IronMail
+    | RubberVest
+    | SilkRobe
+    | ToughHide
+
+type AccessoryType =
+    | LeatherBrace
+
+type WeaponSubtype =
+    | Melee
+    | Sword
+    | Heavesword
+    | Rod
+    | Bow
+
+type ArmorSubtype =
+    | Robe
+    | Vest
+    | Mail
+    | Pelt
+
 type EquipmentType =
-    | WeaponType of string
-    | ArmorType of string
-    | AccessoryType of string // TODO: might want to make this a static type since many accessories will involve custom coding.
+    | WeaponType of WeaponType
+    | ArmorType of ArmorType
+    | AccessoryType of AccessoryType
 
 type ConsumableType =
     | GreenHerb
@@ -160,7 +208,7 @@ type ItemType =
     static member getName item =
         match item with
         | Consumable ty -> string ty
-        | Equipment ty -> match ty with WeaponType name | ArmorType name | AccessoryType name -> name
+        | Equipment ty -> match ty with WeaponType ty -> string ty | ArmorType ty -> string ty | AccessoryType ty -> string ty
         | KeyItem ty -> string ty
         | Stash gold -> string gold + "G"
 
@@ -295,19 +343,6 @@ type ArchetypeType =
     | RobotBig
     | Dinoman
 
-type WeaponSubtype =
-    | Melee
-    | Sword
-    | Heavesword
-    | Rod
-    | Bow
-
-type ArmorSubtype =
-    | Robe
-    | Vest
-    | Mail
-    | Pelt
-
 type ShopType =
     | Chemist
     | Armory
@@ -361,14 +396,22 @@ type BattleType =
     | CastleBattle7
     | CastleBattle8
     | CastleBattle9
-    | CastleBattle10
-    | CastleBattle11
-    | CastleBattle12
     | FireGoblinBattle
+    | Castle2Battle
+    | Castle2Battle2
+    | Castle2Battle3
+    | Castle2Battle4
+    | Castle2Battle5
+    | Castle2Battle6
+    | Castle2Battle7
+    | Castle2Battle8
+    | Castle2Battle9
+    | HeavyArmorosBattle
 
 type EncounterType =
     | DebugEncounter
     | CastleEncounter
+    | Castle2Encounter
 
 type LockType =
     | BrassKey
@@ -406,6 +449,7 @@ type NpcType =
     | EildaenNpc
     | ShamanaNpc
     | FireGoblinNpc
+    | HeavyArmorosNpc
     
     static member exists advents specialty =
         match specialty with
@@ -414,6 +458,7 @@ type NpcType =
         | RiainNpc -> not (Set.contains RiainRecruited advents)
         | PericNpc -> not (Set.contains PericRecruited advents)
         | FireGoblinNpc -> not (Set.contains FireGoblinDefeated advents)
+        | HeavyArmorosNpc -> not (Set.contains HeavyArmorosDefeated advents)
         | RavelNpc | AdvenNpc | EildaenNpc | ShamanaNpc -> true
 
 type ShopkeepType =
@@ -474,6 +519,10 @@ type EnemyType =
     | BlueGoblin
     | MadMinotaur
     | FireGoblin
+    | PoisonGorgon
+    | FacelessSoldier
+    | Hawk
+    | HeavyArmoros
 
 type CharacterType =
     | Ally of AllyType
@@ -488,14 +537,12 @@ type [<NoEquality; NoComparison>] SpiritType =
     | WeakSpirit
     | NormalSpirit
     | StrongSpirit
-    | GreatSpirit
 
     static member getColor spiritType =
         match spiritType with
         | WeakSpirit -> Color (byte 255, byte 255, byte 255, byte 127)
-        | NormalSpirit -> Color (byte 159, byte 159, byte 255, byte 127)
-        | StrongSpirit -> Color (byte 255, byte 159, byte 255, byte 127)
-        | GreatSpirit -> Color (byte 255, byte 159, byte 159, byte 127)
+        | NormalSpirit -> Color (byte 255, byte 199, byte 199, byte 127)
+        | StrongSpirit -> Color (byte 255, byte 149, byte 149, byte 127)
 
 type [<NoEquality; NoComparison>] CueTarget =
     | AvatarTarget // (field only)
@@ -584,7 +631,7 @@ module OmniSeedState =
 type OmniSeedState = OmniSeedState.OmniSeedState
 
 type WeaponData =
-    { WeaponType : string // key
+    { WeaponType : WeaponType // key
       WeaponSubtype : WeaponSubtype
       PowerBase : int
       MagicBase : int
@@ -592,7 +639,7 @@ type WeaponData =
       Description : string }
 
 type ArmorData =
-    { ArmorType : string // key
+    { ArmorType : ArmorType // key
       ArmorSubtype : ArmorSubtype
       HitPointsBase : int
       TechPointsBase : int
@@ -600,7 +647,7 @@ type ArmorData =
       Description : string }
 
 type AccessoryData =
-    { AccessoryType : string // key
+    { AccessoryType : AccessoryType // key
       ShieldBase : int
       CounterBase : int
       Cost : int
@@ -682,8 +729,7 @@ type [<NoEquality; NoComparison>] EnemyDescriptor =
 type [<NoEquality; NoComparison>] BattleData =
     { BattleType : BattleType // key
       BattleAllyPositions : Vector2 list
-      BattleEnemiesRandom : EnemyType list
-      BattleEnemiesStatic : EnemyDescriptor list
+      BattleEnemies : EnemyType list
       BattleTileMap : TileMap AssetTag
       BattleSongOpt : Song AssetTag option }
 
@@ -697,9 +743,9 @@ type [<NoEquality; NoComparison>] CharacterData =
       LevelBase : int
       AnimationSheet : Image AssetTag
       PortraitOpt : Image AssetTag option
-      WeaponOpt : string option
-      ArmorOpt : string option
-      Accessories : string list
+      WeaponOpt : WeaponType option
+      ArmorOpt : ArmorType option
+      Accessories : AccessoryType list
       TechProbabilityOpt : single option
       GoldScalar : single
       ExpScalar : single
@@ -884,13 +930,11 @@ module FieldData =
                     | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
                     | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
                     | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
-                let battleIndex = int (4.0f / distanceFromOriginMax * distanceFromOrigin)
+                let battleIndex = int (3.0f / distanceFromOriginMax * distanceFromOrigin)
                 match battleIndex with
                 | 0 -> Some WeakSpirit
                 | 1 -> Some NormalSpirit
-                | 2 -> Some StrongSpirit
-                | 3 -> Some GreatSpirit
-                | _ -> Some GreatSpirit
+                | _ -> Some StrongSpirit
             | FieldConnector _ -> None
             | FieldStatic _ -> None
         | None -> None
@@ -899,9 +943,9 @@ module FieldData =
 module Data =
 
     type [<NoEquality; NoComparison>] OmniData =
-        { Weapons : Map<string, WeaponData>
-          Armors : Map<string, ArmorData>
-          Accessories : Map<string, AccessoryData>
+        { Weapons : Map<WeaponType, WeaponData>
+          Armors : Map<ArmorType, ArmorData>
+          Accessories : Map<AccessoryType, AccessoryData>
           Consumables : Map<ConsumableType, ConsumableData>
           Techs : Map<TechType, TechData>
           Archetypes : Map<ArchetypeType, ArchetypeData>

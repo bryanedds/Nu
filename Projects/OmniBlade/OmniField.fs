@@ -104,10 +104,10 @@ module Field =
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
-    let getChestCenters field world =
+    let getChests field world =
         getPropStates field world |>
         Map.toValueArray |>
-        Array.choose (function ChestState (bounds, id) -> (if field.Advents.Contains (Opened id) then None else Some bounds.Center) | _ -> None)
+        Array.choose (function ChestState (bounds, id) -> Some (Chest.make bounds (field.Advents.Contains (Opened id))) | _ -> None)
 
     let updateFieldType updater field =
         { field with
@@ -216,7 +216,6 @@ module Field =
                                 | WeakSpirit -> encounterData.BattleTypes.[Gen.random2 0 3]
                                 | NormalSpirit -> encounterData.BattleTypes.[Gen.random2 3 6]
                                 | StrongSpirit -> encounterData.BattleTypes.[Gen.random2 6 9]
-                                | GreatSpirit -> encounterData.BattleTypes.[Gen.random2 9 12]
                             match Data.Value.Battles.TryGetValue battleType with
                             | (true, battleData) ->
                                 let field = { field with Spirits_ = [||] }

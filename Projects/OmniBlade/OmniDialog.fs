@@ -49,7 +49,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                 | Some dialog ->
                     match dialog.DialogForm with
                     | DialogThin -> v4Bounds (v2 -432.0f 150.0f) (v2 864.0f 90.0f)
-                    | DialogThick -> v4Bounds (v2 -432.0f 0.0f) (v2 864.0f 252.0f)
+                    | DialogThick -> v4Bounds (v2 -432.0f 60.0f) (v2 864.0f 192.0f)
                 | None -> v4Zero
              Entity.Elevation == elevation
              Entity.BackgroundImageOpt <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->

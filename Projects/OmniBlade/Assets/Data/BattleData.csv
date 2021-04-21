@@ -1,15 +1,22 @@
-Type,BattleAllyPositions,BattleEnemiesRandom,BattleEnemiesStatic,BattleBackground,BattleSongOpt
-DebugBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[],[[DebugGoblin [48 -84]] [DebugGoblin [-168 -120]] [DebugGoblin [-60 60]]],[Field DebugBattle],[Some [Battle Battle]]
-CastleBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat],[],[Castle CastleBattle],None
-CastleBattle2,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat DarkBat],[],[Castle CastleBattle],None
-CastleBattle3,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin],[],[Castle CastleBattle],None
-CastleBattle4,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat DarkBat DarkBat],[],[Castle CastleBattle],None
-CastleBattle5,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin BlueGoblin],[],[Castle CastleBattle],None
-CastleBattle6,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin DarkBat DarkBat],[],[Castle CastleBattle],None
-CastleBattle7,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur],[],[Castle CastleBattle],None
-CastleBattle8,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin BlueGoblin BlueGoblin],[],[Castle CastleBattle],None
-CastleBattle9,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin DarkBat DarkBat DarkBat],[],[Castle CastleBattle],None
-CastleBattle10,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur BlueGoblin DarkBat],[],[Castle CastleBattle],None
-CastleBattle11,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur BlueGoblin BlueGoblin],[],[Castle CastleBattle],None
-CastleBattle12,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur DarkBat DarkBat DarkBat],[],[Castle CastleBattle],None
-FireGoblinBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[],[[MadMinotaur [48 -48]] [MadMinotaur [-96 -96]] [FireGoblin [-216 -12]]],[Castle CastleBattle],[Some [Battle Battle]]
+Type,BattleAllyPositions,BattleEnemies,BattleBackground,BattleSongOpt
+DebugBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DebugGoblin DebugGoblin DebugGoblin DebugGoblin DebugGoblin],[Field DebugBattle],[Some [Battle Battle]]
+CastleBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat],[Castle CastleBattle],None
+CastleBattle2,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat DarkBat],[Castle CastleBattle],None
+CastleBattle3,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin DarkBat],[Castle CastleBattle],None
+CastleBattle4,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat DarkBat DarkBat DarkBat],[Castle CastleBattle],None
+CastleBattle5,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin BlueGoblin],[Castle CastleBattle],None
+CastleBattle6,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin DarkBat DarkBat],[Castle CastleBattle],None
+CastleBattle7,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur DarkBat DarkBat DarkBat],[Castle CastleBattle],None
+CastleBattle8,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur BlueGoblin DarkBat DarkBat],[Castle CastleBattle],None
+CastleBattle9,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur MadMinotaur],[Castle CastleBattle],None
+FireGoblinBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur MadMinotaur FireGoblin],[Castle CastleBattle],[Some [Battle Battle]]
+Castle2Battle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[PoisonGorgon],[Castle CastleBattle],None
+Castle2Battle2,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[PoisonGorgon PoisonGorgon],[Castle CastleBattle],None
+Castle2Battle3,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[FacelessSoldier],[Castle CastleBattle],None
+Castle2Battle4,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[PoisonGorgon PoisonGorgon PoisonGorgon PoisonGorgon],[Castle CastleBattle],None
+Castle2Battle5,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[FacelessSoldier FacelessSoldier],[Castle CastleBattle],None
+Castle2Battle6,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[FacelessSoldier PoisonGorgon PoisonGorgon],[Castle CastleBattle],None
+Castle2Battle7,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Hawk PoisonGorgon PoisonGorgon PoisonGorgon],[Castle CastleBattle],None
+Castle2Battle8,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Hawk FacelessSoldier PoisonGorgon PoisonGorgon],[Castle CastleBattle],None
+Castle2Battle9,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Hawk Hawk],[Castle CastleBattle],None
+HeavyArmorosBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[HeavyArmoros PoisonGorgon PoisonGorgon PoisonGorgon PoisonGorgon],[Castle CastleBattle],[Some [Battle Battle]]

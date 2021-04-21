@@ -201,7 +201,7 @@ let generateBattlerAnimationSheet (sourceFilePath : string) (sourceFilePath2Opt 
     copyBiCels 0 5 7 sourceImage targetImage metrics // casting
     copyMonoCels 0 4 8 sourceImage targetImage metrics // damage
     copyMonoCels 3 5 9 sourceImage targetImage metrics // defend
-    copyMonoCels 6 5 11 sourceImage targetImage metrics // dead
+    copyMonoCels 6 5 11 sourceImage targetImage { metrics with YOffset = 0 } // dead
     targetImage.Write (stream, MagickFormat.Png32)
 
 let generateWalkingOnlyAnimationSheet widthSource heightSource (sourceFilePath : string) (targetFilePath : string) =
@@ -220,7 +220,7 @@ let generateWalkingOnlyAnimationSheet widthSource heightSource (sourceFilePath :
     copyMonoCels 0 3 8 sourceImage targetImage metrics // damage
     copyMonoCels 0 3 9 sourceImage targetImage metrics // defend
     copyIdleCels 10 sourceImage targetImage metrics // idle
-    copyMonoCels 0 3 11 sourceImage targetImage metrics // dead
+    copyMonoCels 0 0 11 sourceImage targetImage metrics // dead
     targetImage.Write (stream, MagickFormat.Png32)
 
 // generate ally characters
@@ -278,7 +278,10 @@ generateBattlerAnimationSheet "../../Art/Enemies/NonWalking/Splittah.png" None "
 // generate walking-only enemy characters
 Directory.CreateDirectory "../../Art/Enemies/WalkingOnly/Out"
 generateWalkingOnlyAnimationSheet 48 48 "../../Art/Enemies/WalkingOnly/144x192/Hawk.png" "../../Art/Enemies/WalkingOnly/Out/Hawk.png"
-generateWalkingOnlyAnimationSheet 48 48 "../../Art/Enemies/WalkingOnly/144x192/Phoenix.png" "../../Art/Enemies/WalkingOnly/Out/Phoenix.png"
+generateWalkingOnlyAnimationSheet 52 53 "../../Art/Enemies/WalkingOnly/156x212/Gorgon.png" "../../Art/Enemies/WalkingOnly/Out/Gorgon.png"
+generateWalkingOnlyAnimationSheet 60 64 "../../Art/Enemies/WalkingOnly/180x256/Apparition.png" "../../Art/Enemies/WalkingOnly/Out/Apparition.png"
 generateWalkingOnlyAnimationSheet 60 64 "../../Art/Enemies/WalkingOnly/180x256/Bat.png" "../../Art/Enemies/WalkingOnly/Out/Bat.png"
+generateWalkingOnlyAnimationSheet 47 50 "../../Art/Enemies/WalkingOnly/141x200/Armoros.png" "../../Art/Enemies/WalkingOnly/Out/Armoros.png"
+generateWalkingOnlyAnimationSheet 47 50 "../../Art/Enemies/WalkingOnly/141x200/HeavyArmoros.png" "../../Art/Enemies/WalkingOnly/Out/HeavyArmoros.png"
 generateWalkingOnlyAnimationSheet 47 50 "../../Art/Enemies/WalkingOnly/141x200/Minotaur.png" "../../Art/Enemies/WalkingOnly/Out/Minotaur.png"
 generateWalkingOnlyAnimationSheet 26 36 "../../Art/Enemies/WalkingOnly/78x144/Ghost.png" "../../Art/Enemies/WalkingOnly/Out/Ghost.png"
