@@ -28,14 +28,14 @@ Editing a section of a BlazeVector stage.
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeOuterTomb.png?raw=true)
 Wandering around the encampment in OmniBlade.
 
+![Screenshot](Projects/OmniBlade/Promotional/OmniBladeShop.png?raw=true)
+Shopping for items in OmniBlade.
+
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeChest.png?raw=true)
 Exploring a level in OmniBlade.
 
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeBattle.png?raw=true)
 A battle with Goblins in OmniBlade.
-
-![Screenshot](Projects/OmniBlade/Promotional/OmniBladeShop.png?raw=true)
-Shopping for items in OmniBlade.
 
 ![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
 Editing a special effect in Nu.
