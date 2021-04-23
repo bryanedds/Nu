@@ -1,7 +1,7 @@
 Type,BattleAllyPositions,BattleEnemies,BattleBackground,BattleSongOpt
 DebugBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DebugGoblin DebugGoblin DebugGoblin DebugGoblin DebugGoblin],[Field DebugBattle],[Some [Battle Battle]]
-CastleBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat],[Castle CastleBattle],None
-CastleBattle2,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat DarkBat],[Castle CastleBattle],None
+CastleBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat DarkBat],[Castle CastleBattle],None
+CastleBattle2,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin],[Castle CastleBattle],None
 CastleBattle3,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin DarkBat],[Castle CastleBattle],None
 CastleBattle4,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat DarkBat DarkBat DarkBat],[Castle CastleBattle],None
 CastleBattle5,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin BlueGoblin],[Castle CastleBattle],None

@@ -80,10 +80,10 @@ module AvatarDispatcher =
         override this.Channel (_, entity) =
             [entity.UpdateEvent =|> fun _ ->
                 let force = v2Zero
-                let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.WalkForce 0.0f + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.WalkForce 0.0f + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Up then v2 0.0f Constants.Field.WalkForce + force else force
-                let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.WalkForce + force else force
+                let force = if KeyboardState.isKeyDown KeyboardKey.Right then v2 Constants.Field.AvatarWalkForce 0.0f + force else force
+                let force = if KeyboardState.isKeyDown KeyboardKey.Left then v2 -Constants.Field.AvatarWalkForce 0.0f + force else force
+                let force = if KeyboardState.isKeyDown KeyboardKey.Up then v2 0.0f Constants.Field.AvatarWalkForce + force else force
+                let force = if KeyboardState.isKeyDown KeyboardKey.Down then v2 0.0f -Constants.Field.AvatarWalkForce + force else force
                 cmd (TryTravel force)
              entity.UpdateEvent =|> fun _ ->
                 if KeyboardState.isKeyDown KeyboardKey.Right then msg (Face Rightward)
@@ -102,11 +102,11 @@ module AvatarDispatcher =
             | Update ->
 
                 // update animation generally
-                let velocity = World.getBodyLinearVelocity (entity.GetPhysicsId world) world
-                let direction = Direction.ofVector2 velocity
+                let velocity = entity.GetLinearVelocity world
                 let speed = velocity.Length ()
+                let direction = Direction.ofVector2 velocity
                 let avatar =
-                    if speed > 10.0f then
+                    if speed > Constants.Field.AvatarIdleSpeedMax then
                         if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
                             let avatar = Avatar.updateDirection (constant direction) avatar
                             Avatar.animate time WalkAnimation avatar
@@ -123,11 +123,13 @@ module AvatarDispatcher =
 
             | Face direction ->
 
-                // update facing if enabled, velocity is zero, and direction pressed
+                // update facing if enabled, speed is low, and direction pressed
                 let avatar =
-                    if entity.GetEnabled world then
+                    if  not (World.isSelectedScreenTransitioning world) &&
+                        entity.GetEnabled world then
                         let velocity = entity.GetLinearVelocity world
-                        if velocity = v2Zero
+                        let speed = velocity.Length ()
+                        if speed <= Constants.Field.AvatarIdleSpeedMax
                         then Avatar.updateDirection (constant direction) avatar
                         else avatar
                     else avatar
