@@ -35,7 +35,7 @@ Shopping for items in OmniBlade.
 Exploring a level in OmniBlade.
 
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeBattle.png?raw=true)
-A battle with Goblins in OmniBlade.
+A Chrono Trigger-style battle in OmniBlade.
 
 ![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
 Editing a special effect in Nu.
