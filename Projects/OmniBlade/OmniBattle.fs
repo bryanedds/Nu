@@ -212,18 +212,7 @@ module Battle =
                 match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
                 | Some archetypeData ->
                     match archetypeData.Stature with
-                    | SmallStature ->
-                        if y < h - 1 && x < w - 1 then
-                            match
-                                (layout.[x+0].[y+0],
-                                 layout.[x+1].[y+0], layout.[x+0].[y+1]) with
-                            | (Left (),
-                               Left (), Left ()) ->
-                                layout.[x+1].[y+0] <- Right None
-                                layout.[x+0].[y+0] <- Right (Some enemy); layout.[x+0].[y+1] <- Right None
-                            | _ -> tryRandomizeEnemy (inc attempts) enemy layout
-                        else tryRandomizeEnemy (inc attempts) enemy layout
-                    | NormalStature | LargeStature ->
+                    | SmallStature | NormalStature | LargeStature ->
                         if x > 0 && x < w - 1 && y > 0 && y < h - 1 then
                             match
                                 (layout.[x+0].[y+1],
