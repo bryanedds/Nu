@@ -46,15 +46,16 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Field =
 
-#if DEV
-        let WalkForce = 17000.0f
-#else
-        let WalkForce = 8500.0f
-#endif
         let LinearDamping = 19.0f
         let PropsGroupName = "Props"
         let TransitionTime = 60L
         let MapRandSize = v2iDup 7
+#if DEV
+        let AvatarWalkForce = 17000.0f
+#else
+        let AvatarWalkForce = 8500.0f
+#endif
+        let AvatarIdleSpeedMax = 10.0f
         let AvatarBottomInset = v2 0.0f 24.0f
         let SpiritMovementDuration = 60L
         let SpiritWalkSpeed = 2.75f

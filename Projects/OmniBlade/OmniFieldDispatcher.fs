@@ -1052,8 +1052,8 @@ module FieldDispatcher =
                                        let abs = Algorithms.shield Magical teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
                                        "HP  "   + (string teammate.HitPoints).PadLeft 3 + " /" + (string hpm).PadLeft 3 +
                                        "\nTP  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string tpm).PadLeft 3 +
-                                       "\nPow " + (string pow).PadLeft 3 + "   Mag " + (string mag).PadLeft 3 +
-                                       "\nDef " + (string def).PadLeft 3 + "   Abs " + (string abs).PadLeft 3 +
+                                       "\nPow " + (string pow).PadLeft 3 + "    Mag " + (string mag).PadLeft 3 +
+                                       "\nDef " + (string def).PadLeft 3 + "    Abs " + (string abs).PadLeft 3 +
                                        "\nExp " + (string teammate.ExpPoints).PadLeft 3 + "/" + (string (Algorithms.expPointsForNextLevel teammate.ExpPoints)).PadLeft 3
                                    | None -> ""
                                | _ -> ""]]
