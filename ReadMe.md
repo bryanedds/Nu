@@ -23,7 +23,10 @@ Here is some media on the Nu Game Engine -
 Nu's tutorial game, BlazeVector!
 
 ![Screenshot](Projects/BlazeVector/Promotional/EditingASectionOfABlazeVectorStage.png?raw=true)
-Editing a section of a BlazeVector stage.
+Editing a section of a BlazeVector stage in Gaia (Nu's rewindable game editor).
+
+![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
+Editing a special effect in Gaia.
 
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeOuterTomb.png?raw=true)
 Wandering around the encampment in OmniBlade.
@@ -36,9 +39,6 @@ Exploring a level in OmniBlade.
 
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeBattle.png?raw=true)
 A Chrono Trigger-style battle in OmniBlade.
-
-![Screenshot](Nu/Nu.Promotional/SpecialEffect.png?raw=true)
-Editing a special effect in Nu.
 
 Getting Started
 ===============
