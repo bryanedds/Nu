@@ -1153,7 +1153,7 @@ module BattleDispatcher =
                                     match ally.InputState with NoInput | RegularMenu -> false | _ -> true)
                                     allies
                             alliesPastRegularMenu
-                         Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Defend", (1, true)); ("Tech", (2, true)); ("Consumable", (3, true))]; ItemCancelOpt = None }
+                         Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; ItemCancelOpt = None }
                          Entity.ItemSelectEvent ==|> fun evt -> msg (RegularItemSelect (index, evt.Data))
                          Entity.CancelEvent ==> msg (RegularItemCancel index)]
 
