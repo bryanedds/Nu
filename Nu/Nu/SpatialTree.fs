@@ -187,8 +187,8 @@ module SpatialTree =
             let leafSize = rootBounds.Size / single rootDepth
             let leafPosition =
                 v2
-                    (oldBounds.Position.X - modulus (rootBounds.X + oldBounds.Position.X) leafSize.X)
-                    (oldBounds.Position.Y - modulus (rootBounds.Y + oldBounds.Position.Y) leafSize.Y)
+                    (oldBounds.Position.X - (rootBounds.X + oldBounds.Position.X) % leafSize.X)
+                    (oldBounds.Position.Y - (rootBounds.Y + oldBounds.Position.Y) % leafSize.Y)
             let leafBounds = v4Bounds leafPosition leafSize
             if  not (Math.isBoundsInBounds oldBounds leafBounds) ||
                 not (Math.isBoundsInBounds newBounds leafBounds) then
