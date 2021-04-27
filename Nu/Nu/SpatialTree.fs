@@ -20,17 +20,17 @@ module internal SpatialNode =
     let internal atPoint point node =
         Math.isPointInBounds point node.Bounds
 
-    let internal intersectingBounds bounds node =
+    let internal isIntersectingBounds bounds node =
         Math.isBoundsIntersectingBounds bounds node.Bounds
 
     let rec internal addElement bounds element node =
-        if intersectingBounds bounds node then
+        if isIntersectingBounds bounds node then
             match node.Children with
             | Left nodes -> for node in nodes do addElement bounds element node
             | Right elements -> elements.Add element |> ignore
 
     let rec internal removeElement bounds element node =
-        if intersectingBounds bounds node then
+        if isIntersectingBounds bounds node then
             match node.Children with
             | Left nodes -> for node in nodes do removeElement bounds element node
             | Right elements -> elements.Remove element |> ignore
@@ -39,12 +39,12 @@ module internal SpatialNode =
         match node.Children with
         | Left nodes ->
             for node in nodes do
-                if intersectingBounds oldBounds node || intersectingBounds newBounds node then
+                if isIntersectingBounds oldBounds node || isIntersectingBounds newBounds node then
                     updateElement oldBounds newBounds element node
         | Right elements ->
-            if intersectingBounds oldBounds node then
-                if not (intersectingBounds newBounds node) then elements.Remove element |> ignore
-            elif intersectingBounds newBounds node then
+            if isIntersectingBounds oldBounds node then
+                if not (isIntersectingBounds newBounds node) then elements.Remove element |> ignore
+            elif isIntersectingBounds newBounds node then
                 elements.Add element |> ignore
 
     let rec internal getElementsAtPoint point node (set : 'e HashSet) =
@@ -54,7 +54,7 @@ module internal SpatialNode =
 
     let rec internal getElementsInBounds bounds node (set : 'e HashSet) =
         match node.Children with
-        | Left nodes -> for node in nodes do if intersectingBounds bounds node then getElementsInBounds bounds node set
+        | Left nodes -> for node in nodes do if isIntersectingBounds bounds node then getElementsInBounds bounds node set
         | Right elements -> for element in elements do set.Add element |> ignore
 
     let rec internal clone node =
@@ -154,7 +154,7 @@ module SpatialTree =
         if omnipresent then
             tree.OmnipresentElements.Add element |> ignore
         else
-            if not (SpatialNode.intersectingBounds bounds tree.Node) then
+            if not (SpatialNode.isIntersectingBounds bounds tree.Node) then
                 Log.info "Element is outside spatial tree's containment area or is being added redundantly."
                 tree.OmnipresentElements.Add element |> ignore
             else SpatialNode.addElement bounds element tree.Node
@@ -163,14 +163,14 @@ module SpatialTree =
         if omnipresent then 
             tree.OmnipresentElements.Remove element |> ignore
         else
-            if not (SpatialNode.intersectingBounds bounds tree.Node) then
+            if not (SpatialNode.isIntersectingBounds bounds tree.Node) then
                 Log.info "Element is outside spatial tree's containment area or is not present for removal."
                 tree.OmnipresentElements.Remove element |> ignore
             else SpatialNode.removeElement bounds element tree.Node
 
     let updateElement oldBounds newBounds element tree =
-        let oldInBounds = SpatialNode.intersectingBounds oldBounds tree.Node
-        let newInBounds = SpatialNode.intersectingBounds newBounds tree.Node
+        let oldInBounds = SpatialNode.isIntersectingBounds oldBounds tree.Node
+        let newInBounds = SpatialNode.isIntersectingBounds newBounds tree.Node
         if oldInBounds && not newInBounds then
             // going out of bounds
             Log.info "Element is outside spatial tree's containment area."
