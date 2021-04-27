@@ -57,9 +57,6 @@ module internal SpatialNode =
         | Left nodes -> for node in nodes do if intersectingBounds bounds node then getElementsInBounds bounds node set
         | Right elements -> for element in elements do set.Add element |> ignore
 
-    let internal getDepth node =
-        node.Depth
-
     let rec internal clone node =
         { Depth = node.Depth
           Bounds = node.Bounds
@@ -148,7 +145,10 @@ module SpatialTree =
     type [<NoEquality; NoComparison>] SpatialTree<'e when 'e : equality> =
         private
             { Node : 'e SpatialNode
-              OmnipresentElements : 'e HashSet }
+              OmnipresentElements : 'e HashSet
+              Depth : int
+              Granularity : int
+              Bounds : Vector4 }
 
     let addElement omnipresent bounds element tree =
         if omnipresent then
@@ -182,7 +182,17 @@ module SpatialTree =
             SpatialNode.updateElement oldBounds newBounds element tree.Node
         elif oldInBounds && newInBounds then
             // staying in bounds
-            SpatialNode.updateElement oldBounds newBounds element tree.Node
+            let rootBounds = tree.Bounds
+            let rootDepth = pown tree.Granularity tree.Depth
+            let leafSize = rootBounds.Size / single rootDepth
+            let leafPosition =
+                v2
+                    (oldBounds.Position.X - modulus (rootBounds.X + oldBounds.Position.X) leafSize.X)
+                    (oldBounds.Position.Y - modulus (rootBounds.Y + oldBounds.Position.Y) leafSize.Y)
+            let leafBounds = v4Bounds leafPosition leafSize
+            if  not (Math.isBoundsInBounds oldBounds leafBounds) ||
+                not (Math.isBoundsInBounds newBounds leafBounds) then
+                SpatialNode.updateElement oldBounds newBounds element tree.Node
         else
             // staying out of bounds
             ()
@@ -202,15 +212,21 @@ module SpatialTree =
         new SpatialTreeEnumerable<'e> (new SpatialTreeEnumerator<'e> (tree.OmnipresentElements, set)) :> 'e IEnumerable
 
     let getDepth tree =
-        SpatialNode.getDepth tree.Node
+        tree.Depth
 
     let clone tree =
         { Node = SpatialNode.clone tree.Node
-          OmnipresentElements = HashSet (tree.OmnipresentElements, HashIdentity.Structural) }
+          OmnipresentElements = HashSet (tree.OmnipresentElements, HashIdentity.Structural)
+          Depth = tree.Depth
+          Granularity = tree.Granularity
+          Bounds = tree.Bounds }
 
     let make<'e when 'e : equality> granularity depth bounds =
         { Node = SpatialNode.make<'e> granularity depth bounds
-          OmnipresentElements = HashSet HashIdentity.Structural }
+          OmnipresentElements = HashSet HashIdentity.Structural
+          Depth = depth
+          Granularity = granularity
+          Bounds = bounds }
           
 /// A spatial structure that organizes elements on a 2D plane. TODO: document this.
 type SpatialTree<'e when 'e : equality> = SpatialTree.SpatialTree<'e>
