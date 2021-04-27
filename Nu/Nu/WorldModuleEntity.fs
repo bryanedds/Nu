@@ -247,7 +247,7 @@ module WorldModuleEntity =
 
         static member internal getEntityStateBoundsMax entityState =
             // TODO: get up off yer arse and write an algorithm for tight-fitting bounds...
-            let transform = entityState.Transform
+            let transform = &entityState.Transform
             match transform.Rotation with
             | 0.0f ->
                 let boundsOverflow = v4BoundsOverflow transform.Position transform.Size entityState.Overflow
