@@ -32,7 +32,7 @@ type 'c ArrayRef =
 type Component<'c when 'c : struct and 'c :> 'c Component> =
     interface
         abstract Active : bool with get, set
-        abstract AllocateJunctions : 'w Ecs -> obj array
+        abstract AllocateJunctions : 'w Ecs -> (obj * obj) array
         abstract ResizeJunctions : int -> obj array -> 'w Ecs -> unit
         abstract MoveJunctions : int -> int -> obj array -> 'w Ecs -> unit
         abstract Junction : int -> obj array -> obj array -> 'w Ecs -> 'c
@@ -234,15 +234,15 @@ and Ecs<'w when 'w :> Freezable> () as this =
         | (true, found) ->
             match found with
             | UnbufferedArrayObjs arrayObjs ->
-                let arr = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjs.Add (box arr)
-                (arr, arr)
+                let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                arrayObjs.Add (box aref)
+                (box aref, box aref)
             | BufferedArrayObjs arrayObjs ->
                 let readOnlyAref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 let writableAref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 arrayObjs.WritableArrayObjs.Add (box writableAref)
                 arrayObjs.ReadOnlyArrayObjs.Add (box readOnlyAref)
-                (writableAref, readOnlyAref)
+                (box writableAref, box readOnlyAref)
         | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'.")
 
     member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
@@ -373,7 +373,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     inherit System<'w> (name)
 
     let mutable (components, componentsReadOnly) = ecs.AllocateComponents<'c> buffered
-    let mutable (junctions, junctionsReadOnly) = (Unchecked.defaultof<'c>.AllocateJunctions ecs, Unchecked.defaultof<'c>.AllocateJunctions ecs)
+    let mutable (junctions, junctionsReadOnly) = Unchecked.defaultof<'c>.AllocateJunctions ecs |> Array.unzip
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
