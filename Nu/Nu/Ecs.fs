@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Runtime.CompilerServices
+open System.Threading
 open System.Threading.Tasks
 open Prime
 
@@ -44,23 +45,25 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
 /// NOTE: Inlined everything for speed.
 and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c :> 'c Component> =
     { ComponentIndex : int
-      ComponentArrRef : 'c ArrayRef }
+      ComponentArefWritable : 'c ArrayRef
+      ComponentArefReadOnly : 'c ArrayRef }
 
     member inline this.Index
-        with get () = &this.ComponentArrRef.[this.ComponentIndex]
+        with get () = &this.ComponentArefWritable.[this.ComponentIndex]
 
     member inline this.Assign value =
-        this.ComponentArrRef.[this.ComponentIndex] <- value
+        this.ComponentArefWritable.[this.ComponentIndex] <- value
+
+    member inline this.Read
+        with get () = lock this.ComponentArefReadOnly (fun () -> this.ComponentArefReadOnly.[this.ComponentIndex])
 
     static member inline (<!) (componentRef, value) =
-        componentRef.ComponentArrRef.Array.[componentRef.ComponentIndex] <- value
+        componentRef.ComponentArefWritable.Array.[componentRef.ComponentIndex] <- value
 
-    static member inline (!>) componentRef =
-        &componentRef.ComponentArrRef.Array.[componentRef.ComponentIndex]
-
-    static member inline make index arr : 'c ComponentRef =
+    static member inline make index arr arr2 : 'c ComponentRef =
         { ComponentIndex = index
-          ComponentArrRef = arr }
+          ComponentArefWritable = arr
+          ComponentArefReadOnly = arr2 }
 
 /// An ECS event.
 and [<NoEquality; NoComparison>] SystemEvent<'d, 'w when 'w :> Freezable> =
@@ -92,6 +95,12 @@ and [<NoEquality; NoComparison>] BufferedArrayObjs =
 and [<NoEquality; NoComparison>] ArrayObjs =
     | UnbufferedArrayObjs of obj List
     | BufferedArrayObjs of BufferedArrayObjs
+    static member lock arrayObjs fn =
+        match arrayObjs with
+        | UnbufferedArrayObjs _ -> ()
+        | BufferedArrayObjs buffered ->
+            try for arrayObj in buffered.ReadOnlyArrayObjs do Monitor.Enter arrayObj; fn ()
+            finally for arrayObj in buffered.ReadOnlyArrayObjs do Monitor.Exit arrayObj
 
 /// Nu's custom Entity-Component-System implementation.
 /// Nu's conception of an ECS is primarily as an abstraction over user-definable storage formats.
@@ -118,7 +127,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             callback evt world
         boxableCallback :> obj
 
-    member private this.GetWritableComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
+    member internal this.GetWritableComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
@@ -127,7 +136,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             | BufferedArrayObjs buffered -> buffered.WritableArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
 
-    member private this.BufferWritableComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
+    member internal this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
@@ -135,9 +144,9 @@ and Ecs<'w when 'w :> Freezable> () as this =
             | UnbufferedArrayObjs _ -> ()
             | BufferedArrayObjs buffered ->
                 for i in 0 .. buffered.WritableArrayObjs.Count - 1 do
-                    let writableArray = (buffered.WritableArrayObjs.[i] :?> 'c ArrayRef).Array
-                    let readOnlyArray = (buffered.ReadOnlyArrayObjs.[i] :?> 'c ArrayRef).Array
-                    Array.Copy (writableArray, readOnlyArray, writableArray.Length)
+                    let writableAref = buffered.WritableArrayObjs.[i] :?> 'c ArrayRef
+                    let readOnlyAref = buffered.ReadOnlyArrayObjs.[i] :?> 'c ArrayRef
+                    lock readOnlyAref (fun () -> Array.Copy (writableAref.Array, readOnlyAref.Array, writableAref.Array.Length))
         | (false, _) -> ()
 
     member internal this.Correlations 
@@ -234,12 +243,12 @@ and Ecs<'w when 'w :> Freezable> () as this =
             if buffered then
                 let arr = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 arrayObjss.Add (componentName, UnbufferedArrayObjs (List [box arr]))
-                arr
+                (arr, arr)
             else
                 let writableArray = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 let readOnlyArray = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 arrayObjss.Add (componentName, BufferedArrayObjs { WritableArrayObjs = List [box writableArray]; ReadOnlyArrayObjs = List [box readOnlyArray] })
-                writableArray
+                (writableArray, readOnlyArray)
 
     member this.AllocateJunction<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
@@ -261,13 +270,13 @@ and Ecs<'w when 'w :> Freezable> () as this =
     member this.WithJunctionLock<'c when 'c : struct and 'c :> 'c Component> fn =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
-        | (true, arrayObjs) -> lock arrayObjs fn
+        | (true, arrayObjs) -> ArrayObjs.lock arrayObjs fn
         | (false, _) -> ()
 
     member this.WithComponentArrays<'c when 'c : struct and 'c :> 'c Component> fn =
         let writableComponentArrays = this.GetWritableComponentArrays<'c> ()
         fn writableComponentArrays
-        this.BufferWritableComponentArrays<'c> ()
+        this.BufferComponentArrays<'c> ()
 
     member this.WithComponentLock<'c when 'c : struct and 'c :> 'c Component> fn =
         let comp = Unchecked.defaultof<'c>
@@ -298,60 +307,27 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Fr
             let system = Option.get systemOpt
             &system.Component
 
-/// A system with zero to many components.
-type [<AbstractClass>] SystemMany<'w when 'w :> Freezable> (name) =
-    inherit System<'w> (name)
-    abstract ComponentsCount : int
-    abstract SizeOfComponent : int
-    abstract ComponentsToBytes : unit -> char array
-    abstract BytesToComponents : char array -> unit
-    abstract PadComponents : int -> unit
-
 /// An Ecs system with components stored by a raw index.
 /// Stores components in an unordered manner.
 type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
-    inherit SystemMany<'w> (name)
+    inherit System<'w> (name)
 
-    let mutable components = ecs.AllocateComponents<'c> buffered
+    let mutable (components, components2) = ecs.AllocateComponents<'c> buffered
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
 
     new (ecs) = SystemUncorrelated (typeof<'c>.Name, false, ecs)
     new (buffered, ecs) = SystemUncorrelated (typeof<'c>.Name, buffered, ecs)
 
-    abstract ComponentToBytes : 'c -> char array
-    default this.ComponentToBytes _ = failwithnie ()
-    abstract BytesToComponent : char array -> 'c
-    default this.BytesToComponent _ = failwithnie ()
-
-    override this.ComponentsCount with get () =
-        freeIndex - 1 - freeList.Count
-
-    override this.SizeOfComponent with get () =
-        sizeof<'c>
-
-    override this.ComponentsToBytes () =
-        let byteArrays = Array.map this.ComponentToBytes components.Array
-        Array.concat byteArrays
-
-    override this.BytesToComponents (bytes : char array) =
-        let byteArrays = Array.chunkBySize this.SizeOfComponent bytes
-        if bytes.Length <> components.Length then
-            failwith "Incoming bytes array must have the same number of elements as target system has components."
-        let arr = Array.map this.BytesToComponent byteArrays
-        components.Array <- arr
-
-    override this.PadComponents length =
-        let arr = Array.zeroCreate (components.Length + length)
-        components.Array.CopyTo (arr, 0)
-        components.Array <- arr
-
     member this.Components with get () =
         components
 
+    member this.Components2 with get () =
+        components2
+
     member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
-        ComponentRef<'c>.make index components
+        ComponentRef<'c>.make index components components2
 
     member this.RegisterUncorrelated comp =
         if freeList.Count > 0 then
@@ -395,22 +371,11 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
             | Some system -> system.UnregisterUncorrelated index
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.ReadUncorrelated<'c when 'c : struct and 'c :> 'c Component> (readers : Dictionary<string, StreamReader>) (count : int) =
-            for readerEntry in readers do
-                let (systemName, reader) = (readerEntry.Key, readerEntry.Value)
-                match this.TryIndexSystem<SystemUncorrelated<'c, 'w>> systemName with
-                | Some system ->
-                    system.PadComponents count
-                    let bytes = system.ComponentsToBytes ()
-                    let _ = reader.ReadBlock (bytes, system.SizeOfComponent * system.Components.Length, system.SizeOfComponent * count)
-                    system.BytesToComponents bytes
-                | None -> failwith ("Could not find expected system '" + systemName + "'.")
-
 /// An Ecs system with components stored by entity id.
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
-    inherit SystemMany<'w> (name)
+    inherit System<'w> (name)
 
-    let mutable components = ecs.AllocateComponents<'c> buffered
+    let mutable (components, components2) = ecs.AllocateComponents<'c> buffered
     let mutable junctions = Unchecked.defaultof<'c>.AllocateJunctions ecs
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
@@ -421,13 +386,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     new (buffered, ecs) = SystemCorrelated (typeof<'c>.Name, buffered, ecs)
 
     member this.Components with get () = components
+    member this.Components2 with get () = components2
     member this.Junctions with get () = junctions
-
-    override this.ComponentsCount with get () = freeIndex - freeList.Count
-    override this.SizeOfComponent with get () = failwithnie ()
-    override this.ComponentsToBytes () = failwithnie ()
-    override this.BytesToComponents _ = failwithnie ()
-    override this.PadComponents _ = failwithnie ()
 
     member internal this.Compact ecs =
 
@@ -480,7 +440,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
     member this.IndexCorrelated entityId =
         let index = this.IndexCorrelatedI entityId
-        ComponentRef<'c>.make index components
+        ComponentRef<'c>.make index components components2
 
     member this.RegisterCorrelated (comp : 'c) entityId ecs =
 
@@ -523,6 +483,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             if  components.Length < freeList.Count * 2 && // freeList is always empty if unordered
                 components.Length > Constants.Ecs.ArrayReserve then
                 this.Compact ecs
+                ecs.BufferComponentArrays<'c> ()
             true
         | (false, _) -> false
 
@@ -608,11 +569,20 @@ type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
         let systemName = typeof<'c>.Name
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> systemName
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.ComponentArrRef.Array.[correlated.ComponentIndex]
+        &correlated.ComponentArefWritable.Array.[correlated.ComponentIndex]
     member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.ComponentArrRef.Array.[correlated.ComponentIndex]
+        &correlated.ComponentArefWritable.Array.[correlated.ComponentIndex]
+    member this.ReadPlus<'c when 'c : struct and 'c :> 'c Component> () : 'c outref =
+        let systemName = typeof<'c>.Name
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> systemName
+        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
+        &correlated.ComponentArefReadOnly.Array.[correlated.ComponentIndex]
+    member this.Read<'c when 'c : struct and 'c :> 'c Component> () =
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
+        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
+        &correlated.ComponentArefReadOnly.Array.[correlated.ComponentIndex]
     type Ecs<'w when 'w :> Freezable> with
         member this.GetEntityRef entityId =
             { EntityId = entityId; EntityEcs = this }
