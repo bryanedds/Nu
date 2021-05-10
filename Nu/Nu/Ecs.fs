@@ -44,26 +44,26 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
 and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c :> 'c Component> =
     { ComponentIndex : int
       ComponentAref : 'c ArrayRef
-      ComponentArefReadOnly : 'c ArrayRef }
+      ComponentArefBuffered : 'c ArrayRef }
 
     member inline this.Index
         with get () = &this.ComponentAref.[this.ComponentIndex]
 
-    member inline this.Assign value =
-        this.ComponentAref.[this.ComponentIndex] <- value
-
-    member inline this.Read
+    member inline this.IndexBuffered
         with get () =
             let this = this
-            lock this.ComponentArefReadOnly (fun () -> this.ComponentArefReadOnly.[this.ComponentIndex])
+            lock this.ComponentArefBuffered (fun () -> this.ComponentArefBuffered.[this.ComponentIndex])
+
+    member inline this.Assign value =
+        this.ComponentAref.[this.ComponentIndex] <- value
 
     static member inline (<!) (componentRef, value) =
         componentRef.ComponentAref.Array.[componentRef.ComponentIndex] <- value
 
-    static member inline make index arr arr2 : 'c ComponentRef =
+    static member inline make index aref arefBuffered : 'c ComponentRef =
         { ComponentIndex = index
-          ComponentAref = arr
-          ComponentArefReadOnly = arr2 }
+          ComponentAref = aref
+          ComponentArefBuffered = arefBuffered }
 
 /// An ECS event.
 and [<NoEquality; NoComparison>] SystemEvent<'d, 'w when 'w :> Freezable> =
@@ -95,12 +95,6 @@ and [<NoEquality; NoComparison>] BufferedArrayObjs =
 and [<NoEquality; NoComparison>] ArrayObjs =
     | UnbufferedArrayObjs of obj List
     | BufferedArrayObjs of BufferedArrayObjs
-    static member lock arrayObjs fn =
-        match arrayObjs with
-        | UnbufferedArrayObjs _ -> ()
-        | BufferedArrayObjs buffered ->
-            try for arrayObj in buffered.ReadOnlyArrayObjs do Monitor.Enter arrayObj; fn ()
-            finally for arrayObj in buffered.ReadOnlyArrayObjs do Monitor.Exit arrayObj
 
 /// Nu's custom Entity-Component-System implementation.
 /// Nu's conception of an ECS is primarily as an abstraction over user-definable storage formats.
@@ -254,15 +248,6 @@ and Ecs<'w when 'w :> Freezable> () as this =
             | BufferedArrayObjs buffered -> buffered.WritableArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
 
-    member this.GetComponentArraysReadOnly<'c when 'c : struct and 'c :> 'c Component> () =
-        let componentName = typeof<'c>.Name
-        match arrayObjss.TryGetValue componentName with
-        | (true, arrayObjs) ->
-            match arrayObjs with
-            | UnbufferedArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-            | BufferedArrayObjs buffered -> buffered.ReadOnlyArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
-        | (false, _) -> [||]
-
     member this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
@@ -270,13 +255,26 @@ and Ecs<'w when 'w :> Freezable> () as this =
             match arrayObjs with
             | UnbufferedArrayObjs _ -> ()
             | BufferedArrayObjs buffered ->
-                for i in 0 .. buffered.WritableArrayObjs.Count - 1 do
-                    let writableAref = buffered.WritableArrayObjs.[i] :?> 'c ArrayRef
-                    let readOnlyAref = buffered.ReadOnlyArrayObjs.[i] :?> 'c ArrayRef
-                    lock readOnlyAref (fun () ->
-                        if readOnlyAref.Array.Length = writableAref.Array.Length
-                        then writableAref.Array.CopyTo (readOnlyAref.Array, 0)
-                        else readOnlyAref.Array <- Array.copy writableAref.Array)
+                lock arrayObjs $ fun () ->
+                    for i in 0 .. buffered.WritableArrayObjs.Count - 1 do
+                        let writableAref = buffered.WritableArrayObjs.[i] :?> 'c ArrayRef
+                        let readOnlyAref = buffered.ReadOnlyArrayObjs.[i] :?> 'c ArrayRef
+                        lock readOnlyAref (fun () ->
+                            if readOnlyAref.Array.Length = writableAref.Array.Length
+                            then writableAref.Array.CopyTo (readOnlyAref.Array, 0)
+                            else readOnlyAref.Array <- Array.copy writableAref.Array)
+        | (false, _) -> ()
+
+    member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn =
+        let componentName = typeof<'c>.Name
+        match arrayObjss.TryGetValue componentName with
+        | (true, arrayObjs) ->
+            match arrayObjs with
+            | UnbufferedArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray |> fn
+            | BufferedArrayObjs buffered ->
+                lock arrayObjs $ fun () ->
+                    let readOnlyArefs = buffered.ReadOnlyArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
+                    fn readOnlyArefs
         | (false, _) -> ()
 
     type System<'w when 'w :> Freezable> with
@@ -561,24 +559,18 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
     { EntityId : Guid
       EntityEcs : 'w Ecs }
-    member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> () : 'c outref =
-        let systemName = typeof<'c>.Name
-        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> systemName
-        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.ComponentAref.Array.[correlated.ComponentIndex]
     member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
         &correlated.ComponentAref.Array.[correlated.ComponentIndex]
-    member this.ReadPlus<'c when 'c : struct and 'c :> 'c Component> () : 'c outref =
-        let systemName = typeof<'c>.Name
-        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> systemName
-        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.ComponentArefReadOnly.Array.[correlated.ComponentIndex]
-    member this.Read<'c when 'c : struct and 'c :> 'c Component> () =
+    member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> () : 'c outref =
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.ComponentArefReadOnly.Array.[correlated.ComponentIndex]
+        &correlated.ComponentAref.Array.[correlated.ComponentIndex]
+    member this.IndexBuffered<'c when 'c : struct and 'c :> 'c Component> () =
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
+        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
+        &correlated.ComponentArefBuffered.Array.[correlated.ComponentIndex]
     type Ecs<'w when 'w :> Freezable> with
         member this.GetEntityRef entityId =
             { EntityId = entityId; EntityEcs = this }
@@ -623,9 +615,9 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> 
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.Index.Simplexes.[multiId]
 
-    member this.ReadMultiplexed multiId entityId =
+    member this.IndexMultiplexedBuffered multiId entityId =
         let componentMultiplexed = this.IndexCorrelated entityId
-        componentMultiplexed.Read.Simplexes.[multiId]
+        componentMultiplexed.IndexBuffered.Simplexes.[multiId]
 
     member this.RegisterMultiplexed comp multiId entityId ecs =
         let entityId = this.RegisterCorrelated Unchecked.defaultof<_> entityId ecs
@@ -655,12 +647,12 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> 
             let simplex = system.IndexMultiplexed multiId entityId
             &simplex.Simplex
 
-        member this.ReadMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
+        member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
             let systemName = typeof<'c>.Name
             let systemOpt = this.TryIndexSystem<SystemMultiplexed<'c, 'w>> systemName
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
-            let simplex = system.ReadMultiplexed multiId entityId
+            let simplex = system.IndexMultiplexedBuffered multiId entityId
             &simplex.Simplex
 
         member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> comp multiId entityId =
