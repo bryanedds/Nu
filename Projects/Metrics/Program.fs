@@ -18,6 +18,7 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
         member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ = this
         member this.Disjunction _ _ _ = ()
+        member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<StaticSpriteComponent> fn
 #endif
 
 #if ECS
@@ -30,7 +31,7 @@ type [<NoEquality; NoComparison; Struct>] Velocity =
         member this.ResizeJunctions _ _ _ = ()
         member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ = this
-        member this.Disjunction _ _ _ = ()
+        member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Velocity> fn
 
 type [<NoEquality; NoComparison; Struct>] Position =
     { mutable Active : bool
@@ -42,6 +43,7 @@ type [<NoEquality; NoComparison; Struct>] Position =
         member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ = this
         member this.Disjunction _ _ _ = ()
+        member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Position> fn
 
 type [<NoEquality; NoComparison; Struct>] Mover =
     { mutable Active : bool
@@ -54,6 +56,7 @@ type [<NoEquality; NoComparison; Struct>] Mover =
         member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Velocity> src dst junctions.[0]; ecs.MoveJunction<Position> src dst junctions.[1]
         member this.Junction index junctions ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0]; Position = ecs.Junction<Position> index junctions.[1] }
         member this.Disjunction index junctions ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
+        member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Mover> (fun () -> ecs.WithComponentLock<Velocity> (fun () -> ecs.WithComponentLock<Position> fn))
 #endif
 
 #if FACETED

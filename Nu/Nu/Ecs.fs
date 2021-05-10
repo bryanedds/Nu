@@ -37,6 +37,7 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         abstract MoveJunctions : int -> int -> obj array -> 'w Ecs -> unit
         abstract Junction : int -> obj array -> 'w Ecs -> 'c
         abstract Disjunction : int -> obj array -> 'w Ecs -> unit
+        abstract WithJunctionLock : (unit -> unit) -> 'w Ecs -> unit
         end
 
 /// A storable reference to a component in its containing array.
@@ -263,6 +264,10 @@ and Ecs<'w when 'w :> Freezable> () as this =
         this.BufferWritableComponentArrays<'c> ()
 
     member this.WithComponentLock<'c when 'c : struct and 'c :> 'c Component> fn =
+        let comp = Unchecked.defaultof<'c>
+        comp.WithJunctionLock fn this
+
+    member this.WithJunctionLock<'c when 'c : struct and 'c :> 'c Component> fn =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) -> lock arrayObjs fn
@@ -630,6 +635,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ = this
         member this.Disjunction _ _ _ = ()
+        member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<'c ComponentMultiplexed> fn
     member this.RegisterMultiplexed (multiId, comp) =
         this.Simplexes.Add (multiId, { Simplex = comp })
     member this.UnregisterMultiplexed multiId =
