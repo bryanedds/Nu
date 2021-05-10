@@ -6,7 +6,6 @@ open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Runtime.CompilerServices
-open System.Threading
 open System.Threading.Tasks
 open Prime
 
@@ -264,6 +263,10 @@ and Ecs<'w when 'w :> Freezable> () as this =
                             then writableAref.Array.CopyTo (readOnlyAref.Array, 0)
                             else readOnlyAref.Array <- Array.copy writableAref.Array)
         | (false, _) -> ()
+
+    //member this.BufferComponentArraysAll () =
+    //    for arrayObjs in arrayObjss.Values do
+    //        this.BufferComponentArrays<?> ()
 
     member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn =
         let componentName = typeof<'c>.Name
