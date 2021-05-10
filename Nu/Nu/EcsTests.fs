@@ -71,13 +71,12 @@ module EcsTests =
         // define our airship system's update behavior
         let _ =
             ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-                ecs.WithComponentArrays<Airship> $ fun arrays ->
-                    for components in arrays do
-                        for i in 0 .. components.Length - 1 do
-                            let mutable comp = &components.[i]
-                            if  comp.Active then
-                                comp.Transform.Index.Enabled <- i % 2 = 0
-                                comp.Skin.Index.Color.A <- byte 128
+                for components in ecs.GetComponentArrays<Airship> () do
+                    for i in 0 .. components.Length - 1 do
+                        let mutable comp = &components.[i]
+                        if  comp.Active then
+                            comp.Transform.Index.Enabled <- i % 2 = 0
+                            comp.Skin.Index.Color.A <- byte 128
 
         // create and register our airship
         let airshipId = ecs.RegisterCorrelated Unchecked.defaultof<Airship> Gen.id
