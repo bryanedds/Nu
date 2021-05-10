@@ -128,31 +128,6 @@ and Ecs<'w when 'w :> Freezable> () as this =
             callback evt world
         boxableCallback :> obj
 
-    member internal this.GetWritableComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
-        let componentName = typeof<'c>.Name
-        match arrayObjss.TryGetValue componentName with
-        | (true, arrayObjs) ->
-            match arrayObjs with
-            | UnbufferedArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-            | BufferedArrayObjs buffered -> buffered.WritableArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
-        | (false, _) -> [||]
-
-    member internal this.PropagateComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
-        let componentName = typeof<'c>.Name
-        match arrayObjss.TryGetValue componentName with
-        | (true, arrayObjs) ->
-            match arrayObjs with
-            | UnbufferedArrayObjs _ -> ()
-            | BufferedArrayObjs buffered ->
-                for i in 0 .. buffered.WritableArrayObjs.Count - 1 do
-                    let writableAref = buffered.WritableArrayObjs.[i] :?> 'c ArrayRef
-                    let readOnlyAref = buffered.ReadOnlyArrayObjs.[i] :?> 'c ArrayRef
-                    lock readOnlyAref (fun () ->
-                        if readOnlyAref.Array.Length = writableAref.Array.Length
-                        then writableAref.Array.CopyTo (readOnlyAref.Array, 0)
-                        else readOnlyAref.Array <- Array.copy writableAref.Array)
-        | (false, _) -> ()
-
     member internal this.Correlations 
         with get () = correlations
 
@@ -271,10 +246,30 @@ and Ecs<'w when 'w :> Freezable> () as this =
                 (writableAref, readOnlyAref)
         | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'.")
 
-    member this.WithComponentArrays<'c when 'c : struct and 'c :> 'c Component> fn =
-        let writableComponentArrays = this.GetWritableComponentArrays<'c> ()
-        fn writableComponentArrays
-        this.PropagateComponentArrays<'c> ()
+    member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
+        let componentName = typeof<'c>.Name
+        match arrayObjss.TryGetValue componentName with
+        | (true, arrayObjs) ->
+            match arrayObjs with
+            | UnbufferedArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
+            | BufferedArrayObjs buffered -> buffered.WritableArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
+        | (false, _) -> [||]
+
+    member this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
+        let componentName = typeof<'c>.Name
+        match arrayObjss.TryGetValue componentName with
+        | (true, arrayObjs) ->
+            match arrayObjs with
+            | UnbufferedArrayObjs _ -> ()
+            | BufferedArrayObjs buffered ->
+                for i in 0 .. buffered.WritableArrayObjs.Count - 1 do
+                    let writableAref = buffered.WritableArrayObjs.[i] :?> 'c ArrayRef
+                    let readOnlyAref = buffered.ReadOnlyArrayObjs.[i] :?> 'c ArrayRef
+                    lock readOnlyAref (fun () ->
+                        if readOnlyAref.Array.Length = writableAref.Array.Length
+                        then writableAref.Array.CopyTo (readOnlyAref.Array, 0)
+                        else readOnlyAref.Array <- Array.copy writableAref.Array)
+        | (false, _) -> ()
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
