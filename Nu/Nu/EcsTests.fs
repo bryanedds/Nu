@@ -25,7 +25,7 @@ module EcsTests =
           Skin : Skin ComponentRef }
         interface Airship Component with
             member this.Active with get () = this.Active and set value = this.Active <- value
-            member this.AllocateJunctions ecs = [|ecs.AllocateArray<Transform> (); ecs.AllocateArray<Skin> ()|]
+            member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Transform> (); ecs.AllocateJunction<Skin> ()|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Transform> size junctions.[0]; ecs.ResizeJunction<Skin> size junctions.[1]
             member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Transform> src dst junctions.[0]; ecs.MoveJunction<Skin> src dst junctions.[1]
             member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Transform> index junctions.[0]; Skin = ecs.Junction<Skin> index junctions.[1] }
@@ -48,7 +48,7 @@ module EcsTests =
           NodeId : Guid }
         interface Prop Component with
             member this.Active with get () = this.Active and set value = this.Active <- value
-            member this.AllocateJunctions ecs = [|ecs.AllocateArray<Node> ()|]
+            member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Node> ()|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Node> size junctions.[0]
             member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Node> src dst junctions.[0]
             member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Node> index junctions.[0] }
@@ -69,14 +69,15 @@ module EcsTests =
         ecs.RegisterSystem (SystemCorrelated<Airship, World> ecs)
 
         // define our airship system's update behavior
-        let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            for components in ecs.GetComponentArrays<Airship> () do
-                for i in 0 .. components.Length - 1 do
-                    let mutable comp = &components.[i]
-                    if  comp.Active then
-                        comp.Transform.Index.Enabled <- i % 2 = 0
-                        comp.Skin.Index.Color.A <- byte 128
-            world)
+        let _ =
+            ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+                ecs.WithComponentArrays<Airship> $ fun arrays ->
+                    for components in arrays do
+                        for i in 0 .. components.Length - 1 do
+                            let mutable comp = &components.[i]
+                            if  comp.Active then
+                                comp.Transform.Index.Enabled <- i % 2 = 0
+                                comp.Skin.Index.Color.A <- byte 128
 
         // create and register our airship
         let airshipId = ecs.RegisterCorrelated Unchecked.defaultof<Airship> Gen.id
