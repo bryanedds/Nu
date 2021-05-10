@@ -18,6 +18,7 @@ module EcsTests =
             member this.MoveJunctions _ _ _ _ = ()
             member this.Junction _ _ _ = this
             member this.Disjunction _ _ _ = ()
+            member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Skin> fn
 
     type [<NoEquality; NoComparison; Struct>] Airship =
         { mutable Active : bool
@@ -30,6 +31,7 @@ module EcsTests =
             member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Transform> src dst junctions.[0]; ecs.MoveJunction<Skin> src dst junctions.[1]
             member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Transform> index junctions.[0]; Skin = ecs.Junction<Skin> index junctions.[1] }
             member this.Disjunction index junctions ecs = ecs.Disjunction<Transform> index junctions.[0]; ecs.Disjunction<Skin> index junctions.[1]
+            member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Transform> (fun () -> ecs.WithComponentLock<Skin> fn)
 
     type [<NoEquality; NoComparison; Struct>] Node =
         { mutable Active : bool
@@ -41,18 +43,20 @@ module EcsTests =
             member this.MoveJunctions _ _ _ _ = ()
             member this.Junction _ _ _ = this
             member this.Disjunction _ _ _ = ()
+            member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Node> fn
 
     type [<NoEquality; NoComparison; Struct>] Prop =
         { mutable Active : bool
-          Transform : Node ComponentRef
+          Node : Node ComponentRef
           NodeId : Guid }
         interface Prop Component with
             member this.Active with get () = this.Active and set value = this.Active <- value
             member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Node> ()|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Node> size junctions.[0]
             member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Node> src dst junctions.[0]
-            member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Node> index junctions.[0] }
+            member this.Junction index junctions ecs = { id this with Node = ecs.Junction<Node> index junctions.[0] }
             member this.Disjunction index junctions ecs = ecs.Disjunction<Node> index junctions.[0]
+            member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Prop> (fun () -> ecs.WithComponentLock<Node> fn)
 
     let example (world : World) =
 
