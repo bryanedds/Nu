@@ -16,9 +16,8 @@ module EcsTests =
             member this.AllocateJunctions _ = [||]
             member this.ResizeJunctions _ _ _ = ()
             member this.MoveJunctions _ _ _ _ = ()
-            member this.Junction _ _ _ = this
+            member this.Junction _ _ _ _ = this
             member this.Disjunction _ _ _ = ()
-            member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Skin> fn
 
     type [<NoEquality; NoComparison; Struct>] Airship =
         { mutable Active : bool
@@ -29,9 +28,8 @@ module EcsTests =
             member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Transform> (); ecs.AllocateJunction<Skin> ()|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Transform> size junctions.[0]; ecs.ResizeJunction<Skin> size junctions.[1]
             member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Transform> src dst junctions.[0]; ecs.MoveJunction<Skin> src dst junctions.[1]
-            member this.Junction index junctions ecs = { id this with Transform = ecs.Junction<Transform> index junctions.[0]; Skin = ecs.Junction<Skin> index junctions.[1] }
+            member this.Junction index junctions junctionsReadOnly ecs = { id this with Transform = ecs.Junction<Transform> index junctions.[0] junctionsReadOnly.[0]; Skin = ecs.Junction<Skin> index junctions.[1] junctionsReadOnly.[1] }
             member this.Disjunction index junctions ecs = ecs.Disjunction<Transform> index junctions.[0]; ecs.Disjunction<Skin> index junctions.[1]
-            member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Transform> (fun () -> ecs.WithComponentLock<Skin> fn)
 
     type [<NoEquality; NoComparison; Struct>] Node =
         { mutable Active : bool
@@ -41,9 +39,8 @@ module EcsTests =
             member this.AllocateJunctions _ = [||]
             member this.ResizeJunctions _ _ _ = ()
             member this.MoveJunctions _ _ _ _ = ()
-            member this.Junction _ _ _ = this
+            member this.Junction _ _ _ _ = this
             member this.Disjunction _ _ _ = ()
-            member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Node> fn
 
     type [<NoEquality; NoComparison; Struct>] Prop =
         { mutable Active : bool
@@ -54,9 +51,8 @@ module EcsTests =
             member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Node> ()|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Node> size junctions.[0]
             member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Node> src dst junctions.[0]
-            member this.Junction index junctions ecs = { id this with Node = ecs.Junction<Node> index junctions.[0] }
+            member this.Junction index junctions junctionsReadOnly ecs = { id this with Node = ecs.Junction<Node> index junctions.[0] junctionsReadOnly.[0] }
             member this.Disjunction index junctions ecs = ecs.Disjunction<Node> index junctions.[0]
-            member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Prop> (fun () -> ecs.WithComponentLock<Node> fn)
 
     let example (world : World) =
 
