@@ -106,9 +106,8 @@ type [<NoEquality; NoComparison; Struct>] Transform =
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.MoveJunctions _ _ _ _ = ()
-        member this.Junction _ _ _ = this
+        member this.Junction _ _ _ _ = this
         member this.Disjunction _ _ _ = ()
-        member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<Transform> fn
 
 [<AutoOpen>]
 module TransformOperators =

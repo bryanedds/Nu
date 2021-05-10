@@ -36,9 +36,8 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         abstract AllocateJunctions : 'w Ecs -> obj array
         abstract ResizeJunctions : int -> obj array -> 'w Ecs -> unit
         abstract MoveJunctions : int -> int -> obj array -> 'w Ecs -> unit
-        abstract Junction : int -> obj array -> 'w Ecs -> 'c
+        abstract Junction : int -> obj array -> obj array -> 'w Ecs -> 'c
         abstract Disjunction : int -> obj array -> 'w Ecs -> unit
-        abstract WithJunctionLock : (unit -> unit) -> 'w Ecs -> unit
         end
 
 /// A storable reference to a component in its containing array.
@@ -55,7 +54,9 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
         this.ComponentArefWritable.[this.ComponentIndex] <- value
 
     member inline this.Read
-        with get () = lock this.ComponentArefReadOnly (fun () -> this.ComponentArefReadOnly.[this.ComponentIndex])
+        with get () =
+            let this = this
+            lock this.ComponentArefReadOnly (fun () -> this.ComponentArefReadOnly.[this.ComponentIndex])
 
     static member inline (<!) (componentRef, value) =
         componentRef.ComponentArefWritable.Array.[componentRef.ComponentIndex] <- value
@@ -136,7 +137,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             | BufferedArrayObjs buffered -> buffered.WritableArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
 
-    member internal this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
+    member internal this.PropagateComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
@@ -146,7 +147,10 @@ and Ecs<'w when 'w :> Freezable> () as this =
                 for i in 0 .. buffered.WritableArrayObjs.Count - 1 do
                     let writableAref = buffered.WritableArrayObjs.[i] :?> 'c ArrayRef
                     let readOnlyAref = buffered.ReadOnlyArrayObjs.[i] :?> 'c ArrayRef
-                    lock readOnlyAref (fun () -> Array.Copy (writableAref.Array, readOnlyAref.Array, writableAref.Array.Length))
+                    lock readOnlyAref (fun () ->
+                        if readOnlyAref.Array.Length = writableAref.Array.Length
+                        then writableAref.Array.CopyTo (readOnlyAref.Array, 0)
+                        else readOnlyAref.Array <- Array.copy writableAref.Array)
         | (false, _) -> ()
 
     member internal this.Correlations 
@@ -245,10 +249,10 @@ and Ecs<'w when 'w :> Freezable> () as this =
                 arrayObjss.Add (componentName, UnbufferedArrayObjs (List [box arr]))
                 (arr, arr)
             else
-                let writableArray = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                let readOnlyArray = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjss.Add (componentName, BufferedArrayObjs { WritableArrayObjs = List [box writableArray]; ReadOnlyArrayObjs = List [box readOnlyArray] })
-                (writableArray, readOnlyArray)
+                let writableAref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                let readOnlyAref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                arrayObjss.Add (componentName, BufferedArrayObjs { WritableArrayObjs = List [box writableAref]; ReadOnlyArrayObjs = List [box readOnlyAref] })
+                (writableAref, readOnlyAref)
 
     member this.AllocateJunction<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
@@ -258,29 +262,19 @@ and Ecs<'w when 'w :> Freezable> () as this =
             | UnbufferedArrayObjs arrayObjs ->
                 let arr = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 arrayObjs.Add (box arr)
-                arr
+                (arr, arr)
             | BufferedArrayObjs arrayObjs ->
-                let readOnlyArray = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                let writableArray = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjs.WritableArrayObjs.Add (box writableArray)
-                arrayObjs.ReadOnlyArrayObjs.Add (box readOnlyArray)
-                writableArray
+                let readOnlyAref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                let writableAref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                arrayObjs.WritableArrayObjs.Add (box writableAref)
+                arrayObjs.ReadOnlyArrayObjs.Add (box readOnlyAref)
+                (writableAref, readOnlyAref)
         | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'.")
-
-    member this.WithJunctionLock<'c when 'c : struct and 'c :> 'c Component> fn =
-        let componentName = typeof<'c>.Name
-        match arrayObjss.TryGetValue componentName with
-        | (true, arrayObjs) -> ArrayObjs.lock arrayObjs fn
-        | (false, _) -> ()
 
     member this.WithComponentArrays<'c when 'c : struct and 'c :> 'c Component> fn =
         let writableComponentArrays = this.GetWritableComponentArrays<'c> ()
         fn writableComponentArrays
-        this.BufferComponentArrays<'c> ()
-
-    member this.WithComponentLock<'c when 'c : struct and 'c :> 'c Component> fn =
-        let comp = Unchecked.defaultof<'c>
-        comp.WithJunctionLock fn this
+        this.PropagateComponentArrays<'c> ()
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
@@ -375,8 +369,8 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
-    let mutable (components, components2) = ecs.AllocateComponents<'c> buffered
-    let mutable junctions = Unchecked.defaultof<'c>.AllocateJunctions ecs
+    let mutable (components, componentsReadOnly) = ecs.AllocateComponents<'c> buffered
+    let mutable (junctions, junctionsReadOnly) = (Unchecked.defaultof<'c>.AllocateJunctions ecs, Unchecked.defaultof<'c>.AllocateJunctions ecs)
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
@@ -386,7 +380,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     new (buffered, ecs) = SystemCorrelated (typeof<'c>.Name, buffered, ecs)
 
     member this.Components with get () = components
-    member this.Components2 with get () = components2
     member this.Junctions with get () = junctions
 
     member internal this.Compact ecs =
@@ -440,7 +433,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
     member this.IndexCorrelated entityId =
         let index = this.IndexCorrelatedI entityId
-        ComponentRef<'c>.make index components components2
+        ComponentRef<'c>.make index components componentsReadOnly
 
     member this.RegisterCorrelated (comp : 'c) entityId ecs =
 
@@ -457,7 +450,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
-            let mutable comp = comp.Junction index junctions ecs
+            let mutable comp = comp.Junction index junctions junctionsReadOnly ecs
             comp.Active <- true
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
@@ -483,7 +476,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             if  components.Length < freeList.Count * 2 && // freeList is always empty if unordered
                 components.Length > Constants.Ecs.ArrayReserve then
                 this.Compact ecs
-                ecs.BufferComponentArrays<'c> ()
             true
         | (false, _) -> false
 
@@ -537,14 +529,15 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
                 result
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) =
+        member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsObjReadOnly : obj) =
             let components = componentsObj :?> 'c ArrayRef
+            let componentsReadOnly = componentsObjReadOnly :?> 'c ArrayRef
             comp.Active <- true
             components.[index] <- comp
-            ComponentRef<'c>.make index components
+            ComponentRef<'c>.make index components componentsReadOnly
 
-        member this.Junction<'c when 'c : struct and 'c :> 'c Component> index components =
-            this.JunctionPlus<'c> Unchecked.defaultof<'c> index components
+        member this.Junction<'c when 'c : struct and 'c :> 'c Component> index componentsObj componentsObjReadOnly =
+            this.JunctionPlus<'c> Unchecked.defaultof<'c> index componentsObj componentsObjReadOnly
 
         member this.Disjunction<'c when 'c : struct and 'c :> 'c Component> (index : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
@@ -603,9 +596,8 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.MoveJunctions _ _ _ _ = ()
-        member this.Junction _ _ _ = this
+        member this.Junction _ _ _ _ = this
         member this.Disjunction _ _ _ = ()
-        member this.WithJunctionLock fn ecs = ecs.WithJunctionLock<'c ComponentMultiplexed> fn
     member this.RegisterMultiplexed (multiId, comp) =
         this.Simplexes.Add (multiId, { Simplex = comp })
     member this.UnregisterMultiplexed multiId =
