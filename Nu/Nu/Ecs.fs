@@ -258,6 +258,12 @@ and Ecs<'w when 'w :> Freezable> () as this =
                 writableArray
         | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'.")
 
+    member this.WithJunctionLock<'c when 'c : struct and 'c :> 'c Component> fn =
+        let componentName = typeof<'c>.Name
+        match arrayObjss.TryGetValue componentName with
+        | (true, arrayObjs) -> lock arrayObjs fn
+        | (false, _) -> ()
+
     member this.WithComponentArrays<'c when 'c : struct and 'c :> 'c Component> fn =
         let writableComponentArrays = this.GetWritableComponentArrays<'c> ()
         fn writableComponentArrays
@@ -266,12 +272,6 @@ and Ecs<'w when 'w :> Freezable> () as this =
     member this.WithComponentLock<'c when 'c : struct and 'c :> 'c Component> fn =
         let comp = Unchecked.defaultof<'c>
         comp.WithJunctionLock fn this
-
-    member this.WithJunctionLock<'c when 'c : struct and 'c :> 'c Component> fn =
-        let componentName = typeof<'c>.Name
-        match arrayObjss.TryGetValue componentName with
-        | (true, arrayObjs) -> lock arrayObjs fn
-        | (false, _) -> ()
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
