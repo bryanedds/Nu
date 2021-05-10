@@ -49,7 +49,7 @@ type [<NoEquality; NoComparison; Struct>] Mover =
       mutable Position : Position ComponentRef }
     interface Mover Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
-        member this.AllocateJunctions ecs = [|ecs.AllocateArray<Velocity> (); ecs.AllocateArray<Position> ()|]
+        member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Velocity> (); ecs.AllocateJunction<Position> ()|]
         member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Velocity> size junctions.[0]; ecs.ResizeJunction<Position> size junctions.[1]
         member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Velocity> src dst junctions.[0]; ecs.MoveJunction<Position> src dst junctions.[1]
         member this.Junction index junctions ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0]; Position = ecs.Junction<Position> index junctions.[1] }
@@ -157,14 +157,15 @@ type MyGameDispatcher () =
 
         // define update for movers
         let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            for components in ecs.GetComponentArrays<Mover> () do
-                for i in 0 .. components.Length - 1 do
-                    let mutable comp = &components.[i]
-                    if comp.Active then
-                        let velocity = &comp.Velocity.Index
-                        let position = &comp.Position.Index
-                        position.Position.X <- position.Position.X + velocity.Velocity.X
-                        position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+            ecs.WithComponentArrays<Mover> (fun arrays ->
+                for components in arrays do
+                    for i in 0 .. components.Length - 1 do
+                        let mutable comp = &components.[i]
+                        if comp.Active then
+                            let velocity = &comp.Velocity.Index
+                            let position = &comp.Position.Index
+                            position.Position.X <- position.Position.X + velocity.Velocity.X
+                            position.Position.Y <- position.Position.Y + velocity.Velocity.Y)
             world)
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
@@ -189,28 +190,31 @@ type MyGameDispatcher () =
         let world = World.selectScreen Simulants.DefaultScreen world
 #if ECS_HYBRID
         // define update for static sprites
-        let _ = ecs.Subscribe EcsEvents.Update (fun _ _ _ world ->
-            for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
-                for i in 0 .. components.Length - 1 do
-                    let comp = &components.[i]
-                    if comp.Active then
-                        let state = comp.Entity.State world
-                        state.Rotation <- state.Rotation + 0.03f
-            world)
+        let _ =
+            ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+                ecs.WithComponentArrays<StaticSpriteComponent> $ fun arrays ->
+                    for components in arrays do
+                        for i in 0 .. components.Length - 1 do
+                            let comp = &components.[i]
+                            if comp.Active then
+                                let state = comp.Entity.State world
+                                state.Rotation <- state.Rotation + 0.03f
 
         // define actualize for static sprites
-        let _ = ecs.Subscribe EcsEvents.Actualize (fun _ _ _ world ->
-            let messages = List ()
-            for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
-                for i in 0 .. components.Length - 1 do
-                    let comp = &components.[i]
-                    if comp.Active then
-                        let state = comp.Entity.State world
-                        if state.Visible then
-                            let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
-                            let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
-                            messages.Add layeredMessage
-            World.enqueueRenderLayeredMessages messages world)
+        let _ =
+            ecs.SubscribeEffect EcsEvents.Actualize $ fun _ _ _ world ->
+                let messages = List ()
+                ecs.WithComponentArrays<StaticSpriteComponent> $ fun arrays ->
+                    for components in arrays do
+                        for i in 0 .. components.Length - 1 do
+                            let comp = &components.[i]
+                            if comp.Active then
+                                let state = comp.Entity.State world
+                                if state.Visible then
+                                    let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
+                                    let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
+                                    messages.Add layeredMessage
+                World.enqueueRenderLayeredMessages messages world
 #else
         ignore screen
 #endif

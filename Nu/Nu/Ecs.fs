@@ -82,6 +82,16 @@ and System<'w when 'w :> Freezable> (name : string) =
     default this.PipedInit with get () = () :> obj
     member this.Name with get () = name
 
+/// Buffered array objects.
+and [<NoEquality; NoComparison>] BufferedArrayObjs =
+    { WritableArrayObjs : obj List
+      mutable ReadOnlyArrayObjs : obj List }
+
+/// Array objects that may or may not be buffered.
+and [<NoEquality; NoComparison>] ArrayObjs =
+    | UnbufferedArrayObjs of obj List
+    | BufferedArrayObjs of BufferedArrayObjs
+
 /// Nu's custom Entity-Component-System implementation.
 /// Nu's conception of an ECS is primarily as an abstraction over user-definable storage formats.
 /// The default formats include SoA-based formats for non-correlated, correlated, multiplexed, and hierarchichal value types.
@@ -89,7 +99,7 @@ and System<'w when 'w :> Freezable> (name : string) =
 /// on this 'w Ecs type.
 and Ecs<'w when 'w :> Freezable> () as this =
 
-    let arrayObjs = dictPlus<string, obj List> StringComparer.Ordinal []
+    let arrayObjss = dictPlus<string, ArrayObjs> StringComparer.Ordinal []
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
     let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
@@ -106,6 +116,28 @@ and Ecs<'w when 'w :> Freezable> () as this =
                   SystemPublisher = evt.SystemPublisher }
             callback evt world
         boxableCallback :> obj
+
+    member private this.GetWritableComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
+        let componentName = typeof<'c>.Name
+        match arrayObjss.TryGetValue componentName with
+        | (true, arrayObjs) ->
+            match arrayObjs with
+            | UnbufferedArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
+            | BufferedArrayObjs buffered -> buffered.WritableArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
+        | (false, _) -> [||]
+
+    member private this.BufferWritableComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
+        let componentName = typeof<'c>.Name
+        match arrayObjss.TryGetValue componentName with
+        | (true, arrayObjs) ->
+            match arrayObjs with
+            | UnbufferedArrayObjs _ -> ()
+            | BufferedArrayObjs buffered ->
+                for i in 0 .. buffered.WritableArrayObjs.Count - 1 do
+                    let writableArray = (buffered.WritableArrayObjs.[i] :?> 'c ArrayRef).Array
+                    let readOnlyArray = (buffered.ReadOnlyArrayObjs.[i] :?> 'c ArrayRef).Array
+                    Array.Copy (writableArray, readOnlyArray, writableArray.Length)
+        | (false, _) -> ()
 
     member internal this.Correlations 
         with get () = correlations
@@ -143,7 +175,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
     member this.IndexSystem<'s when 's :> 'w System> systemName =
         this.TryIndexSystem<'s> systemName |> Option.get
 
-    member this.Subscribe<'d> eventName (callback : SystemCallback<'d, 'w>) =
+    member this.SubscribeEffect<'d> eventName (callback : SystemCallback<'d, 'w>) =
         let subscriptionId = Gen.id
         match systemSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
@@ -153,6 +185,9 @@ and Ecs<'w when 'w :> Freezable> () as this =
             let subscriptions = dictPlus HashIdentity.Structural [(subscriptionId, this.BoxCallback<'d> callback)]
             systemSubscriptions.Add (eventName, subscriptions)
             subscriptionId
+
+    member this.Subscribe<'d, 'w when 'w :> Freezable> eventName callback =
+        this.SubscribeEffect<'d> eventName (fun evt system ecs world -> callback evt system ecs; world)
 
     member this.Unsubscribe eventName subscriptionId =
         match systemSubscriptions.TryGetValue eventName with
@@ -190,19 +225,48 @@ and Ecs<'w when 'w :> Freezable> () as this =
             world
         | (false, _) -> world
 
-    member this.AllocateArray<'c when 'c : struct and 'c :> 'c Component> () =
+    member this.AllocateComponents<'c when 'c : struct and 'c :> 'c Component> buffered =
         let componentName = typeof<'c>.Name
-        let arr = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-        match arrayObjs.TryGetValue componentName with
-        | (true, found) -> found.Add (box arr)
-        | (false, _) -> arrayObjs.Add (componentName, List [box arr])
-        arr
+        match arrayObjss.TryGetValue componentName with
+        | (true, _) -> failwith ("Array already initally allocated for '" + componentName + "'.")
+        | (false, _) ->
+            if buffered then
+                let arr = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                arrayObjss.Add (componentName, UnbufferedArrayObjs (List [box arr]))
+                arr
+            else
+                let writableArray = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                let readOnlyArray = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                arrayObjss.Add (componentName, BufferedArrayObjs { WritableArrayObjs = List [box writableArray]; ReadOnlyArrayObjs = List [box readOnlyArray] })
+                writableArray
 
-    member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
+    member this.AllocateJunction<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
-        match arrayObjs.TryGetValue componentName with
-        | (true, found) -> found |> Seq.cast<'c ArrayRef> |> Seq.toArray
-        | (false, _) -> [||]
+        match arrayObjss.TryGetValue componentName with
+        | (true, found) ->
+            match found with
+            | UnbufferedArrayObjs arrayObjs ->
+                let arr = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                arrayObjs.Add (box arr)
+                arr
+            | BufferedArrayObjs arrayObjs ->
+                let readOnlyArray = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                let writableArray = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                arrayObjs.WritableArrayObjs.Add (box writableArray)
+                arrayObjs.ReadOnlyArrayObjs.Add (box readOnlyArray)
+                writableArray
+        | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'.")
+
+    member this.WithComponentArrays<'c when 'c : struct and 'c :> 'c Component> fn =
+        let writableComponentArrays = this.GetWritableComponentArrays<'c> ()
+        fn writableComponentArrays
+        this.BufferWritableComponentArrays<'c> ()
+
+    member this.WithComponentLock<'c when 'c : struct and 'c :> 'c Component> fn =
+        let componentName = typeof<'c>.Name
+        match arrayObjss.TryGetValue componentName with
+        | (true, arrayObjs) -> lock arrayObjs fn
+        | (false, _) -> ()
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
@@ -240,14 +304,15 @@ type [<AbstractClass>] SystemMany<'w when 'w :> Freezable> (name) =
 
 /// An Ecs system with components stored by a raw index.
 /// Stores components in an unordered manner.
-type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, ecs : 'w Ecs) =
+type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
     inherit SystemMany<'w> (name)
 
-    let mutable components = ecs.AllocateArray<'c> ()
+    let mutable components = ecs.AllocateComponents<'c> buffered
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
 
-    new (ecs) = SystemUncorrelated (typeof<'c>.Name, ecs)
+    new (ecs) = SystemUncorrelated (typeof<'c>.Name, false, ecs)
+    new (buffered, ecs) = SystemUncorrelated (typeof<'c>.Name, buffered, ecs)
 
     abstract ComponentToBytes : 'c -> char array
     default this.ComponentToBytes _ = failwithnie ()
@@ -337,17 +402,18 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
                 | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system with components stored by entity id.
-type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, ecs : 'w Ecs) =
+type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
     inherit SystemMany<'w> (name)
 
-    let mutable components = ecs.AllocateArray<'c> ()
+    let mutable components = ecs.AllocateComponents<'c> buffered
     let mutable junctions = Unchecked.defaultof<'c>.AllocateJunctions ecs
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
     let correlationsBack = dictPlus<int, Guid> HashIdentity.Structural []
 
-    new (ecs) = SystemCorrelated (typeof<'c>.Name, ecs)
+    new (ecs) = SystemCorrelated (typeof<'c>.Name, false, ecs)
+    new (buffered, ecs) = SystemCorrelated (typeof<'c>.Name, buffered, ecs)
 
     member this.Components with get () = components
     member this.Junctions with get () = junctions
@@ -570,10 +636,11 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         this.Simplexes.Remove multiId
 
 /// An Ecs system that stores multiple components per entity id.
-type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, ecs : 'w Ecs) =
-    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (name, ecs)
+type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
+    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (name, buffered, ecs)
 
-    new (ecs) = SystemMultiplexed (typeof<'c>.Name, ecs)
+    new (ecs) = SystemMultiplexed (typeof<'c>.Name, false, ecs)
+    new (buffered, ecs) = SystemMultiplexed (typeof<'c>.Name, buffered, ecs)
 
     member this.QualifyMultiplexed multiId entityId =
         if this.QualifyCorrelated entityId then
@@ -634,13 +701,14 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> 
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system that stores components in a tree hierarchy.
-type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, ecs : 'w Ecs) =
+type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
     let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
 
-    new (ecs) = SystemHierarchical (typeof<'c>.Name, ecs)
+    new (ecs) = SystemHierarchical (typeof<'c>.Name, false, ecs)
+    new (buffered, ecs) = SystemHierarchical (typeof<'c>.Name, buffered, ecs)
 
     member this.Components with get () =
         systemTree |> ListTree.map (fun system -> system.Components)
@@ -652,7 +720,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 
     member this.AddNode (parentIdOpt : Guid option) =
         let nodeId = Gen.id
-        let system = SystemCorrelated<'c, 'w> (scstring nodeId, ecs)
+        let system = SystemCorrelated<'c, 'w> (scstring nodeId, buffered, ecs)
         let added =
             match parentIdOpt with
             | Some parentId ->
