@@ -50,7 +50,7 @@
   </object>
   <object id="12" gid="443" x="1056" y="624" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc GarrouNpc Downward [Prompt &quot;We can combine our efforts... for $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Garrou]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc ShadeNpc Downward [Prompt &quot;We can combine our efforts... for $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
  </objectgroup>

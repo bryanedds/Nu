@@ -239,8 +239,8 @@ generateBattlerAnimationSheet "../../Art/Allies/HeroIce.png" (Some "../../Art/Al
 generateBattlerAnimationSheet "../../Art/Allies/HeroRed.png" (Some "../../Art/Allies/HeroRedWalk.png") "../../Art/Allies/Out/HeroRed.png"
 generateBattlerAnimationSheet "../../Art/Allies/HeroSilver.png" (Some "../../Art/Allies/HeroSilverWalk.png") "../../Art/Allies/Out/HeroSilver.png"
 generateBattlerAnimationSheet "../../Art/Allies/Mercenary.png" (Some "../../Art/Allies/MercenaryWalk.png") "../../Art/Allies/Out/Mercenary.png"
+generateBattlerAnimationSheet "../../Art/Allies/Ninja.png" (Some "../../Art/Allies/NinjaWalk.png") "../../Art/Allies/Out/Ninja.png"
 generateBattlerAnimationSheet "../../Art/Allies/Prince.png" (Some "../../Art/Allies/PrinceWalk.png") "../../Art/Allies/Out/Prince.png"
-generateBattlerAnimationSheet "../../Art/Allies/Thief.png" (Some "../../Art/Allies/ThiefWalk.png") "../../Art/Allies/Out/Thief.png"
 
 // generate walking enemy characters
 Directory.CreateDirectory "../../Art/Enemies/Walking/Out"
@@ -257,11 +257,11 @@ generateBattlerAnimationSheet "../../Art/Enemies/Walking/Mage.png" (Some "../../
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Magician.png" (Some "../../Art/Enemies/Walking/MagicianWalk.png") "../../Art/Enemies/Walking/Out/Magician.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Merman.png" (Some "../../Art/Enemies/Walking/MermanWalk.png") "../../Art/Enemies/Walking/Out/Merman.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Monk.png" (Some "../../Art/Enemies/Walking/MonkWalk.png") "../../Art/Enemies/Walking/Out/Monk.png"
-generateBattlerAnimationSheet "../../Art/Enemies/Walking/Ninja.png" (Some "../../Art/Enemies/Walking/NinjaWalk.png") "../../Art/Enemies/Walking/Out/Ninja.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Poisoner.png" (Some "../../Art/Enemies/Walking/PoisonerWalk.png") "../../Art/Enemies/Walking/Out/Poisoner.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Samurai.png" (Some "../../Art/Enemies/Walking/SamuraiWalk.png") "../../Art/Enemies/Walking/Out/Samurai.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Samurai2.png" (Some "../../Art/Enemies/Walking/Samurai2Walk.png") "../../Art/Enemies/Walking/Out/Samurai2.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Soldier.png" (Some "../../Art/Enemies/Walking/SoldierWalk.png") "../../Art/Enemies/Walking/Out/Soldier.png"
+generateBattlerAnimationSheet "../../Art/Enemies/Walking/Thief.png" (Some "../../Art/Enemies/Walking/ThiefWalk.png") "../../Art/Enemies/Walking/Out/Thief.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Traveler.png" (Some "../../Art/Enemies/Walking/TravelerWalk.png") "../../Art/Enemies/Walking/Out/Traveler.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Trixter.png" (Some "../../Art/Enemies/Walking/TrixterWalk.png") "../../Art/Enemies/Walking/Out/Trixter.png"
 generateBattlerAnimationSheet "../../Art/Enemies/Walking/Vampire.png" (Some "../../Art/Enemies/Walking/VampireWalk.png") "../../Art/Enemies/Walking/Out/Vampire.png"

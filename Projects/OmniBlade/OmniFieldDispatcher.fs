@@ -287,7 +287,7 @@ module FieldDispatcher =
                     let advent =
                         match allyType with
                         | Jinn -> failwithumf ()
-                        | Garrou -> GarrouRecruited
+                        | Shade -> ShadeRecruited
                         | Mael -> MaelRecruited
                         | Riain -> RiainRecruited
                         | Peric -> PericRecruited

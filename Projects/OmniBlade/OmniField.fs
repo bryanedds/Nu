@@ -54,7 +54,7 @@ module Field =
         member this.BattleOpt = this.BattleOpt_
 
     let getRecruitmentFee (field : Field) =
-        let advents = Set.ofArray [|GarrouRecruited; MaelRecruited; RiainRecruited; PericRecruited|]
+        let advents = Set.ofArray [|ShadeRecruited; MaelRecruited; RiainRecruited; PericRecruited|]
         let recruiteds = Set.intersect advents field.Advents
         let recruited = Set.count recruiteds
         match Array.tryItem recruited Constants.Field.RecruitmentFees with
