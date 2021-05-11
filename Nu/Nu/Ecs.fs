@@ -40,10 +40,13 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
 
 /// A storable reference to a component in its containing array.
 /// DO NOT access the elements of ComponentArefBuffered without locking the field itself!
-/// NOTE: Inlined everything for speed.
+/// OPTIMIZATION: Inlined everything for speed.
 and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c :> 'c Component> =
-    { ComponentIndex : int
+    { /// The associated component's index.
+      ComponentIndex : int
+      /// The associated component array reference.
       ComponentAref : 'c ArrayRef
+      /// DO NOT access the elements of ComponentArefBuffered without locking the field itself!
       ComponentArefBuffered : 'c ArrayRef }
 
     member inline this.Index
