@@ -99,7 +99,7 @@ and System<'w when 'w :> Freezable> (name : string) =
 
 /// Buffered array objects.
 and [<NoEquality; NoComparison>] ArrayObjsBuffered =
-    { ArrayObjs : obj List
+    { ArrayObjsUnbuffered : obj List
       mutable ArrayObjsBuffered : obj List }
 
 /// Array objects that may or may not be buffered.
@@ -230,7 +230,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             else
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 let arefBuffered = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjss.Add (componentName, ArrayObjsBuffered { ArrayObjs = List [box aref]; ArrayObjsBuffered = List [box arefBuffered] })
+                arrayObjss.Add (componentName, ArrayObjsBuffered { ArrayObjsUnbuffered = List [box aref]; ArrayObjsBuffered = List [box arefBuffered] })
                 (aref, arefBuffered)
 
     member this.AllocateJunction<'c when 'c : struct and 'c :> 'c Component> () =
@@ -245,7 +245,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             | ArrayObjsBuffered arrayObjs ->
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 let arefBuffered = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjs.ArrayObjs.Add (box aref)
+                arrayObjs.ArrayObjsUnbuffered.Add (box aref)
                 arrayObjs.ArrayObjsBuffered.Add (box arefBuffered)
                 (box aref, box arefBuffered)
         | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'.")
@@ -256,7 +256,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
         | (true, arrayObjs) ->
             match arrayObjs with
             | ArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-            | ArrayObjsBuffered buffered -> buffered.ArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
+            | ArrayObjsBuffered buffered -> buffered.ArrayObjsUnbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
 
     member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn =
@@ -279,8 +279,8 @@ and Ecs<'w when 'w :> Freezable> () as this =
             | ArrayObjs _ -> ()
             | ArrayObjsBuffered buffered ->
                 lock arrayObjs $ fun () ->
-                    for i in 0 .. buffered.ArrayObjs.Count - 1 do
-                        let aref = buffered.ArrayObjs.[i] :?> 'c ArrayRef
+                    for i in 0 .. buffered.ArrayObjsUnbuffered.Count - 1 do
+                        let aref = buffered.ArrayObjsUnbuffered.[i] :?> 'c ArrayRef
                         let arefBuffered = buffered.ArrayObjsBuffered.[i] :?> 'c ArrayRef
                         lock arefBuffered (fun () ->
                             if arefBuffered.Array.Length = aref.Array.Length
@@ -787,7 +787,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// A correlated entity reference.
-/// Slow relative to normal ECS operations, but convenient for one-off operations.
+/// Slow relative to normal ECS operations, but convenient for one-off uses.
 type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
     { EntityId : Guid
       EntityEcs : 'w Ecs }
