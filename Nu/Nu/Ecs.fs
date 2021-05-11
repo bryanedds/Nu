@@ -275,10 +275,6 @@ and Ecs<'w when 'w :> Freezable> () as this =
                             else readOnlyAref.Array <- Array.copy writableAref.Array)
         | (false, _) -> ()
 
-    //member this.BufferComponentArraysAll () =
-    //    for arrayObjs in arrayObjss.Values do
-    //        this.BufferComponentArrays<?> ()
-
     member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
@@ -440,7 +436,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
     member this.IndexCorrelatedI entityId =
         let (found, index) = correlations.TryGetValue entityId
-        if not found then raise (InvalidOperationException "entityId")
+        if not found then raise (ArgumentOutOfRangeException "entityId")
         index
 
     member this.IndexCorrelated entityId =
@@ -455,10 +451,12 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             // ensure there is space in the arrays
             if freeIndex >= components.Length then
                 let length = components.Length * Constants.Ecs.ArrayGrowth
-                let arr = Array.zeroCreate length
-                components.Array.CopyTo (arr, 0)
-                components.Array <- arr
+                let arr = Array.zeroCreate length in components.Array.CopyTo (arr, 0); components.Array <- arr
                 comp.ResizeJunctions length junctions ecs
+                lock componentsBuffered (fun () ->
+                    let arr = Array.zeroCreate length in componentsBuffered.Array.CopyTo (arr, 0); componentsBuffered.Array <- arr)
+                lock junctionsBuffered (fun () ->
+                    comp.ResizeJunctions length junctionsBuffered ecs)
 
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
@@ -731,7 +729,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 
     member this.IndexHierarchical nodeId entityId =
         let (found, system) = systemDict.TryGetValue nodeId
-        if not found then raise (InvalidOperationException "nodeId")
+        if not found then raise (ArgumentOutOfRangeException "nodeId")
         system.IndexCorrelated entityId
 
     member this.RegisterHierarchical comp nodeId entityId ecs =
