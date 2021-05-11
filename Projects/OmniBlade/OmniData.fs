@@ -29,7 +29,7 @@ type Advent =
     | DebugSwitch
     | DebugSwitch2
     | Opened of Guid
-    | GarrouRecruited
+    | ShadeRecruited
     | MaelRecruited
     | RiainRecruited
     | PericRecruited
@@ -136,17 +136,17 @@ type [<CustomEquality; CustomComparison>] StatusType =
 
 type WeaponType =
     | ShortSword
-    | LongSword
+    | Dagger
     | OakRod
     | OakBow
     | Paws
     | BronzeSword
-    | HeavySword
+    | BronzeKatana
     | BronzeRod
     | LightBow
     | Claws
     | IronSword
-    | BroadSword
+    | IronKatana
     | SightedBow
     | IvoryRod
     | Fangs
@@ -171,7 +171,7 @@ type AccessoryType =
 type WeaponSubtype =
     | Melee
     | Sword
-    | Heavesword
+    | Knife
     | Rod
     | Bow
 
@@ -245,7 +245,7 @@ type TechType =
     | DarkCritical
     | Cyclone
     | PowerCut
-    | EmboldenCut
+    | SneakCut
     | DoubleCut
     | ProvokeCut
     | Fire
@@ -282,7 +282,7 @@ type StatureType =
 type ArchetypeType =
     | Apprentice
     | Fighter
-    | Brawler
+    | Ninja
     | Wizard
     | Conjuror
     | Cleric
@@ -314,7 +314,6 @@ type ArchetypeType =
     | Thief
     | Lizardman
     | Trixter
-    | Ninja
     | Monk
     | Gorgon
     | Tortoise
@@ -440,7 +439,7 @@ type PortalType =
     | StairsPortal of bool
 
 type NpcType =
-    | GarrouNpc
+    | ShadeNpc
     | MaelNpc
     | RiainNpc
     | PericNpc
@@ -453,7 +452,7 @@ type NpcType =
     
     static member exists advents specialty =
         match specialty with
-        | GarrouNpc -> not (Set.contains GarrouRecruited advents)
+        | ShadeNpc -> not (Set.contains ShadeRecruited advents)
         | MaelNpc -> not (Set.contains MaelRecruited advents)
         | RiainNpc -> not (Set.contains RiainRecruited advents)
         | PericNpc -> not (Set.contains PericRecruited advents)
@@ -508,7 +507,7 @@ type CharacterAnimationType =
 
 type AllyType =
     | Jinn
-    | Garrou
+    | Shade
     | Mael
     | Riain
     | Peric
@@ -672,7 +671,7 @@ type TechData =
       Scalar : single
       SuccessRate : single
       Curative : bool
-      Emboldening : bool
+      Sneakening : bool
       Provocative : bool
       Cancels : bool
       Absorb : single // percentage of outcome that is absorbed by the caster

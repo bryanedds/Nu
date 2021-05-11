@@ -639,7 +639,7 @@ module BattleDispatcher =
                 let target = Battle.getCharacter targetIndex battle
                 let effectOpt =
                     match techType with
-                    | Critical | DarkCritical | PowerCut | EmboldenCut | DoubleCut | ProvokeCut ->
+                    | Critical | DarkCritical | PowerCut | SneakCut | DoubleCut | ProvokeCut ->
                         let hopDirection = Direction.ofVector2 (target.Bottom - source.Bottom)
                         let hopStop = target.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
                         Left (DisplayHop { HopStart = source.Bottom; HopStop = hopStop })
@@ -713,7 +713,7 @@ module BattleDispatcher =
                     let cut = DisplayCut (30L, false, targetIndex)
                     let battle = Battle.updateCharacter (Character.animate time AttackAnimation) sourceIndex battle
                     withCmds [playHit; cut] battle
-                | EmboldenCut ->
+                | SneakCut ->
                     let time = World.getTickTime world
                     let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                     let cut = DisplayCut (30L, false, targetIndex)
@@ -846,7 +846,7 @@ module BattleDispatcher =
                 let target = Battle.getCharacter targetIndex battle
                 let hopOpt =
                     match techType with
-                    | Critical | DarkCritical | PowerCut | EmboldenCut | DoubleCut | ProvokeCut ->
+                    | Critical | DarkCritical | PowerCut | SneakCut | DoubleCut | ProvokeCut ->
                         let hopDirection = Direction.ofVector2 (target.Bottom - source.BottomOriginal)
                         let hopStart = target.Bottom - Direction.toVector2 hopDirection * Constants.Battle.StrikingDistance
                         Some { HopStart = hopStart; HopStop = source.BottomOriginal }

@@ -141,14 +141,14 @@ module PropDispatcher =
                         | NpcState (npcType, direction, color, glow, true) ->
                             let image =
                                 match npcType with
-                                | GarrouNpc -> Assets.Field.GarrouAnimationSheet
+                                | ShadeNpc -> Assets.Field.ShadeAnimationSheet
                                 | MaelNpc -> Assets.Field.MaelAnimationSheet
                                 | RiainNpc -> Assets.Field.RiainAnimationSheet
                                 | PericNpc -> Assets.Field.PericAnimationSheet
                                 | _ -> Assets.Field.NpcAnimationSheet
                             let (row, column) =
                                 match npcType with
-                                | GarrouNpc
+                                | ShadeNpc
                                 | MaelNpc
                                 | RiainNpc
                                 | PericNpc -> (10, 0)
