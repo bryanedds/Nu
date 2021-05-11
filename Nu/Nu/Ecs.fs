@@ -1,5 +1,4 @@
 ﻿// Nu Game Engine.
-// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
@@ -42,6 +41,7 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
 /// A storable reference to a component in its containing array.
 /// DO NOT access the elements of ComponentArefBuffered without locking the field itself!
 /// OPTIMIZATION: Inlined everything for speed.
+/// TODO: test threaded / buffered ECS functionality.
 and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c :> 'c Component> =
     { /// The associated component's index.
       ComponentIndex : int
@@ -259,6 +259,18 @@ and Ecs<'w when 'w :> Freezable> () as this =
             | ArrayObjsBuffered buffered -> buffered.ArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
 
+    member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn =
+        let componentName = typeof<'c>.Name
+        match arrayObjss.TryGetValue componentName with
+        | (true, arrayObjs) ->
+            match arrayObjs with
+            | ArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray |> fn
+            | ArrayObjsBuffered buffered ->
+                lock arrayObjs $ fun () ->
+                    let arefsBuffered = buffered.ArrayObjsBuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
+                    fn arefsBuffered
+        | (false, _) -> ()
+
     member this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
@@ -274,18 +286,6 @@ and Ecs<'w when 'w :> Freezable> () as this =
                             if arefBuffered.Array.Length = aref.Array.Length
                             then aref.Array.CopyTo (arefBuffered.Array, 0)
                             else arefBuffered.Array <- Array.copy aref.Array)
-        | (false, _) -> ()
-
-    member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn =
-        let componentName = typeof<'c>.Name
-        match arrayObjss.TryGetValue componentName with
-        | (true, arrayObjs) ->
-            match arrayObjs with
-            | ArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray |> fn
-            | ArrayObjsBuffered buffered ->
-                lock arrayObjs $ fun () ->
-                    let arefsBuffered = buffered.ArrayObjsBuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-                    fn arefsBuffered
         | (false, _) -> ()
 
     type System<'w when 'w :> Freezable> with
