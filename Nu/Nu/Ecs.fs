@@ -259,7 +259,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             | ArrayObjsBuffered buffered -> buffered.ArrayObjsUnbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
 
-    member this.WithComponentArraysBufferedEffect<'c when 'c : struct and 'c :> 'c Component> fn (world : 'w) =
+    member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn (world : 'w) =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
@@ -272,9 +272,6 @@ and Ecs<'w when 'w :> Freezable> () as this =
                     let arefsBuffered = buffered.ArrayObjsBuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
                     fn arefsBuffered world
         | (false, _) -> world
-
-    member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn =
-        this.WithComponentArraysBufferedEffect<'c> (fun arefsBuffered world -> fn arefsBuffered; world)
 
     member this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
@@ -331,8 +328,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
     new (buffered, ecs) = SystemUncorrelated (typeof<'c>.Name, buffered, ecs)
 
     member this.Components with get () = components
-    member this.WithComponentsBuffered (fn : 'c ArrayRef -> unit) = lock componentsBuffered (fun () -> fn componentsBuffered)
-    member this.WithComponentsBufferedEffect (fn : 'c ArrayRef -> 'w -> 'w) world = lock componentsBuffered (fun () -> fn componentsBuffered world)
+    member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w -> 'w) world = lock componentsBuffered (fun () -> fn componentsBuffered world)
 
     member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
@@ -395,12 +391,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     new (buffered, ecs) = SystemCorrelated (typeof<'c>.Name, buffered, ecs)
 
     member this.Components with get () = components
-    member this.WithComponentsBuffered (fn : 'c ArrayRef -> unit) = lock componentsBuffered (fun () -> fn componentsBuffered)
-    member this.WithComponentsBufferedEffect (fn : 'c ArrayRef -> 'w -> 'w) world = lock componentsBuffered (fun () -> fn componentsBuffered world)
+    member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w -> 'w) world = lock componentsBuffered (fun () -> fn componentsBuffered world)
 
     member this.Junctions with get () = junctions
-    member this.WithJunctionsBuffered (fn : obj array -> unit) = lock junctionsBuffered (fun () -> fn junctionsBuffered)
-    member this.WithJunctionsBufferedEffect (fn : obj array -> 'w -> 'w) world = lock junctionsBuffered (fun () -> fn junctionsBuffered world)
+    member this.WithJunctionsBuffered (fn : obj array -> 'w -> 'w) world = lock junctionsBuffered (fun () -> fn junctionsBuffered world)
 
     member internal this.Compact ecs =
 
