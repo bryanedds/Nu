@@ -1,4 +1,5 @@
 ﻿// Nu Game Engine.
+// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2020.
 
 namespace Nu
@@ -97,14 +98,14 @@ and System<'w when 'w :> Freezable> (name : string) =
     member this.Name with get () = name
 
 /// Buffered array objects.
-and [<NoEquality; NoComparison>] BufferedArrayObjs =
-    { WritableArrayObjs : obj List
-      mutable ReadOnlyArrayObjs : obj List }
+and [<NoEquality; NoComparison>] ArrayObjsBuffered =
+    { ArrayObjs : obj List
+      mutable ArrayObjsBuffered : obj List }
 
 /// Array objects that may or may not be buffered.
 and [<NoEquality; NoComparison>] ArrayObjs =
-    | UnbufferedArrayObjs of obj List
-    | BufferedArrayObjs of BufferedArrayObjs
+    | ArrayObjs of obj List
+    | ArrayObjsBuffered of ArrayObjsBuffered
 
 /// Nu's custom Entity-Component-System implementation.
 /// Nu's conception of an ECS is primarily as an abstraction over user-definable storage formats.
@@ -223,30 +224,30 @@ and Ecs<'w when 'w :> Freezable> () as this =
         | (true, _) -> failwith ("Array already initally allocated for '" + componentName + "'.")
         | (false, _) ->
             if buffered then
-                let arr = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjss.Add (componentName, UnbufferedArrayObjs (List [box arr]))
-                (arr, arr)
+                let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                arrayObjss.Add (componentName, ArrayObjs (List [box aref]))
+                (aref, aref)
             else
-                let writableAref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                let readOnlyAref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjss.Add (componentName, BufferedArrayObjs { WritableArrayObjs = List [box writableAref]; ReadOnlyArrayObjs = List [box readOnlyAref] })
-                (writableAref, readOnlyAref)
+                let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                let arefBuffered = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                arrayObjss.Add (componentName, ArrayObjsBuffered { ArrayObjs = List [box aref]; ArrayObjsBuffered = List [box arefBuffered] })
+                (aref, arefBuffered)
 
     member this.AllocateJunction<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, found) ->
             match found with
-            | UnbufferedArrayObjs arrayObjs ->
+            | ArrayObjs arrayObjs ->
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 arrayObjs.Add (box aref)
                 (box aref, box aref)
-            | BufferedArrayObjs arrayObjs ->
-                let readOnlyAref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                let writableAref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjs.WritableArrayObjs.Add (box writableAref)
-                arrayObjs.ReadOnlyArrayObjs.Add (box readOnlyAref)
-                (box writableAref, box readOnlyAref)
+            | ArrayObjsBuffered arrayObjs ->
+                let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                let arefBuffered = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
+                arrayObjs.ArrayObjs.Add (box aref)
+                arrayObjs.ArrayObjsBuffered.Add (box arefBuffered)
+                (box aref, box arefBuffered)
         | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'.")
 
     member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
@@ -254,8 +255,8 @@ and Ecs<'w when 'w :> Freezable> () as this =
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
             match arrayObjs with
-            | UnbufferedArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-            | BufferedArrayObjs buffered -> buffered.WritableArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
+            | ArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
+            | ArrayObjsBuffered buffered -> buffered.ArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
 
     member this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
@@ -263,16 +264,16 @@ and Ecs<'w when 'w :> Freezable> () as this =
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
             match arrayObjs with
-            | UnbufferedArrayObjs _ -> ()
-            | BufferedArrayObjs buffered ->
+            | ArrayObjs _ -> ()
+            | ArrayObjsBuffered buffered ->
                 lock arrayObjs $ fun () ->
-                    for i in 0 .. buffered.WritableArrayObjs.Count - 1 do
-                        let writableAref = buffered.WritableArrayObjs.[i] :?> 'c ArrayRef
-                        let readOnlyAref = buffered.ReadOnlyArrayObjs.[i] :?> 'c ArrayRef
-                        lock readOnlyAref (fun () ->
-                            if readOnlyAref.Array.Length = writableAref.Array.Length
-                            then writableAref.Array.CopyTo (readOnlyAref.Array, 0)
-                            else readOnlyAref.Array <- Array.copy writableAref.Array)
+                    for i in 0 .. buffered.ArrayObjs.Count - 1 do
+                        let aref = buffered.ArrayObjs.[i] :?> 'c ArrayRef
+                        let arefBuffered = buffered.ArrayObjsBuffered.[i] :?> 'c ArrayRef
+                        lock arefBuffered (fun () ->
+                            if arefBuffered.Array.Length = aref.Array.Length
+                            then aref.Array.CopyTo (arefBuffered.Array, 0)
+                            else arefBuffered.Array <- Array.copy aref.Array)
         | (false, _) -> ()
 
     member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn =
@@ -280,11 +281,11 @@ and Ecs<'w when 'w :> Freezable> () as this =
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
             match arrayObjs with
-            | UnbufferedArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray |> fn
-            | BufferedArrayObjs buffered ->
+            | ArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray |> fn
+            | ArrayObjsBuffered buffered ->
                 lock arrayObjs $ fun () ->
-                    let readOnlyArefs = buffered.ReadOnlyArrayObjs |> Seq.cast<'c ArrayRef> |> Seq.toArray
-                    fn readOnlyArefs
+                    let arefsBuffered = buffered.ArrayObjsBuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
+                    fn arefsBuffered
         | (false, _) -> ()
 
     type System<'w when 'w :> Freezable> with
@@ -541,15 +542,15 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
                 result
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsObjReadOnly : obj) =
+        member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsBufferedObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
-            let componentsBuffered = componentsObjReadOnly :?> 'c ArrayRef
+            let componentsBuffered = componentsBufferedObj :?> 'c ArrayRef
             comp.Active <- true
             components.[index] <- comp
             ComponentRef<'c>.make index components componentsBuffered
 
-        member this.Junction<'c when 'c : struct and 'c :> 'c Component> index componentsObj componentsObjReadOnly =
-            this.JunctionPlus<'c> Unchecked.defaultof<'c> index componentsObj componentsObjReadOnly
+        member this.Junction<'c when 'c : struct and 'c :> 'c Component> index componentsObj componentsBufferedObj =
+            this.JunctionPlus<'c> Unchecked.defaultof<'c> index componentsObj componentsBufferedObj
 
         member this.Disjunction<'c when 'c : struct and 'c :> 'c Component> (index : int) (componentsObj : obj) =
             let components = componentsObj :?> 'c ArrayRef
