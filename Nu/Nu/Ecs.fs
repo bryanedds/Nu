@@ -324,8 +324,8 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
     new (ecs) = SystemUncorrelated (typeof<'c>.Name, false, ecs)
     new (buffered, ecs) = SystemUncorrelated (typeof<'c>.Name, buffered, ecs)
 
-    member this.Components with get () =
-        components
+    member this.Components with get () = components
+    member this.WithComponentsBuffered fn = lock componentsBuffered (fun () -> fn componentsBuffered)
 
     member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
@@ -388,7 +388,9 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     new (buffered, ecs) = SystemCorrelated (typeof<'c>.Name, buffered, ecs)
 
     member this.Components with get () = components
+    member this.WithComponentsBuffered fn = lock componentsBuffered (fun () -> fn componentsBuffered)
     member this.Junctions with get () = junctions
+    member this.WithJunctionsBuffered fn = lock junctionsBuffered (fun () -> fn junctionsBuffered)
 
     member internal this.Compact ecs =
 
