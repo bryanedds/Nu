@@ -138,19 +138,12 @@ and Ecs<'w when 'w :> Freezable> () as this =
     member this.GlobalSystem
         with get () = globalSystem
 
-    /// Thread-safe.
-    member this.RegisterPipedValue<'a> key (value : 'a) =
+    member this.RegisterPipedValue<'a when 'a : not struct> key (value : 'a) =
         pipedValues.[key] <- value :> obj
 
-    /// Thread-safe.
-    member this.TryIndexPipedValue<'a> key =
-        match pipedValues.TryGetValue key with
-        | (true, value) -> Some (value :?> 'a)
-        | (false, _) -> None
-
-    /// Thread-safe.
-    member this.IndexPipedValue<'a> key =
-        pipedValues.[key] :?> 'a
+    member this.WithPipedValue<'a when 'a : not struct> key fn (world : 'w) : 'w =
+        let pipedValue = pipedValues.[key] :?> 'a
+        lock pipedValue (fun () -> fn pipedValue world)
 
     member this.RegisterSystemGeneralized (system : 'w System) =
         systemsUnordered.Add (system.Name, system)
@@ -292,7 +285,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
-        member this.IndexPipedValue<'a> (ecs : 'w Ecs) = ecs.IndexPipedValue<'a> this.PipedKey
+        member this.WithPipedValue<'a when 'a : not struct> fn (ecs : 'w Ecs) world = ecs.WithPipedValue<'a> this.PipedKey fn world
 
 [<Extension>]
 type EcsExtensions =
