@@ -399,8 +399,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     member this.WithComponentsBufferedEffect (fn : 'c ArrayRef -> 'w -> 'w) world = lock componentsBuffered (fun () -> fn componentsBuffered world)
 
     member this.Junctions with get () = junctions
-    member this.WithJunctionsBuffered (fn : 'c ArrayRef -> unit) = lock junctionsBuffered (fun () -> fn junctionsBuffered)
-    member this.WithJunctionsBufferedEffect (fn : 'c ArrayRef -> 'w -> 'w) world = lock junctionsBuffered (fun () -> fn junctionsBuffered world)
+    member this.WithJunctionsBuffered (fn : obj array -> unit) = lock junctionsBuffered (fun () -> fn junctionsBuffered)
+    member this.WithJunctionsBufferedEffect (fn : obj array -> 'w -> 'w) world = lock junctionsBuffered (fun () -> fn junctionsBuffered world)
 
     member internal this.Compact ecs =
 
