@@ -664,7 +664,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> 
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
             let simplex = system.IndexMultiplexedBuffered multiId entityId
-            &simplex.Simplex
+            simplex.Simplex
 
         member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> comp multiId entityId =
             let systemName = typeof<'c>.Name
