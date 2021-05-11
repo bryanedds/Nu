@@ -132,7 +132,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             callback evt world
         boxableCallback :> obj
 
-    member internal this.Correlations 
+    member private this.Correlations 
         with get () = correlations
 
     member this.GlobalSystem
@@ -386,6 +386,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
     let correlationsBack = dictPlus<int, Guid> HashIdentity.Structural []
+    static member private isJunction<'c> junction = junction.GetType().GetElementType().GetGenericArguments().[0] = typeof<'c>
 
     new (ecs) = SystemCorrelated (typeof<'c>.Name, false, ecs)
     new (buffered, ecs) = SystemCorrelated (typeof<'c>.Name, buffered, ecs)
@@ -393,10 +394,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     member this.Components with get () = components
     member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w -> 'w) world = lock componentsBuffered (fun () -> fn componentsBuffered world)
 
-    member this.Junctions with get () = junctions
-    member this.WithJunctionsBuffered (fn : obj array -> 'w -> 'w) world = lock junctionsBuffered (fun () -> fn junctionsBuffered world)
+    member this.GetJunction<'c> () = junctions |> Array.find SystemCorrelated<'c, 'w>.isJunction<'c> :?> 'c ArrayRef
+    member this.WithJunctionBuffered<'c> fn world = let junction = this.GetJunction<'c> () in  lock junction (fun () -> fn junction world)
 
-    member internal this.Compact ecs =
+    member private this.Compact ecs =
 
         // compact array
         // TODO: P1: step-debug this.
