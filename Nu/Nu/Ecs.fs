@@ -566,27 +566,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             let components = componentsObj :?> 'c ArrayRef
             components.[dst] <- components.[src]
 
-/// A correlated entity reference.
-/// Very slow, but convenient for one-off operations.
-type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
-    { EntityId : Guid
-      EntityEcs : 'w Ecs }
-    member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
-        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
-        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.Index
-    member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> () : 'c outref =
-        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
-        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.Index
-    member this.IndexBuffered<'c when 'c : struct and 'c :> 'c Component> () =
-        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
-        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        correlated.IndexBuffered
-    type Ecs<'w when 'w :> Freezable> with
-        member this.GetEntityRef entityId =
-            { EntityId = entityId; EntityEcs = this }
-
 /// Handle to one of an array of multiplexed components.
 type Simplex<'c when 'c : struct> =
     { mutable Simplex : 'c }
@@ -806,6 +785,39 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
                     | (true, correlation) -> correlation.Add systemName
                     | (false, _) -> this.Correlations.Add (entityId, List [systemName])
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
+
+/// A correlated entity reference.
+/// Slow relative to normal ECS operations, but convenient for one-off operations.
+type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
+    { EntityId : Guid
+      EntityEcs : 'w Ecs }
+    member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
+        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
+        &correlated.Index
+    member this.IndexBuffered<'c when 'c : struct and 'c :> 'c Component> () =
+        let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
+        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
+        correlated.IndexBuffered
+    member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId =
+        let system = this.EntityEcs.IndexSystem<SystemMultiplexed<'c, 'w>> typeof<'c>.Name
+        let multiplexed = system.IndexMultiplexed multiId this.EntityId : 'c Simplex
+        &multiplexed.Simplex
+    member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> multiId =
+        let system = this.EntityEcs.IndexSystem<SystemMultiplexed<'c, 'w>> typeof<'c>.Name
+        let multiplexed = system.IndexMultiplexedBuffered multiId this.EntityId : 'c Simplex
+        multiplexed.Simplex
+    member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId =
+        let system = this.EntityEcs.IndexSystem<SystemHierarchical<'c, 'w>> typeof<'c>.Name
+        let hierarchical = system.IndexHierarchical nodeId this.EntityId : 'c ComponentRef
+        &hierarchical.Index
+    member this.IndexHierarchicalBuffered<'c when 'c : struct and 'c :> 'c Component> nodeId =
+        let system = this.EntityEcs.IndexSystem<SystemHierarchical<'c, 'w>> typeof<'c>.Name
+        let hierarchical = system.IndexHierarchical nodeId this.EntityId : 'c ComponentRef
+        hierarchical.IndexBuffered
+    type Ecs<'w when 'w :> Freezable> with
+        member this.GetEntityRef entityId =
+            { EntityId = entityId; EntityEcs = this }
 
 [<RequireQualifiedAccess>]
 module EcsEvents =
