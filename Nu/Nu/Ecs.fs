@@ -39,6 +39,7 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         end
 
 /// A storable reference to a component in its containing array.
+/// DO NOT access the elements of ComponentArefBuffered without locking the field itself!
 /// NOTE: Inlined everything for speed.
 and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c :> 'c Component> =
     { ComponentIndex : int
@@ -50,13 +51,20 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
 
     member inline this.IndexBuffered
         with get () =
-            let this = this
-            lock this.ComponentArefBuffered (fun () -> this.ComponentArefBuffered.[this.ComponentIndex])
+            let index = this.ComponentIndex
+            let arefBuffered = this.ComponentArefBuffered
+            lock arefBuffered (fun () -> arefBuffered.[index])
 
     member inline this.Assign value =
         this.ComponentAref.[this.ComponentIndex] <- value
 
+    member inline this.Assign (value : 'c inref) =
+        this.ComponentAref.[this.ComponentIndex] <- value
+
     static member inline (<!) (componentRef, value) =
+        componentRef.ComponentAref.Array.[componentRef.ComponentIndex] <- value
+        
+    static member inline (<!) (componentRef, value : 'c inref) =
         componentRef.ComponentAref.Array.[componentRef.ComponentIndex] <- value
 
     static member inline make index aref arefBuffered : 'c ComponentRef =
@@ -310,7 +318,7 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Fr
 type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
-    let mutable (components, components2) = ecs.AllocateComponents<'c> buffered
+    let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
 
@@ -320,12 +328,9 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
     member this.Components with get () =
         components
 
-    member this.Components2 with get () =
-        components2
-
     member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
-        ComponentRef<'c>.make index components components2
+        ComponentRef<'c>.make index components componentsBuffered
 
     member this.RegisterUncorrelated comp =
         if freeList.Count > 0 then
@@ -373,8 +378,8 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
-    let mutable (components, componentsReadOnly) = ecs.AllocateComponents<'c> buffered
-    let mutable (junctions, junctionsReadOnly) = Unchecked.defaultof<'c>.AllocateJunctions ecs |> Array.unzip
+    let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
+    let mutable (junctions, junctionsBuffered) = Unchecked.defaultof<'c>.AllocateJunctions ecs |> Array.unzip
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
@@ -437,7 +442,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
     member this.IndexCorrelated entityId =
         let index = this.IndexCorrelatedI entityId
-        ComponentRef<'c>.make index components componentsReadOnly
+        ComponentRef<'c>.make index components componentsBuffered
 
     member this.RegisterCorrelated (comp : 'c) entityId ecs =
 
@@ -454,7 +459,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
-            let mutable comp = comp.Junction index junctions junctionsReadOnly ecs
+            let mutable comp = comp.Junction index junctions junctionsBuffered ecs
             comp.Active <- true
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
@@ -535,10 +540,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsObjReadOnly : obj) =
             let components = componentsObj :?> 'c ArrayRef
-            let componentsReadOnly = componentsObjReadOnly :?> 'c ArrayRef
+            let componentsBuffered = componentsObjReadOnly :?> 'c ArrayRef
             comp.Active <- true
             components.[index] <- comp
-            ComponentRef<'c>.make index components componentsReadOnly
+            ComponentRef<'c>.make index components componentsBuffered
 
         member this.Junction<'c when 'c : struct and 'c :> 'c Component> index componentsObj componentsObjReadOnly =
             this.JunctionPlus<'c> Unchecked.defaultof<'c> index componentsObj componentsObjReadOnly
@@ -565,15 +570,15 @@ type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
     member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.ComponentAref.Array.[correlated.ComponentIndex]
+        &correlated.Index
     member this.IndexPlus<'c when 'c : struct and 'c :> 'c Component> () : 'c outref =
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.ComponentAref.Array.[correlated.ComponentIndex]
+        &correlated.Index
     member this.IndexBuffered<'c when 'c : struct and 'c :> 'c Component> () =
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.ComponentArefBuffered.Array.[correlated.ComponentIndex]
+        correlated.IndexBuffered
     type Ecs<'w when 'w :> Freezable> with
         member this.GetEntityRef entityId =
             { EntityId = entityId; EntityEcs = this }
