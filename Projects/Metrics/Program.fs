@@ -199,19 +199,18 @@ type MyGameDispatcher () =
                         state.Rotation <- state.Rotation + 0.03f
 
         // define actualize for static sprites
-        let _ =
-            ecs.SubscribePlus EcsEvents.Actualize $ fun _ _ _ world ->
-                let messages = List ()
-                for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
-                    for i in 0 .. components.Length - 1 do
-                        let comp = &components.[i]
-                        if comp.Active then
-                            let state = comp.Entity.State world
-                            if state.Visible then
-                                let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
-                                let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
-                                messages.Add layeredMessage
-                World.enqueueRenderLayeredMessages messages world
+        ecs.SubscribePlus Gen.id EcsEvents.Actualize $ fun _ _ _ world ->
+            let messages = List ()
+            for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
+                for i in 0 .. components.Length - 1 do
+                    let comp = &components.[i]
+                    if comp.Active then
+                        let state = comp.Entity.State world
+                        if state.Visible then
+                            let spriteDescriptor = SpriteDescriptor { Transform = state.Transform; Absolute = state.Absolute; Offset = Vector2.Zero; InsetOpt = None; Image = comp.Sprite; Color = Color.White; Blend = Transparent; Glow = Color.Zero; Flip = FlipNone }
+                            let layeredMessage = { Elevation = state.Elevation; PositionY = state.Position.Y; AssetTag = AssetTag.generalize comp.Sprite; RenderDescriptor = spriteDescriptor }
+                            messages.Add layeredMessage
+            World.enqueueRenderLayeredMessages messages world
 #else
         ignore screen
 #endif
