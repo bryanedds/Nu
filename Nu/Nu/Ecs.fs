@@ -667,8 +667,8 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (name, b
     new (ecs) = SystemHierarchical (typeof<'c>.Name, false, ecs)
     new (buffered, ecs) = SystemHierarchical (typeof<'c>.Name, buffered, ecs)
 
-    member this.Components with get () =
-        systemTree |> ListTree.map (fun system -> system.Components)
+    member this.Components with get () = systemTree |> ListTree.map (fun system -> system.Components)
+    member this.WithComponentsBuffered fn worldOpt = systemTree |> ListTree.map (fun system -> system.WithComponentsBuffered fn worldOpt)
 
     member this.IndexNode nodeId =
         match systemDict.TryGetValue nodeId with
