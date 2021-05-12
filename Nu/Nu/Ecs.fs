@@ -159,7 +159,9 @@ and Ecs<'w when 'w :> Freezable> () as this =
         | (false, _) -> None
 
     member this.IndexSystem<'s when 's :> 'w System> systemName =
-        this.TryIndexSystem<'s> systemName |> Option.get
+        match systemsUnordered.TryGetValue systemName with
+        | (true, system) -> system :?> 's
+        | (false, _) -> failwith ("Could not index system '" + systemName + "' of type '" + typeof<'s>.Name + "'.")
 
     member this.SubscribePlus<'d> subscriptionId eventName (callback : SystemCallback<'d, 'w>) =
         match systemSubscriptions.TryGetValue eventName with
