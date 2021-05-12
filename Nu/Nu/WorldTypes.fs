@@ -143,7 +143,13 @@ type [<StructuralEquality; NoComparison>] NuConfig =
 
     /// The default configuration for Nu.
     static member defaultConfig =
-        { RunSynchronously = false }
+        let runSynchronously =
+#if SYNCHRONOUS
+            true
+#else
+            false
+#endif
+        { RunSynchronously = runSynchronously }
 
 /// Configuration parameters for the world.
 type [<StructuralEquality; NoComparison>] WorldConfig =
