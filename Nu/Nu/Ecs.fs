@@ -184,14 +184,13 @@ and Ecs<'w when 'w :> Freezable> () as this =
     member this.Publish<'d> eventName (eventData : 'd) publisher world =
         match systemSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
-            (Some world, subscriptions.Values) ||>
-            Seq.fold (fun worldOpt (callback : obj) ->
+            (world, subscriptions.Values) ||>
+            Seq.fold (fun world (callback : obj) ->
                 match callback with
                 | :? SystemCallback<obj, 'w> as objCallback ->
                     let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
-                    objCallback evt publisher this worldOpt
-                | _ -> failwithumf ()) |>
-            Option.get
+                    objCallback evt publisher this (Some world) |> Option.get
+                | _ -> failwithumf ())
         | (false, _) -> world
 
     member this.PublishParallel<'d> eventName (eventData : 'd) publisher =
