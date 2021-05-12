@@ -184,13 +184,13 @@ and Ecs<'w when 'w :> Freezable> () as this =
     member this.Publish<'d> eventName (eventData : 'd) publisher world =
         match systemSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
-            (world, subscriptions.Values) ||>
             Seq.fold (fun world (callback : obj) ->
                 match callback with
                 | :? SystemCallback<obj, 'w> as objCallback ->
                     let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
                     objCallback evt publisher this (Some world) |> Option.get
                 | _ -> failwithumf ())
+                world subscriptions.Values
         | (false, _) -> world
 
     member this.PublishParallel<'d> eventName (eventData : 'd) publisher =
@@ -822,8 +822,8 @@ type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
 [<RequireQualifiedAccess>]
 module EcsEvents =
 
-    let [<Literal>] UpdateParallel = "UpdateParallel"
     let [<Literal>] Update = "Update"
-    let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
+    let [<Literal>] UpdateParallel = "UpdateParallel"
     let [<Literal>] PostUpdate = "PostUpdate"
+    let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
     let [<Literal>] Actualize = "Actualize"
