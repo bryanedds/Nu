@@ -193,24 +193,19 @@ and Ecs<'w when 'w :> Freezable> () as this =
                 world subscriptions.Values
         | (false, _) -> world
 
-    member this.PublishParallel<'d> eventName (eventData : 'd) publisher (world : 'w) =
+    member this.PublishParallel<'d> eventName (eventData : 'd) publisher =
         match systemSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
-            world.Freeze ()
-            try subscriptions |>
-                Seq.map (fun subscription ->
-                    Task.Run (fun () ->
-                        match subscription.Value with
-                        | :? SystemCallback<obj, 'w> as objCallback ->
-                            let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
-                            objCallback evt publisher this world |> ignore<'w> // ignore returned world
-                        | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
-                Vsync.Parallel |>
-                Vsync.RunSynchronously |>
-                ignore<unit array>
-            finally world.Thaw ()
-            world
-        | (false, _) -> world
+            subscriptions |>
+            Seq.map (fun subscription ->
+                Task.Run (fun () ->
+                    match subscription.Value with
+                    | :? SystemCallback<obj, 'w> as objCallback ->
+                        let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
+                        objCallback evt publisher this Unchecked.defaultof<'w> |> ignore<'w>
+                    | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
+            Vsync.Parallel
+        | (false, _) -> Vsync.Parallel []
 
     member this.AllocateComponents<'c when 'c : struct and 'c :> 'c Component> buffered =
         let componentName = typeof<'c>.Name
@@ -831,5 +826,4 @@ module EcsEvents =
     let [<Literal>] Update = "Update"
     let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
     let [<Literal>] PostUpdate = "PostUpdate"
-    let [<Literal>] ActualizeParallel = "ActualizeParallel"
     let [<Literal>] Actualize = "Actualize"

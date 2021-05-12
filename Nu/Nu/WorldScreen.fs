@@ -119,12 +119,15 @@ module WorldScreenModule =
 
             // update ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.PublishParallel EcsEvents.UpdateParallel () ecs.GlobalSystem world
+            let updateParallel = ecs.PublishParallel EcsEvents.UpdateParallel () ecs.GlobalSystem
             let world = ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
 
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.Update (screen, world)
+
+            // finish parallel updating ecs
+            Vsync.RunSynchronously updateParallel |> ignore<unit array>
 
             // publish update event
             let eventTrace = EventTrace.debug "World" "updateScreen" "" EventTrace.empty
@@ -134,12 +137,15 @@ module WorldScreenModule =
 
             // post-update ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.PublishParallel EcsEvents.PostUpdateParallel () ecs.GlobalSystem world
+            let postUpdateParallel = ecs.PublishParallel EcsEvents.PostUpdateParallel () ecs.GlobalSystem
             let world = ecs.Publish EcsEvents.PostUpdate () ecs.GlobalSystem world
                 
             // post-update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world
             let world = dispatcher.PostUpdate (screen, world)
+
+            // finish parallel post-updating ecs
+            Vsync.RunSynchronously postUpdateParallel |> ignore<unit array>
 
             // publish post-update event
             let eventTrace = EventTrace.debug "World" "postUpdateScreen" "" EventTrace.empty
@@ -149,7 +155,6 @@ module WorldScreenModule =
 
             // actualize ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.PublishParallel EcsEvents.ActualizeParallel () ecs.GlobalSystem world
             let world = ecs.Publish EcsEvents.Actualize () ecs.GlobalSystem world
             
             // actualize via dispatcher
