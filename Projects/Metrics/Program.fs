@@ -156,7 +156,7 @@ type MyGameDispatcher () =
             mover.Index.Velocity.Index.Velocity <- v2One
 
         // define update for movers
-        let _ = ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             for components in ecs.GetComponentArrays<Mover> () do
                 for i in 0 .. components.Length - 1 do
                     let mutable comp = &components.[i]
@@ -188,18 +188,17 @@ type MyGameDispatcher () =
         let world = World.selectScreen Simulants.DefaultScreen world
 #if ECS_HYBRID
         // define update for static sprites
-        let _ =
-            ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-                for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
-                    for i in 0 .. components.Length - 1 do
-                        let comp = &components.[i]
-                        if comp.Active then
-                            let state = comp.Entity.State world
-                            state.Rotation <- state.Rotation + 0.03f
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+            for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
+                for i in 0 .. components.Length - 1 do
+                    let comp = &components.[i]
+                    if comp.Active then
+                        let state = comp.Entity.State world
+                        state.Rotation <- state.Rotation + 0.03f
 
         // define actualize for static sprites
         let _ =
-            ecs.SubscribeEffect EcsEvents.Actualize $ fun _ _ _ world ->
+            ecs.SubscribePlus EcsEvents.Actualize $ fun _ _ _ world ->
                 let messages = List ()
                 for components in ecs.GetComponentArrays<StaticSpriteComponent> () do
                     for i in 0 .. components.Length - 1 do

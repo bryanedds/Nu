@@ -161,7 +161,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
     member this.IndexSystem<'s when 's :> 'w System> systemName =
         this.TryIndexSystem<'s> systemName |> Option.get
 
-    member this.SubscribeEffect<'d> eventName (callback : SystemCallback<'d, 'w>) =
+    member this.SubscribePlus<'d> eventName (callback : SystemCallback<'d, 'w>) =
         let subscriptionId = Gen.id
         match systemSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
@@ -173,7 +173,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             subscriptionId
 
     member this.Subscribe<'d, 'w when 'w :> Freezable> eventName callback =
-        this.SubscribeEffect<'d> eventName (fun evt system ecs world -> callback evt system ecs; world)
+        this.SubscribePlus<'d> eventName (fun evt system ecs world -> callback evt system ecs; world) |> ignore
 
     member this.Unsubscribe eventName subscriptionId =
         match systemSubscriptions.TryGetValue eventName with
