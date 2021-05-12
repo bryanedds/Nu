@@ -232,6 +232,11 @@ and Ecs<'w> () as this =
                 (box aref, box arefBuffered)
         | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'.")
 
+    member this.AllocateJunctions<'c when 'c : struct and 'c :> 'c Component> () =
+        let comp = Unchecked.defaultof<'c>
+        let junctionObjss = comp.AllocateJunctions this
+        Array.unzip junctionObjss
+
     member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
@@ -363,7 +368,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
     inherit System<'w> (name)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
-    let mutable (junctions, junctionsBuffered) = Unchecked.defaultof<'c>.AllocateJunctions ecs |> Array.unzip
+    let mutable (junctions, junctionsBuffered) = ecs.AllocateJunctions<'c> ()
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
