@@ -193,19 +193,21 @@ and Ecs<'w when 'w :> Freezable> () as this =
                 world subscriptions.Values
         | (false, _) -> world
 
-    member this.PublishParallel<'d> eventName (eventData : 'd) publisher =
-        match systemSubscriptions.TryGetValue eventName with
-        | (true, subscriptions) ->
-            subscriptions |>
-            Seq.map (fun subscription ->
-                Task.Run (fun () ->
-                    match subscription.Value with
-                    | :? SystemCallback<obj, 'w> as objCallback ->
-                        let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
-                        objCallback evt publisher this None |> ignore<'w option>
-                    | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
-            Vsync.Parallel
-        | (false, _) -> Vsync.Parallel []
+    member this.PublishAsync<'d> eventName (eventData : 'd) publisher =
+        let vsync =
+            match systemSubscriptions.TryGetValue eventName with
+            | (true, subscriptions) ->
+                subscriptions |>
+                Seq.map (fun subscription ->
+                    Task.Run (fun () ->
+                        match subscription.Value with
+                        | :? SystemCallback<obj, 'w> as objCallback ->
+                            let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
+                            objCallback evt publisher this None |> ignore<'w option>
+                        | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
+                Vsync.Parallel
+            | (false, _) -> Vsync.Parallel []
+        Vsync.StartAsTask vsync
 
     member this.AllocateComponents<'c when 'c : struct and 'c :> 'c Component> buffered =
         let componentName = typeof<'c>.Name
