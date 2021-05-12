@@ -719,7 +719,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (name, b
 
     type Ecs<'w> with
 
-        member this.IndexHierarchy<'c when 'c : struct and 'c :> 'c Component> () =
+        member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
             let systemName = typeof<'c>.Name
             match this.TryIndexSystem<SystemHierarchical<'c, 'w>> systemName with
             | Some system -> system.Components
