@@ -789,30 +789,37 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
     { EntityId : Guid
       EntityEcs : 'w Ecs }
+
     member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
         &correlated.Index
+
     member this.IndexBuffered<'c when 'c : struct and 'c :> 'c Component> () =
         let system = this.EntityEcs.IndexSystem<SystemCorrelated<'c, 'w>> typeof<'c>.Name
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
         correlated.IndexBuffered
+
     member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId =
         let system = this.EntityEcs.IndexSystem<SystemMultiplexed<'c, 'w>> typeof<'c>.Name
         let multiplexed = system.IndexMultiplexed multiId this.EntityId : 'c Simplex
         &multiplexed.Simplex
+
     member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> multiId =
         let system = this.EntityEcs.IndexSystem<SystemMultiplexed<'c, 'w>> typeof<'c>.Name
         let multiplexed = system.IndexMultiplexedBuffered multiId this.EntityId : 'c Simplex
         multiplexed.Simplex
+
     member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId =
         let system = this.EntityEcs.IndexSystem<SystemHierarchical<'c, 'w>> typeof<'c>.Name
         let hierarchical = system.IndexHierarchical nodeId this.EntityId : 'c ComponentRef
         &hierarchical.Index
+
     member this.IndexHierarchicalBuffered<'c when 'c : struct and 'c :> 'c Component> nodeId =
         let system = this.EntityEcs.IndexSystem<SystemHierarchical<'c, 'w>> typeof<'c>.Name
         let hierarchical = system.IndexHierarchical nodeId this.EntityId : 'c ComponentRef
         hierarchical.IndexBuffered
+
     type Ecs<'w when 'w :> Freezable> with
         member this.GetEntityRef entityId =
             { EntityId = entityId; EntityEcs = this }
@@ -821,5 +828,8 @@ type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
 module EcsEvents =
 
     let [<Literal>] Update = "Update"
+    let [<Literal>] UpdateParallel = "UpdateParallel"
     let [<Literal>] PostUpdate = "PostUpdate"
+    let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
     let [<Literal>] Actualize = "Actualize"
+    let [<Literal>] ActualizeParallel = "ActualizeParallel"
