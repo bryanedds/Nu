@@ -142,7 +142,7 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // entity count
-        let entityCount = 4000000 // 4M entities (goal: 60FPS, current: 55FPS)
+        let entityCount = pown 2 22 // ~4M entities (goal: 60FPS, current: 43FPS)
 
         // create systems
         ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
