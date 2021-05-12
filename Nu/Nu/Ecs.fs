@@ -827,9 +827,9 @@ type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
 [<RequireQualifiedAccess>]
 module EcsEvents =
 
-    let [<Literal>] Update = "Update"
     let [<Literal>] UpdateParallel = "UpdateParallel"
-    let [<Literal>] PostUpdate = "PostUpdate"
+    let [<Literal>] Update = "Update"
     let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
-    let [<Literal>] Actualize = "Actualize"
+    let [<Literal>] PostUpdate = "PostUpdate"
     let [<Literal>] ActualizeParallel = "ActualizeParallel"
+    let [<Literal>] Actualize = "Actualize"
