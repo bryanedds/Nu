@@ -26,6 +26,6 @@ module SpatialTreeTests =
         SpatialTree.addElement false (Vector4 (0.0f, 0.0f, 1.0f, 1.0f)) "ZeroOne" tree
         SpatialTree.addElement false (Vector4 (1.0f, 1.0f, 0.0f, 0.0f)) "OneZero" tree
         Assert.Equal (4, Seq.length (SpatialTree.getElementsAtPoint Vector2.Zero tree))
-        Assert.Equal (4, Seq.length (SpatialTree.getElementsAtPoint Vector2.One tree))
-        Assert.Equal (4, Seq.length (SpatialTree.getElementsAtPoint (Vector2 0.5f) tree))
+        Assert.Equal (5, Seq.length (SpatialTree.getElementsAtPoint Vector2.One tree))
+        Assert.Equal (5, Seq.length (SpatialTree.getElementsAtPoint (Vector2 0.5f) tree))
         Assert.Equal (3, Seq.length (SpatialTree.getElementsAtPoint (Vector2 2.0f) tree))
