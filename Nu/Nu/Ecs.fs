@@ -83,11 +83,11 @@ and [<NoEquality; NoComparison>] SystemEvent<'d, 'w when 'w :> Freezable> =
 
 /// An ECS event callback.
 and SystemCallback<'d, 'w when 'w :> Freezable> =
-    SystemEvent<'d, 'w> -> 'w System -> 'w Ecs -> 'w -> 'w
+    SystemEvent<'d, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
 
 /// A boxed ECS event callback.
 and SystemCallbackBoxed<'w when 'w :> Freezable> =
-    SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w -> 'w
+    SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
 
 /// A base system type of an Ecs.
 and System<'w when 'w :> Freezable> (name : string) =
@@ -125,11 +125,11 @@ and Ecs<'w when 'w :> Freezable> () as this =
     do this.RegisterSystemGeneralized globalSystem
 
     member private this.BoxCallback<'a> (callback : SystemCallback<'a, 'w>) =
-        let boxableCallback = fun (evt : SystemEvent<obj, 'w>) world ->
+        let boxableCallback = fun (evt : SystemEvent<obj, 'w>) system ->
             let evt =
                 { SystemEventData = evt.SystemEventData :?> 'a
                   SystemPublisher = evt.SystemPublisher }
-            callback evt world
+            callback evt system
         boxableCallback :> obj
 
     member private this.Correlations 
@@ -141,9 +141,9 @@ and Ecs<'w when 'w :> Freezable> () as this =
     member this.RegisterPipedValue<'a when 'a : not struct> key (value : 'a) =
         pipedValues.[key] <- value :> obj
 
-    member this.WithPipedValue<'a when 'a : not struct> key fn (world : 'w) : 'w =
+    member this.WithPipedValue<'a when 'a : not struct> key fn (worldOpt : 'w option) : 'w option =
         let pipedValue = pipedValues.[key] :?> 'a
-        lock pipedValue (fun () -> fn pipedValue world)
+        lock pipedValue (fun () -> fn pipedValue worldOpt)
 
     member this.RegisterSystemGeneralized (system : 'w System) =
         systemsUnordered.Add (system.Name, system)
@@ -174,7 +174,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             subscriptionId
 
     member this.Subscribe<'d, 'w when 'w :> Freezable> eventName callback =
-        this.SubscribePlus<'d> Gen.id eventName (fun evt system ecs world -> callback evt system ecs; world) |> ignore
+        this.SubscribePlus<'d> Gen.id eventName (fun evt system ecs worldOpt -> callback evt system ecs; worldOpt) |> ignore
 
     member this.Unsubscribe eventName subscriptionId =
         match systemSubscriptions.TryGetValue eventName with
@@ -184,13 +184,14 @@ and Ecs<'w when 'w :> Freezable> () as this =
     member this.Publish<'d> eventName (eventData : 'd) publisher world =
         match systemSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
-            Seq.fold (fun world (callback : obj) ->
+            (Some world, subscriptions.Values) ||>
+            Seq.fold (fun worldOpt (callback : obj) ->
                 match callback with
                 | :? SystemCallback<obj, 'w> as objCallback ->
                     let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
-                    objCallback evt publisher this world
-                | _ -> failwithumf ())
-                world subscriptions.Values
+                    objCallback evt publisher this worldOpt
+                | _ -> failwithumf ()) |>
+            Option.get
         | (false, _) -> world
 
     member this.PublishParallel<'d> eventName (eventData : 'd) publisher =
@@ -202,7 +203,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
                     match subscription.Value with
                     | :? SystemCallback<obj, 'w> as objCallback ->
                         let evt = { SystemEventData = eventData :> obj; SystemPublisher = publisher }
-                        objCallback evt publisher this Unchecked.defaultof<'w> |> ignore<'w>
+                        objCallback evt publisher this None |> ignore<'w option>
                     | _ -> failwithumf ()) |> Vsync.AwaitTask) |>
             Vsync.Parallel
         | (false, _) -> Vsync.Parallel []
@@ -248,19 +249,19 @@ and Ecs<'w when 'w :> Freezable> () as this =
             | ArrayObjsBuffered buffered -> buffered.ArrayObjsUnbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
         | (false, _) -> [||]
 
-    member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn (world : 'w) =
+    member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn (worldOpt : 'w option) =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
             match arrayObjs with
             | ArrayObjs unbuffered ->
                 let arefs = unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-                fn arefs world
+                fn arefs worldOpt
             | ArrayObjsBuffered buffered ->
                 lock arrayObjs $ fun () ->
                     let arefsBuffered = buffered.ArrayObjsBuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-                    fn arefsBuffered world
-        | (false, _) -> world
+                    fn arefsBuffered worldOpt
+        | (false, _) -> worldOpt
 
     member this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
@@ -281,7 +282,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
 
     type System<'w when 'w :> Freezable> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
-        member this.WithPipedValue<'a when 'a : not struct> fn (ecs : 'w Ecs) world = ecs.WithPipedValue<'a> this.PipedKey fn world
+        member this.WithPipedValue<'a when 'a : not struct> fn (ecs : 'w Ecs) worldOpt = ecs.WithPipedValue<'a> this.PipedKey fn worldOpt
 
 [<Extension>]
 type EcsExtensions =
@@ -317,7 +318,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
     new (buffered, ecs) = SystemUncorrelated (typeof<'c>.Name, buffered, ecs)
 
     member this.Components with get () = components
-    member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w -> 'w) world = lock componentsBuffered (fun () -> fn componentsBuffered world)
+    member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
 
     member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
@@ -381,10 +382,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
     new (buffered, ecs) = SystemCorrelated (typeof<'c>.Name, buffered, ecs)
 
     member this.Components with get () = components
-    member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w -> 'w) world = lock componentsBuffered (fun () -> fn componentsBuffered world)
+    member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
 
     member this.GetJunction<'c> () = junctions |> Array.find SystemCorrelated<'c, 'w>.isJunction<'c> :?> 'c ArrayRef
-    member this.WithJunctionBuffered<'c> fn world = let junction = this.GetJunction<'c> () in  lock junction (fun () -> fn junction world)
+    member this.WithJunctionBuffered<'c> fn (worldOpt : 'w option) = let junction = this.GetJunction<'c> () in  lock junction (fun () -> fn junction worldOpt)
 
     member private this.Compact ecs =
 
