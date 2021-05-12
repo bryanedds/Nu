@@ -6,7 +6,6 @@ open System
 module internal World =
 
 #if DEBUG
-    let mutable internal Frozen = 0
     let mutable internal Chosen = obj ()
 #endif
     let mutable internal viewGame = fun (_ : obj) -> Array.create 0 (String.Empty, obj ())
@@ -1191,7 +1190,6 @@ module WorldTypes =
             member this.UpdateEventSystemDelegate updater =
                 let this = { this with EventSystemDelegate = updater this.EventSystemDelegate }
 #if DEBUG
-                if Debug.World.Frozen > 0 then failwith "Invalid operation on a frozen world."
                 Debug.World.Chosen <- this
 #endif
                 this
@@ -1210,7 +1208,6 @@ module WorldTypes =
                     | :? GlobalSimulantGeneralized -> EventSystem.publishEvent<'a, 'p, Simulant, World> simulant publisher eventData eventAddress eventTrace subscription world
                     | _ -> failwithumf ()
 #if DEBUG
-                if Debug.World.Frozen > 0 then failwith "Invalid operation on a frozen world."
                 Debug.World.Chosen <- world
 #endif
                 (handling, world)
@@ -1256,28 +1253,6 @@ module WorldTypes =
                 | ("Entity", Scripting.String str) | ("Entity", Scripting.Keyword str) -> str |> stoa |> Entity :> obj |> Some
                 | ("Simulant", Scripting.String _) | ("Simulant", Scripting.Keyword _) -> None // TODO: see if this should be failwithumf or a violation instead.
                 | (_, _) -> None
-
-        interface Freezable with
-
-            member this.Frozen with get () =
-#if DEBUG
-                Debug.World.Frozen > 0
-#else
-                false
-#endif
-
-            member this.Freeze () =
-#if DEBUG
-                Debug.World.Frozen <- inc Debug.World.Frozen
-#endif
-                ()
-
-            member this.Thaw () =
-#if DEBUG
-                Debug.World.Frozen <- dec Debug.World.Frozen
-                if Debug.World.Frozen < 0 then failwith "World Freeze and Thaw operation mismatch."
-#endif
-                ()
 
         override this.ToString () =
             ""

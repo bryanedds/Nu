@@ -9,15 +9,6 @@ open System.Runtime.CompilerServices
 open System.Threading.Tasks
 open Prime
 
-/// A freezable type.
-/// TODO: move to Prime?
-type Freezable =
-    interface
-        abstract Frozen : bool
-        abstract Freeze : unit -> unit
-        abstract Thaw : unit -> unit
-        end
-
 /// An array with additional indirection.
 /// NOTE: Inlined everything for speed.
 /// TODO: move to Prime?
@@ -77,20 +68,20 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
           ComponentArefBuffered = arefBuffered }
 
 /// An ECS event.
-and [<NoEquality; NoComparison>] SystemEvent<'d, 'w when 'w :> Freezable> =
+and [<NoEquality; NoComparison>] SystemEvent<'d, 'w> =
     { SystemEventData : 'd
       SystemPublisher : 'w System }
 
 /// An ECS event callback.
-and SystemCallback<'d, 'w when 'w :> Freezable> =
+and SystemCallback<'d, 'w> =
     SystemEvent<'d, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
 
 /// A boxed ECS event callback.
-and SystemCallbackBoxed<'w when 'w :> Freezable> =
+and SystemCallbackBoxed<'w> =
     SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
 
 /// A base system type of an Ecs.
-and System<'w when 'w :> Freezable> (name : string) =
+and System<'w> (name : string) =
     let pipedKey = Gen.id
     member this.PipedKey with get () = pipedKey
     abstract PipedInit : obj
@@ -112,7 +103,7 @@ and [<NoEquality; NoComparison>] ArrayObjs =
 /// The default formats include SoA-based formats for non-correlated, correlated, multiplexed, and hierarchichal value types.
 /// User can add formats of their own design by implementing the 'w System interface and providing related extension methods
 /// on this 'w Ecs type.
-and Ecs<'w when 'w :> Freezable> () as this =
+and Ecs<'w> () as this =
 
     let arrayObjss = dictPlus<string, ArrayObjs> StringComparer.Ordinal []
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
@@ -173,7 +164,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
             systemSubscriptions.Add (eventName, subscriptions)
             subscriptionId
 
-    member this.Subscribe<'d, 'w when 'w :> Freezable> eventName callback =
+    member this.Subscribe<'d, 'w> eventName callback =
         this.SubscribePlus<'d> Gen.id eventName (fun evt system ecs worldOpt -> callback evt system ecs; worldOpt) |> ignore
 
     member this.Unsubscribe eventName subscriptionId =
@@ -281,7 +272,7 @@ and Ecs<'w when 'w :> Freezable> () as this =
                             else arefBuffered.Array <- Array.copy aref.Array)
         | (false, _) -> ()
 
-    type System<'w when 'w :> Freezable> with
+    type System<'w> with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
         member this.WithPipedValue<'a when 'a : not struct> fn (ecs : 'w Ecs) worldOpt = ecs.WithPipedValue<'a> this.PipedKey fn worldOpt
 
@@ -289,16 +280,16 @@ and Ecs<'w when 'w :> Freezable> () as this =
 type EcsExtensions =
 
     [<Extension>]
-    static member RegisterSystem<'s, 'w when 's :> 'w System and 'w :> Freezable> (this : 'w Ecs, system : 's) =
+    static member RegisterSystem<'s, 'w when 's :> 'w System> (this : 'w Ecs, system : 's) =
         this.RegisterSystemGeneralized system
 
 /// An Ecs system with just a single component.
-type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, comp : 'c) =
+type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (name, comp : 'c) =
     inherit System<'w> (name)
     let mutable comp = comp
     new (comp) = SystemSingleton (typeof<'c>.Name, comp)
     member this.Component with get () = &comp
-    type Ecs<'w when 'w :> Freezable> with
+    type Ecs<'w> with
         member this.IndexSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> () =
             let systemName = typeof<'c>.Name
             let systemOpt = this.TryIndexSystem<SystemSingleton<'c, 'w>> systemName
@@ -308,7 +299,7 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Fr
 
 /// An Ecs system with components stored by a raw index.
 /// Stores components in an unordered manner.
-type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
+type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
@@ -346,7 +337,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
             freeList.Add index |> ignore<bool>
         else freeIndex <- dec freeIndex
 
-    type Ecs<'w when 'w :> Freezable> with
+    type Ecs<'w> with
 
         member this.IndexUncorrelated<'c when 'c : struct and 'c :> 'c Component> index =
             let systemName = typeof<'c>.Name
@@ -368,7 +359,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system with components stored by entity id.
-type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
+type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
@@ -487,7 +478,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> F
             true
         | (false, _) -> false
 
-    type Ecs<'w when 'w :> Freezable> with
+    type Ecs<'w> with
 
         member this.GetSystemsCorrelated entityId =
             this.Correlations.[entityId] |>
@@ -585,7 +576,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         this.Simplexes.Remove multiId
 
 /// An Ecs system that stores multiple components per entity id.
-type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
+type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
     inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (name, buffered, ecs)
 
     new (ecs) = SystemMultiplexed (typeof<'c>.Name, false, ecs)
@@ -616,7 +607,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> 
         componentMultiplexed.Index.UnregisterMultiplexed multiId |> ignore<bool>
         this.UnregisterCorrelated entityId ecs
 
-    type Ecs<'w when 'w :> Freezable> with
+    type Ecs<'w> with
 
         member this.QualifyMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
             let systemName = typeof<'c>.Name
@@ -662,7 +653,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> 
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system that stores components in a tree hierarchy.
-type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :> Freezable> (name, buffered, ecs : 'w Ecs) =
+type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
@@ -721,7 +712,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
         | (true, system) -> system.UnregisterCorrelated entityId ecs
         | (false, _) -> false
 
-    type Ecs<'w when 'w :> Freezable> with
+    type Ecs<'w> with
 
         member this.IndexHierarchy<'c when 'c : struct and 'c :> 'c Component> () =
             let systemName = typeof<'c>.Name
@@ -783,7 +774,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component and 'w :>
 
 /// A correlated entity reference.
 /// Slow relative to normal ECS operations, but convenient for one-off uses.
-type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
+type [<NoEquality; NoComparison; Struct>] EntityRef<'w> =
     { EntityId : Guid
       EntityEcs : 'w Ecs }
 
@@ -817,7 +808,7 @@ type [<NoEquality; NoComparison; Struct>] EntityRef<'w when 'w :> Freezable> =
         let hierarchical = system.IndexHierarchical nodeId this.EntityId : 'c ComponentRef
         hierarchical.IndexBuffered
 
-    type Ecs<'w when 'w :> Freezable> with
+    type Ecs<'w> with
         member this.GetEntityRef entityId =
             { EntityId = entityId; EntityEcs = this }
 
