@@ -121,12 +121,8 @@ module BattleDispatcher =
                         | _ when timeLocal > 15L && Character.getAnimationFinished time target ->
                             let target = Battle.getCharacter targetIndex battle
                             if target.IsHealthy then
-                                let battle =
-                                    if Character.shouldCounter target then
-                                        let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
-                                        Battle.appendActionCommand attackCommand battle
-                                    else battle
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                                let battle = Battle.tryCounterAttack sourceIndex targetIndex battle
                                 withMsgs [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] battle
                             else
                                 let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
@@ -886,11 +882,12 @@ module BattleDispatcher =
                             (battle, [])
                             results
                     let battle = Battle.updateCharacter (Character.updateTechPoints ((+) -techData.TechCost)) sourceIndex battle
+                    let battle = Battle.tryCounterAttack sourceIndex targetIndex battle
                     let battle = Battle.updateCurrentCommandOpt (constant None) battle
                     let sigs = Message (PoiseCharacter sourceIndex) :: sigs
                     withSigs sigs battle
                 | None -> just battle
-                    
+
             | TechCharacterAmbient (sourceIndex, _, _) ->
                 if Simulants.Battle.Scene.Ride.Exists world then
                     let battle =

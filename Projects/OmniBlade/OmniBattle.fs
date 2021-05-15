@@ -203,6 +203,15 @@ module Battle =
     let prependActionCommand command battle =
          { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
+    let counterAttack sourceIndex targetIndex battle =
+        let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
+        prependActionCommand attackCommand battle
+
+    let tryCounterAttack sourceIndex targetIndex battle =
+        if Character.shouldCounter target
+        then counterAttack sourceIndex targetIndex battle
+        else battle
+
     let rec private tryRandomizeEnemy attempts enemy (layout : Either<unit, EnemyType option> array array) =
         if attempts < 10000 then
             let (w, h) = (layout.Length, layout.[0].Length)
