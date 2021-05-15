@@ -121,11 +121,11 @@ module BattleDispatcher =
                         | _ when timeLocal > 15L && Character.getAnimationFinished time target ->
                             let target = Battle.getCharacter targetIndex battle
                             if target.IsHealthy then
-                                let battle = Battle.updateCurrentCommandOpt (constant None) battle
                                 let battle =
                                     if Character.shouldCounter target
                                     then Battle.counterAttack sourceIndex targetIndex battle
                                     else battle
+                                let battle = Battle.updateCurrentCommandOpt (constant None) battle
                                 withMsgs [PoiseCharacter sourceIndex; PoiseCharacter targetIndex] battle
                             else
                                 let woundCommand = CurrentCommand.make time (ActionCommand.make Wound sourceIndex (Some targetIndex))
