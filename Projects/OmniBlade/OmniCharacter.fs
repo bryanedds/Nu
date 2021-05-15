@@ -315,6 +315,9 @@ module Character =
         | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
         | None -> false
 
+    let shouldCounter (character : Character) =
+        character.IsAlly
+    
     let evaluateAutoBattle (source : Character) (target : Character) =
         let techOpt =
             if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
