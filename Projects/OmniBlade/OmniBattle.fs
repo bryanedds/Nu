@@ -207,11 +207,6 @@ module Battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
         prependActionCommand attackCommand battle
 
-    let tryCounterAttack sourceIndex targetIndex battle =
-        if Character.shouldCounter target
-        then counterAttack sourceIndex targetIndex battle
-        else battle
-
     let rec private tryRandomizeEnemy attempts enemy (layout : Either<unit, EnemyType option> array array) =
         if attempts < 10000 then
             let (w, h) = (layout.Length, layout.[0].Length)
