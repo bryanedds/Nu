@@ -39,16 +39,23 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
       /// The associated component array reference.
       ComponentAref : 'c ArrayRef
       /// DO NOT access the elements of ComponentArefBuffered without locking the field itself!
-      ComponentArefBuffered : 'c ArrayRef }
+#if ECS_BUFFERED
+      ComponentArefBuffered : 'c ArrayRef
+#endif
+      }
 
     member inline this.Index
         with get () = &this.ComponentAref.[this.ComponentIndex]
 
     member inline this.IndexBuffered
         with get () =
+#if ECS_BUFFERED
             let index = this.ComponentIndex
             let arefBuffered = this.ComponentArefBuffered
             lock arefBuffered (fun () -> arefBuffered.[index])
+#else
+            this.Index
+#endif
 
     member inline this.Assign value =
         this.ComponentAref.[this.ComponentIndex] <- value
@@ -63,9 +70,15 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
         componentRef.ComponentAref.Array.[componentRef.ComponentIndex] <- value
 
     static member inline make index aref arefBuffered : 'c ComponentRef =
+#if !ECS_BUFFERED
+        ignore<'c ArrayRef> arefBuffered
+#endif
         { ComponentIndex = index
           ComponentAref = aref
-          ComponentArefBuffered = arefBuffered }
+#if ECS_BUFFERED          
+          ComponentArefBuffered = arefBuffered
+#endif
+        }
 
 /// An ECS event.
 and [<NoEquality; NoComparison>] SystemEvent<'d, 'w> =
