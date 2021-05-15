@@ -159,7 +159,9 @@ type MyGameDispatcher () =
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             for components in ecs.GetComponentArrays<Mover> () do
                 // NOTE: perhaps the primary explanation for why iteration here is slower in .NET than C++ is that
-                // .NET does not implement a pointer bump for array traversal whereas C++ libs often do.
+                // we're using array indexing rather than direct pointer bumping. We're stuck with array indexing
+                // here because pointer bumping requires use with unmanaged types, of which Mover is not due to
+                // containing an array via its 'c ArrayRefs.
                 for i in 0 .. components.Length - 1 do
                     let mutable comp = &components.[i]
                     if comp.Active then
