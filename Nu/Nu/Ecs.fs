@@ -205,7 +205,7 @@ and Ecs<'w> () as this =
         match arrayObjss.TryGetValue componentName with
         | (true, _) -> failwith ("Array already initally allocated for '" + componentName + "'.")
         | (false, _) ->
-            if buffered then
+            if not buffered then
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 arrayObjss.Add (componentName, ArrayObjs (List [box aref]))
                 (aref, aref)
