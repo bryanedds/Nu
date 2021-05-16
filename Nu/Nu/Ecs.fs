@@ -387,7 +387,9 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, b
             | Some system -> system.UnregisterUncorrelated index
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-/// An Ecs system with components stored by entity id.
+/// An Ecs system with components correlated by entity id.
+/// Hashing and storing millions of entity ids is slow, so if need to create that many components quickly, consider
+/// instead manually junctioning uncorrelated components.
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
