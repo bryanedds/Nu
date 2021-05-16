@@ -73,7 +73,8 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
 #if !ECS_BUFFERED
         ignore<'c ArrayRef> arefBuffered
 #endif
-        { ComponentIndex = index
+        {
+          ComponentIndex = index
           ComponentAref = aref
 #if ECS_BUFFERED          
           ComponentArefBuffered = arefBuffered
@@ -125,7 +126,7 @@ and Ecs<'w> () as this =
     let correlations = dictPlus<Guid, string List> HashIdentity.Structural []
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
     let globalSystem = System<'w> "Global"
-    
+
     do this.RegisterSystemGeneralized globalSystem
 
     member private this.BoxCallback<'a> (callback : SystemCallback<'a, 'w>) =
@@ -334,20 +335,26 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, b
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
         ComponentRef<'c>.make index components componentsBuffered
 
-    member this.RegisterUncorrelated comp =
+    member this.RegisterUncorrelated (comp : 'c) =
+        comp.Active <- true // ensure component is marked active
         if freeList.Count > 0 then
             let index = Seq.head freeList
             freeList.Remove index |> ignore<bool>
             components.[index] <- comp
+            ComponentRef.make index components componentsBuffered
         elif freeIndex < components.Length then
-            components.[freeIndex] <- comp
-            freeIndex <- inc freeIndex
+            let index = freeIndex
+            components.[index] <- comp
+            freeIndex <- inc index
+            ComponentRef.make index components componentsBuffered
         else
+            let index = freeIndex
             let arr = Array.zeroCreate (components.Length * Constants.Ecs.ArrayGrowth)
             components.Array.CopyTo (arr, 0)
             components.Array <- arr
-            components.[freeIndex] <- comp
-            freeIndex <- inc freeIndex
+            components.[index] <- comp
+            freeIndex <- inc index
+            ComponentRef.make index components componentsBuffered
 
     member this.UnregisterUncorrelated index =
         if index <> freeIndex then
@@ -452,6 +459,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
 
     member this.RegisterCorrelated (comp : 'c) entityId ecs =
 
+        // ensure component is marked active
+        // NOTE: this is not actually necessary as this comp is not the value that will ultimately be utilized.
+        comp.Active <- true
+
         // check if component is already registered
         if not (correlations.ContainsKey entityId) then
 
@@ -468,13 +479,13 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
             let mutable comp = comp.Junction index junctions junctionsBuffered ecs
-            comp.Active <- true
+            comp.Active <- true // ensure component is marked active
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
             components.Array.[index] <- comp
 
-            // fin
-            entityId
+            // make component ref
+            ComponentRef.make index components componentsBuffered
 
         // component is already registered
         else failwith ("Component registered multiple times for entity '" + string entityId + "'.")
@@ -527,11 +538,11 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
             let systemName = typeof<'c>.Name
             match this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName with
             | Some system ->
-                let entityId = system.RegisterCorrelated comp entityId this
+                let componentRef = system.RegisterCorrelated comp entityId this
                 match this.Correlations.TryGetValue entityId with
                 | (true, correlation) -> correlation.Add systemName
                 | (false, _) -> this.Correlations.Add (entityId, List [systemName])
-                entityId
+                componentRef
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
         member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
@@ -547,9 +558,9 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsBufferedObj : obj) =
+            comp.Active <- true // ensure component is marked active
             let components = componentsObj :?> 'c ArrayRef
             let componentsBuffered = componentsBufferedObj :?> 'c ArrayRef
-            comp.Active <- true
             components.[index] <- comp
             ComponentRef<'c>.make index components componentsBuffered
 
@@ -615,10 +626,10 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (name, bu
         componentMultiplexed.IndexBuffered.Simplexes.[multiId]
 
     member this.RegisterMultiplexed comp multiId entityId ecs =
-        let entityId = this.RegisterCorrelated Unchecked.defaultof<_> entityId ecs
+        let _ = this.RegisterCorrelated Unchecked.defaultof<_> entityId ecs
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.Index.RegisterMultiplexed (multiId, comp)
-        multiId
+        componentMultiplexed
 
     member this.UnregisterMultiplexed multiId entityId ecs =
         let componentMultiplexed = this.IndexCorrelated entityId
