@@ -94,7 +94,7 @@ and SystemCallback<'d, 'w> =
 and SystemCallbackBoxed<'w> =
     SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
 
-/// A base system type of an Ecs.
+/// A base system type of an ECS.
 and System<'w> (name : string) =
     let pipedKey = Gen.id
     member this.PipedKey with get () = pipedKey
@@ -316,8 +316,7 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (name, comp
             let system = Option.get systemOpt
             &system.Component
 
-/// An Ecs system with components stored by a raw index.
-/// Stores components in an unordered manner.
+/// An Ecs system with components stored by an integer index.
 type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
