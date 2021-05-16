@@ -78,10 +78,10 @@ module EcsTests =
                         comp.Skin.Index.Color.A <- byte 128
 
         // create and register our airship
-        let airshipId = ecs.RegisterCorrelated Unchecked.defaultof<Airship> Gen.id
+        let airshipId = Gen.id
+        let airship = ecs.RegisterCorrelated Unchecked.defaultof<Airship> Gen.id
 
         // change some airship properties
-        let airship = ecs.IndexCorrelated<Airship> airshipId
         airship.Index.Transform.Index.Position.X <- 0.5f
         airship.Index.Skin.Index.Color.R <- byte 16
 
