@@ -600,7 +600,8 @@ type Simplex<'c when 'c : struct> =
 /// Allows an entity to contain multiple of the same component.
 /// However, it uses a dictionary without a small-object optimization, so this functionality won't get the typical
 /// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
-/// anything else (which is good enough in almost all cases where multi-components are used).
+/// anything else (which is good enough in almost all cases where multi-components are used). Just make sure to
+/// interface with the involved systems directly rather than through the Ecs API which indexes them implcitly.
 type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : struct and 'c :> 'c Component> =
     { mutable Active : bool
       Simplexes : Dictionary<Guid, 'c Simplex> }
