@@ -336,7 +336,12 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, b
         ComponentRef<'c>.make index components componentsBuffered
 
     member this.RegisterUncorrelated (comp : 'c) =
-        comp.Active <- true // ensure component is marked active
+
+        // ensure component is marked active
+        let mutable comp = comp
+        comp.Active <- true 
+
+        // assign component
         if freeList.Count > 0 then
             let index = Seq.head freeList
             freeList.Remove index |> ignore<bool>
@@ -460,6 +465,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
     member this.RegisterCorrelated (comp : 'c) entityId ecs =
 
         // ensure component is marked active
+        let mutable comp = comp
         comp.Active <- true
 
         // check if component is already registered
@@ -556,7 +562,12 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsBufferedObj : obj) =
-            comp.Active <- true // ensure component is marked active
+
+            // ensure component is marked active
+            let mutable comp = comp
+            comp.Active <- true 
+
+            // set component
             let components = componentsObj :?> 'c ArrayRef
             let componentsBuffered = componentsBufferedObj :?> 'c ArrayRef
             components.[index] <- comp
