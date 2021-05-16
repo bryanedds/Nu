@@ -460,7 +460,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
     member this.RegisterCorrelated (comp : 'c) entityId ecs =
 
         // ensure component is marked active
-        // NOTE: this is not actually necessary as this comp is not the value that will ultimately be utilized.
         comp.Active <- true
 
         // check if component is already registered
@@ -478,8 +477,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
 
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
-            let mutable comp = comp.Junction index junctions junctionsBuffered ecs
-            comp.Active <- true // ensure component is marked active
+            let comp = comp.Junction index junctions junctionsBuffered ecs
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
             components.Array.[index] <- comp
