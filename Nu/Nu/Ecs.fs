@@ -389,7 +389,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, b
 
 /// An Ecs system with components correlated by entity id.
 /// Hashing and storing millions of entity ids is slow, so if need to create that many components quickly, consider
-/// instead manually junctioning uncorrelated components.
+/// manually junctioning uncorrelated components instead.
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
