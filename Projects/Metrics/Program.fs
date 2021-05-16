@@ -122,6 +122,10 @@ type MetricsEntityDispatcher () =
   #endif
 #endif
 
+type P = { mutable Active : bool; mutable P : Vector2 }
+type V = { mutable Active : bool; mutable V : Vector2 }
+type O = { mutable Active : bool; mutable P : P; mutable V : V }
+
 type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, unit> (())
 
@@ -141,34 +145,66 @@ type MyGameDispatcher () =
         // get ecs
         let ecs = screen.GetEcs world
 
-        // entity count
-        let entityCount = pown 2 22 // ~4M entities (goal: 60FPS, current: 43FPS)
-
         // create systems
         ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
         ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
         ecs.RegisterSystem (SystemCorrelated<Mover, World> ecs)
 
-        // create movers
-        for _ in 0 .. entityCount - 1 do
-            let entityId = ecs.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id
-            let mover = ecs.IndexCorrelated<Mover> entityId
-            mover.Index.Velocity.Index.Velocity <- v2One
-
-        // define update for movers
+        // create object references
+        let count = 2500000
+        let ps = Array.init count (fun _ -> { Active = true; P = v2Zero })
+        let vs = Array.init count (fun _ -> { Active = true; V = v2Zero })
+        let objs = Array.init count (fun i -> { Active = true; P = ps.[i]; V = vs.[i]})
+        //let objs = Array.init count (fun _ -> { P = { P = v2Zero }; V = { V = v2One }})
+        
+        //// randomize elements in memory
+        //for i in 0 .. objs.Length - 1 do
+        //    objs.[i] <- objs.[Gen.random1 (objs.Length - 1)]
+        //    objs.[i].P <- objs.[Gen.random1 (objs.Length - 1)].P
+        //    objs.[i].V <- objs.[Gen.random1 (objs.Length - 1)].V
+        
+        // define update for out-of-place movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            for components in ecs.GetComponentArrays<Mover> () do
-                // NOTE: perhaps the primary explanation for why iteration here is slower in .NET than C++ is that
-                // we're using array indexing rather than direct pointer bumping. We're stuck with array indexing
-                // here because pointer bumping requires use with unmanaged types, of which Mover is not due to
-                // containing an array via its 'c ArrayRefs.
-                for i in 0 .. components.Length - 1 do
-                    let mutable comp = &components.[i]
-                    if comp.Active then
-                        let velocity = &comp.Velocity.Index
-                        let position = &comp.Position.Index
-                        position.Position.X <- position.Position.X + velocity.Velocity.X
-                        position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+            for obj in objs do
+                if obj.Active then
+                    obj.P.P.X <- obj.P.P.X + obj.V.V.X
+                    obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
+
+        //// mover count
+        //let moverCount = 3000000 // pown 2 22 // ~4M entities (goal: 60FPS, current: 43FPS)
+        //
+        //// create movers
+        //for _ in 0 .. moverCount - 1 do
+        //    let moverId = ecs.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id
+        //    let mover = ecs.IndexCorrelated<Mover> moverId
+        //    mover.Index.Velocity.Index.Velocity <- v2One
+        //
+        //// define update for movers
+        //ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+        //    for components in ecs.GetComponentArrays<Mover> () do
+        //        // NOTE: perhaps the primary explanation for why iteration here is slower in .NET than C++ is that
+        //        // we're using array indexing rather than direct pointer bumping. We're stuck with array indexing
+        //        // here because pointer bumping requires use with unmanaged types, of which Mover is not due to
+        //        // containing an array via its 'c ArrayRef members.
+        //        for i in 0 .. components.Length - 1 do
+        //            let mutable comp = &components.[i]
+        //            if comp.Active then
+        //                let velocity = &comp.Velocity.Index
+        //                let position = &comp.Position.Index
+        //                position.Position.X <- position.Position.X + velocity.Velocity.X
+        //                position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+
+        // [| mutable P : Vector2; mutable V : Vector2 |]               8M
+        // 
+        // { mutable P : Vector2; mutable V : Vector2 }                 5M / 1.25M
+        // 
+        // [| junction [| componentRef P |] [| componentRef V |] |]     3M (when not #ECS_BUFFERED)
+        //
+        // [| ref [| ref P |] [| ref V |] |]                            2.5M
+        // 
+        // { mutable P : P; mutable V : V }                             2M / 250K
+        // 
+        // out-of-place entities                                        50K
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
