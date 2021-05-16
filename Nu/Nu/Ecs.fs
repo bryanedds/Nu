@@ -339,7 +339,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, b
 
         // ensure component is marked active
         let mutable comp = comp
-        comp.Active <- true 
+        comp.Active <- true
 
         // assign component
         if freeList.Count > 0 then
