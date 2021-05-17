@@ -170,8 +170,8 @@ type MyGameDispatcher () =
         //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
-        // create movers
-        let moverCount = 4000000 // 4M movers (goal: 60FPS, current: 44FPS)
+        // create 3M movers (goal: 60FPS, current: 50FPS)
+        let moverCount = 3000000
         let moverSystem = ecs.IndexSystem<SystemCorrelated<Mover, World>> typeof<Mover>.Name
         for _ in 0 .. moverCount - 1 do
             let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id ecs
@@ -193,16 +193,18 @@ type MyGameDispatcher () =
                         position.Position.Y <- position.Position.Y + velocity.Velocity.Y
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
-        // 
-        // { mutable P : Vector2; mutable V : Vector2 }         5M / 1.25M
-        // 
-        // [| [| componentRef P |] [| componentRef V |] |]      3M (when #if !ECS_BUFFERED)
+        //
+        // { mutable P : Vector2; mutable V : Vector2 }         5M / 1.25M when placement randomized
+        //
+        // [| [| componentRef P |] [| componentRef V |] |]      3M / 2M #if ECS_BUFFERED
         //
         // [| [| ref P |] [| ref V |] |]                        2.5M
-        // 
-        // { mutable P : P; mutable V : V }                     2M / 250K
-        // 
-        // out-of-place entities                                50K
+        //
+        // { mutable P : P; mutable V : V }                     2M / 250K when placement randomized
+        //
+        // out-of-place entities * ops                          50K * 5 = 250K
+        //
+        // flat array -> 8M, partitioned array -> 2M, partitioned array tree -> ???, randomized cyclic graph -> 250K
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
