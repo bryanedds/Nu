@@ -170,12 +170,11 @@ type MyGameDispatcher () =
         //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
-        // mover count
-        let moverCount = 4000000 // 4M movers (goal: 60FPS, current: 44FPS)
-
         // create movers
+        let moverCount = 4000000 // 4M movers (goal: 60FPS, current: 44FPS)
+        let moverSystem = ecs.IndexSystem<SystemCorrelated<Mover, World>> typeof<Mover>.Name
         for _ in 0 .. moverCount - 1 do
-            let mover = ecs.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id
+            let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id ecs
             mover.Index.Velocity.Index.Velocity <- v2One
 
         // define update for movers
