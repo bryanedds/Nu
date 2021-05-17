@@ -20,7 +20,7 @@ module FieldDispatcher =
         | MenuTeamOpen
         | MenuTeamAlly of int
         | MenuItemOpen
-        | MenuItemSelect of Lens<int * ItemType, World>
+        | MenuItemSelect of Lens<int * (ItemType * int Option), World>
         | MenuItemUse of int
         | MenuItemCancel
         | MenuClose
@@ -28,7 +28,7 @@ module FieldDispatcher =
         | ShopSell
         | ShopPageUp
         | ShopPageDown
-        | ShopSelect of Lens<int * ItemType, World>
+        | ShopSelect of Lens<int * (ItemType * int Option), World>
         | ShopConfirmAccept
         | ShopConfirmDecline
         | ShopLeave
@@ -474,20 +474,19 @@ module FieldDispatcher =
                 (fun (field : Field) _ -> (field.Menu, field.ShopOpt, field.Inventory))
                 (fun (menu, shopOpt, inventory : Inventory) _ ->
                     match menu.MenuState with
-                    | MenuItem menu -> pageItems menu.ItemPage 10 (Inventory.indexItems inventory)
+                    | MenuItem menu -> inventory.Items |> Map.toSeq |> Seq.index |> pageItems menu.ItemPage 10 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
                     | _ ->
                         match shopOpt with
                         | Some shop ->
                             match shop.ShopState with
                             | ShopBuying ->
                                 match Map.tryFind shop.ShopType Data.Value.Shops with
-                                | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 10
+                                | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 10 |> Map.map (fun _ (i, item) -> (i, (item, None)))
                                 | None -> Map.empty
                             | ShopSelling ->
-                                inventory |>
-                                Inventory.indexItems |>
-                                Seq.choose (function (_, Equipment _ as item) | (_, Consumable _ as item) -> Some item | (_, KeyItem _) | (_, Stash _) -> None) |>
-                                pageItems shop.ShopPage 10
+                                inventory.Items |> Map.toSeq |> Seq.index |>
+                                Seq.choose (function (_, (Equipment _, _) as item) | (_, (Consumable _, _) as item) -> Some item | (_, (KeyItem _, _)) | (_, (Stash _, _)) -> None) |>
+                                pageItems shop.ShopPage 10 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 368.0f
@@ -495,8 +494,8 @@ module FieldDispatcher =
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 336.0f 72.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
-                         Entity.Text <== selectionLens --> fun (_, itemType) -> ItemType.getName itemType
-                         Entity.EnabledLocal <== selectionLens --> fun (_, itemType) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
+                         Entity.Text <== selectionLens --> fun (_, (itemType, countOpt)) -> match countOpt with Some count when count > 1 -> string count + " " + ItemType.getName itemType | _ -> ItemType.getName itemType
+                         Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
 
         override this.Channel (_, field) =
@@ -663,6 +662,7 @@ module FieldDispatcher =
 
             | MenuItemSelect selectionLens ->
                 let selection = Lens.get selectionLens world
+                let selection = (fst selection, fst (snd selection))
                 let field = Field.updateMenu (fun menu -> { menu with MenuUseOpt = MenuUse.tryMakeFromSelection selection }) field
                 just field
 
@@ -708,6 +708,7 @@ module FieldDispatcher =
 
             | ShopSelect selectionLens ->
                 let selection = Lens.get selectionLens world
+                let selection = (fst selection, fst (snd selection))
                 let field =
                     Field.updateShopOpt (Option.map (fun shop ->
                         let buying = match shop.ShopState with ShopBuying -> true | ShopSelling -> false
