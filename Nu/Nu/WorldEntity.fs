@@ -254,6 +254,16 @@ module WorldEntityModule =
         /// Try to signal an entity.
         member this.TrySignal signal world = (this.GetDispatcher world).TrySignal (signal, this, world)
 
+        member this.InitComponent<'c, 's when 's :> SystemCorrelated<'c, World>> (comp : 'c) systemName world =
+            let ecs = World.getSelectedEcs world
+            let system = ecs.IndexSystem<'s> systemName
+            system.RegisterCorrelated comp this.CorrelationId ecs
+
+        member this.GetComponentRef<'c, 's when 's :> SystemCorrelated<'c, World>> systemName world : 'c ComponentRef =
+            let ecs = World.getSelectedEcs world
+            let system = ecs.IndexSystem<'s> systemName
+            system.IndexCorrelated this.CorrelationId
+
     type World with
 
         static member internal updateEntity (entity : Entity) world =

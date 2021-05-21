@@ -955,14 +955,20 @@ module WorldTypes =
                 | :? Group as that -> (this :> Group IComparable).CompareTo that
                 | _ -> failwith "Invalid Group comparison (comparee not of type Group)."
 
-    /// The type around which the whole game engine is based! Used in combination with dispatchers
-    /// to implement things like buttons, characters, blocks, and things of that sort.
-    /// OPTIMIZATION: Includes pre-constructed entity change and update event addresses to avoid
-    /// reconstructing new ones for each entity every frame.
+    /// The type around which the whole game engine is based! Used in combination with dispatchers to implement things
+    /// like buttons, characters, blocks, and things of that sort.
+    /// OPTIMIZATION: Includes pre-constructed entity update event addresses to avoid reconstructing new ones for each
+    /// entity every frame.
     and Entity (entityAddress) =
 
         // check that address is of correct length for an entity
         do if Address.length entityAddress <> 3 then failwith "Entity address must be length of 3."
+
+        /// The entity's cached state.
+        let mutable entityStateOpt = Unchecked.defaultof<EntityState>
+
+        /// The entity's correlation id.
+        let correlationId = entityAddress |> Address.getName |> Gen.correlate
 
         // cache the simulant address to avoid allocation
         let simulantAddress = atoa<Entity, Simulant> entityAddress
@@ -978,10 +984,6 @@ module WorldTypes =
             let entityNames = Address.getNames entityAddress
             rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
 #endif
-
-        /// The entity's cached state.
-        let mutable entityStateOpt =
-            Unchecked.defaultof<EntityState>
 
         /// Create an entity reference from an address string.
         new (entityAddressStr : string) = Entity (stoa entityAddressStr)
@@ -1001,6 +1003,14 @@ module WorldTypes =
         /// The parent group of the entity.
         member this.Parent = let names = this.EntityAddress.Names in Group [names.[0]; names.[1]]
 
+        /// The cached entity state for imperative entities.
+        member this.EntityStateOpt
+            with get () = entityStateOpt
+            and set value = entityStateOpt <- value
+
+        /// The entity's correlation id.
+        member this.CorrelationId = correlationId
+
         /// The address of the entity's update event.
         member this.UpdateEventCached = updateEvent
 
@@ -1008,11 +1018,6 @@ module WorldTypes =
         /// The address of the entity's post-update event.
         member this.PostUpdateEventCached = postUpdateEvent
 #endif
-
-        /// The cached entity state for imperative entities.
-        member this.EntityStateOpt
-            with get () = entityStateOpt
-            and set value = entityStateOpt <- value
 
         /// Get the name of an entity.
         member this.Name = Address.getName this.EntityAddress
