@@ -2567,12 +2567,3 @@ module ScreenDispatcherModule =
 
         abstract member View : 'model * Screen * World -> View
         default this.View (_, _, _) = View.empty
-
-//module EcsModule =
-//
-//    type Entity with
-//
-//        member this.InitTransform value world = this.InitComponent<Transform, SystemCorrelated<Transform, World>> value world
-//        member this.GetTransformPosition world = let cref = this.GetComponentRef<Transform, SystemCorrelated<Transform, World>> Sys? Transform world in cref.Index.Position
-//        member this.SetTransformPosition value world = let cref = this.GetComponentRef<Transform, SystemCorrelated<Transform, World>> Sys? Transform world in cref.Index.Position <- value; World.publishChangeBinding Property? TransformPosition this world
-//        member this.TransformPosition = lens Property? TransformPosition this.GetTransformPosition this.SetTransformPosition this

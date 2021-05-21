@@ -91,4 +91,4 @@ module EcsTests =
         airshipRef.Index<Skin>().Color.G <- byte 255
 
         // invoke update behavior
-        ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
+        ecs.Publish EcsEvents.Update () ecs.SystemGlobal world

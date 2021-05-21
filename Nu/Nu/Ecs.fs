@@ -120,15 +120,15 @@ and [<NoEquality; NoComparison>] ArrayObjs =
 and Ecs<'w> () as this =
 
     let mutable systemCached = System<'w> "Global"
+    let systemGlobal = systemCached
     let arrayObjss = dictPlus<string, ArrayObjs> StringComparer.Ordinal []
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
     let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
     let correlations = dictPlus<Guid, string List> HashIdentity.Structural []
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
-    let globalSystem = systemCached
 
-    do this.RegisterSystemGeneralized globalSystem
+    do this.RegisterSystemGeneralized systemGlobal
 
     member private this.BoxCallback<'a> (callback : SystemCallback<'a, 'w>) =
         let boxableCallback = fun (evt : SystemEvent<obj, 'w>) system ->
@@ -141,8 +141,8 @@ and Ecs<'w> () as this =
     member private this.Correlations 
         with get () = correlations
 
-    member this.GlobalSystem
-        with get () = globalSystem
+    member this.SystemGlobal
+        with get () = systemGlobal
 
     member this.RegisterPipedValue<'a when 'a : not struct> key (value : 'a) =
         pipedValues.[key] <- value :> obj
