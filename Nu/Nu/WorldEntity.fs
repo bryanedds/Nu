@@ -257,12 +257,12 @@ module WorldEntityModule =
         member this.InitComponent<'c, 's when 's :> SystemCorrelated<'c, World>> (comp : 'c) systemName world =
             let ecs = World.getSelectedEcs world
             let system = ecs.IndexSystem<'s> systemName
-            system.RegisterCorrelated comp this.CorrelationId ecs
+            system.RegisterCorrelated comp this.Cid ecs
 
         member this.GetComponentRef<'c, 's when 's :> SystemCorrelated<'c, World>> systemName world : 'c ComponentRef =
             let ecs = World.getSelectedEcs world
             let system = ecs.IndexSystem<'s> systemName
-            system.IndexCorrelated this.CorrelationId
+            system.IndexCorrelated this.Cid
 
     type World with
 
