@@ -119,13 +119,14 @@ and [<NoEquality; NoComparison>] ArrayObjs =
 /// on this 'w Ecs type.
 and Ecs<'w> () as this =
 
+    let mutable systemCached = System<'w> "Global"
     let arrayObjss = dictPlus<string, ArrayObjs> StringComparer.Ordinal []
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
-    let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal [] // TODO: cache last accessed system.
+    let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
     let correlations = dictPlus<Guid, string List> HashIdentity.Structural []
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
-    let globalSystem = System<'w> "Global"
+    let globalSystem = systemCached
 
     do this.RegisterSystemGeneralized globalSystem
 
@@ -156,17 +157,30 @@ and Ecs<'w> () as this =
         this.RegisterPipedValue<obj> system.PipedKey system.PipedInit
 
     member this.TryIndexSystem<'s when 's :> 'w System> systemName =
-        match systemsUnordered.TryGetValue systemName with
-        | (true, system) ->
-            match system with
+        if systemCached.Name = systemName then
+            match systemCached with
             | :? 's as systemAsS -> Some systemAsS
             | _ -> None
-        | (false, _) -> None
+        else
+            match systemsUnordered.TryGetValue systemName with
+            | (true, system) ->
+                match system with
+                | :? 's as systemAsS ->
+                    systemCached <- system
+                    Some systemAsS
+                | _ -> None
+            | (false, _) -> None
 
     member this.IndexSystem<'s when 's :> 'w System> systemName =
-        match systemsUnordered.TryGetValue systemName with
-        | (true, system) -> system :?> 's
-        | (false, _) -> failwith ("Could not index system '" + systemName + "' of type '" + typeof<'s>.Name + "'.")
+        if systemCached.Name = systemName
+        then systemCached :?> 's
+        else
+            match systemsUnordered.TryGetValue systemName with
+            | (true, system) ->
+                let systemAsS = system :?> 's
+                systemCached <- system
+                systemAsS
+            | (false, _) -> failwith ("Could not index system '" + systemName + "' of type '" + typeof<'s>.Name + "'.")
 
     member this.SubscribePlus<'d> subscriptionId eventName (callback : SystemCallback<'d, 'w>) =
         match systemSubscriptions.TryGetValue eventName with
