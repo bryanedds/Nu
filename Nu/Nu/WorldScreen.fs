@@ -120,11 +120,11 @@ module WorldScreenModule =
             // update ecs
             let ecs = World.getScreenEcs screen world
 #if ECS_BUFFERED_PLUS
-            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.GlobalSystem
-            let world = ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
+            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.SystemGlobal
+            let world = ecs.Publish EcsEvents.Update () ecs.SystemGlobal world
 #else
-            let world = ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
-            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.GlobalSystem
+            let world = ecs.Publish EcsEvents.Update () ecs.SystemGlobal world
+            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.SystemGlobal
 #endif
 
             // update via dispatcher
@@ -143,11 +143,11 @@ module WorldScreenModule =
             // post-update ecs
             let ecs = World.getScreenEcs screen world
 #if ECS_BUFFERED_PLUS
-            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.GlobalSystem
-            let world = ecs.Publish EcsEvents.PostUpdate () ecs.GlobalSystem world
+            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.SystemGlobal
+            let world = ecs.Publish EcsEvents.PostUpdate () ecs.SystemGlobal world
 #else
-            let world = ecs.Publish EcsEvents.PostUpdate () ecs.GlobalSystem world
-            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.GlobalSystem
+            let world = ecs.Publish EcsEvents.PostUpdate () ecs.SystemGlobal world
+            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.SystemGlobal
 #endif
                 
             // post-update via dispatcher
@@ -165,8 +165,8 @@ module WorldScreenModule =
 
             // actualize ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.Publish EcsEvents.Actualize () ecs.GlobalSystem world
-            
+            let world = ecs.Publish EcsEvents.Actualize () ecs.SystemGlobal world
+
             // actualize via dispatcher
             let dispatcher = screen.GetDispatcher world
             dispatcher.Actualize (screen, world)

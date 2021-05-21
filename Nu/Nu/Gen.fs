@@ -125,7 +125,7 @@ module Gen =
         static member isCname (name : string) =
             name.Length = 9 && name.[0] = '@'
 
-        /// Correlate a name, caching a unique cid for it if it is not directly correlatable.
+        /// Correlate a name to a cid, caching a unique cid for it if it is not directly correlatable.
         static member correlate (name : string) =
             if Gen.isCname name then
                 lock Lock $ fun () ->
