@@ -14,7 +14,6 @@ open Nu
 module Nu =
 
     let mutable private Initialized = false
-    let private LoadedAssemblies = Dictionary<string, Assembly> StringComparer.Ordinal
 
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
         if right.Validate world then
@@ -47,9 +46,9 @@ module Nu =
 
             // make types load reflectively from pathed (non-static) assemblies
             AppDomain.CurrentDomain.AssemblyLoad.Add
-                (fun args -> LoadedAssemblies.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
+                (fun args -> Reflection.AssembliesLoaded.[args.LoadedAssembly.FullName] <- args.LoadedAssembly)
             AppDomain.CurrentDomain.add_AssemblyResolve (ResolveEventHandler
-                (fun _ args -> snd (LoadedAssemblies.TryGetValue args.Name)))
+                (fun _ args -> snd (Reflection.AssembliesLoaded.TryGetValue args.Name)))
 
             // ensure the current culture is invariate
             Threading.Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture

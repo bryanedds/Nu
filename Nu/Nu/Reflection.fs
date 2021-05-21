@@ -60,6 +60,10 @@ module Reflection =
              ("EffectTags", true)
              ("EffectHistory", true)]
 
+    /// A dictionary of all loaded assemblies.
+    let internal AssembliesLoaded =
+        Dictionary<string, Assembly> StringComparer.Ordinal
+
     /// Initialize a property's dynamic attributes.
     /// Available as an alternative to using the NP property name suffix.
     let initPropertyAttributes nonPersistent propertyName =
