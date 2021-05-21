@@ -968,7 +968,7 @@ module WorldTypes =
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
 
         /// The entity's correlation id.
-        let correlationId = entityAddress |> Address.getName |> Gen.correlate
+        let cid = entityAddress |> Address.getName |> Gen.correlate
 
         // cache the simulant address to avoid allocation
         let simulantAddress = atoa<Entity, Simulant> entityAddress
@@ -1009,7 +1009,7 @@ module WorldTypes =
             and set value = entityStateOpt <- value
 
         /// The entity's correlation id.
-        member this.CorrelationId = correlationId
+        member this.Cid = cid
 
         /// The address of the entity's update event.
         member this.UpdateEventCached = updateEvent
