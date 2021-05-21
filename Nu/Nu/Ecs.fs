@@ -121,7 +121,7 @@ and Ecs<'w> () as this =
 
     let arrayObjss = dictPlus<string, ArrayObjs> StringComparer.Ordinal []
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
-    let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
+    let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal [] // TODO: cache last accessed system.
     let systemsOrdered = List<string * 'w System> ()
     let correlations = dictPlus<Guid, string List> HashIdentity.Structural []
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
