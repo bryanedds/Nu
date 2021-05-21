@@ -473,8 +473,9 @@ module FieldDispatcher =
             Content.entities field
                 (fun (field : Field) _ -> (field.Menu, field.ShopOpt, field.Inventory))
                 (fun (menu, shopOpt, inventory : Inventory) _ ->
+                    let sorter (item, _) = match item with Consumable _ -> 0 | Equipment _ -> 1 | KeyItem _ -> 2 | Stash _ -> 3
                     match menu.MenuState with
-                    | MenuItem menu -> inventory.Items |> Map.toSeq |> Seq.index |> pageItems menu.ItemPage 10 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+                    | MenuItem menu -> inventory.Items |> Map.toSeq |> Seq.sortBy sorter |> Seq.index |> pageItems menu.ItemPage 10 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
                     | _ ->
                         match shopOpt with
                         | Some shop ->
@@ -484,7 +485,7 @@ module FieldDispatcher =
                                 | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 10 |> Map.map (fun _ (i, item) -> (i, (item, None)))
                                 | None -> Map.empty
                             | ShopSelling ->
-                                inventory.Items |> Map.toSeq |> Seq.index |>
+                                inventory.Items |> Map.toSeq |> Seq.sortBy sorter |> Seq.index |>
                                 Seq.choose (function (_, (Equipment _, _) as item) | (_, (Consumable _, _) as item) -> Some item | (_, (KeyItem _, _)) | (_, (Stash _, _)) -> None) |>
                                 pageItems shop.ShopPage 10 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
                         | None -> Map.empty)
