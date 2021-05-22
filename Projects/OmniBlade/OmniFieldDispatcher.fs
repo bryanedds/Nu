@@ -495,7 +495,7 @@ module FieldDispatcher =
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 336.0f 72.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
-                         Entity.Text <== selectionLens --> fun (_, (itemType, countOpt)) -> match countOpt with Some count when count > 1 -> string count + " " + ItemType.getName itemType | _ -> ItemType.getName itemType
+                         Entity.Text <== selectionLens --> fun (_, (itemType, countOpt)) -> match countOpt with Some count when count > 1 -> ItemType.getName itemType + " x" + string count | _ -> ItemType.getName itemType
                          Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
 
