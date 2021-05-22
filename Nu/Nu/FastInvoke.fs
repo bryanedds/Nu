@@ -68,14 +68,6 @@ module FastInvoke =
     type private A<'T1,'T2,'T3,'T4,'T5,'T6> = delegate of 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 -> unit
     type private A<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = delegate of 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 * 'T7 -> unit
 
-    //type private FD1 = delegate of obj -> obj
-    //type private FD2 = delegate of (obj * obj) -> obj
-    //type private FD3 = delegate of (obj * obj * obj) -> obj
-    //type private FD4 = delegate of (obj * obj * obj * obj) -> obj
-    //type private FD5 = delegate of (obj * obj * obj * obj * obj) -> obj
-    //type private FD6 = delegate of (obj * obj * obj * obj * obj * obj) -> obj
-    //type private FD7 = delegate of (obj * obj * obj * obj * obj * obj * obj) -> obj
-
     type [<AbstractClass>] private Factory () =
         abstract Prepare : obj -> FastInvoke
 
@@ -155,25 +147,6 @@ module FastInvoke =
               for p in m.GetParameters() do yield p.ParameterType|]
         let r = m.ReturnType
         let isAction = r = typeof<Void>
-        //if not isAction && ts.Length = 1 then
-        //    let ts = Array.append ts [|r|]
-        //    let r = DynamicMethod ("FastInvoke:" + m.Name, typeof<obj>, [|typeof<obj>|], true)
-        //    let g = r.GetILGenerator ()
-        //    g.Emit (OpCodes.Ldarg_0)
-        //    g.Emit (OpCodes.Unbox_Any, ts.[0])
-        //    if m.IsVirtual then
-        //        g.Emit (OpCodes.Callvirt, m)
-        //    else
-        //        g.Emit (OpCodes.Call, m)
-        //    if m.ReturnType = typeof<Void> then
-        //        g.Emit (OpCodes.Ldnull)
-        //        g.Emit (OpCodes.Ret)
-        //    else
-        //        g.Emit (OpCodes.Box, m.ReturnType)
-        //        g.Emit (OpCodes.Ret)
-        //    let d = r.CreateDelegate (typeof<FD1>) :?> FD1
-        //    { new FastInvoke () with override this.Invoke1 (p) = d.Invoke p }
-        //else
         let (iT, dT) =
             if isAction then
                 match ts.Length with
