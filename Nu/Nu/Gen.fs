@@ -130,7 +130,7 @@ module Gen =
             if Gen.isCname name then
                 lock Lock $ fun () ->
                     Encoding.Unicode.GetBytes (name, 1, 8, CnameBytes, 0) |> ignore<int>
-                    Array.Copy (CnameBytes, 1, CidBytes, 0, 16)
+                    Array.Copy (CnameBytes, 0, CidBytes, 0, 16)
                     Guid CidBytes
             else
                 match Cids.TryGetValue name with
