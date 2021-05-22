@@ -24,7 +24,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;PLATFORM_AGNOSTIC_TIMESTAMPING; DISABLE_ENTITY_POST_UPDATE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PLATFORM_EMIT; PLATFORM_AGNOSTIC_TIMESTAMPING; DISABLE_ENTITY_POST_UPDATE</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -39,7 +39,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; DISABLE_ENTITY_POST_UPDATE; ECS_BUFFERED</DefineConstants>
+    <DefineConstants>TRACE;PLATFORM_EMIT; PLATFORM_AGNOSTIC_TIMESTAMPING; DISABLE_ENTITY_POST_UPDATE; ECS_BUFFERED</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Release\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -76,7 +76,7 @@
     <Compile Include="Ecs.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="SpatialTree.fs" />
-    <Compile Include="FastMethod.fs" />
+    <Compile Include="FastInvoke.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Overlayer.fs" />
     <Compile Include="OverlayRouter.fs" />
