@@ -2260,18 +2260,18 @@ module BoxDispatcherModule =
 module CharacterDispatcherModule =
 
     type Entity with
-        member this.GetCharacterIdleImage world = this.Get Property? CharacterIdleImage world
-        member this.SetCharacterIdleImage value world = this.Set Property? CharacterIdleImage value world
-        member this.CharacterIdleImage = lens<Image AssetTag> Property? CharacterIdleImage this.GetCharacterIdleImage this.SetCharacterIdleImage this
-        member this.GetCharacterJumpImage world = this.Get Property? CharacterJumpImage world
-        member this.SetCharacterJumpImage value world = this.Set Property? CharacterJumpImage value world
-        member this.CharacterJumpImage = lens<Image AssetTag> Property? CharacterJumpImage this.GetCharacterJumpImage this.SetCharacterJumpImage this
-        member this.GetCharacterWalkSheet world = this.Get Property? CharacterWalkSheet world
-        member this.SetCharacterWalkSheet value world = this.Set Property? CharacterWalkSheet value world
-        member this.CharacterWalkSheet = lens<Image AssetTag> Property? CharacterWalkSheet this.GetCharacterWalkSheet this.SetCharacterWalkSheet this
-        member this.GetCharacterFacingLeft world = this.Get Property? CharacterFacingLeft world
-        member this.SetCharacterFacingLeft value world = this.Set Property? CharacterFacingLeft value world
-        member this.CharacterFacingLeft = lens<bool> Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
+        member this.GetCharacterIdleImage world : Image AssetTag = this.Get Property? CharacterIdleImage world
+        member this.SetCharacterIdleImage (value : Image AssetTag) world = this.Set Property? CharacterIdleImage value world
+        member this.CharacterIdleImage = lens Property? CharacterIdleImage this.GetCharacterIdleImage this.SetCharacterIdleImage this
+        member this.GetCharacterJumpImage world : Image AssetTag = this.Get Property? CharacterJumpImage world
+        member this.SetCharacterJumpImage (value : Image AssetTag) world = this.Set Property? CharacterJumpImage value world
+        member this.CharacterJumpImage = lens Property? CharacterJumpImage this.GetCharacterJumpImage this.SetCharacterJumpImage this
+        member this.GetCharacterWalkSheet world : Image AssetTag = this.Get Property? CharacterWalkSheet world
+        member this.SetCharacterWalkSheet (value : Image AssetTag) world = this.Set Property? CharacterWalkSheet value world
+        member this.CharacterWalkSheet = lens Property? CharacterWalkSheet this.GetCharacterWalkSheet this.SetCharacterWalkSheet this
+        member this.GetCharacterFacingLeft world : bool = this.Get Property? CharacterFacingLeft world
+        member this.SetCharacterFacingLeft (value : bool) world = this.Set Property? CharacterFacingLeft value world
+        member this.CharacterFacingLeft = lens Property? CharacterFacingLeft this.GetCharacterFacingLeft this.SetCharacterFacingLeft this
 
     type CharacterDispatcher () =
         inherit EntityDispatcher ()
