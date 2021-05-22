@@ -55,9 +55,37 @@ module Program =
     need to move the app from 60fps to 30fps. *)
 
     (* TODO: investigate Gaia extensibility mechanism. *)
+    type Test () =
+        static member Fn i = i * 2
+        static member Test () =
+            let md = typeof<Test>.GetMethod "Fn"
+            let c = FastInvoke.compile md
+            let iters = 12500000
+            let mutable i = 0
+            let sw = Diagnostics.Stopwatch ()
+    
+            sw.Reset ()
+            sw.Start ()
+            for _ in 0 .. iters do i <- i + unbox<int> (md.Invoke (null, [|2|]))
+            sw.Stop ()
+            printfn "Time: %A" sw.Elapsed
+    
+            sw.Reset ()
+            sw.Start ()
+            for _ in 0 .. iters do i <- i + unbox<int> (c.Invoke1 2)
+            sw.Stop ()
+            printfn "Time: %A" sw.Elapsed
+    
+            sw.Reset ()
+            sw.Start ()
+            for _ in 0 .. iters do i <- i + unbox<int> (box (Test.Fn 2))
+            sw.Stop ()
+            printfn "Time: %A" sw.Elapsed
 
     /// Program entry point.
     let [<EntryPoint; STAThread>] main _ =
+
+        Test.Test ()
 
         // query user to create new project
         Console.Write "Create a new game with the Nu Game Engine? [y/n]: "

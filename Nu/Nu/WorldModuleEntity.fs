@@ -17,8 +17,8 @@ module WorldModuleEntity =
     let internal EntitySetters = Dictionary<string, Property -> Entity -> World -> struct (bool * World)> StringComparer.Ordinal
 
     /// Reflective property getters / setters.
-    let internal EntityGetters2 = Dictionary<string, FastMethod> StringComparer.Ordinal
-    let internal EntitySetters2 = Dictionary<string, FastMethod> StringComparer.Ordinal
+    let internal EntityGetters2 = Dictionary<string, FastInvoke> StringComparer.Ordinal
+    let internal EntitySetters2 = Dictionary<string, FastInvoke> StringComparer.Ordinal
 
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
