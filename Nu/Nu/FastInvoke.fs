@@ -18,12 +18,10 @@
 /// every time, which has to repeatedly do method binding.
 ///
 /// NOTE: Modified locally for direct use in the Nu project.
+/// TODO: Consider moving this to Prime.
 namespace Nu
 open System
 open System.Reflection
-#if PLATFORM_EMIT
-open System.Reflection.Emit
-#endif
 
 /// Represents a method that can be quickly invoked dynamically.
 [<AbstractClass>]
@@ -37,7 +35,6 @@ type FastInvoke () =
     abstract Invoke5 : obj * obj * obj * obj * obj -> obj
     abstract Invoke6 : obj * obj * obj * obj * obj * obj -> obj
     abstract Invoke7 : obj * obj * obj * obj * obj * obj * obj -> obj
-    abstract InvokeN : [<ParamArray>] args: obj array -> obj
 
     override this.Invoke0 () = invalidOp "Bad arguments given to a FastInvoke method."
     override this.Invoke1 (_) = invalidOp "Bad arguments given to a FastInvoke method."
@@ -47,17 +44,6 @@ type FastInvoke () =
     override this.Invoke5 (_, _, _, _, _) = invalidOp "Bad arguments given to a FastInvoke method."
     override this.Invoke6 (_, _, _, _, _, _) = invalidOp "Bad arguments given to a FastInvoke method."
     override this.Invoke7 (_, _, _, _, _, _, _) = invalidOp "Bad arguments given to a FastInvoke method."
-    override this.InvokeN ps =
-        match ps.Length with
-        | 0 -> this.Invoke0()
-        | 1 -> this.Invoke1(ps.[0])
-        | 2 -> this.Invoke2(ps.[0], ps.[1])
-        | 3 -> this.Invoke3(ps.[0], ps.[1], ps.[2])
-        | 4 -> this.Invoke4(ps.[0], ps.[1], ps.[2], ps.[3])
-        | 5 -> this.Invoke5(ps.[0], ps.[1], ps.[2], ps.[3], ps.[4])
-        | 6 -> this.Invoke6(ps.[0], ps.[1], ps.[2], ps.[3], ps.[4], ps.[5])
-        | 7 -> this.Invoke7(ps.[0], ps.[1], ps.[2], ps.[3], ps.[4], ps.[5], ps.[6])
-        | _ -> invalidOp "Bad arguments given to a FastInvoke method."
 
 [<RequireQualifiedAccess>]
 module FastInvoke =
@@ -81,9 +67,12 @@ module FastInvoke =
     type private A<'T1,'T2,'T3,'T4,'T5> = delegate of 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> unit
     type private A<'T1,'T2,'T3,'T4,'T5,'T6> = delegate of 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 -> unit
     type private A<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = delegate of 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 * 'T7 -> unit
-    
+
     type private F =
         delegate of obj [] -> obj
+
+    type private FD1 = delegate of obj -> obj
+    type private FD2 = delegate of (obj * obj) -> obj
 
     type [<AbstractClass>] private Factory () =
         abstract Prepare : obj -> FastInvoke
@@ -91,7 +80,7 @@ module FastInvoke =
     type [<AbstractClass>] private Factory<'T> () =
         inherit Factory ()
         abstract Prepare : 'T -> FastInvoke
-        override this.Prepare (x: obj) = this.Prepare (x :?> 'T)
+        override this.Prepare (x : obj) = this.Prepare (x :?> 'T)
 
     type [<Sealed>] private Func0<'R> () =
         inherit Factory<F<'R>> ()
@@ -159,41 +148,30 @@ module FastInvoke =
 
     /// Compiles a method to a fast invoke function.
     let compile (m : MethodInfo) : FastInvoke =
-#if PLATFORM_EMIT
-        let r = DynamicMethod ("FastInvoke:" + m.Name, typeof<obj>, [|typeof<obj array>|], true)
-        let g = r.GetILGenerator ()
-        [|if not m.IsStatic then yield m.DeclaringType
-          for p in m.GetParameters() do yield p.ParameterType|]
-        |> Array.iteri (fun i p ->
-            g.Emit (OpCodes.Ldarg_0)
-            g.Emit (OpCodes.Ldc_I4, i)
-            g.Emit (OpCodes.Ldelem, typeof<obj>)
-            g.Emit (OpCodes.Unbox_Any, p))
-        let ct = if m.IsVirtual then OpCodes.Callvirt else OpCodes.Call
-        g.Emit (ct, m)
-        if m.ReturnType = typeof<Void> then
-            g.Emit (OpCodes.Ldnull)
-            g.Emit (OpCodes.Ret)
-        else
-            g.Emit (OpCodes.Box, m.ReturnType)
-            g.Emit (OpCodes.Ret)
-        let d = r.CreateDelegate (typeof<F>) :?> F
-        { new FastInvoke () with
-            override this.Invoke0 () = d.Invoke ([||])
-            override this.Invoke1 (p) = d.Invoke ([|p|])
-            override this.Invoke2 (p, p2) = d.Invoke ([|p; p2|])
-            override this.Invoke3 (p, p2, p3) = d.Invoke ([|p; p2; p3|])
-            override this.Invoke4 (p, p2, p3, p4) = d.Invoke ([|p; p2; p3; p4|])
-            override this.Invoke5 (p, p2, p3, p4, p5) = d.Invoke ([|p; p2; p3; p4; p5|])
-            override this.Invoke6 (p, p2, p3, p4, p5, p6) = d.Invoke ([|p; p2; p3; p4; p5; p6|])
-            override this.Invoke7 (p, p2, p3, p4, p5, p6, p7) = d.Invoke ([|p; p2; p3; p4; p5; p6; p7|])
-            override this.InvokeN (ps) = d.Invoke (ps) }
-#else
         let ts =
             [|if not m.IsStatic then yield m.DeclaringType
               for p in m.GetParameters() do yield p.ParameterType|]
         let r = m.ReturnType
         let isAction = r = typeof<Void>
+        //if not isAction && ts.Length = 1 then
+        //    let ts = Array.append ts [|r|]
+        //    let r = DynamicMethod ("FastInvoke:" + m.Name, typeof<obj>, [|typeof<obj>|], true)
+        //    let g = r.GetILGenerator ()
+        //    g.Emit (OpCodes.Ldarg_0)
+        //    g.Emit (OpCodes.Unbox_Any, ts.[0])
+        //    if m.IsVirtual then
+        //        g.Emit (OpCodes.Callvirt, m)
+        //    else
+        //        g.Emit (OpCodes.Call, m)
+        //    if m.ReturnType = typeof<Void> then
+        //        g.Emit (OpCodes.Ldnull)
+        //        g.Emit (OpCodes.Ret)
+        //    else
+        //        g.Emit (OpCodes.Box, m.ReturnType)
+        //        g.Emit (OpCodes.Ret)
+        //    let d = r.CreateDelegate (typeof<FD1>) :?> FD1
+        //    { new FastInvoke () with override this.Invoke1 (p) = d.Invoke p }
+        //else
         let (iT, dT) =
             if isAction then
                 match ts.Length with
@@ -222,4 +200,3 @@ module FastInvoke =
         let iT = iT.MakeGenericType ts
         let factory = Activator.CreateInstance iT :?> Factory
         factory.Prepare (Delegate.CreateDelegate (dT, m))
-#endif
