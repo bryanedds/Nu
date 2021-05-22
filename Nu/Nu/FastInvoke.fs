@@ -68,11 +68,13 @@ module FastInvoke =
     type private A<'T1,'T2,'T3,'T4,'T5,'T6> = delegate of 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 -> unit
     type private A<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = delegate of 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 * 'T7 -> unit
 
-    type private F =
-        delegate of obj [] -> obj
-
-    type private FD1 = delegate of obj -> obj
-    type private FD2 = delegate of (obj * obj) -> obj
+    //type private FD1 = delegate of obj -> obj
+    //type private FD2 = delegate of (obj * obj) -> obj
+    //type private FD3 = delegate of (obj * obj * obj) -> obj
+    //type private FD4 = delegate of (obj * obj * obj * obj) -> obj
+    //type private FD5 = delegate of (obj * obj * obj * obj * obj) -> obj
+    //type private FD6 = delegate of (obj * obj * obj * obj * obj * obj) -> obj
+    //type private FD7 = delegate of (obj * obj * obj * obj * obj * obj * obj) -> obj
 
     type [<AbstractClass>] private Factory () =
         abstract Prepare : obj -> FastInvoke
