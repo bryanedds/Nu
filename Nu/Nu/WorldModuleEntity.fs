@@ -16,6 +16,10 @@ module WorldModuleEntity =
     let internal EntityGetters = Dictionary<string, Entity -> World -> Property> StringComparer.Ordinal
     let internal EntitySetters = Dictionary<string, Property -> Entity -> World -> struct (bool * World)> StringComparer.Ordinal
 
+    /// Reflective property getters / setters.
+    let internal EntityGetters2 = Dictionary<string, FastMethod> StringComparer.Ordinal
+    let internal EntitySetters2 = Dictionary<string, FastMethod> StringComparer.Ordinal
+
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
 
@@ -728,7 +732,10 @@ module WorldModuleEntity =
                 | false ->
                     match EntityGetters.TryGetValue propertyName with
                     | (true, getter) -> property <- getter entity world; true
-                    | (false, _) -> false
+                    | (false, _) ->
+                        match EntityGetters2.TryGetValue propertyName with
+                        | (true, getter2) -> property.PropertyValue <- getter2.Invoke2 (entity, world); true
+                        | (false, _) -> false
 
         static member internal getEntityProperty propertyName entity world =
             let mutable property = Unchecked.defaultof<_>
@@ -783,7 +790,10 @@ module WorldModuleEntity =
                     if changed
                     then World.publishEntityChange propertyName property.PropertyValue entity world
                     else world
-                | (false, _, world) -> world
+                | (false, _, world) ->
+                    match EntitySetters2.TryGetValue propertyName with
+                    | (true, setter2) -> setter2.Invoke3 (entity, property.PropertyValue, world) :?> World
+                    | (false, _) -> world
 
         static member internal trySetEntityProperty propertyName property entity world =
             match EntitySetters.TryGetValue propertyName with
@@ -798,7 +808,10 @@ module WorldModuleEntity =
                         then World.publishEntityChange propertyName property.PropertyValue entity world
                         else world
                     struct (true, changed, world)
-                | struct (false, changed, world) -> (false, changed, world)
+                | struct (false, changed, world) ->
+                    match EntitySetters2.TryGetValue propertyName with
+                    | (true, setter2) -> (true, true, setter2.Invoke3 (entity, property.PropertyValue, world) :?> World) // NOTE: asserting always changed presuming it's not really used anywhere.
+                    | (false, _) -> (false, changed, world)
 
         static member internal setEntityProperty propertyName property entity world =
             match World.trySetEntityProperty propertyName property entity world with
