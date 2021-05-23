@@ -789,20 +789,20 @@ module WorldModuleEntity =
                                 | (false, _) -> struct (false, false, world)
                             else struct (true, false, world)
                     | false -> struct (false, false, world)
-                (success, changed, world)
+                struct (success, changed, world)
 
         static member internal setEntityXtensionPropertyWithoutEvent propertyName property entity world =
             match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
-            | (true, changed, world) -> (true, changed, world)
-            | (false, _, _) -> failwithf "Could not find property '%s'." propertyName
+            | struct (true, changed, world) -> (true, changed, world)
+            | struct (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
             match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
-            | (true, changed, world) ->
+            | struct (true, changed, world) ->
                 if changed
                 then World.publishEntityChange propertyName property.PropertyValue entity world
                 else world
-            | (false, _, world) ->
+            | struct (false, _, world) ->
                 match EntitySetters.TryGetValue propertyName with
                 | (true, setter) ->
                     match setter with
