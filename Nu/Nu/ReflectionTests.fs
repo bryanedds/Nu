@@ -22,8 +22,8 @@ module ReflectionTests =
             { this with Xtension = this.Xtension }
 
     let [<Fact>] xtensionSerializationViaContainingTypeWorks () =
-        let xtd = { Xtension = Xtension.makeMixed () }
-        let xtd = xtd?TestProperty <- 5
+        let xtd = { Xtension = Xtension.makeFunctional () }
+        let xtd = { Xtension = Xtension.attachProperty Property? TestProperty { PropertyType = typeof<int>; PropertyValue = 5 } xtd.Xtension }
         let properties = Reflection.writePropertiesFromTarget tautology3 Map.empty xtd
         let xtdRead = { xtd with Xtension = xtd.Xtension } // hacky copy
         let xtd = Reflection.readPropertiesToTarget TestXtended.copy properties xtdRead

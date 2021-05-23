@@ -55,11 +55,11 @@ module SymbolStore =
                 let symbols = List.definitize symbolOpts
                 match Dictionary.tryFind packageName symbolStore.SymbolPackages with
                 | Some symbolDict ->
-                    for (key, value) in symbols do symbolDict.ForceAdd (key, value)
-                    symbolStore.SymbolPackages.ForceAdd (packageName, symbolDict)
+                    for (key, value) in symbols do symbolDict.Assign (key, value)
+                    symbolStore.SymbolPackages.Assign (packageName, symbolDict)
                 | None ->
                     let symbolDict = dictPlus StringComparer.Ordinal symbols
-                    symbolStore.SymbolPackages.ForceAdd (packageName, symbolDict)
+                    symbolStore.SymbolPackages.Assign (packageName, symbolDict)
             | Left error ->
                 Log.info ("Symbol store package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
         | Left error ->
