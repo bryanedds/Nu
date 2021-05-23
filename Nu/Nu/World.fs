@@ -34,8 +34,10 @@ module Nu =
                         pars.[1].ParameterType = typeof<World>
                     else false)
             for md in mds do
-                let compiled = FastInvoke.compile md
-                WorldModuleEntity.EntityGetters2.Add (md.Name.Replace ("Entity.Get", ""), (md.ReturnType, compiled))
+                let name = md.Name.Replace ("Entity.Get", "")
+                if  not (WorldModuleEntity.EntityGetters.ContainsKey name) then
+                    let compiled = FastInvoke.compile md
+                    WorldModuleEntity.EntityGetters.Add (name, InvokeGetter (md.ReturnType, compiled))
 
     let private loadEntitySetters2 (assembly : Assembly) =
         let types =
@@ -57,9 +59,11 @@ module Nu =
                         pars.[2].ParameterType = typeof<World>
                     else false)
             for md in mds do
-                let compiled = FastInvoke.compile md
-                let propertyType = md.GetParameters().[1].ParameterType
-                WorldModuleEntity.EntitySetters2.Add (md.Name.Replace ("Entity.Set", ""), (propertyType, compiled))
+                let name = md.Name.Replace ("Entity.Set", "")
+                if  not (WorldModuleEntity.EntitySetters.ContainsKey name) then
+                    let compiled = FastInvoke.compile md
+                    let propertyType = md.GetParameters().[1].ParameterType
+                    WorldModuleEntity.EntitySetters.Add (name, InvokeSetter (propertyType, compiled))
 
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
         if right.Validate world then
