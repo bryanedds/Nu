@@ -35,7 +35,7 @@ module Nu =
                     else false)
             for md in mds do
                 let compiled = FastInvoke.compile md
-                WorldModuleEntity.EntityGetters2.Add (md.Name.Replace ("Entity.Get", ""), compiled)
+                WorldModuleEntity.EntityGetters2.Add (md.Name.Replace ("Entity.Get", ""), (md.ReturnType, compiled))
 
     let private loadEntitySetters2 (assembly : Assembly) =
         let types =
@@ -58,7 +58,8 @@ module Nu =
                     else false)
             for md in mds do
                 let compiled = FastInvoke.compile md
-                WorldModuleEntity.EntitySetters2.Add (md.Name.Replace ("Entity.Set", ""), compiled)
+                let propertyType = md.GetParameters().[1].ParameterType
+                WorldModuleEntity.EntitySetters2.Add (md.Name.Replace ("Entity.Set", ""), (propertyType, compiled))
 
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
         if right.Validate world then
