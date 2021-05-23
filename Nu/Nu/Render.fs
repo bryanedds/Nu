@@ -262,11 +262,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let renderAssets = List.definitize renderAssetOpts
                 match Dictionary.tryFind packageName renderer.RenderPackages with
                 | Some renderAssetDict ->
-                    for (key, value) in renderAssets do renderAssetDict.ForceAdd (key, value)
-                    renderer.RenderPackages.ForceAdd (packageName, renderAssetDict)
+                    for (key, value) in renderAssets do renderAssetDict.Assign (key, value)
+                    renderer.RenderPackages.Assign (packageName, renderAssetDict)
                 | None ->
                     let renderAssetDict = dictPlus StringComparer.Ordinal renderAssets
-                    renderer.RenderPackages.ForceAdd (packageName, renderAssetDict)
+                    renderer.RenderPackages.Assign (packageName, renderAssetDict)
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
         | Left error ->

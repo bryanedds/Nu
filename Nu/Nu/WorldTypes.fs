@@ -475,7 +475,7 @@ module WorldTypes =
                     (single Constants.Render.VirtualResolutionY)
             { Id = Gen.id
               Dispatcher = dispatcher
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               OmniScreenOpt = None
               SelectedScreenOpt = None
@@ -539,7 +539,7 @@ module WorldTypes =
         static member make nameOpt (dispatcher : ScreenDispatcher) ecs =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Ecs = ecs
               TransitionState = IdlingState
@@ -602,7 +602,7 @@ module WorldTypes =
         static member make nameOpt (dispatcher : GroupDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Visible = true
               Persistent = true
@@ -672,7 +672,7 @@ module WorldTypes =
             { Transform = transform
               Dispatcher = dispatcher
               Facets = [||]
-              Xtension = if imperative then Xtension.makeImperative () else Xtension.makeSafe ()
+              Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
@@ -692,6 +692,10 @@ module WorldTypes =
             let entityState' = EntityState.copy entityState
             entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
             entityState'
+
+        /// Check that there exists an xtenstion proprty that is a runtime property.
+        static member containsRuntimeProperties entityState =
+            Xtension.containsRuntimeProperties entityState.Xtension
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty (propertyName, entityState, propertyRef : Property outref) =
