@@ -12,13 +12,23 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldModuleEntity =
 
+    /// A reflective getter.
+    type [<NoEquality; NoComparison; Struct>] internal EntityGetter =
+        | PropertyGetter of PropertyGetter : (Entity -> World -> Property)
+        | ValueGetter of FastInvoke : FastInvoke
+
+    /// A reflective setter.
+    type [<NoEquality; NoComparison; Struct>] internal EntitySetter =
+        | PropertySetter of PropertySetter : (Property -> Entity -> World -> struct (bool * World))
+        | ValueSetter of FastInvoke : FastInvoke
+
     /// Dynamic property getters / setters.
     let internal EntityGetters = Dictionary<string, Entity -> World -> Property> StringComparer.Ordinal
     let internal EntitySetters = Dictionary<string, Property -> Entity -> World -> struct (bool * World)> StringComparer.Ordinal
 
     /// Reflective property getters / setters.
-    let internal EntityGetters2 = Dictionary<string, FastInvoke> StringComparer.Ordinal
-    let internal EntitySetters2 = Dictionary<string, FastInvoke> StringComparer.Ordinal
+    let internal EntityGetters2 = Dictionary<string, Type * FastInvoke> StringComparer.Ordinal
+    let internal EntitySetters2 = Dictionary<string, Type * FastInvoke> StringComparer.Ordinal
 
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
@@ -734,7 +744,7 @@ module WorldModuleEntity =
                     | (true, getter) -> property <- getter entity world; true
                     | (false, _) ->
                         match EntityGetters2.TryGetValue propertyName with
-                        | (true, getter2) -> property.PropertyValue <- getter2.Invoke2 (entity, world); true
+                        | (true, (ty, getter2)) -> property <- { PropertyType = ty; PropertyValue = getter2.Invoke2 (entity, world) }; true
                         | (false, _) -> false
 
         static member internal getEntityProperty propertyName entity world =
@@ -792,7 +802,7 @@ module WorldModuleEntity =
                     else world
                 | (false, _, world) ->
                     match EntitySetters2.TryGetValue propertyName with
-                    | (true, setter2) -> setter2.Invoke3 (entity, property.PropertyValue, world) :?> World
+                    | (true, (_, setter2)) -> setter2.Invoke3 (entity, property.PropertyValue, world) :?> World
                     | (false, _) -> world
 
         static member internal trySetEntityProperty propertyName property entity world =
@@ -810,7 +820,7 @@ module WorldModuleEntity =
                     struct (true, changed, world)
                 | struct (false, changed, world) ->
                     match EntitySetters2.TryGetValue propertyName with
-                    | (true, setter2) -> (true, true, setter2.Invoke3 (entity, property.PropertyValue, world) :?> World) // NOTE: asserting always changed presuming it's not really used anywhere.
+                    | (true, (_, setter2)) -> (true, true, setter2.Invoke3 (entity, property.PropertyValue, world) :?> World) // NOTE: asserting always changed since it's not used anywhere in this case.
                     | (false, _) -> (false, changed, world)
 
         static member internal setEntityProperty propertyName property entity world =
