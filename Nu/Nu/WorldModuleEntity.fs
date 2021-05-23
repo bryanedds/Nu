@@ -792,33 +792,33 @@ module WorldModuleEntity =
             | (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
-            match EntitySetters.TryGetValue propertyName with
-            | (true, setter) -> setter property entity world |> snd'
-            | (false, _) ->
-                match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
-                | (true, changed, world) ->
-                    if changed
-                    then World.publishEntityChange propertyName property.PropertyValue entity world
-                    else world
-                | (false, _, world) ->
+            match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
+            | (true, changed, world) ->
+                if changed
+                then World.publishEntityChange propertyName property.PropertyValue entity world
+                else world
+            | (false, _, world) ->
+                match EntitySetters.TryGetValue propertyName with
+                | (true, setter) -> setter property entity world |> snd'
+                | (false, _) ->
                     match EntitySetters2.TryGetValue propertyName with
                     | (true, (_, setter2)) -> setter2.Invoke3 (entity, property.PropertyValue, world) :?> World
                     | (false, _) -> world
 
         static member internal trySetEntityProperty propertyName property entity world =
-            match EntitySetters.TryGetValue propertyName with
-            | (true, setter) ->
-                let struct (changed, world) = setter property entity world
+            match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
+            | struct (true, changed, world) ->
+                let world =
+                    if changed
+                    then World.publishEntityChange propertyName property.PropertyValue entity world
+                    else world
                 struct (true, changed, world)
-            | (false, _) ->
-                match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
-                | struct (true, changed, world) ->
-                    let world =
-                        if changed
-                        then World.publishEntityChange propertyName property.PropertyValue entity world
-                        else world
+            | struct (false, changed, world) ->
+                match EntitySetters.TryGetValue propertyName with
+                | (true, setter) ->
+                    let struct (changed, world) = setter property entity world
                     struct (true, changed, world)
-                | struct (false, changed, world) ->
+                | (false, _) ->
                     match EntitySetters2.TryGetValue propertyName with
                     | (true, (_, setter2)) -> (true, true, setter2.Invoke3 (entity, property.PropertyValue, world) :?> World) // NOTE: asserting always changed since it's not used anywhere in this case.
                     | (false, _) -> (false, changed, world)
