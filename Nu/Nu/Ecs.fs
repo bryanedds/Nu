@@ -128,7 +128,7 @@ and Ecs<'w> () as this =
     let correlations = dictPlus<Guid, string List> HashIdentity.Structural []
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
 
-    do this.RegisterSystemGeneralized systemGlobal
+    do this.RegisterSystemGeneralized systemGlobal |> ignore<'w System>
 
     member private this.BoxCallback<'a> (callback : SystemCallback<'a, 'w>) =
         let boxableCallback = fun (evt : SystemEvent<obj, 'w>) system ->
@@ -151,10 +151,11 @@ and Ecs<'w> () as this =
         let pipedValue = pipedValues.[key] :?> 'a
         lock pipedValue (fun () -> fn pipedValue worldOpt)
 
-    member this.RegisterSystemGeneralized (system : 'w System) =
+    member this.RegisterSystemGeneralized (system : 'w System) : 'w System =
         systemsUnordered.Add (system.Name, system)
         systemsOrdered.Add (system.Name, system)
         this.RegisterPipedValue<obj> system.PipedKey system.PipedInit
+        system
 
     member this.TryIndexSystem<'s when 's :> 'w System> systemName =
         if systemCached.Name = systemName then
@@ -258,7 +259,7 @@ and Ecs<'w> () as this =
                 arrayObjs.ArrayObjsUnbuffered.Add (box aref)
                 arrayObjs.ArrayObjsBuffered.Add (box arefBuffered)
                 (box aref, box arefBuffered)
-        | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'.")
+        | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'. Did you neglect to register a system for this component?")
 
     member this.AllocateJunctions<'c when 'c : struct and 'c :> 'c Component> () =
         let comp = Unchecked.defaultof<'c>
@@ -313,8 +314,8 @@ and Ecs<'w> () as this =
 type EcsExtensions =
 
     [<Extension>]
-    static member RegisterSystem<'s, 'w when 's :> 'w System> (this : 'w Ecs, system : 's) =
-        this.RegisterSystemGeneralized system
+    static member RegisterSystem<'s, 'w when 's :> 'w System> (this : 'w Ecs, system : 's) : 's =
+        this.RegisterSystemGeneralized system :?> 's
 
 /// An Ecs system with just a single component.
 type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (name, comp : 'c) =
@@ -424,8 +425,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
     member this.Components with get () = components
     member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
 
-    member this.GetJunction<'j when 'j :> 'j Component> () = junctions |> Array.find SystemCorrelated<'j, 'w>.isJunction<'j> :?> 'j ArrayRef
-    member this.WithJunctionBuffered<'j when 'j :> 'j Component> fn (worldOpt : 'w option) = let junction = this.GetJunction<'j> () in  lock junction (fun () -> fn junction worldOpt)
+    member this.IndexJunction<'j when 'j :> 'j Component> () = junctions |> Array.find SystemCorrelated<'j, 'w>.isJunction<'j> :?> 'j ArrayRef
+    member this.WithJunctionBuffered<'j when 'j :> 'j Component> fn (worldOpt : 'w option) = let junction = this.IndexJunction<'j> () in  lock junction (fun () -> fn junction worldOpt)
 
     member private this.Compact ecs =
 
@@ -590,7 +591,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
             let componentsBuffered = componentsBufferedObj :?> 'c ArrayRef
             components.[index] <- comp
             ComponentRef<'c>.make index components componentsBuffered
-
+            
         member this.Junction<'c when 'c : struct and 'c :> 'c Component> index componentsObj componentsBufferedObj =
             this.JunctionPlus<'c> Unchecked.defaultof<'c> index componentsObj componentsBufferedObj
 

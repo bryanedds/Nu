@@ -146,9 +146,9 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create systems
-        ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
-        ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        ecs.RegisterSystem (SystemCorrelated<Mover, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
+        let moverSystem = ecs.RegisterSystem (SystemCorrelated<Mover, World> ecs)
 
         //// create object references
         //let count = 2500000
@@ -171,17 +171,15 @@ type MyGameDispatcher () =
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
         // create 4M movers (goal: 60FPS, current: 56FPS)
-        let moverCount = 4000000
-        let moverSystem = ecs.IndexSystem<SystemCorrelated<Mover, World>> typeof<Mover>.Name
-        for _ in 0 .. moverCount - 1 do
+        for _ in 0 .. 4000000 - 1 do
             let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id ecs
             mover.Index.Velocity.Index.Velocity <- v2One
 
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             let components = moverSystem.Components.Array
-            let velocities = moverSystem.GetJunction<Velocity>().Array
-            let positions = moverSystem.GetJunction<Position>().Array
+            let velocities = moverSystem.IndexJunction<Velocity>().Array
+            let positions = moverSystem.IndexJunction<Position>().Array
             for i in 0 .. components.Length - 1 do
                 let mutable comp = &components.[i]
                 if comp.Active then
@@ -189,21 +187,6 @@ type MyGameDispatcher () =
                     let position = &positions.[i]
                     position.Position.X <- position.Position.X + velocity.Velocity.X
                     position.Position.Y <- position.Position.Y + velocity.Velocity.Y
-
-        //// define update for movers
-        //ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-        //    for components in ecs.GetComponentArrays<Mover> () do
-        //        // NOTE: perhaps the primary explanation for why iteration here is slower in .NET than C++ is that
-        //        // we're using array indexing rather than direct pointer bumping. We're stuck with array indexing
-        //        // here because pointer bumping requires use with unmanaged types, of which Mover is not due to
-        //        // containing an array via its 'c ArrayRef members.
-        //        for i in 0 .. components.Length - 1 do
-        //            let mutable comp = &components.[i]
-        //            if comp.Active then
-        //                let velocity = &comp.Velocity.Index
-        //                let position = &comp.Position.Index
-        //                position.Position.X <- position.Position.X + velocity.Velocity.X
-        //                position.Position.Y <- position.Position.Y + velocity.Velocity.Y
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //
