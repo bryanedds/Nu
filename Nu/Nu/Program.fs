@@ -19,18 +19,18 @@ module Program =
 
     system          | language                  | editor
     -----------------------------------------------------------
-    simulants defs  | s-expr DSL                | Gaia
+    simulant defns  | s-expr DSL                | Gaia
     event filtering | s-expr DSL                | Gaia
     collision bodies| s-expr DSL                | Gaia
     overlay         | s-expr DSL                | Visual Studio & Gaia
     asset graph     | s-expr DSL                | Visual Studio & Gaia
-    script language | s-expr DSL                | Visual Studio & Gaia
+    console script  | s-expr DSL                | Visual Studio & Gaia
     effect system   | s-expr DSL                | Gaia & Aether (TBA)
     mind (TBA)      | s-expr DSL                | Gaia & Pheobe (TBA) - http://www.cs.uu.nl/research/techreps/repo/CS-2013/2013-003.pdf
     particles       | F#                        | Visual Studio
     subsystems      | F#                        | Visual Studio
     ECS             | F#                        | Visual Studio
-    components      | F# (facets / dispatchers) | Visual Studio
+    OO components   | F# (facets / dispatchers) | Visual Studio
     elmish / MVU    | F# (facets / dispatchers) | Visual Studio
     interactions    | F# (chains)               | Visual Studio (deprecated, but still usable)
 
@@ -53,6 +53,10 @@ module Program =
 
     (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
     need to move the app from 60fps to 30fps. *)
+
+    (* WISDOM: You get only slightly lower performance by using reference types in the ECS when all of the
+    pre-allocated references are allocated consecutively. However, it's still much better to use value types instead
+    because you are able to end up with unmanaged types that will not need to be scanned in a GC. *)
 
     (* TODO: investigate Gaia extensibility mechanism. *)
 
