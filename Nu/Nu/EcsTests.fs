@@ -66,20 +66,16 @@ module EcsTests =
         let _ = ecs.RegisterSystem (SystemCorrelated<Skin, World> ecs)
 
         // create and register our airship system
-        let airshipSystem = ecs.RegisterSystem (SystemCorrelated<Airship, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<Airship, World> ecs)
 
         // define our airship system's update behavior
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            let components = airshipSystem.Components.Array
-            let transforms = airshipSystem.IndexJunction<Transform>().Array
-            let skins = airshipSystem.IndexJunction<Skin>().Array
-            for i in 0 .. components.Length - 1 do
-                let comp = &components.[i]
-                if  comp.Active then
-                    let transform = &transforms.[i]
-                    let skin = &skins.[i]
-                    transform.Enabled <- i % 2 = 0
-                    skin.Color.A <- byte 128
+            for components in ecs.GetComponentArrays<Airship> () do
+                for i in 0 .. components.Length - 1 do
+                    let mutable comp = &components.[i]
+                    if  comp.Active then
+                        comp.Transform.Index.Enabled <- i % 2 = 0
+                        comp.Skin.Index.Color.A <- byte 128
 
         // create and register our airship
         let airshipId = Gen.id

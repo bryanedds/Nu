@@ -170,29 +170,42 @@ type MyGameDispatcher () =
         //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
-        // create 4M movers (goal: 60FPS, current: 57FPS)
-        for _ in 0 .. 4000000 - 1 do
+        // create 2.5M movers (goal: 60FPS, current: 54FPS)
+        for _ in 0 .. 2500000 - 1 do
             let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id ecs
             mover.Index.Velocity.Index.Velocity <- v2One
 
+#if SYSTEM_ITERATION
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             let components = moverSystem.Components.Array
             let velocities = moverSystem.IndexJunction<Velocity>().Array
             let positions = moverSystem.IndexJunction<Position>().Array
             for i in 0 .. components.Length - 1 do
-                let mutable comp = &components.[i]
+                let comp = &components.[i]
                 if comp.Active then
                     let velocity = &velocities.[i]
                     let position = &positions.[i]
                     position.Position.X <- position.Position.X + velocity.Velocity.X
                     position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+#else
+        // define update for movers
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+            for components in ecs.GetComponentArrays<Mover> () do
+                for i in 0 .. components.Length - 1 do
+                    let mutable comp = &components.[i]
+                    if  comp.Active then
+                        let velocity = &comp.Velocity.Index
+                        let position = &comp.Position.Index
+                        position.Position.X <- position.Position.X + velocity.Velocity.X
+                        position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+#endif
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //
         // { mutable P : Vector2; mutable V : Vector2 }         5M / 1.25M when placement randomized
         //
-        // [| [| componentRef P |] [| componentRef V |] |]      4M / 3M when uncorrelated
+        // [| [| componentRef P |] [| componentRef V |] |]      4M / 2.5M #if !SYSTEM_ITERATION
         //
         // [| [| ref P |] [| ref V |] |]                        2.5M
         //

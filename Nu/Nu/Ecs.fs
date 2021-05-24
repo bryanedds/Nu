@@ -270,9 +270,11 @@ and Ecs<'w> () as this =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
-            match arrayObjs with
-            | ArrayObjs unbuffered -> unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-            | ArrayObjsBuffered buffered -> buffered.ArrayObjsUnbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
+            let arefObjs =
+                match arrayObjs with
+                | ArrayObjs unbuffered -> unbuffered
+                | ArrayObjsBuffered buffered -> buffered.ArrayObjsUnbuffered
+            arefObjs |> Seq.map (fun arefObj -> (arefObj :?> 'c ArrayRef).Array) |> Seq.toArray
         | (false, _) -> [||]
 
     member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn (worldOpt : 'w option) =
