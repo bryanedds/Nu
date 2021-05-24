@@ -170,7 +170,7 @@ type MyGameDispatcher () =
         //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
-        // create 4M movers (goal: 60FPS, current: 56FPS)
+        // create 4M movers (goal: 60FPS, current: 57FPS)
         for _ in 0 .. 4000000 - 1 do
             let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id ecs
             mover.Index.Velocity.Index.Velocity <- v2One
@@ -192,7 +192,7 @@ type MyGameDispatcher () =
         //
         // { mutable P : Vector2; mutable V : Vector2 }         5M / 1.25M when placement randomized
         //
-        // [| [| componentRef P |] [| componentRef V |] |]      4M
+        // [| [| componentRef P |] [| componentRef V |] |]      4M / 3M when uncorrelated
         //
         // [| [| ref P |] [| ref V |] |]                        2.5M
         //
