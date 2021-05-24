@@ -232,7 +232,7 @@ and Ecs<'w> () as this =
     member this.AllocateComponents<'c when 'c : struct and 'c :> 'c Component> buffered =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
-        | (true, _) -> failwith ("Array already initally allocated for '" + componentName + "'.")
+        | (true, _) -> failwith ("Array already initally allocated for '" + componentName + "'. Do you have multiple systems with the same component type? (not allowed)")
         | (false, _) ->
             if not buffered then
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
@@ -318,10 +318,9 @@ type EcsExtensions =
         this.RegisterSystemGeneralized system :?> 's
 
 /// An Ecs system with just a single component.
-type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (name, comp : 'c) =
-    inherit System<'w> (name)
+type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c) =
+    inherit System<'w> (typeof<'c>.Name)
     let mutable comp = comp
-    new (comp) = SystemSingleton (typeof<'c>.Name, comp)
     member this.Component with get () = &comp
     type Ecs<'w> with
         member this.IndexSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> () =
@@ -332,15 +331,14 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (name, comp
             &system.Component
 
 /// An Ecs system with components stored by an integer index.
-type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
-    inherit System<'w> (name)
+type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+    inherit System<'w> (typeof<'c>.Name)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
 
-    new (ecs) = SystemUncorrelated (typeof<'c>.Name, false, ecs)
-    new (buffered, ecs) = SystemUncorrelated (typeof<'c>.Name, buffered, ecs)
+    new (ecs) = SystemUncorrelated (false, ecs)
 
     member this.Components with get () = components
     member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
@@ -409,8 +407,8 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, b
 /// batches to ensure maximum throughput when processing the manually-junctioned components.
 /// Also note that all junctions are guaranteed to keep the same size and order as the related components so that they
 /// can be accessed by the same index.
-type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
-    inherit System<'w> (name)
+type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+    inherit System<'w> (typeof<'c>.Name)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable (junctions, junctionsBuffered) = ecs.AllocateJunctions<'c> ()
@@ -421,8 +419,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
     let correlationsBack = dictPlus<int, Guid> HashIdentity.Structural []
 
-    new (ecs) = SystemCorrelated (typeof<'c>.Name, false, ecs)
-    new (buffered, ecs) = SystemCorrelated (typeof<'c>.Name, buffered, ecs)
+    new (ecs) = SystemCorrelated (false, ecs)
 
     member this.Components with get () = components
     member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
@@ -636,11 +633,10 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         this.Simplexes.Remove multiId
 
 /// An Ecs system that stores multiple components per entity id.
-type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
-    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (name, buffered, ecs)
+type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (buffered, ecs)
 
-    new (ecs) = SystemMultiplexed (typeof<'c>.Name, false, ecs)
-    new (buffered, ecs) = SystemMultiplexed (typeof<'c>.Name, buffered, ecs)
+    new (ecs) = SystemMultiplexed (false, ecs)
 
     member this.QualifyMultiplexed multiId entityId =
         if this.QualifyCorrelated entityId then
@@ -713,14 +709,13 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (name, bu
             | _ -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// An Ecs system that stores components in a tree hierarchy.
-type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
-    inherit System<'w> (name)
+type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+    inherit System<'w> (typeof<'c>.Name)
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
     let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
 
-    new (ecs) = SystemHierarchical (typeof<'c>.Name, false, ecs)
-    new (buffered, ecs) = SystemHierarchical (typeof<'c>.Name, buffered, ecs)
+    new (ecs) = SystemHierarchical (false, ecs)
 
     member this.Components with get () = systemTree |> ListTree.map (fun system -> system.Components)
     member this.WithComponentsBuffered fn worldOpt = systemTree |> ListTree.map (fun system -> system.WithComponentsBuffered fn worldOpt)
@@ -732,7 +727,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (name, b
 
     member this.AddNode (parentIdOpt : Guid option) =
         let nodeId = Gen.id
-        let system = SystemCorrelated<'c, 'w> (scstring nodeId, buffered, ecs)
+        let system = SystemCorrelated<'c, 'w> (buffered, ecs)
         let added =
             match parentIdOpt with
             | Some parentId ->
