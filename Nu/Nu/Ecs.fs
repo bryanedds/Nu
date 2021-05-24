@@ -407,17 +407,19 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, b
 /// manually junctioning uncorrelated components instead. The trade-off to using uncorrelated components is that you
 /// have to manually unregister their component refs and you have to allocate and deallocate them consecutively in
 /// batches to ensure maximum throughput when processing the manually-junctioned components.
-/// Also note that all junctions are guaranteed to keep the same size and order as the related components.
+/// Also note that all junctions are guaranteed to keep the same size and order as the related components so that they
+/// can be accessed by the same index.
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buffered, ecs : 'w Ecs) =
     inherit System<'w> (name)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable (junctions, junctionsBuffered) = ecs.AllocateJunctions<'c> ()
+    let mutable junctionsMapped = dictPlus HashIdentity.Structural (Array.map (fun j -> (j.GetType().GenericTypeArguments.[0], j)) junctions)
+    let mutable junctionsBufferedMapped = dictPlus HashIdentity.Structural (Array.map (fun jb -> (jb.GetType().GenericTypeArguments.[0], jb)) junctionsBuffered)
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
     let correlationsBack = dictPlus<int, Guid> HashIdentity.Structural []
-    static member private isJunction<'j when 'j :> 'j Component> junction = junction.GetType().GenericTypeArguments.[0] = typeof<'j>
 
     new (ecs) = SystemCorrelated (typeof<'c>.Name, false, ecs)
     new (buffered, ecs) = SystemCorrelated (typeof<'c>.Name, buffered, ecs)
@@ -425,8 +427,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (name, buf
     member this.Components with get () = components
     member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
 
-    member this.IndexJunction<'j when 'j :> 'j Component> () = junctions |> Array.find SystemCorrelated<'j, 'w>.isJunction<'j> :?> 'j ArrayRef
-    member this.WithJunctionBuffered<'j when 'j :> 'j Component> fn (worldOpt : 'w option) = let junction = this.IndexJunction<'j> () in  lock junction (fun () -> fn junction worldOpt)
+    member this.IndexJunction<'j when 'j :> 'j Component> () = junctionsMapped.[typeof<'j>] :?> 'j ArrayRef
+    member this.WithJunctionBuffered<'j when 'j :> 'j Component> fn (worldOpt : 'w option) = let junction = junctionsBufferedMapped.[typeof<'j>] :?> 'j ArrayRef in lock junction (fun () -> fn junction worldOpt)
 
     member private this.Compact ecs =
 
