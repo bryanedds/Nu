@@ -175,7 +175,7 @@ type MyGameDispatcher () =
             let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id ecs
             mover.Index.Velocity.Index.Velocity <- v2One
 
-#if SYSTEM_ITERATION
+  #if SYSTEM_ITERATION
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             let components = moverSystem.Components.Array
@@ -188,7 +188,7 @@ type MyGameDispatcher () =
                     let position = &positions.[i]
                     position.Position.X <- position.Position.X + velocity.Velocity.X
                     position.Position.Y <- position.Position.Y + velocity.Velocity.Y
-#else
+  #else
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             for components in ecs.GetComponentArrays<Mover> () do
@@ -199,7 +199,7 @@ type MyGameDispatcher () =
                         let position = &comp.Position.Index
                         position.Position.X <- position.Position.X + velocity.Velocity.X
                         position.Position.Y <- position.Position.Y + velocity.Velocity.Y
-#endif
+  #endif
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //
