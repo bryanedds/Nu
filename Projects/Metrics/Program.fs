@@ -52,7 +52,7 @@ type [<NoEquality; NoComparison; Struct>] Mover =
         member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Velocity> (); ecs.AllocateJunction<Position> ()|]
         member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Velocity> size junctions.[0]; ecs.ResizeJunction<Position> size junctions.[1]
         member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Velocity> src dst junctions.[0]; ecs.MoveJunction<Position> src dst junctions.[1]
-        member this.Junction index junctions junctionsBuffered ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0] junctionsBuffered.[0]; Position = ecs.Junction<Position> index junctions.[1] junctionsBuffered.[1] }
+        member this.Junction index junctions buffers ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0] buffers.[0]; Position = ecs.Junction<Position> index junctions.[1] buffers.[1] }
         member this.Disjunction index junctions ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
 #endif
 
@@ -192,7 +192,7 @@ type MyGameDispatcher () =
         //
         // { mutable P : Vector2; mutable V : Vector2 }         5M / 1.25M when placement randomized
         //
-        // [| [| componentRef P |] [| componentRef V |] |]      3M / 2M #if ECS_BUFFERED
+        // [| [| componentRef P |] [| componentRef V |] |]      4M
         //
         // [| [| ref P |] [| ref V |] |]                        2.5M
         //
