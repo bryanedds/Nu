@@ -64,6 +64,7 @@ module EcsTests =
 
         // create and register our skin system
         let _ = ecs.RegisterSystem (SystemCorrelated<Skin, World> ecs)
+
         // create and register our airship system
         let airshipSystem = ecs.RegisterSystem (SystemCorrelated<Airship, World> ecs)
 
@@ -74,9 +75,9 @@ module EcsTests =
             let skins = airshipSystem.IndexJunction<Skin>().Array
             for i in 0 .. components.Length - 1 do
                 let comp = &components.[i]
-                let transform = &transforms.[i]
-                let skin = &skins.[i]
                 if  comp.Active then
+                    let transform = &transforms.[i]
+                    let skin = &skins.[i]
                     transform.Enabled <- i % 2 = 0
                     skin.Color.A <- byte 128
 
@@ -89,9 +90,9 @@ module EcsTests =
         airship.Index.Skin.Index.Color.R <- byte 16
 
         // for non-junctioned entities, you can alternatively construct and use a much slower entity reference
-        let airshipRef = ecs.GetEntityRef airshipId
-        airshipRef.Index<Transform>().Position.Y <- 5.0f
-        airshipRef.Index<Skin>().Color.G <- byte 255
+        //let airshipRef = ecs.GetEntityRef ...
+        //airshipRef.Index<Transform>().Position.Y <- 5.0f
+        //airshipRef.Index<Skin>().Color.G <- byte 255
 
         // invoke update behavior
         ecs.Publish EcsEvents.Update () ecs.SystemGlobal world
