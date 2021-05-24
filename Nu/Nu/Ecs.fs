@@ -516,7 +516,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         match correlations.TryGetValue entityId with
         | (true, index) ->
             let comp = components.[index]
-            if index <> freeIndex then
+            if  index <> freeIndex then
                 components.[index].Active <- false
                 freeList.Add index |> ignore<bool>
             else freeIndex <- dec freeIndex
