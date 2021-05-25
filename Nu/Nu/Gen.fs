@@ -12,11 +12,11 @@ module Gen =
 
     let private Lock = obj ()
     let private Random = Random ()
-    let mutable private Counter = -1L
     let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
     let private CidBytes = Array.zeroCreate 16
     let private CnameBytes = Array.zeroCreate 16
     let private UniqueAllocator = Unique.make ()
+    let mutable private Counter = -1L
 
     /// Generates engine-specific values on-demand.
     type Gen =
@@ -75,17 +75,13 @@ module Gen =
             | Some item -> item
             | None -> default_
 
-        /// Generate a unique counter.
-        static member counter =
-            lock Lock (fun () -> Counter <- inc Counter; Counter)
-
         /// The prefix of a generated name
         static member namePrefix =
             "@"
 
         /// Generate a unique name.
         static member name =
-            Gen.namePrefix + scstring Gen.counter
+            Gen.namePrefix + string Gen.id
 
         /// Generate a unique name if given none.
         static member nameIf nameOpt =
@@ -167,6 +163,10 @@ module Gen =
         /// Free a unique int.
         static member free number =
             Unique.free number UniqueAllocator
+
+        /// Generate a unique counter.
+        static member counter =
+            lock Lock (fun () -> Counter <- inc Counter; Counter)
 
 /// Generates engine-specific values on-demand.
 type Gen = Gen.Gen
