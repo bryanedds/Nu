@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Text
 open Prime
 
@@ -15,6 +16,8 @@ module Gen =
     let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
     let private CidBytes = Array.zeroCreate 16
     let private CnameBytes = Array.zeroCreate 16
+    let mutable private UniqueCeiling = System.Int32.MinValue
+    let private UniquesFree = HashSet ()
 
     /// Generates engine-specific values on-demand.
     type Gen =
@@ -157,6 +160,22 @@ module Gen =
             let id = Gen.id
             let name = Gen.nameIf nameOpt
             (id, name)
+
+        /// Allocate a unique int.
+        static member alloc () =
+            if UniquesFree.Count = 0 then
+                if UniqueCeiling = Int32.MaxValue then failwith "No unique ints available - likely due to resource leak."
+                let unique = UniqueCeiling
+                UniqueCeiling <- inc UniqueCeiling
+                unique
+            else
+                let unique = Seq.head UniquesFree
+                UniquesFree.Remove unique |> ignore
+                unique
+
+        /// Free a unique int.
+        static member free unique =
+            UniquesFree.Add unique
 
 /// Generates engine-specific values on-demand.
 type Gen = Gen.Gen
