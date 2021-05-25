@@ -16,8 +16,8 @@ module Gen =
     let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
     let private CidBytes = Array.zeroCreate 16
     let private CnameBytes = Array.zeroCreate 16
-    let mutable private UniqueCeiling = System.Int32.MinValue
     let private UniquesFree = HashSet ()
+    let mutable private UniqueCurrent = System.Int32.MinValue
 
     /// Generates engine-specific values on-demand.
     type Gen =
@@ -164,9 +164,9 @@ module Gen =
         /// Allocate a unique int.
         static member alloc () =
             if UniquesFree.Count = 0 then
-                if UniqueCeiling = Int32.MaxValue then failwith "No unique ints available - likely due to resource leak."
-                let unique = UniqueCeiling
-                UniqueCeiling <- inc UniqueCeiling
+                if UniqueCurrent = Int32.MaxValue then failwith "No unique ints available - likely due to resource leak."
+                let unique = UniqueCurrent
+                UniqueCurrent <- inc UniqueCurrent
                 unique
             else
                 let unique = Seq.head UniquesFree
