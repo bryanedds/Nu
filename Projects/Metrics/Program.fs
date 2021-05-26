@@ -170,8 +170,8 @@ type MyGameDispatcher () =
         //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
-        // create 2M movers (goal: 60FPS, current: 60FPS)
-        for _ in 0 .. 2000000 - 1 do
+        // create 3M movers (goal: 60FPS, current: 50FPS)
+        for _ in 0 .. 3000000 - 1 do
             let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id ecs
             mover.Index.Velocity.Index.Velocity <- v2One
 
@@ -214,6 +214,12 @@ type MyGameDispatcher () =
         // out-of-place entities * ops                          50K * 5 = 250K
         //
         // flat array -> 8M, partitioned array -> 2M, partitioned array tree -> ???, randomized cyclic graph -> 250K
+
+        // raw, manually managed array of structs               inits fast, runs fast. optimal but inflexible.
+        //
+        // unordered components                                 inits medium fast (int HashSet op may be required), runs fast. slight flexibility increase.
+        //
+        // correlated components                                inits slow, runs medium fast. suboptimal, but very flexible.
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
