@@ -49,7 +49,7 @@ type [<NoEquality; NoComparison; Struct>] Mover =
       mutable Position : Position ComponentRef }
     interface Mover Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
-        member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Velocity> (); ecs.AllocateJunction<Position> ()|]
+        member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Velocity> "Velocity"; ecs.AllocateJunction<Position> "Position"|]
         member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Velocity> size junctions.[0]; ecs.ResizeJunction<Position> size junctions.[1]
         member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Velocity> src dst junctions.[0]; ecs.MoveJunction<Position> src dst junctions.[1]
         member this.Junction index junctions buffereds ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0] buffereds.[0]; Position = ecs.Junction<Position> index junctions.[1] buffereds.[1] }
