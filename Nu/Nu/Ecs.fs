@@ -426,8 +426,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     member this.Components with get () = components
     member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
 
-    member this.IndexJunction<'j when 'j :> 'j Component> () = junctionsMapped.[typeof<'j>] :?> 'j ArrayRef
-    member this.WithJunctionBuffered<'j when 'j :> 'j Component> fn (worldOpt : 'w option) = let junction = junctionsBufferedMapped.[typeof<'j>] :?> 'j ArrayRef in lock junction (fun () -> fn junction worldOpt)
+    member this.IndexJunction<'j when 'j : struct and 'j :> 'j Component> () = junctionsMapped.[typeof<'j>] :?> 'j ArrayRef
+    member this.WithJunctionBuffered<'j when 'j : struct and 'j :> 'j Component> fn (worldOpt : 'w option) = let junction = junctionsBufferedMapped.[typeof<'j>] :?> 'j ArrayRef in lock junction (fun () -> fn junction worldOpt)
 
     member private this.Compact ecs =
 
@@ -481,6 +481,12 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     member this.IndexCorrelated entityId =
         let index = this.IndexCorrelatedI entityId
         ComponentRef<'c>.make index components componentsBuffered
+
+    member this.IndexJunctioned<'j when 'j : struct and 'j :> 'j Component> entityId =
+        let index = this.IndexCorrelatedI entityId
+        let junction = junctionsMapped.[typeof<'j>] :?> 'j ArrayRef
+        let buffered = junctionsBufferedMapped.[typeof<'j>] :?> 'j ArrayRef
+        ComponentRef<'j>.make index junction buffered
 
     member this.RegisterCorrelated (comp : 'c) entityId ecs =
 
@@ -557,6 +563,13 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
             system.IndexCorrelated entityId
+
+        member inline this.IndexJunctioned<'c, 'j when 'c : struct and 'c :> 'c Component and 'j : struct and 'j :> 'j Component> entityId : 'j ComponentRef =
+            let systemName = typeof<'c>.Name
+            let systemOpt = this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
+            let system = Option.get systemOpt
+            system.IndexJunctioned<'j> entityId
 
         member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> comp entityId =
             let systemName = typeof<'c>.Name
