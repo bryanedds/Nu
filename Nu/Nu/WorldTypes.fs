@@ -1140,7 +1140,9 @@ module WorldTypes =
     /// Keeps the World from occupying more than two cache lines.
     and [<ReferenceEquality; NoComparison>] WorldExtension =
         { DestructionListRev : Simulant list
-          Plugin : NuPlugin }
+          Plugin : NuPlugin
+          ScriptingEnv : Scripting.Env
+          ScriptingContext : Simulant }
 
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general
@@ -1165,9 +1167,6 @@ module WorldTypes =
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, UMap<string, Entity>>>>>
               Dispatchers : Dispatchers
-              ScriptingEnv : Scripting.Env
-              // cache line 3 (oof!) - TODO: P1: see if we can reduce the size of this type to fit in 2 cache lines.
-              ScriptingContext : Simulant
               WorldExtension : WorldExtension }
 
         interface World EventSystem with
@@ -1230,7 +1229,7 @@ module WorldTypes =
         interface World ScriptingSystem with
 
             member this.GetEnv () =
-                this.ScriptingEnv
+                this.WorldExtension.ScriptingEnv
 
             member this.TryGetExtrinsic fnName =
                 this.Dispatchers.TryGetExtrinsic fnName
