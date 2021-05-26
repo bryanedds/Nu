@@ -254,15 +254,26 @@ module WorldEntityModule =
         /// Try to signal an entity.
         member this.TrySignal signal world = (this.GetDispatcher world).TrySignal (signal, this, world)
 
-        member this.InitComponent<'c, 's when 's :> SystemCorrelated<'c, World>> (comp : 'c) systemName world =
+        /// Initialize a correlated Ecs component.
+        member this.InitCorrelated<'c, 's when 's :> SystemCorrelated<'c, World>> (comp : 'c) systemName world =
             let ecs = World.getSelectedEcs world
             let system = ecs.IndexSystem<'s> systemName
             system.RegisterCorrelated comp this.Cid ecs
 
-        member this.GetComponentRef<'c, 's when 's :> SystemCorrelated<'c, World>> systemName world : 'c ComponentRef =
+        /// Index a correlated Ecs component.
+        member this.IndexCorrelated<'c, 's when 's :> SystemCorrelated<'c, World>> systemName world : 'c ComponentRef =
             let ecs = World.getSelectedEcs world
             let system = ecs.IndexSystem<'s> systemName
             system.IndexCorrelated this.Cid
+
+        /// Index a junctioned Ecs component.
+        member this.IndexJunctioned<'c, 'j, 's  when 'c : struct and 'c :> 'c Component
+                                                and 'j : struct and 'j :> 'j Component
+                                                and 's :> SystemCorrelated<'c, World>>
+            systemName world : 'j ComponentRef =
+            let ecs = World.getSelectedEcs world
+            let system = ecs.IndexSystem<'s> systemName
+            system.IndexJunctioned<'j> this.Cid
 
     type World with
 
