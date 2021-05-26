@@ -972,7 +972,8 @@ module WorldTypes =
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
 
         /// Whether cidOpt has been populated with a valid value.
-        let mutable cidPopulated = false
+        /// OPTIMIZATION: this is a 64-bit 'boolean' in order to more pad this type to 64 bytes.
+        let mutable cidPopulated = 0L
 
         /// The entity's cached correlation id.
         let mutable cidOpt = Guid.Empty
@@ -1005,8 +1006,9 @@ module WorldTypes =
 
         /// The entity's correlation id.
         member this.Cid =
-            if not cidPopulated then
+            if  cidPopulated = 0L then
                 cidOpt <- entityAddress |> Address.getName |> Gen.correlate
+                cidPopulated <- -1L
             cidOpt
 
         /// The entity's update event.
