@@ -971,23 +971,14 @@ module WorldTypes =
         /// The entity's cached state.
         let mutable entityStateOpt = Unchecked.defaultof<EntityState>
 
-        /// The entity's cacheed correlation id.
+        /// Whether cidOpt has been populated with a valid value.
+        let mutable cidPopulated = false
+
+        /// The entity's cached correlation id.
         let mutable cidOpt = Guid.Empty
 
         // cache the simulant address to avoid allocation
         let simulantAddress = atoa<Entity, Simulant> entityAddress
-
-        /// The entity's update event.
-        let updateEvent =
-            let entityNames = Address.getNames entityAddress
-            rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-
-#if !DISABLE_ENTITY_POST_UPDATE
-        /// The entity's post update event.
-        let postUpdateEvent =
-            let entityNames = Address.getNames entityAddress
-            rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-#endif
 
         /// Create an entity reference from an address string.
         new (entityAddressStr : string) = Entity (stoa entityAddressStr)
@@ -1014,16 +1005,20 @@ module WorldTypes =
 
         /// The entity's correlation id.
         member this.Cid =
-            if  cidOpt.Equals Guid.Empty then
+            if not cidPopulated then
                 cidOpt <- entityAddress |> Address.getName |> Gen.correlate
             cidOpt
 
-        /// The address of the entity's update event.
-        member this.UpdateEventCached = updateEvent
+        /// The entity's update event.
+        member this.UpdateEvent =
+            let entityNames = Address.getNames entityAddress
+            rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
 
 #if !DISABLE_ENTITY_POST_UPDATE
-        /// The address of the entity's post-update event.
-        member this.PostUpdateEventCached = postUpdateEvent
+        /// The entity's post update event.
+        member this.PostUpdateEvent =
+            let entityNames = Address.getNames entityAddress
+            rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
 #endif
 
         /// Get the name of an entity.
