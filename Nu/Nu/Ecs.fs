@@ -334,24 +334,24 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c)
             let system = Option.get systemOpt
             &system.Component
 
-/// An Ecs system with components stored by an integer index.
-type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+/// An Ecs system with components stored by an integer index in an unordered fashion.
+type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit System<'w> (typeof<'c>.Name)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
 
-    new (ecs) = SystemUncorrelated (false, ecs)
+    new (ecs) = SystemUnordered (false, ecs)
 
     member this.Components with get () = components
     member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
 
-    member this.IndexUncorrelated index =
+    member this.IndexUnordered index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
         ComponentRef<'c>.make index components componentsBuffered
 
-    member this.RegisterUncorrelated (comp : 'c) =
+    member this.RegisterUnordered (comp : 'c) =
 
         // ensure component is marked active
         let mutable comp = comp
@@ -377,7 +377,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             freeIndex <- inc index
             ComponentRef.make index components componentsBuffered
 
-    member this.UnregisterUncorrelated index =
+    member this.UnregisterUnordered index =
         if index <> freeIndex then
             components.[index].Active <- false
             freeList.Add index |> ignore<bool>
@@ -385,20 +385,20 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     type Ecs<'w> with
 
-        member this.IndexUncorrelated<'c when 'c : struct and 'c :> 'c Component> index =
-            let systemOpt = this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> ()
+        member this.IndexUnordered<'c when 'c : struct and 'c :> 'c Component> index =
+            let systemOpt = this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> ()
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
             let system = Option.get systemOpt
-            system.IndexUncorrelated index
+            system.IndexUnordered index
 
-        member this.RegisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> comp =
-            match this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> () with
-            | Some system -> system.RegisterUncorrelated comp
+        member this.RegisterUnordered<'c when 'c : struct and 'c :> 'c Component> comp =
+            match this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> () with
+            | Some system -> system.RegisterUnordered comp
             | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
 
-        member this.UnregisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> index =
-            match this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> () with
-            | Some system -> system.UnregisterUncorrelated index
+        member this.UnregisterUnordered<'c when 'c : struct and 'c :> 'c Component> index =
+            match this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> () with
+            | Some system -> system.UnregisterUnordered index
             | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
 
 /// An Ecs system with components correlated by entity id.
