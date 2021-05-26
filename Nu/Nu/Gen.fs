@@ -12,8 +12,8 @@ module Gen =
     let private Lock = obj ()
     let private Random = Random ()
     let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
-    let private CidBytes = Array.zeroCreate 16
-    let private CnameBytes = Array.zeroCreate 16
+    let private CidBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
+    let private CnameBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
     let private UniqueAllocator = Unique.make ()
     let mutable private Counter = -1L
 
