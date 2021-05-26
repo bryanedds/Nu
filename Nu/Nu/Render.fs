@@ -277,35 +277,35 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             fst renderer.RenderPackageCachedOpt = assetTag.PackageName then
             if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
                 fst renderer.RenderAssetCachedOpt = assetTag.AssetName then
-                Some (snd renderer.RenderAssetCachedOpt)
+                ValueSome (snd renderer.RenderAssetCachedOpt)
             else
                 let assets = snd renderer.RenderPackageCachedOpt
-                match Dictionary.tryFind assetTag.AssetName assets with
-                | Some asset as someAsset ->
+                match assets.TryGetValue assetTag.AssetName with
+                | (true, asset) ->
                     renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
-                    someAsset
-                | None -> None
+                    ValueSome asset
+                | (false, _) -> ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some assets ->
                 renderer.RenderPackageCachedOpt <- (assetTag.PackageName, assets)
-                match Dictionary.tryFind assetTag.AssetName assets with
-                | Some asset as someAsset ->
+                match assets.TryGetValue assetTag.AssetName with
+                | (true, asset) ->
                     renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
-                    someAsset
-                | None -> None
+                    ValueSome asset
+                | (false, _) -> ValueNone
             | None ->
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 SdlRenderer.tryLoadRenderPackage assetTag.PackageName renderer
-                match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
-                | Some assets ->
+                match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+                | (true, assets) ->
                     renderer.RenderPackageCachedOpt <- (assetTag.PackageName, assets)
-                    match Dictionary.tryFind assetTag.AssetName assets with
-                    | Some asset as someAsset ->
+                    match assets.TryGetValue assetTag.AssetName with
+                    | (true, asset) ->
                         renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
-                        someAsset
-                    | None -> None
-                | None -> None
+                        ValueSome asset
+                    | (false, _) -> ValueNone
+                | (false, _) -> ValueNone
 
     static member private handleHintRenderPackageUse hintPackageName renderer =
         SdlRenderer.tryLoadRenderPackage hintPackageName renderer
@@ -359,7 +359,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let blend = Blend.toSdlBlendMode blend
         let flip = Flip.toSdlFlip flip
         match SdlRenderer.tryFindRenderAsset image renderer with
-        | Some renderAsset ->
+        | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
                 let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
@@ -423,9 +423,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             tileAssets |>
             Array.map (fun (tileSet, tileSetImage) ->
                 match SdlRenderer.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
-                | Some (TextureAsset tileSetTexture) -> Some (tileSet, tileSetImage, tileSetTexture)
-                | Some _ -> None
-                | None -> None) |>
+                | ValueSome (TextureAsset tileSetTexture) -> Some (tileSet, tileSetImage, tileSetTexture)
+                | ValueSome _ -> None
+                | ValueNone -> None) |>
             Array.definitizePlus
         if allFound then
             // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
@@ -517,7 +517,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let sizeView = Matrix3x3.Multiply (&transform.Size, &viewScale)
         let font = AssetTag.generalize font
         match SdlRenderer.tryFindRenderAsset font renderer with
-        | Some renderAsset ->
+        | ValueSome renderAsset ->
             match renderAsset with
             | FontAsset (font, _) ->
                 let mutable renderColor = SDL.SDL_Color ()
@@ -589,7 +589,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let blend = Blend.toSdlBlendMode blend
         let image = AssetTag.generalize image
         match SdlRenderer.tryFindRenderAsset image renderer with
-        | Some renderAsset ->
+        | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
                 let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
