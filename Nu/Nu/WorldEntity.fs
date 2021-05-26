@@ -261,9 +261,9 @@ module WorldEntityModule =
             system.RegisterCorrelated comp this.Cid ecs
 
         /// Index a correlated ECS component.
-        member this.IndexCorrelated<'c, 's when 's :> SystemCorrelated<'c, World>> world : 'c ComponentRef =
+        member this.IndexCorrelated<'c, 's when 's :> SystemCorrelated<'c, World>> systemName world : 'c ComponentRef =
             let ecs = World.getSelectedEcs world
-            let system = ecs.IndexSystem<'s> typeof<'c>.Name
+            let system = ecs.IndexSystem<'s> systemName
             system.IndexCorrelated this.Cid
 
         /// Index a junctioned ECS component.
