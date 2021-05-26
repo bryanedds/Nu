@@ -975,7 +975,7 @@ module WorldTypes =
         let mutable cidPopulated = false
 
         /// The entity's cached correlation id.
-        let mutable cidOpt = Guid.Empty
+        let mutable cidOpt = Unchecked.defaultof<Guid> // OPTIMIZATION: faster than Guid.Empty?
 
         // cache the simulant address to avoid allocation
         let simulantAddress = atoa<Entity, Simulant> entityAddress
