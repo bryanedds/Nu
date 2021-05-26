@@ -9,20 +9,6 @@ open System.Reflection
 open Prime
 open Nu
 
-/// In tandem with the sys literal, grants a nice syntax to denote ECS systems.
-type [<NoEquality; NoComparison>] SysDescription =
-    { SysDescription : unit }
-    
-    /// Some magic syntax for uttering ECS system names.
-    static member inline (?) (_, sysName : string) =
-        sysName
-
-[<AutoOpen>]
-module ReflectionSyntax =
-
-    /// In tandem with the SysDescription type, grants a nice syntax to utter ECS system names.
-    let Sys = { SysDescription = () }
-
 [<RequireQualifiedAccess>]
 module Reflection =
 

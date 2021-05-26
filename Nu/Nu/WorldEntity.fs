@@ -270,10 +270,10 @@ module WorldEntityModule =
         member this.IndexJunctioned<'c, 'j, 's when 'c : struct and 'c :> 'c Component
                                                 and 'j : struct and 'j :> 'j Component
                                                 and 's :> SystemCorrelated<'c, World>>
-            systemName world : 'j ComponentRef =
+            systemName fieldPath world : 'j ComponentRef =
             let ecs = World.getSelectedEcs world
             let system = ecs.IndexSystem<'s> systemName
-            system.IndexJunctioned<'j> this.Cid
+            system.IndexJunctioned<'j> fieldPath this.Cid
 
     type World with
 

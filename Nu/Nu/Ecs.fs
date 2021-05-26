@@ -22,7 +22,7 @@ type 'c ArrayRef =
 type Component<'c when 'c : struct and 'c :> 'c Component> =
     interface
         abstract Active : bool with get, set
-        abstract AllocateJunctions : 'w Ecs -> (obj * obj) array
+        abstract AllocateJunctions : 'w Ecs -> (string * obj * obj) array
         abstract ResizeJunctions : int -> obj array -> 'w Ecs -> unit
         abstract MoveJunctions : int -> int -> obj array -> 'w Ecs -> unit
         abstract Junction : int -> obj array -> obj array -> 'w Ecs -> 'c
@@ -244,7 +244,7 @@ and Ecs<'w> () as this =
                 arrayObjss.Add (componentName, ArrayObjsBuffered { ArrayObjsUnbuffered = List [box aref]; ArrayObjsBuffered = List [box arefBuffered] })
                 (aref, arefBuffered)
 
-    member this.AllocateJunction<'c when 'c : struct and 'c :> 'c Component> () =
+    member this.AllocateJunction<'c when 'c : struct and 'c :> 'c Component> (fieldPath : string) =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, found) ->
@@ -252,19 +252,20 @@ and Ecs<'w> () as this =
             | ArrayObjs arrayObjs ->
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 arrayObjs.Add (box aref)
-                (box aref, box aref)
+                (fieldPath, box aref, box aref)
             | ArrayObjsBuffered arrayObjs ->
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 let arefBuffered = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 arrayObjs.ArrayObjsUnbuffered.Add (box aref)
                 arrayObjs.ArrayObjsBuffered.Add (box arefBuffered)
-                (box aref, box arefBuffered)
+                (fieldPath, box aref, box arefBuffered)
         | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'. Did you neglect to register a system for this component?")
 
     member this.AllocateJunctions<'c when 'c : struct and 'c :> 'c Component> () =
         let comp = Unchecked.defaultof<'c>
         let junctionObjss = comp.AllocateJunctions this
-        Array.unzip junctionObjss
+        let (fieldPaths, junctions, buffereds) = Array.unzip3 junctionObjss
+        (Array.zip fieldPaths junctions, Array.zip fieldPaths buffereds)
 
     member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
@@ -413,9 +414,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     inherit System<'w> (typeof<'c>.Name)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
-    let mutable (junctions, junctionsBuffered) = ecs.AllocateJunctions<'c> ()
-    let mutable junctionsMapped = dictPlus HashIdentity.Structural (Array.map (fun j -> (j.GetType().GenericTypeArguments.[0], j)) junctions)
-    let mutable junctionsBufferedMapped = dictPlus HashIdentity.Structural (Array.map (fun jb -> (jb.GetType().GenericTypeArguments.[0], jb)) junctionsBuffered)
+    let mutable (junctionsNamed, junctionsBufferedNamed) = ecs.AllocateJunctions<'c> ()
+    let mutable (junctions, junctionsBuffered) = (Array.map snd junctionsNamed, Array.map snd junctionsBufferedNamed)
+    let mutable junctionsMapped = dictPlus HashIdentity.Structural junctionsNamed
+    let mutable junctionsBufferedMapped = dictPlus HashIdentity.Structural junctionsBufferedNamed
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
@@ -426,8 +428,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     member this.Components with get () = components
     member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
 
-    member this.IndexJunction<'j when 'j : struct and 'j :> 'j Component> () = junctionsMapped.[typeof<'j>] :?> 'j ArrayRef
-    member this.WithJunctionBuffered<'j when 'j : struct and 'j :> 'j Component> fn (worldOpt : 'w option) = let junction = junctionsBufferedMapped.[typeof<'j>] :?> 'j ArrayRef in lock junction (fun () -> fn junction worldOpt)
+    member this.IndexJunction<'j when 'j : struct and 'j :> 'j Component> fieldPath = junctionsMapped.[fieldPath] :?> 'j ArrayRef
+    member this.WithJunctionBuffered<'j when 'j : struct and 'j :> 'j Component> fn fieldPath (worldOpt : 'w option) = let junction = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef in lock junction (fun () -> fn junction worldOpt)
 
     member private this.Compact ecs =
 
@@ -482,10 +484,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         let index = this.IndexCorrelatedI entityId
         ComponentRef<'c>.make index components componentsBuffered
 
-    member this.IndexJunctioned<'j when 'j : struct and 'j :> 'j Component> entityId =
+    member this.IndexJunctioned<'j when 'j : struct and 'j :> 'j Component> fieldPath entityId =
         let index = this.IndexCorrelatedI entityId
-        let junction = junctionsMapped.[typeof<'j>] :?> 'j ArrayRef
-        let buffered = junctionsBufferedMapped.[typeof<'j>] :?> 'j ArrayRef
+        let junction = junctionsMapped.[fieldPath] :?> 'j ArrayRef
+        let buffered = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef
         ComponentRef<'j>.make index junction buffered
 
     member this.RegisterCorrelated (comp : 'c) entityId ecs =
@@ -564,12 +566,12 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             let system = Option.get systemOpt
             system.IndexCorrelated entityId
 
-        member inline this.IndexJunctioned<'c, 'j when 'c : struct and 'c :> 'c Component and 'j : struct and 'j :> 'j Component> entityId : 'j ComponentRef =
+        member inline this.IndexJunctioned<'c, 'j when 'c : struct and 'c :> 'c Component and 'j : struct and 'j :> 'j Component> fieldPath entityId : 'j ComponentRef =
             let systemName = typeof<'c>.Name
             let systemOpt = this.TryIndexSystem<SystemCorrelated<'c, 'w>> systemName
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + systemName + "'.")
             let system = Option.get systemOpt
-            system.IndexJunctioned<'j> entityId
+            system.IndexJunctioned<'j> fieldPath entityId
 
         member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> comp entityId =
             let systemName = typeof<'c>.Name
