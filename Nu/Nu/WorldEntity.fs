@@ -276,7 +276,7 @@ module WorldEntityModule =
                 else Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
             if World.getEntityPublishUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
-                World.publishPlus () entity.UpdateEventCached eventTrace Simulants.Game false world
+                World.publishPlus () entity.UpdateEvent eventTrace Simulants.Game false world
             else world
 
 #if !DISABLE_ENTITY_POST_UPDATE
@@ -290,7 +290,7 @@ module WorldEntityModule =
                 else Array.fold (fun world (facet : Facet) -> facet.PostUpdate (entity, world)) world facets
             if World.getEntityPublishPostUpdates entity world then
                 let eventTrace = EventTrace.debug "World" "postUpdateEntity" "" EventTrace.empty
-                World.publishPlus () entity.PostUpdateEventCached eventTrace Simulants.Game false world
+                World.publishPlus () entity.PostUpdateEvent eventTrace Simulants.Game false world
             else world
 #endif
 
