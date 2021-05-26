@@ -645,18 +645,18 @@ module WorldTypes =
     /// Hosts the ongoing state of an entity.
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
-        { // cache line 1
+        { // cache line 1 (assuming 16 byte header)
           Dispatcher : EntityDispatcher
           mutable Transform : Transform
-          // cache line 2
+          // cache line 2 + 16 bytes
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
+          // cache line 3
           mutable FacetNames : string Set
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
-          // cache line 3
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
           Name : string }
@@ -1150,22 +1150,23 @@ module WorldTypes =
     /// for that.
     and [<ReferenceEquality; NoComparison>] World =
         internal
-            { // cache line 1
+            { // cache line 1 (assuming 16 byte header)
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity, UMap<Entity, EntityState>>, EntityState>
               EntityStates : UMap<Entity, EntityState>
               GroupStates : UMap<Group, GroupState>
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
+              // cache line 2
               mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
-              // cache line 2
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings>
               AmbientState : World AmbientState
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, UMap<string, Entity>>>>>
               Dispatchers : Dispatchers
               ScriptingEnv : Scripting.Env
+              // cache line 3 (oof!) - TODO: P1: see if we can reduce the size of this type to fit in 2 cache lines.
               ScriptingContext : Simulant
               WorldExtension : WorldExtension }
 

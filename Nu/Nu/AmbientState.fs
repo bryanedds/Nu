@@ -27,19 +27,20 @@ module AmbientState =
     /// The ambient state of the world.
     type [<ReferenceEquality; NoComparison>] 'w AmbientState =
         private
-            { // cache line 1
+            { // cache line 1 (assuming 16 byte header)
               Liveness : Liveness
               TickRate : int64 // NOTE: might be better to make this accessible from World to avoid cache misses
               TickTime : int64
               ClockDelta : single // NOTE: might be better to make this accessible from World to avoid cache misses
+              // cache line 2
               Metadata : Metadata
               KeyValueStore : UMap<Guid, obj>
-              // cache line 2
               ClockTime : DateTimeOffset // moved down here because it's 16 bytes according to - https://stackoverflow.com/a/38731608
               Tasklets : 'w Tasklet UList
               SdlDepsOpt : SdlDeps option
               SymbolStore : SymbolStore
               Overlayer : Overlayer
+              // cache line 3 (oof!) - TODO: P1: see if we can reduce the size of this type to fit in 2 cache lines.
               OverlayRouter : OverlayRouter }
 
     /// Get whether the engine is running imperatively.
