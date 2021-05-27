@@ -220,6 +220,14 @@ type MyGameDispatcher () =
         // unordered components                                 inits medium fast (int HashSet op may be required), runs fast. slight flexibility increase.
         //
         // correlated components                                inits slow, runs medium fast. suboptimal, but very flexible.
+
+        // elmish                                               1,000's
+        //
+        // classic                                              10,000's
+        //
+        // ecs                                                  100,000's
+        //
+        // compute shaders                                      1,000,000's
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
