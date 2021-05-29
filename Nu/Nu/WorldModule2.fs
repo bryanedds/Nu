@@ -1001,7 +1001,7 @@ module WorldModule2 =
                 | Dead -> world
             else world
 
-        /// Run the game engine with the given handlers.
+        /// Run the game engine with the given handler.
         static member run4 runWhile sdlDeps liveness world =
             let result =
                 try let world = World.runWithoutCleanUp runWhile id id sdlDeps liveness None None world
