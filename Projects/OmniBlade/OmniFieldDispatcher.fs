@@ -25,6 +25,7 @@ module FieldDispatcher =
         | MenuItemCancel
         | MenuTechOpen
         | MenuTechAlly of int
+        | MenuTechSelect
         | MenuClose
         | ShopBuy
         | ShopSell
@@ -708,6 +709,9 @@ module FieldDispatcher =
                             | state -> state
                         { menu with MenuState = state })
                         field
+                just field
+            
+            | MenuTechSelect ->
                 just field
             
             | MenuClose ->
