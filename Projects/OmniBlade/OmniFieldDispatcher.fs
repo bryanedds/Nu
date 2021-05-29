@@ -24,6 +24,7 @@ module FieldDispatcher =
         | MenuItemUse of int
         | MenuItemCancel
         | MenuTechOpen
+        | MenuTechAlly of int
         | MenuClose
         | ShopBuy
         | ShopSell
@@ -698,6 +699,17 @@ module FieldDispatcher =
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
                 just field
             
+            | MenuTechAlly index ->
+                let field =
+                    Field.updateMenu (fun menu ->
+                        let state =
+                            match menu.MenuState with
+                            | MenuTech menuTech -> MenuTech { menuTech with TechIndexOpt = Some index }
+                            | state -> state
+                        { menu with MenuState = state })
+                        field
+                just field
+            
             | MenuClose ->
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = MenuClosed }) field
                 just field
@@ -1089,7 +1101,8 @@ module FieldDispatcher =
                     Content.panel Gen.name
                        [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
-                       [sidebar (v2 24.0f 420.0f) 1.0f field]
+                       [sidebar (v2 24.0f 420.0f) 1.0f field
+                        team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology2 MenuTechAlly]
                  
                  // use
                  Content.entityIf field (fun field _ -> Option.isSome field.Menu.MenuUseOpt) $ fun field _ ->
