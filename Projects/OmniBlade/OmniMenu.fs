@@ -82,9 +82,13 @@ type [<ReferenceEquality; NoComparison>] MenuTeam =
 type [<ReferenceEquality; NoComparison>] MenuItem =
     { ItemPage : int }
 
+type [<ReferenceEquality; NoComparison>] MenuTech =
+    { TechIndexOpt : int option }
+
 type [<StructuralEquality; NoComparison>] MenuState =
     | MenuTeam of MenuTeam
     | MenuItem of MenuItem
+    | MenuTech of MenuTech
     | MenuClosed
 
 type [<ReferenceEquality; NoComparison>] Menu =

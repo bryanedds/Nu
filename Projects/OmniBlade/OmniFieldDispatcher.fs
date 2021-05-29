@@ -23,6 +23,7 @@ module FieldDispatcher =
         | MenuItemSelect of Lens<int * (ItemType * int Option), World>
         | MenuItemUse of int
         | MenuItemCancel
+        | MenuTechOpen
         | MenuClose
         | ShopBuy
         | ShopSell
@@ -452,6 +453,11 @@ module FieldDispatcher =
                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuItem _ -> false | _ -> true
                     Entity.ClickEvent ==> msg MenuItemOpen]
                  Content.button Gen.name
+                   [Entity.PositionLocal == position - v2 0.0f 160.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
+                    Entity.Text == "T"
+                    Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
+                    Entity.ClickEvent ==> msg MenuTechOpen]
+                 Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.Text == "X"
                     Entity.ClickEvent ==> msg MenuClose]]
@@ -687,6 +693,11 @@ module FieldDispatcher =
                 let field = Field.updateMenu (fun menu -> { menu with MenuUseOpt = None }) field
                 just field
 
+            | MenuTechOpen ->
+                let state = MenuTech { TechIndexOpt = None }
+                let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
+                just field
+            
             | MenuClose ->
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = MenuClosed }) field
                 just field
@@ -1073,6 +1084,13 @@ module FieldDispatcher =
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                             Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
+                 // tech
+                 Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuTech _ -> true | _ -> false) $ fun field _ ->
+                    Content.panel Gen.name
+                       [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
+                        Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                       [sidebar (v2 24.0f 420.0f) 1.0f field]
+                 
                  // use
                  Content.entityIf field (fun field _ -> Option.isSome field.Menu.MenuUseOpt) $ fun field _ ->
                     Content.panel Gen.name
