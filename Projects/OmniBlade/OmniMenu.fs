@@ -85,6 +85,11 @@ type [<ReferenceEquality; NoComparison>] MenuItem =
 type [<ReferenceEquality; NoComparison>] MenuTech =
     { TechIndexOpt : int option }
 
+    static member tryGetTeammate (team : Map<int, Teammate>) menuTech =
+        match menuTech.TechIndexOpt with
+        | Some index -> Map.tryFind index team
+        | None -> None
+
 type [<StructuralEquality; NoComparison>] MenuState =
     | MenuTeam of MenuTeam
     | MenuItem of MenuItem
