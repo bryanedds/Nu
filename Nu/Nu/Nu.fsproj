@@ -79,6 +79,7 @@
     <Compile Include="SpatialTree.fs" />
     <Compile Include="FastInvoke.fs" />
     <Compile Include="Reflection.fs" />
+    <Compile Include="SdlGpu.fs" />
     <Compile Include="Overlayer.fs" />
     <Compile Include="OverlayRouter.fs" />
     <Compile Include="AssetGraph.fs" />
