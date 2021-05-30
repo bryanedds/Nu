@@ -1100,14 +1100,40 @@ module FieldDispatcher =
                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                             Entity.Text <== field --> (fun field -> string field.Inventory.Gold + "G")]]
 
-                 // tech
-                 Content.entityIf field (fun field _ -> match field.Menu.MenuState with MenuTech _ -> true | _ -> false) $ fun field _ ->
+                 // tech team
+                 Content.entityIf field (fun field _ -> Menu.isTechTeam field.Menu) $ fun field _ ->
                     Content.panel Gen.name
                        [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
                         Entity.LabelImage == Assets.Gui.DialogXXLImage]
                        [sidebar (v2 24.0f 420.0f) 1.0f field
                         team (v2 138.0f 420.0f) 1.0f Int32.MaxValue field tautology2 MenuTechAlly]
                  
+                 // tech teammate
+                 Content.entityIf field (fun field _ -> Menu.isTechTeammate field.Menu) $ fun field _ ->
+                    Content.panel Gen.name
+                       [Entity.Position == v2 -448.0f -256.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v2 896.0f 512.0f
+                        Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                       [sidebar (v2 24.0f 420.0f) 1.0f field
+                        Content.entities field
+                           (fun (field : Field) _ -> (field.Menu, field.Team))
+                           (fun (menu, team) _ ->
+                               match menu.MenuState with
+                               | MenuTech menuTech ->
+                                   match MenuTech.tryGetTeammate team menuTech with
+                                   | Some teammate -> teammate.Techs |> Seq.index |> Map.ofSeq
+                                   | None -> Map.empty
+                               | _ -> Map.empty)
+                           (fun i selectionLens _ ->
+                               let position = (v2 136.0f 420.0f)
+                               let x = if i < 5 then position.X else position.X + 368.0f
+                               let y = position.Y - single (i % 5) * 80.0f
+                               Content.button Gen.name
+                                   [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == 1.0f; Entity.Size == v2 336.0f 72.0f
+                                    Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
+                                    Entity.Text <== selectionLens --> fun techType -> string techType
+                                    Entity.EnabledLocal <== selectionLens --> fun _ -> true
+                                    Entity.ClickEvent ==> msg MenuTechSelect])]
+
                  // use
                  Content.entityIf field (fun field _ -> Option.isSome field.Menu.MenuUseOpt) $ fun field _ ->
                     Content.panel Gen.name
