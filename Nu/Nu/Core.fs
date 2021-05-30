@@ -31,7 +31,7 @@ module internal CoreInternal =
 #else
     /// Query the windows performance counter.
     [<DllImport "Kernel32.dll">]
-    extern bool private QueryPerformanceCounter (int64&)
+    extern bool private QueryPerformanceCounter (int64& time)
 
     /// Get a time stamp at the highest-available resolution on windows.
     let internal getTimeStampInternal () =

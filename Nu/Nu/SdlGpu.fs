@@ -59,13 +59,37 @@ module SDL_gpu =
     extern void public GPU_Quit ()
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern IntPtr public GPU_InitRenderer (int rid, uint w, uint h, uint flags)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_ResetRendererState ()
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_SetInitWindow (uint winid)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern IntPtr public GPU_CreateTargetFromWindow (uint windowid)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_SetPreInitFlags (uint flags)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
     extern IntPtr public GPU_CopyImageFromSurface (IntPtr surface)
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
     extern void public GPU_FreeImage (IntPtr image)
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_SetBlending (IntPtr image, bool enable)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
     extern void public GPU_SetBlendMode (IntPtr image, GPU_BlendPresetEnum mode)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_SetAnchor (IntPtr image, float x, float y)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_SetDefaultAnchor (float x, float y)
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
     extern bool public GPU_SetFullscreen (bool fullscreen, bool desktop_res)
@@ -74,28 +98,7 @@ module SDL_gpu =
     extern void public GPU_SetLineThickness (float thickness)
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern GPU_Rect public GPU_MakeRect (float x, float y, float w, float h)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
     extern void public GPU_ClearColor (IntPtr target, SDL.SDL_Color color)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_Flip (IntPtr target)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_Blit (IntPtr image, GPU_Rect& rect, IntPtr screen, float x, float y)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_BlitRotate (IntPtr image, GPU_Rect& rect, IntPtr screen, float x, float y, float degrees)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_BlitScale (IntPtr image, GPU_Rect& rect, IntPtr screen, float x, float y, float sx, float sy)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_BlitTransform (IntPtr image, GPU_Rect& rect, IntPtr screen, float x, float y, float rotation, float sx, float sy)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_BlitTransformX (IntPtr image, GPU_Rect& rect, IntPtr screen, float x, float y, float pivot_x, float pivot_y, float rotation, float sx, float sy)
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
     extern void public GPU_Rectangle (IntPtr screen, float l, float t, float r, float b, SDL.SDL_Color c)
@@ -110,28 +113,22 @@ module SDL_gpu =
     extern void public GPU_Pixel (IntPtr screen, float x, float y, SDL.SDL_Color c)
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_SetBlending (IntPtr image, bool enable)
+    extern void public GPU_Blit (IntPtr image, GPU_Rect& rect, IntPtr screen, float x, float y)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_BlitRotate (IntPtr image, GPU_Rect& rect, IntPtr screen, float x, float y, float degrees)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_BlitScale (IntPtr image, GPU_Rect& rect, IntPtr screen, float x, float y, float sx, float sy)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_BlitTransform (IntPtr image, GPU_Rect& rect, IntPtr screen, float x, float y, float rotation, float sx, float sy)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_BlitTransformX (IntPtr image, GPU_Rect& rect, IntPtr screen, float x, float y, float pivotx, float pivoty, float rotation, float sx, float sy)
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
     extern void public GPU_FlushBlitBuffer ()
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_SetAnchor (IntPtr image, float x, float y)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_SetPreInitFlags (uint flags)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_SetDefaultAnchor (float x, float y)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern IntPtr public GPU_CreateTargetFromWindow (uint windowid)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_SetInitWindow (uint winid)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern IntPtr public GPU_InitRenderer (int rid, uint w, uint h, uint flags)
-
-    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
-    extern void public GPU_ResetRendererState ()
+    extern void public GPU_Flip (IntPtr target)
