@@ -99,3 +99,19 @@ type [<StructuralEquality; NoComparison>] MenuState =
 type [<ReferenceEquality; NoComparison>] Menu =
     { MenuState : MenuState
       MenuUseOpt : MenuUse option }
+
+    static member isTechTeam menu =
+        match menu.MenuState with
+        | MenuTech menuTech ->
+            match menuTech.TechIndexOpt with
+            | None -> true
+            | _ -> false
+        | _ -> false
+
+    static member isTechTeammate menu =
+        match menu.MenuState with
+        | MenuTech menuTech ->
+            match menuTech.TechIndexOpt with
+            | Some _ -> true
+            | _ -> false
+        | _ -> false
