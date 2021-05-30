@@ -1132,7 +1132,12 @@ module FieldDispatcher =
                                     Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
                                     Entity.Text <== selectionLens --> fun techType -> string techType
                                     Entity.EnabledLocal <== selectionLens --> fun _ -> true
-                                    Entity.ClickEvent ==> msg MenuTechSelect])]
+                                    Entity.ClickEvent ==> msg MenuTechSelect])
+                        Content.button Gen.name
+                            [Entity.PositionLocal == v2 800.0f 16.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 84.0f 54.0f
+                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
+                             Entity.Text == "Back"
+                             Entity.ClickEvent ==> msg MenuTechOpen]]
 
                  // use
                  Content.entityIf field (fun field _ -> Option.isSome field.Menu.MenuUseOpt) $ fun field _ ->
