@@ -35,7 +35,7 @@ type [<Flags>] GPU_InitFlagEnum =
     | GPU_INIT_USE_ROW_BY_ROW_TEXTURE_UPLOAD_FALLBACK = 0x20u
     | GPU_INIT_USE_COPY_TEXTURE_UPLOAD_FALLBACK = 0x40u
 
-type [<Flags>] GPU_RendererEnum =
+type GPU_RendererEnum =
     | GPU_RENDERER_UNKNOWN = 0
     | GPU_RENDERER_OPENGL_1_BASE = 1
     | GPU_RENDERER_OPENGL_1 = 2
