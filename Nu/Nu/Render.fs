@@ -31,10 +31,10 @@ type [<StructuralEquality; NoComparison; Struct>] Flip =
     /// Convert to a flip value recognized by SDL.
     static member toSdlFlip flip =
         match flip with
-        | FlipHV -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-        | FlipH -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
-        | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-        | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
+        | FlipHV -> SDL.GPU_FlipEnum.GPU_FLIP_HORIZONTAL ||| SDL.GPU_FlipEnum.GPU_FLIP_VERTICAL
+        | FlipH -> SDL.GPU_FlipEnum.GPU_FLIP_HORIZONTAL
+        | FlipV -> SDL.GPU_FlipEnum.GPU_FLIP_VERTICAL
+        | FlipNone -> SDL.GPU_FlipEnum.GPU_FLIP_NONE
 
 /// The blend more of a sprite.
 type [<StructuralEquality; NoComparison; Struct>] Blend =
@@ -46,10 +46,10 @@ type [<StructuralEquality; NoComparison; Struct>] Blend =
     /// Convert to a blend mode value recognized by SDL.
     static member toSdlBlendMode flip =
         match flip with
-        | Transparent -> SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND
-        | Additive -> SDL.SDL_BlendMode.SDL_BLENDMODE_ADD
-        | Modulate -> SDL.SDL_BlendMode.SDL_BLENDMODE_MOD
-        | Overwrite -> SDL.SDL_BlendMode.SDL_BLENDMODE_NONE
+        | Transparent -> SDL.GPU_BlendPresetEnum.GPU_BLEND_NORMAL
+        | Additive -> SDL.GPU_BlendPresetEnum.GPU_BLEND_ADD
+        | Modulate -> SDL.GPU_BlendPresetEnum.GPU_BLEND_MOD_ALPHA
+        | Overwrite -> SDL.GPU_BlendPresetEnum.GPU_BLEND_SET
 
 /// Horizontal justification.
 type [<StructuralEquality; NoComparison; Struct>] JustificationH =
@@ -225,7 +225,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
     static member private freeRenderAsset renderAsset renderer =
         SdlRenderer.invalidateCaches renderer
         match renderAsset with
-        | TextureAsset texture -> SDL.SDL_DestroyTexture texture
+        | TextureAsset texture -> SDL_gpu.GPU_FreeImage texture
         | FontAsset (font, _) -> SDL_ttf.TTF_CloseFont font
 
     static member private tryLoadRenderAsset (asset : obj Asset) renderContext renderer =
@@ -362,39 +362,35 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
-                let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
-                let mutable sourceRect = SDL.SDL_Rect ()
+                let mutable (textureSizeX, textureSizeY) = (0, 0)
+                SDL_gpu.GPU_QueryImageSize (texture, &textureSizeX, &textureSizeY)
+                let mutable sourceRect = Unchecked.defaultof<SDL.GPU_Rect>
                 if inset.X = 0.0f && inset.Y = 0.0f && inset.Z = 0.0f && inset.W = 0.0f then
-                    sourceRect.x <- 0
-                    sourceRect.y <- 0
-                    sourceRect.w <- textureSizeX
-                    sourceRect.h <- textureSizeY
+                    sourceRect.x <- 0.0f
+                    sourceRect.y <- 0.0f
+                    sourceRect.w <- single textureSizeX
+                    sourceRect.h <- single textureSizeY
                 else
-                    sourceRect.x <- int inset.X
-                    sourceRect.y <- int inset.Y
-                    sourceRect.w <- int inset.Z
-                    sourceRect.h <- int inset.W
-                let mutable destRect = SDL.SDL_Rect ()
-                destRect.x <- int (+positionView.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
-                destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
-                destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
-                destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
-                let rotation = double -transform.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
-                let mutable rotationCenter = SDL.SDL_Point ()
-                rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
-                rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
+                    sourceRect.x <- inset.X
+                    sourceRect.y <- inset.Y
+                    sourceRect.w <- inset.Z
+                    sourceRect.h <- inset.W
+                let mutable destRect = Unchecked.defaultof<SDL.GPU_Rect>
+                destRect.x <- (+positionView.X + eyeSize.X * 0.5f) * single Constants.Render.VirtualScalar
+                destRect.y <- (-positionView.Y + eyeSize.Y * 0.5f) * single Constants.Render.VirtualScalar - (sizeView.Y * single Constants.Render.VirtualScalar) // negation for right-handedness
+                destRect.w <- sizeView.X * single Constants.Render.VirtualScalar
+                destRect.h <- sizeView.Y * single Constants.Render.VirtualScalar
+                let rotation = -transform.Rotation * single Constants.Math.RadiansToDegrees // negation for right-handedness
+                let rotationCenterX = sizeView.X * 0.5f * single Constants.Render.VirtualScalar
+                let rotationCenterY = sizeView.Y * 0.5f * single Constants.Render.VirtualScalar
                 if color.A <> byte 0 then
-                    SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
-                    SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
-                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
-                    if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+                    SDL_gpu.GPU_SetBlendMode (texture, blend)
+                    SDL_gpu.GPU_SetRGBA (texture, uint color.R, uint color.G, uint color.B, uint color.A)
+                    SDL_gpu.GPU_BlitRectX (texture, &sourceRect, renderer.RenderContext, &destRect, rotation, rotationCenterX, rotationCenterY, flip)
                 if glow.A <> byte 0 then
-                    SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                    SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
-                    SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore
-                    let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
-                    if renderResult <> 0 then Log.info ("Render error - could not render texture for sprite '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+                    SDL_gpu.GPU_SetBlendMode (texture, SDL.GPU_BlendPresetEnum.GPU_BLEND_ADD)
+                    SDL_gpu.GPU_SetRGBA (texture, uint glow.R, uint glow.G, uint glow.B, uint glow.A)
+                    SDL_gpu.GPU_BlitRectX (texture, &sourceRect, renderer.RenderContext, &destRect, rotation, rotationCenterX, rotationCenterY, flip)
             | _ -> Log.trace "Cannot render sprite with a non-texture asset."
         | _ -> Log.info ("SpriteDescriptor failed to render due to unloadable assets for '" + scstring image + "'.")
 
