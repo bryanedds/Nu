@@ -76,6 +76,9 @@ module SDL_gpu =
     extern IntPtr public GPU_CreateTargetFromWindow (uint windowid)
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern IntPtr public GPU_GetCurrentRenderer ()
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
     extern void public GPU_ResetRendererState ()
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
@@ -124,6 +127,9 @@ module SDL_gpu =
     extern void public GPU_BlitRectX (IntPtr image, SDL.GPU_Rect& source, IntPtr screen, SDL.GPU_Rect& dest, single degrees, single pivotx, single pivoty, SDL.GPU_FlipEnum flip)
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
+    extern void public GPU_Clear (IntPtr target)
+
+    [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
     extern void public GPU_ClearColor (IntPtr target, SDL.SDL_Color color)
 
     [<DllImport("SDL2_gpu", CallingConvention = CallingConvention.Cdecl)>]
@@ -133,8 +139,13 @@ module SDL_gpu =
     extern void public GPU_Flip (IntPtr target)
 
     let GPU_QueryImageSize (image : IntPtr, width : int byref, height : int byref) =
-        let bytes = Array.zeroCreate<int> 8 // assumes pointers are 64-bit
+        let bytes = Array.zeroCreate<int> 9 // assumes pointers are 64-bit
         Marshal.Copy (image, bytes, 0, 0)
         let wh = bytes.[8]
         width <- int (wh >>> 16)
         height <- int (int16 wh)
+
+    let GPU_QueryWindowFlags (renderer : IntPtr) =
+        let bytes = Array.zeroCreate<int> 17 // assumes pointers are 64-bit
+        Marshal.Copy (renderer, bytes, 0, 0)
+        bytes.[16]

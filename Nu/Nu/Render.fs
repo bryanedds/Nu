@@ -441,10 +441,10 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     if Math.isBoundsIntersectingBounds tileBounds viewBounds then
                         let tileFlip =
                             match (tile.HorizontalFlip, tile.VerticalFlip) with
-                            | (false, false) -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
-                            | (true, false) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL
-                            | (false, true) -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
-                            | (true, true) -> SDL.SDL_RendererFlip.SDL_FLIP_HORIZONTAL ||| SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
+                            | (false, false) -> SDL.GPU_FlipEnum.GPU_FLIP_NONE
+                            | (true, false) -> SDL.GPU_FlipEnum.GPU_FLIP_HORIZONTAL
+                            | (false, true) -> SDL.GPU_FlipEnum.GPU_FLIP_VERTICAL
+                            | (true, true) -> SDL.GPU_FlipEnum.GPU_FLIP_HORIZONTAL ||| SDL.GPU_FlipEnum.GPU_FLIP_VERTICAL
                         let mutable tileOffset = 1 // gid 0 is the empty tile
                         let mutable tileSetIndex = 0
                         let mutable tileSetWidth = 0
@@ -465,32 +465,27 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             v2
                                 (single (tileIdPosition % tileSetWidth))
                                 (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
-                        let mutable sourceRect = SDL.SDL_Rect ()
-                        sourceRect.x <- int tileSourcePosition.X
-                        sourceRect.y <- int tileSourcePosition.Y
-                        sourceRect.w <- tileSourceSize.X
-                        sourceRect.h <- tileSourceSize.Y
-                        let mutable destRect = SDL.SDL_Rect ()
-                        destRect.x <- int tilePosition.X * Constants.Render.VirtualScalar
-                        destRect.y <- int tilePosition.Y * Constants.Render.VirtualScalar
-                        destRect.w <- int tileSize.X * Constants.Render.VirtualScalar
-                        destRect.h <- int tileSize.Y * Constants.Render.VirtualScalar
-                        let rotation = double -tileRotation * Constants.Math.RadiansToDegrees // negation for right-handedness
-                        let mutable rotationCenter = SDL.SDL_Point ()
-                        rotationCenter.x <- int (tileSize.X * 0.5f) * Constants.Render.VirtualScalar
-                        rotationCenter.y <- int (tileSize.Y * 0.5f) * Constants.Render.VirtualScalar
+                        let mutable sourceRect = Unchecked.defaultof<SDL.GPU_Rect>
+                        sourceRect.x <- tileSourcePosition.X
+                        sourceRect.y <- tileSourcePosition.Y
+                        sourceRect.w <- single tileSourceSize.X
+                        sourceRect.h <- single tileSourceSize.Y
+                        let mutable destRect = Unchecked.defaultof<SDL.GPU_Rect>
+                        destRect.x <- tilePosition.X * single Constants.Render.VirtualScalar
+                        destRect.y <- tilePosition.Y * single Constants.Render.VirtualScalar
+                        destRect.w <- tileSize.X * single Constants.Render.VirtualScalar
+                        destRect.h <- tileSize.Y * single Constants.Render.VirtualScalar
+                        let rotation = -tileRotation * single Constants.Math.RadiansToDegrees // negation for right-handedness
+                        let rotationCenterX = tileSize.X * 0.5f * single Constants.Render.VirtualScalar
+                        let rotationCenterY = tileSize.Y * 0.5f * single Constants.Render.VirtualScalar
                         if color.A <> byte 0 then
-                            SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_BLEND) |> ignore
-                            SDL.SDL_SetTextureColorMod (tileSetTexture, color.R, color.G, color.B) |> ignore
-                            SDL.SDL_SetTextureAlphaMod (tileSetTexture, color.A) |> ignore
-                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
-                            if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
+                            SDL_gpu.GPU_SetBlendMode (tileSetTexture, SDL.GPU_BlendPresetEnum.GPU_BLEND_NORMAL)
+                            SDL_gpu.GPU_SetRGBA (tileSetTexture, uint color.R, uint color.G, uint color.B, uint color.A)
+                            SDL_gpu.GPU_BlitRectX (tileSetTexture, &sourceRect, renderer.RenderContext, &destRect, rotation, rotationCenterX, rotationCenterY, tileFlip)
                         if glow.A <> byte 0 then
-                            SDL.SDL_SetTextureBlendMode (tileSetTexture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                            SDL.SDL_SetTextureColorMod (tileSetTexture, glow.R, glow.G, glow.B) |> ignore
-                            SDL.SDL_SetTextureAlphaMod (tileSetTexture, glow.A) |> ignore
-                            let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, tileSetTexture, &sourceRect, &destRect, rotation, &rotationCenter, tileFlip)
-                            if renderResult <> 0 then Log.info ("Render error - could not render texture for '" + scstring tileAssets + "' due to '" + SDL.SDL_GetError () + ".")
+                            SDL_gpu.GPU_SetBlendMode (tileSetTexture, SDL.GPU_BlendPresetEnum.GPU_BLEND_ADD)
+                            SDL_gpu.GPU_SetRGBA (tileSetTexture, uint glow.R, uint glow.G, uint glow.B, uint glow.A)
+                            SDL_gpu.GPU_BlitRectX (tileSetTexture, &sourceRect, renderer.RenderContext, &destRect, rotation, rotationCenterX, rotationCenterY, tileFlip)
                 tileIndex <- inc tileIndex
         else Log.info ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
@@ -524,6 +519,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 // NOTE: the resource implications (perf and vram fragmentation?) of creating and destroying a
                 // texture one or more times a frame must be understood! Although, maybe it all happens in software
                 // and vram fragmentation would not be a concern in the first place... perf could still be, however.
+                //
+                // TODO: P1: it seems like the API intends for us to cache these surfaces across frames. We should
+                // probably accomodate that for performance reasons.
                 let (offset, textSurface) =
                     match justification with
                     | Unjustified wrapped ->
@@ -549,20 +547,21 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                             | JustifyBottom -> sizeView.Y - single height
                         (v2 offsetX offsetY, textSurface)
                 if textSurface <> IntPtr.Zero then
-                    let textTexture = SDL.SDL_CreateTextureFromSurface (renderer.RenderContext, textSurface)
-                    let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture textTexture
-                    let mutable sourceRect = SDL.SDL_Rect ()
-                    sourceRect.x <- 0
-                    sourceRect.y <- 0
-                    sourceRect.w <- textureSizeX
-                    sourceRect.h <- textureSizeY
-                    let mutable destRect = SDL.SDL_Rect ()
-                    destRect.x <- int (+positionView.X + offset.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
-                    destRect.y <- int (-positionView.Y + offset.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
-                    destRect.w <- textureSizeX * Constants.Render.VirtualScalar
-                    destRect.h <- textureSizeY * Constants.Render.VirtualScalar
-                    if textTexture <> IntPtr.Zero then SDL.SDL_RenderCopy (renderer.RenderContext, textTexture, &sourceRect, &destRect) |> ignore
-                    SDL.SDL_DestroyTexture textTexture
+                    let textTexture = SDL_gpu.GPU_CopyImageFromSurface textSurface
+                    let mutable (textureSizeX, textureSizeY) = (0, 0)
+                    SDL_gpu.GPU_QueryImageSize (textTexture, &textureSizeX, &textureSizeY)
+                    let mutable sourceRect = Unchecked.defaultof<SDL.GPU_Rect>
+                    sourceRect.x <- 0.0f
+                    sourceRect.y <- 0.0f
+                    sourceRect.w <- single textureSizeX
+                    sourceRect.h <- single textureSizeY
+                    let mutable destRect = Unchecked.defaultof<SDL.GPU_Rect>
+                    destRect.x <- (+positionView.X + offset.X + eyeSize.X * 0.5f) * single Constants.Render.VirtualScalar
+                    destRect.y <- (-positionView.Y + offset.Y + eyeSize.Y * 0.5f) * single Constants.Render.VirtualScalar - (sizeView.Y * single Constants.Render.VirtualScalar) // negation for right-handedness
+                    destRect.w <- single textureSizeX * single Constants.Render.VirtualScalar
+                    destRect.h <- single textureSizeY * single Constants.Render.VirtualScalar
+                    if textTexture <> IntPtr.Zero then SDL_gpu.GPU_BlitRect (textTexture, &sourceRect, renderer.RenderContext, &destRect)
+                    SDL_gpu.GPU_FreeImage textTexture
                     SDL.SDL_FreeSurface textSurface
             | _ -> Log.debug "Cannot render text with a non-font asset."
         | _ -> Log.info ("TextDescriptor failed due to unloadable assets for '" + scstring font + "'.")
@@ -588,50 +587,46 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
-                let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
-                let mutable sourceRect = SDL.SDL_Rect ()
-                let mutable destRect = SDL.SDL_Rect ()
+                let mutable (textureSizeX, textureSizeY) = (0, 0)
+                SDL_gpu.GPU_QueryImageSize (texture, &textureSizeX, &textureSizeY)
+                let mutable sourceRect = Unchecked.defaultof<SDL.GPU_Rect>
+                let mutable destRect = Unchecked.defaultof<SDL.GPU_Rect>
                 let mutable index = 0
                 while index < particles.Length do
                     let particle = &particles.[index]
                     let transform = &particle.Transform
                     let position = transform.Position - Vector2.Multiply (particle.Offset, transform.Size)
                     let positionView = position + positionOffset
-                    let sizeView = transform.Size * Matrix3x3.CreateScale(Vector3(view.Row0.X, view.Row1.Y, view.Row2.Z))
+                    let sizeView = transform.Size * Matrix3x3.CreateScale (Vector3 (view.Row0.X, view.Row1.Y, view.Row2.Z))
                     let color = &particle.Color
                     let glow = &particle.Glow
                     let flip = Flip.toSdlFlip particle.Flip
                     let inset = particle.Inset
                     if inset.X = 0.0f && inset.Y = 0.0f && inset.Z = 0.0f && inset.W = 0.0f then
-                        sourceRect.x <- 0
-                        sourceRect.y <- 0
-                        sourceRect.w <- textureSizeX
-                        sourceRect.h <- textureSizeY
+                        sourceRect.x <- 0.0f
+                        sourceRect.y <- 0.0f
+                        sourceRect.w <- single textureSizeX
+                        sourceRect.h <- single textureSizeY
                     else
-                        sourceRect.x <- int inset.X
-                        sourceRect.y <- int inset.Y
-                        sourceRect.w <- int inset.Z
-                        sourceRect.h <- int inset.W
-                    destRect.x <- int (+positionView.X + eyeSize.X * 0.5f) * Constants.Render.VirtualScalar
-                    destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
-                    destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
-                    destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
-                    let rotation = double -transform.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
-                    let mutable rotationCenter = SDL.SDL_Point ()
-                    rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
-                    rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
+                        sourceRect.x <- inset.X
+                        sourceRect.y <- inset.Y
+                        sourceRect.w <- inset.Z
+                        sourceRect.h <- inset.W
+                    destRect.x <- (+positionView.X + eyeSize.X * 0.5f) * single Constants.Render.VirtualScalar
+                    destRect.y <- (-positionView.Y + eyeSize.Y * 0.5f) * single Constants.Render.VirtualScalar - (sizeView.Y * single Constants.Render.VirtualScalar) // negation for right-handedness
+                    destRect.w <- sizeView.X * single Constants.Render.VirtualScalar
+                    destRect.h <- sizeView.Y * single Constants.Render.VirtualScalar
+                    let rotation = -transform.Rotation * single Constants.Math.RadiansToDegrees // negation for right-handedness
+                    let rotationCenterX = sizeView.X * 0.5f * single Constants.Render.VirtualScalar
+                    let rotationCenterY = sizeView.Y * 0.5f * single Constants.Render.VirtualScalar
                     if color.A <> byte 0 then
-                        SDL.SDL_SetTextureBlendMode (texture, blend) |> ignore
-                        SDL.SDL_SetTextureColorMod (texture, color.R, color.G, color.B) |> ignore
-                        SDL.SDL_SetTextureAlphaMod (texture, color.A) |> ignore
-                        let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
-                        if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+                        SDL_gpu.GPU_SetBlendMode (texture, blend)
+                        SDL_gpu.GPU_SetRGBA (texture, uint color.R, uint color.G, uint color.B, uint color.A)
+                        SDL_gpu.GPU_BlitRectX (texture, &sourceRect, renderer.RenderContext, &destRect, rotation, rotationCenterX, rotationCenterY, flip)
                     if glow.A <> byte 0 then
-                        SDL.SDL_SetTextureBlendMode (texture, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-                        SDL.SDL_SetTextureColorMod (texture, glow.R, glow.G, glow.B) |> ignore
-                        SDL.SDL_SetTextureAlphaMod (texture, glow.A) |> ignore
-                        let renderResult = SDL.SDL_RenderCopyEx (renderer.RenderContext, texture, &sourceRect, &destRect, rotation, &rotationCenter, flip)
-                        if renderResult <> 0 then Log.info ("Render error - could not render texture for particle '" + scstring image + "' due to '" + SDL.SDL_GetError () + ".")
+                        SDL_gpu.GPU_SetBlendMode (texture, SDL.GPU_BlendPresetEnum.GPU_BLEND_ADD)
+                        SDL_gpu.GPU_SetRGBA (texture, uint glow.R, uint glow.G, uint glow.B, uint glow.A)
+                        SDL_gpu.GPU_BlitRectX (texture, &sourceRect, renderer.RenderContext, &destRect, rotation, rotationCenterX, rotationCenterY, flip)
                     index <- inc index
             | _ -> Log.trace "Cannot render particle with a non-texture asset."
         | _ -> Log.info ("RenderDescriptors failed to render due to unloadable assets for '" + scstring image + "'.")
@@ -678,21 +673,16 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
 
     static member private renderLayeredMessages eyeCenter eyeSize (messages : RenderLayeredMessage List) renderer =
         let renderContext = renderer.RenderContext
-        let targetResult = SDL.SDL_SetRenderTarget (renderContext, IntPtr.Zero)
-        match targetResult with
-        | 0 ->
-            SDL.SDL_SetRenderDrawBlendMode (renderContext, SDL.SDL_BlendMode.SDL_BLENDMODE_ADD) |> ignore
-            let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
-            let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
+        SDL_gpu.GPU_SetBlendMode (renderContext, SDL.GPU_BlendPresetEnum.GPU_BLEND_NORMAL)
+        let viewAbsolute = (Math.getViewAbsoluteI eyeCenter eyeSize).InvertedView ()
+        let viewRelative = (Math.getViewRelativeI eyeCenter eyeSize).InvertedView ()
 #if MULTITHREAD_RENDER_SORT
-            let messages = messages.AsParallel().OrderBy(id, RenderLayeredMessageComparer ())
+        let messages = messages.AsParallel().OrderBy(id, RenderLayeredMessageComparer ())
 #else
-            messages.Sort (RenderLayeredMessageComparer ())
+        messages.Sort (RenderLayeredMessageComparer ())
 #endif
-            for message in messages do
-                SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, message.RenderDescriptor, renderer)
-        | _ ->
-            Log.trace ("Render error - could not set render target to display buffer due to '" + SDL.SDL_GetError () + ".")
+        for message in messages do SdlRenderer.renderDescriptor (&viewAbsolute, &viewRelative, eyeCenter, eyeSize, message.RenderDescriptor, renderer)
+        SDL_gpu.GPU_FlushBlitBuffer ()
 
     /// Get the render context.
     static member getRenderContext renderer =

@@ -842,11 +842,17 @@ module WorldModule2 =
         static member private render renderMessages renderContext renderer eyeCenter eyeSize =
             match Constants.Render.ScreenClearing with
             | NoClear -> ()
-            | ColorClear (r, g, b) ->
-                SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
-                SDL.SDL_RenderClear renderContext |> ignore
+            | DefaultClear ->
+                SDL_gpu.GPU_Clear renderContext
+            | ColorClear color ->
+                let mutable colorSdl = SDL.SDL_Color ()
+                colorSdl.r <- color.R
+                colorSdl.g <- color.G
+                colorSdl.b <- color.B
+                colorSdl.a <- color.A
+                SDL_gpu.GPU_ClearColor (renderContext, colorSdl)
             Renderer.render eyeCenter eyeSize renderMessages renderer
-            SDL.SDL_RenderPresent renderContext
+            SDL_gpu.GPU_Flip renderContext
 
         static member private play audioMessages audioPlayer =
             AudioPlayer.play audioMessages audioPlayer

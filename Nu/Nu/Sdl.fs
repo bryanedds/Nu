@@ -32,7 +32,7 @@ type [<StructuralEquality; NoComparison>] SdlConfig =
     { ViewConfig : SdlViewConfig
       ViewW : int
       ViewH : int
-      RendererFlags : SDL.SDL_RendererFlags
+      RendererFlags : SDL.GPU_InitFlagEnum
       AudioChunkSize : int }
 
     /// A default SdlConfig.
@@ -40,7 +40,7 @@ type [<StructuralEquality; NoComparison>] SdlConfig =
         { ViewConfig = NewWindow SdlWindowConfig.defaultConfig
           ViewW = Constants.Render.ResolutionX
           ViewH = Constants.Render.ResolutionY
-          RendererFlags = Constants.Render.RendererFlagsDefault
+          RendererFlags = Constants.Render.GpuInitFlagsDefault
           AudioChunkSize = Constants.Audio.BufferSizeDefault }
 
 [<AutoOpen>]
@@ -110,7 +110,7 @@ module SdlDeps =
             match tryMakeSdlResource
                 (fun () ->
                     match sdlConfig.ViewConfig with
-                    | NewWindow windowConfig -> SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
+                    | NewWindow windowConfig -> SDL_gpu. SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
                     | ExistingWindow hwindow -> SDL.SDL_CreateWindowFrom hwindow)
                 (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
             | Left error -> Left error

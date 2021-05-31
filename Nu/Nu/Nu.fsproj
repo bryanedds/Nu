@@ -71,6 +71,7 @@
     <Compile Include="Log.fs" />
     <Compile Include="Unique.fs" />
     <Compile Include="Gen.fs" />
+    <Compile Include="SdlGpu.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="ListTree.fs" />
     <Compile Include="KeyedArray.fs" />
@@ -79,7 +80,6 @@
     <Compile Include="SpatialTree.fs" />
     <Compile Include="FastInvoke.fs" />
     <Compile Include="Reflection.fs" />
-    <Compile Include="SdlGpu.fs" />
     <Compile Include="Overlayer.fs" />
     <Compile Include="OverlayRouter.fs" />
     <Compile Include="AssetGraph.fs" />
@@ -155,6 +155,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="SDL2_ttf.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="SDL2_gpu.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="libfreetype-6.dll">

@@ -167,20 +167,6 @@ module AmbientState =
     let addTasklets tasklets state =
         { state with Tasklets = UList.makeFromSeq (UList.getConfig state.Tasklets) (Seq.append (tasklets :> _ seq) (state.Tasklets :> _ seq)) }
 
-    /// Attempt to get the window flags.
-    let tryGetWindowFlags state =
-        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
-        | Some window -> Some (SDL.SDL_GetWindowFlags window)
-        | None -> None
-
-    /// Attempt to check that the window is minimized.
-    let tryGetWindowMinimized state =
-        Option.map (fun flags -> flags ||| uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED = 0u) (tryGetWindowFlags state)
-
-    /// Attempt to check that the window is maximized.
-    let tryGetWindowMaximized state =
-        Option.map (fun flags -> flags ||| uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MAXIMIZED = 0u) (tryGetWindowFlags state)
-
     /// Get the symbol store with the by map.
     let getSymbolStoreBy by state =
         by state.SymbolStore

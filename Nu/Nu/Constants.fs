@@ -48,10 +48,8 @@ module Render =
     let (*Literal*) VirtualScalar = Core.getVirtualScalarOrDefault 2
     let (*Literal*) ResolutionX = VirtualResolutionX * VirtualScalar
     let (*Literal*) ResolutionY = VirtualResolutionY * VirtualScalar
-    let (*Literal*) RendererFlagsDefault =
-        SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED |||
-        SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC
-    let (*Literal*) ScreenClearing = ColorClear (255uy, 255uy, 255uy) // TODO: move this to ViewConfig or WorldConfig?
+    let (*Literal*) GpuInitFlagsDefault = SDL.GPU_InitFlagEnum.GPU_INIT_ENABLE_VSYNC
+    let (*Literal*) ScreenClearing = ColorClear (Color (255uy, 255uy, 255uy, 255uy)) // TODO: move this to ViewConfig or WorldConfig?
 
 [<RequireQualifiedAccess>]
 module Audio =

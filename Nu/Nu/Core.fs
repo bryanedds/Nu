@@ -14,7 +14,8 @@ open Prime
 /// NOTE: this type is here only to make the screen clear constant defineable in Constants.fs.
 type ScreenClear =
     | NoClear
-    | ColorClear of byte * byte * byte
+    | DefaultClear
+    | ColorClear of Color
 
 [<RequireQualifiedAccess>]
 module internal CoreInternal =
