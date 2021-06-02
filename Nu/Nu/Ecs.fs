@@ -102,15 +102,11 @@ and System<'w> (name : string) =
     default this.PipedInit with get () = () :> obj
     member this.Name with get () = name
 
-/// Buffered array objects.
-and [<NoEquality; NoComparison>] ArrayObjsBuffered =
+/// Potentially-buffered array objects.
+/// ArrayObjsUnbuffered will be refEq to ArrayObjsBuffered if buffering is disabled.
+and [<NoEquality; NoComparison>] internal ArrayObjs =
     { ArrayObjsUnbuffered : obj List
       mutable ArrayObjsBuffered : obj List }
-
-/// Array objects that may or may not be buffered.
-and [<NoEquality; NoComparison>] ArrayObjs =
-    | ArrayObjs of obj List
-    | ArrayObjsBuffered of ArrayObjsBuffered
 
 /// Nu's custom Entity-Component-System implementation.
 /// Nu's conception of an ECS is primarily as an abstraction over user-definable storage formats.
@@ -238,28 +234,28 @@ and Ecs<'w> () as this =
         | (false, _) ->
             if not buffered then
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjss.Add (componentName, ArrayObjs (List [box aref]))
+                let arefs = List [box aref]
+                arrayObjss.Add (componentName, { ArrayObjsUnbuffered = arefs; ArrayObjsBuffered = arefs })
                 (aref, aref)
             else
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 let arefBuffered = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjss.Add (componentName, ArrayObjsBuffered { ArrayObjsUnbuffered = List [box aref]; ArrayObjsBuffered = List [box arefBuffered] })
+                arrayObjss.Add (componentName, { ArrayObjsUnbuffered = List [box aref]; ArrayObjsBuffered = List [box arefBuffered] })
                 (aref, arefBuffered)
 
     member this.AllocateJunction<'c when 'c : struct and 'c :> 'c Component> (fieldPath : string) =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, found) ->
-            match found with
-            | ArrayObjs arrayObjs ->
+            if refEq found.ArrayObjsUnbuffered found.ArrayObjsBuffered then
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjs.Add (box aref)
+                found.ArrayObjsUnbuffered.Add (box aref)
                 (fieldPath, box aref, box aref)
-            | ArrayObjsBuffered arrayObjs ->
+            else
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 let arefBuffered = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                arrayObjs.ArrayObjsUnbuffered.Add (box aref)
-                arrayObjs.ArrayObjsBuffered.Add (box arefBuffered)
+                found.ArrayObjsUnbuffered.Add (box aref)
+                found.ArrayObjsBuffered.Add (box arefBuffered)
                 (fieldPath, box aref, box arefBuffered)
         | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'. Did you neglect to register a system for this component?")
 
@@ -272,43 +268,29 @@ and Ecs<'w> () as this =
     member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
-        | (true, arrayObjs) ->
-            let arefObjs =
-                match arrayObjs with
-                | ArrayObjs unbuffered -> unbuffered
-                | ArrayObjsBuffered buffered -> buffered.ArrayObjsUnbuffered
-            arefObjs |> Seq.map (fun arefObj -> (arefObj :?> 'c ArrayRef).Array) |> Seq.toArray
+        | (true, arrayObjs) -> arrayObjs.ArrayObjsUnbuffered |> Seq.map (fun arefObj -> (arefObj :?> 'c ArrayRef).Array) |> Seq.toArray
         | (false, _) -> [||]
 
     member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn (worldOpt : 'w option) =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
-            match arrayObjs with
-            | ArrayObjs unbuffered ->
-                let arefs = unbuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-                fn arefs worldOpt
-            | ArrayObjsBuffered buffered ->
-                lock arrayObjs $ fun () ->
-                    let arefsBuffered = buffered.ArrayObjsBuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
-                    fn arefsBuffered worldOpt
+            let arefsBuffered = arrayObjs.ArrayObjsBuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
+            fn arefsBuffered worldOpt
         | (false, _) -> worldOpt
 
     member this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = typeof<'c>.Name
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
-            match arrayObjs with
-            | ArrayObjs _ -> ()
-            | ArrayObjsBuffered buffered ->
-                lock arrayObjs $ fun () ->
-                    for i in 0 .. buffered.ArrayObjsUnbuffered.Count - 1 do
-                        let aref = buffered.ArrayObjsUnbuffered.[i] :?> 'c ArrayRef
-                        let arefBuffered = buffered.ArrayObjsBuffered.[i] :?> 'c ArrayRef
-                        lock arefBuffered (fun () ->
-                            if arefBuffered.Array.Length = aref.Array.Length
-                            then aref.Array.CopyTo (arefBuffered.Array, 0)
-                            else arefBuffered.Array <- Array.copy aref.Array)
+            lock arrayObjs $ fun () ->
+                for i in 0 .. arrayObjs.ArrayObjsUnbuffered.Count - 1 do
+                    let aref = arrayObjs.ArrayObjsUnbuffered.[i] :?> 'c ArrayRef
+                    let arefBuffered = arrayObjs.ArrayObjsBuffered.[i] :?> 'c ArrayRef
+                    lock arefBuffered (fun () ->
+                        if arefBuffered.Array.Length = aref.Array.Length
+                        then aref.Array.CopyTo (arefBuffered.Array, 0)
+                        else arefBuffered.Array <- Array.copy aref.Array)
         | (false, _) -> ()
 
     type System<'w> with
@@ -587,7 +569,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
             // ensure component is marked active
             let mutable comp = comp
-            comp.Active <- true 
+            comp.Active <- true
 
             // set component
             let components = componentsObj :?> 'c ArrayRef
