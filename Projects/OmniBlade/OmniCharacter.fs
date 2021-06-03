@@ -21,7 +21,8 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
       Charging : bool
       TechProbabilityOpt : single option
       GoldPrize : int
-      ExpPrize : int }
+      ExpPrize : int
+      ItemPrizeOpt : ItemType option }
 
     member this.Level = Algorithms.expPointsToLevel this.ExpPoints
     member this.IsHealthy = this.HitPoints > 0
@@ -97,7 +98,8 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Charging = false
               TechProbabilityOpt = characterData.TechProbabilityOpt
               GoldPrize = Algorithms.goldPrize archetypeType characterData.GoldScalar level
-              ExpPrize = Algorithms.expPrize archetypeType characterData.ExpScalar level }
+              ExpPrize = Algorithms.expPrize archetypeType characterData.ExpScalar level
+              ItemPrizeOpt = Algorithms.itemPrizeOpt archetypeType level }
         characterState
 
     static member empty =
@@ -114,7 +116,8 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
               Charging = false
               TechProbabilityOpt = None
               GoldPrize = 0
-              ExpPrize = 0 }
+              ExpPrize = 0
+              ItemPrizeOpt = None }
         characterState
 
 type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
