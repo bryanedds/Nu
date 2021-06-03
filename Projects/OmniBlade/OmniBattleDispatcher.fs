@@ -385,7 +385,11 @@ module BattleDispatcher =
                     | _ :: _ as texts -> String.join "\n" texts + "^"
                     | [] -> ""
                 let textC = "Gained " + string battle.PrizePool.Exp + " Exp!\nGained " + string battle.PrizePool.Gold + " Gold!"
-                let text = textA + textB + textC
+                let textD =
+                    match battle.PrizePool.Items with
+                    | _ :: _ as items -> "^Found " + (items |> List.map (fun i -> ItemType.getName i) |> String.join ", ") + "!"
+                    | [] -> ""
+                let text = textA + textB + textC + textD
                 let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
                 let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
                 if outcome then
