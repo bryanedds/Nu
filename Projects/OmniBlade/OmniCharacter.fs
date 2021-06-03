@@ -294,6 +294,7 @@ module Character =
         member this.Shield = this.CharacterState_.Shield
         member this.GoldPrize = this.CharacterState_.GoldPrize
         member this.ExpPrize = this.CharacterState_.ExpPrize
+        member this.ItemPrizeOpt = this.CharacterState_.ItemPrizeOpt
 
         (* Animation Properties *)
         member this.TimeStart = this.CharacterAnimationState_.TimeStart
