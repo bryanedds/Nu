@@ -170,3 +170,8 @@ module Algorithms =
             | None -> 1.0f
         let algo = single level * 1.5f
         int (mythos * scalar * algo)
+
+    let itemPrizeOpt archetypeType (level : int) =
+        if Gen.random1 8 = 0 then
+            Some (Consumable GreenHerb)
+        else None
