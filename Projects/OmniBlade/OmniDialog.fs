@@ -42,6 +42,25 @@ type [<ReferenceEquality; NoComparison>] Dialog =
         dialog.DialogPage = lastPage &&
         dialog.DialogProgress > pages.[lastPage].Length
 
+    static member wordWrap (limit : int) (string : string) =
+        let rec wordWrap acc (string : string) =
+            if string.Length <= limit then string :: acc
+            else
+                let (left, right) =
+                    let seq = String.explode string |> Seq.ofList |> Seq.take limit
+                    if Seq.exists (fun c -> c = '\n' || c = ' ') seq then
+                        let index =
+                            match Seq.tryFindIndex (fun c -> c = '\n') seq with
+                            | Some index -> index
+                            | None -> Seq.findIndexBack (fun c -> c = ' ') seq
+                        (Seq.take index seq, Seq.skip (index + 1) seq)
+                    else (Seq.take limit seq, Seq.skip limit seq)
+                let (left, right) = (Seq.toList left |> String.implode, Seq.toList right |> String.implode)
+                let acc = left :: acc
+                wordWrap acc right
+        wordWrap [] string |> List.rev |> String.join "\n"
+                    
+    
     static member content name elevation promptLeft promptRight (detokenizeAndDialogOpt : Lens<(string -> string) * Dialog option, World>) =
         Content.entityWithContent<TextDispatcher> name
             [Entity.Bounds <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->
@@ -66,7 +85,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                 | Some dialog ->
                     let detokenized = detokenize dialog.DialogTokenized
                     let textPage = dialog.DialogPage
-                    let text = detokenized.Split(Constants.Gameplay.DialogSplit).[textPage]
+                    let text = detokenized.Split(Constants.Gameplay.DialogSplit).[textPage] |> Dialog.wordWrap 48
                     let textToShow = String.tryTake dialog.DialogProgress text
                     textToShow
                 | None -> ""
