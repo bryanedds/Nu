@@ -47,14 +47,15 @@ type [<ReferenceEquality; NoComparison>] Dialog =
             if string.Length <= limit then string :: acc
             else
                 let (left, right) =
-                    let seq = String.explode string |> Seq.ofList |> Seq.take limit
-                    if Seq.exists (fun c -> c = '\n' || c = ' ') seq then
+                    let seq = String.explode string |> Seq.ofList
+                    let seqLeft = Seq.take limit seq
+                    if Seq.exists (fun c -> c = '\n' || c = ' ') seqLeft then
                         let index =
-                            match Seq.tryFindIndex (fun c -> c = '\n') seq with
+                            match Seq.tryFindIndex (fun c -> c = '\n') seqLeft with
                             | Some index -> index
-                            | None -> Seq.findIndexBack (fun c -> c = ' ') seq
+                            | None -> Seq.findIndexBack (fun c -> c = ' ') seqLeft
                         (Seq.take index seq, Seq.skip (index + 1) seq)
-                    else (Seq.take limit seq, Seq.skip limit seq)
+                    else (seqLeft, Seq.skip limit seq)
                 let (left, right) = (Seq.toList left |> String.implode, Seq.toList right |> String.implode)
                 let acc = left :: acc
                 wordWrap acc right
