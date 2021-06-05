@@ -45,8 +45,8 @@ type [<NoEquality; NoComparison; Struct>] Position =
 
 type [<NoEquality; NoComparison; Struct>] Mover =
     { mutable Active : bool
-      mutable Velocity : Velocity ComponentRef
-      mutable Position : Position ComponentRef }
+      Velocity : Velocity ComponentRef
+      Position : Position ComponentRef }
     interface Mover Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
         member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Velocity> "Velocity"; ecs.AllocateJunction<Position> "Position"|]
