@@ -17,7 +17,7 @@ module Unique =
     /// Allocate a unique number.
     let alloc unique =
         if unique.UniquesFree.Count = 0 then
-            if unique.UniqueCurrent = Int32.MaxValue then failwith "No unique ints available - likely due to resource leak."
+            if unique.UniqueCurrent = Int32.MaxValue then failwith "No unique numbers available (likely due to leak)."
             let number = unique.UniqueCurrent
             unique.UniqueCurrent <- inc unique.UniqueCurrent
             number
