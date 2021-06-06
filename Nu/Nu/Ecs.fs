@@ -42,7 +42,7 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
 #if ECS_BUFFERED
       ComponentArefBuffered : 'c ArrayRef
 #endif
-      }
+    }
 
     member inline this.Index
         with get () = &this.ComponentAref.[this.ComponentIndex]
@@ -95,7 +95,7 @@ and SystemCallbackBoxed<'w> =
     SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
 
 /// A base system type of an ECS.
-and System<'w> (name : string) =
+and 'w System (name : string) =
     let pipedKey = Gen.id
     member this.PipedKey with get () = pipedKey
     abstract PipedInit : obj
@@ -113,7 +113,7 @@ and [<NoEquality; NoComparison>] internal ArrayObjs =
 /// The default formats include SoA-based formats for non-correlated, correlated, multiplexed, and hierarchichal value types.
 /// User can add formats of their own design by implementing the 'w System interface and providing related extension methods
 /// on this 'w Ecs type.
-and Ecs<'w> () as this =
+and 'w Ecs () as this =
 
     let mutable systemCached = System<'w> typeof<unit>.Name
     let systemGlobal = systemCached
@@ -293,7 +293,7 @@ and Ecs<'w> () as this =
                         else arefBuffered.Array <- Array.copy aref.Array)
         | (false, _) -> ()
 
-    type System<'w> with
+    type 'w System with
         member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
         member this.WithPipedValue<'a when 'a : not struct> fn (ecs : 'w Ecs) worldOpt = ecs.WithPipedValue<'a> this.PipedKey fn worldOpt
 
@@ -309,7 +309,7 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c)
     inherit System<'w> (typeof<'c>.Name)
     let mutable comp = comp
     member this.Component with get () = &comp
-    type Ecs<'w> with
+    type 'w Ecs with
         member this.IndexSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> () =
             let systemOpt = this.TryIndexSystem<'c, SystemSingleton<'c, 'w>> ()
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
@@ -365,7 +365,7 @@ type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, 
             freeList.Add index |> ignore<bool>
         else freeIndex <- dec freeIndex
 
-    type Ecs<'w> with
+    type 'w Ecs with
 
         member this.IndexUnordered<'c when 'c : struct and 'c :> 'c Component> index =
             let systemOpt = this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> ()
@@ -519,7 +519,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             true
         | (false, _) -> false
 
-    type Ecs<'w> with
+    type 'w Ecs with
 
         member this.GetEntitiesCorrelated<'c when 'c : struct and 'c :> 'c Component> () =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
@@ -649,7 +649,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
         componentMultiplexed.Index.UnregisterMultiplexed multiId |> ignore<bool>
         this.UnregisterCorrelated entityId ecs
 
-    type Ecs<'w> with
+    type 'w Ecs with
 
         member this.QualifyMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
@@ -748,7 +748,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         | (true, system) -> system.UnregisterCorrelated entityId ecs
         | (false, _) -> false
 
-    type Ecs<'w> with
+    type 'w Ecs with
 
         member this.IndexTree<'c when 'c : struct and 'c :> 'c Component> () =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
@@ -802,7 +802,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
 /// A correlated entity reference.
 /// Slow relative to normal ECS operations, but convenient for one-off uses.
-type [<NoEquality; NoComparison; Struct>] EntityRef<'w> =
+type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
     { EntityId : Guid
       EntityEcs : 'w Ecs }
 
@@ -836,7 +836,7 @@ type [<NoEquality; NoComparison; Struct>] EntityRef<'w> =
         let hierarchical = system.IndexHierarchical nodeId this.EntityId : 'c ComponentRef
         hierarchical.IndexBuffered
 
-    type Ecs<'w> with
+    type 'w Ecs with
         member this.GetEntityRef entityId =
             { EntityId = entityId; EntityEcs = this }
 
