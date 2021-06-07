@@ -108,6 +108,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
         member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ _ = this
         member this.Disjunction _ _ _ = ()
+        member this.TypeName = nameof Transform
 
 [<AutoOpen>]
 module TransformOperators =
