@@ -111,7 +111,7 @@ and [<NoEquality; NoComparison>] internal ArrayObjs =
 
 /// Nu's custom Entity-Component-System implementation.
 /// Nu's conception of an ECS is primarily as an abstraction over user-definable storage formats.
-/// The default formats include SoA-based formats for non-correlated, correlated, multiplexed, and hierarchichal value types.
+/// The default formats include SoA-style formats for non-correlated, correlated, multiplexed, and hierarchichal value types.
 /// User can add formats of their own design by implementing the 'w System interface and providing related extension methods
 /// on this 'w Ecs type.
 and 'w Ecs () as this =
@@ -386,7 +386,7 @@ type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, 
 
 /// An Ecs system with components correlated by entity id.
 /// Hashing and storing millions of entity ids is slow, so if need to create that many components quickly, consider
-/// manually junctioning uncorrelated components instead. The trade-off to using uncorrelated components is that you
+/// manually junctioning unordered components instead. The trade-off to using uncorrelated components is that you
 /// have to manually unregister their component refs and you have to allocate and deallocate them consecutively in
 /// batches to ensure maximum throughput when processing the manually-junctioned components.
 /// Also note that all junctions are guaranteed to keep the same size and order as the related components so that they
