@@ -27,6 +27,7 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         abstract MoveJunctions : int -> int -> obj array -> 'w Ecs -> unit
         abstract Junction : int -> obj array -> obj array -> 'w Ecs -> 'c
         abstract Disjunction : int -> obj array -> 'w Ecs -> unit
+        abstract TypeName : string
         end
 
 /// A storable reference to a component in its containing array.
@@ -154,7 +155,7 @@ and 'w Ecs () as this =
         system
 
     member this.TryIndexSystem<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w System> () =
-        let systemName = typeof<'c>.Name
+        let systemName = Unchecked.defaultof<'c>.TypeName
         if systemCached.Name = systemName then
             match systemCached with
             | :? 's as systemAsS -> Some systemAsS
@@ -170,7 +171,7 @@ and 'w Ecs () as this =
             | (false, _) -> None
 
     member this.IndexSystem<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w System> () =
-        let systemName = typeof<'c>.Name
+        let systemName = Unchecked.defaultof<'c>.TypeName
         if systemCached.Name = systemName
         then systemCached :?> 's
         else
@@ -228,7 +229,7 @@ and 'w Ecs () as this =
         Vsync.StartAsTask vsync
 
     member this.AllocateComponents<'c when 'c : struct and 'c :> 'c Component> buffered =
-        let componentName = typeof<'c>.Name
+        let componentName = Unchecked.defaultof<'c>.TypeName
         match arrayObjss.TryGetValue componentName with
         | (true, _) -> failwith ("Array already initally allocated for '" + componentName + "'. Do you have multiple systems with the same component type? (not allowed)")
         | (false, _) ->
@@ -244,7 +245,7 @@ and 'w Ecs () as this =
                 (aref, arefBuffered)
 
     member this.AllocateJunction<'c when 'c : struct and 'c :> 'c Component> (fieldPath : string) =
-        let componentName = typeof<'c>.Name
+        let componentName = Unchecked.defaultof<'c>.TypeName
         match arrayObjss.TryGetValue componentName with
         | (true, found) ->
             if refEq found.ArrayObjsUnbuffered found.ArrayObjsBuffered then
@@ -266,13 +267,13 @@ and 'w Ecs () as this =
         (Array.zip fieldPaths junctions, Array.zip fieldPaths buffereds)
 
     member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
-        let componentName = typeof<'c>.Name
+        let componentName = Unchecked.defaultof<'c>.TypeName
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) -> arrayObjs.ArrayObjsUnbuffered |> Seq.map (fun arefObj -> (arefObj :?> 'c ArrayRef).Array) |> Seq.toArray
         | (false, _) -> [||]
 
     member this.WithComponentArraysBuffered<'c when 'c : struct and 'c :> 'c Component> fn (worldOpt : 'w option) =
-        let componentName = typeof<'c>.Name
+        let componentName = Unchecked.defaultof<'c>.TypeName
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
             let arefsBuffered = arrayObjs.ArrayObjsBuffered |> Seq.cast<'c ArrayRef> |> Seq.toArray
@@ -280,7 +281,7 @@ and 'w Ecs () as this =
         | (false, _) -> worldOpt
 
     member this.BufferComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
-        let componentName = typeof<'c>.Name
+        let componentName = Unchecked.defaultof<'c>.TypeName
         match arrayObjss.TryGetValue componentName with
         | (true, arrayObjs) ->
             lock arrayObjs $ fun () ->
@@ -306,19 +307,19 @@ type EcsExtensions =
 
 /// An Ecs system with just a single component.
 type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c) =
-    inherit System<'w> (typeof<'c>.Name)
+    inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
     let mutable comp = comp
     member this.Component with get () = &comp
     type 'w Ecs with
         member this.IndexSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> () =
             let systemOpt = this.TryIndexSystem<'c, SystemSingleton<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
             &system.Component
 
 /// An Ecs system with components stored by an integer index in an unordered fashion.
 type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
-    inherit System<'w> (typeof<'c>.Name)
+    inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable freeIndex = 0
@@ -369,19 +370,19 @@ type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, 
 
         member this.IndexUnordered<'c when 'c : struct and 'c :> 'c Component> index =
             let systemOpt = this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
             system.IndexUnordered index
 
         member this.RegisterUnordered<'c when 'c : struct and 'c :> 'c Component> comp =
             match this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> () with
             | Some system -> system.RegisterUnordered comp
-            | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterUnordered<'c when 'c : struct and 'c :> 'c Component> index =
             match this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> () with
             | Some system -> system.UnregisterUnordered index
-            | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// An Ecs system with components correlated by entity id.
 /// Hashing and storing millions of entity ids is slow, so if need to create that many components quickly, consider
@@ -391,7 +392,7 @@ type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, 
 /// Also note that all junctions are guaranteed to keep the same size and order as the related components so that they
 /// can be accessed by the same index.
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
-    inherit System<'w> (typeof<'c>.Name)
+    inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable (junctionsNamed, junctionsBufferedNamed) = ecs.AllocateJunctions<'c> ()
@@ -524,23 +525,23 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         member this.GetEntitiesCorrelated<'c when 'c : struct and 'c :> 'c Component> () =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
             | Some system -> system.GetEntitiesCorrelated ()
-            | _ -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.QualifyCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
             system.QualifyCorrelated entityId
 
         member inline this.IndexCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId : 'c ComponentRef =
             let systemOpt = this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
             system.IndexCorrelated entityId
 
         member inline this.IndexJunctioned<'c, 'j when 'c : struct and 'c :> 'c Component and 'j : struct and 'j :> 'j Component> fieldPath entityId : 'j ComponentRef =
             let systemOpt = this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
             system.IndexJunctioned<'j> fieldPath entityId
 
@@ -549,10 +550,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             | Some system ->
                 let componentRef = system.RegisterCorrelated comp entityId this
                 match this.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add typeof<'c>.Name
-                | (false, _) -> this.Correlations.Add (entityId, List [typeof<'c>.Name])
+                | (true, correlation) -> correlation.Add Unchecked.defaultof<'c>.TypeName
+                | (false, _) -> this.Correlations.Add (entityId, List [Unchecked.defaultof<'c>.TypeName])
                 componentRef
-            | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
@@ -560,10 +561,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
                 let result = system.UnregisterCorrelated entityId this
                 if result then
                     match this.Correlations.TryGetValue entityId with
-                    | (true, correlation) -> correlation.Remove typeof<'c>.Name |> ignore<bool>
+                    | (true, correlation) -> correlation.Remove Unchecked.defaultof<'c>.TypeName |> ignore<bool>
                     | (false, _) -> ()
                 result
-            | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsBufferedObj : obj) =
 
@@ -605,7 +606,8 @@ type Simplex<'c when 'c : struct> =
 /// interface with the involved systems directly rather than through the Ecs API which indexes them implcitly.
 type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : struct and 'c :> 'c Component> =
     { mutable Active : bool
-      Simplexes : Dictionary<Guid, 'c Simplex> }
+      Simplexes : Dictionary<Guid, 'c Simplex>
+      TypeName : string }
     interface Component<'c ComponentMultiplexed> with
         member this.Active with get () = this.Active and set value = this.Active <- value
         member this.AllocateJunctions _ = [||]
@@ -613,6 +615,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ _ = this
         member this.Disjunction _ _ _ = ()
+        member this.TypeName = getTypeName this
     member this.RegisterMultiplexed (multiId, comp) =
         this.Simplexes.Add (multiId, { Simplex = comp })
     member this.UnregisterMultiplexed multiId =
@@ -653,20 +656,20 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
 
         member this.QualifyMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
             system.QualifyMultiplexed multiId entityId
 
         member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
             let simplex = system.IndexMultiplexed multiId entityId
             &simplex.Simplex
 
         member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
             let simplex = system.IndexMultiplexedBuffered multiId entityId
             simplex.Simplex
@@ -676,22 +679,22 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
             | Some system ->
                 let _ = system.RegisterMultiplexed comp multiId entityId
                 match this.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add typeof<'c>.Name
-                | (false, _) -> this.Correlations.Add (entityId, List [typeof<'c>.Name])
-            | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+                | (true, correlation) -> correlation.Add Unchecked.defaultof<'c>.TypeName
+                | (false, _) -> this.Correlations.Add (entityId, List [Unchecked.defaultof<'c>.TypeName])
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
             | Some system ->
                 if system.UnregisterMultiplexed multiId entityId this then
                     match this.Correlations.TryGetValue entityId with
-                    | (true, correlation) -> correlation.Add typeof<'c>.Name
-                    | (false, _) -> this.Correlations.Add (entityId, List [typeof<'c>.Name])
-            | _ -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+                    | (true, correlation) -> correlation.Add Unchecked.defaultof<'c>.TypeName
+                    | (false, _) -> this.Correlations.Add (entityId, List [Unchecked.defaultof<'c>.TypeName])
+            | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// An Ecs system that stores components in a tree hierarchy.
 type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
-    inherit System<'w> (typeof<'c>.Name)
+    inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
     let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
@@ -753,32 +756,32 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         member this.IndexTree<'c when 'c : struct and 'c :> 'c Component> () =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
             | Some system -> system.Components
-            | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.IndexNode<'c when 'c : struct and 'c :> 'c Component> nodeId =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
             | Some system -> system.IndexNode nodeId
-            | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.AddNode<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
             | Some system -> system.AddNode parentIdOpt
-            | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.RemoveNode<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
             | Some system -> system.RemoveNode parentIdOpt
-            | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.QualifyHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
             system.QualifyHierarchical nodeId entityId
 
         member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
             system.IndexHierarchical nodeId entityId
 
@@ -787,18 +790,18 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some system ->
                 let _ = system.RegisterHierarchical comp nodeId entityId
                 match this.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add typeof<'c>.Name
-                | (false, _) -> this.Correlations.Add (entityId, List [typeof<'c>.Name])
-            | None -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+                | (true, correlation) -> correlation.Add Unchecked.defaultof<'c>.TypeName
+                | (false, _) -> this.Correlations.Add (entityId, List [Unchecked.defaultof<'c>.TypeName])
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId entityId =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
             | Some system ->
                 if system.UnregisterHierarchical nodeId entityId this then
                     match this.Correlations.TryGetValue entityId with
-                    | (true, correlation) -> correlation.Add typeof<'c>.Name
-                    | (false, _) -> this.Correlations.Add (entityId, List [typeof<'c>.Name])
-            | _ -> failwith ("Could not find expected system '" + typeof<'c>.Name + "'.")
+                    | (true, correlation) -> correlation.Add Unchecked.defaultof<'c>.TypeName
+                    | (false, _) -> this.Correlations.Add (entityId, List [Unchecked.defaultof<'c>.TypeName])
+            | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// A correlated entity reference.
 /// Slow relative to normal ECS operations, but convenient for one-off uses.

@@ -18,6 +18,7 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
         member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ _ = this
         member this.Disjunction _ _ _ = ()
+        member this.TypeName = nameof StaticSpriteComponent
 #endif
 
 #if ECS
@@ -31,6 +32,7 @@ type [<NoEquality; NoComparison; Struct>] Velocity =
         member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ _ = this
         member this.Disjunction _ _ _ = ()
+        member this.TypeName = nameof Velocity
 
 type [<NoEquality; NoComparison; Struct>] Position =
     { mutable Active : bool
@@ -42,6 +44,7 @@ type [<NoEquality; NoComparison; Struct>] Position =
         member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ _ = this
         member this.Disjunction _ _ _ = ()
+        member this.TypeName = nameof Position
 
 type [<NoEquality; NoComparison; Struct>] Mover =
     { mutable Active : bool
@@ -54,6 +57,7 @@ type [<NoEquality; NoComparison; Struct>] Mover =
         member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Velocity> src dst junctions.[0]; ecs.MoveJunction<Position> src dst junctions.[1]
         member this.Junction index junctions buffereds ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0] buffereds.[0]; Position = ecs.Junction<Position> index junctions.[1] buffereds.[1] }
         member this.Disjunction index junctions ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
+        member this.TypeName = nameof Mover
 #endif
 
 #if FACETED

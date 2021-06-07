@@ -18,6 +18,7 @@ module EcsTests =
             member this.MoveJunctions _ _ _ _ = ()
             member this.Junction _ _ _ _ = this
             member this.Disjunction _ _ _ = ()
+            member this.TypeName = nameof Skin
 
     type [<NoEquality; NoComparison; Struct>] Airship =
         { mutable Active : bool
@@ -30,6 +31,7 @@ module EcsTests =
             member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Transform> src dst junctions.[0]; ecs.MoveJunction<Skin> src dst junctions.[1]
             member this.Junction index junctions buffereds ecs = { id this with Transform = ecs.Junction<Transform> index junctions.[0] buffereds.[0]; Skin = ecs.Junction<Skin> index junctions.[1] buffereds.[1] }
             member this.Disjunction index junctions ecs = ecs.Disjunction<Transform> index junctions.[0]; ecs.Disjunction<Skin> index junctions.[1]
+            member this.TypeName = nameof Airship
 
     type [<NoEquality; NoComparison; Struct>] Node =
         { mutable Active : bool
@@ -41,6 +43,7 @@ module EcsTests =
             member this.MoveJunctions _ _ _ _ = ()
             member this.Junction _ _ _ _ = this
             member this.Disjunction _ _ _ = ()
+            member this.TypeName = nameof Node
 
     type [<NoEquality; NoComparison; Struct>] Prop =
         { mutable Active : bool
@@ -53,6 +56,7 @@ module EcsTests =
             member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Node> src dst junctions.[0]
             member this.Junction index junctions buffereds ecs = { id this with Node = ecs.Junction<Node> index junctions.[0] buffereds.[0] }
             member this.Disjunction index junctions ecs = ecs.Disjunction<Node> index junctions.[0]
+            member this.TypeName = nameof Prop
 
     let example (world : World) =
 
