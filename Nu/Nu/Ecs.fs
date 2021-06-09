@@ -394,7 +394,7 @@ type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, 
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
-    let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
+    let mutable (correlateds, correlatedsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable (junctionsNamed, junctionsBufferedNamed) = ecs.AllocateJunctions<'c> ()
     let mutable (junctions, junctionsBuffered) = (Array.map snd junctionsNamed, Array.map snd junctionsBufferedNamed)
     let mutable junctionsMapped = dictPlus HashIdentity.Structural junctionsNamed
@@ -406,14 +406,17 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
     new (ecs) = SystemCorrelated (false, ecs)
 
-    member this.Components with get () = components
-    member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
+    member this.Correlateds with get () = correlateds
+    member this.WithCorrelatedsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock correlatedsBuffered (fun () -> fn correlatedsBuffered worldOpt)
 
     member this.IndexJunction<'j when 'j : struct and 'j :> 'j Component> fieldPath = junctionsMapped.[fieldPath] :?> 'j ArrayRef
     member this.WithJunctionBuffered<'j when 'j : struct and 'j :> 'j Component> fn fieldPath (worldOpt : 'w option) = let junction = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef in lock junction (fun () -> fn junction worldOpt)
 
-    member this.IndexComponent index = &components.Array.[index]
-    member this.IndexComponentBuffered index = componentsBuffered.Array.[index]
+    member this.IndexCorrelatedUnbuffered index = &correlateds.Array.[index]
+    member this.IndexCorrelatedBuffered index = correlatedsBuffered.Array.[index]
+
+    member this.IndexJunctionedUnbuffered fieldPath index = &(this.IndexJunction<'j> fieldPath).[index]
+    member this.IndexJunctionedBuffered fieldPath index = (junctionsMapped.[fieldPath] :?> 'j ArrayRef).[index]
 
     member private this.Compact ecs =
 
@@ -424,18 +427,18 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         while j < freeIndex do
 
             // check if slot is free
-            if not components.[i].Active && freeList.Contains i then
+            if not correlateds.[i].Active && freeList.Contains i then
 
                 // find next non-free component
                 while
                     j < freeIndex &&
-                    not components.[j].Active &&
+                    not correlateds.[j].Active &&
                     not (freeList.Contains j) do
                     j <- inc j
 
                 // move components
-                components.[i] <- components.[j]
-                components.[0].MoveJunctions j i junctions ecs
+                correlateds.[i] <- correlateds.[j]
+                correlateds.[0].MoveJunctions j i junctions ecs
 
                 // update book-keeping
                 match correlationsBack.TryGetValue j with
@@ -453,23 +456,20 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         freeList.Clear ()
         freeIndex <- j
 
+    member inline private this.IndexCorrelatedToI entityId =
+        let (found, index) = correlations.TryGetValue entityId
+        if not found then raise (ArgumentOutOfRangeException "entityId")
+        index
+
     member this.GetEntitiesCorrelated () =
         correlations.Keys :> _ IEnumerable
 
     member this.QualifyCorrelated entityId =
         correlations.ContainsKey entityId
 
-    member this.IndexCorrelatedFromI index =
-        ComponentRef<'c>.make index components componentsBuffered
-
-    member this.IndexCorrelatedToI entityId =
-        let (found, index) = correlations.TryGetValue entityId
-        if not found then raise (ArgumentOutOfRangeException "entityId")
-        index
-
     member this.IndexCorrelated entityId =
         let index = this.IndexCorrelatedToI entityId
-        ComponentRef<'c>.make index components componentsBuffered
+        ComponentRef<'c>.make index correlateds correlatedsBuffered
 
     member this.IndexJunctioned<'j when 'j : struct and 'j :> 'j Component> fieldPath entityId =
         let index = this.IndexCorrelatedToI entityId
@@ -487,12 +487,12 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         if not (correlations.ContainsKey entityId) then
 
             // ensure there is space in the arrays
-            if freeIndex >= components.Length then
-                let length = components.Length * Constants.Ecs.ArrayGrowth
-                let arr = Array.zeroCreate length in components.Array.CopyTo (arr, 0); components.Array <- arr
+            if freeIndex >= correlateds.Length then
+                let length = correlateds.Length * Constants.Ecs.ArrayGrowth
+                let arr = Array.zeroCreate length in correlateds.Array.CopyTo (arr, 0); correlateds.Array <- arr
                 comp.ResizeJunctions length junctions ecs
-                lock componentsBuffered (fun () ->
-                    let arr = Array.zeroCreate length in componentsBuffered.Array.CopyTo (arr, 0); componentsBuffered.Array <- arr)
+                lock correlatedsBuffered (fun () ->
+                    let arr = Array.zeroCreate length in correlatedsBuffered.Array.CopyTo (arr, 0); correlatedsBuffered.Array <- arr)
                 lock junctionsBuffered (fun () ->
                     comp.ResizeJunctions length junctionsBuffered ecs)
 
@@ -501,10 +501,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             let comp = comp.Junction index junctions junctionsBuffered ecs
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
-            components.Array.[index] <- comp
+            correlateds.Array.[index] <- comp
 
             // make component ref
-            ComponentRef.make index components componentsBuffered
+            ComponentRef.make index correlateds correlatedsBuffered
 
         // component is already registered
         else failwith ("Component registered multiple times for entity '" + string entityId + "'.")
@@ -512,16 +512,16 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     member this.UnregisterCorrelated entityId ecs =
         match correlations.TryGetValue entityId with
         | (true, index) ->
-            let comp = components.[index]
+            let comp = correlateds.[index]
             if  index <> freeIndex then
-                components.[index].Active <- false
+                correlateds.[index].Active <- false
                 freeList.Add index |> ignore<bool>
             else freeIndex <- dec freeIndex
             correlations.Remove entityId |> ignore<bool>
             correlationsBack.Remove index |> ignore<bool>
             comp.Disjunction index junctions ecs
-            if  components.Length < freeList.Count * 2 && // freeList is always empty if unordered
-                components.Length > Constants.Ecs.ArrayReserve then
+            if  correlateds.Length < freeList.Count * 2 && // freeList is always empty if unordered
+                correlateds.Length > Constants.Ecs.ArrayReserve then
                 this.Compact ecs
             true
         | (false, _) -> false
@@ -707,12 +707,12 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     new (ecs) = SystemHierarchical (false, ecs)
 
-    member this.Components with get () = systemTree |> ListTree.map (fun system -> system.Components)
-    member this.WithComponentsBuffered fn worldOpt = systemTree |> ListTree.map (fun system -> system.WithComponentsBuffered fn worldOpt)
+    member this.Components with get () = systemTree |> ListTree.map (fun system -> system.Correlateds)
+    member this.WithComponentsBuffered fn worldOpt = systemTree |> ListTree.map (fun system -> system.WithCorrelatedsBuffered fn worldOpt)
 
     member this.IndexNode nodeId =
         match systemDict.TryGetValue nodeId with
-        | (true, system) -> system.Components
+        | (true, system) -> system.Correlateds
         | (false, _) -> failwith ("Node with id '" + scstring nodeId + "' not found.")
 
     member this.AddNode (parentIdOpt : Guid option) =
