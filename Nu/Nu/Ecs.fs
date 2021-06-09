@@ -412,6 +412,9 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     member this.IndexJunction<'j when 'j : struct and 'j :> 'j Component> fieldPath = junctionsMapped.[fieldPath] :?> 'j ArrayRef
     member this.WithJunctionBuffered<'j when 'j : struct and 'j :> 'j Component> fn fieldPath (worldOpt : 'w option) = let junction = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef in lock junction (fun () -> fn junction worldOpt)
 
+    member this.IndexComponent index = &components.Array.[index]
+    member this.IndexComponentBuffered index = componentsBuffered.Array.[index]
+
     member private this.Compact ecs =
 
         // compact array
@@ -456,17 +459,20 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     member this.QualifyCorrelated entityId =
         correlations.ContainsKey entityId
 
-    member this.IndexCorrelatedI entityId =
+    member this.IndexCorrelatedFromI index =
+        ComponentRef<'c>.make index components componentsBuffered
+
+    member this.IndexCorrelatedToI entityId =
         let (found, index) = correlations.TryGetValue entityId
         if not found then raise (ArgumentOutOfRangeException "entityId")
         index
 
     member this.IndexCorrelated entityId =
-        let index = this.IndexCorrelatedI entityId
+        let index = this.IndexCorrelatedToI entityId
         ComponentRef<'c>.make index components componentsBuffered
 
     member this.IndexJunctioned<'j when 'j : struct and 'j :> 'j Component> fieldPath entityId =
-        let index = this.IndexCorrelatedI entityId
+        let index = this.IndexCorrelatedToI entityId
         let junction = junctionsMapped.[fieldPath] :?> 'j ArrayRef
         let buffered = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef
         ComponentRef<'j>.make index junction buffered
