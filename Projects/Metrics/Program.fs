@@ -182,9 +182,9 @@ type MyGameDispatcher () =
   #if SYSTEM_ITERATION
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            let components = moverSystem.Components.Array
-            let velocities = moverSystem.IndexJunction<Velocity>().Array
-            let positions = moverSystem.IndexJunction<Position>().Array
+            let components = moverSystem.Correlateds.Array
+            let velocities = moverSystem.IndexJunction<Velocity>(nameof Velocity).Array
+            let positions = moverSystem.IndexJunction<Position>(nameof Position).Array
             for i in 0 .. components.Length - 1 do
                 let comp = &components.[i]
                 if comp.Active then
