@@ -39,8 +39,8 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
       ComponentIndex : int
       /// The associated component array reference.
       ComponentAref : 'c ArrayRef
-      /// DO NOT access the elements of ComponentArefBuffered without locking the field itself!
 #if ECS_BUFFERED
+      /// DO NOT access the elements of ComponentArefBuffered without locking the field itself!
       ComponentArefBuffered : 'c ArrayRef
 #endif
     }
@@ -456,7 +456,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         freeList.Clear ()
         freeIndex <- j
 
-    member inline private this.IndexCorrelatedToI entityId =
+    member inline this.IndexCorrelatedInt entityId =
         let (found, index) = correlations.TryGetValue entityId
         if not found then raise (ArgumentOutOfRangeException "entityId")
         index
@@ -468,11 +468,11 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         correlations.ContainsKey entityId
 
     member this.IndexCorrelated entityId =
-        let index = this.IndexCorrelatedToI entityId
+        let index = this.IndexCorrelatedInt entityId
         ComponentRef<'c>.make index correlateds correlatedsBuffered
 
     member this.IndexJunctioned<'j when 'j : struct and 'j :> 'j Component> fieldPath entityId =
-        let index = this.IndexCorrelatedToI entityId
+        let index = this.IndexCorrelatedInt entityId
         let junction = junctionsMapped.[fieldPath] :?> 'j ArrayRef
         let buffered = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef
         ComponentRef<'j>.make index junction buffered
@@ -848,6 +848,72 @@ type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
     type 'w Ecs with
         member this.GetEntityRef entityId =
             { EntityId = entityId; EntityEcs = this }
+
+/// A correlated entity reference that memoizes a portion of its component queries to eliminate intermediate look-ups.
+type [<NoEquality; NoComparison; Struct>] 'w EntityMemo =
+    { EntityMemoCache : Dictionary<Guid, struct ('w System * int)>
+      EntityMemoId : Guid
+      EntityMemoEcs : 'w Ecs }
+
+    member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
+        match this.EntityMemoCache.TryGetValue this.EntityMemoId with
+        | (true, struct (system, index)) ->
+            let system = system :?> SystemCorrelated<'c, 'w>
+            &system.IndexCorrelatedUnbuffered index
+        | (false, _) ->
+            let system = this.EntityMemoEcs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let index = system.IndexCorrelatedInt this.EntityMemoId
+            this.EntityMemoCache.Add (this.EntityMemoId, struct (system :> 'w System, index))
+            &system.IndexCorrelatedUnbuffered index
+
+    member this.IndexBuffered<'c when 'c : struct and 'c :> 'c Component> () =
+        match this.EntityMemoCache.TryGetValue this.EntityMemoId with
+        | (true, struct (system, index)) ->
+            let system = system :?> SystemCorrelated<'c, 'w>
+            system.IndexCorrelatedBuffered index
+        | (false, _) ->
+            let system = this.EntityMemoEcs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let index = system.IndexCorrelatedInt this.EntityMemoId
+            this.EntityMemoCache.Add (this.EntityMemoId, struct (system :> 'w System, index))
+            system.IndexCorrelatedBuffered index
+
+    member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId =
+        match this.EntityMemoCache.TryGetValue this.EntityMemoId with
+        | (true, struct (system, index)) ->
+            let system = system :?> SystemMultiplexed<'c, 'w>
+            &(system.IndexCorrelatedUnbuffered index).Simplexes.[multiId].Simplex
+        | (false, _) ->
+            let system = this.EntityMemoEcs.IndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
+            let index = system.IndexCorrelatedInt this.EntityMemoId
+            this.EntityMemoCache.Add (this.EntityMemoId, struct (system :> 'w System, index))
+            &(system.IndexCorrelatedUnbuffered index).Simplexes.[multiId].Simplex
+
+    member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> multiId =
+        match this.EntityMemoCache.TryGetValue this.EntityMemoId with
+        | (true, struct (system, index)) ->
+            let system = system :?> SystemMultiplexed<'c, 'w>
+            (system.IndexCorrelatedBuffered index).Simplexes.[multiId].Simplex
+        | (false, _) ->
+            let system = this.EntityMemoEcs.IndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
+            let index = system.IndexCorrelatedInt this.EntityMemoId
+            this.EntityMemoCache.Add (this.EntityMemoId, struct (system :> 'w System, index))
+            (system.IndexCorrelatedBuffered index).Simplexes.[multiId].Simplex
+
+    member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId =
+        let system = this.EntityMemoEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
+        let hierarchical = system.IndexHierarchical nodeId this.EntityMemoId : 'c ComponentRef
+        &hierarchical.Index
+
+    member this.IndexHierarchicalBuffered<'c when 'c : struct and 'c :> 'c Component> nodeId =
+        let system = this.EntityMemoEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
+        let hierarchical = system.IndexHierarchical nodeId this.EntityMemoId : 'c ComponentRef
+        hierarchical.IndexBuffered
+
+    type 'w Ecs with
+        member this.GetEntityMemo entityId =
+            { EntityMemoCache = dictPlus HashIdentity.Structural Seq.empty
+              EntityMemoId = entityId
+              EntityMemoEcs = this }
 
 [<RequireQualifiedAccess>]
 module EcsEvents =
