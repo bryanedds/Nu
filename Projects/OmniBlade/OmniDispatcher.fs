@@ -16,6 +16,7 @@ module GameDispatcher =
         | Splashing
         | Title
         | Start
+        | Introing of SaveSlot
         | Credits
 
     type [<StructuralEquality; NoComparison>] Omni =
@@ -27,7 +28,8 @@ module GameDispatcher =
         | ChangeField of Field
         | ChangeBattle of Battle
         | Update
-        | Intro
+        | Intro of SaveSlot
+        | InitField
 
     type [<NoEquality; NoComparison>] OmniCommand =
         | Show of Screen
@@ -57,15 +59,15 @@ module GameDispatcher =
              Simulants.Title.Gui.Credits.ClickEvent => msg (Change (Gui Credits))
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
 #if DEV
-             Simulants.Start.Gui.New.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
+             Simulants.Start.Gui.New.ClickEvent => msg (Change (Field (Field.initial Slot1 (uint64 Gen.random))))
 #else
-             Simulants.Start.Gui.New.ClickEvent => msg Intro
+             Simulants.Start.Gui.New.ClickEvent => msg (Intro Slot1)
 #endif
-             Simulants.Start.Gui.Load.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath) then (Change (Field (Field.loadOrInitial (uint64 Gen.random)))) else Intro)
+             Simulants.Start.Gui.Load.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath) then (Change (Field (Field.loadOrInitial (uint64 Gen.random)))) else Intro Slot1)
              
              Simulants.Start.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
-             Simulants.Intro5.Screen.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))]
+             Simulants.Intro5.Screen.DeselectEvent => msg (Change (Field (Field.initial Slot1 (uint64 Gen.random))))]
 
         override this.Message (omni, message, _, world) =
 
@@ -93,6 +95,7 @@ module GameDispatcher =
                     | Splashing -> just omni
                     | Title -> withCmd (Show Simulants.Title.Screen) omni
                     | Start -> withCmd (Show Simulants.Start.Screen) omni
+                    | Introing _ -> just omni
                     | Credits -> withCmd (Show Simulants.Credits.Screen) omni
                 | Field field ->
                     match field.BattleOpt with
@@ -107,10 +110,13 @@ module GameDispatcher =
                         | _ -> withCmd (Show Simulants.Battle.Screen) omni
                     | None -> withCmd (Show Simulants.Field.Screen) omni
 
-            | Intro ->
-                let splashing = msg (Change (Gui Splashing))
+            | Intro saveSlot ->
+                let introing = msg (Change (Gui (Introing saveSlot)))
                 let intro = cmd (Show Simulants.Intro.Screen)
-                withSigs [splashing; intro] omni
+                withSigs [introing; intro] omni
+
+            | InitField ->
+                just omni
 
         override this.Command (_, command, _, world) =
             match command with

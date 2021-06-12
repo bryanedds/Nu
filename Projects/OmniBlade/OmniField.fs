@@ -9,6 +9,11 @@ open FSharpx.Collections
 open Prime
 open Nu
 
+type [<ReferenceEquality; NoComparison>] SaveSlot =
+    | Slot1
+    | Slot2
+    | Slot3
+
 type [<ReferenceEquality; NoComparison>] FieldTransition =
     { FieldType : FieldType
       FieldDestination : Vector2
@@ -20,7 +25,8 @@ module Field =
 
     type [<ReferenceEquality; NoComparison>] Field =
         private
-            { FieldType_ : FieldType
+            { SaveSlot : SaveSlot
+              FieldType_ : FieldType
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
               Team_ : Map<int, Teammate>
@@ -255,7 +261,8 @@ module Field =
         { field with Avatar_ = Avatar.toSymbolizable field.Avatar }
 
     let make fieldType randSeedState avatar team advents inventory =
-        { FieldType_ = fieldType
+        { SaveSlot = Slot1
+          FieldType_ = fieldType
           OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = avatar
           SpiritActivity_ = 0.0f
@@ -272,7 +279,8 @@ module Field =
           BattleOpt_ = None }
 
     let empty =
-        { FieldType_ = DebugRoom
+        { SaveSlot = Slot1
+          FieldType_ = DebugRoom
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty
           Team_ = Map.empty
@@ -292,8 +300,9 @@ module Field =
         { empty with
             Team_ = Map.singleton 0 (Teammate.make 0 Jinn) }
 
-    let initial randSeedState =
+    let initial saveSlot randSeedState =
         { empty with
+            SaveSlot = saveSlot
             FieldType_ = TombOuter
             OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
             Avatar_ = Avatar.initial
@@ -308,6 +317,6 @@ module Field =
     let loadOrInitial randSeedState =
         try let fieldStr = File.ReadAllText Assets.Global.SaveFilePath
             scvalue<Field> fieldStr
-        with _ -> initial randSeedState
+        with _ -> initial Slot1 randSeedState
 
 type Field = Field.Field
