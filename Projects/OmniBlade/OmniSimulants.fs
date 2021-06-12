@@ -41,6 +41,19 @@ module Simulants =
             let Exit = Group / "Exit"
 
     [<RequireQualifiedAccess>]
+    module Start =
+
+        let Screen = Screen "Start"
+
+        [<RequireQualifiedAccess>]
+        module Gui =
+
+            let Group = Screen / "Gui"
+            let New = Group / "New"
+            let Load = Group / "Load"
+            let Back = Group / "Back"
+    
+    [<RequireQualifiedAccess>]
     module Credits =
 
         let Screen = Screen "Credits"
