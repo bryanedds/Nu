@@ -13,13 +13,9 @@
     [Position [-96 -222]]
     [Text Exit]]]
   [ButtonDispatcher
-   [[Name New]
-    [Position [-96 -24]]
-    [Text "New Game"]]]
-  [ButtonDispatcher
-   [[Name Load]
+   [[Name Start]
     [Position [-96 -90]]
-    [Text "Load Game"]]]
+    [Text "Start Game"]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]

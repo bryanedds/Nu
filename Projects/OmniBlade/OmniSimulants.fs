@@ -35,8 +35,7 @@ module Simulants =
         module Gui =
 
             let Group = Screen / "Gui"
-            let New = Group / "New"
-            let Load = Group / "Load"
+            let Start = Group / "Start"
             let Credits = Group / "Credits"
             let Exit = Group / "Exit"
 
