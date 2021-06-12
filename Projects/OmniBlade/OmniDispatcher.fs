@@ -59,15 +59,18 @@ module GameDispatcher =
              Simulants.Title.Gui.Credits.ClickEvent => msg (Change (Gui Credits))
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
 #if DEV
-             Simulants.Start.Gui.New.ClickEvent => msg (Change (Field (Field.initial Slot1 (uint64 Gen.random))))
+             Simulants.Start.Gui.Start1.ClickEvent => msg (Change (Field (Field.initial Slot1 (uint64 Gen.random))))
+             Simulants.Start.Gui.Start2.ClickEvent => msg (Change (Field (Field.initial Slot2 (uint64 Gen.random))))
+             Simulants.Start.Gui.Start3.ClickEvent => msg (Change (Field (Field.initial Slot3 (uint64 Gen.random))))
 #else
-             Simulants.Start.Gui.New.ClickEvent => msg (Intro Slot1)
+             Simulants.Start.Gui.Start1.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath1) then (Change (Field (Field.loadOrInitial Slot1 (uint64 Gen.random)))) else Intro Slot1)
+             Simulants.Start.Gui.Start2.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath2) then (Change (Field (Field.loadOrInitial Slot2 (uint64 Gen.random)))) else Intro Slot2)
+             Simulants.Start.Gui.Start3.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath3) then (Change (Field (Field.loadOrInitial Slot3 (uint64 Gen.random)))) else Intro Slot3)
 #endif
-             Simulants.Start.Gui.Load.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath) then (Change (Field (Field.loadOrInitial (uint64 Gen.random)))) else Intro Slot1)
-             
+
              Simulants.Start.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
-             Simulants.Intro5.Screen.DeselectEvent => msg (Change (Field (Field.initial Slot1 (uint64 Gen.random))))]
+             Simulants.Intro5.Screen.DeselectEvent => msg InitField]
 
         override this.Message (omni, message, _, world) =
 
@@ -116,7 +119,14 @@ module GameDispatcher =
                 withSigs [introing; intro] omni
 
             | InitField ->
-                just omni
+                let saveSlot =
+                    match omni with
+                    | Gui gui ->
+                        match gui with
+                        | Introing saveSlot -> saveSlot
+                        | _ -> Slot1
+                    | Field _ -> Slot1
+                withMsg (Change (Field (Field.initial saveSlot (uint64 Gen.random)))) omni
 
         override this.Command (_, command, _, world) =
             match command with
@@ -135,12 +145,15 @@ module GameDispatcher =
              Content.screen Simulants.Start.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) []
                 [Content.group Simulants.Start.Gui.Group.Name []
                 
-                    [Content.button Simulants.Start.Gui.New.Name
+                    [Content.button Simulants.Start.Gui.Start1.Name
                         [Entity.Position == v2 -96.0f -24.0f;
-                         Entity.Text == "New Game"]
-                     Content.button Simulants.Start.Gui.Load.Name
+                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath1) then "Load Slot 1" else "New Game"]
+                     Content.button Simulants.Start.Gui.Start2.Name
                         [Entity.Position == v2 -96.0f -90.0f;
-                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath) then "Load Game" else "New Game"]
+                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath2) then "Load Slot 2" else "New Game"]
+                     Content.button Simulants.Start.Gui.Start3.Name
+                        [Entity.Position == v2 -96.0f -156.0f;
+                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath3) then "Load Slot 3" else "New Game"]
                      Content.button Simulants.Start.Gui.Back.Name
                         [Entity.Position == v2 -96.0f -222.0f;
                          Entity.Text == "Back"]]]

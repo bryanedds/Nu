@@ -10,7 +10,9 @@ module Assets =
     [<RequireQualifiedAccess>]
     module Global =
 
-        let SaveFilePath = "OmniBlade.sav"
+        let SaveFilePath1 = "OmniBlade1.sav"
+        let SaveFilePath2 = "OmniBlade2.sav"
+        let SaveFilePath3 = "OmniBlade3.sav"
 
     [<RequireQualifiedAccess>]
     module Data =

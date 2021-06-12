@@ -48,8 +48,9 @@ module Simulants =
         module Gui =
 
             let Group = Screen / "Gui"
-            let New = Group / "New"
-            let Load = Group / "Load"
+            let Start1 = Group / "Start1"
+            let Start2 = Group / "Start2"
+            let Start3 = Group / "Start3"
             let Back = Group / "Back"
     
     [<RequireQualifiedAccess>]

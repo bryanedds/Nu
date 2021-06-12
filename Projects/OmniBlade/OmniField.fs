@@ -310,13 +310,23 @@ module Field =
             Inventory_ = Inventory.initial }
 
     let save field =
+        let saveFilePath =
+            match field.SaveSlot with
+            | Slot1 -> Assets.Global.SaveFilePath1
+            | Slot2 -> Assets.Global.SaveFilePath2
+            | Slot3 -> Assets.Global.SaveFilePath3
         let fieldSymbolizable = toSymbolizable field
         let fileStr = scstring fieldSymbolizable
-        try File.WriteAllText (Assets.Global.SaveFilePath, fileStr) with _ -> ()
+        try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
 
-    let loadOrInitial randSeedState =
-        try let fieldStr = File.ReadAllText Assets.Global.SaveFilePath
+    let loadOrInitial saveSlot randSeedState =
+        try let saveFilePath =
+                match saveSlot with
+                | Slot1 -> Assets.Global.SaveFilePath1
+                | Slot2 -> Assets.Global.SaveFilePath2
+                | Slot3 -> Assets.Global.SaveFilePath3
+            let fieldStr = File.ReadAllText saveFilePath
             scvalue<Field> fieldStr
-        with _ -> initial Slot1 randSeedState
+        with _ -> initial saveSlot randSeedState
 
 type Field = Field.Field
