@@ -14,6 +14,7 @@ module GameDispatcher =
     type Gui =
         | Splashing
         | Title
+        | Start
         | Credits
 
     type [<StructuralEquality; NoComparison>] Omni =
@@ -51,14 +52,17 @@ module GameDispatcher =
             [Simulants.Field.Screen.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
              Simulants.Battle.Screen.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
              Simulants.Game.UpdateEvent => msg Update
-#if DEV
-             Simulants.Title.Gui.New.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
-#else
-             Simulants.Title.Gui.New.ClickEvent => msg Intro
-#endif
-             Simulants.Title.Gui.Load.ClickEvent =|> fun _ -> msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
+             Simulants.Title.Gui.Start.ClickEvent => msg (Change (Gui Start))
              Simulants.Title.Gui.Credits.ClickEvent => msg (Change (Gui Credits))
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
+#if DEV
+             Simulants.Start.Gui.New.ClickEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))
+#else
+             Simulants.Start.Gui.New.ClickEvent => msg Intro
+#endif
+             Simulants.Start.Gui.Load.ClickEvent =|> fun _ -> msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
+             
+             Simulants.Start.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Intro5.Screen.DeselectEvent => msg (Change (Field (Field.initial (uint64 Gen.random))))]
 
@@ -87,6 +91,7 @@ module GameDispatcher =
                     match gui with
                     | Splashing -> just omni
                     | Title -> withCmd (Show Simulants.Title.Screen) omni
+                    | Start -> withCmd (Show Simulants.Start.Screen) omni
                     | Credits -> withCmd (Show Simulants.Credits.Screen) omni
                 | Field field ->
                     match field.BattleOpt with
