@@ -119,6 +119,20 @@ module GameDispatcher =
              // title
              Content.screenFromGroupFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath
 
+             // start
+             Content.screen Simulants.Start.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) []
+                [Content.group Simulants.Start.Gui.Group.Name []
+                
+                    [Content.button Simulants.Start.Gui.New.Name
+                        [Entity.Position == v2 -96.0f -24.0f;
+                         Entity.Text == "New Game"]
+                     Content.button Simulants.Start.Gui.Load.Name
+                        [Entity.Position == v2 -96.0f -90.0f;
+                         Entity.Text == "Load Game"]
+                     Content.button Simulants.Start.Gui.Back.Name
+                        [Entity.Position == v2 -96.0f -222.0f;
+                         Entity.Text == "Back"]]]
+             
              // credits
              Content.screenFromGroupFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsGroupFilePath
 
