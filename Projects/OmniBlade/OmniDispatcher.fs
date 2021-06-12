@@ -3,6 +3,7 @@
 
 namespace OmniBlade
 open System
+open System.IO
 open Prime
 open Nu
 open Nu.Declarative
@@ -60,7 +61,7 @@ module GameDispatcher =
 #else
              Simulants.Start.Gui.New.ClickEvent => msg Intro
 #endif
-             Simulants.Start.Gui.Load.ClickEvent =|> fun _ -> msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
+             Simulants.Start.Gui.Load.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath) then (Change (Field (Field.loadOrInitial (uint64 Gen.random)))) else Intro)
              
              Simulants.Start.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
@@ -133,7 +134,7 @@ module GameDispatcher =
                          Entity.Text == "New Game"]
                      Content.button Simulants.Start.Gui.Load.Name
                         [Entity.Position == v2 -96.0f -90.0f;
-                         Entity.Text == "Load Game"]
+                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath) then "Load Game" else "New Game"]
                      Content.button Simulants.Start.Gui.Back.Name
                         [Entity.Position == v2 -96.0f -222.0f;
                          Entity.Text == "Back"]]]
