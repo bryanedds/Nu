@@ -96,6 +96,9 @@ and SystemCallbackBoxed<'w> =
     SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
 
 /// A base system type of an ECS.
+/// Systems are a bit different in this ECS; they're primarily storage for components and don't have any behavior
+/// associated with them. Because this ECS is purely event-driven, behavior is encoded in event handlers rather than
+/// systems.
 and 'w System (name : string) =
     let pipedKey = Gen.id
     member this.PipedKey with get () = pipedKey
