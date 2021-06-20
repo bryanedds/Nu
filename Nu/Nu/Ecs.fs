@@ -308,7 +308,7 @@ type EcsExtensions =
     static member RegisterSystem<'s, 'w when 's :> 'w System> (this : 'w Ecs, system : 's) : 's =
         this.RegisterSystemGeneralized system :?> 's
 
-/// An Ecs system with just a single component.
+/// An ECS system with just a single component.
 type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
     let mutable comp = comp
@@ -320,7 +320,7 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c)
             let system = Option.get systemOpt
             &system.Component
 
-/// An Ecs system with components stored by an integer index in an unordered fashion.
+/// An ECS system with components stored by an integer index in an unordered fashion.
 type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
@@ -387,8 +387,8 @@ type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, 
             | Some system -> system.UnregisterUnordered index
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-/// An Ecs system with components correlated by entity id.
-/// Hashing and storing millions of entity ids is slow, so if need to create that many components quickly, consider
+/// An ECS system with components correlated by entity id.
+/// Hashing and storing millions of entity ids is slow, so if you need to create that many components quickly, consider
 /// manually junctioning unordered components instead. The trade-off to using uncorrelated components is that you
 /// have to manually unregister their component refs and you have to allocate and deallocate them consecutively in
 /// batches to ensure maximum throughput when processing the manually-junctioned components.
@@ -611,11 +611,10 @@ type Simplex<'c when 'c : struct> =
 /// Allows an entity to contain multiple of the same component.
 /// However, it uses a dictionary without a small-object optimization, so this functionality won't get the typical
 /// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
-/// anything else (which is good enough in almost all cases where multi-components are used). Just make sure to
-/// interface with the involved systems directly rather than through the Ecs API which indexes them implcitly.
+/// anything else (which is good enough in almost all cases where multiplexing is used).
 type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : struct and 'c :> 'c Component> =
     { mutable Active : bool
-      Simplexes : Dictionary<Guid, 'c Simplex>
+      Simplexes : Dictionary<string, 'c Simplex>
       TypeName : string }
     interface Component<'c ComponentMultiplexed> with
         member this.Active with get () = this.Active and set value = this.Active <- value
@@ -625,77 +624,77 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         member this.Junction _ _ _ _ = this
         member this.Disjunction _ _ _ = ()
         member this.TypeName = getTypeName this
-    member this.RegisterMultiplexed (multiId, comp) =
-        this.Simplexes.Add (multiId, { Simplex = comp })
-    member this.UnregisterMultiplexed multiId =
-        this.Simplexes.Remove multiId
+    member this.RegisterMultiplexed (simplexName, comp) =
+        this.Simplexes.Add (simplexName, { Simplex = comp })
+    member this.UnregisterMultiplexed simplexName =
+        this.Simplexes.Remove simplexName
 
-/// An Ecs system that stores multiple components per entity id.
+/// An ECS system that stores multiple components per entity id.
 type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (buffered, ecs)
 
     new (ecs) = SystemMultiplexed (false, ecs)
 
-    member this.QualifyMultiplexed multiId entityId =
+    member this.QualifyMultiplexed simplexName entityId =
         if this.QualifyCorrelated entityId then
             let comp = this.IndexCorrelated entityId
-            comp.Index.Simplexes.ContainsKey multiId
+            comp.Index.Simplexes.ContainsKey simplexName
         else false
 
-    member this.IndexMultiplexed multiId entityId =
+    member this.IndexMultiplexed simplexName entityId =
         let componentMultiplexed = this.IndexCorrelated entityId
-        componentMultiplexed.Index.Simplexes.[multiId]
+        componentMultiplexed.Index.Simplexes.[simplexName]
 
-    member this.IndexMultiplexedBuffered multiId entityId =
+    member this.IndexMultiplexedBuffered simplexName entityId =
         let componentMultiplexed = this.IndexCorrelated entityId
-        componentMultiplexed.IndexBuffered.Simplexes.[multiId]
+        componentMultiplexed.IndexBuffered.Simplexes.[simplexName]
 
-    member this.RegisterMultiplexed comp multiId entityId ecs =
+    member this.RegisterMultiplexed comp simplexName entityId ecs =
         let _ = this.RegisterCorrelated Unchecked.defaultof<_> entityId ecs
         let componentMultiplexed = this.IndexCorrelated entityId
-        componentMultiplexed.Index.RegisterMultiplexed (multiId, comp)
+        componentMultiplexed.Index.RegisterMultiplexed (simplexName, comp)
         componentMultiplexed
 
-    member this.UnregisterMultiplexed multiId entityId ecs =
+    member this.UnregisterMultiplexed simplexName entityId ecs =
         let componentMultiplexed = this.IndexCorrelated entityId
-        componentMultiplexed.Index.UnregisterMultiplexed multiId |> ignore<bool>
+        componentMultiplexed.Index.UnregisterMultiplexed simplexName |> ignore<bool>
         this.UnregisterCorrelated entityId ecs
 
     type 'w Ecs with
 
-        member this.QualifyMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
+        member this.QualifyMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
-            system.QualifyMultiplexed multiId entityId
+            system.QualifyMultiplexed simplexName entityId
 
-        member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
+        member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
-            let simplex = system.IndexMultiplexed multiId entityId
+            let simplex = system.IndexMultiplexed simplexName entityId
             &simplex.Simplex
 
-        member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
+        member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
-            let simplex = system.IndexMultiplexedBuffered multiId entityId
+            let simplex = system.IndexMultiplexedBuffered simplexName entityId
             simplex.Simplex
 
-        member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> comp multiId entityId =
+        member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> comp simplexName entityId =
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
             | Some system ->
-                let _ = system.RegisterMultiplexed comp multiId entityId
+                let _ = system.RegisterMultiplexed comp simplexName entityId
                 match this.Correlations.TryGetValue entityId with
                 | (true, correlation) -> correlation.Add Unchecked.defaultof<'c>.TypeName
                 | (false, _) -> this.Correlations.Add (entityId, List [Unchecked.defaultof<'c>.TypeName])
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId entityId =
+        member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
             | Some system ->
-                if system.UnregisterMultiplexed multiId entityId this then
+                if system.UnregisterMultiplexed simplexName entityId this then
                     match this.Correlations.TryGetValue entityId with
                     | (true, correlation) -> correlation.Add Unchecked.defaultof<'c>.TypeName
                     | (false, _) -> this.Correlations.Add (entityId, List [Unchecked.defaultof<'c>.TypeName])
@@ -828,14 +827,14 @@ type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
         let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
         correlated.IndexBuffered
 
-    member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> multiId =
+    member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName =
         let system = this.EntityEcs.IndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
-        let multiplexed = system.IndexMultiplexed multiId this.EntityId : 'c Simplex
+        let multiplexed = system.IndexMultiplexed simplexName this.EntityId : 'c Simplex
         &multiplexed.Simplex
 
-    member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> multiId =
+    member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> simplexName =
         let system = this.EntityEcs.IndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
-        let multiplexed = system.IndexMultiplexedBuffered multiId this.EntityId : 'c Simplex
+        let multiplexed = system.IndexMultiplexedBuffered simplexName this.EntityId : 'c Simplex
         multiplexed.Simplex
 
     member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId =
