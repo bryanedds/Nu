@@ -608,7 +608,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 type Simplex<'c when 'c : struct> =
     { mutable Simplex : 'c }
 
-/// Allows an entity to contain multiple of the same component.
+/// Allows an entity to contain zero to many of the same component.
 /// However, it uses a dictionary without a small-object optimization, so this functionality won't get the typical
 /// perf benefits of data-orientation. Really, this functionality is here for flexibility and convenience more than
 /// anything else (which is good enough in almost all cases where multiplexing is used).
@@ -629,7 +629,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
     member this.UnregisterMultiplexed simplexName =
         this.Simplexes.Remove simplexName
 
-/// An ECS system that stores multiple components per entity id.
+/// An ECS system that stores zero to many of the same component per entity id.
 type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (buffered, ecs)
 
