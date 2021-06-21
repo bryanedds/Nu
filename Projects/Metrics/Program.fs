@@ -170,7 +170,7 @@ type MyGameDispatcher () =
         //// define update for out-of-place movers
         //ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
         //    for obj in objs do
-        //        if obj.Active then
+        //        if  obj.Active then
         //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
@@ -187,7 +187,7 @@ type MyGameDispatcher () =
             let positions = moverSystem.IndexJunction<Position>(nameof Position).Array
             for i in 0 .. components.Length - 1 do
                 let comp = &components.[i]
-                if comp.Active then
+                if  comp.Active then
                     let velocity = &velocities.[i]
                     let position = &positions.[i]
                     position.Position.X <- position.Position.X + velocity.Velocity.X
