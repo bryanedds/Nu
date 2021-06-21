@@ -400,8 +400,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     let mutable (correlateds, correlatedsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable (junctionsNamed, junctionsBufferedNamed) = ecs.AllocateJunctions<'c> ()
     let mutable (junctions, junctionsBuffered) = (Array.map snd junctionsNamed, Array.map snd junctionsBufferedNamed)
-    let mutable junctionsMapped = dictPlus HashIdentity.Structural junctionsNamed
-    let mutable junctionsBufferedMapped = dictPlus HashIdentity.Structural junctionsBufferedNamed
+    let mutable (junctionsMapped, junctionsBufferedMapped) = (dictPlus HashIdentity.Structural junctionsNamed, dictPlus HashIdentity.Structural junctionsBufferedNamed)
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
