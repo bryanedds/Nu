@@ -10,10 +10,10 @@ module Program =
 
     (* DISCUSSION - On Nu's authoring story...
 
-    Instead of using a single, general purpose scripting language for authoring tasks in Nu, we use
-    a small set of domain-specific languages. For example, the simulant system uses s-expression-
-    based DSLs, as does the overlay, asset graph, and effect system. The simulation interactions
-    are defined with an Elm-style Model-View-Update form factor directly in F#.
+    Instead of using a single, general purpose scripting language for authoring tasks in Nu, we use a small set of
+    domain-specific languages. For example, the simulant system uses s-expression-based DSLs, as does the overlay,
+    asset graph, and effect system. The simulation interactions are defined with an Elm-style Model-View-Update form
+    factor directly in F#.
 
     What follows is a matrix of engine systems and the authoring language they provide to the user -
 
@@ -36,27 +36,27 @@ module Program =
 
     The advantages and limitations that fall out of this are as such -
 
-    The systems that provide an s-expr DSL have their DSLs interpreted at run-time and, unlike code
-    in F#, allow for hot-reloading for optimal authoring experiences. For these systems, however,
-    no static checking is in place, allowing for trivial errors.
+    The systems that provide an s-expr DSL have their DSLs interpreted at run-time and, unlike code in F#, allow for
+    hot-reloading for optimal authoring experiences. For these systems, however, no static checking is in place,
+    allowing for trivial errors.
 
-    For the system that isn't interpreted, a strong type system is in place to make sure complex
-    data-flow dependencies are made explicit and checked with good error messages. For this system,
-    however, no hot-reloading is possible, negatively affecting the authoring experience.
+    For the systems that aren't interpreted, a strong type system is in place to make sure complex data-flow
+    dependencies are made explicit and checked with good error messages. For this system, however, no hot-reloading
+    is possible, negatively affecting the authoring experience.
 
     The trade-offs for each given domain does seem to be approxiately appropriate. *)
 
-    (* WISDOM - Dealing with different device resolutions - Instead of rendering each component
-    scaled to a back-buffer of a varying size, render each component unscaled to an off-screen
-    buffer of a static size and then blit that with scaling to the back-buffer. NOTE: this only
-    applies to 2D ~ will not apply to 3D once implemented in Nu (for obvious reasons). *)
+    (* WISDOM - Dealing with different device resolutions - Instead of rendering each component scaled to a back-buffer
+    of a varying size, render each component unscaled to an off-screen buffer of a static size and then blit that with
+    scaling to the back-buffer. NOTE: this only applies to 2D ~ will not apply to 3D once implemented in Nu (for
+    obvious reasons). *)
 
-    (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you
-    need to move the app from 60fps to 30fps. *)
+    (* WISDOM: Keep all animation frame numbers even. That way, you can simply halve them if you need to move the app
+    from 60fps to 30fps. *)
 
-    (* WISDOM: You get only slightly lower performance by using reference types in the ECS when all of the
-    pre-allocated references are allocated consecutively. However, it's still much better to use value types instead
-    because you are able to end up with unmanaged types that will not need to be scanned in a GC. *)
+    (* WISDOM: You get only slightly lower performance by using reference types in the ECS when all of the pre-
+    allocated references are allocated consecutively. However, it's still much better to use value types instead
+    because you are able to end up with unmanaged types that will not need to be scanned by the GC. *)
 
     (* TODO: investigate Gaia extensibility mechanism. *)
 
