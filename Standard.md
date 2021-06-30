@@ -19,7 +19,7 @@ Correctness, Consistency, Simplicity
 
 7) Avoid trading away type inference unless you have a specific need.
 
-8) Avoid creating object and struct types, as well as instance members and properties, unless you have a specific need (such as for creating a plug-in, a DSL, for interop, for efficiency, or etc).
+8) Avoid creating object and struct types, as well as instance members, and properties for all but the most trivial getters, unless you have a specific need (such as for creating a plug-in, a DSL, for interop, for efficiency, or etc).
 
 9) Try to preserve debuggability of code by -
 
@@ -28,7 +28,7 @@ Correctness, Consistency, Simplicity
 
 10) Suffix option bindings, choice bindings, either bindings, and bindings to potentially null values with `Opt`.
 
-11) Consider prefixing functions that return an option, choice, either, or potential null with `try`.
+11) Prefix functions that return an option, choice, either, or potential null with `try`.
 
 12) Try to use unique names for public fields and discriminated union cases to avoid ambiguating type inference. For example, `Id` is not a good public field name, but `ProductId` might be.
 
@@ -43,7 +43,7 @@ Correctness, Consistency, Simplicity
 -   using `UpperCamelCasing` for `Namespaces`, `Modules`, `Types`, `Fields`, `Constants`, `Properties`, and `InstanceMembers`.
 -   using `lowerCamelCasing` for `variables`, `functions`, `staticMembers`, `parameters`, and `'typeParameters`.
 
-4) Use shadowing on different bindings with the same conceptual identity rather than `'` suffixes (this helps correctness significantly). Conversely, avoid shadowing on different binding with different conceptual identities.
+4) Use shadowing on different bindings with the same conceptual identity rather than `'` suffixes (this helps correctness significantly). Conversely, avoid shadowing on different bindings with different conceptual identities.
 
 5) Place `open` statements at the top of each file, right below the current namespace declaration.
 
