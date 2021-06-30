@@ -25,27 +25,6 @@ open TiledSharp
 open Prime
 open Nu
 
-/// Efficiently emulates root type casting of a Map.
-/// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
-/// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
-type [<NoEquality; NoComparison>] MapGeneralized =
-    { ToKeys : List<IComparable>
-      ContainsKey : IComparable -> bool
-      GetValue : IComparable -> obj }
-
-    /// Make a generalized map.
-    static member make (map : Map<'k, 'v>) =
-        { ToKeys =
-            let list = List ()
-            for entry in map do list.Add (entry.Key :> IComparable)
-            list
-          ContainsKey = fun (key : IComparable) ->
-            Map.containsKey (key :?> 'k) map
-          GetValue = fun (key : IComparable) ->
-            match map.TryGetValue (key :?> 'k) with
-            | (true, value) -> value :> obj
-            | (false, _) -> failwithumf () }
-
 /// Describes a Tiled tile.
 type [<StructuralEquality; NoComparison>] TileDescriptor =
     { Tile : TmxLayerTile
@@ -165,6 +144,27 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
           TickRate = 1L
           SdlConfig = SdlConfig.defaultConfig
           NuConfig = NuConfig.defaultConfig }
+
+/// Efficiently emulates root type casting of a Map.
+/// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
+/// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
+type [<NoEquality; NoComparison>] MapGeneralized =
+    { ToKeys : List<IComparable>
+      ContainsKey : IComparable -> bool
+      GetValue : IComparable -> obj }
+
+    /// Make a generalized map.
+    static member make (map : Map<'k, 'v>) =
+        { ToKeys =
+            let list = List ()
+            for entry in map do list.Add (entry.Key :> IComparable)
+            list
+          ContainsKey = fun (key : IComparable) ->
+            Map.containsKey (key :?> 'k) map
+          GetValue = fun (key : IComparable) ->
+            match map.TryGetValue (key :?> 'k) with
+            | (true, value) -> value :> obj
+            | (false, _) -> failwithumf () }
 
 /// Extensions for EventTrace.
 module EventTrace =
@@ -961,8 +961,6 @@ module WorldTypes =
 
     /// The type around which the whole game engine is based! Used in combination with dispatchers to implement things
     /// like buttons, characters, blocks, and things of that sort.
-    /// OPTIMIZATION: Includes pre-constructed entity update event addresses to avoid reconstructing new ones for each
-    /// entity every frame.
     and Entity (entityAddress) =
 
         // check that address is of correct length for an entity
@@ -1266,7 +1264,7 @@ module WorldTypes =
             ""
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
-    /// specific values.
+    /// specific values and configurations.
     and NuPlugin () =
 
         /// The game dispatcher that Nu will utilize when running outside the editor.
