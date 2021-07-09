@@ -464,9 +464,9 @@ module WorldModule2 =
 
         /// Clear all messages in all subsystems.
         static member clearMessages world =
-             let world = World.updatePhysicsEngine PhysicsEngine.clearMessages world
-             let world = World.updateRenderer (fun renderer -> Renderer.clearMessages renderer; renderer) world
-             let world = World.updateAudioPlayer (fun audioPlayer -> AudioPlayer.clearMessages audioPlayer; audioPlayer) world
+             let world = World.updatePhysicsEngine (fun physicsEngine -> physicsEngine.ClearMessages ()) world
+             let world = World.updateRenderer (fun renderer -> renderer.ClearMessages (); renderer) world
+             let world = World.updateAudioPlayer (fun audioPlayer -> audioPlayer.ClearMessages (); audioPlayer) world
              world
 
         /// Shelve the a world for background storage.
@@ -479,7 +479,7 @@ module WorldModule2 =
         static member unshelve world =
 
             // clear existing physics messages
-            let world = World.updatePhysicsEngine PhysicsEngine.clearMessages world
+            let world = World.updatePhysicsEngine (fun physicsEngine -> physicsEngine.ClearMessages ()) world
 
             // rebuild physics state
             let world = World.enqueuePhysicsMessage RebuildPhysicsHackMessage world
@@ -835,21 +835,21 @@ module WorldModule2 =
             let physicsEngine = World.getPhysicsEngine world
             let (physicsMessages, physicsEngine) = physicsEngine.PopMessages ()
             let world = World.setPhysicsEngine physicsEngine world
-            let integrationMessages = PhysicsEngine.integrate (World.getTickRate world) physicsMessages physicsEngine
+            let integrationMessages = physicsEngine.Integrate (World.getTickRate world) physicsMessages
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 
-        static member private render renderMessages renderContext renderer eyeCenter eyeSize =
+        static member private render renderMessages renderContext (renderer : Renderer) eyeCenter eyeSize =
             match Constants.Render.ScreenClearing with
             | NoClear -> ()
             | ColorClear (r, g, b) ->
                 SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
                 SDL.SDL_RenderClear renderContext |> ignore
-            Renderer.render eyeCenter eyeSize renderMessages renderer
+            renderer.Render eyeCenter eyeSize renderMessages
             SDL.SDL_RenderPresent renderContext
 
-        static member private play audioMessages audioPlayer =
-            AudioPlayer.play audioMessages audioPlayer
+        static member private play audioMessages (audioPlayer : AudioPlayer) =
+            audioPlayer.Play audioMessages
 
         static member private cleanUp world =
             let world = World.unregisterGame world

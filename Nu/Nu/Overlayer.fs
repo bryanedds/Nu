@@ -35,11 +35,14 @@ type Overlay =
     static member makeIntrinsicOverlays requiresFacetNames sourceTypes =
 
         // get the unique, decomposed source types
-        let sourceTypeHashSet = HashSet HashIdentity.Structural
-        for sourceType in sourceTypes do
-            for sourceTypeDecomposed in sourceType :: Reflection.getBaseTypesExceptObject sourceType do
-                sourceTypeHashSet.Add sourceTypeDecomposed |> ignore
-        let sourceTypes = List.ofSeq sourceTypeHashSet
+        let decomposedTypes =
+            seq {
+                for sourceType in sourceTypes do
+                    yield sourceType
+                    for sourceTypeDecomposed in Reflection.getBaseTypesExceptObject sourceType do
+                        yield sourceTypeDecomposed } |>
+            HashSet |>
+            Seq.toList
 
         // get the descriptors needed to construct the overlays
         let overlayDescriptors =
@@ -49,7 +52,7 @@ type Overlay =
                     let definitions = Reflection.getPropertyDefinitionsNoInherit sourceType
                     let requiresFacetNames = requiresFacetNames sourceType
                     (sourceType.Name, includeNames, definitions, requiresFacetNames))
-                sourceTypes
+                decomposedTypes
 
         // create the intrinsic overlays with the above descriptors
         let overlays =

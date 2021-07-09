@@ -891,7 +891,7 @@ type [<ReferenceEquality; NoComparison>] AetherPhysicsEngine =
             integrationMessages
 
 [<RequireQualifiedAccess>]
-module PhysicsEngine =
+module Physics =
 
     /// Convert a category mask to a value that represents collision categories.
     /// Examples -
@@ -918,43 +918,3 @@ module PhysicsEngine =
         | BodyShapes bodyShapes ->
             let bodyShapes = List.map (localizeBodyShape extent) bodyShapes
             BodyShapes bodyShapes
-
-    /// Check that the physics engine contain the body with the given physics id.
-    let bodyExists physicsId (physicsEngine : PhysicsEngine) =
-        physicsEngine.BodyExists physicsId
-
-    /// Get the contact normals of the body with the given physics id.
-    let getBodyContactNormals physicsId (physicsEngine : PhysicsEngine) =
-        physicsEngine.GetBodyContactNormals physicsId
-
-    /// Get the linear velocity of the body with the given physics id.
-    let getBodyLinearVelocity physicsId (physicsEngine : PhysicsEngine) =
-        physicsEngine.GetBodyLinearVelocity physicsId
-
-    /// Get the contact normals where the body with the given physics id is touching the ground.
-    let getBodyToGroundContactNormals physicsId (physicsEngine : PhysicsEngine) =
-        physicsEngine.GetBodyToGroundContactNormals physicsId
-
-    /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
-    let getBodyToGroundContactNormalOpt physicsId (physicsEngine : PhysicsEngine) =
-        physicsEngine.GetBodyToGroundContactNormalOpt physicsId
-
-    /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
-    let getBodyToGroundContactTangentOpt physicsId (physicsEngine : PhysicsEngine) =
-        physicsEngine.GetBodyToGroundContactTangentOpt physicsId
-
-    /// Check that the body with the given physics id is on the ground.
-    let isBodyOnGround physicsId (physicsEngine : PhysicsEngine) =
-        physicsEngine.IsBodyOnGround physicsId
-
-    /// Clear all of the physics messages that have been enqueued.
-    let clearMessages (physicsEngine : PhysicsEngine) =
-        physicsEngine.ClearMessages ()
-
-    /// Enqueue a message from an external source.
-    let enqueueMessage physicsMessage (physicsEngine : PhysicsEngine) =
-        physicsEngine.EnqueueMessage physicsMessage
-
-    /// Integrate the physics system one frame.
-    let integrate tickRate physicsMessages (physicsEngine : PhysicsEngine) =
-        physicsEngine.Integrate tickRate physicsMessages

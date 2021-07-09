@@ -741,26 +741,3 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
             renderer :> Renderer
-
-[<RequireQualifiedAccess>]
-module Renderer =
-
-    /// Clear all of the render messages that have been enqueued.
-    let clearMessages (renderer : Renderer) =
-        renderer.ClearMessages ()
-
-    /// Enqueue a message from an external source.
-    let enqueueMessage message (renderer : Renderer) =
-        renderer.EnqueueMessage message
-
-    /// Enqueue a layered message from an external source, bypassing enqueueMessage for speed.
-    let enqueueLayeredMessage message (renderer : Renderer) =
-        renderer.EnqueueLayeredMessage message
-
-    /// Render a frame of the game.
-    let render eyeCenter eyeSize renderMessages (renderer : Renderer) =
-        renderer.Render eyeCenter eyeSize renderMessages
-
-    /// Handle render clean up by freeing all loaded render assets.
-    let cleanUp (renderer : Renderer) =
-        renderer.CleanUp ()
