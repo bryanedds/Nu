@@ -278,18 +278,3 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         member audioPlayer.Play audioMessages =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
             SdlAudioPlayer.tryUpdateCurrentSong audioPlayer
-
-[<RequireQualifiedAccess>]
-module AudioPlayer =
-
-    /// Clear all of the audio messages that have been enqueued.
-    let clearMessages (audioPlayer : AudioPlayer) =
-        audioPlayer.ClearMessages ()
-
-    /// Enqueue a message from an external source.
-    let enqueueMessage message (audioPlayer : AudioPlayer) =
-        audioPlayer.EnqueueMessage message
-
-    /// 'Play' the audio system. Must be called once per frame.
-    let play audioMessages (audioPlayer : AudioPlayer) =
-        audioPlayer.Play audioMessages

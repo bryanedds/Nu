@@ -35,7 +35,8 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
 /// OPTIMIZATION: Inlined everything for speed.
 /// TODO: test threaded / buffered ECS functionality.
 and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c :> 'c Component> =
-    { /// The associated component's index.
+    {
+      /// The associated component's index.
       ComponentIndex : int
       /// The associated component array reference.
       ComponentAref : 'c ArrayRef
