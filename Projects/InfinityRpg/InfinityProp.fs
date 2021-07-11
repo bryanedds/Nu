@@ -6,10 +6,10 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
-type PropType =
+type [<StructuralEquality; NoComparison>] PropType =
     | LongGrass
 
-type PropAnimationType =
+type [<StructuralEquality; NoComparison>] PropAnimationType =
     | PropAnimationStanding
     | PropAnimationDestroyed
 

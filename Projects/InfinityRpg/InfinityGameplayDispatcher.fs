@@ -22,7 +22,7 @@ module GameplayDispatcher =
         | BeginTurns
         | MakeEnemyAttack
         | MakeEnemiesWalk
-        | MakeEnemyMoves
+        | MakeEnemiesMove
         | TryTransitionRound
         | TryMakePlayerMove of PlayerInput
         | SkipPlayerTurn
@@ -67,7 +67,7 @@ module GameplayDispatcher =
                         | TurnFinishing ->
                             match characterTurn.TurnType with
                             | AttackTurn _ ->
-                                let gameplay = Gameplay.finishMove index gameplay
+                                let gameplay = Gameplay.finishCharacterAction index gameplay
                                 match characterTurn.TurnReactionOpt with
                                 | Some (CharacterReaction characterIndex) ->
                                     match Gameboard.tryGetCharacter characterIndex gameplay.Gameboard with
@@ -81,7 +81,7 @@ module GameplayDispatcher =
                                 | Some (PickupReaction _) -> gameplay
                                 | Some (PropReaction coordinates) -> Gameplay.tryCutGrass coordinates gameplay
                                 | None -> gameplay
-                            | WalkTurn _ -> Gameplay.finishMove index gameplay
+                            | WalkTurn _ -> Gameplay.finishCharacterAction index gameplay
                         | _ -> failwith "Non-finishing turns should be filtered out by this point.")
                         gameplay
                         indices
@@ -123,11 +123,11 @@ module GameplayDispatcher =
                 withCmd (DisplayTurnEffects characterIndices) gameplay
 
             | MakeEnemyAttack ->
-                let index = gameplay.Round.AttackingEnemyGroup.Head
+                let index = gameplay.RoundState.AttackingEnemyGroup.Head
                 let gameplay =
                     match Gameboard.tryGetCharacter PlayerIndex gameplay.Gameboard with
                     | Some character when character.IsAlive ->
-                        Gameplay.tryAddMove gameplay.Time index (Attack (CharacterReaction PlayerIndex)) gameplay
+                        Gameplay.tryAddCharacterAction gameplay.Time index (Attack (CharacterReaction PlayerIndex)) gameplay
                     | Some _ | None -> gameplay
                 let gameplay = Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
@@ -140,20 +140,20 @@ module GameplayDispatcher =
                             let openDirections = Gameboard.getOpenDirections coordinates gameplay.Gameboard
                             let direction = Gen.random1 4 |> Direction.ofInt
                             if Set.contains direction openDirections
-                            then Gameplay.tryAddMove gameplay.Time index (Step direction) gameplay
+                            then Gameplay.tryAddCharacterAction gameplay.Time index (Step direction) gameplay
                             else gameplay
                         | None -> gameplay)
                         gameplay
-                        gameplay.Round.WalkingEnemyGroup
+                        gameplay.RoundState.WalkingEnemyGroup
                 let gameplay = Gameplay.removeWalkingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
 
-            | MakeEnemyMoves ->
+            | MakeEnemiesMove ->
                 let enemyIndices = Gameboard.getEnemyIndices gameplay.Gameboard
                 let adjacentEnemies = List.filter (fun x -> Gameplay.areCharactersAdjacent x PlayerIndex gameplay) enemyIndices
                 let gameplay = Gameplay.addAttackingEnemyGroup adjacentEnemies gameplay
                 let gameplay = Gameplay.createWalkingEnemyGroup gameplay
-                match Round.tryGetPlayerMove gameplay.Round with
+                match RoundState.tryGetPlayerAction gameplay.RoundState with
                 | Some move ->
                     match move with
                     | Step _
@@ -163,7 +163,7 @@ module GameplayDispatcher =
 
             | TryTransitionRound ->
                 let gameplay =
-                    match gameplay.Round.PlayerContinuity with
+                    match gameplay.RoundState.PlayerNavigation with
                     | AutomaticNavigation path ->
                         match path with
                         | _ :: [] -> gameplay
@@ -171,14 +171,14 @@ module GameplayDispatcher =
                             let targetCoordinates = (List.head navigationPath).Coordinates
                             let unoccupiedSpaces = Gameboard.getUnoccupiedSpaces gameplay.Gameboard
                             if Set.contains targetCoordinates unoccupiedSpaces
-                            then Gameplay.tryAddMove gameplay.Time PlayerIndex (Travel navigationPath) gameplay
+                            then Gameplay.tryAddCharacterAction gameplay.Time PlayerIndex (Travel navigationPath) gameplay
                             else gameplay
                         | [] -> failwithumf ()
                     | _ -> gameplay
-                if Map.containsKey PlayerIndex gameplay.Round.CharacterMoves then
-                    withMsg MakeEnemyMoves gameplay
+                if Map.containsKey PlayerIndex gameplay.RoundState.CharacterActions then
+                    withMsg MakeEnemiesMove gameplay
                 else
-                    let gameplay = Gameplay.updateRound (Round.updatePlayerContinuity (constant NoContinuity)) gameplay
+                    let gameplay = Gameplay.updateRoundState (RoundState.updatePlayerNavigation (constant Idling)) gameplay
                     withCmd ListenKeyboard gameplay
             
             | TryMakePlayerMove playerInput ->
@@ -196,13 +196,13 @@ module GameplayDispatcher =
                             if Math.areCoordinatesAdjacent targetCoordinates currentCoordinates then
                                 if Set.contains targetCoordinates gameplay.Gameboard.Spaces then
                                     match Map.tryFind targetCoordinates gameplay.Gameboard.Characters with
-                                    | Some character -> Gameplay.tryAddMove time PlayerIndex (Attack (CharacterReaction character.CharacterIndex)) gameplay
+                                    | Some character -> Gameplay.tryAddCharacterAction time PlayerIndex (Attack (CharacterReaction character.CharacterIndex)) gameplay
                                     | None ->
                                         match Map.tryFind targetCoordinates gameplay.Gameboard.Props with
-                                        | Some _ -> Gameplay.tryAddMove time PlayerIndex (Attack (PropReaction targetCoordinates)) gameplay
+                                        | Some _ -> Gameplay.tryAddCharacterAction time PlayerIndex (Attack (PropReaction targetCoordinates)) gameplay
                                         | None ->
                                             let direction = Math.directionToTarget currentCoordinates targetCoordinates
-                                            Gameplay.tryAddMove time PlayerIndex (Step direction) gameplay
+                                            Gameplay.tryAddCharacterAction time PlayerIndex (Step direction) gameplay
                                 else gameplay
                             else
                                 let navigationPathOpt =
@@ -213,18 +213,18 @@ module GameplayDispatcher =
                                 match navigationPathOpt with
                                 | Some navigationPath ->
                                     match navigationPath with
-                                    | _ :: _ -> Gameplay.tryAddMove time PlayerIndex (Travel navigationPath) gameplay
+                                    | _ :: _ -> Gameplay.tryAddCharacterAction time PlayerIndex (Travel navigationPath) gameplay
                                     | [] -> gameplay
                                 | None -> gameplay
                         | None -> gameplay
-                    if Map.containsKey PlayerIndex gameplay.Round.CharacterMoves
-                    then withMsg MakeEnemyMoves gameplay
+                    if Map.containsKey PlayerIndex gameplay.RoundState.CharacterActions
+                    then withMsg MakeEnemiesMove gameplay
                     else just gameplay
                 | None -> just gameplay
 
             | SkipPlayerTurn ->
-                let gameplay = Gameplay.updateRound (Round.updatePlayerContinuity (constant Waiting)) gameplay
-                withMsg MakeEnemyMoves gameplay
+                let gameplay = Gameplay.updateRoundState (RoundState.updatePlayerNavigation (constant Waiting)) gameplay
+                withMsg MakeEnemiesMove gameplay
             
             | HaltPlayer ->
                 let gameplay = Gameplay.tryInterruptPlayer gameplay
@@ -266,8 +266,8 @@ module GameplayDispatcher =
                     if Set.contains targetCoordinates gameplay.Gameboard.Spaces then
                         match Gameboard.tryGetCharacterAtCoordinates targetCoordinates gameplay.Gameboard with
                         | Some character when character.IsEnemy ->
-                            let gameplay = Gameplay.tryAddMove gameplay.Time PlayerIndex (Shoot (CharacterReaction character.CharacterIndex)) gameplay
-                            withMsg MakeEnemyMoves gameplay
+                            let gameplay = Gameplay.tryAddCharacterAction gameplay.Time PlayerIndex (Shoot (CharacterReaction character.CharacterIndex)) gameplay
+                            withMsg MakeEnemiesMove gameplay
                         | Some _ | None -> just gameplay
                     else just gameplay 
                 | _ -> just gameplay
@@ -290,12 +290,12 @@ module GameplayDispatcher =
 
             | Update ->
                 let gameplay = Gameplay.advanceTime gameplay
-                match Round.getRoundState gameplay.Round with
-                | RunningCharacterMoves -> withMsg TickTurns gameplay
-                | MakingEnemyAttack -> withMsg MakeEnemyAttack gameplay
-                | MakingEnemiesWalk -> withMsg MakeEnemiesWalk gameplay
-                | FinishingRound -> withMsg TryTransitionRound gameplay
-                | NoRound -> withCmd ListenKeyboard gameplay
+                match RoundState.getRoundProgress gameplay.RoundState with
+                | CharactersActing -> withMsg TickTurns gameplay
+                | EnemiesAttacking -> withMsg MakeEnemyAttack gameplay
+                | EnemiesWalking -> withMsg MakeEnemiesWalk gameplay
+                | RoundFinishing -> withMsg TryTransitionRound gameplay
+                | RoundFinished -> withCmd ListenKeyboard gameplay
 
             | Nil ->
                 just gameplay
@@ -339,7 +339,7 @@ module GameplayDispatcher =
                 withMsg TickTurns world
             
             | HandlePlayerInput playerInput ->
-                if Round.notInProgress gameplay.Round then
+                if not (RoundState.inProgress gameplay.RoundState) then
                     match gameplay.InputMode with
                     | NormalInputMode ->
                         let msg =
@@ -424,14 +424,14 @@ module GameplayDispatcher =
                  Content.button Gen.name
                     [Entity.Position == v2 184.0f -144.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Halt"
-                     Entity.Enabled <== gameplay --> fun gameplay -> gameplay.Round.IsPlayerTraveling
+                     Entity.Enabled <== gameplay --> fun gameplay -> gameplay.RoundState.IsPlayerTraveling
                      Entity.ClickEvent ==> msg HaltPlayer]
 
                  // save button
                  Content.button Gen.name
                     [Entity.Position == v2 184.0f -200.0f; Entity.Size == v2 288.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "Save Game"
-                     Entity.Enabled <== gameplay --> fun gameplay -> not (Round.inProgress gameplay.Round) && gameplay.InputMode = NormalInputMode
+                     Entity.Enabled <== gameplay --> fun gameplay -> not (RoundState.inProgress gameplay.RoundState) && gameplay.InputMode = NormalInputMode
                      Entity.ClickEvent ==> cmd Save]
 
                  // HP
@@ -476,7 +476,7 @@ module GameplayDispatcher =
                  Content.button Gen.name
                     [Entity.Position == v2 -387.0f -177.0f; Entity.Size == v2 48.0f 48.0f; Entity.Elevation == 10.0f
                      Entity.Text == "W"
-                     Entity.Enabled <== gameplay --> fun gameplay -> if Round.inProgress gameplay.Round then false else true
+                     Entity.Enabled <== gameplay --> fun gameplay -> if RoundState.inProgress gameplay.RoundState then false else true
                      Entity.ClickEvent ==> cmd (HandlePlayerInput TurnSkipInput)]
 
                  // item bar

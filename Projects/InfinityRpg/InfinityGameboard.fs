@@ -1,9 +1,7 @@
 namespace InfinityRpg
 open System
-open System.Numerics
 open Prime
 open Nu
-open Nu.Declarative
 open InfinityRpg
 
 type [<StructuralEquality; NoComparison>] AttackType =
@@ -94,8 +92,8 @@ type [<ReferenceEquality; NoComparison>] Turn =
 // TODO: turn this into an abstract data type.
 type [<ReferenceEquality; NoComparison>] Gameboard =
     { Spaces : Vector2i Set
-      Props : Map<Vector2i, PropType>
       Pickups : Map<Vector2i, PickupType>
+      Props : Map<Vector2i, PropType>
       Characters : Map<Vector2i, Character>
       CharacterTurns : Turn list }
 
@@ -105,11 +103,11 @@ type [<ReferenceEquality; NoComparison>] Gameboard =
     static member updateSpaces updater gameboard =
         { gameboard with Spaces = updater gameboard.Spaces }
 
-    static member updatePropSpaces updater gameboard =
-        { gameboard with Props = updater gameboard.Props }
-
     static member updatePickupSpaces updater gameboard =
         { gameboard with Pickups = updater gameboard.Pickups }
+
+    static member updatePropSpaces updater gameboard =
+        { gameboard with Props = updater gameboard.Props }
     
     static member updateCharacterSpaces updater gameboard =
         { gameboard with Characters = updater gameboard.Characters }
@@ -328,15 +326,15 @@ type [<ReferenceEquality; NoComparison>] Gameboard =
         Map.ofSeq
 
     static member addCharacterTurn turn gameboard =
-        Gameboard.updateCharacterTurns (fun x -> turn :: x) gameboard
+        Gameboard.updateCharacterTurns (List.cons turn) gameboard
 
     static member removeCharacterTurn index gameboard =
-        Gameboard.updateCharacterTurns (fun turns -> List.filter (fun x -> x.CharacterIndex <> index) turns) gameboard
+        Gameboard.updateCharacterTurns (List.filter (fun turn -> turn.CharacterIndex <> index)) gameboard
 
     static member empty =
         { Spaces = Set.empty
-          Props = Map.empty
           Pickups = Map.empty
+          Props = Map.empty
           Characters = Map.empty
           CharacterTurns = [] }
 
