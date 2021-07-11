@@ -3,8 +3,8 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.Reflection
+open System.Threading
 open SDL2
 open Prime
 open Nu
@@ -96,7 +96,7 @@ module Nu =
 
             // process loading assemblies
             AppDomain.CurrentDomain.AssemblyLoad.Add (fun args ->
-                Reflection.AssembliesLoaded.Add (args.LoadedAssembly.FullName, args.LoadedAssembly)
+                Reflection.AssembliesLoaded.Assign (args.LoadedAssembly.FullName, args.LoadedAssembly)
                 loadEntityGetters2 args.LoadedAssembly
                 loadEntitySetters2 args.LoadedAssembly)
             AppDomain.CurrentDomain.add_AssemblyResolve (ResolveEventHandler (fun _ args ->
@@ -104,13 +104,14 @@ module Nu =
 
             // process existing assemblies
             for assembly in AppDomain.CurrentDomain.GetAssemblies () do
-                Reflection.AssembliesLoaded.Add (assembly.FullName, assembly)
-                if assembly.ManifestModule.Name <> "mscorlib.dll" then
+                Reflection.AssembliesLoaded.Assign (assembly.FullName, assembly)
+                if  assembly.ManifestModule.Name <> "mscorlib.dll" &&
+                    not (assembly.ManifestModule.Name.StartsWith "xunit") then
                     loadEntityGetters2 assembly
                     loadEntitySetters2 assembly
 
             // ensure the current culture is invariate
-            Threading.Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
+            Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
 
             // init logging
             Log.init (Some "Log.txt")
