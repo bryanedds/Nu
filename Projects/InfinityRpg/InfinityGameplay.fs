@@ -38,10 +38,10 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       MetaMap : MetaMap
       Field : Field
       Gameboard : Gameboard
+      ActionsIssued : Map<CharacterIndex, Action>
       WalkingEnemies : CharacterIndex list
       AttackingEnemies : CharacterIndex list
-      PlayerNavigation : Navigation
-      ActionsIssued : Map<CharacterIndex, Action> }
+      PlayerNavigation : Navigation }
 
     (* Properties *)
 
@@ -76,6 +76,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member updateInventory updater gameplay =
         { gameplay with Inventory = updater gameplay.Inventory }
+    
+    static member updateActionsIssued updater gameplay =
+        { gameplay with ActionsIssued = updater gameplay.ActionsIssued }
 
     static member updatePlayerNavigation updater gameplay =
         { gameplay with PlayerNavigation = updater gameplay.PlayerNavigation }
@@ -85,9 +88,6 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member updateAttackingEnemies updater gameplay =
         { gameplay with AttackingEnemies = updater gameplay.AttackingEnemies }
-    
-    static member updateActionsIssued updater gameplay =
-        { gameplay with ActionsIssued = updater gameplay.ActionsIssued }
     
     static member tryUpdateCharacterTurn index updater gameplay =
         Gameplay.updateGameboard (Gameboard.tryUpdateCharacterTurn index updater) gameplay
@@ -151,7 +151,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let gameplay = Gameplay.updateGameboard (Gameboard.removeCharacterTurn index) gameplay
         Gameplay.updateActionsIssued (Map.remove index) gameplay
 
-    static member tryIssueCharacterAction time index action gameplay =
+    static member tryIssueAction time index action gameplay =
         match Gameboard.tryGetCharacter index gameplay.Gameboard with
         | Some character when character.IsAlive ->
             let gameplay = Gameplay.issueAction index action gameplay
@@ -353,7 +353,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
           MetaMap = MetaMap.initial
           Field = field
           Gameboard = Gameboard.make field.FieldMap
+          ActionsIssued = Map.empty
           WalkingEnemies = []
           AttackingEnemies = []
-          PlayerNavigation = Idling
-          ActionsIssued = Map.empty }
+          PlayerNavigation = Idling }
