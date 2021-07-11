@@ -89,7 +89,7 @@ type [<ReferenceEquality; NoComparison>] Turn =
           Direction = direction
           StartTime = time }
 
-// TODO: turn this into an abstract data type.
+/// TODO: turn this into an abstract data type.
 type [<ReferenceEquality; NoComparison>] Gameboard =
     { Spaces : Vector2i Set
       Pickups : Map<Vector2i, PickupType>
