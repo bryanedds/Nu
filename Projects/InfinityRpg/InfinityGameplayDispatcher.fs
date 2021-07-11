@@ -68,9 +68,9 @@ module GameplayDispatcher =
                             match characterTurn.TurnType with
                             | AttackTurn _ ->
                                 let gameplay = Gameplay.finishMove index gameplay
-                                match characterTurn.ReactorOpt with
-                                | Some (ReactingCharacter reactorIndex) ->
-                                    match Gameboard.tryGetCharacter reactorIndex gameplay.Gameboard with
+                                match characterTurn.TurnReactionOpt with
+                                | Some (CharacterReaction characterIndex) ->
+                                    match Gameboard.tryGetCharacter characterIndex gameplay.Gameboard with
                                     | Some character ->
                                         if character.HitPoints <= 0 then
                                             match character.CharacterIndex with
@@ -78,8 +78,8 @@ module GameplayDispatcher =
                                             | EnemyIndex _ -> Gameplay.tryKillCharacter character.CharacterIndex gameplay
                                         else gameplay
                                     | None -> gameplay
-                                | Some (ReactingPickup _) -> gameplay
-                                | Some (ReactingProp coordinates) -> Gameplay.tryCutGrass coordinates gameplay
+                                | Some (PickupReaction _) -> gameplay
+                                | Some (PropReaction coordinates) -> Gameplay.tryCutGrass coordinates gameplay
                                 | None -> gameplay
                             | WalkTurn _ -> Gameplay.finishMove index gameplay
                         | _ -> failwith "Non-finishing turns should be filtered out by this point.")
@@ -127,7 +127,7 @@ module GameplayDispatcher =
                 let gameplay =
                     match Gameboard.tryGetCharacter PlayerIndex gameplay.Gameboard with
                     | Some character when character.IsAlive ->
-                        Gameplay.tryAddMove gameplay.Time index (Attack (ReactingCharacter PlayerIndex)) gameplay
+                        Gameplay.tryAddMove gameplay.Time index (Attack (CharacterReaction PlayerIndex)) gameplay
                     | Some _ | None -> gameplay
                 let gameplay = Gameplay.removeHeadFromAttackingEnemyGroup gameplay
                 withMsg BeginTurns gameplay
@@ -196,10 +196,10 @@ module GameplayDispatcher =
                             if Math.areCoordinatesAdjacent targetCoordinates currentCoordinates then
                                 if Set.contains targetCoordinates gameplay.Gameboard.Spaces then
                                     match Map.tryFind targetCoordinates gameplay.Gameboard.Characters with
-                                    | Some character -> Gameplay.tryAddMove time PlayerIndex (Attack (ReactingCharacter character.CharacterIndex)) gameplay
+                                    | Some character -> Gameplay.tryAddMove time PlayerIndex (Attack (CharacterReaction character.CharacterIndex)) gameplay
                                     | None ->
                                         match Map.tryFind targetCoordinates gameplay.Gameboard.Props with
-                                        | Some _ -> Gameplay.tryAddMove time PlayerIndex (Attack (ReactingProp targetCoordinates)) gameplay
+                                        | Some _ -> Gameplay.tryAddMove time PlayerIndex (Attack (PropReaction targetCoordinates)) gameplay
                                         | None ->
                                             let direction = Math.directionToTarget currentCoordinates targetCoordinates
                                             Gameplay.tryAddMove time PlayerIndex (Step direction) gameplay
@@ -266,7 +266,7 @@ module GameplayDispatcher =
                     if Set.contains targetCoordinates gameplay.Gameboard.Spaces then
                         match Gameboard.tryGetCharacterAtCoordinates targetCoordinates gameplay.Gameboard with
                         | Some character when character.IsEnemy ->
-                            let gameplay = Gameplay.tryAddMove gameplay.Time PlayerIndex (Shoot (ReactingCharacter character.CharacterIndex)) gameplay
+                            let gameplay = Gameplay.tryAddMove gameplay.Time PlayerIndex (Shoot (CharacterReaction character.CharacterIndex)) gameplay
                             withMsg MakeEnemyMoves gameplay
                         | Some _ | None -> just gameplay
                     else just gameplay 
@@ -308,23 +308,10 @@ module GameplayDispatcher =
                     match Gameboard.tryGetCharacterTurn PlayerIndex gameplay.Gameboard with
                     | Some turn ->
                         match turn.TurnType with
-                        | AttackTurn magicMissile ->
+                        | AttackTurn attackType ->
                             if turn.StartTime = gameplay.Time then
-                                if magicMissile then
-                                    match Turn.tryGetReactingCharacterIndex turn with
-                                    | Some reactorIndex ->
-                                        match Gameboard.tryGetCharacterCoordinates reactorIndex gameplay.Gameboard with
-                                        | Some reactorCoordinates ->
-                                            let effect = Effects.makeMagicMissileImpactEffect ()
-                                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Group world
-                                            let world = entity.SetEffect effect world
-                                            let world = entity.SetSize Constants.Layout.TileSize world
-                                            let world = entity.SetPosition (vctovf reactorCoordinates) world
-                                            let world = entity.SetElevation Constants.Layout.EffectElevation world
-                                            entity.SetSelfDestruct true world
-                                        | None -> world
-                                    | None -> world
-                                else
+                                match attackType with
+                                | NormalAttack ->
                                     let effect = Effects.makeSwordStrikeEffect turn.Direction
                                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Group world
                                     let world = entity.SetEffect effect world
@@ -332,6 +319,20 @@ module GameplayDispatcher =
                                     let world = entity.SetPosition ((vctovf turn.OriginCoordinates) - Constants.Layout.TileSize) world
                                     let world = entity.SetElevation Constants.Layout.EffectElevation world
                                     entity.SetSelfDestruct true world
+                                | MissileAttack ->
+                                    match turn.TurnReactionOpt with
+                                    | Some (CharacterReaction characterIndex) ->
+                                        match Gameboard.tryGetCharacterCoordinates characterIndex gameplay.Gameboard with
+                                        | Some characterCoordinates ->
+                                            let effect = Effects.makeMagicMissileImpactEffect ()
+                                            let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Group world
+                                            let world = entity.SetEffect effect world
+                                            let world = entity.SetSize Constants.Layout.TileSize world
+                                            let world = entity.SetPosition (vctovf characterCoordinates) world
+                                            let world = entity.SetElevation Constants.Layout.EffectElevation world
+                                            entity.SetSelfDestruct true world
+                                        | None -> world
+                                    | _ -> world
                             else world
                         | _ -> world
                     | None -> world
