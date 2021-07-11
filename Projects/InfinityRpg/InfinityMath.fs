@@ -170,13 +170,13 @@ module Direction =
 module MathOperators =
     
     let itoc i =
-        i / Constants.Layout.TileSizeI.X
+        i / Constants.Gameplay.TileSizeI.X
     
     let vctovi vm =
-        Vector2i.Multiply (vm, Constants.Layout.TileSizeI)
+        Vector2i.Multiply (vm, Constants.Gameplay.TileSizeI)
 
     let vitovc vi =
-        Vector2i.Divide (vi, Constants.Layout.TileSizeI)
+        Vector2i.Divide (vi, Constants.Gameplay.TileSizeI)
 
     let vitovf (vi : Vector2i) =
         vi.Vector2
@@ -248,7 +248,7 @@ module MathOperators =
 module Math =
 
     let isSnapped i =
-        i % Constants.Layout.TileSizeI.X = 0
+        i % Constants.Gameplay.TileSizeI.X = 0
 
     let directionToTarget current target =
         target - current |> vctod

@@ -19,7 +19,7 @@ module FieldDispatcher =
 
         static let getTileInset (tileSheetCoordinates : Vector2i) =
             let tileOffset = vctovf tileSheetCoordinates
-            let tileInset = v4Bounds tileOffset Constants.Layout.TileSize
+            let tileInset = v4Bounds tileOffset Constants.Gameplay.TileSize
             tileInset
 
         static let viewBoundsToMapUnits (viewBounds : Vector4) =
@@ -45,12 +45,12 @@ module FieldDispatcher =
         
         override this.View (field, entity, world) =
             let fieldTransform = entity.GetTransform world
-            let tileTransform = { fieldTransform with Size = Constants.Layout.TileSize }
+            let tileTransform = { fieldTransform with Size = Constants.Gameplay.TileSize }
             let absolute = entity.GetAbsolute world
             let bounds =
                 v4BoundsOverflow
                     fieldTransform.Position
-                    (Vector2.Multiply (Constants.Layout.TileSize, Constants.Layout.TileSheetSize))
+                    (Vector2.Multiply (Constants.Gameplay.TileSize, Constants.Gameplay.TileSheetSize))
                     (entity.GetOverflow world)
             if World.isBoundsInView absolute bounds world then
                 let fieldMap = field.FieldMap

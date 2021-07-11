@@ -5,20 +5,6 @@ open Nu
 module Constants =
 
     [<RequireQualifiedAccess>]
-    module Layout =
-
-        let TileSizeI = v2iDup 48
-        let TileSize = let t = TileSizeI in t.Vector2
-        let TileSheetSizeC = v2iDup 4
-        let TileSheetSizeI = Vector2i.Multiply (TileSheetSizeC, TileSizeI)
-        let TileSheetSize = let t = TileSheetSizeI in t.Vector2
-        let FieldMapSizeC = v2iDup 20
-        let CharacterElevation = 1.0f
-        let PropElevation = 1.0f
-        let PickupElevation = 0.5f
-        let EffectElevation = 2.0f
-
-    [<RequireQualifiedAccess>]
     module Gui =
 
         let DissolveDescriptor =
@@ -33,9 +19,19 @@ module Constants =
 
     [<RequireQualifiedAccess>]
     module Gameplay =
-
+    
+        let TileSizeI = v2iDup 48
+        let TileSize = let t = TileSizeI in t.Vector2
+        let TileSheetSizeC = v2iDup 4
+        let TileSheetSizeI = Vector2i.Multiply (TileSheetSizeC, TileSizeI)
+        let TileSheetSize = let t = TileSheetSizeI in t.Vector2
+        let FieldMapSizeC = v2iDup 20
+        let CharacterElevation = 1.0f
+        let PropElevation = 1.0f
+        let PickupElevation = 0.5f
+        let EffectElevation = 2.0f
         let CharacterWalkStep = 4
-        let CharacterWalkSteps = int Layout.TileSize.X / CharacterWalkStep
+        let CharacterWalkSteps = int TileSize.X / CharacterWalkStep
         let CharacterAnimationFacingDelay = 16L
         let CharacterAnimationActingDelay = 12L // original value is 24L
         let ReactionTick = CharacterAnimationActingDelay * 2L

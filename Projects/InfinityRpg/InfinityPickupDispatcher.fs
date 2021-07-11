@@ -18,7 +18,7 @@ module PickupDispatcher =
         inherit EntityDispatcher<Pickup, unit, unit> (Pickup.initial)
 
         static member Properties =
-            [define Entity.Elevation Constants.Layout.PickupElevation
+            [define Entity.Elevation Constants.Gameplay.PickupElevation
              define Entity.Omnipresent true]
         
         override this.Initializers (pickup, _) =

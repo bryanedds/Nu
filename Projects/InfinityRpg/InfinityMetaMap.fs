@@ -13,11 +13,11 @@ type [<ReferenceEquality; NoComparison>] MetaTile =
         let sysrandom = System.Random ()
         let randSeed = uint64 (sysrandom.Next ())
         let directionNext = if Gen.randomb then Upward else Rightward
-        let randResult = Gen.random1 (Constants.Layout.FieldMapSizeC.X - 4) // assumes X and Y are equal
+        let randResult = Gen.random1 (Constants.Gameplay.FieldMapSizeC.X - 4) // assumes X and Y are equal
         let pathEnd =
             match directionNext with
-            | Upward -> v2i (randResult + 2) (Constants.Layout.FieldMapSizeC.Y - 1)
-            | Rightward -> v2i (Constants.Layout.FieldMapSizeC.X - 1) (randResult + 2)
+            | Upward -> v2i (randResult + 2) (Constants.Gameplay.FieldMapSizeC.Y - 1)
+            | Rightward -> v2i (Constants.Gameplay.FieldMapSizeC.X - 1) (randResult + 2)
             | _ -> failwithumf ()
         { RandSeed = randSeed
           DirectionNext = directionNext
