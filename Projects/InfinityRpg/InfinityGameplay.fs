@@ -114,8 +114,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
       ShallLoadGame : bool
       MetaMap : MetaMap
       Field : Field
-      Chessboard : Chessboard
-      Puppeteer : Puppeteer
+      Gameboard : Gameboard
       Round : Round
       Inventory : Inventory }
 
@@ -130,11 +129,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updateField updater gameplay =
         { gameplay with Field = updater gameplay.Field }
     
-    static member updateChessboard updater gameplay =
-        { gameplay with Chessboard = updater gameplay.Chessboard }
-    
-    static member updatePuppeteer updater gameplay =
-        { gameplay with Puppeteer = updater gameplay.Puppeteer }
+    static member updateGameboard updater gameplay =
+        { gameplay with Gameboard = updater gameplay.Gameboard }
     
     static member updateRound updater gameplay =
         { gameplay with Round = updater gameplay.Round }
@@ -143,37 +139,37 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         { gameplay with Inventory = updater gameplay.Inventory }
     
     static member tryUpdateCharacterTurn index updater gameplay =
-        Gameplay.updatePuppeteer (Puppeteer.tryUpdateCharacterTurn index updater) gameplay
+        Gameplay.updateGameboard (Gameboard.tryUpdateCharacterTurn index updater) gameplay
     
     static member tryUpdateCharacterTurnStatus index status gameplay =
         Gameplay.tryUpdateCharacterTurn index (Turn.updateTurnStatus status) gameplay
     
     static member tryUpdateCharacter index updater gameplay =
-        Gameplay.updateChessboard (Chessboard.tryUpdateCharacter index updater) gameplay
+        Gameplay.updateGameboard (Gameboard.tryUpdateCharacter index updater) gameplay
 
     static member tryRelocateCharacter index coordinates gameplay =
-        Gameplay.updateChessboard (Chessboard.tryRelocateCharacter index coordinates) gameplay
+        Gameplay.updateGameboard (Gameboard.tryRelocateCharacter index coordinates) gameplay
 
     (* Accessors *)
     
     static member areCharactersAdjacent index index2 gameplay =
         Math.areCoordinatesAdjacent
-            (Chessboard.tryGetCharacterCoordinates index gameplay.Chessboard |> Option.get) // assume character exists
-            (Chessboard.tryGetCharacterCoordinates index2 gameplay.Chessboard |> Option.get) // assume character exists
+            (Gameboard.tryGetCharacterCoordinates index gameplay.Gameboard |> Option.get) // assume character exists
+            (Gameboard.tryGetCharacterCoordinates index2 gameplay.Gameboard |> Option.get) // assume character exists
 
     (* FieldMap Commands *)
     
     static member resetFieldMap fieldMap gameplay =
-        let gameplay = Gameplay.updateChessboard (Chessboard.setFieldSpaces fieldMap) gameplay
+        let gameplay = Gameplay.updateGameboard (Gameboard.setFieldSpaces fieldMap) gameplay
         Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
     
     static member resetFieldMapWithPlayer fieldMap gameplay =
-        let gameplay = Gameplay.updateChessboard (Chessboard.transitionMap fieldMap) gameplay
+        let gameplay = Gameplay.updateGameboard (Gameboard.transitionMap fieldMap) gameplay
         Gameplay.updateField (Field.setFieldMap fieldMap) gameplay
     
     static member transitionFieldMap direction gameplay =
-        let player = Chessboard.tryGetCharacter PlayerIndex gameplay.Chessboard |> Option.get // assume player exists
-        let gameplay = Gameplay.updateChessboard (Chessboard.tryRemoveCharacter PlayerIndex) gameplay
+        let player = Gameboard.tryGetCharacter PlayerIndex gameplay.Gameboard |> Option.get // assume player exists
+        let gameplay = Gameplay.updateGameboard (Gameboard.tryRemoveCharacter PlayerIndex) gameplay
         let gameplay = Gameplay.updateMetaMap (MetaMap.transition direction) gameplay
         let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
         let newCoordinates =
@@ -182,12 +178,12 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             | Rightward -> gameplay.MetaMap.Current.PathStart
             | Downward
             | Leftward -> gameplay.MetaMap.Current.PathEnd
-        Gameplay.updateChessboard (Chessboard.addCharacter player newCoordinates) gameplay
+        Gameplay.updateGameboard (Gameboard.addCharacter player newCoordinates) gameplay
 
     (* Interaction Commands *)
 
     static member createWalkingEnemyGroup gameplay =
-        let enemyIndices = Chessboard.getEnemyIndices gameplay.Chessboard
+        let enemyIndices = Gameboard.getEnemyIndices gameplay.Gameboard
         let group = List.except gameplay.Round.AttackingEnemyGroup enemyIndices
         Gameplay.updateRound (Round.addWalkingEnemyGroup group) gameplay
     
@@ -207,11 +203,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateRound (Round.removeMove index) gameplay
     
     static member finishMove index gameplay =
-        let gameplay = Gameplay.updatePuppeteer (Puppeteer.removeCharacterTurn index) gameplay
+        let gameplay = Gameplay.updateGameboard (Gameboard.removeCharacterTurn index) gameplay
         Gameplay.removeMove index gameplay
 
     static member tryAddMove time index move gameplay =
-        match Chessboard.tryGetCharacter index gameplay.Chessboard with
+        match Gameboard.tryGetCharacter index gameplay.Gameboard with
         | Some character when character.IsAlive ->
             let gameplay = Gameplay.addMove index move gameplay
             let gameplay = Gameplay.tryActivateCharacter time index gameplay
@@ -236,21 +232,21 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         else gameplay
     
     static member tryCutGrass coordinates gameplay =
-        match Map.tryFind coordinates gameplay.Chessboard.Props with
+        match Map.tryFind coordinates gameplay.Gameboard.Props with
         | Some prop when prop = LongGrass ->
-            let gameplay = Gameplay.updateChessboard (Chessboard.removeProp coordinates) gameplay
+            let gameplay = Gameplay.updateGameboard (Gameboard.removeProp coordinates) gameplay
             if Gen.random1 10 = 0 then Gameplay.makeRandomPickup coordinates gameplay else gameplay
         | Some _ | None -> gameplay
     
     static member tryKillCharacter index gameplay =
-        match Chessboard.tryGetCharacterCoordinates index gameplay.Chessboard with
+        match Gameboard.tryGetCharacterCoordinates index gameplay.Gameboard with
         | Some coordinates ->
-            let gameplay = Gameplay.updateChessboard (Chessboard.tryRemoveCharacter index) gameplay
+            let gameplay = Gameplay.updateGameboard (Gameboard.tryRemoveCharacter index) gameplay
             match index with
             | EnemyIndex _ ->
-                let gameplay = if Gen.randomb then Gameplay.updateChessboard (Chessboard.addPickup Health coordinates) gameplay else gameplay
-                let gameplay = Gameplay.updateRound (Round.updateWalkingEnemyGroup (List.filter (fun character -> Chessboard.doesCharacterExist character gameplay.Chessboard))) gameplay
-                let gameplay = Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun character -> Chessboard.doesCharacterExist character gameplay.Chessboard))) gameplay
+                let gameplay = if Gen.randomb then Gameplay.updateGameboard (Gameboard.addPickup Health coordinates) gameplay else gameplay
+                let gameplay = Gameplay.updateRound (Round.updateWalkingEnemyGroup (List.filter (fun character -> Gameboard.doesCharacterExist character gameplay.Gameboard))) gameplay
+                let gameplay = Gameplay.updateRound (Round.updateAttackingEnemyGroup (List.filter (fun character -> Gameboard.doesCharacterExist character gameplay.Gameboard))) gameplay
                 gameplay
             | PlayerIndex -> gameplay
         | None -> gameplay
@@ -261,32 +257,32 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         match index with
         | PlayerIndex ->
             let gameplay =
-                match Chessboard.tryGetPickup coordinates gameplay.Chessboard with
+                match Gameboard.tryGetPickup coordinates gameplay.Gameboard with
                 | Some Health -> Gameplay.tryUpdateCharacter index (Character.updateHitPoints (fun x -> x + 15)) gameplay
                 | Some (Item item) -> Gameplay.updateInventory (Inventory.tryAddItem item) gameplay
                 | None -> gameplay
-            Gameplay.updateChessboard (Chessboard.removePickup coordinates) gameplay
+            Gameplay.updateGameboard (Gameboard.removePickup coordinates) gameplay
         | _ -> gameplay
     
     static member tryApplyStep index direction gameplay =
-        match Chessboard.tryGetCharacterCoordinates index gameplay.Chessboard with
+        match Gameboard.tryGetCharacterCoordinates index gameplay.Gameboard with
         | Some coordinates ->
             let coordinates = coordinates + dtovc direction
             let gameplay = Gameplay.tryUpdateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
             let gameplay =
-                if Map.containsKey coordinates gameplay.Chessboard.Pickups
+                if Map.containsKey coordinates gameplay.Gameboard.Pickups
                 then Gameplay.tryPickupHealth index coordinates gameplay
                 else gameplay
             Gameplay.tryRelocateCharacter index coordinates gameplay
         | None -> gameplay
     
     static member tryApplyAttack index reactor gameplay =
-        match Chessboard.tryGetCharacterCoordinates index gameplay.Chessboard with
+        match Gameboard.tryGetCharacterCoordinates index gameplay.Gameboard with
         | Some coordinates ->
             match reactor with
             | ReactingCharacter reactorIndex ->
                 let reactorDamage = 4 // NOTE: just hard-coding damage for now
-                let reactorCoordinates = Chessboard.tryGetCharacterCoordinates reactorIndex gameplay.Chessboard |> Option.get // we know it's there - we just got it
+                let reactorCoordinates = Gameboard.tryGetCharacterCoordinates reactorIndex gameplay.Gameboard |> Option.get // we know it's there - we just got it
                 let direction = Math.directionToTarget coordinates reactorCoordinates
                 let gameplay = Gameplay.tryUpdateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
                 let gameplay = Gameplay.tryUpdateCharacter reactorIndex (Character.updateHitPoints (fun hp -> hp - reactorDamage)) gameplay
@@ -306,7 +302,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         | Travel path ->
             match path with
             | head :: _ ->
-                match Chessboard.tryGetCharacterCoordinates index gameplay.Chessboard with
+                match Gameboard.tryGetCharacterCoordinates index gameplay.Gameboard with
                 | Some coordinates ->
                     let direction = Math.directionToTarget coordinates head.Coordinates
                     Gameplay.tryApplyStep index direction gameplay
@@ -320,7 +316,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member tryActivateCharacter time index gameplay =
         let move = gameplay.Round.CharacterMoves.[index]
-        match Chessboard.tryGetCharacterCoordinates index gameplay.Chessboard with
+        match Gameboard.tryGetCharacterCoordinates index gameplay.Gameboard with
         | Some coordinates ->
             let turn =
                 match move with
@@ -332,18 +328,18 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 | Attack reactor ->
                     let direction =
                         match reactor with
-                        | ReactingCharacter reactorIndex -> Chessboard.tryGetCharacterCoordinates reactorIndex gameplay.Chessboard |> Option.get |> Math.directionToTarget coordinates // assume reactor exists
+                        | ReactingCharacter reactorIndex -> Gameboard.tryGetCharacterCoordinates reactorIndex gameplay.Gameboard |> Option.get |> Math.directionToTarget coordinates // assume reactor exists
                         | ReactingPickup _ -> failwithumf ()
                         | ReactingProp reactorCoordinates -> Math.directionToTarget coordinates reactorCoordinates
                     Turn.makeAttack time index false reactor coordinates direction
                 | Shoot reactor ->
                     let direction =
                         match reactor with
-                        | ReactingCharacter reactorIndex -> Chessboard.tryGetCharacterCoordinates reactorIndex gameplay.Chessboard |> Option.get |> Math.directionToTarget coordinates // assume reactor exists
+                        | ReactingCharacter reactorIndex -> Gameboard.tryGetCharacterCoordinates reactorIndex gameplay.Gameboard |> Option.get |> Math.directionToTarget coordinates // assume reactor exists
                         | ReactingPickup _ -> failwithumf ()
                         | ReactingProp _ -> failwithumf ()
                     Turn.makeAttack time index true reactor coordinates direction
-            Gameplay.updatePuppeteer (Puppeteer.addCharacterTurn turn) gameplay
+            Gameplay.updateGameboard (Gameboard.addCharacterTurn turn) gameplay
         | None -> gameplay
 
     static member advanceTime gameplay =
@@ -353,16 +349,16 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     
     static member makeRandomPickup coordinates gameplay =
         let pickup = if Gen.randomb then Health else (Item (Special MagicMissile))
-        Gameplay.updateChessboard (Chessboard.addPickup pickup coordinates) gameplay
+        Gameplay.updateGameboard (Gameboard.addPickup pickup coordinates) gameplay
 
     static member makeLongGrass coordinates gameplay =
-        Gameplay.updateChessboard (Chessboard.addProp LongGrass coordinates) gameplay
+        Gameplay.updateGameboard (Gameboard.addProp LongGrass coordinates) gameplay
 
     static member makeLongGrasses gameplay =
         let mapBounds = v4iBounds v2iZero (Constants.Layout.FieldMapSizeC - v2iOne)
         let predicate1 coordinates = Math.isPointInBoundsI coordinates mapBounds && Map.find coordinates gameplay.Field.FieldMap.FieldTiles = FieldMap.GrassTile
         let predicate2 coordinates = FieldMap.hasAtLeastNAdjacentTiles 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMap.FieldTiles
-        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
+        let unoccupiedSpaces = Gameboard.getUnoccupiedSpaces gameplay.Gameboard
         Set.fold (fun gameplay coordinates ->
             if predicate1 coordinates && predicate2 coordinates
             then Gameplay.makeLongGrass coordinates gameplay
@@ -374,9 +370,9 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.makeLongGrasses gameplay
     
     static member makeEnemy index gameplay =
-        let unoccupiedSpaces = Chessboard.getUnoccupiedSpaces gameplay.Chessboard
+        let unoccupiedSpaces = Gameboard.getUnoccupiedSpaces gameplay.Gameboard
         let coordinates = Seq.item (Gen.random1 (Set.count unoccupiedSpaces)) unoccupiedSpaces
-        Gameplay.updateChessboard (Chessboard.addCharacter (Character.makeEnemy index) coordinates) gameplay
+        Gameplay.updateGameboard (Gameboard.addCharacter (Character.makeEnemy index) coordinates) gameplay
     
     static member makeEnemies enemyCount gameplay =
         Seq.fold
@@ -385,25 +381,23 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             [0 .. dec enemyCount]
 
     static member clearPickups gameplay =
-        Gameplay.updateChessboard Chessboard.clearPickups gameplay
+        Gameplay.updateGameboard Gameboard.clearPickups gameplay
 
     static member clearProps gameplay =
-        Gameplay.updateChessboard Chessboard.clearProps gameplay
+        Gameplay.updateGameboard Gameboard.clearProps gameplay
 
     static member clearEnemies gameplay =
-        Gameplay.updateChessboard Chessboard.clearEnemies gameplay
+        Gameplay.updateGameboard Gameboard.clearEnemies gameplay
 
     (* Constructors *)
 
     static member initial =
         let field = Field.initial
-        let chessboard = Chessboard.make field.FieldMap
         { Time = 0L
           InputMode = NormalInputMode
           ShallLoadGame = false
           MetaMap = MetaMap.initial
           Field = field
-          Chessboard = chessboard
-          Puppeteer = Puppeteer.empty
+          Gameboard = Gameboard.make field.FieldMap
           Round = Round.empty
           Inventory = Inventory.initial }

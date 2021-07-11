@@ -56,7 +56,7 @@ module GameDispatcher =
 #else
              Simulants.Title.Gui.New.ClickEvent => msg Intro
 #endif
-             Simulants.Title.Gui.Load.ClickEvent =|> fun _ -> msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
+             Simulants.Title.Gui.Load.ClickEvent => msg (Change (Field (Field.loadOrInitial (uint64 Gen.random))))
              Simulants.Title.Gui.Credits.ClickEvent => msg (Change (Gui Credits))
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
