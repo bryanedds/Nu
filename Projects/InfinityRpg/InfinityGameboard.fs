@@ -6,28 +6,31 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
-/// TODO: see if we can get rid of or generalize this type.
-type [<ReferenceEquality; NoComparison>] Reactor =
-    | ReactingCharacter of CharacterIndex
-    | ReactingPickup of Vector2i
-    | ReactingProp of Vector2i
+type [<StructuralEquality; NoComparison>] AttackType =
+    | NormalAttack
+    | MissileAttack
 
-type [<ReferenceEquality; NoComparison>] TurnType =
+type [<StructuralEquality; NoComparison>] TurnType =
     | WalkTurn of bool
-    | AttackTurn of bool
+    | AttackTurn of AttackType
     member this.IsWalking = match this with WalkTurn _ -> true | _ -> false
     member this.IsAttacking = match this with AttackTurn _ -> true | _ -> false
 
-type [<ReferenceEquality; NoComparison>] TurnStatus =
+type [<StructuralEquality; NoComparison>] TurnStatus =
     | TurnBeginning
     | TurnTicking
     | TurnFinishing
 
+type [<StructuralEquality; NoComparison>] TurnReaction =
+    | CharacterReaction of CharacterIndex
+    | PickupReaction of Vector2i
+    | PropReaction of Vector2i
+
 type [<ReferenceEquality; NoComparison>] Turn =
     { TurnType : TurnType
       TurnStatus : TurnStatus
+      TurnReactionOpt : TurnReaction option
       CharacterIndex : CharacterIndex
-      ReactorOpt : Reactor option
       OriginCoordinates : Vector2i
       Direction : Direction
       StartTime : int64 }
@@ -38,20 +41,15 @@ type [<ReferenceEquality; NoComparison>] Turn =
     static member updateStartTime updater (turn : Turn) =
         { turn with StartTime = updater turn.StartTime }
     
-    static member tryGetReactingCharacterIndex turn =
-        match turn.ReactorOpt with
-        | Some (ReactingCharacter characterIndex) -> Some characterIndex
-        | _ -> None
-    
-    static member hasParticularReactor reactorIndex turn =
-        match turn.ReactorOpt with
-        | Some reactor ->
-            match reactor with
-            | ReactingCharacter index -> index = reactorIndex
+    static member hasCharacterReaction characterIndex turn =
+        match turn.TurnReactionOpt with
+        | Some reaction ->
+            match reaction with
+            | CharacterReaction index -> index = characterIndex
             | _ -> false
         | None -> false
     
-    static member calculatePosition time turn =
+    static member computeCharacterPosition time turn =
         match turn.TurnType with
         | WalkTurn _ ->
             match turn.TurnStatus with
@@ -67,10 +65,10 @@ type [<ReferenceEquality; NoComparison>] Turn =
     static member toCharacterAnimationState turn =
         let animationType =
             match turn.TurnType with
-            | AttackTurn magicMissile ->
+            | AttackTurn attackTurnType ->
                 match turn.TurnStatus with
                 | TurnBeginning
-                | TurnTicking -> if magicMissile then CharacterAnimationSpecial else CharacterAnimationActing
+                | TurnTicking -> match attackTurnType with NormalAttack -> CharacterAnimationActing | MissileAttack -> CharacterAnimationSpecial
                 | _ -> CharacterAnimationFacing
             | WalkTurn _ -> CharacterAnimationFacing
         CharacterAnimationState.make turn.StartTime animationType turn.Direction
@@ -78,27 +76,27 @@ type [<ReferenceEquality; NoComparison>] Turn =
     static member makeWalk time index multiRoundContext originC direction =
         { TurnType = WalkTurn multiRoundContext
           TurnStatus = TurnBeginning
+          TurnReactionOpt = None
           CharacterIndex = index
-          ReactorOpt = None
           OriginCoordinates = originC
           Direction = direction
           StartTime = time }
 
-    static member makeAttack time index magicMissile reactor originC direction  =
+    static member makeAttack time index magicMissile reaction originC direction  =
         { TurnType = AttackTurn magicMissile
           TurnStatus = TurnBeginning
+          TurnReactionOpt = Some reaction
           CharacterIndex = index
-          ReactorOpt = Some reactor
           OriginCoordinates = originC
           Direction = direction
           StartTime = time }
 
-/// TODO: turn this into an abstract data type.
+// TODO: turn this into an abstract data type.
 type [<ReferenceEquality; NoComparison>] Gameboard =
     { Spaces : Vector2i Set
-      Characters : Map<Vector2i, Character>
       Props : Map<Vector2i, PropType>
       Pickups : Map<Vector2i, PickupType>
+      Characters : Map<Vector2i, Character>
       CharacterTurns : Turn list }
 
     member this.AnyTurnsInProgress =
@@ -106,15 +104,15 @@ type [<ReferenceEquality; NoComparison>] Gameboard =
     
     static member updateSpaces updater gameboard =
         { gameboard with Spaces = updater gameboard.Spaces }
-    
-    static member updateCharacterSpaces updater gameboard =
-        { gameboard with Characters = updater gameboard.Characters }
 
     static member updatePropSpaces updater gameboard =
         { gameboard with Props = updater gameboard.Props }
 
     static member updatePickupSpaces updater gameboard =
         { gameboard with Pickups = updater gameboard.Pickups }
+    
+    static member updateCharacterSpaces updater gameboard =
+        { gameboard with Characters = updater gameboard.Characters }
 
     static member getOccupiedSpaces gameboard =
         let characterSpaces = gameboard.Characters |> Map.toKeySeq |> Set.ofSeq
@@ -248,7 +246,7 @@ type [<ReferenceEquality; NoComparison>] Gameboard =
         List.tryFind (fun x -> x.CharacterIndex = index) gameboard.CharacterTurns
 
     static member tryGetOpponentTurn index gameboard =
-        List.tryFind (Turn.hasParticularReactor index) gameboard.CharacterTurns
+        List.tryFind (Turn.hasCharacterReaction index) gameboard.CharacterTurns
     
     static member tryGetAttackingEnemyTurn gameboard =
         List.tryFind (fun x -> x.CharacterIndex.IsEnemy && x.TurnType.IsAttacking) gameboard.CharacterTurns
@@ -279,13 +277,13 @@ type [<ReferenceEquality; NoComparison>] Gameboard =
             let animationType =
                 match Gameboard.tryGetCharacterTurn PlayerIndex gameboard with
                 | Some turn ->
-                    match turn.ReactorOpt with
-                    | Some reactor ->
-                        match reactor with
-                        | ReactingCharacter _ -> PropAnimationStanding
-                        | ReactingPickup _ -> PropAnimationStanding
-                        | ReactingProp propCoords ->
-                            if propCoords = coordinates then
+                    match turn.TurnReactionOpt with
+                    | Some reaction ->
+                        match reaction with
+                        | CharacterReaction _ -> PropAnimationStanding
+                        | PickupReaction _ -> PropAnimationStanding
+                        | PropReaction propCoordinates ->
+                            if propCoordinates = coordinates then
                                 match turn.TurnStatus with
                                 | TurnBeginning -> PropAnimationStanding
                                 | TurnTicking ->
@@ -305,7 +303,7 @@ type [<ReferenceEquality; NoComparison>] Gameboard =
         let getCharacterEntry coordinates (character : Character) =
             let index = match character.CharacterIndex with PlayerIndex -> 0 | EnemyIndex i -> inc i
             let turnOpt = Gameboard.tryGetCharacterTurn character.CharacterIndex gameboard
-            let position = match turnOpt with Some turn -> Turn.calculatePosition time turn | None -> vctovf coordinates
+            let position = match turnOpt with Some turn -> Turn.computeCharacterPosition time turn | None -> vctovf coordinates
             let characterAnimationState =
                 match turnOpt with
                 | None ->
@@ -337,9 +335,9 @@ type [<ReferenceEquality; NoComparison>] Gameboard =
 
     static member empty =
         { Spaces = Set.empty
-          Characters = Map.empty
           Props = Map.empty
           Pickups = Map.empty
+          Characters = Map.empty
           CharacterTurns = [] }
 
     static member make fieldMap =

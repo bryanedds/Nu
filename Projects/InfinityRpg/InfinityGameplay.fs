@@ -25,8 +25,8 @@ type [<ReferenceEquality; NoComparison>] PlayerContinuity =
 type [<StructuralEquality; NoComparison>] Move =
     | Step of Direction
     | Travel of NavigationNode list
-    | Attack of Reactor
-    | Shoot of Reactor
+    | Attack of TurnReaction
+    | Shoot of TurnReaction
 
 type RoundState =
     | RunningCharacterMoves
@@ -276,22 +276,21 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             Gameplay.tryRelocateCharacter index coordinates gameplay
         | None -> gameplay
     
-    static member tryApplyAttack index reactor gameplay =
+    static member tryApplyAttack index reaction gameplay =
         match Gameboard.tryGetCharacterCoordinates index gameplay.Gameboard with
         | Some coordinates ->
-            match reactor with
-            | ReactingCharacter reactorIndex ->
-                let reactorDamage = 4 // NOTE: just hard-coding damage for now
-                let reactorCoordinates = Gameboard.tryGetCharacterCoordinates reactorIndex gameplay.Gameboard |> Option.get // we know it's there - we just got it
-                let direction = Math.directionToTarget coordinates reactorCoordinates
+            match reaction with
+            | CharacterReaction characterIndex ->
+                let damage = 4 // NOTE: just hard-coding damage for now
+                let characterCoordinates = Gameboard.tryGetCharacterCoordinates characterIndex gameplay.Gameboard |> Option.get // we know it's there - we just got it
+                let direction = Math.directionToTarget coordinates characterCoordinates
                 let gameplay = Gameplay.tryUpdateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
-                let gameplay = Gameplay.tryUpdateCharacter reactorIndex (Character.updateHitPoints (fun hp -> hp - reactorDamage)) gameplay
-                if reactorIndex = PlayerIndex then Gameplay.tryInterruptPlayer gameplay else gameplay
-            | ReactingProp reactorCoordinates ->
-                let direction = Math.directionToTarget coordinates reactorCoordinates
+                let gameplay = Gameplay.tryUpdateCharacter characterIndex (Character.updateHitPoints (fun hp -> hp - damage)) gameplay
+                if characterIndex = PlayerIndex then Gameplay.tryInterruptPlayer gameplay else gameplay
+            | PropReaction propCoordinates ->
+                let direction = Math.directionToTarget coordinates propCoordinates
                 Gameplay.tryUpdateCharacter index (Character.updateFacingDirection (constant direction)) gameplay
-            | ReactingPickup _ ->
-                gameplay
+            | PickupReaction _ -> gameplay
         | None -> gameplay
     
     static member tryApplyMove index gameplay =
@@ -308,11 +307,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                     Gameplay.tryApplyStep index direction gameplay
                 | None -> gameplay
             | [] -> gameplay
-        | Attack reactor ->
-            Gameplay.tryApplyAttack index reactor gameplay
-        | Shoot reactor ->
+        | Attack reaction ->
+            Gameplay.tryApplyAttack index reaction gameplay
+        | Shoot reaction ->
             let gameplay = Gameplay.updateInventory (Inventory.removeItem (Special MagicMissile)) gameplay
-            Gameplay.tryApplyAttack index reactor gameplay
+            Gameplay.tryApplyAttack index reaction gameplay
     
     static member tryActivateCharacter time index gameplay =
         let move = gameplay.Round.CharacterMoves.[index]
@@ -325,20 +324,20 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
                 | Travel path ->
                     let direction = Math.directionToTarget coordinates path.Head.Coordinates
                     Turn.makeWalk time index true coordinates direction
-                | Attack reactor ->
+                | Attack reaction ->
                     let direction =
-                        match reactor with
-                        | ReactingCharacter reactorIndex -> Gameboard.tryGetCharacterCoordinates reactorIndex gameplay.Gameboard |> Option.get |> Math.directionToTarget coordinates // assume reactor exists
-                        | ReactingPickup _ -> failwithumf ()
-                        | ReactingProp reactorCoordinates -> Math.directionToTarget coordinates reactorCoordinates
-                    Turn.makeAttack time index false reactor coordinates direction
-                | Shoot reactor ->
+                        match reaction with
+                        | CharacterReaction characterIndex -> Gameboard.tryGetCharacterCoordinates characterIndex gameplay.Gameboard |> Option.get |> Math.directionToTarget coordinates // assume character exists
+                        | PickupReaction _ -> failwithumf ()
+                        | PropReaction propCoordinates -> Math.directionToTarget coordinates propCoordinates
+                    Turn.makeAttack time index NormalAttack reaction coordinates direction
+                | Shoot reaction ->
                     let direction =
-                        match reactor with
-                        | ReactingCharacter reactorIndex -> Gameboard.tryGetCharacterCoordinates reactorIndex gameplay.Gameboard |> Option.get |> Math.directionToTarget coordinates // assume reactor exists
-                        | ReactingPickup _ -> failwithumf ()
-                        | ReactingProp _ -> failwithumf ()
-                    Turn.makeAttack time index true reactor coordinates direction
+                        match reaction with
+                        | CharacterReaction characterIndex -> Gameboard.tryGetCharacterCoordinates characterIndex gameplay.Gameboard |> Option.get |> Math.directionToTarget coordinates // assume character exists
+                        | PickupReaction _ -> failwithumf ()
+                        | PropReaction _ -> failwithumf ()
+                    Turn.makeAttack time index MissileAttack reaction coordinates direction
             Gameplay.updateGameboard (Gameboard.addCharacterTurn turn) gameplay
         | None -> gameplay
 

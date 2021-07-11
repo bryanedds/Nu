@@ -6,6 +6,7 @@ open Nu
 open Nu.Declarative
 open InfinityRpg
 
+// TODO: see if this could be a PropType rather than its own type.
 type PickupType =
     | Health
     | Item of ItemType
