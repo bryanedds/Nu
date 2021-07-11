@@ -7,7 +7,7 @@ open Nu.Declarative
 open InfinityRpg
 
 // TODO: see if this could be a PropType rather than its own type.
-type PickupType =
+type [<StructuralEquality; NoComparison>] PickupType =
     | Health
     | Item of ItemType
 

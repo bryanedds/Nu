@@ -1,32 +1,21 @@
 ﻿namespace InfinityRpg
 open Prime
+open Nu
 
-type [<ReferenceEquality; NoComparison>] Inventory =
-    { Items : Map<ItemType, int> }
-
-    static member containsItem item inventory =
-        match Map.tryFind item inventory.Items with
-        | Some itemCount when itemCount > 0 -> true
-        | _ -> false
-    
-    static member tryAddItem item inventory =
-        match Map.tryFind item inventory.Items with
-        | Some itemCount ->
-            if itemCount < Constants.Gameplay.ItemLimit
-            then { inventory with Items = Map.add item (inc itemCount) inventory.Items }
-            else inventory
-        | None -> { inventory with Items = Map.add item 1 inventory.Items }
-    
-    static member removeItem item inventory =
-        match Map.tryFind item inventory.Items with
-        | Some itemCount when itemCount > 1 ->
-            { inventory with Items = Map.add item (dec itemCount) inventory.Items }
-        | Some itemCount when itemCount = 1 ->
-            { inventory with Items = Map.remove item inventory.Items }
-        | _ -> inventory
+type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
+    { StartTime : int64
+      AnimationType : CharacterAnimationType
+      Direction : Direction }
     
     static member initial =
-        { Items = Map.singleton (Special MagicMissile) 3 }
+        { StartTime = 0L
+          AnimationType = CharacterAnimationFacing
+          Direction = Upward }
+
+    static member make time animationType direction =
+        { StartTime = time
+          AnimationType = animationType
+          Direction = direction }
 
 type [<ReferenceEquality; NoComparison>] Character =
     { CharacterIndex : CharacterIndex
@@ -76,9 +65,9 @@ type [<ReferenceEquality; NoComparison>] Character =
           MagicBuff = 1.0f // rate at which magic is buffed / debuffed
           ShieldBuff = 1.0f // rate at which shield is buffed / debuffed
           CounterBuff = 1.0f // rate at which counter is buffed / debuffed
-          Statuses = Set.empty<StatusType>
-          WeaponOpt = Option<WeaponType>.None
-          ArmorOpt = Option<ArmorType>.None
+          Statuses = Set.empty
+          WeaponOpt = None
+          ArmorOpt = None
           Accessories = [] } // level is calculated from base experience + added experience
 
     static member makePlayer () =
@@ -87,25 +76,3 @@ type [<ReferenceEquality; NoComparison>] Character =
     static member makeEnemy index =
         let character = { Character.empty with CharacterIndex = index; CharacterType = Enemy Goopy }
         Character.updateHitPoints (constant character.HitPointsMax) character
-
-type CharacterAnimationType =
-    | CharacterAnimationFacing
-    | CharacterAnimationActing
-    | CharacterAnimationDefending
-    | CharacterAnimationSpecial // works for jump, cast magic, being healed, and perhaps others!
-    | CharacterAnimationSlain
-
-type [<ReferenceEquality; NoComparison>] CharacterAnimationState =
-    { StartTime : int64
-      AnimationType : CharacterAnimationType
-      Direction : Direction }
-    
-    static member initial =
-        { StartTime = 0L
-          AnimationType = CharacterAnimationFacing
-          Direction = Upward }
-
-    static member make time animationType direction =
-        { StartTime = time
-          AnimationType = animationType
-          Direction = direction }

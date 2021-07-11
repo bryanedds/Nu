@@ -3,7 +3,7 @@ open System
 open Prime
 open Nu
 
-type FieldTileType =
+type [<StructuralEquality; NoComparison>] FieldTileType =
     | Impassable
     | Passable
 

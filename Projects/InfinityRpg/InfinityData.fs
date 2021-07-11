@@ -7,6 +7,13 @@ type CharacterIndex =
     member this.IsAlly = not this.IsEnemy
     member this.IsEnemy = match this with EnemyIndex _ -> true | PlayerIndex -> false
 
+type CharacterAnimationType =
+    | CharacterAnimationFacing
+    | CharacterAnimationActing
+    | CharacterAnimationDefending
+    | CharacterAnimationSpecial // works for jump, cast magic, being healed, and perhaps others!
+    | CharacterAnimationSlain
+
 type EnemyType =
     | Goopy
     | Goblin

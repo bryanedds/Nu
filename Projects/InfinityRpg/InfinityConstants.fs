@@ -10,12 +10,12 @@ module Constants =
         let DissolveDescriptor =
             { IncomingTime = 20L
               OutgoingTime = 30L
-              DissolveImage = asset<Image> Assets.Gui.PackageName "Dissolve" }
+              DissolveImage = asset Assets.Gui.PackageName "Dissolve" }
 
         let SplashData =
             { DissolveDescriptor = DissolveDescriptor
               IdlingTime = 60L
-              SplashImageOpt = Some (asset<Image> Assets.Gui.PackageName "Nu") }
+              SplashImageOpt = Some (asset Assets.Gui.PackageName "Nu") }
 
     [<RequireQualifiedAccess>]
     module Gameplay =
