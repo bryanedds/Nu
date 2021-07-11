@@ -128,7 +128,7 @@ module GameplayDispatcher =
                     let gameplay =
                         match Gameboard.tryGetCharacter PlayerIndex gameplay.Gameboard with
                         | Some character when character.IsAlive ->
-                            Gameplay.tryIssueCharacterAction gameplay.Time enemyIndex (Attack (CharacterReaction PlayerIndex)) gameplay
+                            Gameplay.tryIssueAction gameplay.Time enemyIndex (Attack (CharacterReaction PlayerIndex)) gameplay
                         | Some _ | None -> gameplay
                     let gameplay = Gameplay.removeHeadFromAttackingEnemies gameplay
                     withMsg BeginTurns gameplay
@@ -142,7 +142,7 @@ module GameplayDispatcher =
                             let openDirections = Gameboard.getOpenDirections coordinates gameplay.Gameboard
                             let direction = Gen.random1 4 |> Direction.ofInt
                             if Set.contains direction openDirections
-                            then Gameplay.tryIssueCharacterAction gameplay.Time index (Step direction) gameplay
+                            then Gameplay.tryIssueAction gameplay.Time index (Step direction) gameplay
                             else gameplay
                         | None -> gameplay)
                         gameplay
@@ -174,7 +174,7 @@ module GameplayDispatcher =
                             let targetCoordinates = (List.head navigationPath).Coordinates
                             let unoccupiedSpaces = Gameboard.getUnoccupiedSpaces gameplay.Gameboard
                             if Set.contains targetCoordinates unoccupiedSpaces
-                            then Gameplay.tryIssueCharacterAction gameplay.Time PlayerIndex (Travel navigationPath) gameplay
+                            then Gameplay.tryIssueAction gameplay.Time PlayerIndex (Travel navigationPath) gameplay
                             else gameplay
                         | [] -> failwithumf ()
                     | _ -> gameplay
@@ -199,13 +199,13 @@ module GameplayDispatcher =
                             if Math.areCoordinatesAdjacent targetCoordinates currentCoordinates then
                                 if Set.contains targetCoordinates gameplay.Gameboard.Spaces then
                                     match Map.tryFind targetCoordinates gameplay.Gameboard.Characters with
-                                    | Some character -> Gameplay.tryIssueCharacterAction time PlayerIndex (Attack (CharacterReaction character.CharacterIndex)) gameplay
+                                    | Some character -> Gameplay.tryIssueAction time PlayerIndex (Attack (CharacterReaction character.CharacterIndex)) gameplay
                                     | None ->
                                         match Map.tryFind targetCoordinates gameplay.Gameboard.Props with
-                                        | Some _ -> Gameplay.tryIssueCharacterAction time PlayerIndex (Attack (PropReaction targetCoordinates)) gameplay
+                                        | Some _ -> Gameplay.tryIssueAction time PlayerIndex (Attack (PropReaction targetCoordinates)) gameplay
                                         | None ->
                                             let direction = Math.directionToTarget currentCoordinates targetCoordinates
-                                            Gameplay.tryIssueCharacterAction time PlayerIndex (Step direction) gameplay
+                                            Gameplay.tryIssueAction time PlayerIndex (Step direction) gameplay
                                 else gameplay
                             else
                                 let navigationPathOpt =
@@ -216,7 +216,7 @@ module GameplayDispatcher =
                                 match navigationPathOpt with
                                 | Some navigationPath ->
                                     match navigationPath with
-                                    | _ :: _ -> Gameplay.tryIssueCharacterAction time PlayerIndex (Travel navigationPath) gameplay
+                                    | _ :: _ -> Gameplay.tryIssueAction time PlayerIndex (Travel navigationPath) gameplay
                                     | [] -> gameplay
                                 | None -> gameplay
                         | None -> gameplay
@@ -269,7 +269,7 @@ module GameplayDispatcher =
                     if Set.contains targetCoordinates gameplay.Gameboard.Spaces then
                         match Gameboard.tryGetCharacterAtCoordinates targetCoordinates gameplay.Gameboard with
                         | Some character when character.IsEnemy ->
-                            let gameplay = Gameplay.tryIssueCharacterAction gameplay.Time PlayerIndex (Shoot (CharacterReaction character.CharacterIndex)) gameplay
+                            let gameplay = Gameplay.tryIssueAction gameplay.Time PlayerIndex (Shoot (CharacterReaction character.CharacterIndex)) gameplay
                             withMsg MakeEnemiesMove gameplay
                         | Some _ | None -> just gameplay
                     else just gameplay 
