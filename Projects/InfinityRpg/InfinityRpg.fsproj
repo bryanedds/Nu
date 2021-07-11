@@ -83,8 +83,7 @@
     <Compile Include="InfinityNavigationMap.fs" />
     <Compile Include="InfinityFieldMap.fs" />
     <Compile Include="InfinityField.fs" />
-    <Compile Include="InfinityPuppeteer.fs" />
-    <Compile Include="InfinityChessboard.fs" />
+    <Compile Include="InfinityGameboard.fs" />
     <Compile Include="InfinityGameplay.fs" />
     <Compile Include="InfinityPickupDispatcher.fs" />
     <Compile Include="InfinityPropDispatcher.fs" />
