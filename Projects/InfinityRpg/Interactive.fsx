@@ -38,7 +38,6 @@ System.IO.Directory.SetCurrentDirectory workingDirPath
 #load "InfinityCharacter.fs"
 #load "InfinityField.fs"
 #load "InfinityGameboard.fs"
-#load "InfinityRoundState.fs"
 #load "InfinityGameplay.fs"
 #load "InfinityPickupDispatcher.fs"
 #load "InfinityPropDispatcher.fs"

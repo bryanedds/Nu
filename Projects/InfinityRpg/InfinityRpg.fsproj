@@ -85,7 +85,6 @@
     <Compile Include="InfinityCharacter.fs" />
     <Compile Include="InfinityField.fs" />
     <Compile Include="InfinityGameboard.fs" />
-    <Compile Include="InfinityRoundState.fs" />
     <Compile Include="InfinityGameplay.fs" />
     <Compile Include="InfinityPickupDispatcher.fs" />
     <Compile Include="InfinityPropDispatcher.fs" />

@@ -1,9 +1,7 @@
 ﻿namespace InfinityRpg
 open System
-open System.Numerics
 open Prime
 open Nu
-open Nu.Declarative
 open InfinityRpg
 
 type [<StructuralEquality; NoComparison>] InputMode =
@@ -11,16 +9,56 @@ type [<StructuralEquality; NoComparison>] InputMode =
     | SelectionInputMode
     | DisabledInputMode
 
+type [<StructuralEquality; NoComparison>] Action =
+    | Step of Direction
+    | Travel of NavigationNode list
+    | Attack of TurnReaction
+    | Shoot of TurnReaction
+
+type [<StructuralEquality; NoComparison>] Navigation =
+    | Idling // no navigation
+    | Waiting // skipping turn
+    | ManualNavigation
+    | AutomaticNavigation of NavigationNode list
+
+type [<StructuralEquality; NoComparison>] Progression =
+    | ActionsIssued
+    | EnemiesAttacking
+    | EnemiesWalking
+    | ProgressionFinishing
+    | ProgressionFinished
+
 /// TODO: turn this into an abstract data type.
+/// TODO: keep cleaning up this shitty progression code.
 type [<ReferenceEquality; NoComparison>] Gameplay =
     { Time : int64
       InputMode : InputMode
       ShallLoadGame : bool
+      Inventory : Inventory
       MetaMap : MetaMap
       Field : Field
       Gameboard : Gameboard
-      RoundState : RoundState
-      Inventory : Inventory }
+      WalkingEnemies : CharacterIndex list
+      AttackingEnemies : CharacterIndex list
+      PlayerNavigation : Navigation
+      ActionsIssued : Map<CharacterIndex, Action> }
+
+    (* Properties *)
+
+    /// NOTE: continuity here is the player's ability to perform operations across multiple rounds without processing
+    /// RoundFinished in between. rounds are thus linked together preventing the game from alternating between "round
+    /// on" and "round off" states. In other words, PlayerContinuity effectively tells the game whether to advance the
+    /// round cycle or turn it off. This is what prevents things like a save button blinking on and off during player
+    /// navigation and waiting.
+    member this.IsPlayerContinuing =
+        match this.PlayerNavigation with
+        | Idling -> false
+        | _ -> true
+
+    member this.IsPlayerTraveling =
+        match this.PlayerNavigation with
+        | AutomaticNavigation _ -> true
+        | _ -> false
 
     (* Updaters *)
     
@@ -36,11 +74,20 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
     static member updateGameboard updater gameplay =
         { gameplay with Gameboard = updater gameplay.Gameboard }
     
-    static member updateRoundState updater gameplay =
-        { gameplay with RoundState = updater gameplay.RoundState }
-    
     static member updateInventory updater gameplay =
         { gameplay with Inventory = updater gameplay.Inventory }
+
+    static member updatePlayerNavigation updater gameplay =
+        { gameplay with PlayerNavigation = updater gameplay.PlayerNavigation }
+    
+    static member updateWalkingEnemies updater gameplay =
+        { gameplay with WalkingEnemies = updater gameplay.WalkingEnemies }
+    
+    static member updateAttackingEnemies updater gameplay =
+        { gameplay with AttackingEnemies = updater gameplay.AttackingEnemies }
+    
+    static member updateActionsIssued updater gameplay =
+        { gameplay with ActionsIssued = updater gameplay.ActionsIssued }
     
     static member tryUpdateCharacterTurn index updater gameplay =
         Gameplay.updateGameboard (Gameboard.tryUpdateCharacterTurn index updater) gameplay
@@ -61,6 +108,19 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             (Gameboard.tryGetCharacterCoordinates index gameplay.Gameboard |> Option.get) // assume character exists
             (Gameboard.tryGetCharacterCoordinates index2 gameplay.Gameboard |> Option.get) // assume character exists
 
+    static member getProgression (gameplay : Gameplay) =
+        if Map.notEmpty gameplay.ActionsIssued then ActionsIssued
+        elif List.notEmpty gameplay.AttackingEnemies then EnemiesAttacking
+        elif List.notEmpty gameplay.WalkingEnemies then EnemiesWalking
+        elif gameplay.IsPlayerContinuing then ProgressionFinishing
+        else ProgressionFinished
+    
+    static member inProgress gameplay =
+        Gameplay.getProgression gameplay <> ProgressionFinished
+    
+    static member tryGetPlayerAction (gameplay : Gameplay) =
+        Map.tryFind PlayerIndex gameplay.ActionsIssued
+
     (* FieldMap Commands *)
     
     static member resetFieldMap fieldMap gameplay =
@@ -78,60 +138,51 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         let gameplay = Gameplay.resetFieldMap (FieldMap.makeFromMetaTile gameplay.MetaMap.Current) gameplay
         let newCoordinates =
             match direction with
-            | Upward
-            | Rightward -> gameplay.MetaMap.Current.PathStart
-            | Downward
-            | Leftward -> gameplay.MetaMap.Current.PathEnd
+            | Upward | Rightward -> gameplay.MetaMap.Current.PathStart
+            | Downward | Leftward -> gameplay.MetaMap.Current.PathEnd
         Gameplay.updateGameboard (Gameboard.addCharacter player newCoordinates) gameplay
 
     (* Interaction Commands *)
+    
+    static member issueAction index action gameplay =
+        Gameplay.updateActionsIssued (Map.add index action) gameplay
 
-    static member createWalkingEnemyGroup gameplay =
-        let enemyIndices = Gameboard.getEnemyIndices gameplay.Gameboard
-        let group = List.except gameplay.RoundState.AttackingEnemyGroup enemyIndices
-        Gameplay.updateRoundState (RoundState.addWalkingEnemyGroup group) gameplay
-    
-    static member removeWalkingEnemyGroup gameplay =
-        Gameplay.updateRoundState RoundState.removeWalkingEnemyGroup gameplay
-    
-    static member addAttackingEnemyGroup group gameplay =
-        Gameplay.updateRoundState (RoundState.addAttackingEnemyGroup group) gameplay
-
-    static member removeHeadFromAttackingEnemyGroup gameplay =
-        Gameplay.updateRoundState RoundState.removeHeadFromAttackingEnemyGroup gameplay
-    
-    static member addCharacterAction index (action : Action) gameplay =
-        Gameplay.updateRoundState (RoundState.addCharacterAction index action) gameplay
-
-    static member removeCharacterAction index gameplay =
-        Gameplay.updateRoundState (RoundState.removeCharacterAction index) gameplay
-    
-    static member finishCharacterAction index gameplay =
+    static member finishAction index gameplay =
         let gameplay = Gameplay.updateGameboard (Gameboard.removeCharacterTurn index) gameplay
-        Gameplay.removeCharacterAction index gameplay
+        Gameplay.updateActionsIssued (Map.remove index) gameplay
 
-    static member tryAddCharacterAction time index move gameplay =
+    static member tryIssueCharacterAction time index action gameplay =
         match Gameboard.tryGetCharacter index gameplay.Gameboard with
         | Some character when character.IsAlive ->
-            let gameplay = Gameplay.addCharacterAction index move gameplay
+            let gameplay = Gameplay.issueAction index action gameplay
             let gameplay = Gameplay.tryActivateCharacter time index gameplay
             let gameplay = Gameplay.tryApplyCharacterAction index gameplay
             if index = PlayerIndex then
-                match move with
-                | Step _ -> Gameplay.updateRoundState (RoundState.updatePlayerNavigation (constant ManualNavigation)) gameplay
-                | Travel path -> Gameplay.updateRoundState (RoundState.updatePlayerNavigation (constant (AutomaticNavigation path))) gameplay
+                match action with
+                | Step _ -> Gameplay.updatePlayerNavigation (constant ManualNavigation) gameplay
+                | Travel path -> Gameplay.updatePlayerNavigation (constant (AutomaticNavigation path)) gameplay
                 | _ -> gameplay
             else gameplay
-        | Some _ | None -> gameplay
+        | _ -> gameplay
+
+    static member addWalkingEnemies enemies gameplay =
+        Gameplay.updateWalkingEnemies (constant enemies) gameplay
+
+    static member removeWalkingEnemies gameplay =
+        Gameplay.updateWalkingEnemies (constant []) gameplay
+
+    static member addAttackingEnemies group gameplay =
+        Gameplay.updateAttackingEnemies (constant group) gameplay
+
+    static member removeHeadFromAttackingEnemies gameplay =
+        Gameplay.updateAttackingEnemies List.tail gameplay
     
-    static member tryInterruptPlayer gameplay =
-        if gameplay.RoundState.IsPlayerTraveling then
-            Gameplay.updateRoundState (fun roundState ->
-                RoundState.updatePlayerNavigation (fun navigation ->
-                    match navigation with
-                    | AutomaticNavigation (head :: _) -> AutomaticNavigation [head]
-                    | _ -> navigation)
-                    roundState)
+    static member tryInterruptPlayer (gameplay : Gameplay) =
+        if gameplay.IsPlayerTraveling then
+            Gameplay.updatePlayerNavigation (fun navigation ->
+                match navigation with
+                | AutomaticNavigation (head :: _) -> AutomaticNavigation [head]
+                | _ -> navigation)
                 gameplay
         else gameplay
     
@@ -149,8 +200,8 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             match index with
             | EnemyIndex _ ->
                 let gameplay = if Gen.randomb then Gameplay.updateGameboard (Gameboard.addPickup Health coordinates) gameplay else gameplay
-                let gameplay = Gameplay.updateRoundState (RoundState.updateWalkingEnemyGroup (List.filter (fun character -> Gameboard.doesCharacterExist character gameplay.Gameboard))) gameplay
-                let gameplay = Gameplay.updateRoundState (RoundState.updateAttackingEnemyGroup (List.filter (fun character -> Gameboard.doesCharacterExist character gameplay.Gameboard))) gameplay
+                let gameplay = Gameplay.updateWalkingEnemies (List.filter (fun character -> Gameboard.doesCharacterExist character gameplay.Gameboard)) gameplay
+                let gameplay = Gameplay.updateAttackingEnemies (List.filter (fun character -> Gameboard.doesCharacterExist character gameplay.Gameboard)) gameplay
                 gameplay
             | PlayerIndex -> gameplay
         | None -> gameplay
@@ -198,8 +249,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         | None -> gameplay
     
     static member tryApplyCharacterAction index gameplay =
-        let move = gameplay.RoundState.CharacterActions.[index]
-        match move with
+        match gameplay.ActionsIssued.[index] with // assume index is valid
         | Step direction ->
             Gameplay.tryApplyStep index direction gameplay
         | Travel path ->
@@ -218,11 +268,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
             Gameplay.tryApplyAttack index reaction gameplay
     
     static member tryActivateCharacter time index gameplay =
-        let move = gameplay.RoundState.CharacterActions.[index]
+        let action = gameplay.ActionsIssued.[index] // assume index is valid
         match Gameboard.tryGetCharacterCoordinates index gameplay.Gameboard with
         | Some coordinates ->
             let turn =
-                match move with
+                match action with
                 | Step direction ->
                     Turn.makeWalk time index false coordinates direction
                 | Travel path ->
@@ -299,8 +349,11 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         { Time = 0L
           InputMode = NormalInputMode
           ShallLoadGame = false
+          Inventory = Inventory.initial
           MetaMap = MetaMap.initial
           Field = field
           Gameboard = Gameboard.make field.FieldMap
-          RoundState = RoundState.empty
-          Inventory = Inventory.initial }
+          WalkingEnemies = []
+          AttackingEnemies = []
+          PlayerNavigation = Idling
+          ActionsIssued = Map.empty }
