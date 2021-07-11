@@ -24,13 +24,13 @@ module PropDispatcher =
                 | PropAnimationDestroyed -> single 1
             let spriteOffset =
                 v2
-                    (Constants.Layout.TileSize.X * xOffset)
-                    (Constants.Layout.TileSize.Y * single 0)
-            let spriteInset = v4Bounds spriteOffset Constants.Layout.TileSize
+                    (Constants.Gameplay.TileSize.X * xOffset)
+                    (Constants.Gameplay.TileSize.Y * single 0)
+            let spriteInset = v4Bounds spriteOffset Constants.Gameplay.TileSize
             Some spriteInset
         
         static member Properties =
-            [define Entity.Elevation Constants.Layout.PropElevation
+            [define Entity.Elevation Constants.Gameplay.PropElevation
              define Entity.Omnipresent true]
         
         override this.Initializers (prop, _) =

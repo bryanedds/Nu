@@ -247,8 +247,8 @@ module GameplayDispatcher =
                         | Some currentCoordinates ->
                             let targetOutside =
                                 match direction with
-                                | Upward -> currentCoordinates.Y = Constants.Layout.FieldMapSizeC.Y - 1
-                                | Rightward -> currentCoordinates.X = Constants.Layout.FieldMapSizeC.X - 1
+                                | Upward -> currentCoordinates.Y = Constants.Gameplay.FieldMapSizeC.Y - 1
+                                | Rightward -> currentCoordinates.X = Constants.Gameplay.FieldMapSizeC.X - 1
                                 | Downward -> currentCoordinates.Y = 0
                                 | Leftward -> currentCoordinates.X = 0
                             let possibleInDirection = MetaMap.possibleInDirection direction gameplay.MetaMap
@@ -316,8 +316,8 @@ module GameplayDispatcher =
                                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Group world
                                     let world = entity.SetEffect effect world
                                     let world = entity.SetSize (v2Dup 144.0f) world
-                                    let world = entity.SetPosition ((vctovf turn.OriginCoordinates) - Constants.Layout.TileSize) world
-                                    let world = entity.SetElevation Constants.Layout.EffectElevation world
+                                    let world = entity.SetPosition ((vctovf turn.OriginCoordinates) - Constants.Gameplay.TileSize) world
+                                    let world = entity.SetElevation Constants.Gameplay.EffectElevation world
                                     entity.SetSelfDestruct true world
                                 | MissileAttack ->
                                     match turn.TurnReactionOpt with
@@ -327,9 +327,9 @@ module GameplayDispatcher =
                                             let effect = Effects.makeMagicMissileImpactEffect ()
                                             let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Gameplay.Scene.Group world
                                             let world = entity.SetEffect effect world
-                                            let world = entity.SetSize Constants.Layout.TileSize world
+                                            let world = entity.SetSize Constants.Gameplay.TileSize world
                                             let world = entity.SetPosition (vctovf characterCoordinates) world
-                                            let world = entity.SetElevation Constants.Layout.EffectElevation world
+                                            let world = entity.SetElevation Constants.Gameplay.EffectElevation world
                                             entity.SetSelfDestruct true world
                                         | None -> world
                                     | _ -> world
@@ -389,13 +389,13 @@ module GameplayDispatcher =
                      Content.entities gameplay
                         (fun gameplay _ -> gameplay.Gameboard.Pickups)
                         (fun pickups _ -> pickups |> Map.toSeqBy (fun positionM pickupType -> Pickup.ofPickupType pickupType positionM) |> Map.indexed)
-                        (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Pickup <== pickup])
+                        (fun index pickup _ -> Content.entity<PickupDispatcher> ("Pickup+" + scstring index) [Entity.Size == Constants.Gameplay.TileSize; Entity.Pickup <== pickup])
 
                      // props
                      Content.entities gameplay
                         (fun gameplay _ -> (gameplay.Gameboard.Props, gameplay.Gameboard, gameplay.Time))
                         (fun (props, puppeteer, time) _ -> Gameboard.getPropMap props puppeteer time)
-                        (fun index prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring index) [Entity.Size == Constants.Layout.TileSize; Entity.Prop <== prop])
+                        (fun index prop _ -> Content.entity<PropDispatcher> ("Prop+" + scstring index) [Entity.Size == Constants.Gameplay.TileSize; Entity.Prop <== prop])
 
                      // characters
                      Content.entities gameplay

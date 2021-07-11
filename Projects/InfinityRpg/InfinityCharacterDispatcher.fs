@@ -63,14 +63,14 @@ module CharacterDispatcherModule =
             let spriteCoordinates = animationOffsetC + directionOffsetC + animatedOffsetC
             let spriteOffset =
                 v2
-                    (Constants.Layout.TileSize.X * single spriteCoordinates.X)
-                    (Constants.Layout.TileSize.Y * single spriteCoordinates.Y)
-            let spriteInset = v4Bounds spriteOffset Constants.Layout.TileSize
+                    (Constants.Gameplay.TileSize.X * single spriteCoordinates.X)
+                    (Constants.Gameplay.TileSize.Y * single spriteCoordinates.Y)
+            let spriteInset = v4Bounds spriteOffset Constants.Gameplay.TileSize
             Some spriteInset
 
         static member Properties =
-            [define Entity.Size Constants.Layout.TileSize
-             define Entity.Elevation Constants.Layout.CharacterElevation
+            [define Entity.Size Constants.Gameplay.TileSize
+             define Entity.Elevation Constants.Gameplay.CharacterElevation
              define Entity.Omnipresent true
              define Entity.CharacterAnimationState CharacterAnimationState.initial
              define Entity.CharacterAnimationSheet Assets.Gameplay.PlayerImage

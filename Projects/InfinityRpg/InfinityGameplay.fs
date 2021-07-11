@@ -354,7 +354,7 @@ type [<ReferenceEquality; NoComparison>] Gameplay =
         Gameplay.updateGameboard (Gameboard.addProp LongGrass coordinates) gameplay
 
     static member makeLongGrasses gameplay =
-        let mapBounds = v4iBounds v2iZero (Constants.Layout.FieldMapSizeC - v2iOne)
+        let mapBounds = v4iBounds v2iZero (Constants.Gameplay.FieldMapSizeC - v2iOne)
         let predicate1 coordinates = Math.isPointInBoundsI coordinates mapBounds && Map.find coordinates gameplay.Field.FieldMap.FieldTiles = FieldMap.GrassTile
         let predicate2 coordinates = FieldMap.hasAtLeastNAdjacentTiles 2 coordinates FieldMap.TreeTile mapBounds gameplay.Field.FieldMap.FieldTiles
         let unoccupiedSpaces = Gameboard.getUnoccupiedSpaces gameplay.Gameboard
