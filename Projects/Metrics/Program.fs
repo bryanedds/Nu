@@ -174,7 +174,7 @@ type MyGameDispatcher () =
         //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
-        // create 3M movers (goal: 60FPS, current: 50FPS)
+        // create 3M movers (goal: 60FPS, current: 55FPS)
         for _ in 0 .. 3000000 - 1 do
             let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id ecs
             mover.Index.Velocity.Index.Velocity <- v2One
