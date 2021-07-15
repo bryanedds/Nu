@@ -232,7 +232,7 @@ type MyGameDispatcher () =
 
         // raw, manually managed array of structs               inits fast, runs fast. optimal but inflexible.
         //
-        // unordered components                                 inits medium fast (int HashSet op may be required), runs fast. slight flexibility increase.
+        // uncorreelated components                             inits medium fast (int HashSet op may be required), runs fast. slight flexibility increase.
         //
         // correlated components                                inits slow, runs medium fast. suboptimal, but very flexible.
 

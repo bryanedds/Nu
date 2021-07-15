@@ -326,24 +326,24 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c)
             let system = Option.get systemOpt
             &system.Component
 
-/// An ECS system with components stored by an integer index in an unordered fashion.
-type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+/// An ECS system with components stored by an integer index.
+type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (components, componentsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
 
-    new (ecs) = SystemUnordered (false, ecs)
+    new (ecs) = SystemUncorrelated (false, ecs)
 
     member this.Components with get () = components
     member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
 
-    member this.IndexUnordered index =
+    member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
         ComponentRef<'c>.make index components componentsBuffered
 
-    member this.RegisterUnordered (comp : 'c) =
+    member this.RegisterUncorrelated (comp : 'c) =
 
         // ensure component is marked active
         let mutable comp = comp
@@ -369,7 +369,7 @@ type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, 
             freeIndex <- inc index
             ComponentRef.make index components componentsBuffered
 
-    member this.UnregisterUnordered index =
+    member this.UnregisterUncorrelated index =
         if index <> freeIndex then
             components.[index].Active <- false
             freeList.Add index |> ignore<bool>
@@ -377,23 +377,23 @@ type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, 
 
     type 'w Ecs with
 
-        member this.IndexSystemUnordered<'c when 'c : struct and 'c :> 'c Component> () =
-            this.IndexSystem<'c, SystemUnordered<'c, 'w>> ()
+        member this.IndexSystemUncorrelated<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexSystem<'c, SystemUncorrelated<'c, 'w>> ()
 
-        member this.IndexUnordered<'c when 'c : struct and 'c :> 'c Component> index =
-            let systemOpt = this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> ()
+        member this.IndexUncorrelated<'c when 'c : struct and 'c :> 'c Component> index =
+            let systemOpt = this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> ()
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
-            system.IndexUnordered index
+            system.IndexUncorrelated index
 
-        member this.RegisterUnordered<'c when 'c : struct and 'c :> 'c Component> comp =
-            match this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> () with
-            | Some system -> system.RegisterUnordered comp
+        member this.RegisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> comp =
+            match this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> () with
+            | Some system -> system.RegisterUncorrelated comp
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.UnregisterUnordered<'c when 'c : struct and 'c :> 'c Component> index =
-            match this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> () with
-            | Some system -> system.UnregisterUnordered index
+        member this.UnregisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> index =
+            match this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> () with
+            | Some system -> system.UnregisterUncorrelated index
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// An ECS system with components correlated by entity id.
