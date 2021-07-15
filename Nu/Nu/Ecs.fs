@@ -96,10 +96,6 @@ and SystemCallback<'d, 'w> =
 and SystemCallbackBoxed<'w> =
     SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
 
-/// Correlation changes to be junctioned / unjunctioned.
-and JunctionChanges =
-    Dictionary<Guid, string HashSet>
-
 /// A base system type of an ECS.
 /// Systems are a bit different in this ECS; they're primarily storage for components and don't have any behavior
 /// associated with them. Because this ECS is purely event-driven, behavior is encoded in event handlers rather than
@@ -484,7 +480,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         let buffered = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef
         ComponentRef<'j>.make index junction buffered
 
-    member internal this.RegisterCorrelatedInternal (comp : 'c) entityId ecs =
+    member internal this.RegisterCorrelated (comp : 'c) entityId ecs =
 
         // activate component
         let mutable comp = comp
@@ -526,7 +522,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         // component is already registered
         else failwith ("Component registered multiple times for entity '" + string entityId + "'.")
 
-    member internal this.UnregisterCorrelatedInternal entityId ecs =
+    member internal this.UnregisterCorrelated entityId ecs =
         match correlations.TryGetValue entityId with
         | (true, index) ->
 
@@ -584,7 +580,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> comp entityId =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
             | Some system ->
-                let componentRef = system.RegisterCorrelatedInternal comp entityId this
+                let componentRef = system.RegisterCorrelated comp entityId this
                 match this.Correlations.TryGetValue entityId with
                 | (true, correlation) ->
                     correlation.Add system.Name |> ignore<bool>
@@ -598,7 +594,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
             | Some system ->
-                if system.UnregisterCorrelatedInternal entityId this then
+                if system.UnregisterCorrelated entityId this then
                     match this.Correlations.TryGetValue entityId with
                     | (true, correlation) ->
                         correlation.Remove system.Name |> ignore<bool>
@@ -679,16 +675,16 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.IndexBuffered.Simplexes.[simplexName]
 
-    member this.RegisterMultiplexed comp simplexName entityId ecs =
-        let _ = this.RegisterCorrelatedInternal Unchecked.defaultof<_> entityId ecs
+    member internal this.RegisterMultiplexed comp simplexName entityId ecs =
+        let _ = this.RegisterCorrelated Unchecked.defaultof<_> entityId ecs
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.Index.RegisterMultiplexed (simplexName, comp)
         componentMultiplexed
 
-    member this.UnregisterMultiplexed simplexName entityId ecs =
+    member internal this.UnregisterMultiplexed simplexName entityId ecs =
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.Index.UnregisterMultiplexed simplexName |> ignore<bool>
-        this.UnregisterCorrelatedInternal entityId ecs
+        this.UnregisterCorrelated entityId ecs
 
     type 'w Ecs with
 
@@ -789,16 +785,16 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         if not found then raise (ArgumentOutOfRangeException "nodeId")
         system.IndexCorrelated entityId
 
-    member this.RegisterHierarchical comp nodeId entityId ecs =
+    member internal this.RegisterHierarchical comp nodeId entityId ecs =
         match systemDict.TryGetValue nodeId with
         | (true, system) ->
-            let _ = system.RegisterCorrelatedInternal comp entityId ecs
+            let _ = system.RegisterCorrelated comp entityId ecs
             true
         | (false, _) -> false
 
-    member this.UnregisterHierarchical nodeId entityId ecs =
+    member internal this.UnregisterHierarchical nodeId entityId ecs =
         match systemDict.TryGetValue nodeId with
-        | (true, system) -> system.UnregisterCorrelatedInternal entityId ecs
+        | (true, system) -> system.UnregisterCorrelated entityId ecs
         | (false, _) -> false
 
     type 'w Ecs with

@@ -66,7 +66,7 @@ type [<NoEquality; NoComparison; Struct>] MoverDynamic =
     interface MoverDynamic Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
         member this.ShouldJunction systemNames =
-            not (systemNames.Contains (nameof MoverDynamic)) &&
+            systemNames.Contains (nameof MoverDynamic) |> not &&
             systemNames.Contains (nameof Velocity) &&
             systemNames.Contains (nameof Position)
         member this.AllocateJunctions _ = [||]
@@ -199,15 +199,15 @@ type MyGameDispatcher () =
             let mover = ecs.RegisterCorrelated Unchecked.defaultof<MoverStatic> Gen.id
             mover.Index.Velocity.Index.Velocity <- v2One
 
-        // define junction changes
-        ecs.Subscribe EcsEvents.JunctionChanges $ fun (changes : SystemEvent<Dictionary<Guid, string HashSet>, World>) _ _ ->
-            for change in changes.SystemEventData do
+        // define junction changes for dynamic movers
+        ecs.Subscribe EcsEvents.JunctionChanges $ fun (evt : SystemEvent<Dictionary<Guid, string HashSet>, World>) _ _ ->
+            for change in evt.SystemEventData do
                 if ecs.ShouldJunction<MoverDynamic> change.Value
                 then ecs.RegisterCorrelated Unchecked.defaultof<MoverDynamic> change.Key |> ignore
                 else ecs.UnregisterCorrelated<MoverDynamic> change.Key |> ignore
 
   #if SYSTEM_ITERATION
-        // define update for movers
+        // define update for static movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             let components = moverSystem.Correlateds.Array
             let velocities = moverSystem.IndexJunction<Velocity>(nameof Velocity).Array
@@ -220,7 +220,7 @@ type MyGameDispatcher () =
                     position.Position.X <- position.Position.X + velocity.Velocity.X
                     position.Position.Y <- position.Position.Y + velocity.Velocity.Y
   #else
-        // define update for movers
+        // define update for static movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
             for components in ecs.GetComponentArrays<MoverStatic> () do
                 for i in 0 .. components.Length - 1 do
