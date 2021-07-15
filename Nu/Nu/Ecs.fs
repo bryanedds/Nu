@@ -24,7 +24,6 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         abstract Active : bool with get, set
         abstract AllocateJunctions : 'w Ecs -> (string * obj * obj) array
         abstract ResizeJunctions : int -> obj array -> 'w Ecs -> unit
-        abstract MoveJunctions : int -> int -> obj array -> 'w Ecs -> unit
         abstract Junction : int -> obj array -> obj array -> Guid -> 'w Ecs -> 'c
         abstract Disjunction : int -> obj array -> Guid -> 'w Ecs -> unit
         abstract TypeName : string
@@ -317,6 +316,10 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c)
     let mutable comp = comp
     member this.Component with get () = &comp
     type 'w Ecs with
+
+        member this.IndexSystemSingleton<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexSystem<'c, SystemSingleton<'c, 'w>> ()
+
         member this.IndexSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> () =
             let systemOpt = this.TryIndexSystem<'c, SystemSingleton<'c, 'w>> ()
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
@@ -374,6 +377,9 @@ type SystemUnordered<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, 
 
     type 'w Ecs with
 
+        member this.IndexSystemUnordered<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexSystem<'c, SystemUnordered<'c, 'w>> ()
+
         member this.IndexUnordered<'c when 'c : struct and 'c :> 'c Component> index =
             let systemOpt = this.TryIndexSystem<'c, SystemUnordered<'c, 'w>> ()
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
@@ -423,44 +429,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     member this.IndexJunctionedUnbuffered fieldPath index = &(this.IndexJunction<'j> fieldPath).[index]
     member this.IndexJunctionedBuffered fieldPath index = (junctionsMapped.[fieldPath] :?> 'j ArrayRef).[index]
 
-    member private this.Compact ecs =
-
-        // compact array
-        // TODO: P1: step-debug this.
-        let mutable i = 0
-        let mutable j = 1
-        while j < freeIndex do
-
-            // check if slot is free
-            if not correlateds.[i].Active && freeList.Contains i then
-
-                // find next non-free component
-                while
-                    j < freeIndex &&
-                    not correlateds.[j].Active &&
-                    not (freeList.Contains j) do
-                    j <- inc j
-
-                // move components
-                correlateds.[i] <- correlateds.[j]
-                correlateds.[0].MoveJunctions j i junctions ecs
-
-                // update book-keeping
-                match correlationsBack.TryGetValue j with
-                | (true, entityId) ->
-                    correlations.[entityId] <- i
-                    correlationsBack.Remove j |> ignore<bool>
-                    correlationsBack.Add (i, entityId)
-                | (false, _) -> failwithumf ()
-
-                // loop
-                j <- inc j
-            i <- inc i
-
-        // update book-keeping
-        freeList.Clear ()
-        freeIndex <- j
-
     member inline private this.IndexCorrelatedToI entityId =
         let (found, index) = correlations.TryGetValue entityId
         if not found then raise (ArgumentOutOfRangeException "entityId")
@@ -491,18 +459,28 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         // check if component is already registered
         if not (correlations.ContainsKey entityId) then
 
-            // ensure there is space in the arrays
-            if freeIndex >= correlateds.Length then
-                let length = correlateds.Length * Constants.Ecs.ArrayGrowth
-                let arr = Array.zeroCreate length in correlateds.Array.CopyTo (arr, 0); correlateds.Array <- arr
-                comp.ResizeJunctions length junctions ecs
-                lock correlatedsBuffered (fun () ->
-                    let arr = Array.zeroCreate length in correlatedsBuffered.Array.CopyTo (arr, 0); correlatedsBuffered.Array <- arr)
-                lock junctionsBuffered (fun () ->
-                    comp.ResizeJunctions length junctionsBuffered ecs)
+            // find a free index, enlarging arrays if necessary
+            let index =
+                if freeIndex >= correlateds.Length then
+                    if freeList.Count <> 0 then
+                        let index = Seq.head freeList
+                        freeList.Remove index |> ignore<bool>
+                        index
+                    else
+                        let length = correlateds.Length * Constants.Ecs.ArrayGrowth
+                        let arr = Array.zeroCreate length in correlateds.Array.CopyTo (arr, 0); correlateds.Array <- arr
+                        comp.ResizeJunctions length junctions ecs
+                        lock correlatedsBuffered (fun () -> let arr = Array.zeroCreate length in correlatedsBuffered.Array.CopyTo (arr, 0); correlatedsBuffered.Array <- arr)
+                        lock junctionsBuffered (fun () -> comp.ResizeJunctions length junctionsBuffered ecs)
+                        let index = freeIndex
+                        freeIndex <- inc freeIndex
+                        index
+                else
+                    let index = freeIndex
+                    freeIndex <- inc freeIndex
+                    index
 
             // allocate component
-            let index = freeIndex in freeIndex <- inc freeIndex
             let comp = comp.Junction index junctions junctionsBuffered entityId ecs
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
@@ -525,13 +503,13 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             correlations.Remove entityId |> ignore<bool>
             correlationsBack.Remove index |> ignore<bool>
             comp.Disjunction index junctions entityId ecs
-            if  correlateds.Length < freeList.Count * 2 && // freeList is always empty if unordered
-                correlateds.Length > Constants.Ecs.ArrayReserve then
-                this.Compact ecs
             true
         | (false, _) -> false
 
     type 'w Ecs with
+
+        member this.IndexSystemCorrelated<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
 
         member this.GetEntitiesCorrelated<'c when 'c : struct and 'c :> 'c Component> () =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
@@ -602,10 +580,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             Array.blit components.Array 0 arr 0 (min components.Array.Length arr.Length)
             components.Array <- arr
 
-        member this.MoveJunction<'c when 'c : struct and 'c :> 'c Component> (src : int) (dst : int) (componentsObj : obj) =
-            let components = componentsObj :?> 'c ArrayRef
-            components.[dst] <- components.[src]
-
 /// Handle to one of an array of multiplexed components.
 type Simplex<'c when 'c : struct> =
     { mutable Simplex : 'c }
@@ -622,7 +596,6 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         member this.Active with get () = this.Active and set value = this.Active <- value
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
-        member this.MoveJunctions _ _ _ _ = ()
         member this.Junction _ _ _ _ _ = this
         member this.Disjunction _ _ _ _ = ()
         member this.TypeName = getTypeName this
@@ -663,6 +636,9 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
         this.UnregisterCorrelated entityId ecs
 
     type 'w Ecs with
+
+        member this.IndexSystemMultiplexed<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
 
         member this.QualifyMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
@@ -764,6 +740,9 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         | (false, _) -> false
 
     type 'w Ecs with
+
+        member this.IndexSystemHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
 
         member this.IndexTree<'c when 'c : struct and 'c :> 'c Component> () =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
