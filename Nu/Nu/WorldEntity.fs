@@ -257,14 +257,12 @@ module WorldEntityModule =
         /// Register a correlated ECS component.
         member this.RegisterCorrelated<'c, 's when 's :> SystemCorrelated<'c, World>> (comp : 'c) world =
             let ecs = World.getSelectedEcs world
-            let system = ecs.IndexSystem<'c, 's> ()
-            system.RegisterCorrelated comp this.Cid ecs
+            ecs.RegisterCorrelated comp this.Cid
 
         /// Index a correlated ECS component.
         member this.IndexCorrelated<'c, 's when 's :> SystemCorrelated<'c, World>> world : 'c ComponentRef =
             let ecs = World.getSelectedEcs world
-            let system = ecs.IndexSystem<'c, 's> ()
-            system.IndexCorrelated this.Cid
+            ecs.IndexCorrelated this.Cid
 
         /// Index a junctioned ECS component.
         member this.IndexJunctioned<'c, 'j, 's when 'c : struct and 'c :> 'c Component

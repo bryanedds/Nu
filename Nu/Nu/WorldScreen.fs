@@ -115,12 +115,18 @@ module WorldScreenModule =
 
     type World with
 
+        static member private junctionChanges (ecs : 'w Ecs) (world : 'w) =
+            match ecs.PopCorrelationChanges () with
+            | correlationChanges when correlationChanges.Count <> 0 ->
+                let world = ecs.Publish EcsEvents.JunctionChanges correlationChanges ecs.SystemGlobal world
+                World.junctionChanges ecs world
+            | _ -> world
+
         static member internal updateScreen (screen : Screen) world =
 
-            // correlate ecs
+            // junction ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.Publish EcsEvents.Correlate ecs.CorrelationsChanged ecs.SystemGlobal world
-            ecs.ClearCorrelationsChanged ()
+            let world = World.junctionChanges ecs world
 
             // update ecs
 #if ECS_BUFFERED_PLUS
@@ -144,10 +150,9 @@ module WorldScreenModule =
 
         static member internal postUpdateScreen (screen : Screen) world =
 
-            // correlate ecs
+            // junction ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.Publish EcsEvents.Correlate ecs.CorrelationsChanged ecs.SystemGlobal world
-            ecs.ClearCorrelationsChanged ()
+            let world = World.junctionChanges ecs world
 
             // post-update ecs
 #if ECS_BUFFERED_PLUS
@@ -171,10 +176,9 @@ module WorldScreenModule =
 
         static member internal actualizeScreen (screen : Screen) world =
 
-            // correlate ecs
+            // junction ecs
             let ecs = World.getScreenEcs screen world
-            let world = ecs.Publish EcsEvents.Correlate ecs.CorrelationsChanged ecs.SystemGlobal world
-            ecs.ClearCorrelationsChanged ()
+            let world = World.junctionChanges ecs world
 
             // actualize ecs
             let world = ecs.Publish EcsEvents.Actualize () ecs.SystemGlobal world

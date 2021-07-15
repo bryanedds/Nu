@@ -103,6 +103,7 @@ type [<NoEquality; NoComparison; Struct>] Transform =
 
     interface Transform Component with
         member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
+        member this.ShouldJunction _ = true
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.Junction _ _ _ _ _ = this
