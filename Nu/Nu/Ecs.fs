@@ -113,14 +113,15 @@ and [<NoEquality; NoComparison>] internal ArrayObjs =
       mutable ArrayObjsBuffered : obj List }
 
 /// Nu's custom Entity-Component-System implementation.
-/// Nu's conception of an ECS is primarily as an abstraction over user-definable storage formats.
-/// The default formats include SoA-style formats for non-correlated, correlated, multiplexed, and hierarchichal value types.
-/// User can add formats of their own design by implementing the 'w System interface and providing related extension methods
-/// on this 'w Ecs type.
-/// To keep this ECS implementation a library rather than a framework, this ECS features no inversion of control mechanisms.
-/// Yes, there are event callbacks, but they are not IoC because they are not invoked from within the ECS but rather
-/// exclusively by the client code. The most interesting exclusion is a lack of component add / remove events. The author
-/// is still betting that such a feature is unecessary and would only compromise the algebraic nature of this ECS design.
+/// Nu's conception of an ECS is primarily as an abstraction over user-definable component storage formats.
+/// The default formats include SoA-style formats for non-correlated, correlated, multiplexed, and hierarchichal value
+/// types. User can add formats of their own design by implementing the 'w System interface and providing related
+/// extension methods on this 'w Ecs type.
+/// To keep this ECS implementation a library rather than a framework, it features no inversion of control mechanisms.
+/// Yes, there are ECS event callbacks, but they are not IoC because they are not invoked from within the ECS but
+/// rather by the client code exclusively. The most interesting exclusion is a lack of component add / remove events.
+/// The author concludes that this feature would only compromise the algebraic nature of this design as well as
+/// performance.
 and 'w Ecs () as this =
 
     let mutable systemCached = System<'w> typeof<unit>.Name
