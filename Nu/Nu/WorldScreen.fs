@@ -117,8 +117,12 @@ module WorldScreenModule =
 
         static member internal updateScreen (screen : Screen) world =
 
-            // update ecs
+            // correlate ecs
             let ecs = World.getScreenEcs screen world
+            let world = ecs.Publish EcsEvents.Correlate ecs.CorrelationsChanged ecs.SystemGlobal world
+            ecs.ClearCorrelationsChanged ()
+
+            // update ecs
 #if ECS_BUFFERED_PLUS
             let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.SystemGlobal
             let world = ecs.Publish EcsEvents.Update () ecs.SystemGlobal world
@@ -140,8 +144,12 @@ module WorldScreenModule =
 
         static member internal postUpdateScreen (screen : Screen) world =
 
-            // post-update ecs
+            // correlate ecs
             let ecs = World.getScreenEcs screen world
+            let world = ecs.Publish EcsEvents.Correlate ecs.CorrelationsChanged ecs.SystemGlobal world
+            ecs.ClearCorrelationsChanged ()
+
+            // post-update ecs
 #if ECS_BUFFERED_PLUS
             let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.SystemGlobal
             let world = ecs.Publish EcsEvents.PostUpdate () ecs.SystemGlobal world
@@ -163,8 +171,12 @@ module WorldScreenModule =
 
         static member internal actualizeScreen (screen : Screen) world =
 
-            // actualize ecs
+            // correlate ecs
             let ecs = World.getScreenEcs screen world
+            let world = ecs.Publish EcsEvents.Correlate ecs.CorrelationsChanged ecs.SystemGlobal world
+            ecs.ClearCorrelationsChanged ()
+
+            // actualize ecs
             let world = ecs.Publish EcsEvents.Actualize () ecs.SystemGlobal world
 
             // actualize via dispatcher
