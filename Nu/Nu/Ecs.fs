@@ -904,6 +904,7 @@ type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
 [<RequireQualifiedAccess>]
 module EcsEvents =
 
+    let [<Literal>] Correlate = "Correlate"
     let [<Literal>] Update = "Update"
     let [<Literal>] UpdateParallel = "UpdateParallel"
     let [<Literal>] PostUpdate = "PostUpdate"
