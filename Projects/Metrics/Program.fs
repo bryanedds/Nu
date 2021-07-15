@@ -66,7 +66,6 @@ type [<NoEquality; NoComparison; Struct>] MoverDynamic =
     interface MoverDynamic Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
         member this.ShouldJunction systemNames =
-            systemNames.Contains (nameof MoverDynamic) |> not &&
             systemNames.Contains (nameof Velocity) &&
             systemNames.Contains (nameof Position)
         member this.AllocateJunctions _ = [||]
@@ -199,12 +198,10 @@ type MyGameDispatcher () =
             let mover = ecs.RegisterCorrelated Unchecked.defaultof<MoverStatic> Gen.id
             mover.Index.Velocity.Index.Velocity <- v2One
 
-        // define junction changes for dynamic movers
-        ecs.Subscribe EcsEvents.JunctionChanges $ fun (evt : SystemEvent<Dictionary<Guid, string HashSet>, World>) _ _ ->
-            for change in evt.SystemEventData do
-                if ecs.ShouldJunction<MoverDynamic> change.Value
-                then ecs.RegisterCorrelated Unchecked.defaultof<MoverDynamic> change.Key |> ignore
-                else ecs.UnregisterCorrelated<MoverDynamic> change.Key |> ignore
+        // define synchronize correlation changes for dynamic movers
+        ecs.Subscribe EcsEvents.SynchronizeCorrelationChanges $ fun evt _ _ ->
+            for change in (evt.SystemEventData : Dictionary<Guid, string HashSet>) do
+                ecs.SynchronizeCorrelated<MoverDynamic> change.Value change.Key
 
   #if SYSTEM_ITERATION
         // define update for static movers

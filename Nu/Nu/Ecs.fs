@@ -257,9 +257,6 @@ and 'w Ecs () as this =
         correlationsChanged <- dictPlus<Guid, string HashSet> HashIdentity.Structural []
         result
 
-    member this.ShouldJunction<'c when 'c : struct and 'c :> 'c Component> systemNames =
-        Unchecked.defaultof<'c>.ShouldJunction systemNames
-
     member this.AllocateComponents<'c when 'c : struct and 'c :> 'c Component> buffered =
         let componentName = Unchecked.defaultof<'c>.TypeName
         match arrayObjss.TryGetValue componentName with
@@ -605,6 +602,14 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
                 else false
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
+        member this.SynchronizeCorrelated<'c when 'c : struct and 'c :> 'c Component> (systemNames : string HashSet) entityId =
+            if systemNames.Contains Unchecked.defaultof<'c>.TypeName then
+                if not (Unchecked.defaultof<'c>.ShouldJunction systemNames) then
+                    this.UnregisterCorrelated<'c> entityId |> ignore<bool>
+            else
+                if Unchecked.defaultof<'c>.ShouldJunction systemNames then
+                    this.RegisterCorrelated Unchecked.defaultof<'c> entityId |> ignore<'c ComponentRef>
+
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsBufferedObj : obj) =
 
             // ensure component is active
@@ -738,6 +743,14 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
                 else false
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
+        member this.SynchronizeMultiplexed<'c when 'c : struct and 'c :> 'c Component> (systemNames : string HashSet) simplexName entityId =
+            if systemNames.Contains Unchecked.defaultof<'c>.TypeName then
+                if not (Unchecked.defaultof<'c>.ShouldJunction systemNames) then
+                    this.UnregisterMultiplexed<'c> simplexName entityId |> ignore<bool>
+            else
+                if Unchecked.defaultof<'c>.ShouldJunction systemNames then
+                    this.RegisterMultiplexed Unchecked.defaultof<'c> simplexName entityId
+
 /// An Ecs system that stores components in a tree hierarchy.
 type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
@@ -861,6 +874,14 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
                 else false
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
+        member this.SynchronizeHierarchical<'c when 'c : struct and 'c :> 'c Component> (systemNames : string HashSet) nodeId entityId =
+            if systemNames.Contains Unchecked.defaultof<'c>.TypeName then
+                if not (Unchecked.defaultof<'c>.ShouldJunction systemNames) then
+                    this.UnregisterHierarchical<'c> nodeId entityId |> ignore<bool>
+            else
+                if Unchecked.defaultof<'c>.ShouldJunction systemNames then
+                    this.RegisterHierarchical Unchecked.defaultof<'c> nodeId entityId
+
 /// A correlated entity reference.
 /// Slow relative to normal ECS operations, but convenient for one-off uses.
 type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
@@ -904,9 +925,9 @@ type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
 [<RequireQualifiedAccess>]
 module EcsEvents =
 
-    let [<Literal>] JunctionChanges = "JunctionChanges"
-    let [<Literal>] Update = "Update"
-    let [<Literal>] UpdateParallel = "UpdateParallel"
-    let [<Literal>] PostUpdate = "PostUpdate"
-    let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
-    let [<Literal>] Actualize = "Actualize"
+    let rec SynchronizeCorrelationChanges = nameof SynchronizeCorrelationChanges
+    let rec Update = nameof Update
+    let rec UpdateParallel = nameof UpdateParallel
+    let rec PostUpdate = nameof PostUpdate
+    let rec PostUpdateParallel = nameof PostUpdateParallel
+    let rec Actualize = nameof Actualize
