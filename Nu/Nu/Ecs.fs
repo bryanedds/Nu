@@ -187,6 +187,11 @@ and 'w Ecs () as this =
         | (true, systemNames) -> systemNames
         | (false, _) -> emptySystemNames
 
+    member this.IndexEntities systemNames =
+        correlations |>
+        Seq.filter (fun kvp -> kvp.Value.IsSubsetOf systemNames) |>
+        Seq.map (fun kvp -> kvp.Key)
+
     member this.SubscribePlus<'d> subscriptionId eventName (callback : SystemCallback<'d, 'w>) =
         match systemSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
