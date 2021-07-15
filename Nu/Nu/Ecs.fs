@@ -452,14 +452,14 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
     member this.RegisterCorrelated (comp : 'c) entityId ecs =
 
-        // ensure component is marked active
+        // activate component
         let mutable comp = comp
         comp.Active <- true
 
         // check if component is already registered
         if not (correlations.ContainsKey entityId) then
 
-            // find a free index, enlarging arrays if necessary
+            // allocate index for component, enlarging arrays if necessary
             let index =
                 if freeIndex >= correlateds.Length then
                     if freeList.Count <> 0 then
@@ -495,15 +495,28 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     member this.UnregisterCorrelated entityId ecs =
         match correlations.TryGetValue entityId with
         | (true, index) ->
-            let comp = correlateds.[index]
-            if  index <> freeIndex then
-                correlateds.[index].Active <- false
-                freeList.Add index |> ignore<bool>
-            else freeIndex <- dec freeIndex
+
+            // deallocate component
             correlations.Remove entityId |> ignore<bool>
             correlationsBack.Remove index |> ignore<bool>
-            comp.Disjunction index junctions entityId ecs
+            Unchecked.defaultof<'c>.Disjunction index junctions entityId ecs
+
+            // deallocate index for component
+            if index <> freeIndex
+            then freeList.Add index |> ignore<bool>
+            else freeIndex <- dec freeIndex
+
+            // deactive component
+            correlateds.[index].Active <- false
+
+            // clear free list and reset free index when there are no registered components remaining
+            if  freeList.Count = correlateds.Length then
+                freeList.Clear ()
+                freeIndex <- 0
+
+            // fin
             true
+
         | (false, _) -> false
 
     type 'w Ecs with
