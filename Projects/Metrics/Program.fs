@@ -13,6 +13,7 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
       mutable Sprite : Image AssetTag }
     interface StaticSpriteComponent Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.ShouldJunction _ = true
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.Junction _ _ _ _ _ = this
@@ -26,6 +27,7 @@ type [<NoEquality; NoComparison; Struct>] Velocity =
       mutable Velocity : Vector2 }
     interface Velocity Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.ShouldJunction _ = true
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.Junction _ _ _ _ _ = this
@@ -37,6 +39,7 @@ type [<NoEquality; NoComparison; Struct>] Position =
       mutable Position : Vector2 }
     interface Position Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.ShouldJunction _ = true
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.Junction _ _ _ _ _ = this
@@ -49,6 +52,7 @@ type [<NoEquality; NoComparison; Struct>] MoverStatic =
       Position : Position ComponentRef }
     interface MoverStatic Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.ShouldJunction _ = true
         member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Velocity> "Velocity"; ecs.AllocateJunction<Position> "Position"|]
         member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Velocity> size junctions.[0]; ecs.ResizeJunction<Position> size junctions.[1]
         member this.Junction index junctions buffereds _ ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0] buffereds.[0]; Position = ecs.Junction<Position> index junctions.[1] buffereds.[1] }
@@ -61,6 +65,10 @@ type [<NoEquality; NoComparison; Struct>] MoverDynamic =
       Position : Position ComponentRef }
     interface MoverDynamic Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.ShouldJunction systemNames =
+            not (systemNames.Contains (nameof MoverDynamic)) &&
+            systemNames.Contains (nameof Velocity) &&
+            systemNames.Contains (nameof Position)
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.Junction _ _ _ entityId ecs =
@@ -163,7 +171,8 @@ type MyGameDispatcher () =
         // create systems
         let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
         let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        let moverSystem = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
+        let moverStaticSystem = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
+        let moverDynamicSystem = ecs.RegisterSystem (SystemCorrelated<MoverDynamic, World> ecs)
 
         //// create object references
         //let count = 2500000
@@ -187,8 +196,15 @@ type MyGameDispatcher () =
 
         // create 3M movers (goal: 60FPS, current: 54FPS)
         for _ in 0 .. 3000000 - 1 do
-            let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<MoverStatic> Gen.id ecs
+            let mover = ecs.RegisterCorrelated Unchecked.defaultof<MoverStatic> Gen.id
             mover.Index.Velocity.Index.Velocity <- v2One
+
+        // define junction changes
+        ecs.Subscribe EcsEvents.JunctionChanges $ fun (changes : SystemEvent<Dictionary<Guid, string HashSet>, World>) _ _ ->
+            for change in changes.SystemEventData do
+                if ecs.ShouldJunction<MoverDynamic> change.Value
+                then ecs.RegisterCorrelated Unchecked.defaultof<MoverDynamic> change.Key |> ignore
+                else ecs.UnregisterCorrelated<MoverDynamic> change.Key |> ignore
 
   #if SYSTEM_ITERATION
         // define update for movers

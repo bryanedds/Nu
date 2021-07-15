@@ -13,6 +13,7 @@ module EcsTests =
           mutable Color : Color }
         interface Skin Component with
             member this.Active with get () = this.Active and set value = this.Active <- value
+            member this.ShouldJunction _ = true
             member this.AllocateJunctions _ = [||]
             member this.ResizeJunctions _ _ _ = ()
             member this.Junction _ _ _ _ _ = this
@@ -25,6 +26,7 @@ module EcsTests =
           Skin : Skin ComponentRef }
         interface Airship Component with
             member this.Active with get () = this.Active and set value = this.Active <- value
+            member this.ShouldJunction _ = true
             member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Transform> "Transform"; ecs.AllocateJunction<Skin> "Skin"|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Transform> size junctions.[0]; ecs.ResizeJunction<Skin> size junctions.[1]
             member this.Junction index junctions buffereds _ ecs = { id this with Transform = ecs.Junction<Transform> index junctions.[0] buffereds.[0]; Skin = ecs.Junction<Skin> index junctions.[1] buffereds.[1] }
@@ -36,6 +38,7 @@ module EcsTests =
           Transform : Transform }
         interface Node Component with
             member this.Active with get () = this.Active and set value = this.Active <- value
+            member this.ShouldJunction _ = true
             member this.AllocateJunctions _ = [||]
             member this.ResizeJunctions _ _ _ = ()
             member this.Junction _ _ _ _ _ = this
@@ -48,6 +51,7 @@ module EcsTests =
           NodeId : Guid }
         interface Prop Component with
             member this.Active with get () = this.Active and set value = this.Active <- value
+            member this.ShouldJunction _ = true
             member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Node> "Node"|]
             member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Node> size junctions.[0]
             member this.Junction index junctions buffereds _ ecs = { id this with Node = ecs.Junction<Node> index junctions.[0] buffereds.[0] }
