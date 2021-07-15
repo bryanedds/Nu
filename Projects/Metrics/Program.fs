@@ -16,8 +16,8 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.MoveJunctions _ _ _ _ = ()
-        member this.Junction _ _ _ _ = this
-        member this.Disjunction _ _ _ = ()
+        member this.Junction _ _ _ _ _ = this
+        member this.Disjunction _ _ _ _ = ()
         member this.TypeName = nameof StaticSpriteComponent
 #endif
 
@@ -30,8 +30,8 @@ type [<NoEquality; NoComparison; Struct>] Velocity =
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.MoveJunctions _ _ _ _ = ()
-        member this.Junction _ _ _ _ = this
-        member this.Disjunction _ _ _ = ()
+        member this.Junction _ _ _ _ _ = this
+        member this.Disjunction _ _ _ _ = ()
         member this.TypeName = nameof Velocity
 
 type [<NoEquality; NoComparison; Struct>] Position =
@@ -42,22 +42,38 @@ type [<NoEquality; NoComparison; Struct>] Position =
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.MoveJunctions _ _ _ _ = ()
-        member this.Junction _ _ _ _ = this
-        member this.Disjunction _ _ _ = ()
+        member this.Junction _ _ _ _ _ = this
+        member this.Disjunction _ _ _ _ = ()
         member this.TypeName = nameof Position
 
-type [<NoEquality; NoComparison; Struct>] Mover =
+type [<NoEquality; NoComparison; Struct>] MoverStatic =
     { mutable Active : bool
       Velocity : Velocity ComponentRef
       Position : Position ComponentRef }
-    interface Mover Component with
+    interface MoverStatic Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
         member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Velocity> "Velocity"; ecs.AllocateJunction<Position> "Position"|]
         member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Velocity> size junctions.[0]; ecs.ResizeJunction<Position> size junctions.[1]
         member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Velocity> src dst junctions.[0]; ecs.MoveJunction<Position> src dst junctions.[1]
-        member this.Junction index junctions buffereds ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0] buffereds.[0]; Position = ecs.Junction<Position> index junctions.[1] buffereds.[1] }
-        member this.Disjunction index junctions ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
-        member this.TypeName = nameof Mover
+        member this.Junction index junctions buffereds _ ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0] buffereds.[0]; Position = ecs.Junction<Position> index junctions.[1] buffereds.[1] }
+        member this.Disjunction index junctions _ ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
+        member this.TypeName = nameof MoverStatic
+
+type [<NoEquality; NoComparison; Struct>] MoverDynamic =
+    { mutable Active : bool
+      Velocity : Velocity ComponentRef
+      Position : Position ComponentRef }
+    interface MoverDynamic Component with
+        member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.AllocateJunctions _ = [||]
+        member this.ResizeJunctions _ _ _ = ()
+        member this.MoveJunctions _ _ _ _ = ()
+        member this.Junction _ _ _ entityId ecs =
+            { id this with
+                Velocity = ecs.IndexSystem<Velocity, SystemCorrelated<Velocity, _>>().IndexCorrelated entityId
+                Position = ecs.IndexSystem<Position, SystemCorrelated<Position, _>>().IndexCorrelated entityId }
+        member this.Disjunction _ _ _ _ = ()
+        member this.TypeName = nameof MoverDynamic
 #endif
 
 #if FACETED
@@ -152,7 +168,7 @@ type MyGameDispatcher () =
         // create systems
         let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
         let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        let moverSystem = ecs.RegisterSystem (SystemCorrelated<Mover, World> ecs)
+        let moverSystem = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
 
         //// create object references
         //let count = 2500000
@@ -176,7 +192,7 @@ type MyGameDispatcher () =
 
         // create 3M movers (goal: 60FPS, current: 54FPS)
         for _ in 0 .. 3000000 - 1 do
-            let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id ecs
+            let mover = moverSystem.RegisterCorrelated Unchecked.defaultof<MoverStatic> Gen.id ecs
             mover.Index.Velocity.Index.Velocity <- v2One
 
   #if SYSTEM_ITERATION
@@ -195,7 +211,7 @@ type MyGameDispatcher () =
   #else
         // define update for movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            for components in ecs.GetComponentArrays<Mover> () do
+            for components in ecs.GetComponentArrays<MoverStatic> () do
                 for i in 0 .. components.Length - 1 do
                     let mutable comp = &components.[i]
                     if  comp.Active then

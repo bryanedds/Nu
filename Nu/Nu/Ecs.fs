@@ -25,8 +25,8 @@ type Component<'c when 'c : struct and 'c :> 'c Component> =
         abstract AllocateJunctions : 'w Ecs -> (string * obj * obj) array
         abstract ResizeJunctions : int -> obj array -> 'w Ecs -> unit
         abstract MoveJunctions : int -> int -> obj array -> 'w Ecs -> unit
-        abstract Junction : int -> obj array -> obj array -> 'w Ecs -> 'c
-        abstract Disjunction : int -> obj array -> 'w Ecs -> unit
+        abstract Junction : int -> obj array -> obj array -> Guid -> 'w Ecs -> 'c
+        abstract Disjunction : int -> obj array -> Guid -> 'w Ecs -> unit
         abstract TypeName : string
         end
 
@@ -126,9 +126,9 @@ and 'w Ecs () as this =
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
     let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
-    let correlations = dictPlus<Guid, Dictionary<string, 'w System>> HashIdentity.Structural []
+    let correlations = dictPlus<Guid, string HashSet> HashIdentity.Structural []
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
-    let emptySystems = dictPlus<string, 'w System> StringComparer.Ordinal [] // the empty systems dict to elide allocation on IndexSystems
+    let emptySystemNames = hashSetPlus<string> StringComparer.Ordinal [] // the empty systems dict to elide allocation on IndexSystems
 
     do this.RegisterSystemGeneralized systemGlobal |> ignore<'w System>
 
@@ -183,10 +183,10 @@ and 'w Ecs () as this =
             | (false, _) -> failwith ("Could not index system '" + systemName + "' of type '" + typeof<'s>.Name + "'.")
         else systemCached :?> 's
 
-    member this.IndexSystems entityId =
+    member this.IndexSystemNames entityId =
         match correlations.TryGetValue entityId with
-        | (true, systems) -> systems
-        | (false, _) -> emptySystems
+        | (true, systemNames) -> systemNames
+        | (false, _) -> emptySystemNames
 
     member this.SubscribePlus<'d> subscriptionId eventName (callback : SystemCallback<'d, 'w>) =
         match systemSubscriptions.TryGetValue eventName with
@@ -503,7 +503,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
             // allocate component
             let index = freeIndex in freeIndex <- inc freeIndex
-            let comp = comp.Junction index junctions junctionsBuffered ecs
+            let comp = comp.Junction index junctions junctionsBuffered entityId ecs
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
             correlateds.Array.[index] <- comp
@@ -524,7 +524,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             else freeIndex <- dec freeIndex
             correlations.Remove entityId |> ignore<bool>
             correlationsBack.Remove index |> ignore<bool>
-            comp.Disjunction index junctions ecs
+            comp.Disjunction index junctions entityId ecs
             if  correlateds.Length < freeList.Count * 2 && // freeList is always empty if unordered
                 correlateds.Length > Constants.Ecs.ArrayReserve then
                 this.Compact ecs
@@ -561,8 +561,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             | Some system ->
                 let componentRef = system.RegisterCorrelated comp entityId this
                 match this.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add (system.Name, system)
-                | (false, _) -> this.Correlations.Add (entityId, Dictionary.singleton StringComparer.Ordinal system.Name (system :> 'w System))
+                | (true, correlation) -> correlation.Add system.Name |> ignore<bool>
+                | (false, _) -> this.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal system.Name)
                 componentRef
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
@@ -623,8 +623,8 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
         member this.MoveJunctions _ _ _ _ = ()
-        member this.Junction _ _ _ _ = this
-        member this.Disjunction _ _ _ = ()
+        member this.Junction _ _ _ _ _ = this
+        member this.Disjunction _ _ _ _ = ()
         member this.TypeName = getTypeName this
     member this.RegisterMultiplexed (simplexName, comp) =
         this.Simplexes.Add (simplexName, { Simplex = comp })
@@ -689,8 +689,8 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
             | Some system ->
                 let _ = system.RegisterMultiplexed comp simplexName entityId
                 match this.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add (system.Name, system)
-                | (false, _) -> this.Correlations.Add (entityId, Dictionary.singleton StringComparer.Ordinal system.Name (system :> 'w System))
+                | (true, correlation) -> correlation.Add system.Name |> ignore<bool>
+                | (false, _) -> this.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal system.Name)
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
@@ -802,8 +802,8 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some system ->
                 let _ = system.RegisterHierarchical comp nodeId entityId
                 match this.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add (system.Name, system)
-                | (false, _) -> this.Correlations.Add (entityId, Dictionary.singleton StringComparer.Ordinal system.Name (system :> 'w System))
+                | (true, correlation) -> correlation.Add system.Name |> ignore<bool>
+                | (false, _) -> this.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal system.Name)
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId entityId =
