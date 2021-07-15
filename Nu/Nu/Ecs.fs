@@ -126,6 +126,7 @@ and 'w Ecs () as this =
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
     let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
+    let correlations = dictPlus<Guid, 'w System List> HashIdentity.Structural []
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
 
     do this.RegisterSystemGeneralized systemGlobal |> ignore<'w System>
@@ -137,6 +138,9 @@ and 'w Ecs () as this =
                   SystemPublisher = evt.SystemPublisher }
             callback evt system
         boxableCallback :> obj
+
+    member private this.Correlations 
+        with get () = correlations
 
     member this.SystemGlobal
         with get () = systemGlobal
@@ -156,11 +160,7 @@ and 'w Ecs () as this =
 
     member this.TryIndexSystem<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w System> () =
         let systemName = Unchecked.defaultof<'c>.TypeName
-        if systemCached.Name = systemName then
-            match systemCached with
-            | :? 's as systemAsS -> Some systemAsS
-            | _ -> None
-        else
+        if systemCached.Name <> systemName then
             match systemsUnordered.TryGetValue systemName with
             | (true, system) ->
                 match system with
@@ -169,18 +169,23 @@ and 'w Ecs () as this =
                     Some systemAsS
                 | _ -> None
             | (false, _) -> None
+        else match systemCached with :? 's as systemAsS -> Some systemAsS | _ -> None
 
     member this.IndexSystem<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w System> () =
         let systemName = Unchecked.defaultof<'c>.TypeName
-        if systemCached.Name = systemName
-        then systemCached :?> 's
-        else
+        if systemCached.Name <> systemName then
             match systemsUnordered.TryGetValue systemName with
             | (true, system) ->
                 let systemAsS = system :?> 's
                 systemCached <- system
                 systemAsS
             | (false, _) -> failwith ("Could not index system '" + systemName + "' of type '" + typeof<'s>.Name + "'.")
+        else systemCached :?> 's
+
+    member this.IndexSystems entityId =
+        match correlations.TryGetValue entityId with
+        | (true, systems) -> seq systems
+        | (false, _) -> Seq.empty
 
     member this.SubscribePlus<'d> subscriptionId eventName (callback : SystemCallback<'d, 'w>) =
         match systemSubscriptions.TryGetValue eventName with
@@ -552,12 +557,23 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
         member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> comp entityId =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
-            | Some system -> system.RegisterCorrelated comp entityId this
+            | Some system ->
+                let componentRef = system.RegisterCorrelated comp entityId this
+                match this.Correlations.TryGetValue entityId with
+                | (true, correlation) -> correlation.Add system
+                | (false, _) -> this.Correlations.Add (entityId, List [system :> 'w System])
+                componentRef
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
-            | Some system -> system.UnregisterCorrelated entityId this
+            | Some system ->
+                let result = system.UnregisterCorrelated entityId this
+                if result then
+                    match this.Correlations.TryGetValue entityId with
+                    | (true, correlation) -> correlation.Remove system |> ignore<bool>
+                    | (false, _) -> ()
+                result
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsBufferedObj : obj) =
@@ -669,12 +685,20 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
 
         member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> comp simplexName entityId =
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
-            | Some system -> system.RegisterMultiplexed comp simplexName entityId
+            | Some system ->
+                let _ = system.RegisterMultiplexed comp simplexName entityId
+                match this.Correlations.TryGetValue entityId with
+                | (true, correlation) -> correlation.Add system
+                | (false, _) -> this.Correlations.Add (entityId, List [system :> 'w System])
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
-            | Some system -> system.UnregisterMultiplexed simplexName entityId this
+            | Some system ->
+                if system.UnregisterMultiplexed simplexName entityId this then
+                    match this.Correlations.TryGetValue entityId with
+                    | (true, correlation) -> correlation.Add system
+                    | (false, _) -> this.Correlations.Add (entityId, List [system :> 'w System])
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// An Ecs system that stores components in a tree hierarchy.
@@ -772,12 +796,20 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
         member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> comp nodeId entityId =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.RegisterHierarchical comp nodeId entityId
+            | Some system ->
+                let _ = system.RegisterHierarchical comp nodeId entityId
+                match this.Correlations.TryGetValue entityId with
+                | (true, correlation) -> correlation.Add system
+                | (false, _) -> this.Correlations.Add (entityId, List [system :> 'w System])
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId entityId =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.UnregisterHierarchical nodeId entityId this
+            | Some system ->
+                if system.UnregisterHierarchical nodeId entityId this then
+                    match this.Correlations.TryGetValue entityId with
+                    | (true, correlation) -> correlation.Add system
+                    | (false, _) -> this.Correlations.Add (entityId, List [system :> 'w System])
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// A correlated entity reference.
