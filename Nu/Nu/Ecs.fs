@@ -126,8 +126,9 @@ and 'w Ecs () as this =
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
     let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
-    let correlations = dictPlus<Guid, 'w System List> HashIdentity.Structural []
+    let correlations = dictPlus<Guid, Dictionary<string, 'w System>> HashIdentity.Structural []
     let pipedValues = ConcurrentDictionary<Guid, obj> ()
+    let emptySystems = dictPlus<string, 'w System> StringComparer.Ordinal [] // the empty systems dict to elide allocation on IndexSystems
 
     do this.RegisterSystemGeneralized systemGlobal |> ignore<'w System>
 
@@ -184,8 +185,8 @@ and 'w Ecs () as this =
 
     member this.IndexSystems entityId =
         match correlations.TryGetValue entityId with
-        | (true, systems) -> seq systems
-        | (false, _) -> Seq.empty
+        | (true, systems) -> systems
+        | (false, _) -> emptySystems
 
     member this.SubscribePlus<'d> subscriptionId eventName (callback : SystemCallback<'d, 'w>) =
         match systemSubscriptions.TryGetValue eventName with
@@ -560,20 +561,20 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             | Some system ->
                 let componentRef = system.RegisterCorrelated comp entityId this
                 match this.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add system
-                | (false, _) -> this.Correlations.Add (entityId, List [system :> 'w System])
+                | (true, correlation) -> correlation.Add (system.Name, system)
+                | (false, _) -> this.Correlations.Add (entityId, Dictionary.singleton StringComparer.Ordinal system.Name (system :> 'w System))
                 componentRef
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
             | Some system ->
-                let result = system.UnregisterCorrelated entityId this
-                if result then
+                if system.UnregisterCorrelated entityId this then
                     match this.Correlations.TryGetValue entityId with
-                    | (true, correlation) -> correlation.Remove system |> ignore<bool>
+                    | (true, correlation) -> correlation.Remove system.Name |> ignore<bool>
                     | (false, _) -> ()
-                result
+                    true
+                else false
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsBufferedObj : obj) =
@@ -688,8 +689,8 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
             | Some system ->
                 let _ = system.RegisterMultiplexed comp simplexName entityId
                 match this.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add system
-                | (false, _) -> this.Correlations.Add (entityId, List [system :> 'w System])
+                | (true, correlation) -> correlation.Add (system.Name, system)
+                | (false, _) -> this.Correlations.Add (entityId, Dictionary.singleton StringComparer.Ordinal system.Name (system :> 'w System))
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
@@ -697,8 +698,10 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
             | Some system ->
                 if system.UnregisterMultiplexed simplexName entityId this then
                     match this.Correlations.TryGetValue entityId with
-                    | (true, correlation) -> correlation.Add system
-                    | (false, _) -> this.Correlations.Add (entityId, List [system :> 'w System])
+                    | (true, correlation) -> correlation.Remove system.Name |> ignore<bool>
+                    | (false, _) -> ()
+                    true
+                else false
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// An Ecs system that stores components in a tree hierarchy.
@@ -799,8 +802,8 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some system ->
                 let _ = system.RegisterHierarchical comp nodeId entityId
                 match this.Correlations.TryGetValue entityId with
-                | (true, correlation) -> correlation.Add system
-                | (false, _) -> this.Correlations.Add (entityId, List [system :> 'w System])
+                | (true, correlation) -> correlation.Add (system.Name, system)
+                | (false, _) -> this.Correlations.Add (entityId, Dictionary.singleton StringComparer.Ordinal system.Name (system :> 'w System))
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId entityId =
@@ -808,8 +811,10 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some system ->
                 if system.UnregisterHierarchical nodeId entityId this then
                     match this.Correlations.TryGetValue entityId with
-                    | (true, correlation) -> correlation.Add system
-                    | (false, _) -> this.Correlations.Add (entityId, List [system :> 'w System])
+                    | (true, correlation) -> correlation.Remove system.Name |> ignore<bool>
+                    | (false, _) -> ()
+                    true
+                else false
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// A correlated entity reference.
