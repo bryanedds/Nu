@@ -170,8 +170,8 @@ type MyGameDispatcher () =
         // create systems
         let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
         let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        let moverStaticSystem = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
-        let moverDynamicSystem = ecs.RegisterSystem (SystemCorrelated<MoverDynamic, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<MoverDynamic, World> ecs)
 
         //// create object references
         //let count = 2500000
@@ -199,9 +199,9 @@ type MyGameDispatcher () =
             mover.Index.Velocity.Index.Velocity <- v2One
 
         // define synchronize correlation changes for dynamic movers
-        ecs.Subscribe EcsEvents.SynchronizeCorrelationChanges $ fun evt _ _ ->
-            for change in (evt.SystemEventData : Dictionary<Guid, string HashSet>) do
-                ecs.SynchronizeCorrelated<MoverDynamic> change.Value change.Key
+        ecs.Subscribe EcsEvents.SynchronizeCorrelationChanges $ fun (evt : World SynchronizeCorrelationEvent) _ _ ->
+            for change in evt.SystemEventData do
+                ecs.SynchronizeCorrelated<MoverDynamic> change.Value change.Key |> ignore<SynchronizeResult>
 
   #if SYSTEM_ITERATION
         // define update for static movers
