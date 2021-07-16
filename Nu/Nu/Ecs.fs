@@ -96,6 +96,16 @@ and SystemCallback<'d, 'w> =
 and SystemCallbackBoxed<'w> =
     SystemEvent<obj, 'w> -> 'w System -> 'w Ecs -> 'w option -> 'w option
 
+/// The event type recommended for SynchronizeCorrelationChanges.
+and 'w SynchronizeCorrelationEvent =
+    SystemEvent<Dictionary<Guid, string HashSet>, 'w>
+
+/// The type of synchronization used.
+and [<StructuralEquality; NoComparison; Struct>] SynchronizeResult =
+    | Registered
+    | Unregistered
+    | Unchanged of bool
+
 /// A base system type of an ECS.
 /// Systems are a bit different in this ECS; they're primarily storage for components and don't have any behavior
 /// associated with them. Because this ECS is purely event-driven, behavior is encoded in event handlers rather than
@@ -606,9 +616,13 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             if systemNames.Contains Unchecked.defaultof<'c>.TypeName then
                 if not (Unchecked.defaultof<'c>.ShouldJunction systemNames) then
                     this.UnregisterCorrelated<'c> entityId |> ignore<bool>
+                    Unregistered
+                else Unchanged true
             else
                 if Unchecked.defaultof<'c>.ShouldJunction systemNames then
                     this.RegisterCorrelated Unchecked.defaultof<'c> entityId |> ignore<'c ComponentRef>
+                    Registered
+                else Unchanged false
 
         member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsBufferedObj : obj) =
 
