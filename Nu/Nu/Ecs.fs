@@ -939,9 +939,9 @@ type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
 [<RequireQualifiedAccess>]
 module EcsEvents =
 
-    let rec SynchronizeCorrelationChanges = nameof SynchronizeCorrelationChanges
-    let rec Update = nameof Update
-    let rec UpdateParallel = nameof UpdateParallel
-    let rec PostUpdate = nameof PostUpdate
-    let rec PostUpdateParallel = nameof PostUpdateParallel
-    let rec Actualize = nameof Actualize
+    let [<Literal>] SynchronizeCorrelationChanges = "SynchronizeCorrelationChanges"
+    let [<Literal>] Update = "Update"
+    let [<Literal>] UpdateParallel = "UpdateParallel"
+    let [<Literal>] PostUpdate = "PostUpdate"
+    let [<Literal>] PostUpdateParallel = "PostUpdateParallel"
+    let [<Literal>] Actualize = "Actualize"
