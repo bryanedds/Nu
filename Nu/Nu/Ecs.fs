@@ -782,14 +782,14 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
     member this.AddNode (parentIdOpt : Guid option) =
         let nodeId = Gen.id
         let system = SystemCorrelated<'c, 'w> (buffered, ecs)
-        let added =
+        let addedOpt =
             match parentIdOpt with
             | Some parentId ->
                 let parentIdStr = string parentId
                 systemTree |> ListTree.tryInsert (fun system -> system.Name = parentIdStr) system
             | None ->
                 systemTree |> ListTree.tryAdd tautology system
-        if Option.isSome added then
+        if Option.isSome addedOpt then
             systemDict.Add (nodeId, system)
             Some nodeId
         else None
