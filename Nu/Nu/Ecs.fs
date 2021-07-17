@@ -779,11 +779,19 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
     let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
+    let mutable componentsRegistered = hashSetPlus<Guid> HashIdentity.Structural []
+    let mutable componentsUnregistered = hashSetPlus<Guid> HashIdentity.Structural []
 
     new (ecs) = SystemHierarchical (false, ecs)
 
     member this.Components with get () = systemTree |> ListTree.map (fun system -> system.Correlateds)
     member this.WithComponentsBuffered fn worldOpt = systemTree |> ListTree.map (fun system -> system.WithCorrelatedsBuffered fn worldOpt)
+
+    member this.PopComponentStates () =
+        let (registered, unregistered) = (componentsRegistered, componentsUnregistered)
+        componentsRegistered <- hashSetPlus<Guid> HashIdentity.Structural []
+        componentsUnregistered <- hashSetPlus<Guid> HashIdentity.Structural []
+        (registered, unregistered)
 
     member this.IndexNode nodeId =
         match systemDict.TryGetValue nodeId with
@@ -832,6 +840,11 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
                 true
             | (false, _) -> false
 
+        // track registration
+        if registered then
+            componentsRegistered.Add entityId |> ignore<bool>
+            componentsUnregistered.Remove entityId |> ignore<bool>
+
         // register correlation
         if registered then
             match ecs.Correlations.TryGetValue entityId with
@@ -852,6 +865,11 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             match systemDict.TryGetValue nodeId with
             | (true, system) -> system.UnregisterCorrelated entityId
             | (false, _) -> false
+
+        // track registration
+        if unregistered then
+            componentsRegistered.Remove entityId |> ignore<bool>
+            componentsUnregistered.Add entityId |> ignore<bool>
 
         // unregister correlation
         if unregistered then
@@ -879,6 +897,11 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         member this.IndexTree<'c when 'c : struct and 'c :> 'c Component> () =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
             | Some system -> system.Components
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.PopComponentStates<'c when 'c : struct and 'c :> 'c Component> () =
+            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
+            | Some system -> system.PopComponentStates ()
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.IndexNode<'c when 'c : struct and 'c :> 'c Component> nodeId =
