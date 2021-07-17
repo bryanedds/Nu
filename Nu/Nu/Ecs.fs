@@ -170,34 +170,45 @@ and 'w Ecs () as this =
         systemsOrdered.Add (system.Name, system)
         system
 
-    member this.TryIndexSystem<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w System> () =
-        let systemName = Unchecked.defaultof<'c>.TypeName
+    member this.TryIndexSystem systemName =
         if systemCached.Name <> systemName then
             match systemsUnordered.TryGetValue systemName with
-            | (true, system) ->
-                match system with
-                | :? 's as systemAsS ->
-                    systemCached <- system
-                    Some systemAsS
-                | _ -> None
+            | (true, system) -> 
+                systemCached <- system
+                Some system
             | (false, _) -> None
-        else match systemCached with :? 's as systemAsS -> Some systemAsS | _ -> None
+        else Some systemCached
+
+    member this.IndexSystem systemName =
+        if systemCached.Name <> systemName then
+            match systemsUnordered.TryGetValue systemName with
+            | (true, system) -> 
+                systemCached <- system
+                system
+            | (false, _) -> failwith ("Could not index system '" + systemName + "'.")
+        else systemCached
+
+    member this.TryIndexSystem<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w System> () =
+        let systemName = Unchecked.defaultof<'c>.TypeName
+        match this.TryIndexSystem systemName with
+        | Some system ->
+            match system with
+            | :? 's as systemAsS -> Some systemAsS
+            | _ -> None
+        | None -> None
 
     member this.IndexSystem<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w System> () =
         let systemName = Unchecked.defaultof<'c>.TypeName
-        if systemCached.Name <> systemName then
-            match systemsUnordered.TryGetValue systemName with
-            | (true, system) ->
-                let systemAsS = system :?> 's
-                systemCached <- system
-                systemAsS
-            | (false, _) -> failwith ("Could not index system '" + systemName + "' of type '" + typeof<'s>.Name + "'.")
-        else systemCached :?> 's
+        this.IndexSystem systemName :?> 's
 
     member this.IndexSystemNames entityId =
         match correlations.TryGetValue entityId with
         | (true, systemNames) -> systemNames
         | (false, _) -> emptySystemNames
+
+    member this.IndexSystems entityId =
+        this.IndexSystemNames entityId |>
+        Seq.map this.IndexSystem
 
     member this.IndexEntities systemNames =
         correlations |>
@@ -691,7 +702,7 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
     member this.RegisterMultiplexed comp simplexName entityId =
 
         // register simplex
-        let _ = this.RegisterCorrelated Unchecked.defaultof<_> entityId
+        this.RegisterCorrelated Unchecked.defaultof<_> entityId |> ignore<'c ComponentMultiplexed ComponentRef>
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.Index.RegisterMultiplexed (simplexName, comp)
         
@@ -817,7 +828,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         let registered =
             match systemDict.TryGetValue nodeId with
             | (true, system) ->
-                let _ = system.RegisterCorrelated comp entityId
+                system.RegisterCorrelated comp entityId |> ignore<'c ComponentRef>
                 true
             | (false, _) -> false
 
