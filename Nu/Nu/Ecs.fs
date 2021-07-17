@@ -140,7 +140,6 @@ and 'w Ecs () as this =
     let systemsOrdered = List<string * 'w System> ()
     let correlations = dictPlus<Guid, string HashSet> HashIdentity.Structural []
     let mutable correlationsChanged = dictPlus<Guid, string HashSet> HashIdentity.Structural []
-    let pipedValues = ConcurrentDictionary<Guid, obj> ()
     let emptySystemNames = hashSetPlus<string> StringComparer.Ordinal [] // the empty systems dict to elide allocation on IndexSystemNames
     let emptyCorrelation = hashSetPlus<string> StringComparer.Ordinal [] // the empty correlation to elide allocation on IndexEntitiesChanged
 
@@ -165,13 +164,6 @@ and 'w Ecs () as this =
 
     member this.SystemGlobal
         with get () = systemGlobal
-
-    member this.RegisterPipedValue<'a when 'a : not struct> key (value : 'a) =
-        pipedValues.[key] <- value :> obj
-
-    member this.WithPipedValue<'a when 'a : not struct> key fn (worldOpt : 'w option) : 'w option =
-        let pipedValue = pipedValues.[key] :?> 'a
-        lock pipedValue (fun () -> fn pipedValue worldOpt)
 
     member this.RegisterSystemGeneralized (system : 'w System) : 'w System =
         systemsUnordered.Add (system.Name, system)
