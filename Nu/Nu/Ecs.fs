@@ -109,12 +109,8 @@ and [<StructuralEquality; NoComparison; Struct>] SynchronizeResult =
 /// A base system type of an ECS.
 /// Systems are a bit different in this ECS; they're primarily storage for components and don't have any behavior
 /// associated with them. Because this ECS is purely event-driven, behavior is encoded in event handlers rather than
-/// systems.
+/// systems. If anything, it might be better to renamed this type to Storage.
 and 'w System (name : string) =
-    let pipedKey = Gen.id
-    member this.PipedKey with get () = pipedKey
-    abstract PipedInit : obj
-    default this.PipedInit with get () = () :> obj
     member this.Name with get () = name
 
 /// Potentially-buffered array objects.
@@ -179,7 +175,6 @@ and 'w Ecs () as this =
     member this.RegisterSystemGeneralized (system : 'w System) : 'w System =
         systemsUnordered.Add (system.Name, system)
         systemsOrdered.Add (system.Name, system)
-        this.RegisterPipedValue<obj> system.PipedKey system.PipedInit
         system
 
     member this.TryIndexSystem<'c, 's when 'c : struct and 'c :> 'c Component and 's :> 'w System> () =
@@ -332,10 +327,6 @@ and 'w Ecs () as this =
                         then aref.Array.CopyTo (arefBuffered.Array, 0)
                         else arefBuffered.Array <- Array.copy aref.Array)
         | (false, _) -> ()
-
-    type 'w System with
-        member this.RegisterPipedValue (ecs : 'w Ecs) = ecs.RegisterPipedValue<obj> this.PipedKey this.PipedInit
-        member this.WithPipedValue<'a when 'a : not struct> fn (ecs : 'w Ecs) worldOpt = ecs.WithPipedValue<'a> this.PipedKey fn worldOpt
 
 [<Extension>]
 type EcsExtensions =
