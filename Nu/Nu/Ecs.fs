@@ -110,8 +110,9 @@ and [<StructuralEquality; NoComparison; Struct>] SynchronizeResult =
 /// Systems are a bit different in this ECS; they're primarily storage for components and don't have any behavior
 /// associated with them. Because this ECS is purely event-driven, behavior is encoded in event handlers rather than
 /// systems. If anything, it might be better to renamed this type to Storage.
-and 'w System (name : string) =
-    member this.Name with get () = name
+and [<AbstractClass>] 'w System (name) =
+    member this.Name with get () : string = name
+    abstract UnregisterComponent : Guid -> 'w Ecs -> bool
 
 /// Potentially-buffered array objects.
 /// ArrayObjsUnbuffered will be refEq to ArrayObjsBuffered if buffering is disabled.
@@ -131,7 +132,7 @@ and [<NoEquality; NoComparison>] internal ArrayObjs =
 /// performance.
 and 'w Ecs () as this =
 
-    let mutable systemCached = System<'w> typeof<unit>.Name
+    let mutable systemCached = { new System<'w> (typeof<unit>.Name) with member this.UnregisterComponent _ _ = false }
     let systemGlobal = systemCached
     let arrayObjss = dictPlus<string, ArrayObjs> StringComparer.Ordinal []
     let systemSubscriptions = dictPlus<string, Dictionary<Guid, obj>> StringComparer.Ordinal []
@@ -145,9 +146,6 @@ and 'w Ecs () as this =
 
     do this.RegisterSystemGeneralized systemGlobal |> ignore<'w System>
 
-    member private this.EmptyCorrelation
-        with get () = emptyCorrelation
-
     member private this.BoxCallback<'a> (callback : SystemCallback<'a, 'w>) =
         let boxableCallback = fun (evt : SystemEvent<obj, 'w>) system ->
             let evt =
@@ -156,10 +154,13 @@ and 'w Ecs () as this =
             callback evt system
         boxableCallback :> obj
 
-    member private this.Correlations
+    member internal this.EmptyCorrelation
+        with get () = emptyCorrelation
+
+    member internal this.Correlations
         with get () = correlations
 
-    member private this.CorrelationsChanged
+    member internal this.CorrelationsChanged
         with get () = correlationsChanged
 
     member this.SystemGlobal
@@ -343,6 +344,8 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c)
 
     member this.Component with get () = &comp
 
+    override this.UnregisterComponent _ _ = false
+
     type 'w Ecs with
 
         member this.IndexSystemSingleton<'c when 'c : struct and 'c :> 'c Component> () =
@@ -402,6 +405,8 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             components.[index].Active <- false
             freeList.Add index |> ignore<bool>
         else freeIndex <- dec freeIndex
+        
+    override this.UnregisterComponent _ _ = false
 
     type 'w Ecs with
 
@@ -478,7 +483,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         let buffered = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef
         ComponentRef<'j>.make index junction buffered
 
-    member internal this.RegisterCorrelated (comp : 'c) entityId ecs =
+    member this.RegisterCorrelated (comp : 'c) entityId ecs =
 
         // activate component
         let mutable comp = comp
@@ -514,38 +519,62 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             correlationsBack.Add (index, entityId)
             correlateds.Array.[index] <- comp
 
+            // register correlation with ecs
+            match ecs.Correlations.TryGetValue entityId with
+            | (true, correlation) ->
+                correlation.Add this.Name |> ignore<bool>
+                ecs.CorrelationsChanged.[entityId] <- correlation
+            | (false, _) ->
+                ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
+                ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+
             // make component ref
             ComponentRef.make index correlateds correlatedsBuffered
 
         // component is already registered
         else failwith ("Component registered multiple times for entity '" + string entityId + "'.")
 
-    member internal this.UnregisterCorrelated entityId ecs =
-        match correlations.TryGetValue entityId with
-        | (true, index) ->
+    member this.UnregisterCorrelated entityId ecs =
 
-            // deallocate component
-            correlations.Remove entityId |> ignore<bool>
-            correlationsBack.Remove index |> ignore<bool>
-            Unchecked.defaultof<'c>.Disjunction index junctions entityId ecs
+        // attempt to unregister component
+        let unregistered =
+            match correlations.TryGetValue entityId with
+            | (true, index) ->
 
-            // deallocate index for component
-            if index <> freeIndex
-            then freeList.Add index |> ignore<bool>
-            else freeIndex <- dec freeIndex
+                // deallocate component
+                correlations.Remove entityId |> ignore<bool>
+                correlationsBack.Remove index |> ignore<bool>
+                Unchecked.defaultof<'c>.Disjunction index junctions entityId ecs
 
-            // deactive component
-            correlateds.[index].Active <- false
+                // deallocate index for component
+                if index <> freeIndex
+                then freeList.Add index |> ignore<bool>
+                else freeIndex <- dec freeIndex
 
-            // clear free list and reset free index when there are no registered components remaining
-            if  freeList.Count = correlateds.Length then
-                freeList.Clear ()
-                freeIndex <- 0
+                // deactive component
+                correlateds.[index].Active <- false
 
-            // fin
-            true
+                // clear free list and reset free index when there are no registered components remaining
+                if  freeList.Count = correlateds.Length then
+                    freeList.Clear ()
+                    freeIndex <- 0
+                true
+            | (false, _) -> false
 
-        | (false, _) -> false
+        // unregister correlation from ecs
+        if unregistered then
+            match ecs.Correlations.TryGetValue entityId with
+            | (true, correlation) ->
+                correlation.Remove this.Name |> ignore<bool>
+                ecs.CorrelationsChanged.[entityId] <- correlation
+            | (false, _) ->
+                ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+
+        // fin
+        unregistered
+
+        override this.UnregisterComponent entityId ecs =
+            this.UnregisterCorrelated entityId ecs
 
     type 'w Ecs with
 
@@ -577,30 +606,12 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
         member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> comp entityId =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
-            | Some system ->
-                let componentRef = system.RegisterCorrelated comp entityId this
-                match this.Correlations.TryGetValue entityId with
-                | (true, correlation) ->
-                    correlation.Add system.Name |> ignore<bool>
-                    this.CorrelationsChanged.[entityId] <- correlation
-                | (false, _) ->
-                    this.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal system.Name)
-                    this.CorrelationsChanged.[entityId] <- this.EmptyCorrelation
-                componentRef
+            | Some system -> system.RegisterCorrelated comp entityId this
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
-            | Some system ->
-                if system.UnregisterCorrelated entityId this then
-                    match this.Correlations.TryGetValue entityId with
-                    | (true, correlation) ->
-                        correlation.Remove system.Name |> ignore<bool>
-                        this.CorrelationsChanged.[entityId] <- correlation
-                    | (false, _) ->
-                        this.CorrelationsChanged.[entityId] <- this.EmptyCorrelation
-                    true
-                else false
+            | Some system -> system.UnregisterCorrelated entityId this
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.SynchronizeCorrelated<'c when 'c : struct and 'c :> 'c Component> (systemNames : string HashSet) entityId =
@@ -685,16 +696,44 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.IndexBuffered.Simplexes.[simplexName]
 
-    member internal this.RegisterMultiplexed comp simplexName entityId ecs =
+    member this.RegisterMultiplexed comp simplexName entityId ecs =
+
+        // register simplex
         let _ = this.RegisterCorrelated Unchecked.defaultof<_> entityId ecs
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.Index.RegisterMultiplexed (simplexName, comp)
+        
+        // register correlation with ecs
+        match ecs.Correlations.TryGetValue entityId with
+        | (true, correlation) ->
+            correlation.Add this.Name |> ignore<bool>
+            ecs.CorrelationsChanged.[entityId] <- correlation
+        | (false, _) ->
+            ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
+            ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+
+        // fin
         componentMultiplexed
 
-    member internal this.UnregisterMultiplexed simplexName entityId ecs =
-        let componentMultiplexed = this.IndexCorrelated entityId
-        componentMultiplexed.Index.UnregisterMultiplexed simplexName |> ignore<bool>
-        this.UnregisterCorrelated entityId ecs
+    member this.UnregisterMultiplexed simplexName entityId ecs =
+
+        // attempt to unregister simplex
+        let unregistered =
+            let componentMultiplexed = this.IndexCorrelated entityId
+            componentMultiplexed.Index.UnregisterMultiplexed simplexName |> ignore<bool>
+            this.UnregisterCorrelated entityId ecs
+        
+        // unregister correlation
+        if unregistered then
+            match ecs.Correlations.TryGetValue entityId with
+            | (true, correlation) ->
+                correlation.Remove this.Name |> ignore<bool>
+                ecs.CorrelationsChanged.[entityId] <- correlation
+            | (false, _) ->
+                ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+
+        // fin
+        unregistered
 
     type 'w Ecs with
 
@@ -723,38 +762,13 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
 
         member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> comp simplexName entityId =
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
-            | Some system ->
-                let _ = system.RegisterMultiplexed comp simplexName entityId
-                match this.Correlations.TryGetValue entityId with
-                | (true, correlation) ->
-                    correlation.Add system.Name |> ignore<bool>
-                    this.CorrelationsChanged.[entityId] <- correlation
-                | (false, _) ->
-                    this.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal system.Name)
-                    this.CorrelationsChanged.[entityId] <- this.EmptyCorrelation
+            | Some system -> system.RegisterMultiplexed comp simplexName entityId
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
-            | Some system ->
-                if system.UnregisterMultiplexed simplexName entityId this then
-                    match this.Correlations.TryGetValue entityId with
-                    | (true, correlation) ->
-                        correlation.Remove system.Name |> ignore<bool>
-                        this.CorrelationsChanged.[entityId] <- correlation
-                    | (false, _) ->
-                        this.CorrelationsChanged.[entityId] <- this.EmptyCorrelation
-                    true
-                else false
+            | Some system -> system.UnregisterMultiplexed simplexName entityId this
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.SynchronizeMultiplexed<'c when 'c : struct and 'c :> 'c Component> (systemNames : string HashSet) simplexName entityId =
-            if systemNames.Contains Unchecked.defaultof<'c>.TypeName then
-                if not (Unchecked.defaultof<'c>.ShouldJunction systemNames) then
-                    this.UnregisterMultiplexed<'c> simplexName entityId |> ignore<bool>
-            else
-                if Unchecked.defaultof<'c>.ShouldJunction systemNames then
-                    this.RegisterMultiplexed Unchecked.defaultof<'c> simplexName entityId
 
 /// An Ecs system that stores components in a tree hierarchy.
 type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
@@ -803,17 +817,50 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         if not found then raise (ArgumentOutOfRangeException "nodeId")
         system.IndexCorrelated entityId
 
-    member internal this.RegisterHierarchical comp nodeId entityId ecs =
-        match systemDict.TryGetValue nodeId with
-        | (true, system) ->
-            let _ = system.RegisterCorrelated comp entityId ecs
-            true
-        | (false, _) -> false
+    member this.RegisterHierarchical comp nodeId entityId ecs =
 
-    member internal this.UnregisterHierarchical nodeId entityId ecs =
-        match systemDict.TryGetValue nodeId with
-        | (true, system) -> system.UnregisterCorrelated entityId ecs
-        | (false, _) -> false
+        // attempt to register component
+        let registered =
+            match systemDict.TryGetValue nodeId with
+            | (true, system) ->
+                let _ = system.RegisterCorrelated comp entityId ecs
+                true
+            | (false, _) -> false
+
+        // register correlation
+        if registered then
+            match ecs.Correlations.TryGetValue entityId with
+            | (true, correlation) ->
+                correlation.Add this.Name |> ignore<bool>
+                ecs.CorrelationsChanged.[entityId] <- correlation
+            | (false, _) ->
+                ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
+                ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+
+        // fin
+        registered
+
+    member this.UnregisterHierarchical nodeId entityId ecs =
+
+        // attempt to unregister component
+        let unregistered =
+            match systemDict.TryGetValue nodeId with
+            | (true, system) -> system.UnregisterCorrelated entityId ecs
+            | (false, _) -> false
+
+        // unregister correlation
+        if unregistered then
+            match ecs.Correlations.TryGetValue entityId with
+            | (true, correlation) ->
+                correlation.Remove this.Name |> ignore<bool>
+                ecs.CorrelationsChanged.[entityId] <- correlation
+            | (false, _) ->
+                ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+
+        // fin
+        unregistered
+
+    override this.UnregisterComponent _ _ = false
 
     type 'w Ecs with
 
@@ -854,38 +901,13 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
         member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> comp nodeId entityId =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system ->
-                let _ = system.RegisterHierarchical comp nodeId entityId
-                match this.Correlations.TryGetValue entityId with
-                | (true, correlation) ->
-                    correlation.Add system.Name |> ignore<bool>
-                    this.CorrelationsChanged.[entityId] <- correlation
-                | (false, _) ->
-                    this.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal system.Name)
-                    this.CorrelationsChanged.[entityId] <- this.EmptyCorrelation
+            | Some system -> system.RegisterHierarchical comp nodeId entityId this
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId entityId =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system ->
-                if system.UnregisterHierarchical nodeId entityId this then
-                    match this.Correlations.TryGetValue entityId with
-                    | (true, correlation) ->
-                        correlation.Remove system.Name |> ignore<bool>
-                        this.CorrelationsChanged.[entityId] <- correlation
-                    | (false, _) ->
-                        this.CorrelationsChanged.[entityId] <- this.EmptyCorrelation
-                    true
-                else false
+            | Some system -> system.UnregisterHierarchical nodeId entityId this
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.SynchronizeHierarchical<'c when 'c : struct and 'c :> 'c Component> (systemNames : string HashSet) nodeId entityId =
-            if systemNames.Contains Unchecked.defaultof<'c>.TypeName then
-                if not (Unchecked.defaultof<'c>.ShouldJunction systemNames) then
-                    this.UnregisterHierarchical<'c> nodeId entityId |> ignore<bool>
-            else
-                if Unchecked.defaultof<'c>.ShouldJunction systemNames then
-                    this.RegisterHierarchical Unchecked.defaultof<'c> nodeId entityId
 
 /// A correlated entity reference.
 /// Slow relative to normal ECS operations, but convenient for one-off uses.
