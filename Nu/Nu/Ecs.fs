@@ -139,7 +139,7 @@ and 'w Ecs () as this =
     let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
     let correlations = dictPlus<Guid, string HashSet> HashIdentity.Structural []
-    let mutable correlationsChanged = dictPlus<Guid, string HashSet> HashIdentity.Structural []
+    let mutable correlationChanges = dictPlus<Guid, string HashSet> HashIdentity.Structural []
     let emptySystemNames = hashSetPlus<string> StringComparer.Ordinal [] // the empty systems dict to elide allocation on IndexSystemNames
     let emptyCorrelation = hashSetPlus<string> StringComparer.Ordinal [] // the empty correlation to elide allocation on IndexEntitiesChanged
 
@@ -159,8 +159,8 @@ and 'w Ecs () as this =
     member internal this.Correlations
         with get () = correlations
 
-    member internal this.CorrelationsChanged
-        with get () = correlationsChanged
+    member internal this.CorrelationChanges
+        with get () = correlationChanges
 
     member this.SystemGlobal
         with get () = systemGlobal
@@ -262,8 +262,8 @@ and 'w Ecs () as this =
         Vsync.StartAsTask vsync
 
     member this.PopCorrelationChanges () =
-        let result = correlationsChanged
-        correlationsChanged <- dictPlus<Guid, string HashSet> HashIdentity.Structural []
+        let result = correlationChanges
+        correlationChanges <- dictPlus<Guid, string HashSet> HashIdentity.Structural []
         result
 
     member this.AllocateComponents<'c when 'c : struct and 'c :> 'c Component> buffered =
@@ -526,10 +526,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Add this.Name |> ignore<bool>
-                ecs.CorrelationsChanged.[entityId] <- correlation
+                ecs.CorrelationChanges.[entityId] <- correlation
             | (false, _) ->
                 ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
-                ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
 
             // make component ref
             ComponentRef.make index correlateds correlatedsBuffered
@@ -569,9 +569,9 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
-                ecs.CorrelationsChanged.[entityId] <- correlation
+                ecs.CorrelationChanges.[entityId] <- correlation
             | (false, _) ->
-                ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
 
         // fin
         unregistered
@@ -710,10 +710,10 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
         match ecs.Correlations.TryGetValue entityId with
         | (true, correlation) ->
             correlation.Add this.Name |> ignore<bool>
-            ecs.CorrelationsChanged.[entityId] <- correlation
+            ecs.CorrelationChanges.[entityId] <- correlation
         | (false, _) ->
             ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
-            ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+            ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
 
         // fin
         componentMultiplexed
@@ -731,9 +731,9 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
-                ecs.CorrelationsChanged.[entityId] <- correlation
+                ecs.CorrelationChanges.[entityId] <- correlation
             | (false, _) ->
-                ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
 
         // fin
         unregistered
@@ -779,19 +779,19 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
     let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
-    let mutable componentsRegistered = hashSetPlus<Guid> HashIdentity.Structural []
-    let mutable componentsUnregistered = hashSetPlus<Guid> HashIdentity.Structural []
+    let mutable registrations = hashSetPlus<Guid> HashIdentity.Structural []
+    let mutable unregistrations = hashSetPlus<Guid> HashIdentity.Structural []
 
     new (ecs) = SystemHierarchical (false, ecs)
 
     member this.Components with get () = systemTree |> ListTree.map (fun system -> system.Correlateds)
     member this.WithComponentsBuffered fn worldOpt = systemTree |> ListTree.map (fun system -> system.WithCorrelatedsBuffered fn worldOpt)
 
-    member this.PopComponentStates () =
-        let (registered, unregistered) = (componentsRegistered, componentsUnregistered)
-        componentsRegistered <- hashSetPlus<Guid> HashIdentity.Structural []
-        componentsUnregistered <- hashSetPlus<Guid> HashIdentity.Structural []
-        (registered, unregistered)
+    member this.PopHierarchyChanges () =
+        let (rs, us) = (registrations, unregistrations)
+        registrations <- hashSetPlus<Guid> HashIdentity.Structural []
+        unregistrations <- hashSetPlus<Guid> HashIdentity.Structural []
+        (rs, us)
 
     member this.IndexNode nodeId =
         match systemDict.TryGetValue nodeId with
@@ -842,18 +842,18 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
         // track registration
         if registered then
-            componentsRegistered.Add entityId |> ignore<bool>
-            componentsUnregistered.Remove entityId |> ignore<bool>
+            registrations.Add entityId |> ignore<bool>
+            unregistrations.Remove entityId |> ignore<bool>
 
         // register correlation
         if registered then
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Add this.Name |> ignore<bool>
-                ecs.CorrelationsChanged.[entityId] <- correlation
+                ecs.CorrelationChanges.[entityId] <- correlation
             | (false, _) ->
                 ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
-                ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
 
         // fin
         registered
@@ -868,17 +868,17 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
         // track registration
         if unregistered then
-            componentsRegistered.Remove entityId |> ignore<bool>
-            componentsUnregistered.Add entityId |> ignore<bool>
+            registrations.Remove entityId |> ignore<bool>
+            unregistrations.Add entityId |> ignore<bool>
 
         // unregister correlation
         if unregistered then
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
-                ecs.CorrelationsChanged.[entityId] <- correlation
+                ecs.CorrelationChanges.[entityId] <- correlation
             | (false, _) ->
-                ecs.CorrelationsChanged.[entityId] <- ecs.EmptyCorrelation
+                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
 
         // fin
         unregistered
@@ -899,9 +899,9 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some system -> system.Components
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.PopComponentStates<'c when 'c : struct and 'c :> 'c Component> () =
+        member this.PopHierarchyChanges<'c when 'c : struct and 'c :> 'c Component> () =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.PopComponentStates ()
+            | Some system -> system.PopHierarchyChanges ()
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.IndexNode<'c when 'c : struct and 'c :> 'c Component> nodeId =
