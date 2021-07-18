@@ -215,6 +215,13 @@ and 'w Ecs () as this =
         Seq.filter (fun kvp -> kvp.Value.IsSubsetOf systemNames) |>
         Seq.map (fun kvp -> kvp.Key)
 
+    member this.UnregisterComponents entityId =
+        let mutable result = false
+        for system in this.IndexSystems entityId do
+            if system.UnregisterComponent entityId then
+                result <- true
+        result
+
     member this.SubscribePlus<'d> subscriptionId eventName (callback : SystemCallback<'d, 'w>) =
         match systemSubscriptions.TryGetValue eventName with
         | (true, subscriptions) ->
