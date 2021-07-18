@@ -792,8 +792,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
     let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
-    let mutable registrations = hashSetPlus<Guid> HashIdentity.Structural []
-    let mutable unregistrations = hashSetPlus<Guid> HashIdentity.Structural []
+    let mutable changes = List<struct (Guid * bool)> ()
 
     new (ecs) = SystemHierarchical (false, false, ecs)
 
@@ -804,10 +803,9 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         systemTree |> ListTree.map (fun system -> system.WithCorrelatedsBuffered fn worldOpt)
 
     member this.PopHierarchyChanges () =
-        let (rs, us) = (registrations, unregistrations)
-        registrations <- hashSetPlus<Guid> HashIdentity.Structural []
-        unregistrations <- hashSetPlus<Guid> HashIdentity.Structural []
-        (rs, us)
+        let popped = changes
+        changes <- List<struct (Guid * bool)> ()
+        popped
 
     member this.IndexNode nodeId =
         match systemDict.TryGetValue nodeId with
@@ -833,7 +831,10 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         let nodeIdStr = string nodeId
         systemTree |>
         ListTree.findAll (fun system -> system.Name = nodeIdStr) |>
-        Seq.iter (fun system -> system.GetEntitiesCorrelated () |> Seq.iter (fun correlated -> system.UnregisterCorrelated correlated |> ignore<bool>))
+        Seq.iter (fun system ->
+            system.GetEntitiesCorrelated () |>
+            Seq.map (fun correlated -> changes.Add struct (correlated, false); correlated) |>
+            Seq.iter (fun correlated -> system.UnregisterCorrelated correlated |> ignore<bool>))
         systemDict.Remove nodeId
 
     member this.QualifyHierarchical nodeId entityId =
@@ -858,8 +859,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
         // track registration
         if registered then
-            registrations.Add entityId |> ignore<bool>
-            unregistrations.Remove entityId |> ignore<bool>
+            changes.Add struct (entityId, true)
 
         // register correlation
         if registered && not isolated then
@@ -884,8 +884,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
         // track registration
         if unregistered then
-            registrations.Remove entityId |> ignore<bool>
-            unregistrations.Add entityId |> ignore<bool>
+            changes.Add struct (entityId, false)
 
         // unregister correlation
         if unregistered && not isolated then
