@@ -788,8 +788,10 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
 
 /// Tracks changes in a hierarchical system.
 type HierarchyChange =
-    | HierarchyAdd of Guid * Guid
-    | HierarchyRemove of Guid * Guid
+    | NodeAdded of Guid * Guid option
+    | NodeRemoved of Guid // TODO: try to figure out how to add parentId option here.
+    | ComponentAddedToNode of Guid * Guid
+    | ComponentRemovedFromNode of Guid * Guid
 
 /// An Ecs system that stores components in a tree hierarchy.
 type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, isolated, ecs : 'w Ecs) =
@@ -797,19 +799,19 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
     let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
-    let mutable changes = List<HierarchyChange> ()
+    let mutable hierarchyChanges = List<HierarchyChange> ()
 
     new (ecs) = SystemHierarchical (false, false, ecs)
 
-    member this.Components with get () =
+    member this.Hierarchy with get () =
         systemTree |> ListTree.map (fun system -> system.Correlateds)
 
-    member this.WithComponentsBuffered fn worldOpt =
+    member this.WithHierarchyBuffered fn worldOpt =
         systemTree |> ListTree.map (fun system -> system.WithCorrelatedsBuffered fn worldOpt)
 
     member this.PopHierarchyChanges () =
-        let popped = changes
-        changes <- List<HierarchyChange> ()
+        let popped = hierarchyChanges
+        hierarchyChanges <- List<HierarchyChange> ()
         popped
 
     member this.IndexNode nodeId =
@@ -828,19 +830,36 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | None ->
                 systemTree |> ListTree.tryAdd tautology system
         if Option.isSome addedOpt then
+            hierarchyChanges.Add (NodeAdded (nodeId, parentIdOpt))
             systemDict.Add (nodeId, system)
             Some nodeId
         else None
 
     member this.RemoveNode nodeId =
-        let nodeIdStr = string nodeId
+
+        // infer system name
+        let systemName = string nodeId
+
+        // unregister all correlated components from node's system
         systemTree |>
-        ListTree.findAll (fun system -> system.Name = nodeIdStr) |>
+        ListTree.findAll (fun system -> system.Name = systemName) |>
         Seq.iter (fun system ->
             system.GetEntitiesCorrelated () |>
-            Seq.map (fun correlated -> changes.Add (HierarchyRemove (nodeId, correlated)); correlated) |>
-            Seq.iter (fun correlated -> system.UnregisterCorrelated correlated |> ignore<bool>))
-        systemDict.Remove nodeId
+            Seq.iter (fun correlated ->
+                hierarchyChanges.Add (ComponentRemovedFromNode (nodeId, correlated))
+                system.UnregisterCorrelated correlated |> ignore<bool>))
+
+        // remove node's system from tree
+        systemTree |> ListTree.removeFirst (fun system -> system.Name = systemName) |> ignore<bool>
+
+        // remove entry from dict
+        let result = systemDict.Remove nodeId
+
+        // log change
+        if result then hierarchyChanges.Add (NodeRemoved nodeId)
+
+        // fin
+        result
 
     member this.QualifyHierarchical nodeId entityId =
         match systemDict.TryGetValue nodeId with
@@ -864,7 +883,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
         // track registration
         if registered then
-            changes.Add (HierarchyAdd (nodeId, entityId))
+            hierarchyChanges.Add (ComponentAddedToNode (nodeId, entityId))
 
         // register correlation
         if registered && not isolated then
@@ -889,7 +908,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
         // track registration
         if unregistered then
-            changes.Add (HierarchyAdd (nodeId, entityId))
+            hierarchyChanges.Add (ComponentAddedToNode (nodeId, entityId))
 
         // unregister correlation
         if unregistered && not isolated then
@@ -914,9 +933,9 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         member this.IndexSystemHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
             this.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
 
-        member this.IndexTree<'c when 'c : struct and 'c :> 'c Component> () =
+        member this.IndexHierarchy<'c when 'c : struct and 'c :> 'c Component> () =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.Components
+            | Some system -> system.Hierarchy
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.PopHierarchyChanges<'c when 'c : struct and 'c :> 'c Component> () =
