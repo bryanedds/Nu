@@ -446,7 +446,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 /// batches to ensure maximum throughput when processing the manually-junctioned components.
 /// Also note that all junctions are guaranteed to keep the same size and order as the related components so that they
 /// can be accessed by the same index.
-type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, isolated, ecs : 'w Ecs) =
+type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (correlateds, correlatedsBuffered) = ecs.AllocateComponents<'c> buffered
@@ -458,7 +458,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
     let correlationsBack = dictPlus<int, Guid> HashIdentity.Structural []
 
-    new (ecs) = SystemCorrelated (false, false, ecs)
+    new (ecs) = SystemCorrelated (false, ecs)
 
     member this.Correlateds with get () = correlateds
     member this.WithCorrelatedsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock correlatedsBuffered (fun () -> fn correlatedsBuffered worldOpt)
@@ -529,15 +529,14 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             correlationsBack.Add (index, entityId)
             correlateds.Array.[index] <- comp
 
-            // register correlation with ecs if needed
-            if not isolated then
-                match ecs.Correlations.TryGetValue entityId with
-                | (true, correlation) ->
-                    correlation.Add this.Name |> ignore<bool>
-                    ecs.CorrelationChanges.[entityId] <- correlation
-                | (false, _) ->
-                    ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
-                    ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
+            // register correlation with ecs
+            match ecs.Correlations.TryGetValue entityId with
+            | (true, correlation) ->
+                correlation.Add this.Name |> ignore<bool>
+                ecs.CorrelationChanges.[entityId] <- correlation
+            | (false, _) ->
+                ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
+                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
 
             // make component ref
             ComponentRef.make index correlateds correlatedsBuffered
@@ -573,7 +572,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             | (false, _) -> false
 
         // unregister correlation from ecs if needed
-        if unregistered && not isolated then
+        if unregistered then
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
@@ -693,10 +692,10 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         this.Simplexes.Remove simplexName
 
 /// An ECS system that stores zero to many of the same component per entity id.
-type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, isolated, ecs : 'w Ecs) =
-    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (buffered, isolated, ecs)
+type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (buffered, ecs)
 
-    new (ecs) = SystemMultiplexed (false, false, ecs)
+    new (ecs) = SystemMultiplexed (false, ecs)
 
     member this.QualifyMultiplexed simplexName entityId =
         if this.QualifyCorrelated entityId then
@@ -787,146 +786,57 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// Tracks changes in a hierarchical system.
-type HierarchyChange =
-    | NodeAdded of Guid * Guid option
-    | NodeRemoved of Guid // TODO: try to figure out how to add parentId option here.
-    | ComponentAddedToNode of Guid * Guid
-    | ComponentRemovedFromNode of Guid * Guid
+type [<NoEquality; NoComparison>] ChangeHierarchical =
+    | RegistrationHierarchical of Guid * Guid option
+    | UnregistrationHierarchical of Guid // TODO: try to figure out how to add parentId option here.
 
-/// An Ecs system that stores components in a tree hierarchy.
-type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, isolated, ecs : 'w Ecs) =
+type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :> 'c Component> =
+    { EntityId : Guid
+      ComponentRef : 'c ComponentRef}
+
+/// An Ecs system that stores components in a hierarchy.
+type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
-    let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
-    let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
-    let mutable hierarchyChanges = List<HierarchyChange> ()
+    let hierarchy = ListTree.makeEmpty<'c NodeHierarchical> ()
+    let system = ecs.RegisterSystem (SystemCorrelated<'c, 'w> (buffered, ecs))
+    let mutable hierarchyChanges = List<ChangeHierarchical> ()
 
-    new (ecs) = SystemHierarchical (false, false, ecs)
+    new (ecs) = SystemHierarchical (false, ecs)
 
     member this.Hierarchy with get () =
-        systemTree |> ListTree.map (fun system -> system.Correlateds)
-
-    member this.WithHierarchyBuffered fn worldOpt =
-        systemTree |> ListTree.map (fun system -> system.WithCorrelatedsBuffered fn worldOpt)
+        hierarchy
 
     member this.PopHierarchyChanges () =
         let popped = hierarchyChanges
-        hierarchyChanges <- List<HierarchyChange> ()
+        hierarchyChanges <- List<ChangeHierarchical> ()
         popped
 
-    member this.IndexNode nodeId =
-        match systemDict.TryGetValue nodeId with
-        | (true, system) -> system.Correlateds
-        | (false, _) -> failwith ("Node with id '" + scstring nodeId + "' not found.")
-
-    member this.AddNode (parentIdOpt : Guid option) =
-        let nodeId = Gen.id
-        let system = SystemCorrelated<'c, 'w> (buffered, true, ecs)
-        let addedOpt =
-            match parentIdOpt with
-            | Some parentId ->
-                let parentIdStr = string parentId
-                systemTree |> ListTree.tryInsert (fun system -> system.Name = parentIdStr) system
-            | None ->
-                systemTree |> ListTree.tryAdd tautology system
-        if Option.isSome addedOpt then
-            hierarchyChanges.Add (NodeAdded (nodeId, parentIdOpt))
-            systemDict.Add (nodeId, system)
-            Some nodeId
-        else None
-
-    member this.RemoveNode nodeId =
-
-        // infer system name
-        let systemName = string nodeId
-
-        // unregister all correlated components from node's system
-        systemTree |>
-        ListTree.findAll (fun system -> system.Name = systemName) |>
-        Seq.iter (fun system ->
-            system.GetEntitiesCorrelated () |>
-            Seq.iter (fun correlated ->
-                hierarchyChanges.Add (ComponentRemovedFromNode (nodeId, correlated))
-                system.UnregisterCorrelated correlated |> ignore<bool>))
-
-        // remove node's system from tree
-        systemTree |> ListTree.removeFirst (fun system -> system.Name = systemName) |> ignore<bool>
-
-        // remove entry from dict
-        let result = systemDict.Remove nodeId
-
-        // log change
-        if result then hierarchyChanges.Add (NodeRemoved nodeId)
-
-        // fin
-        result
-
-    member this.QualifyHierarchical nodeId entityId =
-        match systemDict.TryGetValue nodeId with
-        | (true, system) -> system.QualifyCorrelated entityId
-        | (false, _) -> false
-
-    member this.IndexHierarchical nodeId entityId =
-        let (found, system) = systemDict.TryGetValue nodeId
-        if not found then raise (ArgumentOutOfRangeException "nodeId")
+    member this.IndexHierarchical entityId =
         system.IndexCorrelated entityId
 
-    member this.RegisterHierarchical comp nodeId entityId =
+    member this.RegisterHierarchical (parentIdOpt : Guid option) comp entityId =
+        let cref = system.RegisterCorrelated comp entityId
+        let node = { EntityId = entityId; ComponentRef = cref }
+        let addedOpt =
+            match parentIdOpt with
+            | Some parentId -> ListTree.tryInsert (fun node -> node.EntityId = parentId) node hierarchy
+            | None -> ListTree.tryAdd tautology node hierarchy
+        if Option.isSome addedOpt then
+            hierarchyChanges.Add (RegistrationHierarchical (entityId, parentIdOpt))
+            Some cref
+        else None
 
-        // attempt to register component
-        let registered =
-            match systemDict.TryGetValue nodeId with
-            | (true, system) ->
-                system.RegisterCorrelated comp entityId |> ignore<'c ComponentRef>
-                true
-            | (false, _) -> false
+    member this.UnregisterHierarchical entityId =
+        let result = ListTree.removeFirst (fun node -> node.EntityId = entityId) hierarchy
+        if result then hierarchyChanges.Add (UnregistrationHierarchical entityId)
+        result
 
-        // track registration
-        if registered then
-            hierarchyChanges.Add (ComponentAddedToNode (nodeId, entityId))
-
-        // register correlation
-        if registered && not isolated then
-            match ecs.Correlations.TryGetValue entityId with
-            | (true, correlation) ->
-                correlation.Add this.Name |> ignore<bool>
-                ecs.CorrelationChanges.[entityId] <- correlation
-            | (false, _) ->
-                ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
-                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
-
-        // fin
-        registered
-
-    member this.UnregisterHierarchical nodeId entityId =
-
-        // attempt to unregister component
-        let unregistered =
-            match systemDict.TryGetValue nodeId with
-            | (true, system) -> system.UnregisterCorrelated entityId
-            | (false, _) -> false
-
-        // track registration
-        if unregistered then
-            hierarchyChanges.Add (ComponentAddedToNode (nodeId, entityId))
-
-        // unregister correlation
-        if unregistered && not isolated then
-            match ecs.Correlations.TryGetValue entityId with
-            | (true, correlation) ->
-                correlation.Remove this.Name |> ignore<bool>
-                ecs.CorrelationChanges.[entityId] <- correlation
-            | (false, _) ->
-                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
-
-        // fin
-        unregistered
+    member this.QualifyHierarchical entityId =
+        system.QualifyCorrelated entityId
 
     override this.UnregisterComponent entityId =
-        systemTree |>
-        ListTree.findAll (fun system -> system.Name = string entityId) |>
-        Seq.map (fun system -> system.UnregisterCorrelated entityId) |>
-        Seq.exists id
+        this.UnregisterHierarchical entityId
 
     type 'w Ecs with
 
@@ -943,42 +853,26 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some system -> system.PopHierarchyChanges ()
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.IndexNode<'c when 'c : struct and 'c :> 'c Component> nodeId =
+        member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> entityId =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.IndexNode nodeId
+            | Some system -> system.IndexHierarchical entityId
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.AddNode<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
+        member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.AddNode parentIdOpt
+            | Some system -> system.RegisterHierarchical parentIdOpt
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.RemoveNode<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
+        member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.RemoveNode parentIdOpt
+            | Some system -> system.UnregisterHierarchical parentIdOpt
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.QualifyHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId entityId =
+        member this.QualifyHierarchical<'c when 'c : struct and 'c :> 'c Component> entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> ()
             if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
             let system = Option.get systemOpt
-            system.QualifyHierarchical nodeId entityId
-
-        member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId entityId =
-            let systemOpt = this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            system.IndexHierarchical nodeId entityId
-
-        member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> comp nodeId entityId =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.RegisterHierarchical comp nodeId entityId
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.UnregisterHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId entityId =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.UnregisterHierarchical nodeId entityId
-            | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            system.QualifyHierarchical entityId
 
 /// A correlated entity reference.
 /// Slow relative to normal ECS operations, but convenient for one-off uses.
@@ -1006,14 +900,14 @@ type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
         let multiplexed = system.IndexMultiplexedBuffered simplexName this.EntityId : 'c Simplex
         multiplexed.Simplex
 
-    member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> nodeId =
+    member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
         let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-        let hierarchical = system.IndexHierarchical nodeId this.EntityId : 'c ComponentRef
+        let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
         &hierarchical.Index
 
-    member this.IndexHierarchicalBuffered<'c when 'c : struct and 'c :> 'c Component> nodeId =
+    member this.IndexHierarchicalBuffered<'c when 'c : struct and 'c :> 'c Component> () =
         let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-        let hierarchical = system.IndexHierarchical nodeId this.EntityId : 'c ComponentRef
+        let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
         hierarchical.IndexBuffered
 
     type 'w Ecs with
