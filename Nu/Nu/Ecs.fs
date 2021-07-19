@@ -785,21 +785,22 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
             | Some system -> system.UnregisterMultiplexed simplexName entityId
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
+/// A SystemHierarchical node.
+type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :> 'c Component> =
+    { EntityId : Guid
+      ComponentRef : 'c ComponentRef}
+
 /// Tracks changes in a hierarchical system.
 type [<NoEquality; NoComparison>] ChangeHierarchical =
     | RegistrationHierarchical of Guid * Guid option
     | UnregistrationHierarchical of Guid // TODO: try to figure out how to add parentId option here.
 
-type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :> 'c Component> =
-    { EntityId : Guid
-      ComponentRef : 'c ComponentRef}
-
 /// An Ecs system that stores components in a hierarchy.
 type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
-    let hierarchy = ListTree.makeEmpty<'c NodeHierarchical> ()
     let system = ecs.RegisterSystem (SystemCorrelated<'c, 'w> (buffered, ecs))
+    let hierarchy = ListTree.makeEmpty<'c NodeHierarchical> ()
     let mutable hierarchyChanges = List<ChangeHierarchical> ()
 
     new (ecs) = SystemHierarchical (false, ecs)
