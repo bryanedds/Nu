@@ -477,9 +477,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         if not found then raise (ArgumentOutOfRangeException "entityId")
         index
 
-    member this.GetEntitiesCorrelated () =
-        correlations.Keys :> _ IEnumerable
-
     member this.QualifyCorrelated entityId =
         correlations.ContainsKey entityId
 
@@ -590,11 +587,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
         member this.IndexSystemCorrelated<'c when 'c : struct and 'c :> 'c Component> () =
             this.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-
-        member this.GetEntitiesCorrelated<'c when 'c : struct and 'c :> 'c Component> () =
-            match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
-            | Some system -> system.GetEntitiesCorrelated ()
-            | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.QualifyCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
             let systemOpt = this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> ()
@@ -805,8 +797,9 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     new (ecs) = SystemHierarchical (false, ecs)
 
-    member this.Hierarchy with get () =
-        hierarchy
+    member this.Hierarchy with get () = hierarchy
+    member this.HierarchyFlattened with get () = system.Correlateds
+    member this.WithHierarchyFlattenedBuffered fn worldOpt = system.WithCorrelatedsBuffered fn worldOpt
 
     member this.PopHierarchyChanges () =
         let popped = hierarchyChanges
@@ -815,6 +808,9 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     member this.IndexHierarchical entityId =
         system.IndexCorrelated entityId
+
+    member this.IndexHierarchicalJunctioned fieldPath entityId =
+        system.IndexJunctioned fieldPath entityId
 
     member this.RegisterHierarchical (parentIdOpt : Guid option) comp entityId =
         let cref = system.RegisterCorrelated comp entityId
@@ -849,6 +845,11 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some system -> system.Hierarchy
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
+        member this.IndexHierarchyFlattened<'c when 'c : struct and 'c :> 'c Component> () =
+            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
+            | Some system -> system.HierarchyFlattened
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
         member this.PopHierarchyChanges<'c when 'c : struct and 'c :> 'c Component> () =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
             | Some system -> system.PopHierarchyChanges ()
@@ -857,6 +858,11 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> entityId =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
             | Some system -> system.IndexHierarchical entityId
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.IndexHierarchicalJunctioned<'c, 'j when 'c : struct and 'c :> 'c Component and 'j : struct and 'j :> 'j Component> fieldPath entityId : 'j ComponentRef =
+            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
+            | Some system -> system.IndexHierarchicalJunctioned fieldPath entityId
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
