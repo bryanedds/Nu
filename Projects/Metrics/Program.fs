@@ -170,7 +170,7 @@ type MyGameDispatcher () =
         // create systems
         let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
         let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        let _ = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
+        let moverStaticSystem = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
         let _ = ecs.RegisterSystem (SystemCorrelated<MoverDynamic, World> ecs)
 
         //// create object references
@@ -194,7 +194,7 @@ type MyGameDispatcher () =
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
         // create 3M movers (goal: 60FPS, current: 54FPS)
-        for _ in 0 .. 3000000 - 1 do
+        for _ in 0 .. 4000000 - 1 do
             let mover = ecs.RegisterCorrelated Unchecked.defaultof<MoverStatic> Gen.id
             mover.Index.Velocity.Index.Velocity <- v2One
 
@@ -206,9 +206,9 @@ type MyGameDispatcher () =
   #if SYSTEM_ITERATION
         // define update for static movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            let components = moverSystem.Correlateds.Array
-            let velocities = moverSystem.IndexJunction<Velocity>(nameof Velocity).Array
-            let positions = moverSystem.IndexJunction<Position>(nameof Position).Array
+            let components = moverStaticSystem.Correlateds.Array
+            let velocities = moverStaticSystem.IndexJunction<Velocity>(nameof Velocity).Array
+            let positions = moverStaticSystem.IndexJunction<Position>(nameof Position).Array
             for i in 0 .. components.Length - 1 do
                 let comp = &components.[i]
                 if  comp.Active then
@@ -233,7 +233,7 @@ type MyGameDispatcher () =
         //
         // { mutable P : Vector2; mutable V : Vector2 }         5M / 1.25M when placement randomized
         //
-        // [| [| componentRef P |] [| componentRef V |] |]      4M / 2M #if !SYSTEM_ITERATION
+        // [| [| componentRef P |] [| componentRef V |] |]      4M / 3M #if !SYSTEM_ITERATION
         //
         // [| [| ref P |] [| ref V |] |]                        2.5M
         //
