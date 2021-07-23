@@ -77,6 +77,11 @@ module TileMap =
     let [<Literal>] InfoPropertyName = "I"
 
 [<RequireQualifiedAccess>]
+module Particles =
+
+    let [<Literal>] RestitutionDefault = 0.9f
+
+[<RequireQualifiedAccess>]
 module Effects =
 
     let [<Literal>] EffectHistoryMaxDefault = Engine.DesiredFps // 1 second of effect history

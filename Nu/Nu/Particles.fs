@@ -113,14 +113,16 @@ module Particles =
         { mutable Position : Vector2
           mutable Rotation : single
           mutable LinearVelocity : Vector2
-          mutable AngularVelocity : single }
+          mutable AngularVelocity : single
+          mutable Restitution : single }
 
         /// The default body.
         static member defaultBody =
             { Position = v2Zero
               Rotation = 0.0f
               LinearVelocity = v2Zero
-              AngularVelocity = 0.0f }
+              AngularVelocity = 0.0f
+              Restitution = Constants.Particles.RestitutionDefault }
 
     /// The base particle type.
     type Particle =
@@ -184,7 +186,7 @@ module Particles =
                     if distanceSquared < radiusSquared then
                         let speed = body.LinearVelocity.Length ()
                         let distanceNormalized = Vector2.Normalize delta
-                        let linearVelocity = speed * distanceNormalized
+                        let linearVelocity = speed * distanceNormalized * body.Restitution
                         { body with LinearVelocity = linearVelocity }
                     else body)
                     bodies
@@ -194,7 +196,7 @@ module Particles =
                     if Math.isPointInBounds body.Position bounds then
                         let speed = body.LinearVelocity.Length ()
                         let distanceNormalized = Vector2.Normalize delta
-                        let linearVelocity = speed * distanceNormalized
+                        let linearVelocity = speed * distanceNormalized * body.Restitution
                         { body with LinearVelocity = linearVelocity }
                     else body)
                     bodies
