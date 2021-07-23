@@ -11,13 +11,14 @@ open Nu
 /// The input for a ray cast operation.
 type [<StructuralEquality; NoComparison; Struct>] RayCastInput =
     { RayBegin : Vector2
-      RayEnd : Vector2
-      MaxFraction : single }
+      RayEnd : Vector2 }
       
 /// The output of a ray cast operation.
 type [<StructuralEquality; NoComparison; Struct>] RayCastOutput =
     { mutable Normal : Vector2
       mutable Fraction : single }
+    static member inline defaultOutput =
+        Unchecked.defaultof<RayCastOutput>
 
 /// Masks for Transform flags.
 module TransformMasks =
@@ -911,7 +912,7 @@ module Math =
         let sigma = c * c - rr * b
         if sigma >= 0f && rr >= Epsilon then
             let a = 0f - (c + single (Math.Sqrt (float sigma)))
-            if 0f <= a && a <= input.MaxFraction * rr then
+            if 0f <= a && a <= rr then
                 output.Fraction <- a / rr
                 output.Normal <- Vector2.Normalize (s + output.Fraction * r)
                 true
@@ -919,62 +920,27 @@ module Math =
         else false
 
     /// Perform a ray cast on a rectangle.
-    /// Code adapted from - https://github.com/tainicom/Aether.Physics2D/blob/5613dbfdd6380e165148a3033b585da8273404ba/Physics2D/Collision/Collision.cs#L457-L547
-    let rayCastRectangle interiorCheck (rectangle : Vector4) (input : RayCastInput inref) (output : RayCastOutput outref) =
-        let mutable fail = false
-        let mutable tmin = Single.MinValue
-        let mutable tmax = Single.MaxValue
-        let point = input.RayBegin
-        let delta = input.RayEnd - input.RayBegin
-        let deltaAbs = Vector2 (Math.Abs delta.X, Math.Abs delta.Y)
-        let mutable normal = Vector2.Zero
-        let mutable i = 0
-        while i < 2 && not fail do
-            let deltaAbsForI = if i = 0 then deltaAbs.X else deltaAbs.Y
-            let lowerBoundsForI = if i = 0 then rectangle.X else rectangle.Y
-            let upperBoundsForI = if i = 0 then rectangle.X + rectangle.Z else rectangle.Y + rectangle.W
-            let pointForI = if i = 0 then point.X else point.Y
-            let mutable next = false
-            if deltaAbsForI < Epsilon then
-                if pointForI < lowerBoundsForI || upperBoundsForI < pointForI then
-                    fail <- true
-                    i <- 2
-                else next <- true
-            if not next then
-                let deltaForI = if i = 0 then delta.X else delta.Y
-                let deltaInverse = 1.0f / deltaForI
-                let mutable t1 = (lowerBoundsForI - pointForI) * deltaInverse
-                let mutable t2 = (upperBoundsForI - pointForI) * deltaInverse
-                let mutable s = -1.0f
-                if t1 > t2 then
-                    let t3 = t1
-                    t1 <- t2
-                    t2 <- t3
-                    s <- 1.0f
-                if t1 > tmin then
-                    if i = 0 then normal.X <- s
-                    else normal.Y <- s
-                    tmin <- t1
-                tmax <- Math.Min (tmax, t2)
-                if tmin > tmax then fail <- true
-        if fail then
-            false
-        elif interiorCheck && (tmin < 0f || input.MaxFraction < tmin) then
-            false
-        else
-            output.Fraction <- tmin
-            output.Normal <- normal
-            true
+    /// BUG: There's a bug in AABB.RayCast that produces invalid normals.
+    let rayCastRectangle (rectangle : Vector4) (input : RayCastInput inref) (output : RayCastOutput outref) =
+        let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
+        let point2 = Common.Vector2 (input.RayEnd.X, input.RayEnd.Y)
+        let mutable inputAether = Collision.RayCastInput (MaxFraction = 1.0f, Point1 = point1, Point2 = point2)
+        let mutable outputAether = Unchecked.defaultof<Collision.RayCastOutput>
+        let aabb  = Collision.AABB (Common.Vector2 (rectangle.X, rectangle.Y), Common.Vector2 (rectangle.X + rectangle.Z, rectangle.Y + rectangle.W))
+        let result = aabb.RayCast (&outputAether, &inputAether)
+        output.Normal <- Vector2 (outputAether.Normal.X, outputAether.Normal.Y)
+        output.Fraction <- outputAether.Fraction
+        result
 
     /// Perform a ray-cast on a line segment (edge).
     /// NOTE: due to unoptimized implementation, this function allocates one object per call!
-    /// TODO: adapt the Aether code as was done for circle and rectangle to improve performance and get rid of said
+    /// TODO: adapt the Aether code as was done for circle to improve performance and get rid of said
     /// allocation.
     let rayCastSegment segmentBegin segmentEnd (input : RayCastInput inref) (output : RayCastOutput outref) =
         let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
         let point2 = Common.Vector2 (input.RayEnd.X, input.RayEnd.Y)
         let mutable identity = Common.Transform.Identity // NOTE: superfluous copy of identity to satisfy EdgeShap.RayCast's use of byref instead of inref.
-        let mutable inputAether = Collision.RayCastInput (MaxFraction = input.MaxFraction, Point1 = point1, Point2 = point2)
+        let mutable inputAether = Collision.RayCastInput (MaxFraction = 1.0f, Point1 = point1, Point2 = point2)
         let mutable outputAether = Unchecked.defaultof<Collision.RayCastOutput>
         let edgeShape = Collision.Shapes.EdgeShape (segmentBegin, segmentEnd) // NOTE: unecessary allocation, ugh!
         let result = edgeShape.RayCast (&outputAether, &inputAether, &identity, 0)
