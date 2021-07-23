@@ -21,6 +21,10 @@ type Font = private { __ : unit }
 type TileMap = private { __ : unit }
 
 /// The flipness of a sprite.
+[<Syntax
+    ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Flip =
     | FlipNone
     | FlipH
@@ -35,7 +39,11 @@ type [<StructuralEquality; NoComparison; Struct>] Flip =
         | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
         | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
 
-/// The blend more of a sprite.
+/// The blend mode of a sprite.
+[<Syntax
+    ("Transparent Additive Modulate Overwrite", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Blend =
     | Transparent
     | Additive
@@ -51,18 +59,30 @@ type [<StructuralEquality; NoComparison; Struct>] Blend =
         | Overwrite -> SDL.SDL_BlendMode.SDL_BLENDMODE_NONE
 
 /// Horizontal justification.
+[<Syntax
+    ("JustifyLeft JustifyRight JustifyCenter", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] JustificationH =
     | JustifyLeft
     | JustifyCenter
     | JustifyRight
 
 /// Vertical justification.
+[<Syntax
+    ("JustifyTop JustifyMiddle JustifyBottom", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] JustificationV =
     | JustifyTop
     | JustifyMiddle
     | JustifyBottom
 
 /// Justification (such as for text alignement).
+[<Syntax
+    ("Justified Unjustified", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison>] Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
