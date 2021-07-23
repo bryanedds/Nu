@@ -972,10 +972,10 @@ module Math =
         let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
         let point2 = Common.Vector2 (input.RayEnd.X, input.RayEnd.Y)
         let mutable identity = Common.Transform.Identity // NOTE: superfluous copy of identity to satisfy EdgeShap.RayCast's use of byref instead of inref.
-        let mutable input' = Collision.RayCastInput (MaxFraction = input.MaxFraction, Point1 = point1, Point2 = point2)
-        let mutable output' = Unchecked.defaultof<Collision.RayCastOutput>
+        let mutable inputAether = Collision.RayCastInput (MaxFraction = input.MaxFraction, Point1 = point1, Point2 = point2)
+        let mutable outputAether = Unchecked.defaultof<Collision.RayCastOutput>
         let edgeShape = Collision.Shapes.EdgeShape (segmentBegin, segmentEnd) // NOTE: unecessary allocation, ugh!
-        let result = edgeShape.RayCast (&output', &input', &identity, 0)
-        output.Normal <- Vector2 (output'.Normal.X, output'.Normal.Y)
-        output.Fraction <- output'.Fraction
+        let result = edgeShape.RayCast (&outputAether, &inputAether, &identity, 0)
+        output.Normal <- Vector2 (outputAether.Normal.X, outputAether.Normal.Y)
+        output.Fraction <- outputAether.Fraction
         result
