@@ -186,8 +186,8 @@ module Particles =
                     let radiusSquared = radius * radius
                     if distanceSquared < radiusSquared then
                         let normal = Vector2.Normalize (center - positionNext)
-                        let reflected = Vector2.Reflect (body.LinearVelocity, normal)
-                        let linearVelocity = reflected * body.Restitution
+                        let reflectedVelocity = Vector2.Reflect (body.LinearVelocity, normal)
+                        let linearVelocity = reflectedVelocity * body.Restitution
                         { body with LinearVelocity = linearVelocity }
                     else body)
                     bodies
@@ -201,6 +201,14 @@ module Particles =
                         let linearVelocity = speed * distanceNormalized * body.Restitution
                         { body with LinearVelocity = linearVelocity }
                     else body)
+                    // TODO: retore this code when the AABB.RayCast bug is fixed or Math.rayCastRectangle is implemented from scratch.
+                    //let rayCastInput = { RayBegin = positionNext; RayEnd = positionNext + body.LinearVelocity }
+                    //let mutable rayCastOutput = RayCastOutput.defaultOutput
+                    //if Math.rayCastRectangle bounds &rayCastInput &rayCastOutput then
+                    //    let reflectedVelocity = Vector2.Reflect (body.LinearVelocity, rayCastOutput.Normal)
+                    //    let linearVelocity = reflectedVelocity * body.Restitution
+                    //    { body with LinearVelocity = linearVelocity }
+                    //else body)
                     bodies
             | Constraints constraints ->
                 Array.fold (flip constrain) bodies constraints
