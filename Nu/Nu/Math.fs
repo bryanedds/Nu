@@ -968,6 +968,8 @@ module Math =
 
     /// Perform a ray-cast on a line segment (edge).
     /// NOTE: due to unoptimized implementation, this function allocates one object per call!
+    /// TODO: adapt the Aether code as was done for circle and rectangle to improve performance and get rid of said
+    /// allocation.
     let rayCastSegment segmentBegin segmentEnd (input : RayCastInput inref) (output : RayCastOutput outref) =
         let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
         let point2 = Common.Vector2 (input.RayEnd.X, input.RayEnd.Y)
