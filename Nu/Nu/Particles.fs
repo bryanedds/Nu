@@ -180,20 +180,22 @@ module Particles =
             match c with
             | Circle (radius, center) ->
                 Array.map (fun (body : Body) ->
-                    let delta = body.Position - center 
+                    let positionNext = body.Position + body.LinearVelocity
+                    let delta = positionNext - center
                     let distanceSquared = delta.LengthSquared ()
                     let radiusSquared = radius * radius
                     if distanceSquared < radiusSquared then
-                        let speed = body.LinearVelocity.Length ()
-                        let distanceNormalized = Vector2.Normalize delta
-                        let linearVelocity = speed * distanceNormalized * body.Restitution
+                        let normal = Vector2.Normalize (center - positionNext)
+                        let reflected = Vector2.Reflect (body.LinearVelocity, normal)
+                        let linearVelocity = reflected * body.Restitution
                         { body with LinearVelocity = linearVelocity }
                     else body)
                     bodies
             | Rectangle bounds ->
                 Array.map (fun (body : Body) ->
-                    let delta = body.Position - bounds.Center
-                    if Math.isPointInBounds body.Position bounds then
+                    let positionNext = body.Position + body.LinearVelocity
+                    let delta = positionNext - bounds.Center
+                    if Math.isPointInBounds positionNext bounds then
                         let speed = body.LinearVelocity.Length ()
                         let distanceNormalized = Vector2.Normalize delta
                         let linearVelocity = speed * distanceNormalized * body.Restitution
