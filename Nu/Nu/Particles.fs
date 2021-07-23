@@ -167,9 +167,43 @@ module Particles =
     [<RequireQualifiedAccess>]
     module Transformer =
 
+        /// Accelerate bodies both linearly and angularly.
+        let accelerate bodies =
+            Array.map (fun (body : Body) ->
+                { body with Position = body.Position + body.LinearVelocity; Rotation = body.Rotation + body.AngularVelocity })
+                bodies
+
+        /// Constrain bodies.
+        let rec constrain c bodies =
+            match c with
+            | Circle (radius, center) ->
+                Array.map (fun (body : Body) ->
+                    let delta = body.Position - center 
+                    let distanceSquared = delta.LengthSquared ()
+                    let radiusSquared = radius * radius
+                    if distanceSquared < radiusSquared then
+                        let speed = body.LinearVelocity.Length ()
+                        let distanceNormalized = Vector2.Normalize delta
+                        let linearVelocity = speed * distanceNormalized
+                        { body with LinearVelocity = linearVelocity }
+                    else body)
+                    bodies
+            | Rectangle bounds ->
+                Array.map (fun (body : Body) ->
+                    let delta = body.Position - bounds.Center
+                    if Math.isPointInBounds body.Position bounds then
+                        let speed = body.LinearVelocity.Length ()
+                        let distanceNormalized = Vector2.Normalize delta
+                        let linearVelocity = speed * distanceNormalized
+                        { body with LinearVelocity = linearVelocity }
+                    else body)
+                    bodies
+            | Constraints constraints ->
+                Array.fold (flip constrain) bodies constraints
+
         /// Make a force transformer.
         let force force : Body Transformer =
-            fun _ constrain bodies ->
+            fun _ c bodies ->
                 match force with
                 | Gravity gravity ->
                     let bodies = Array.map (fun (body : Body) -> { body with LinearVelocity = body.LinearVelocity + gravity }) bodies
@@ -197,15 +231,10 @@ module Particles =
                                 AngularVelocity = body.AngularVelocity - angularDrag })
                             bodies
                     (Output.empty, bodies)
-                | Velocity constrain2 ->
-                    let constrain = constrain + constrain2
-                    let bodies =
-                        match constrain with
-                        | Constraints [||] ->
-                            Array.map (fun (body : Body) ->
-                                { body with Position = body.Position + body.LinearVelocity; Rotation = body.Rotation + body.AngularVelocity })
-                                bodies
-                        | _ -> failwithnie () // TODO: implement constraint behavior.
+                | Velocity c2 ->
+                    let c3 = c + c2
+                    let bodies = constrain c3 bodies
+                    let bodies = accelerate bodies
                     (Output.empty, bodies)
 
         /// Make a logic transformer.
