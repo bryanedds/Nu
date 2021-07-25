@@ -784,12 +784,12 @@ type [<NoEquality; NoComparison>] NodeHierarchical<'c when 'c : struct and 'c :>
 
 /// Tracks changes in a hierarchical system.
 type [<NoEquality; NoComparison; Struct>] ChangeHierarchical =
-    { /// The node entity's id.
+    { /// Whether change involves registeration (true) or unregistration (false).
+      Registered : bool
+      /// The node entity's id.
       NodeId : Guid
       /// The parent's entity id or Guid.Empty if no parent.
-      ParentIdOpt : Guid
-      /// Whether change involves registeration (true) or unregistration (false).
-      Registered : bool }
+      ParentIdOpt : Guid }
 
 /// An Ecs system that stores components in a hierarchy.
 type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
@@ -824,7 +824,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some parentId -> ListTree.tryInsert (fun node -> node.EntityId = parentId) node hierarchy
             | None -> ListTree.tryAdd tautology node hierarchy
         if Option.isSome addedOpt then
-            let hierarchyChange = { NodeId = entityId; ParentIdOpt = Option.getOrDefault Guid.Empty parentIdOpt; Registered = true }
+            let hierarchyChange = { Registered = true; NodeId = entityId; ParentIdOpt = Option.getOrDefault Guid.Empty parentIdOpt }
             hierarchyChanges.Add hierarchyChange
             Some cref
         else None
@@ -832,7 +832,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
     member this.UnregisterHierarchical entityId =
         let result = ListTree.removeFirst (fun node -> node.EntityId = entityId) hierarchy
         if result then
-            let hierarchyChage = { NodeId = entityId; ParentIdOpt = Guid.Empty; Registered = false }
+            let hierarchyChage = { Registered = false; NodeId = entityId; ParentIdOpt = Guid.Empty }
             hierarchyChanges.Add hierarchyChage
         result
 
