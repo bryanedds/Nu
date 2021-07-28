@@ -109,7 +109,7 @@ and [<StructuralEquality; NoComparison; Struct>] SynchronizeResult =
 /// A base system type of an ECS.
 /// Systems are a bit different in this ECS; they're primarily storage for components and don't have any behavior
 /// associated with them. Because this ECS is purely event-driven, behavior is encoded in event handlers rather than
-/// systems. If anything, it might be better to renamed this type to Storage.
+/// systems. If anything, it might be better to be renamed to 'w Storage.
 and [<AbstractClass>] 'w System (name) =
     member this.Name with get () : string = name
     abstract UnregisterComponent : Guid -> bool
@@ -119,6 +119,10 @@ and [<AbstractClass>] 'w System (name) =
 and [<NoEquality; NoComparison>] internal ArrayObjs =
     { ArrayObjsUnbuffered : obj List
       mutable ArrayObjsBuffered : obj List }
+    member this.Buffered =
+        refEq
+            this.ArrayObjsBuffered
+            this.ArrayObjsUnbuffered
 
 /// Nu's custom Entity-Component-System implementation.
 /// Nu's conception of an ECS is primarily as an abstraction over user-definable component storage formats.
@@ -293,7 +297,7 @@ and 'w Ecs () as this =
         let componentName = Unchecked.defaultof<'c>.TypeName
         match arrayObjss.TryGetValue componentName with
         | (true, found) ->
-            if refEq found.ArrayObjsUnbuffered found.ArrayObjsBuffered then
+            if found.Buffered then
                 let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 found.ArrayObjsUnbuffered.Add (box aref)
                 (fieldPath, box aref, box aref)
@@ -439,7 +443,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | Some system -> system.UnregisterUncorrelated index
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-/// An ECS system with components correlated by entity id.
+/// An ECS system with components correlated by entity id (Guid).
 /// Hashing and storing millions of entity ids is slow, so if you need to create that many components quickly, consider
 /// manually junctioning unordered components instead. The trade-off to using uncorrelated components is that you
 /// have to manually unregister their component refs and you have to allocate and deallocate them consecutively in
