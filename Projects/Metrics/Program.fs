@@ -195,13 +195,13 @@ type MyGameDispatcher () =
 
         // create 3M movers (goal: 60FPS, current: 54FPS)
         for _ in 0 .. 4000000 - 1 do
-            let mover = ecs.RegisterCorrelated Unchecked.defaultof<MoverStatic> Gen.id
+            let mover = ecs.RegisterCorrelated false Unchecked.defaultof<MoverStatic> Gen.id
             mover.Index.Velocity.Index.Velocity <- v2One
 
         // define synchronize correlation changes for dynamic movers
         ecs.Subscribe EcsEvents.SynchronizeCorrelationChanges $ fun (evt : World SynchronizeCorrelationEvent) _ _ ->
             for change in evt.SystemEventData do
-                ecs.SynchronizeCorrelated<MoverDynamic> change.Value change.Key |> ignore<SynchronizeResult>
+                ecs.SynchronizeCorrelated<MoverDynamic> false change.Value change.Key |> ignore<SynchronizeResult>
 
   #if SYSTEM_ITERATION
         // define update for static movers

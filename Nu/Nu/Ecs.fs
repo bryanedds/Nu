@@ -388,14 +388,20 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
         ComponentRef<'c>.make index components componentsBuffered
 
-    member this.RegisterUncorrelated (comp : 'c) =
+    member this.RegisterUncorrelated ordered (comp : 'c) =
 
         // ensure component is marked active
         let mutable comp = comp
         comp.Active <- true
 
+        // rewind the freeIndex when requesting ordered registration
+        if ordered then
+            while freeList.Remove (dec freeIndex) do
+                freeIndex <- dec freeIndex
+
         // assign component
-        if freeList.Count > 0 then
+        if  not ordered &&
+            freeList.Count > 0 then
             let index = Seq.head freeList
             freeList.Remove index |> ignore<bool>
             components.[index] <- comp
@@ -433,9 +439,9 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             let system = Option.get systemOpt
             system.IndexUncorrelated index
 
-        member this.RegisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> comp =
+        member this.RegisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> ordered comp =
             match this.TryIndexSystem<'c, SystemUncorrelated<'c, 'w>> () with
-            | Some system -> system.RegisterUncorrelated comp
+            | Some system -> system.RegisterUncorrelated ordered comp
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterUncorrelated<'c when 'c : struct and 'c :> 'c Component> index =
@@ -494,7 +500,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         let buffered = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef
         ComponentRef<'j>.make index junction buffered
 
-    member this.RegisterCorrelated (comp : 'c) entityId =
+    member this.RegisterCorrelated ordered (comp : 'c) entityId =
 
         // activate component
         let mutable comp = comp
@@ -502,11 +508,17 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
         // check if component is already registered
         if not (correlations.ContainsKey entityId) then
+        
+            // rewind the freeIndex when requesting ordered registration
+            if ordered then
+                while freeList.Remove (dec freeIndex) do
+                    freeIndex <- dec freeIndex
 
             // allocate index for component, enlarging arrays if necessary
             let index =
                 if freeIndex >= correlateds.Length then
-                    if freeList.Count <> 0 then
+                    if  not ordered &&
+                        freeList.Count <> 0 then
                         let index = Seq.head freeList
                         freeList.Remove index |> ignore<bool>
                         index
@@ -610,9 +622,9 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             let system = Option.get systemOpt
             system.IndexJunctioned<'j> fieldPath entityId
 
-        member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> comp entityId =
+        member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> ordered comp entityId =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
-            | Some system -> system.RegisterCorrelated comp entityId
+            | Some system -> system.RegisterCorrelated ordered comp entityId
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterCorrelated<'c when 'c : struct and 'c :> 'c Component> entityId =
@@ -625,7 +637,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             | Some system -> system.UnregisterComponent entityId
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.SynchronizeCorrelated<'c when 'c : struct and 'c :> 'c Component> (systemNames : string HashSet) entityId =
+        member this.SynchronizeCorrelated<'c when 'c : struct and 'c :> 'c Component> ordered (systemNames : string HashSet) entityId =
             if systemNames.Contains Unchecked.defaultof<'c>.TypeName then
                 if not (Unchecked.defaultof<'c>.ShouldJunction systemNames) then
                     this.UnregisterCorrelated<'c> entityId |> ignore<bool>
@@ -633,7 +645,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
                 else Unchanged true
             else
                 if Unchecked.defaultof<'c>.ShouldJunction systemNames then
-                    this.RegisterCorrelated Unchecked.defaultof<'c> entityId |> ignore<'c ComponentRef>
+                    this.RegisterCorrelated ordered Unchecked.defaultof<'c> entityId |> ignore<'c ComponentRef>
                     Registered
                 else Unchanged false
 
@@ -707,10 +719,10 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.IndexBuffered.Simplexes.[simplexName]
 
-    member this.RegisterMultiplexed comp simplexName entityId =
+    member this.RegisterMultiplexed ordered comp simplexName entityId =
 
         // register simplex
-        this.RegisterCorrelated Unchecked.defaultof<_> entityId |> ignore<'c ComponentMultiplexed ComponentRef>
+        this.RegisterCorrelated ordered Unchecked.defaultof<_> entityId |> ignore<'c ComponentMultiplexed ComponentRef>
         let componentMultiplexed = this.IndexCorrelated entityId
         componentMultiplexed.Index.RegisterMultiplexed (simplexName, comp)
         
@@ -771,9 +783,9 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered
             let simplex = system.IndexMultiplexedBuffered simplexName entityId
             simplex.Simplex
 
-        member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> comp simplexName entityId =
+        member this.RegisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> ordered comp simplexName entityId =
             match this.TryIndexSystem<'c, SystemMultiplexed<'c, 'w>> () with
-            | Some system -> system.RegisterMultiplexed comp simplexName entityId
+            | Some system -> system.RegisterMultiplexed ordered comp simplexName entityId
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.UnregisterMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName entityId =
@@ -820,8 +832,8 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
     member this.IndexHierarchicalJunctioned fieldPath entityId =
         system.IndexJunctioned fieldPath entityId
 
-    member this.RegisterHierarchical (parentIdOpt : Guid option) comp entityId =
-        let cref = system.RegisterCorrelated comp entityId
+    member this.RegisterHierarchical ordered (parentIdOpt : Guid option) comp entityId =
+        let cref = system.RegisterCorrelated ordered comp entityId
         let node = { EntityId = entityId; ComponentRef = cref }
         let addedOpt =
             match parentIdOpt with
