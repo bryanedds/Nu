@@ -605,7 +605,7 @@ module FieldDispatcher =
                                 | (Some song, Some song2) when assetEq song song2 -> just field
                                 | (_, _) -> withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
                             | (false, _) -> just field
-                            
+
                         // half-way point of transition
                         elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
                             let field = Field.updateFieldType (constant fieldTransition.FieldType) field
