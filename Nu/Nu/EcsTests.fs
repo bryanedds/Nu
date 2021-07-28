@@ -83,7 +83,7 @@ module EcsTests =
 
         // create and register our airship
         let airshipId = Gen.id
-        let airship = ecs.RegisterCorrelated Unchecked.defaultof<Airship> airshipId
+        let airship = ecs.RegisterCorrelated false Unchecked.defaultof<Airship> airshipId
 
         // change some airship properties
         airship.Index.Transform.Index.Position.X <- 0.5f
