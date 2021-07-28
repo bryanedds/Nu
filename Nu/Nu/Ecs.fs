@@ -452,7 +452,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 /// batches to ensure maximum throughput when processing the manually-junctioned components.
 /// Also note that all junctions are guaranteed to keep the same size and order as the related components so that they
 /// can be accessed by the same index.
-type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (correlateds, correlatedsBuffered) = ecs.AllocateComponents<'c> buffered
@@ -463,10 +463,12 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
     let correlationsBack = dictPlus<int, Guid> HashIdentity.Structural []
-
-    new (ecs) = SystemCorrelated (false, ecs)
+    
+    new (buffered, ecs) = SystemCorrelated (false, buffered, ecs)
+    new (ecs) = SystemCorrelated (false, false, ecs)
 
     member this.FreeListCount = freeList.Count
+    member this.EntitiesCorrelated = correlations |> Seq.map (fun kvp -> kvp.Key)
 
     member this.Correlateds = correlateds
     member this.WithCorrelatedsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock correlatedsBuffered (fun () -> fn correlatedsBuffered worldOpt)
@@ -542,14 +544,15 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             correlationsBack.Add (index, entityId)
             correlateds.Array.[index] <- comp
 
-            // register correlation with ecs
-            match ecs.Correlations.TryGetValue entityId with
-            | (true, correlation) ->
-                correlation.Add this.Name |> ignore<bool>
-                ecs.CorrelationChanges.[entityId] <- correlation
-            | (false, _) ->
-                ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
-                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
+            // register correlation with ecs if needed
+            if not isolated then
+                match ecs.Correlations.TryGetValue entityId with
+                | (true, correlation) ->
+                    correlation.Add this.Name |> ignore<bool>
+                    ecs.CorrelationChanges.[entityId] <- correlation
+                | (false, _) ->
+                    ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
+                    ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
 
             // make component ref
             ComponentRef.make index correlateds correlatedsBuffered
@@ -585,7 +588,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
             | (false, _) -> false
 
         // unregister correlation from ecs if needed
-        if unregistered then
+        if unregistered && not isolated then
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
@@ -700,10 +703,11 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
         this.Simplexes.Remove simplexName
 
 /// An ECS system that stores zero to many of the same component per entity id.
-type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
-    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (buffered, ecs)
-
-    new (ecs) = SystemMultiplexed (false, ecs)
+type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
+    inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (isolated, buffered, ecs)
+    
+    new (buffered, ecs) = SystemMultiplexed (false, buffered, ecs)
+    new (ecs) = SystemMultiplexed (false, false, ecs)
 
     member this.QualifyMultiplexed simplexName entityId =
         if this.QualifyCorrelated entityId then
@@ -808,14 +812,15 @@ type [<NoEquality; NoComparison; Struct>] ChangeHierarchical =
       ParentIdOpt : Guid }
 
 /// An Ecs system that stores components in a hierarchy.
-type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered, ecs : 'w Ecs) =
+type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
-    let system = ecs.RegisterSystem (SystemCorrelated<'c, 'w> (buffered, ecs))
+    let system = ecs.RegisterSystem (SystemCorrelated<'c, 'w> (isolated, buffered, ecs))
     let hierarchy = ListTree.makeEmpty<'c NodeHierarchical> ()
     let mutable hierarchyChanges = List<ChangeHierarchical> ()
-
-    new (ecs) = SystemHierarchical (false, ecs)
+    
+    new (buffered, ecs) = SystemHierarchical (false, buffered, ecs)
+    new (ecs) = SystemHierarchical (false, false, ecs)
     
     member this.FreeListCount = system.FreeListCount
 
@@ -909,6 +914,207 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             let system = Option.get systemOpt
             system.QualifyHierarchical entityId
 
+/// The type of a familial change.
+type [<NoEquality; NoComparison; Struct>] FamilyChangeType =
+    | MemberAdded
+    | MemberRemoved
+    | ComponentAddedToMember
+    | ComponentRemovedFromMember
+
+/// Tracks changes in a familial system.
+type [<NoEquality; NoComparison; Struct>] FamilyChange =
+    { FamilyChangeType : FamilyChangeType
+      MemberId : Guid
+      ParentIdOpt : Guid }
+
+/// An Ecs system that stores components in a family tree.
+type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
+    inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
+
+    let systemTree = ListTree.makeEmpty<SystemCorrelated<'c, 'w>> ()
+    let systemDict = dictPlus<Guid, SystemCorrelated<'c, 'w>> HashIdentity.Structural []
+    let mutable familyChanges = List<FamilyChange> ()
+    
+    new (buffered, ecs) = SystemFamilial (false, buffered, ecs)
+    new (ecs) = SystemFamilial (false, false, ecs)
+
+    member this.FreeListCount = systemDict.Values |> Seq.fold (fun count system -> count + system.FreeListCount) 0
+    member this.RewindFreeIndices = systemDict.Values |> Seq.iter (fun system -> system.RewindFreeIndex ())
+
+    member this.Family = systemTree |> ListTree.map (fun system -> system.Correlateds)
+    member this.WithFamilyBuffered fn worldOpt = systemTree |> ListTree.map (fun system -> system.WithCorrelatedsBuffered fn worldOpt)
+
+    member this.PopFamilyChanges () =
+        let popped = familyChanges
+        familyChanges <- List<FamilyChange> ()
+        popped
+
+    member this.IndexMember memberId =
+        match systemDict.TryGetValue memberId with
+        | (true, system) -> system.Correlateds
+        | (false, _) -> failwith ("Member with id '" + scstring memberId + "' not found.")
+
+    member this.AddMember (parentIdOpt : Guid option) =
+        let memberId = Gen.id
+        let system = SystemCorrelated<'c, 'w> (buffered, true, ecs)
+        let addedOpt =
+            match parentIdOpt with
+            | Some parentId ->
+                let parentIdStr = string parentId
+                systemTree |> ListTree.tryInsert (fun system -> system.Name = parentIdStr) system
+            | None ->
+                systemTree |> ListTree.tryAdd tautology system
+        if Option.isSome addedOpt then
+            familyChanges.Add { FamilyChangeType = MemberAdded; MemberId = memberId; ParentIdOpt = match parentIdOpt with Some pid -> pid | None -> Guid.Empty }
+            systemDict.Add (memberId, system)
+            Some memberId
+        else None
+
+    member this.RemoveMember memberId =
+
+        // infer system name
+        let systemName = string memberId
+
+        // unregister all correlated components from member's system
+        systemTree |>
+        ListTree.findAll (fun system -> system.Name = systemName) |>
+        Seq.iter (fun system ->
+            system.EntitiesCorrelated |>
+            Seq.iter (fun correlated ->
+                familyChanges.Add { FamilyChangeType = ComponentRemovedFromMember; MemberId = memberId; ParentIdOpt = correlated }
+                system.UnregisterCorrelated correlated |> ignore<bool>))
+
+        // remove member's system from tree
+        systemTree |> ListTree.removeFirst (fun system -> system.Name = systemName) |> ignore<bool>
+
+        // remove entry from dict
+        let result = systemDict.Remove memberId
+
+        // log change
+        if result then familyChanges.Add { FamilyChangeType = MemberRemoved; MemberId = memberId; ParentIdOpt = Guid.Empty }
+
+        // fin
+        result
+
+    member this.QualifyFamilial memberId entityId =
+        match systemDict.TryGetValue memberId with
+        | (true, system) -> system.QualifyCorrelated entityId
+        | (false, _) -> false
+
+    member this.IndexFamilial memberId entityId =
+        let (found, system) = systemDict.TryGetValue memberId
+        if not found then raise (ArgumentOutOfRangeException "memberId")
+        system.IndexCorrelated entityId
+
+    member this.RegisterFamilial ordered comp memberId entityId =
+
+        // attempt to register component
+        let registered =
+            match systemDict.TryGetValue memberId with
+            | (true, system) ->
+                system.RegisterCorrelated ordered comp entityId |> ignore<'c ComponentRef>
+                true
+            | (false, _) -> false
+
+        // track registration
+        if registered then
+            familyChanges.Add { FamilyChangeType = ComponentAddedToMember; MemberId = memberId; ParentIdOpt = entityId }
+
+        // register correlation
+        if registered && not isolated then
+            match ecs.Correlations.TryGetValue entityId with
+            | (true, correlation) ->
+                correlation.Add this.Name |> ignore<bool>
+                ecs.CorrelationChanges.[entityId] <- correlation
+            | (false, _) ->
+                ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
+                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
+
+        // fin
+        registered
+
+    member this.UnregisterFamilial memberId entityId =
+
+        // attempt to unregister component
+        let unregistered =
+            match systemDict.TryGetValue memberId with
+            | (true, system) -> system.UnregisterCorrelated entityId
+            | (false, _) -> false
+
+        // track registration
+        if unregistered then
+            familyChanges.Add { FamilyChangeType = ComponentRemovedFromMember; MemberId = memberId; ParentIdOpt = entityId }
+
+        // unregister correlation
+        if unregistered && not isolated then
+            match ecs.Correlations.TryGetValue entityId with
+            | (true, correlation) ->
+                correlation.Remove this.Name |> ignore<bool>
+                ecs.CorrelationChanges.[entityId] <- correlation
+            | (false, _) ->
+                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
+
+        // fin
+        unregistered
+
+    override this.UnregisterComponent entityId =
+        systemTree |>
+        ListTree.findAll (fun system -> system.Name = string entityId) |>
+        Seq.map (fun system -> system.UnregisterCorrelated entityId) |>
+        Seq.exists id
+
+    type 'w Ecs with
+
+        member this.IndexSystemFamilial<'c when 'c : struct and 'c :> 'c Component> () =
+            this.IndexSystem<'c, SystemFamilial<'c, 'w>> ()
+
+        member this.IndexFamily<'c when 'c : struct and 'c :> 'c Component> () =
+            match this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> () with
+            | Some system -> system.Family
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.PopFamilyChanges<'c when 'c : struct and 'c :> 'c Component> () =
+            match this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> () with
+            | Some system -> system.PopFamilyChanges ()
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.IndexMember<'c when 'c : struct and 'c :> 'c Component> memberId =
+            match this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> () with
+            | Some system -> system.IndexMember memberId
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.AddMember<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
+            match this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> () with
+            | Some system -> system.AddMember parentIdOpt
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.RemoveMember<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
+            match this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> () with
+            | Some system -> system.RemoveMember parentIdOpt
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.QualifyFamilial<'c when 'c : struct and 'c :> 'c Component> memberId entityId =
+            let systemOpt = this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> ()
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let system = Option.get systemOpt
+            system.QualifyFamilial memberId entityId
+
+        member this.IndexFamilial<'c when 'c : struct and 'c :> 'c Component> memberId entityId =
+            let systemOpt = this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> ()
+            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+            let system = Option.get systemOpt
+            system.IndexFamilial memberId entityId
+
+        member this.RegisterFamilial<'c when 'c : struct and 'c :> 'c Component> comp memberId entityId =
+            match this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> () with
+            | Some system -> system.RegisterFamilial comp memberId entityId
+            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
+        member this.UnregisterFamilial<'c when 'c : struct and 'c :> 'c Component> memberId entityId =
+            match this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> () with
+            | Some system -> system.UnregisterFamilial memberId entityId
+            | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
+
 /// A correlated entity reference.
 /// Slow relative to normal ECS operations, but convenient for one-off uses.
 type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
@@ -944,6 +1150,16 @@ type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
         let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
         let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
         hierarchical.IndexBuffered
+
+    member this.IndexFamilial<'c when 'c : struct and 'c :> 'c Component> memberId =
+        let system = this.EntityEcs.IndexSystem<'c, SystemFamilial<'c, 'w>> ()
+        let familial = system.IndexFamilial memberId this.EntityId : 'c ComponentRef
+        &familial.Index
+
+    member this.IndexFamilialBuffered<'c when 'c : struct and 'c :> 'c Component> memberId =
+        let system = this.EntityEcs.IndexSystem<'c, SystemFamilial<'c, 'w>> ()
+        let familial = system.IndexFamilial memberId this.EntityId : 'c ComponentRef
+        familial.IndexBuffered
 
     type 'w Ecs with
         member this.GetEntityRef entityId =
