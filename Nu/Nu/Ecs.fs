@@ -823,6 +823,7 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolate
     new (ecs) = SystemHierarchical (false, false, ecs)
     
     member this.FreeListCount = system.FreeListCount
+    member this.EntitiesCorrelated = system.EntitiesCorrelated
 
     member this.Hierarchy = hierarchy
     member this.HierarchyFlattened = system.Correlateds
@@ -939,10 +940,13 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
     new (ecs) = SystemFamilial (false, false, ecs)
 
     member this.FreeListCount = systemDict.Values |> Seq.fold (fun count system -> count + system.FreeListCount) 0
-    member this.RewindFreeIndices = systemDict.Values |> Seq.iter (fun system -> system.RewindFreeIndex ())
+    member this.EntitiesCorrelated = systemDict.Values |> Seq.map (fun system -> system.EntitiesCorrelated) |> Seq.concat
 
     member this.Family = systemTree |> ListTree.map (fun system -> system.Correlateds)
     member this.WithFamilyBuffered fn worldOpt = systemTree |> ListTree.map (fun system -> system.WithCorrelatedsBuffered fn worldOpt)
+    
+    member this.RewindFreeIndices () =
+        systemDict.Values |> Seq.iter (fun system -> system.RewindFreeIndex ())
 
     member this.PopFamilyChanges () =
         let popped = familyChanges
