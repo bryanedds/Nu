@@ -14,7 +14,7 @@ open Prime
 /// TODO: move to Prime?
 type 'c ArrayRef =
     { mutable Array : 'c array }
-    member inline this.Length with get () = this.Array.Length
+    member inline this.Length = this.Array.Length
     member inline this.Item i = &this.Array.[i]
     static member inline make n = { Array = Array.zeroCreate n }
 
@@ -46,17 +46,16 @@ and [<NoEquality; NoComparison; Struct>] ComponentRef<'c when 'c : struct and 'c
 #endif
     }
 
-    member inline this.Index
-        with get () = &this.ComponentAref.[this.ComponentIndex]
+    member inline this.Index =
+        &this.ComponentAref.[this.ComponentIndex]
 
-    member inline this.IndexBuffered
-        with get () =
+    member inline this.IndexBuffered =
 #if ECS_BUFFERED
-            let index = this.ComponentIndex
-            let arefBuffered = this.ComponentArefBuffered
-            lock arefBuffered (fun () -> arefBuffered.[index])
+        let index = this.ComponentIndex
+        let arefBuffered = this.ComponentArefBuffered
+        lock arefBuffered (fun () -> arefBuffered.[index])
 #else
-            this.Index
+        this.Index
 #endif
 
     member inline this.Assign value =
@@ -111,7 +110,7 @@ and [<StructuralEquality; NoComparison; Struct>] SynchronizeResult =
 /// associated with them. Because this ECS is purely event-driven, behavior is encoded in event handlers rather than
 /// systems. If anything, it might be better to be renamed to 'w Storage.
 and [<AbstractClass>] 'w System (name) =
-    member this.Name with get () : string = name
+    member this.Name : string = name
     abstract UnregisterComponent : Guid -> bool
 
 /// Potentially-buffered array objects.
@@ -157,17 +156,10 @@ and 'w Ecs () as this =
             callback evt system
         boxableCallback :> obj
 
-    member internal this.EmptyCorrelation
-        with get () = emptyCorrelation
-
-    member internal this.Correlations
-        with get () = correlations
-
-    member internal this.CorrelationChanges
-        with get () = correlationChanges
-
-    member this.SystemGlobal
-        with get () = systemGlobal
+    member internal this.EmptyCorrelation = emptyCorrelation
+    member internal this.Correlations = correlations
+    member internal this.CorrelationChanges = correlationChanges
+    member this.SystemGlobal = systemGlobal
 
     member this.RegisterSystemGeneralized (system : 'w System) : 'w System =
         systemsUnordered.Add (system.Name, system)
@@ -356,7 +348,7 @@ type SystemSingleton<'c, 'w when 'c : struct and 'c :> 'c Component> (comp : 'c)
 
     let mutable comp = comp
 
-    member this.Component with get () = &comp
+    member this.Component = &comp
 
     override this.UnregisterComponent _ = false
 
@@ -381,8 +373,14 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
 
     new (ecs) = SystemUncorrelated (false, ecs)
 
-    member this.Components with get () = components
+    member this.FreeListCount = freeList.Count
+
+    member this.Components = components
     member this.WithComponentsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock componentsBuffered (fun () -> fn componentsBuffered worldOpt)
+
+    member this.RewindFreeIndex () =
+        while freeList.Remove (dec freeIndex) do
+            freeIndex <- dec freeIndex
 
     member this.IndexUncorrelated index =
         if index >= freeIndex then raise (ArgumentOutOfRangeException "index")
@@ -395,9 +393,7 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
         comp.Active <- true
 
         // rewind the freeIndex when requesting ordered registration
-        if ordered then
-            while freeList.Remove (dec freeIndex) do
-                freeIndex <- dec freeIndex
+        if ordered then this.RewindFreeIndex ()
 
         // assign component
         if  not ordered &&
@@ -470,8 +466,14 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
 
     new (ecs) = SystemCorrelated (false, ecs)
 
-    member this.Correlateds with get () = correlateds
+    member this.FreeListCount = freeList.Count
+
+    member this.Correlateds = correlateds
     member this.WithCorrelatedsBuffered (fn : 'c ArrayRef -> 'w option -> 'w option) worldOpt = lock correlatedsBuffered (fun () -> fn correlatedsBuffered worldOpt)
+
+    member this.RewindFreeIndex () =
+        while freeList.Remove (dec freeIndex) do
+            freeIndex <- dec freeIndex
 
     member this.IndexJunction<'j when 'j : struct and 'j :> 'j Component> fieldPath = junctionsMapped.[fieldPath] :?> 'j ArrayRef
     member this.WithJunctionBuffered<'j when 'j : struct and 'j :> 'j Component> fn fieldPath (worldOpt : 'w option) = let junction = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef in lock junction (fun () -> fn junction worldOpt)
@@ -510,9 +512,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffered,
         if not (correlations.ContainsKey entityId) then
         
             // rewind the freeIndex when requesting ordered registration
-            if ordered then
-                while freeList.Remove (dec freeIndex) do
-                    freeIndex <- dec freeIndex
+            if ordered then this.RewindFreeIndex ()
 
             // allocate index for component, enlarging arrays if necessary
             let index =
@@ -687,7 +687,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
       Simplexes : Dictionary<string, 'c Simplex>
       TypeName : string }
     interface Component<'c ComponentMultiplexed> with
-        member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.Active with get() = this.Active and set value = this.Active <- value
         member this.ShouldJunction _ = true
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
@@ -816,10 +816,15 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
     let mutable hierarchyChanges = List<ChangeHierarchical> ()
 
     new (ecs) = SystemHierarchical (false, ecs)
+    
+    member this.FreeListCount = system.FreeListCount
 
-    member this.Hierarchy with get () = hierarchy
-    member this.HierarchyFlattened with get () = system.Correlateds
+    member this.Hierarchy = hierarchy
+    member this.HierarchyFlattened = system.Correlateds
     member this.WithHierarchyFlattenedBuffered fn worldOpt = system.WithCorrelatedsBuffered fn worldOpt
+
+    member this.RewindFreeIndex () =
+        system.RewindFreeIndex ()
 
     member this.PopHierarchyChanges () =
         let popped = hierarchyChanges
