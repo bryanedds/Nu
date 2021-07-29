@@ -6,16 +6,16 @@
   [Visible True]]
  [[ButtonDispatcher
    [[Name Credits]
-    [Position [-96 -156]]
+    [Position [-96 -90]]
     [Text Credits]]]
   [ButtonDispatcher
    [[Name Exit]
-    [Position [-96 -222]]
+    [Position [-96 -156]]
     [Text Exit]]]
   [ButtonDispatcher
-   [[Name Start]
-    [Position [-96 -90]]
-    [Text "Start Game"]]]
+   [[Name Play]
+    [Position [-96 -24]]
+    [Text Play]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]

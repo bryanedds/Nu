@@ -35,22 +35,22 @@ module Simulants =
         module Gui =
 
             let Group = Screen / "Gui"
-            let Start = Group / "Start"
+            let Play = Group / "Play"
             let Credits = Group / "Credits"
             let Exit = Group / "Exit"
 
     [<RequireQualifiedAccess>]
-    module Start =
+    module Pick =
 
-        let Screen = Screen "Start"
+        let Screen = Screen "Pick"
 
         [<RequireQualifiedAccess>]
         module Gui =
 
             let Group = Screen / "Gui"
-            let Start1 = Group / "Start1"
-            let Start2 = Group / "Start2"
-            let Start3 = Group / "Start3"
+            let Slot1 = Group / "Slot1"
+            let Slot2 = Group / "Slot2"
+            let Slot3 = Group / "Slot3"
             let Back = Group / "Back"
     
     [<RequireQualifiedAccess>]
