@@ -9,7 +9,8 @@ open FSharpx.Collections
 open Prime
 open Nu
 
-type [<ReferenceEquality; NoComparison>] SaveSlot =
+// TODO: find a better place for this.
+type [<StructuralEquality; NoComparison>] SaveSlot =
     | Slot1
     | Slot2
     | Slot3

@@ -12,7 +12,7 @@ open OmniBlade
 [<AutoOpen>]
 module GameDispatcher =
 
-    type Gui =
+    type [<StructuralEquality; NoComparison>] Gui =
         | Splashing
         | Title
         | Start
