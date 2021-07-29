@@ -320,7 +320,8 @@ module Character =
         | None -> false
 
     let shouldCounter (character : Character) =
-        character.IsAlly
+        // TODO: pull this from stats
+        character.IsAlly && Gen.random1 4 = 0
     
     let evaluateAutoBattle (source : Character) (target : Character) =
         let techOpt =
