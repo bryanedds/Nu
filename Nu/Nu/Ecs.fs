@@ -926,7 +926,7 @@ type [<NoEquality; NoComparison; Struct>] FamilyChangeType =
 type [<NoEquality; NoComparison; Struct>] FamilyChange =
     { FamilyChangeType : FamilyChangeType
       MemberId : Guid
-      ParentIdOpt : Guid }
+      AncestorIdOpt : Guid }
 
 /// An Ecs system that stores components in a family tree.
 type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
@@ -958,18 +958,18 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
         | (true, system) -> system.Correlateds
         | (false, _) -> failwith ("Member with id '" + scstring memberId + "' not found.")
 
-    member this.AddMember (parentIdOpt : Guid option) =
+    member this.AddMember (ancestorIdOpt : Guid option) =
         let memberId = Gen.id
         let system = SystemCorrelated<'c, 'w> (buffered, true, ecs)
         let addedOpt =
-            match parentIdOpt with
-            | Some parentId ->
-                let parentIdStr = string parentId
-                systemTree |> ListTree.tryInsert (fun system -> system.Name = parentIdStr) system
+            match ancestorIdOpt with
+            | Some ancestorId ->
+                let ancestorIdStr = string ancestorId
+                systemTree |> ListTree.tryInsert (fun system -> system.Name = ancestorIdStr) system
             | None ->
                 systemTree |> ListTree.tryAdd tautology system
         if Option.isSome addedOpt then
-            familyChanges.Add { FamilyChangeType = MemberAdded; MemberId = memberId; ParentIdOpt = match parentIdOpt with Some pid -> pid | None -> Guid.Empty }
+            familyChanges.Add { FamilyChangeType = MemberAdded; MemberId = memberId; AncestorIdOpt = match ancestorIdOpt with Some pid -> pid | None -> Guid.Empty }
             systemDict.Add (memberId, system)
             Some memberId
         else None
@@ -985,7 +985,7 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
         Seq.iter (fun system ->
             system.EntitiesCorrelated |>
             Seq.iter (fun correlated ->
-                familyChanges.Add { FamilyChangeType = ComponentRemovedFromMember; MemberId = memberId; ParentIdOpt = correlated }
+                familyChanges.Add { FamilyChangeType = ComponentRemovedFromMember; MemberId = memberId; AncestorIdOpt = correlated }
                 system.UnregisterCorrelated correlated |> ignore<bool>))
 
         // remove member's system from tree
@@ -995,7 +995,7 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
         let result = systemDict.Remove memberId
 
         // log change
-        if result then familyChanges.Add { FamilyChangeType = MemberRemoved; MemberId = memberId; ParentIdOpt = Guid.Empty }
+        if result then familyChanges.Add { FamilyChangeType = MemberRemoved; MemberId = memberId; AncestorIdOpt = Guid.Empty }
 
         // fin
         result
@@ -1022,7 +1022,7 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
 
         // track registration
         if registered then
-            familyChanges.Add { FamilyChangeType = ComponentAddedToMember; MemberId = memberId; ParentIdOpt = entityId }
+            familyChanges.Add { FamilyChangeType = ComponentAddedToMember; MemberId = memberId; AncestorIdOpt = entityId }
 
         // register correlation
         if registered && not isolated then
@@ -1047,7 +1047,7 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
 
         // track registration
         if unregistered then
-            familyChanges.Add { FamilyChangeType = ComponentRemovedFromMember; MemberId = memberId; ParentIdOpt = entityId }
+            familyChanges.Add { FamilyChangeType = ComponentRemovedFromMember; MemberId = memberId; AncestorIdOpt = entityId }
 
         // unregister correlation
         if unregistered && not isolated then
@@ -1087,14 +1087,14 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
             | Some system -> system.IndexMember memberId
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.AddMember<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
+        member this.AddMember<'c when 'c : struct and 'c :> 'c Component> ancestorIdOpt =
             match this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> () with
-            | Some system -> system.AddMember parentIdOpt
+            | Some system -> system.AddMember ancestorIdOpt
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
-        member this.RemoveMember<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
+        member this.RemoveMember<'c when 'c : struct and 'c :> 'c Component> ancestorIdOpt =
             match this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> () with
-            | Some system -> system.RemoveMember parentIdOpt
+            | Some system -> system.RemoveMember ancestorIdOpt
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.QualifyFamilial<'c when 'c : struct and 'c :> 'c Component> memberId entityId =
