@@ -67,7 +67,6 @@ module GameDispatcher =
              Simulants.Start.Gui.Start2.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath2) then (Change (Field (Field.loadOrInitial Slot2 (uint64 Gen.random)))) else Intro Slot2)
              Simulants.Start.Gui.Start3.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath3) then (Change (Field (Field.loadOrInitial Slot3 (uint64 Gen.random)))) else Intro Slot3)
 #endif
-
              Simulants.Start.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Intro5.Screen.DeselectEvent => msg InitField]

@@ -115,16 +115,26 @@ module WorldScreenModule =
 
     type World with
 
+        static member private synchronizeCorrelationChanges (ecs : 'w Ecs) (world : 'w) =
+            match ecs.PopCorrelationChanges () with
+            | correlationChanges when correlationChanges.Count <> 0 ->
+                let world = ecs.Publish EcsEvents.SynchronizeCorrelationChanges correlationChanges ecs.SystemGlobal world
+                World.synchronizeCorrelationChanges ecs world
+            | _ -> world
+
         static member internal updateScreen (screen : Screen) world =
 
-            // update ecs
+            // synchronize correlaction changes for ecs
             let ecs = World.getScreenEcs screen world
-#if ECS_FULL_PARALLEL
-            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.GlobalSystem
-            let world = ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
+            let world = World.synchronizeCorrelationChanges ecs world
+
+            // update ecs
+#if ECS_BUFFERED_PLUS
+            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.SystemGlobal
+            let world = ecs.Publish EcsEvents.Update () ecs.SystemGlobal world
 #else
-            let world = ecs.Publish EcsEvents.Update () ecs.GlobalSystem world
-            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.GlobalSystem
+            let world = ecs.Publish EcsEvents.Update () ecs.SystemGlobal world
+            let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.SystemGlobal
 #endif
 
             // update via dispatcher
@@ -139,15 +149,18 @@ module WorldScreenModule =
             World.publishPlus () (Events.Update --> screen) eventTrace Simulants.Game false world
 
         static member internal postUpdateScreen (screen : Screen) world =
+        
+            // synchronize correlaction changes for ecs
+            let ecs = World.getScreenEcs screen world
+            let world = World.synchronizeCorrelationChanges ecs world
 
             // post-update ecs
-            let ecs = World.getScreenEcs screen world
-#if ECS_FULL_PARALLEL
-            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.GlobalSystem
-            let world = ecs.Publish EcsEvents.PostUpdate () ecs.GlobalSystem world
+#if ECS_BUFFERED_PLUS
+            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.SystemGlobal
+            let world = ecs.Publish EcsEvents.PostUpdate () ecs.SystemGlobal world
 #else
-            let world = ecs.Publish EcsEvents.PostUpdate () ecs.GlobalSystem world
-            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.GlobalSystem
+            let world = ecs.Publish EcsEvents.PostUpdate () ecs.SystemGlobal world
+            let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.SystemGlobal
 #endif
                 
             // post-update via dispatcher
@@ -162,11 +175,14 @@ module WorldScreenModule =
             World.publishPlus () (Events.PostUpdate --> screen) eventTrace Simulants.Game false world
 
         static member internal actualizeScreen (screen : Screen) world =
+        
+            // synchronize correlaction changes for ecs
+            let ecs = World.getScreenEcs screen world
+            let world = World.synchronizeCorrelationChanges ecs world
 
             // actualize ecs
-            let ecs = World.getScreenEcs screen world
-            let world = ecs.Publish EcsEvents.Actualize () ecs.GlobalSystem world
-            
+            let world = ecs.Publish EcsEvents.Actualize () ecs.SystemGlobal world
+
             // actualize via dispatcher
             let dispatcher = screen.GetDispatcher world
             dispatcher.Actualize (screen, world)

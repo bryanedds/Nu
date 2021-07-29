@@ -15,12 +15,9 @@ module Engine =
     let [<Literal>] SuccessExitCode = 0
     let [<Literal>] FailureExitCode = 1
     let [<Literal>] NamePropertyName = "Name"
-    let [<Literal>] RendererSubsystemName = "RendererSubsystem"
-    let [<Literal>] AudioPlayerSubsystemName = "AudioPlayerSubsystem"
-    let [<Literal>] PhysicsEngineSubsystemName = "PhysicsEngineSubsystem"
     let [<Literal>] EffectNameDefault = "Effect"
-    let [<Literal>] GameSortPriority = Single.MaxValue
     let [<Literal>] RefinementDir = "refinement"
+    let [<Literal>] GameSortPriority = Single.MaxValue
     let (*Literal*) ScreenSortPriority = GameSortPriority - 1.0f
     let (*Literal*) GroupSortPriority = ScreenSortPriority - 1.0f
     let (*Literal*) EntitySortPriority = GroupSortPriority - 1.0f
@@ -78,6 +75,11 @@ module TileMap =
     let [<Literal>] CollisionPropertyName = "C"
     let [<Literal>] ElevationPropertyName = "E"
     let [<Literal>] InfoPropertyName = "I"
+
+[<RequireQualifiedAccess>]
+module Particles =
+
+    let [<Literal>] RestitutionDefault = 0.9f
 
 [<RequireQualifiedAccess>]
 module Effects =

@@ -22,24 +22,24 @@ module WorldRender =
 
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage (message : RenderMessage) world =
-            Renderer.enqueueMessage message world.Subsystems.Renderer
+            world.Subsystems.Renderer.EnqueueMessage message
             world
 
         /// Enqueue multiple rendering messages to the world.
         static member enqueueRenderMessages (messages : RenderMessage seq) world =
             let renderer = World.getRenderer world
-            for message in messages do Renderer.enqueueMessage message renderer
+            for message in messages do renderer.EnqueueMessage message
             world
             
         /// Enqueue a layered message for rendering, bypassing enqueueRenderMessage for speed.
         static member enqueueRenderLayeredMessage (message : RenderLayeredMessage) world =
-            Renderer.enqueueLayeredMessage message world.Subsystems.Renderer
+            world.Subsystems.Renderer.EnqueueLayeredMessage message
             world
 
         /// Enqueue multiple layered rendering messages to the world, bypassing enqueueRenderMessage for speed.
         static member enqueueRenderLayeredMessages (messages : RenderLayeredMessage seq) world =
             let renderer = World.getRenderer world
-            for message in messages do Renderer.enqueueLayeredMessage message renderer
+            for message in messages do renderer.EnqueueLayeredMessage message
             world
 
         /// Hint that a rendering asset package with the given name should be loaded. Should be

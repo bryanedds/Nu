@@ -25,27 +25,6 @@ open TiledSharp
 open Prime
 open Nu
 
-/// Efficiently emulates root type casting of a Map.
-/// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
-/// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
-type [<NoEquality; NoComparison>] MapGeneralized =
-    { ToKeys : List<IComparable>
-      ContainsKey : IComparable -> bool
-      GetValue : IComparable -> obj }
-
-    /// Make a generalized map.
-    static member make (map : Map<'k, 'v>) =
-        { ToKeys =
-            let list = List ()
-            for entry in map do list.Add (entry.Key :> IComparable)
-            list
-          ContainsKey = fun (key : IComparable) ->
-            Map.containsKey (key :?> 'k) map
-          GetValue = fun (key : IComparable) ->
-            match map.TryGetValue (key :?> 'k) with
-            | (true, value) -> value :> obj
-            | (false, _) -> failwithumf () }
-
 /// Describes a Tiled tile.
 type [<StructuralEquality; NoComparison>] TileDescriptor =
     { Tile : TmxLayerTile
@@ -165,6 +144,27 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
           TickRate = 1L
           SdlConfig = SdlConfig.defaultConfig
           NuConfig = NuConfig.defaultConfig }
+
+/// Efficiently emulates root type casting of a Map.
+/// Specialized to Nu's specific use case by not providing a TryGetValue but rather ContainsKey and GetValue since Nu
+/// uses them separately. A more general implementation would only provide ToSeq and TryGetValue.
+type [<NoEquality; NoComparison>] MapGeneralized =
+    { ToKeys : List<IComparable>
+      ContainsKey : IComparable -> bool
+      GetValue : IComparable -> obj }
+
+    /// Make a generalized map.
+    static member make (map : Map<'k, 'v>) =
+        { ToKeys =
+            let list = List ()
+            for entry in map do list.Add (entry.Key :> IComparable)
+            list
+          ContainsKey = fun (key : IComparable) ->
+            Map.containsKey (key :?> 'k) map
+          GetValue = fun (key : IComparable) ->
+            match map.TryGetValue (key :?> 'k) with
+            | (true, value) -> value :> obj
+            | (false, _) -> failwithumf () }
 
 /// Extensions for EventTrace.
 module EventTrace =
@@ -475,7 +475,7 @@ module WorldTypes =
                     (single Constants.Render.VirtualResolutionY)
             { Id = Gen.id
               Dispatcher = dispatcher
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               OmniScreenOpt = None
               SelectedScreenOpt = None
@@ -539,7 +539,7 @@ module WorldTypes =
         static member make nameOpt (dispatcher : ScreenDispatcher) ecs =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Ecs = ecs
               TransitionState = IdlingState
@@ -602,7 +602,7 @@ module WorldTypes =
         static member make nameOpt (dispatcher : GroupDispatcher) =
             let (id, name) = Gen.idAndNameIf nameOpt
             { Dispatcher = dispatcher
-              Xtension = Xtension.makeSafe ()
+              Xtension = Xtension.makeFunctional ()
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Visible = true
               Persistent = true
@@ -645,18 +645,18 @@ module WorldTypes =
     /// Hosts the ongoing state of an entity.
     /// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
     and [<NoEquality; NoComparison; CLIMutable>] EntityState =
-        { // cache line 1
+        { // cache line 1 (assuming 16 byte header)
           Dispatcher : EntityDispatcher
           mutable Transform : Transform
-          // cache line 2
+          // cache line 2 + 16 bytes
           mutable Facets : Facet array
           mutable Xtension : Xtension
           mutable Model : DesignerProperty
           mutable Overflow : Vector2
           mutable OverlayNameOpt : string option
+          // cache line 3
           mutable FacetNames : string Set
           mutable ScriptFrameOpt : Scripting.DeclarationFrame
-          // cache line 3
           CreationTimeStamp : int64 // just needed for ordering writes to reduce diff volumes
           Id : Guid
           Name : string }
@@ -672,7 +672,7 @@ module WorldTypes =
             { Transform = transform
               Dispatcher = dispatcher
               Facets = [||]
-              Xtension = if imperative then Xtension.makeImperative () else Xtension.makeSafe ()
+              Xtension = Xtension.makeEmpty imperative
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Overflow = Vector2.Zero
               OverlayNameOpt = overlayNameOpt
@@ -692,6 +692,10 @@ module WorldTypes =
             let entityState' = EntityState.copy entityState
             entityState.Transform.Flags <- entityState.Transform.Flags ||| TransformMasks.InvalidatedMask
             entityState'
+
+        /// Check that there exists an xtenstion proprty that is a runtime property.
+        static member containsRuntimeProperties entityState =
+            Xtension.containsRuntimeProperties entityState.Xtension
 
         /// Try to get an xtension property and its type information.
         static member tryGetProperty (propertyName, entityState, propertyRef : Property outref) =
@@ -955,33 +959,24 @@ module WorldTypes =
                 | :? Group as that -> (this :> Group IComparable).CompareTo that
                 | _ -> failwith "Invalid Group comparison (comparee not of type Group)."
 
-    /// The type around which the whole game engine is based! Used in combination with dispatchers
-    /// to implement things like buttons, characters, blocks, and things of that sort.
-    /// OPTIMIZATION: Includes pre-constructed entity change and update event addresses to avoid
-    /// reconstructing new ones for each entity every frame.
+    /// The type around which the whole game engine is based! Used in combination with dispatchers to implement things
+    /// like buttons, characters, blocks, and things of that sort.
     and Entity (entityAddress) =
 
         // check that address is of correct length for an entity
         do if Address.length entityAddress <> 3 then failwith "Entity address must be length of 3."
 
+        /// The entity's cached state.
+        let mutable entityStateOpt = Unchecked.defaultof<EntityState>
+
+        /// Whether cidOpt has been populated with a valid value.
+        let mutable cidPopulated = false
+
+        /// The entity's cached correlation id.
+        let mutable cidOpt = Unchecked.defaultof<Guid> // OPTIMIZATION: faster than Guid.Empty?
+
         // cache the simulant address to avoid allocation
         let simulantAddress = atoa<Entity, Simulant> entityAddress
-
-        /// The entity's update event.
-        let updateEvent =
-            let entityNames = Address.getNames entityAddress
-            rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-
-#if !DISABLE_ENTITY_POST_UPDATE
-        /// The entity's post update event.
-        let postUpdateEvent =
-            let entityNames = Address.getNames entityAddress
-            rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
-#endif
-
-        /// The entity's cached state.
-        let mutable entityStateOpt =
-            Unchecked.defaultof<EntityState>
 
         /// Create an entity reference from an address string.
         new (entityAddressStr : string) = Entity (stoa entityAddressStr)
@@ -1001,18 +996,29 @@ module WorldTypes =
         /// The parent group of the entity.
         member this.Parent = let names = this.EntityAddress.Names in Group [names.[0]; names.[1]]
 
-        /// The address of the entity's update event.
-        member this.UpdateEventCached = updateEvent
-
-#if !DISABLE_ENTITY_POST_UPDATE
-        /// The address of the entity's post-update event.
-        member this.PostUpdateEventCached = postUpdateEvent
-#endif
-
         /// The cached entity state for imperative entities.
         member this.EntityStateOpt
             with get () = entityStateOpt
             and set value = entityStateOpt <- value
+
+        /// The entity's correlation id.
+        member this.Cid =
+            if not cidPopulated then
+                cidOpt <- entityAddress |> Address.getName |> Gen.correlate
+                cidPopulated <- true
+            cidOpt
+
+        /// The entity's update event.
+        member this.UpdateEvent =
+            let entityNames = Address.getNames entityAddress
+            rtoa<unit> [|"Update"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+
+#if !DISABLE_ENTITY_POST_UPDATE
+        /// The entity's post update event.
+        member this.PostUpdateEvent =
+            let entityNames = Address.getNames entityAddress
+            rtoa<unit> [|"PostUpdate"; "Event"; entityNames.[0]; entityNames.[1]; entityNames.[2]|]
+#endif
 
         /// Get the name of an entity.
         member this.Name = Address.getName this.EntityAddress
@@ -1132,7 +1138,9 @@ module WorldTypes =
     /// Keeps the World from occupying more than two cache lines.
     and [<ReferenceEquality; NoComparison>] WorldExtension =
         { DestructionListRev : Simulant list
-          Plugin : NuPlugin }
+          Plugin : NuPlugin
+          ScriptingEnv : Scripting.Env
+          ScriptingContext : Simulant }
 
     /// The world, in a functional programming sense. Hosts the game object, the dependencies needed
     /// to implement a game, messages to by consumed by the various engine sub-systems, and general
@@ -1142,23 +1150,21 @@ module WorldTypes =
     /// for that.
     and [<ReferenceEquality; NoComparison>] World =
         internal
-            { // cache line 1
+            { // cache line 1 (assuming 16 byte header)
               EventSystemDelegate : World EventSystemDelegate
               EntityCachedOpt : KeyedCache<KeyValuePair<Entity, UMap<Entity, EntityState>>, EntityState>
               EntityStates : UMap<Entity, EntityState>
               GroupStates : UMap<Group, GroupState>
               ScreenStates : UMap<Screen, ScreenState>
               GameState : GameState
+              // cache line 2
               mutable EntityTree : Entity SpatialTree MutantCache // mutated when Imperative
               mutable SelectedEcsOpt : World Ecs option // mutated when Imperative
-              // cache line 2
               ElmishBindingsMap : UMap<PropertyAddress, ElmishBindings>
               AmbientState : World AmbientState
               Subsystems : Subsystems
               ScreenDirectory : UMap<string, KeyValuePair<Screen, UMap<string, KeyValuePair<Group, UMap<string, Entity>>>>>
               Dispatchers : Dispatchers
-              ScriptingEnv : Scripting.Env
-              ScriptingContext : Simulant
               WorldExtension : WorldExtension }
 
         interface World EventSystem with
@@ -1221,7 +1227,7 @@ module WorldTypes =
         interface World ScriptingSystem with
 
             member this.GetEnv () =
-                this.ScriptingEnv
+                this.WorldExtension.ScriptingEnv
 
             member this.TryGetExtrinsic fnName =
                 this.Dispatchers.TryGetExtrinsic fnName
@@ -1258,7 +1264,7 @@ module WorldTypes =
             ""
 
     /// Provides a way to make user-defined dispatchers, facets, and various other sorts of game-
-    /// specific values.
+    /// specific values and configurations.
     and NuPlugin () =
 
         /// The game dispatcher that Nu will utilize when running outside the editor.

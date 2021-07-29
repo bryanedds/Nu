@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open System.Linq
 open System.Numerics
 open System.IO
 open SDL2
@@ -22,6 +21,10 @@ type Font = private { __ : unit }
 type TileMap = private { __ : unit }
 
 /// The flipness of a sprite.
+[<Syntax
+    ("FlipNone FlipH FlipV FlipHV", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Flip =
     | FlipNone
     | FlipH
@@ -36,7 +39,11 @@ type [<StructuralEquality; NoComparison; Struct>] Flip =
         | FlipV -> SDL.SDL_RendererFlip.SDL_FLIP_VERTICAL
         | FlipNone -> SDL.SDL_RendererFlip.SDL_FLIP_NONE
 
-/// The blend more of a sprite.
+/// The blend mode of a sprite.
+[<Syntax
+    ("Transparent Additive Modulate Overwrite", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] Blend =
     | Transparent
     | Additive
@@ -52,18 +59,30 @@ type [<StructuralEquality; NoComparison; Struct>] Blend =
         | Overwrite -> SDL.SDL_BlendMode.SDL_BLENDMODE_NONE
 
 /// Horizontal justification.
+[<Syntax
+    ("JustifyLeft JustifyRight JustifyCenter", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] JustificationH =
     | JustifyLeft
     | JustifyCenter
     | JustifyRight
 
 /// Vertical justification.
+[<Syntax
+    ("JustifyTop JustifyMiddle JustifyBottom", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison; Struct>] JustificationV =
     | JustifyTop
     | JustifyMiddle
     | JustifyBottom
 
 /// Justification (such as for text alignement).
+[<Syntax
+    ("Justified Unjustified", "", "", "", "",
+     Constants.PrettyPrinter.DefaultThresholdMin,
+     Constants.PrettyPrinter.DefaultThresholdMax)>]
 type [<StructuralEquality; NoComparison>] Justification =
     | Justified of JustificationH * JustificationV
     | Unjustified of bool
@@ -262,11 +281,11 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 let renderAssets = List.definitize renderAssetOpts
                 match Dictionary.tryFind packageName renderer.RenderPackages with
                 | Some renderAssetDict ->
-                    for (key, value) in renderAssets do renderAssetDict.ForceAdd (key, value)
-                    renderer.RenderPackages.ForceAdd (packageName, renderAssetDict)
+                    for (key, value) in renderAssets do renderAssetDict.Assign (key, value)
+                    renderer.RenderPackages.Assign (packageName, renderAssetDict)
                 | None ->
                     let renderAssetDict = dictPlus StringComparer.Ordinal renderAssets
-                    renderer.RenderPackages.ForceAdd (packageName, renderAssetDict)
+                    renderer.RenderPackages.Assign (packageName, renderAssetDict)
             | Left failedAssetNames ->
                 Log.info ("Render package load failed due to unloadable assets '" + failedAssetNames + "' for package '" + packageName + "'.")
         | Left error ->
@@ -277,35 +296,35 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             fst renderer.RenderPackageCachedOpt = assetTag.PackageName then
             if  renderer.RenderAssetCachedOpt :> obj |> notNull &&
                 fst renderer.RenderAssetCachedOpt = assetTag.AssetName then
-                Some (snd renderer.RenderAssetCachedOpt)
+                ValueSome (snd renderer.RenderAssetCachedOpt)
             else
                 let assets = snd renderer.RenderPackageCachedOpt
-                match Dictionary.tryFind assetTag.AssetName assets with
-                | Some asset as someAsset ->
+                match assets.TryGetValue assetTag.AssetName with
+                | (true, asset) ->
                     renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
-                    someAsset
-                | None -> None
+                    ValueSome asset
+                | (false, _) -> ValueNone
         else
             match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
             | Some assets ->
                 renderer.RenderPackageCachedOpt <- (assetTag.PackageName, assets)
-                match Dictionary.tryFind assetTag.AssetName assets with
-                | Some asset as someAsset ->
+                match assets.TryGetValue assetTag.AssetName with
+                | (true, asset) ->
                     renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
-                    someAsset
-                | None -> None
+                    ValueSome asset
+                | (false, _) -> ValueNone
             | None ->
                 Log.info ("Loading render package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                 SdlRenderer.tryLoadRenderPackage assetTag.PackageName renderer
-                match Dictionary.tryFind assetTag.PackageName renderer.RenderPackages with
-                | Some assets ->
+                match renderer.RenderPackages.TryGetValue assetTag.PackageName with
+                | (true, assets) ->
                     renderer.RenderPackageCachedOpt <- (assetTag.PackageName, assets)
-                    match Dictionary.tryFind assetTag.AssetName assets with
-                    | Some asset as someAsset ->
+                    match assets.TryGetValue assetTag.AssetName with
+                    | (true, asset) ->
                         renderer.RenderAssetCachedOpt <- (assetTag.AssetName, asset)
-                        someAsset
-                    | None -> None
-                | None -> None
+                        ValueSome asset
+                    | (false, _) -> ValueNone
+                | (false, _) -> ValueNone
 
     static member private handleHintRenderPackageUse hintPackageName renderer =
         SdlRenderer.tryLoadRenderPackage hintPackageName renderer
@@ -359,7 +378,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let blend = Blend.toSdlBlendMode blend
         let flip = Flip.toSdlFlip flip
         match SdlRenderer.tryFindRenderAsset image renderer with
-        | Some renderAsset ->
+        | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
                 let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
@@ -423,9 +442,9 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             tileAssets |>
             Array.map (fun (tileSet, tileSetImage) ->
                 match SdlRenderer.tryFindRenderAsset (AssetTag.generalize tileSetImage) renderer with
-                | Some (TextureAsset tileSetTexture) -> Some (tileSet, tileSetImage, tileSetTexture)
-                | Some _ -> None
-                | None -> None) |>
+                | ValueSome (TextureAsset tileSetTexture) -> Some (tileSet, tileSetImage, tileSetTexture)
+                | ValueSome _ -> None
+                | ValueNone -> None) |>
             Array.definitizePlus
         if allFound then
             // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
@@ -517,7 +536,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let sizeView = Matrix3x3.Multiply (&transform.Size, &viewScale)
         let font = AssetTag.generalize font
         match SdlRenderer.tryFindRenderAsset font renderer with
-        | Some renderAsset ->
+        | ValueSome renderAsset ->
             match renderAsset with
             | FontAsset (font, _) ->
                 let mutable renderColor = SDL.SDL_Color ()
@@ -589,7 +608,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         let blend = Blend.toSdlBlendMode blend
         let image = AssetTag.generalize image
         match SdlRenderer.tryFindRenderAsset image renderer with
-        | Some renderAsset ->
+        | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
                 let (_, _, _, textureSizeX, textureSizeY) = SDL.SDL_QueryTexture texture
@@ -741,26 +760,3 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
             for renderAsset in renderAssets do SdlRenderer.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
             renderer :> Renderer
-
-[<RequireQualifiedAccess>]
-module Renderer =
-
-    /// Clear all of the render messages that have been enqueued.
-    let clearMessages (renderer : Renderer) =
-        renderer.ClearMessages ()
-
-    /// Enqueue a message from an external source.
-    let enqueueMessage message (renderer : Renderer) =
-        renderer.EnqueueMessage message
-
-    /// Enqueue a layered message from an external source, bypassing enqueueMessage for speed.
-    let enqueueLayeredMessage message (renderer : Renderer) =
-        renderer.EnqueueLayeredMessage message
-
-    /// Render a frame of the game.
-    let render eyeCenter eyeSize renderMessages (renderer : Renderer) =
-        renderer.Render eyeCenter eyeSize renderMessages
-
-    /// Handle render clean up by freeing all loaded render assets.
-    let cleanUp (renderer : Renderer) =
-        renderer.CleanUp ()
