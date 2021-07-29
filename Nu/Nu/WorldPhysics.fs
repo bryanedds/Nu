@@ -24,7 +24,7 @@ module WorldPhysics =
 
         /// Enqueue a physics message in the world.
         static member enqueuePhysicsMessage (message : PhysicsMessage) world =
-            World.updatePhysicsEngine (fun physicsEngine -> PhysicsEngine.enqueueMessage message physicsEngine) world
+            World.updatePhysicsEngine (fun physicsEngine -> physicsEngine.EnqueueMessage message) world
 
         /// Enqueue multiple physics messages to the world.
         static member enqueuePhysicsMessages (messages : PhysicsMessage seq) world =
@@ -165,4 +165,4 @@ module WorldPhysics =
         [<FunctionBinding>]
         static member localizeBodyShape (extent : Vector2) (bodyShape : BodyShape) (world : World) =
             ignore world // for world parameter for scripting
-            PhysicsEngine.localizeBodyShape extent bodyShape
+            Physics.localizeBodyShape extent bodyShape

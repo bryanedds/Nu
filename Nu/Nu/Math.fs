@@ -8,6 +8,18 @@ open System.Numerics
 open Prime
 open Nu
 
+/// The input for a ray cast operation.
+type [<StructuralEquality; NoComparison; Struct>] RayCastInput =
+    { RayBegin : Vector2
+      RayEnd : Vector2 }
+      
+/// The output of a ray cast operation.
+type [<StructuralEquality; NoComparison; Struct>] RayCastOutput =
+    { mutable Normal : Vector2
+      mutable Fraction : single }
+    static member inline defaultOutput =
+        Unchecked.defaultof<RayCastOutput>
+
 /// Masks for Transform flags.
 module TransformMasks =
 
@@ -103,11 +115,12 @@ type [<NoEquality; NoComparison; Struct>] Transform =
 
     interface Transform Component with
         member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
+        member this.ShouldJunction _ = true
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
-        member this.MoveJunctions _ _ _ _ = ()
-        member this.Junction _ _ _ _ = this
-        member this.Disjunction _ _ _ = ()
+        member this.Junction _ _ _ _ _ = this
+        member this.Disjunction _ _ _ _ = ()
+        member this.TypeName = nameof Transform
 
 [<AutoOpen>]
 module TransformOperators =
@@ -777,7 +790,11 @@ module Matrix3x3 =
 [<RequireQualifiedAccess>]
 module Math =
 
+    open tainicom.Aether.Physics2D // NOTE: for implementation of some ray-cast code in terms of Aether.
+
     let mutable private Initialized = false
+
+    let Epsilon = 1.1920929E-07f
 
     /// Initializes the type converters found in NuMathModule.
     let init () =
@@ -883,3 +900,50 @@ module Math =
         let translation = eyeCenter
         let translationI = Vector2 (single (int translation.X), single (int translation.Y))
         Matrix3x3.CreateTranslation translationI
+
+    /// Perform a ray cast on a circle.
+    /// Code adapted from - https://github.com/tainicom/Aether.Physics2D/blob/aa8a6b45c63e26c2f408ffde40f03cbe78ecfa7c/Physics2D/Collision/Shapes/CircleShape.cs#L93-L134
+    let rayCastCircle (position : Vector2) (radius : single) (input : RayCastInput inref) (output : RayCastOutput outref) =
+        let mutable s = input.RayBegin - position
+        let b = Vector2.Dot (s, s) - 2.0f * radius
+        let mutable r = input.RayEnd - input.RayBegin
+        let c = Vector2.Dot (s, r)
+        let rr = Vector2.Dot (r, r)
+        let sigma = c * c - rr * b
+        if sigma >= 0f && rr >= Epsilon then
+            let a = 0f - (c + single (Math.Sqrt (float sigma)))
+            if 0f <= a && a <= rr then
+                output.Fraction <- a / rr
+                output.Normal <- Vector2.Normalize (s + output.Fraction * r)
+                true
+            else false
+        else false
+
+    /// Perform a ray cast on a rectangle.
+    /// BUG: There's a bug in AABB.RayCast that produces invalid normals.
+    let rayCastRectangle (rectangle : Vector4) (input : RayCastInput inref) (output : RayCastOutput outref) =
+        let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
+        let point2 = Common.Vector2 (input.RayEnd.X, input.RayEnd.Y)
+        let mutable inputAether = Collision.RayCastInput (MaxFraction = 1.0f, Point1 = point1, Point2 = point2)
+        let mutable outputAether = Unchecked.defaultof<Collision.RayCastOutput>
+        let aabb  = Collision.AABB (Common.Vector2 (rectangle.X, rectangle.Y), Common.Vector2 (rectangle.X + rectangle.Z, rectangle.Y + rectangle.W))
+        let result = aabb.RayCast (&outputAether, &inputAether)
+        output.Normal <- Vector2 (outputAether.Normal.X, outputAether.Normal.Y)
+        output.Fraction <- outputAether.Fraction
+        result
+
+    /// Perform a ray-cast on a line segment (edge).
+    /// NOTE: due to unoptimized implementation, this function allocates one object per call!
+    /// TODO: adapt the Aether code as was done for circle to improve performance and get rid of said
+    /// allocation.
+    let rayCastSegment segmentBegin segmentEnd (input : RayCastInput inref) (output : RayCastOutput outref) =
+        let point1 = Common.Vector2 (input.RayBegin.X, input.RayBegin.Y)
+        let point2 = Common.Vector2 (input.RayEnd.X, input.RayEnd.Y)
+        let mutable identity = Common.Transform.Identity // NOTE: superfluous copy of identity to satisfy EdgeShap.RayCast's use of byref instead of inref.
+        let mutable inputAether = Collision.RayCastInput (MaxFraction = 1.0f, Point1 = point1, Point2 = point2)
+        let mutable outputAether = Unchecked.defaultof<Collision.RayCastOutput>
+        let edgeShape = Collision.Shapes.EdgeShape (segmentBegin, segmentEnd) // NOTE: unecessary allocation, ugh!
+        let result = edgeShape.RayCast (&outputAether, &inputAether, &identity, 0)
+        output.Normal <- Vector2 (outputAether.Normal.X, outputAether.Normal.Y)
+        output.Fraction <- outputAether.Fraction
+        result

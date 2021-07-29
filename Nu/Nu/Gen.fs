@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Text
 open Prime
 
 [<AutoOpen>]
@@ -10,6 +11,10 @@ module Gen =
 
     let private Lock = obj ()
     let private Random = Random ()
+    let private Cids = dictPlus<string, Guid> StringComparer.Ordinal []
+    let private CidBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
+    let private CnameBytes = Array.zeroCreate 16 // TODO: P1: use stack-based allocation via NativePtr.stackalloc and Span - https://bartoszsypytkowski.com/writing-high-performance-f-code/
+    let private UniqueAllocator = Unique.make ()
     let mutable private Counter = -1L
 
     /// Generates engine-specific values on-demand.
@@ -69,17 +74,13 @@ module Gen =
             | Some item -> item
             | None -> default_
 
-        /// Generate a unique counter.
-        static member counter =
-            lock Lock (fun () -> Counter <- inc Counter; Counter)
-
         /// The prefix of a generated name
         static member namePrefix =
             "@"
 
         /// Generate a unique name.
         static member name =
-            Gen.namePrefix + scstring Gen.counter
+            Gen.namePrefix + string Gen.id
 
         /// Generate a unique name if given none.
         static member nameIf nameOpt =
@@ -98,7 +99,41 @@ module Gen =
         /// Generate a unique id.
         static member id =
             Guid.NewGuid ()
-        
+
+        /// Generate a unique id that is guaranteed to be convertible to a valid UTF-16 string of 8 characters.
+        static member cid =
+            let id = Guid.NewGuid ()
+            let str = id.ToByteArray () |> UnicodeEncoding.Unicode.GetString
+            if str.Length = 8 then
+                let id2 = UnicodeEncoding.Unicode.GetBytes str |> Guid
+                if id.Equals id2 then id else Gen.cid
+            else Gen.cid
+
+        /// Generate a unique name that is byte-convertible to a valid cid if given none.
+        static member cnameIf cnameOpt =
+            match cnameOpt with
+            | Some cname -> cname
+            | None ->
+                let cid = Gen.cid
+                let cname = cid.ToByteArray () |> UnicodeEncoding.Unicode.GetString
+                "@" + cname
+
+        /// Check that a name is directly correlatable.
+        static member isCname (name : string) =
+            name.Length = 9 && name.[0] = '@'
+
+        /// Correlate a name to a cid, caching a unique cid for it if it is not directly correlatable.
+        static member correlate (name : string) =
+            if Gen.isCname name then
+                lock Lock $ fun () ->
+                    Encoding.Unicode.GetBytes (name, 1, 8, CnameBytes, 0) |> ignore<int>
+                    Array.Copy (CnameBytes, 0, CidBytes, 0, 16)
+                    Guid CidBytes
+            else
+                match Cids.TryGetValue name with
+                | (false, _) -> let cid = Gen.cid in Cids.Add (name, cid); cid
+                | (true, cid) -> cid
+
         /// Generate an id from a couple of ints.
         /// It is the user's responsibility to ensure uniqueness when using the resulting ids.
         static member idFromInts m n =
@@ -119,6 +154,18 @@ module Gen =
             let id = Gen.id
             let name = Gen.nameIf nameOpt
             (id, name)
+
+        /// Allocate a unique int.
+        static member alloc () =
+            Unique.alloc UniqueAllocator
+
+        /// Free a unique int.
+        static member free number =
+            Unique.free number UniqueAllocator
+
+        /// Generate a unique counter.
+        static member counter =
+            lock Lock (fun () -> Counter <- inc Counter; Counter)
 
 /// Generates engine-specific values on-demand.
 type Gen = Gen.Gen

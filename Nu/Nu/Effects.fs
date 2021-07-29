@@ -490,7 +490,6 @@ module EffectSystem =
                 | SymbolicCompressionB (SymbolicCompressionA aspect) -> evalAspect aspect slice effectSystem
                 | _ -> Log.info ("Expected Aspect for definition '" + definitionName + "'."); slice
             | None -> Log.info ("Could not find definition with name '" + definitionName + "'."); slice
-
         | Aspects aspects ->
             Array.fold
                 (fun slice aspect -> evalAspect aspect slice effectSystem)

@@ -13,11 +13,12 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
       mutable Sprite : Image AssetTag }
     interface StaticSpriteComponent Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.ShouldJunction _ = true
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
-        member this.MoveJunctions _ _ _ _ = ()
-        member this.Junction _ _ _ _ = this
-        member this.Disjunction _ _ _ = ()
+        member this.Junction _ _ _ _ _ = this
+        member this.Disjunction _ _ _ _ = ()
+        member this.TypeName = nameof StaticSpriteComponent
 #endif
 
 #if ECS
@@ -26,34 +27,55 @@ type [<NoEquality; NoComparison; Struct>] Velocity =
       mutable Velocity : Vector2 }
     interface Velocity Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.ShouldJunction _ = true
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
-        member this.MoveJunctions _ _ _ _ = ()
-        member this.Junction _ _ _ _ = this
-        member this.Disjunction _ _ _ = ()
+        member this.Junction _ _ _ _ _ = this
+        member this.Disjunction _ _ _ _ = ()
+        member this.TypeName = nameof Velocity
 
 type [<NoEquality; NoComparison; Struct>] Position =
     { mutable Active : bool
       mutable Position : Vector2 }
     interface Position Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.ShouldJunction _ = true
         member this.AllocateJunctions _ = [||]
         member this.ResizeJunctions _ _ _ = ()
-        member this.MoveJunctions _ _ _ _ = ()
-        member this.Junction _ _ _ _ = this
-        member this.Disjunction _ _ _ = ()
+        member this.Junction _ _ _ _ _ = this
+        member this.Disjunction _ _ _ _ = ()
+        member this.TypeName = nameof Position
 
-type [<NoEquality; NoComparison; Struct>] Mover =
+type [<NoEquality; NoComparison; Struct>] MoverStatic =
     { mutable Active : bool
-      mutable Velocity : Velocity ComponentRef
-      mutable Position : Position ComponentRef }
-    interface Mover Component with
+      Velocity : Velocity ComponentRef
+      Position : Position ComponentRef }
+    interface MoverStatic Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
-        member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Velocity> (); ecs.AllocateJunction<Position> ()|]
+        member this.ShouldJunction _ = true
+        member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Velocity> "Velocity"; ecs.AllocateJunction<Position> "Position"|]
         member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Velocity> size junctions.[0]; ecs.ResizeJunction<Position> size junctions.[1]
-        member this.MoveJunctions src dst junctions ecs = ecs.MoveJunction<Velocity> src dst junctions.[0]; ecs.MoveJunction<Position> src dst junctions.[1]
-        member this.Junction index junctions junctionsBuffered ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0] junctionsBuffered.[0]; Position = ecs.Junction<Position> index junctions.[1] junctionsBuffered.[1] }
-        member this.Disjunction index junctions ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
+        member this.Junction index junctions buffereds _ ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0] buffereds.[0]; Position = ecs.Junction<Position> index junctions.[1] buffereds.[1] }
+        member this.Disjunction index junctions _ ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
+        member this.TypeName = nameof MoverStatic
+
+type [<NoEquality; NoComparison; Struct>] MoverDynamic =
+    { mutable Active : bool
+      Velocity : Velocity ComponentRef
+      Position : Position ComponentRef }
+    interface MoverDynamic Component with
+        member this.Active with get () = this.Active and set value = this.Active <- value
+        member this.ShouldJunction systemNames =
+            systemNames.Contains (nameof Velocity) &&
+            systemNames.Contains (nameof Position)
+        member this.AllocateJunctions _ = [||]
+        member this.ResizeJunctions _ _ _ = ()
+        member this.Junction _ _ _ entityId ecs =
+            { id this with
+                Velocity = ecs.IndexSystemCorrelated<Velocity>().IndexCorrelated entityId
+                Position = ecs.IndexSystemCorrelated<Position>().IndexCorrelated entityId }
+        member this.Disjunction _ _ _ _ = ()
+        member this.TypeName = nameof MoverDynamic
 #endif
 
 #if FACETED
@@ -122,6 +144,10 @@ type MetricsEntityDispatcher () =
   #endif
 #endif
 
+//type P = { mutable Active : bool; mutable P : Vector2 }
+//type V = { mutable Active : bool; mutable V : Vector2 }
+//type O = { mutable Active : bool; mutable P : P; mutable V : V }
+
 type MyGameDispatcher () =
     inherit GameDispatcher<unit, unit, unit> (())
 
@@ -141,38 +167,102 @@ type MyGameDispatcher () =
         // get ecs
         let ecs = screen.GetEcs world
 
-        // entity count
-        let entityCount = pown 2 22 // ~4M entities (goal: 60FPS, current: 43FPS)
-
         // create systems
-        ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
-        ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        ecs.RegisterSystem (SystemCorrelated<Mover, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
+        let moverStaticSystem = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
+        let _ = ecs.RegisterSystem (SystemCorrelated<MoverDynamic, World> ecs)
 
-        // create movers
-        for _ in 0 .. entityCount - 1 do
-            let entityId = ecs.RegisterCorrelated Unchecked.defaultof<Mover> Gen.id
-            let mover = ecs.IndexCorrelated<Mover> entityId
+        //// create object references
+        //let count = 2500000
+        //let ps = Array.init count (fun _ -> { Active = true; P = v2Zero })
+        //let vs = Array.init count (fun _ -> { Active = true; V = v2Zero })
+        //let objs = Array.init count (fun i -> { Active = true; P = ps.[i]; V = vs.[i]})
+        ////let objs = Array.init count (fun _ -> { P = { P = v2Zero }; V = { V = v2One }})
+        //
+        ////// randomize elements in memory
+        ////for i in 0 .. objs.Length - 1 do
+        ////    objs.[i] <- objs.[Gen.random1 (objs.Length - 1)]
+        ////    objs.[i].P <- objs.[Gen.random1 (objs.Length - 1)].P
+        ////    objs.[i].V <- objs.[Gen.random1 (objs.Length - 1)].V
+        //
+        //// define update for out-of-place movers
+        //ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+        //    for obj in objs do
+        //        if  obj.Active then
+        //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
+        //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
+
+        // create 3M movers (goal: 60FPS, current: 54FPS)
+        for _ in 0 .. 4000000 - 1 do
+            let mover = ecs.RegisterCorrelated false Unchecked.defaultof<MoverStatic> Gen.id
             mover.Index.Velocity.Index.Velocity <- v2One
 
-        // define update for movers
+        // define synchronize correlation changes for dynamic movers
+        ecs.Subscribe EcsEvents.SynchronizeCorrelationChanges $ fun (evt : World SynchronizeCorrelationEvent) _ _ ->
+            for change in evt.SystemEventData do
+                ecs.SynchronizeCorrelated<MoverDynamic> false change.Value change.Key |> ignore<SynchronizeResult>
+
+  #if SYSTEM_ITERATION
+        // define update for static movers
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            for components in ecs.GetComponentArrays<Mover> () do
-                // NOTE: perhaps the primary explanation for why iteration here is slower in .NET than C++ is that
-                // .NET does not implement a pointer bump for array traversal whereas C++ libs often do.
+            let components = moverStaticSystem.Correlateds.Array
+            let velocities = moverStaticSystem.IndexJunction<Velocity>(nameof Velocity).Array
+            let positions = moverStaticSystem.IndexJunction<Position>(nameof Position).Array
+            for i in 0 .. components.Length - 1 do
+                let comp = &components.[i]
+                if  comp.Active then
+                    let velocity = &velocities.[i]
+                    let position = &positions.[i]
+                    position.Position.X <- position.Position.X + velocity.Velocity.X
+                    position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+  #else
+        // define update for static movers
+        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
+            for components in ecs.GetComponentArrays<MoverStatic> () do
                 for i in 0 .. components.Length - 1 do
                     let mutable comp = &components.[i]
-                    if comp.Active then
+                    if  comp.Active then
                         let velocity = &comp.Velocity.Index
                         let position = &comp.Position.Index
                         position.Position.X <- position.Position.X + velocity.Velocity.X
                         position.Position.Y <- position.Position.Y + velocity.Velocity.Y
+  #endif
+
+        // [| mutable P : Vector2; mutable V : Vector2 |]       8M
+        //
+        // { mutable P : Vector2; mutable V : Vector2 }         5M / 1.25M when placement randomized
+        //
+        // [| [| componentRef P |] [| componentRef V |] |]      4M / 3M #if !SYSTEM_ITERATION
+        //
+        // [| [| ref P |] [| ref V |] |]                        2.5M
+        //
+        // { mutable P : P; mutable V : V }                     2M / 250K when placement randomized
+        //
+        // out-of-place entities * ops                          50K * 5 = 250K
+        //
+        // flat array -> 8M, partitioned array -> 2M, partitioned array tree -> ???, randomized cyclic graph -> 250K
+
+        // raw, manually managed array of structs               inits fast, runs fast. optimal but inflexible.
+        //
+        // uncorrelated components                              inits medium fast (int HashSet op may be required), runs fast. slight flexibility increase.
+        //
+        // correlated components                                inits slow, runs medium fast. suboptimal, but very flexible.
+
+        // elmish                                               1,000's
+        //
+        // classic                                              10,000's
+        //
+        // ecs                                                  100,000's
+        //
+        // compute shaders                                      1,000,000's
+
 #endif
         let world = World.createGroup (Some Simulants.DefaultGroup.Name) Simulants.DefaultScreen world |> snd
         let world = World.createEntity<FpsDispatcher> (Some Fps.Name) DefaultOverlay Simulants.DefaultGroup world |> snd
         let world = Fps.SetPosition (v2 200.0f -250.0f) world
 #if !ECS
-        let positions = // 15,125 entity positions (goal: 60FPS, current: 57FPS)
+        let positions = // 15,125 entity positions (goal: 60FPS, current: 56FPS)
             seq {
                 for i in 0 .. 54 do
                     for j in 0 .. 54 do

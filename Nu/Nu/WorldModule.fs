@@ -184,7 +184,7 @@ module WorldModule =
             let groupStates = UMap.makeEmpty HashIdentity.Structural config
             let screenStates = UMap.makeEmpty HashIdentity.Structural config
             let gameState = GameState.make activeGameDispatcher
-            let worldExtension = { DestructionListRev = []; Plugin = plugin }
+            let worldExtension = { DestructionListRev = []; Plugin = plugin; ScriptingEnv = scriptingEnv; ScriptingContext = Game () }
             let world =
                 { EventSystemDelegate = eventDelegate
                   EntityCachedOpt = KeyedCache.make (KeyValuePair (Unchecked.defaultof<Entity>, entityStates)) Unchecked.defaultof<EntityState>
@@ -199,8 +199,6 @@ module WorldModule =
                   Subsystems = subsystems
                   ScreenDirectory = UMap.makeEmpty StringComparer.Ordinal config
                   Dispatchers = dispatchers
-                  ScriptingEnv = scriptingEnv
-                  ScriptingContext = Game ()
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world
@@ -819,11 +817,11 @@ module WorldModule =
 
         /// Get the context of the script system.
         static member internal getScriptContext (world : World) =
-            world.ScriptingContext
+            world.WorldExtension.ScriptingContext
 
         /// Set the context of the script system.
         static member internal setScriptContext context (world : World) =
-            World.choose { world with ScriptingContext = context }
+            World.choose { world with WorldExtension = { world.WorldExtension with ScriptingContext = context }}
 
         /// Evaluate a script expression.
         static member eval expr localFrame simulant world =

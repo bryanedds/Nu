@@ -39,7 +39,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; DISABLE_ENTITY_POST_UPDATE</DefineConstants>
+    <DefineConstants>TRACE;PLATFORM_AGNOSTIC_TIMESTAMPING; DISABLE_ENTITY_POST_UPDATE; ECS_BUFFERED</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Release\Nu.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -69,6 +69,7 @@
     <Compile Include="Core.fs" />
     <Compile Include="Assets.fs" />
     <Compile Include="Log.fs" />
+    <Compile Include="Unique.fs" />
     <Compile Include="Gen.fs" />
     <Compile Include="Constants.fs" />
     <Compile Include="ListTree.fs" />
@@ -76,6 +77,7 @@
     <Compile Include="Ecs.fs" />
     <Compile Include="Math.fs" />
     <Compile Include="SpatialTree.fs" />
+    <Compile Include="FastInvoke.fs" />
     <Compile Include="Reflection.fs" />
     <Compile Include="Overlayer.fs" />
     <Compile Include="OverlayRouter.fs" />
@@ -234,10 +236,10 @@
       <HintPath>..\..\packages\Nito.Collections.Deque.1.1.0\lib\netstandard2.0\Nito.Collections.Deque.dll</HintPath>
     </Reference>
     <Reference Include="Prime">
-      <HintPath>..\..\packages\Prime.7.1.0\lib\net472\Prime.dll</HintPath>
+      <HintPath>..\..\packages\Prime.7.2.0\lib\net472\Prime.dll</HintPath>
     </Reference>
     <Reference Include="Prime.Scripting">
-      <HintPath>..\..\packages\Prime.Scripting.7.0.0\lib\net472\Prime.Scripting.exe</HintPath>
+      <HintPath>..\..\packages\Prime.Scripting.7.2.0\lib\net472\Prime.Scripting.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
       <HintPath>..\..\packages\SDL2-CS.dll.2.0.0.0\lib\net20\SDL2-CS.dll</HintPath>

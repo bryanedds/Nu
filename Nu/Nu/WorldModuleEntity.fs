@@ -12,9 +12,19 @@ open Nu
 [<AutoOpen; ModuleBinding>]
 module WorldModuleEntity =
 
-    /// Dynamic property getters / setters.
-    let internal EntityGetters = Dictionary<string, Entity -> World -> Property> StringComparer.Ordinal
-    let internal EntitySetters = Dictionary<string, Property -> Entity -> World -> struct (bool * World)> StringComparer.Ordinal
+    /// A reflective property getter.
+    type [<NoEquality; NoComparison; Struct>] internal PropertyGetter =
+        | LambdaGetter of LambdaGetter : (Entity -> World -> Property)
+        | InvokeGetter of InvokeGetter : Type * FastInvoke
+
+    /// A reflective property setter.
+    type [<NoEquality; NoComparison; Struct>] internal PropertySetter =
+        | LambdaSetter of LambdaSetter : (Property -> Entity -> World -> struct (bool * World))
+        | InvokeSetter of InvokeSetter : Type * FastInvoke
+
+    /// Reflective property getters / setters.
+    let internal EntityGetters = Dictionary<string, PropertyGetter> StringComparer.Ordinal
+    let internal EntitySetters = Dictionary<string, PropertySetter> StringComparer.Ordinal
 
     /// Mutable clipboard that allows its state to persist beyond undo / redo.
     let mutable private Clipboard : obj option = None
@@ -274,13 +284,13 @@ module WorldModuleEntity =
                     if value <> entityState.Imperative then
                         if value then
                             let properties = UMap.makeFromSeq StringComparer.Ordinal Imperative (Xtension.toSeq entityState.Xtension)
-                            let xtension = Xtension.make properties false true true
+                            let xtension = Xtension.make true properties
                             entityState.Xtension <- xtension
                             entityState.Imperative <- true
                             entityState
                         else
                             let properties = UMap.makeFromSeq StringComparer.Ordinal Functional (Xtension.toSeq entityState.Xtension)
-                            let xtension = Xtension.make properties false true false
+                            let xtension = Xtension.make false properties
                             let entityState = EntityState.diverge entityState
                             entityState.Xtension <- xtension
                             entityState.Imperative <- false
@@ -721,13 +731,18 @@ module WorldModuleEntity =
             | _ ->
                 match EntityState.tryGetProperty (propertyName, entityStateOpt, &property) with
                 | true ->
-                    match property.PropertyValue with
-                    | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
-                    | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
-                    | _ -> true
+                    if EntityState.containsRuntimeProperties entityStateOpt then
+                        match property.PropertyValue with
+                        | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
+                        | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (entity :> obj) (world :> obj) }; true
+                        | _ -> true
+                    else true
                 | false ->
                     match EntityGetters.TryGetValue propertyName with
-                    | (true, getter) -> property <- getter entity world; true
+                    | (true, getter) ->
+                        match getter with
+                        | LambdaGetter propertyGetter -> property <- propertyGetter entity world; true
+                        | InvokeGetter (ty, valueGetter) -> property <- { PropertyType = ty; PropertyValue = valueGetter.Invoke2 (entity, world) }; true
                     | (false, _) -> false
 
         static member internal getEntityProperty propertyName entity world =
@@ -745,60 +760,71 @@ module WorldModuleEntity =
                 let struct (success, changed, world) =
                     match EntityState.tryGetProperty (propertyName, entityStateOpt, &propertyOld) with
                     | true ->
-                        match propertyOld.PropertyValue with
-                        | :? DesignerProperty as dp ->
-                            if property.PropertyValue =/= dp.DesignerValue then
-                                let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
-                                match EntityState.trySetProperty propertyName property entityStateOpt with
-                                | (true, entityState) -> struct (true, true, World.setEntityState entityState entity world)
-                                | (false, _) -> struct (false, false, world)
-                            else (true, false, world)
-                        | :? ComputedProperty as cp ->
-                            match cp.ComputedSetOpt with
-                            | Some computedSet ->
-                                if property.PropertyValue =/= cp.ComputedGet (box entity) (box world)
-                                then struct (true, true, computedSet property.PropertyValue entity world :?> World)
+                        if EntityState.containsRuntimeProperties entityStateOpt then
+                            match propertyOld.PropertyValue with
+                            | :? DesignerProperty as dp ->
+                                if property.PropertyValue =/= dp.DesignerValue then
+                                    let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
+                                    match EntityState.trySetProperty propertyName property entityStateOpt with
+                                    | (true, entityState) -> struct (true, true, World.setEntityState entityState entity world)
+                                    | (false, _) -> struct (false, false, world)
+                                else (true, false, world)
+                            | :? ComputedProperty as cp ->
+                                match cp.ComputedSetOpt with
+                                | Some computedSet ->
+                                    if property.PropertyValue =/= cp.ComputedGet (box entity) (box world)
+                                    then struct (true, true, computedSet property.PropertyValue entity world :?> World)
+                                    else struct (true, false, world)
+                                | None -> struct (false, false, world)
+                            | _ ->
+                                if property.PropertyValue =/= propertyOld.PropertyValue then
+                                    match EntityState.trySetProperty propertyName property entityStateOpt with
+                                    | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
+                                    | (false, _) -> struct (false, false, world)
                                 else struct (true, false, world)
-                            | None -> struct (false, false, world)
-                        | _ ->
+                        else
                             if property.PropertyValue =/= propertyOld.PropertyValue then
                                 match EntityState.trySetProperty propertyName property entityStateOpt with
                                 | (true, entityState) -> (true, true, World.setEntityState entityState entity world)
                                 | (false, _) -> struct (false, false, world)
                             else struct (true, false, world)
                     | false -> struct (false, false, world)
-                (success, changed, world)
+                struct (success, changed, world)
 
         static member internal setEntityXtensionPropertyWithoutEvent propertyName property entity world =
             match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
-            | (true, changed, world) -> (true, changed, world)
-            | (false, _, _) -> failwithf "Could not find property '%s'." propertyName
+            | struct (true, changed, world) -> (true, changed, world)
+            | struct (false, _, _) -> failwithf "Could not find property '%s'." propertyName
 
         static member internal trySetEntityPropertyFast propertyName property entity world =
-            match EntitySetters.TryGetValue propertyName with
-            | (true, setter) -> setter property entity world |> snd'
-            | (false, _) ->
-                match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
-                | (true, changed, world) ->
+            match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
+            | struct (true, changed, world) ->
+                if changed
+                then World.publishEntityChange propertyName property.PropertyValue entity world
+                else world
+            | struct (false, _, world) ->
+                match EntitySetters.TryGetValue propertyName with
+                | (true, setter) ->
+                    match setter with
+                    | LambdaSetter propertySetter -> propertySetter property entity world |> snd'
+                    | InvokeSetter (_, valueSetter) -> valueSetter.Invoke3 (entity, property.PropertyValue, world) :?> World
+                | (false, _) -> world
+
+        static member internal trySetEntityProperty propertyName property entity world =
+            match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
+            | struct (true, changed, world) ->
+                let world =
                     if changed
                     then World.publishEntityChange propertyName property.PropertyValue entity world
                     else world
-                | (false, _, world) -> world
-
-        static member internal trySetEntityProperty propertyName property entity world =
-            match EntitySetters.TryGetValue propertyName with
-            | (true, setter) ->
-                let struct (changed, world) = setter property entity world
                 struct (true, changed, world)
-            | (false, _) ->
-                match World.trySetEntityXtentionsPropertyWithoutEvent propertyName property entity world with
-                | struct (true, changed, world) ->
-                    let world =
-                        if changed
-                        then World.publishEntityChange propertyName property.PropertyValue entity world
-                        else world
-                    struct (true, changed, world)
-                | struct (false, changed, world) -> (false, changed, world)
+            | struct (false, changed, world) ->
+                match EntitySetters.TryGetValue propertyName with
+                | (true, setter) ->
+                    match setter with
+                    | LambdaSetter propertySetter -> let struct (changed, world) = propertySetter property entity world in struct (true, changed, world)
+                    | InvokeSetter (_, valueSetter) -> (true, true, valueSetter.Invoke3 (entity, property.PropertyValue, world) :?> World) // NOTE: asserting always changed since it's not used anywhere in this case.
+                | (false, _) -> (false, changed, world)
 
         static member internal setEntityProperty propertyName property entity world =
             match World.trySetEntityProperty propertyName property entity world with
@@ -865,11 +891,11 @@ module WorldModuleEntity =
               SortTarget = entity }
 
         static member internal updateEntityPublishUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEventCached) world
+            World.updateEntityPublishEventFlag World.setEntityPublishUpdates entity (atooa entity.UpdateEvent) world
 
 #if !DISABLE_ENTITY_POST_UPDATE
         static member internal updateEntityPublishPostUpdateFlag entity world =
-            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa entity.PostUpdateEventCached) world
+            World.updateEntityPublishEventFlag World.setEntityPublishPostUpdates entity (atooa entity.PostUpdateEvent) world
 #endif
 
         static member internal updateEntityPublishFlags entity world =
@@ -1387,56 +1413,56 @@ module WorldModuleEntity =
 
     /// Initialize property getters.
     let private initGetters () =
-        EntityGetters.Add ("Dispatcher", fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world })
-        EntityGetters.Add ("Facets", fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world })
-        EntityGetters.Add ("Transform", fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform })
-        EntityGetters.Add ("Bounds", fun entity world -> { PropertyType = typeof<Vector4>; PropertyValue = World.getEntityBounds entity world })
-        EntityGetters.Add ("Position", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world })
-        EntityGetters.Add ("Center", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityCenter entity world })
-        EntityGetters.Add ("Bottom", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityBottom entity world })
-        EntityGetters.Add ("Size", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world })
-        EntityGetters.Add ("Rotation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world })
-        EntityGetters.Add ("Elevation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevation entity world })
-        EntityGetters.Add ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
-        EntityGetters.Add ("Absolute", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world })
-        EntityGetters.Add ("Model", fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-        EntityGetters.Add ("Overflow", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world })
-        EntityGetters.Add ("Imperative", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world })
-        EntityGetters.Add ("PublishChangeBindings", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeBindings entity world })
-        EntityGetters.Add ("PublishChangeEvents", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world })
-        EntityGetters.Add ("Enabled", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world })
-        EntityGetters.Add ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
-        EntityGetters.Add ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
-        EntityGetters.Add ("PublishUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world })
-        EntityGetters.Add ("PublishPostUpdates", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world })
-        EntityGetters.Add ("Persistent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world })
-        EntityGetters.Add ("Optimized", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world })
-        EntityGetters.Add ("Destroying", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world })
-        EntityGetters.Add ("OverlayNameOpt", fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world })
-        EntityGetters.Add ("FacetNames", fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world })
-        EntityGetters.Add ("CreationTimeStamp", fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world })
-        EntityGetters.Add ("Name", fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world })
-        EntityGetters.Add ("Id", fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world })
+        EntityGetters.Assign ("Dispatcher", LambdaGetter (fun entity world -> { PropertyType = typeof<EntityDispatcher>; PropertyValue = World.getEntityDispatcher entity world }))
+        EntityGetters.Assign ("Facets", LambdaGetter (fun entity world -> { PropertyType = typeof<Facet array>; PropertyValue = World.getEntityFacets entity world }))
+        EntityGetters.Assign ("Transform", LambdaGetter (fun entity world -> { PropertyType = typeof<Transform>; PropertyValue = (World.getEntityState entity world).Transform }))
+        EntityGetters.Assign ("Bounds", LambdaGetter (fun entity world -> { PropertyType = typeof<Vector4>; PropertyValue = World.getEntityBounds entity world }))
+        EntityGetters.Assign ("Position", LambdaGetter (fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityPosition entity world }))
+        EntityGetters.Assign ("Center", LambdaGetter (fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityCenter entity world }))
+        EntityGetters.Assign ("Bottom", LambdaGetter (fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityBottom entity world }))
+        EntityGetters.Assign ("Size", LambdaGetter (fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world }))
+        EntityGetters.Assign ("Rotation", LambdaGetter (fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world }))
+        EntityGetters.Assign ("Elevation", LambdaGetter (fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevation entity world }))
+        EntityGetters.Assign ("Omnipresent", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world }))
+        EntityGetters.Assign ("Absolute", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAbsolute entity world }))
+        EntityGetters.Assign ("Model", LambdaGetter (fun entity world -> let designerProperty = World.getEntityModelProperty entity world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue }))
+        EntityGetters.Assign ("Overflow", LambdaGetter (fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityOverflow entity world }))
+        EntityGetters.Assign ("Imperative", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityImperative entity world }))
+        EntityGetters.Assign ("PublishChangeBindings", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeBindings entity world }))
+        EntityGetters.Assign ("PublishChangeEvents", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishChangeEvents entity world }))
+        EntityGetters.Assign ("Enabled", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabled entity world }))
+        EntityGetters.Assign ("Visible", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world }))
+        EntityGetters.Assign ("AlwaysUpdate", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world }))
+        EntityGetters.Assign ("PublishUpdates", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishUpdates entity world }))
+        EntityGetters.Assign ("PublishPostUpdates", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPublishPostUpdates entity world }))
+        EntityGetters.Assign ("Persistent", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPersistent entity world }))
+        EntityGetters.Assign ("Optimized", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOptimized entity world }))
+        EntityGetters.Assign ("Destroying", LambdaGetter (fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityDestroying entity world }))
+        EntityGetters.Assign ("OverlayNameOpt", LambdaGetter (fun entity world -> { PropertyType = typeof<string option>; PropertyValue = World.getEntityOverlayNameOpt entity world }))
+        EntityGetters.Assign ("FacetNames", LambdaGetter (fun entity world -> { PropertyType = typeof<string Set>; PropertyValue = World.getEntityFacetNames entity world }))
+        EntityGetters.Assign ("CreationTimeStamp", LambdaGetter (fun entity world -> { PropertyType = typeof<int64>; PropertyValue = World.getEntityCreationTimeStamp entity world }))
+        EntityGetters.Assign ("Name", LambdaGetter (fun entity world -> { PropertyType = typeof<string>; PropertyValue = World.getEntityName entity world }))
+        EntityGetters.Assign ("Id", LambdaGetter (fun entity world -> { PropertyType = typeof<Guid>; PropertyValue = World.getEntityId entity world }))
 
     /// Initialize property setters.
     let private initSetters () =
-        EntitySetters.Add ("Transform", fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, entity, world))
-        EntitySetters.Add ("Bounds", fun property entity world -> World.setEntityBounds (property.PropertyValue :?> Vector4) entity world)
-        EntitySetters.Add ("Position", fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Add ("Center", fun property entity world -> World.setEntityCenter (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Add ("Bottom", fun property entity world -> World.setEntityBottom (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Add ("Size", fun property entity world -> World.setEntitySize (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Add ("Rotation", fun property entity world -> World.setEntityRotation (property.PropertyValue :?> single) entity world)
-        EntitySetters.Add ("Elevation", fun property entity world -> World.setEntityElevation (property.PropertyValue :?> single) entity world)
-        EntitySetters.Add ("Omnipresent", fun property entity world -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world)
-        EntitySetters.Add ("Absolute", fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world)
-        EntitySetters.Add ("Model", fun property entity world -> World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world)
-        EntitySetters.Add ("Overflow", fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world)
-        EntitySetters.Add ("Imperative", fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world)
-        EntitySetters.Add ("Enabled", fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world)
-        EntitySetters.Add ("Visible", fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world)
-        EntitySetters.Add ("AlwaysUpdate", fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world)
-        EntitySetters.Add ("Persistent", fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world)
+        EntitySetters.Assign ("Transform", LambdaSetter (fun property entity world -> let mutable transform = property.PropertyValue :?> Transform in World.setEntityTransformByRef (&transform, entity, world)))
+        EntitySetters.Assign ("Bounds", LambdaSetter (fun property entity world -> World.setEntityBounds (property.PropertyValue :?> Vector4) entity world))
+        EntitySetters.Assign ("Position", LambdaSetter (fun property entity world -> World.setEntityPosition (property.PropertyValue :?> Vector2) entity world))
+        EntitySetters.Assign ("Center", LambdaSetter (fun property entity world -> World.setEntityCenter (property.PropertyValue :?> Vector2) entity world))
+        EntitySetters.Assign ("Bottom", LambdaSetter (fun property entity world -> World.setEntityBottom (property.PropertyValue :?> Vector2) entity world))
+        EntitySetters.Assign ("Size", LambdaSetter (fun property entity world -> World.setEntitySize (property.PropertyValue :?> Vector2) entity world))
+        EntitySetters.Assign ("Rotation", LambdaSetter (fun property entity world -> World.setEntityRotation (property.PropertyValue :?> single) entity world))
+        EntitySetters.Assign ("Elevation", LambdaSetter (fun property entity world -> World.setEntityElevation (property.PropertyValue :?> single) entity world))
+        EntitySetters.Assign ("Omnipresent", LambdaSetter (fun property entity world -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world))
+        EntitySetters.Assign ("Absolute", LambdaSetter (fun property entity world -> World.setEntityAbsolute (property.PropertyValue :?> bool) entity world))
+        EntitySetters.Assign ("Model", LambdaSetter (fun property entity world -> World.setEntityModelProperty { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } entity world))
+        EntitySetters.Assign ("Overflow", LambdaSetter (fun property entity world -> World.setEntityOverflow (property.PropertyValue :?> Vector2) entity world))
+        EntitySetters.Assign ("Imperative", LambdaSetter (fun property entity world -> World.setEntityImperative (property.PropertyValue :?> bool) entity world))
+        EntitySetters.Assign ("Enabled", LambdaSetter (fun property entity world -> World.setEntityEnabled (property.PropertyValue :?> bool) entity world))
+        EntitySetters.Assign ("Visible", LambdaSetter (fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world))
+        EntitySetters.Assign ("AlwaysUpdate", LambdaSetter (fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world))
+        EntitySetters.Assign ("Persistent", LambdaSetter (fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world))
 
     /// Initialize getters and setters
     let internal init () =

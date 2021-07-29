@@ -46,6 +46,10 @@ module Reflection =
              ("EffectTags", true)
              ("EffectHistory", true)]
 
+    /// A dictionary of all loaded assemblies.
+    let internal AssembliesLoaded =
+        Dictionary<string, Assembly> StringComparer.Ordinal
+
     /// Initialize a property's dynamic attributes.
     /// Available as an alternative to using the NP property name suffix.
     let initPropertyAttributes nonPersistent propertyName =
@@ -340,8 +344,7 @@ module Reflection =
             shouldWriteProperty property.Name property.PropertyType propertyValue then
             if  property.Name = Property? Transform &&
                 property.PropertyType = typeof<Transform> then
-                // nothing to do here since the custom .NET properties will take care of this...
-                propertyDescriptors
+                propertyDescriptors // nothing to do here since the custom .NET properties will take care of this...
             else
                 let converter = SymbolicConverter (false, None, property.PropertyType)
                 let valueSymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol

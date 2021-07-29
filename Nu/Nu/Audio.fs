@@ -122,11 +122,11 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
                 let audioAssets = List.definitize audioAssetOpts
                 match Dictionary.tryFind packageName audioPlayer.AudioPackages with
                 | Some audioAssetDict ->
-                    for (key, value) in audioAssets do audioAssetDict.ForceAdd (key, value)
-                    audioPlayer.AudioPackages.ForceAdd (packageName, audioAssetDict)
+                    for (key, value) in audioAssets do audioAssetDict.Assign (key, value)
+                    audioPlayer.AudioPackages.Assign (packageName, audioAssetDict)
                 | None ->
                     let audioAssetDict = dictPlus StringComparer.Ordinal audioAssets
-                    audioPlayer.AudioPackages.ForceAdd (packageName, audioAssetDict)
+                    audioPlayer.AudioPackages.Assign (packageName, audioAssetDict)
             | Left error ->
                 Log.info ("Audio package load failed due to unloadable assets '" + error + "' for package '" + packageName + "'.")
         | Left error ->
@@ -278,18 +278,3 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
         member audioPlayer.Play audioMessages =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer
             SdlAudioPlayer.tryUpdateCurrentSong audioPlayer
-
-[<RequireQualifiedAccess>]
-module AudioPlayer =
-
-    /// Clear all of the audio messages that have been enqueued.
-    let clearMessages (audioPlayer : AudioPlayer) =
-        audioPlayer.ClearMessages ()
-
-    /// Enqueue a message from an external source.
-    let enqueueMessage message (audioPlayer : AudioPlayer) =
-        audioPlayer.EnqueueMessage message
-
-    /// 'Play' the audio system. Must be called once per frame.
-    let play audioMessages (audioPlayer : AudioPlayer) =
-        audioPlayer.Play audioMessages
