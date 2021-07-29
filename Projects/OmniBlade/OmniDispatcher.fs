@@ -15,9 +15,9 @@ module GameDispatcher =
     type [<StructuralEquality; NoComparison>] Gui =
         | Splashing
         | Title
-        | Start
-        | Introing of SaveSlot
         | Credits
+        | Pick
+        | Intro of SaveSlot
 
     type [<StructuralEquality; NoComparison>] Omni =
         | Gui of Gui
@@ -28,8 +28,9 @@ module GameDispatcher =
         | ChangeField of Field
         | ChangeBattle of Battle
         | Update
-        | Intro of SaveSlot
-        | InitField
+        | ToIntro of SaveSlot
+        | FromIntro
+        | Nop
 
     type [<NoEquality; NoComparison>] OmniCommand =
         | Show of Screen
@@ -55,21 +56,21 @@ module GameDispatcher =
             [Simulants.Field.Screen.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
              Simulants.Battle.Screen.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
              Simulants.Game.UpdateEvent => msg Update
-             Simulants.Title.Gui.Start.ClickEvent => msg (Change (Gui Start))
+             Simulants.Title.Gui.Play.ClickEvent =|> fun _ -> msg (Change (Gui Pick))
              Simulants.Title.Gui.Credits.ClickEvent => msg (Change (Gui Credits))
-             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
+             Simulants.Pick.Gui.Back.ClickEvent => msg (Change (Gui Title))
 #if DEV
-             Simulants.Start.Gui.Start1.ClickEvent => msg (Change (Field (Field.initial Slot1 (uint64 Gen.random))))
-             Simulants.Start.Gui.Start2.ClickEvent => msg (Change (Field (Field.initial Slot2 (uint64 Gen.random))))
-             Simulants.Start.Gui.Start3.ClickEvent => msg (Change (Field (Field.initial Slot3 (uint64 Gen.random))))
+             Simulants.Pick.Gui.Slot1.ClickEvent => msg (Change (Field (Field.initial Slot1 Gen.randomul)))
+             Simulants.Pick.Gui.Slot2.ClickEvent => msg (Change (Field (Field.initial Slot2 Gen.randomul)))
+             Simulants.Pick.Gui.Slot3.ClickEvent => msg (Change (Field (Field.initial Slot3 Gen.randomul)))
 #else
-             Simulants.Start.Gui.Start1.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath1) then (Change (Field (Field.loadOrInitial Slot1 (uint64 Gen.random)))) else Intro Slot1)
-             Simulants.Start.Gui.Start2.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath2) then (Change (Field (Field.loadOrInitial Slot2 (uint64 Gen.random)))) else Intro Slot2)
-             Simulants.Start.Gui.Start3.ClickEvent =|> fun _ -> msg (if File.Exists (Assets.Global.SaveFilePath3) then (Change (Field (Field.loadOrInitial Slot3 (uint64 Gen.random)))) else Intro Slot3)
+             Simulants.Pick.Gui.Slot1.ClickEvent =|> fun _ -> msg (if File.Exists Assets.Global.SaveFilePath1 then (match Field.tryLoad Slot1 with Some loaded -> Change (Field loaded) | None -> Nop) else ToIntro Slot1)
+             Simulants.Pick.Gui.Slot2.ClickEvent =|> fun _ -> msg (if File.Exists Assets.Global.SaveFilePath2 then (match Field.tryLoad Slot2 with Some loaded -> Change (Field loaded) | None -> Nop) else ToIntro Slot2)
+             Simulants.Pick.Gui.Slot3.ClickEvent =|> fun _ -> msg (if File.Exists Assets.Global.SaveFilePath3 then (match Field.tryLoad Slot3 with Some loaded -> Change (Field loaded) | None -> Nop) else ToIntro Slot3)
 #endif
-             Simulants.Start.Gui.Back.ClickEvent => msg (Change (Gui Title))
+             Simulants.Intro5.Screen.DeselectEvent => msg FromIntro
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
-             Simulants.Intro5.Screen.DeselectEvent => msg InitField]
+             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit]
 
         override this.Message (omni, message, _, world) =
 
@@ -96,9 +97,9 @@ module GameDispatcher =
                     match gui with
                     | Splashing -> just omni
                     | Title -> withCmd (Show Simulants.Title.Screen) omni
-                    | Start -> withCmd (Show Simulants.Start.Screen) omni
-                    | Introing _ -> just omni
                     | Credits -> withCmd (Show Simulants.Credits.Screen) omni
+                    | Pick -> withCmd (Show Simulants.Pick.Screen) omni
+                    | Intro _ -> just omni
                 | Field field ->
                     match field.BattleOpt with
                     | Some battle ->
@@ -112,20 +113,21 @@ module GameDispatcher =
                         | _ -> withCmd (Show Simulants.Battle.Screen) omni
                     | None -> withCmd (Show Simulants.Field.Screen) omni
 
-            | Intro saveSlot ->
-                let introing = msg (Change (Gui (Introing saveSlot)))
-                let intro = cmd (Show Simulants.Intro.Screen)
-                withSigs [introing; intro] omni
+            | ToIntro saveSlot ->
+                let introMsg = msg (Change (Gui (Intro saveSlot)))
+                let introCmd = cmd (Show Simulants.Intro.Screen)
+                withSigs [introMsg; introCmd] omni
 
-            | InitField ->
-                let saveSlot =
-                    match omni with
-                    | Gui gui ->
-                        match gui with
-                        | Introing saveSlot -> saveSlot
-                        | _ -> Slot1
-                    | Field _ -> Slot1
-                withMsg (Change (Field (Field.initial saveSlot (uint64 Gen.random)))) omni
+            | FromIntro ->
+                match omni with
+                | Gui gui ->
+                    match gui with
+                    | Intro saveSlot -> withMsg (Change (Field (Field.initial saveSlot Gen.randomul))) omni
+                    | _ -> withMsg Nop omni
+                | Field _ -> withMsg Nop omni
+
+            | Nop ->
+                just omni
 
         override this.Command (_, command, _, world) =
             match command with
@@ -140,25 +142,22 @@ module GameDispatcher =
              // title
              Content.screenFromGroupFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath
 
-             // start
-             Content.screen Simulants.Start.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) []
-                [Content.group Simulants.Start.Gui.Group.Name []
-                
-                    [Content.button Simulants.Start.Gui.Start1.Name
+             // pick
+             // TODO: put this definition in a nugroup file.
+             Content.screen Simulants.Pick.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) []
+                [Content.group Simulants.Pick.Gui.Group.Name []
+                    [Content.button Simulants.Pick.Gui.Slot1.Name
                         [Entity.Position == v2 -96.0f -24.0f;
-                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath1) then "Load Slot 1" else "New Game"]
-                     Content.button Simulants.Start.Gui.Start2.Name
+                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath1) then "Load Game 1" else "New Game  1"]
+                     Content.button Simulants.Pick.Gui.Slot2.Name
                         [Entity.Position == v2 -96.0f -90.0f;
-                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath2) then "Load Slot 2" else "New Game"]
-                     Content.button Simulants.Start.Gui.Start3.Name
+                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath2) then "Load Game 2" else "New Game  2"]
+                     Content.button Simulants.Pick.Gui.Slot3.Name
                         [Entity.Position == v2 -96.0f -156.0f;
-                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath3) then "Load Slot 3" else "New Game"]
-                     Content.button Simulants.Start.Gui.Back.Name
+                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath3) then "Load Game 3" else "New Game  3"]
+                     Content.button Simulants.Pick.Gui.Back.Name
                         [Entity.Position == v2 -96.0f -222.0f;
                          Entity.Text == "Back"]]]
-             
-             // credits
-             Content.screenFromGroupFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsGroupFilePath
 
              // intros
              Content.screenFromGroupFile Simulants.Intro.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2.Screen)) Assets.Gui.IntroGroupFilePath
@@ -166,6 +165,9 @@ module GameDispatcher =
              Content.screenFromGroupFile Simulants.Intro3.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4.Screen)) Assets.Gui.Intro3GroupFilePath
              Content.screenFromGroupFile Simulants.Intro4.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5.Screen)) Assets.Gui.Intro4GroupFilePath
              Content.screenFromGroupFile Simulants.Intro5.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field.Screen)) Assets.Gui.Intro5GroupFilePath
+             
+             // credits
+             Content.screenFromGroupFile Simulants.Credits.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsGroupFilePath
 
              // field
              Content.screen<FieldDispatcher> Simulants.Field.Screen.Name (Dissolve (Constants.Gui.Dissolve, None))

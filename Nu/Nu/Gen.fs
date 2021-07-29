@@ -33,6 +33,18 @@ module Gen =
         static member randomy =
             lock Lock (fun () -> byte (Random.Next ()))
 
+        /// Get the next random unsigned.
+        static member randomu =
+            lock Lock (fun () -> uint (Random.Next ()))
+
+        /// Get the next random long.
+        static member randoml =
+            lock Lock (fun () -> int64 (Random.Next () <<< 32 ||| Random.Next ()))
+
+        /// Get the next random unsigned long.
+        static member randomul =
+            lock Lock (fun () -> uint64 (Random.Next () <<< 32 ||| Random.Next ()))
+
         /// Get the next random single >= 0.0f and < 1.0f.
         static member randomf =
             lock Lock (fun () -> single (Random.NextDouble ()))

@@ -320,14 +320,14 @@ module Field =
         let fileStr = scstring fieldSymbolizable
         try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
 
-    let loadOrInitial saveSlot randSeedState =
+    let tryLoad saveSlot =
         try let saveFilePath =
                 match saveSlot with
                 | Slot1 -> Assets.Global.SaveFilePath1
                 | Slot2 -> Assets.Global.SaveFilePath2
                 | Slot3 -> Assets.Global.SaveFilePath3
             let fieldStr = File.ReadAllText saveFilePath
-            scvalue<Field> fieldStr
-        with _ -> initial saveSlot randSeedState
+            fieldStr |> scvalue<Field> |> Some
+        with _ -> None
 
 type Field = Field.Field
