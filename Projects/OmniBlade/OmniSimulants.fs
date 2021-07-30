@@ -48,9 +48,12 @@ module Simulants =
         module Gui =
 
             let Group = Screen / "Gui"
-            let Slot1 = Group / "Slot1"
-            let Slot2 = Group / "Slot2"
-            let Slot3 = Group / "Slot3"
+            let NewGame1 = Group / "NewGame1"
+            let NewGame2 = Group / "NewGame2"
+            let NewGame3 = Group / "NewGame3"
+            let LoadGame1 = Group / "LoadGame1"
+            let LoadGame2 = Group / "LoadGame2"
+            let LoadGame3 = Group / "LoadGame3"
             let Back = Group / "Back"
     
     [<RequireQualifiedAccess>]

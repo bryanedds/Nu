@@ -33,6 +33,7 @@ module GameDispatcher =
         | Nop
 
     type [<NoEquality; NoComparison>] OmniCommand =
+        | Picks
         | Show of Screen
         | Exit
 
@@ -56,18 +57,16 @@ module GameDispatcher =
             [Simulants.Field.Screen.Field.ChangeEvent =|> fun evt -> msg (ChangeField (evt.Data.Value :?> Field))
              Simulants.Battle.Screen.Battle.ChangeEvent =|> fun evt -> msg (ChangeBattle (evt.Data.Value :?> Battle))
              Simulants.Game.UpdateEvent => msg Update
+             Simulants.Game.UpdateEvent => cmd Picks
              Simulants.Title.Gui.Play.ClickEvent =|> fun _ -> msg (Change (Gui Pick))
              Simulants.Title.Gui.Credits.ClickEvent => msg (Change (Gui Credits))
+             Simulants.Pick.Gui.NewGame1.ClickEvent => msg (ToIntro Slot1)
+             Simulants.Pick.Gui.NewGame2.ClickEvent => msg (ToIntro Slot2)
+             Simulants.Pick.Gui.NewGame3.ClickEvent => msg (ToIntro Slot3)
+             Simulants.Pick.Gui.LoadGame1.ClickEvent =|> fun _ -> msg (match Field.tryLoad Slot1 with Some loaded -> Change (Field loaded) | None -> Nop)
+             Simulants.Pick.Gui.LoadGame2.ClickEvent =|> fun _ -> msg (match Field.tryLoad Slot2 with Some loaded -> Change (Field loaded) | None -> Nop)
+             Simulants.Pick.Gui.LoadGame3.ClickEvent =|> fun _ -> msg (match Field.tryLoad Slot3 with Some loaded -> Change (Field loaded) | None -> Nop)
              Simulants.Pick.Gui.Back.ClickEvent => msg (Change (Gui Title))
-#if DEV
-             Simulants.Pick.Gui.Slot1.ClickEvent => msg (Change (Field (Field.initial Slot1 Gen.randomul)))
-             Simulants.Pick.Gui.Slot2.ClickEvent => msg (Change (Field (Field.initial Slot2 Gen.randomul)))
-             Simulants.Pick.Gui.Slot3.ClickEvent => msg (Change (Field (Field.initial Slot3 Gen.randomul)))
-#else
-             Simulants.Pick.Gui.Slot1.ClickEvent =|> fun _ -> msg (if File.Exists Assets.Global.SaveFilePath1 then (match Field.tryLoad Slot1 with Some loaded -> Change (Field loaded) | None -> Nop) else ToIntro Slot1)
-             Simulants.Pick.Gui.Slot2.ClickEvent =|> fun _ -> msg (if File.Exists Assets.Global.SaveFilePath2 then (match Field.tryLoad Slot2 with Some loaded -> Change (Field loaded) | None -> Nop) else ToIntro Slot2)
-             Simulants.Pick.Gui.Slot3.ClickEvent =|> fun _ -> msg (if File.Exists Assets.Global.SaveFilePath3 then (match Field.tryLoad Slot3 with Some loaded -> Change (Field loaded) | None -> Nop) else ToIntro Slot3)
-#endif
              Simulants.Intro5.Screen.DeselectEvent => msg FromIntro
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit]
@@ -123,14 +122,22 @@ module GameDispatcher =
                 | Gui gui ->
                     match gui with
                     | Intro saveSlot -> withMsg (Change (Field (Field.initial saveSlot Gen.randomul))) omni
-                    | _ -> withMsg Nop omni
-                | Field _ -> withMsg Nop omni
+                    | _ -> just omni
+                | Field _ -> just omni
 
             | Nop ->
                 just omni
 
         override this.Command (_, command, _, world) =
             match command with
+            | Picks ->
+                let world = Simulants.Pick.Gui.NewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
+                let world = Simulants.Pick.Gui.LoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
+                let world = Simulants.Pick.Gui.NewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
+                let world = Simulants.Pick.Gui.LoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
+                let world = Simulants.Pick.Gui.NewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
+                let world = Simulants.Pick.Gui.LoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
+                just world
             | Show screen -> World.transitionScreen screen world |> just
             | Exit -> World.exit world |> just
 
@@ -143,21 +150,7 @@ module GameDispatcher =
              Content.screenFromGroupFile Simulants.Title.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath
 
              // pick
-             // TODO: put this definition in a nugroup file.
-             Content.screen Simulants.Pick.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) []
-                [Content.group Simulants.Pick.Gui.Group.Name []
-                    [Content.button Simulants.Pick.Gui.Slot1.Name
-                        [Entity.Position == v2 -96.0f -24.0f;
-                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath1) then "Load Game 1" else "New Game  1"]
-                     Content.button Simulants.Pick.Gui.Slot2.Name
-                        [Entity.Position == v2 -96.0f -90.0f;
-                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath2) then "Load Game 2" else "New Game  2"]
-                     Content.button Simulants.Pick.Gui.Slot3.Name
-                        [Entity.Position == v2 -96.0f -156.0f;
-                         Entity.Text == if File.Exists (Assets.Global.SaveFilePath3) then "Load Game 3" else "New Game  3"]
-                     Content.button Simulants.Pick.Gui.Back.Name
-                        [Entity.Position == v2 -96.0f -222.0f;
-                         Entity.Text == "Back"]]]
+             Content.screenFromGroupFile Simulants.Pick.Screen.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath
 
              // intros
              Content.screenFromGroupFile Simulants.Intro.Screen.Name (Splash (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2.Screen)) Assets.Gui.IntroGroupFilePath
