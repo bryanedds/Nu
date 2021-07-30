@@ -50,12 +50,13 @@ module Assets =
         let TitleSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Title" }
         let IntroSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = 1500; Song = asset<Song> PackageName "Intro" }
         let TitleGroupFilePath = "Assets/Gui/Groups/Title.nugroup"
-        let CreditsGroupFilePath = "Assets/Gui/Groups/Credits.nugroup"
+        let PickGroupFilePath = "Assets/Gui/Groups/Pick.nugroup"
         let IntroGroupFilePath = "Assets/Gui/Groups/Intro.nugroup"
         let Intro2GroupFilePath = "Assets/Gui/Groups/Intro2.nugroup"
         let Intro3GroupFilePath = "Assets/Gui/Groups/Intro3.nugroup"
         let Intro4GroupFilePath = "Assets/Gui/Groups/Intro4.nugroup"
         let Intro5GroupFilePath = "Assets/Gui/Groups/Intro5.nugroup"
+        let CreditsGroupFilePath = "Assets/Gui/Groups/Credits.nugroup"
 
     [<RequireQualifiedAccess>]
     module Field =
