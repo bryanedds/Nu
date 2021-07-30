@@ -4,7 +4,7 @@
   [Persistent True]
   [Visible True]]
  [[ButtonDispatcher
-   [[Name Bacl]
+   [[Name Back]
     [Position [-96 -222]]
     [Text Back]]]
   [TextDispatcher
