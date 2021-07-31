@@ -446,19 +446,15 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// An ECS system with components correlated by entity id (Guid).
-/// Hashing and storing millions of entity ids is slow, so if you need to create that many components quickly, consider
-/// manually junctioning unordered components instead. The trade-off to using uncorrelated components is that you
-/// have to manually unregister their component refs and you have to allocate and deallocate them consecutively in
-/// batches to ensure maximum throughput when processing the manually-junctioned components.
-/// Also note that all junctions are guaranteed to keep the same size and order as the related components so that they
-/// can be accessed by the same index.
+/// All junctions are guaranteed to keep the same size and order as the junctioning components so they can be accessed
+/// by the same index.
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (correlateds, correlatedsBuffered) = ecs.AllocateComponents<'c> buffered
     let mutable (junctionsNamed, junctionsBufferedNamed) = ecs.AllocateJunctions<'c> ()
-    let mutable (junctions, junctionsBuffered) = (Array.map snd junctionsNamed, Array.map snd junctionsBufferedNamed)
     let mutable (junctionsMapped, junctionsBufferedMapped) = (dictPlus HashIdentity.Structural junctionsNamed, dictPlus HashIdentity.Structural junctionsBufferedNamed)
+    let mutable (junctions, junctionsBuffered) = (Array.map snd junctionsNamed, Array.map snd junctionsBufferedNamed)
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []

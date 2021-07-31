@@ -125,8 +125,7 @@ module GameDispatcher =
                     | _ -> just omni
                 | Field _ -> just omni
 
-            | Nop ->
-                just omni
+            | Nop -> just omni
 
         override this.Command (_, command, _, world) =
             match command with
