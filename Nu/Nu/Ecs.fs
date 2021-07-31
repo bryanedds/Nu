@@ -123,6 +123,128 @@ and [<NoEquality; NoComparison>] internal ArrayObjs =
             this.ArrayObjsBuffered
             this.ArrayObjsUnbuffered
 
+/// A correlated entity reference.
+/// Slow relative to normal ECS operations, but convenient for one-off uses.
+and [<NoEquality; NoComparison; Struct>] 'w EntityRef =
+    { EntityId : Guid
+      EntityEcs : 'w Ecs }
+    static member make<'w> entityId ecs =
+        { EntityId = entityId; EntityEcs = ecs } : 'w EntityRef
+
+/// An ECS query.
+and [<AbstractClass>] 'w Query (filter : (string HashSet -> bool), ecs : 'w Ecs) =
+
+    let cache = dictPlus<Guid, 'w EntityRef> HashIdentity.Structural []
+
+    abstract Correlation : string HashSet
+    member this.Ecs = ecs
+    member this.Cache = cache
+
+    member this.Filter correlation entityId =
+        if filter correlation then
+            cache.[entityId] <- { EntityId = entityId; EntityEcs = ecs }
+            true
+        else
+            cache.Remove entityId |> ignore<bool>
+            false
+
+    member this.Iter (fn : 'w EntityRef -> unit) =
+        for kvp in cache do
+            fn kvp.Value
+
+/// An ECS query.
+and Query<'c, 'w when
+            'c : struct and 'c :> 'c Component> (filter, ecs) =
+    inherit Query<'w> (filter, ecs)
+    let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
+    override this.Correlation = correlation
+
+/// An ECS query.
+and Query<'c, 'c2, 'w when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component> (filter, ecs) =
+    inherit Query<'w> (filter, ecs)
+    let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
+    override this.Correlation = correlation
+    
+/// An ECS query.
+and Query<'c, 'c2, 'c3, 'w when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component and
+            'c3 : struct and 'c3 :> 'c3 Component> (filter, ecs) =
+    inherit Query<'w> (filter, ecs)
+    let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name]
+    override this.Correlation = correlation
+
+/// An ECS query.
+and Query<'c, 'c2, 'c3, 'c4, 'w when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component and
+            'c3 : struct and 'c3 :> 'c3 Component and
+            'c4 : struct and 'c4 :> 'c4 Component> (filter, ecs) =
+    inherit Query<'w> (filter, ecs)
+    let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name]
+    override this.Correlation = correlation
+
+/// An ECS query.
+and Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component and
+            'c3 : struct and 'c3 :> 'c3 Component and
+            'c4 : struct and 'c4 :> 'c4 Component and
+            'c5 : struct and 'c5 :> 'c5 Component> (filter, ecs) =
+    inherit Query<'w> (filter, ecs)
+    let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name]
+    override this.Correlation = correlation
+
+/// An ECS query.
+and Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component and
+            'c3 : struct and 'c3 :> 'c3 Component and
+            'c4 : struct and 'c4 :> 'c4 Component and
+            'c5 : struct and 'c5 :> 'c5 Component and
+            'c6 : struct and 'c6 :> 'c6 Component> (filter, ecs) =
+    inherit Query<'w> (filter, ecs)
+    let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name]
+    override this.Correlation = correlation
+
+/// An ECS query.
+and Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component and
+            'c3 : struct and 'c3 :> 'c3 Component and
+            'c4 : struct and 'c4 :> 'c4 Component and
+            'c5 : struct and 'c5 :> 'c5 Component and
+            'c6 : struct and 'c6 :> 'c6 Component and
+            'c7 : struct and 'c7 :> 'c7 Component> (filter, ecs) =
+    inherit Query<'w> (filter, ecs)
+    let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name]
+    override this.Correlation = correlation
+
+and 'w Queries () =
+
+    let queries = dictPlus<string, 'w Query HashSet> StringComparer.Ordinal []
+
+    member this.RegisterQuery (query : 'w Query) =
+        for systemName in query.Correlation do
+            match queries.TryGetValue systemName with
+            | (true, querySet) -> querySet.Add query |> ignore<bool>
+            | (false, _) -> ()
+
+    member this.UnregisterQuery (query : 'w Query) =
+        for systemName in query.Correlation do
+            match queries.TryGetValue systemName with
+            | (true, querySet) -> querySet.Remove query |> ignore<bool>
+            | (false, _) -> ()
+
+    member this.Filter systemName correlation entityId =
+            match queries.TryGetValue systemName with
+            | (true, querySet) ->
+                for query in querySet do
+                    query.Filter correlation entityId |> ignore<bool>
+            | (false, _) -> ()
+
 /// Nu's custom Entity-Component-System implementation.
 /// Nu's conception of an ECS is primarily as an abstraction over user-definable component storage formats.
 /// The default formats include SoA-style formats for non-correlated, correlated, multiplexed, and hierarchichal value
@@ -145,6 +267,7 @@ and 'w Ecs () as this =
     let mutable correlationChanges = dictPlus<Guid, string HashSet> HashIdentity.Structural []
     let emptySystemNames = hashSetPlus<string> StringComparer.Ordinal [] // the empty systems dict to elide allocation on IndexSystemNames
     let emptyCorrelation = hashSetPlus<string> StringComparer.Ordinal [] // the empty correlation to elide allocation on IndexEntitiesChanged
+    let queries = Queries<'w> ()
 
     do this.RegisterSystemGeneralized systemGlobal |> ignore<'w System>
 
@@ -160,6 +283,18 @@ and 'w Ecs () as this =
     member internal this.Correlations = correlations
     member internal this.CorrelationChanges = correlationChanges
     member this.SystemGlobal = systemGlobal
+
+    member this.GetEntityRef entityId =
+        EntityRef.make<'w> entityId this
+
+    member this.RegisterQuery query =
+        queries.RegisterQuery query
+
+    member this.UnregisterQuery query =
+        queries.UnregisterQuery query
+
+    member this.Filter systemName correlation entityId =
+        queries.Filter systemName correlation entityId
 
     member this.RegisterSystemGeneralized (system : 'w System) : 'w System =
         systemsUnordered.Add (system.Name, system)
@@ -199,16 +334,16 @@ and 'w Ecs () as this =
 
     member this.IndexSystemNames entityId =
         match correlations.TryGetValue entityId with
-        | (true, systemNames) -> systemNames
+        | (true, correlation) -> correlation
         | (false, _) -> emptySystemNames
 
     member this.IndexSystems entityId =
         this.IndexSystemNames entityId |>
         Seq.map this.IndexSystem
 
-    member this.IndexEntities systemNames =
+    member this.IndexEntities correlation =
         correlations |>
-        Seq.filter (fun kvp -> kvp.Value.IsSubsetOf systemNames) |>
+        Seq.filter (fun kvp -> kvp.Value.IsSubsetOf correlation) |>
         Seq.map (fun kvp -> kvp.Key)
 
     member this.UnregisterComponents entityId =
@@ -546,9 +681,12 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                 | (true, correlation) ->
                     correlation.Add this.Name |> ignore<bool>
                     ecs.CorrelationChanges.[entityId] <- correlation
+                    ecs.Filter this.Name correlation entityId
                 | (false, _) ->
-                    ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
+                    let correlation = HashSet.singleton StringComparer.Ordinal this.Name
+                    ecs.Correlations.Add (entityId, correlation)
                     ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
+                    ecs.Filter this.Name correlation entityId
 
             // make component ref
             ComponentRef.make index correlateds correlatedsBuffered
@@ -589,14 +727,166 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
                 ecs.CorrelationChanges.[entityId] <- correlation
+                ecs.Filter this.Name correlation entityId
             | (false, _) ->
-                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
+                let correlation = ecs.EmptyCorrelation
+                ecs.CorrelationChanges.[entityId] <- correlation
+                ecs.Filter this.Name correlation entityId
 
         // fin
         unregistered
 
         override this.UnregisterComponent entityId =
             this.UnregisterCorrelated entityId
+
+    type 'w EntityRef with
+    
+        member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
+            let system = this.EntityEcs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
+            &correlated.Index
+    
+        member this.IndexBuffered<'c when 'c : struct and 'c :> 'c Component> () =
+            let system = this.EntityEcs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
+            correlated.IndexBuffered
+
+    type Query<'c, 'w when
+                'c : struct and 'c :> 'c Component> with
+
+        member this.Iter fn =
+            let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            for kvp in this.Cache do
+                let entityId = kvp.Key
+                fn (system.IndexCorrelated entityId)
+
+    type Query<'c, 'c2, 'w when
+                'c : struct and 'c :> 'c Component and
+                'c2 : struct and 'c2 :> 'c2 Component> with
+
+        member this.Iter fn =
+            let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            for kvp in this.Cache do
+                let entityId = kvp.Key
+                fn
+                    (system.IndexCorrelated entityId)
+                    (system2.IndexCorrelated entityId)
+
+    /// An ECS query.
+    type Query<'c, 'c2, 'c3, 'w when
+                'c : struct and 'c :> 'c Component and
+                'c2 : struct and 'c2 :> 'c2 Component and
+                'c3 : struct and 'c3 :> 'c3 Component> with
+
+        member this.Iter fn =
+            let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            for kvp in this.Cache do
+                let entityId = kvp.Key
+                fn
+                    (system.IndexCorrelated entityId)
+                    (system2.IndexCorrelated entityId)
+                    (system3.IndexCorrelated entityId)
+
+    /// An ECS query.
+    type Query<'c, 'c2, 'c3, 'c4, 'w when
+                'c : struct and 'c :> 'c Component and
+                'c2 : struct and 'c2 :> 'c2 Component and
+                'c3 : struct and 'c3 :> 'c3 Component and
+                'c4 : struct and 'c4 :> 'c4 Component> with
+
+        member this.Iter fn =
+            let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+            for kvp in this.Cache do
+                let entityId = kvp.Key
+                fn
+                    (system.IndexCorrelated entityId)
+                    (system2.IndexCorrelated entityId)
+                    (system3.IndexCorrelated entityId)
+                    (system4.IndexCorrelated entityId)
+
+    /// An ECS query.
+    type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
+                'c : struct and 'c :> 'c Component and
+                'c2 : struct and 'c2 :> 'c2 Component and
+                'c3 : struct and 'c3 :> 'c3 Component and
+                'c4 : struct and 'c4 :> 'c4 Component and
+                'c5 : struct and 'c5 :> 'c5 Component> with
+
+        member this.Iter fn =
+            let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+            let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+            for kvp in this.Cache do
+                let entityId = kvp.Key
+                fn
+                    (system.IndexCorrelated entityId)
+                    (system2.IndexCorrelated entityId)
+                    (system3.IndexCorrelated entityId)
+                    (system4.IndexCorrelated entityId)
+                    (system5.IndexCorrelated entityId)
+
+    /// An ECS query.
+    type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
+                'c : struct and 'c :> 'c Component and
+                'c2 : struct and 'c2 :> 'c2 Component and
+                'c3 : struct and 'c3 :> 'c3 Component and
+                'c4 : struct and 'c4 :> 'c4 Component and
+                'c5 : struct and 'c5 :> 'c5 Component and
+                'c6 : struct and 'c6 :> 'c6 Component> with
+
+        member this.Iter fn =
+            let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+            let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+            let system6 = this.Ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
+            for kvp in this.Cache do
+                let entityId = kvp.Key
+                fn
+                    (system.IndexCorrelated entityId)
+                    (system2.IndexCorrelated entityId)
+                    (system3.IndexCorrelated entityId)
+                    (system4.IndexCorrelated entityId)
+                    (system5.IndexCorrelated entityId)
+                    (system6.IndexCorrelated entityId)
+
+    /// An ECS query.
+    type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
+                'c : struct and 'c :> 'c Component and
+                'c2 : struct and 'c2 :> 'c2 Component and
+                'c3 : struct and 'c3 :> 'c3 Component and
+                'c4 : struct and 'c4 :> 'c4 Component and
+                'c5 : struct and 'c5 :> 'c5 Component and
+                'c6 : struct and 'c6 :> 'c6 Component and
+                'c7 : struct and 'c7 :> 'c7 Component> with
+
+        member this.Iter fn =
+            let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+            let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+            let system6 = this.Ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
+            let system7 = this.Ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
+            for kvp in this.Cache do
+                let entityId = kvp.Key
+                fn
+                    (system.IndexCorrelated entityId)
+                    (system2.IndexCorrelated entityId)
+                    (system3.IndexCorrelated entityId)
+                    (system4.IndexCorrelated entityId)
+                    (system5.IndexCorrelated entityId)
+                    (system6.IndexCorrelated entityId)
+                    (system7.IndexCorrelated entityId)
 
     type 'w Ecs with
 
@@ -636,14 +926,14 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             | Some system -> system.UnregisterComponent entityId
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.SynchronizeCorrelated<'c when 'c : struct and 'c :> 'c Component> ordered (systemNames : string HashSet) entityId =
-            if systemNames.Contains Unchecked.defaultof<'c>.TypeName then
-                if not (Unchecked.defaultof<'c>.ShouldJunction systemNames) then
+        member this.SynchronizeCorrelated<'c when 'c : struct and 'c :> 'c Component> ordered (correlation : string HashSet) entityId =
+            if correlation.Contains Unchecked.defaultof<'c>.TypeName then
+                if not (Unchecked.defaultof<'c>.ShouldJunction correlation) then
                     this.UnregisterCorrelated<'c> entityId |> ignore<bool>
                     Unregistered
                 else Unchanged true
             else
-                if Unchecked.defaultof<'c>.ShouldJunction systemNames then
+                if Unchecked.defaultof<'c>.ShouldJunction correlation then
                     this.RegisterCorrelated ordered Unchecked.defaultof<'c> entityId |> ignore<'c ComponentRef>
                     Registered
                 else Unchanged false
@@ -701,7 +991,7 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
 /// An ECS system that stores zero to many of the same component per entity id.
 type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
     inherit SystemCorrelated<'c ComponentMultiplexed, 'w> (isolated, buffered, ecs)
-    
+
     new (buffered, ecs) = SystemMultiplexed (false, buffered, ecs)
     new (ecs) = SystemMultiplexed (false, false, ecs)
 
@@ -731,9 +1021,12 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated
         | (true, correlation) ->
             correlation.Add this.Name |> ignore<bool>
             ecs.CorrelationChanges.[entityId] <- correlation
+            ecs.Filter this.Name correlation entityId
         | (false, _) ->
-            ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
+            let correlation = HashSet.singleton StringComparer.Ordinal this.Name
+            ecs.Correlations.Add (entityId, correlation)
             ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
+            ecs.Filter this.Name correlation entityId
 
         // fin
         componentMultiplexed
@@ -752,11 +1045,26 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
                 ecs.CorrelationChanges.[entityId] <- correlation
+                ecs.Filter this.Name correlation entityId
             | (false, _) ->
-                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
+                let correlation = ecs.EmptyCorrelation
+                ecs.CorrelationChanges.[entityId] <- correlation
+                ecs.Filter this.Name correlation entityId
 
         // fin
         unregistered
+
+    type 'w EntityRef with
+    
+        member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName =
+            let system = this.EntityEcs.IndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
+            let multiplexed = system.IndexMultiplexed simplexName this.EntityId : 'c Simplex
+            &multiplexed.Simplex
+    
+        member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> simplexName =
+            let system = this.EntityEcs.IndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
+            let multiplexed = system.IndexMultiplexedBuffered simplexName this.EntityId : 'c Simplex
+            multiplexed.Simplex
 
     type 'w Ecs with
 
@@ -809,24 +1117,17 @@ type [<NoEquality; NoComparison; Struct>] ChangeHierarchical =
 
 /// An Ecs system that stores components in a hierarchy.
 type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
-    inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
+    inherit SystemCorrelated<'c, 'w> (isolated, buffered, ecs)
 
-    let system = ecs.RegisterSystem (SystemCorrelated<'c, 'w> (isolated, buffered, ecs))
     let hierarchy = ListTree.makeEmpty<'c NodeHierarchical> ()
     let mutable hierarchyChanges = List<ChangeHierarchical> ()
     
     new (buffered, ecs) = SystemHierarchical (false, buffered, ecs)
     new (ecs) = SystemHierarchical (false, false, ecs)
     
-    member this.FreeListCount = system.FreeListCount
-    member this.EntitiesCorrelated = system.EntitiesCorrelated
-
     member this.Hierarchy = hierarchy
-    member this.HierarchyFlattened = system.Correlateds
-    member this.WithHierarchyFlattenedBuffered fn worldOpt = system.WithCorrelatedsBuffered fn worldOpt
-
-    member this.RewindFreeIndex () =
-        system.RewindFreeIndex ()
+    member this.HierarchyFlattened = this.Correlateds
+    member this.WithHierarchyFlattenedBuffered fn worldOpt = this.WithCorrelatedsBuffered fn worldOpt
 
     member this.PopHierarchyChanges () =
         let popped = hierarchyChanges
@@ -834,13 +1135,14 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolate
         popped
 
     member this.IndexHierarchical entityId =
-        system.IndexCorrelated entityId
+        this.IndexCorrelated entityId
 
     member this.IndexHierarchicalJunctioned fieldPath entityId =
-        system.IndexJunctioned fieldPath entityId
+        this.IndexJunctioned fieldPath entityId
 
     member this.RegisterHierarchical ordered (parentIdOpt : Guid option) comp entityId =
-        let cref = system.RegisterCorrelated ordered comp entityId
+        let this' = this :> SystemCorrelated<'c, 'w>
+        let cref = this'.RegisterCorrelated ordered comp entityId
         let node = { EntityId = entityId; ComponentRef = cref }
         let addedOpt =
             match parentIdOpt with
@@ -860,10 +1162,22 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolate
         result
 
     member this.QualifyHierarchical entityId =
-        system.QualifyCorrelated entityId
+        this.QualifyCorrelated entityId
 
     override this.UnregisterComponent entityId =
         this.UnregisterHierarchical entityId
+
+    type 'w EntityRef with
+    
+        member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
+            let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
+            let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
+            &hierarchical.Index
+    
+        member this.IndexHierarchicalBuffered<'c when 'c : struct and 'c :> 'c Component> () =
+            let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
+            let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
+            hierarchical.IndexBuffered
 
     type 'w Ecs with
 
@@ -1026,9 +1340,12 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
             | (true, correlation) ->
                 correlation.Add this.Name |> ignore<bool>
                 ecs.CorrelationChanges.[entityId] <- correlation
+                ecs.Filter this.Name correlation entityId
             | (false, _) ->
-                ecs.Correlations.Add (entityId, HashSet.singleton StringComparer.Ordinal this.Name)
+                let correlation = HashSet.singleton StringComparer.Ordinal this.Name
+                ecs.Correlations.Add (entityId, correlation)
                 ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
+                ecs.Filter this.Name correlation entityId
 
         // fin
         registered
@@ -1051,8 +1368,11 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
                 ecs.CorrelationChanges.[entityId] <- correlation
+                ecs.Filter this.Name correlation entityId
             | (false, _) ->
-                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
+                let correlation = ecs.EmptyCorrelation
+                ecs.CorrelationChanges.[entityId] <- correlation
+                ecs.Filter this.Name correlation entityId
 
         // fin
         unregistered
@@ -1062,6 +1382,18 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
         ListTree.findAll (fun system -> system.Name = string entityId) |>
         Seq.map (fun system -> system.UnregisterCorrelated entityId) |>
         Seq.exists id
+
+    type 'w EntityRef with
+    
+        member this.IndexFamilial<'c when 'c : struct and 'c :> 'c Component> memberId =
+            let system = this.EntityEcs.IndexSystem<'c, SystemFamilial<'c, 'w>> ()
+            let familial = system.IndexFamilial memberId this.EntityId : 'c ComponentRef
+            &familial.Index
+    
+        member this.IndexFamilialBuffered<'c when 'c : struct and 'c :> 'c Component> memberId =
+            let system = this.EntityEcs.IndexSystem<'c, SystemFamilial<'c, 'w>> ()
+            let familial = system.IndexFamilial memberId this.EntityId : 'c ComponentRef
+            familial.IndexBuffered
 
     type 'w Ecs with
 
@@ -1114,56 +1446,6 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
             match this.TryIndexSystem<'c, SystemFamilial<'c, 'w>> () with
             | Some system -> system.UnregisterFamilial memberId entityId
             | _ -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-/// A correlated entity reference.
-/// Slow relative to normal ECS operations, but convenient for one-off uses.
-type [<NoEquality; NoComparison; Struct>] 'w EntityRef =
-    { EntityId : Guid
-      EntityEcs : 'w Ecs }
-
-    member this.Index<'c when 'c : struct and 'c :> 'c Component> () =
-        let system = this.EntityEcs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        &correlated.Index
-
-    member this.IndexBuffered<'c when 'c : struct and 'c :> 'c Component> () =
-        let system = this.EntityEcs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-        let correlated = system.IndexCorrelated this.EntityId : 'c ComponentRef
-        correlated.IndexBuffered
-
-    member this.IndexMultiplexed<'c when 'c : struct and 'c :> 'c Component> simplexName =
-        let system = this.EntityEcs.IndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
-        let multiplexed = system.IndexMultiplexed simplexName this.EntityId : 'c Simplex
-        &multiplexed.Simplex
-
-    member this.IndexMultiplexedBuffered<'c when 'c : struct and 'c :> 'c Component> simplexName =
-        let system = this.EntityEcs.IndexSystem<'c, SystemMultiplexed<'c, 'w>> ()
-        let multiplexed = system.IndexMultiplexedBuffered simplexName this.EntityId : 'c Simplex
-        multiplexed.Simplex
-
-    member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> () =
-        let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-        let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
-        &hierarchical.Index
-
-    member this.IndexHierarchicalBuffered<'c when 'c : struct and 'c :> 'c Component> () =
-        let system = this.EntityEcs.IndexSystem<'c, SystemHierarchical<'c, 'w>> ()
-        let hierarchical = system.IndexHierarchical this.EntityId : 'c ComponentRef
-        hierarchical.IndexBuffered
-
-    member this.IndexFamilial<'c when 'c : struct and 'c :> 'c Component> memberId =
-        let system = this.EntityEcs.IndexSystem<'c, SystemFamilial<'c, 'w>> ()
-        let familial = system.IndexFamilial memberId this.EntityId : 'c ComponentRef
-        &familial.Index
-
-    member this.IndexFamilialBuffered<'c when 'c : struct and 'c :> 'c Component> memberId =
-        let system = this.EntityEcs.IndexSystem<'c, SystemFamilial<'c, 'w>> ()
-        let familial = system.IndexFamilial memberId this.EntityId : 'c ComponentRef
-        familial.IndexBuffered
-
-    type 'w Ecs with
-        member this.GetEntityRef entityId =
-            { EntityId = entityId; EntityEcs = this }
 
 [<RequireQualifiedAccess>]
 module EcsEvents =
