@@ -173,6 +173,10 @@ type MyGameDispatcher () =
         let moverStaticSystem = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
         let _ = ecs.RegisterSystem (SystemCorrelated<MoverDynamic, World> ecs)
 
+        //// create query
+        //let query = Query<Velocity, Position, World> (ecs)
+        //query.Iter (fun v p -> ignore (v, p))
+
         //// create object references
         //let count = 2500000
         //let ps = Array.init count (fun _ -> { Active = true; P = v2Zero })
