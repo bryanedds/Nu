@@ -152,9 +152,30 @@ and [<AbstractClass>] 'w Query (filter : (string HashSet -> bool), ecs : 'w Ecs)
         for entityId in cache do
             fn { EntityId = entityId; EntityEcs = ecs }
 
+/// A ECS query delegate that enables passing of a component byref.
+and Iter<'c> = delegate of 'c byref -> unit
+
+/// A ECS query delegate that enables passing of a component byref.
+and Iter<'c, 'c2> = delegate of 'c byref * 'c2 byref -> unit
+
+/// A ECS query delegate that enables passing of a component byref.
+and Iter<'c, 'c2, 'c3> = delegate of 'c byref * 'c2 byref * 'c3 byref -> unit
+
+/// A ECS query delegate that enables passing of a component byref.
+and Iter<'c, 'c2, 'c3, 'c4> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref -> unit
+
+/// A ECS query delegate that enables passing of a component byref.
+and Iter<'c, 'c2, 'c3, 'c4, 'c5> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref -> unit
+
+/// A ECS query delegate that enables passing of a component byref.
+and Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref -> unit
+
+/// A ECS query delegate that enables passing of a component byref.
+and Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref -> unit
+
 /// An ECS query.
 and Query<'c, 'w when
-            'c : struct and 'c :> 'c Component> (filter, ecs) =
+            'c : struct and 'c :> 'c Component> (filter, ecs : 'w Ecs) =
     inherit Query<'w> (filter, ecs)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
     override this.Correlation = correlation
@@ -162,7 +183,7 @@ and Query<'c, 'w when
 /// An ECS query.
 and Query<'c, 'c2, 'w when
             'c : struct and 'c :> 'c Component and
-            'c2 : struct and 'c2 :> 'c2 Component> (filter, ecs) =
+            'c2 : struct and 'c2 :> 'c2 Component> (filter, ecs : 'w Ecs) =
     inherit Query<'w> (filter, ecs)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
     override this.Correlation = correlation
@@ -171,7 +192,7 @@ and Query<'c, 'c2, 'w when
 and Query<'c, 'c2, 'c3, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component and
-            'c3 : struct and 'c3 :> 'c3 Component> (filter, ecs) =
+            'c3 : struct and 'c3 :> 'c3 Component> (filter, ecs : 'w Ecs) =
     inherit Query<'w> (filter, ecs)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name]
     override this.Correlation = correlation
@@ -181,7 +202,7 @@ and Query<'c, 'c2, 'c3, 'c4, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component and
             'c3 : struct and 'c3 :> 'c3 Component and
-            'c4 : struct and 'c4 :> 'c4 Component> (filter, ecs) =
+            'c4 : struct and 'c4 :> 'c4 Component> (filter, ecs : 'w Ecs) =
     inherit Query<'w> (filter, ecs)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name]
     override this.Correlation = correlation
@@ -192,7 +213,7 @@ and Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             'c2 : struct and 'c2 :> 'c2 Component and
             'c3 : struct and 'c3 :> 'c3 Component and
             'c4 : struct and 'c4 :> 'c4 Component and
-            'c5 : struct and 'c5 :> 'c5 Component> (filter, ecs) =
+            'c5 : struct and 'c5 :> 'c5 Component> (filter, ecs : 'w Ecs) =
     inherit Query<'w> (filter, ecs)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name]
     override this.Correlation = correlation
@@ -204,7 +225,7 @@ and Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             'c3 : struct and 'c3 :> 'c3 Component and
             'c4 : struct and 'c4 :> 'c4 Component and
             'c5 : struct and 'c5 :> 'c5 Component and
-            'c6 : struct and 'c6 :> 'c6 Component> (filter, ecs) =
+            'c6 : struct and 'c6 :> 'c6 Component> (filter, ecs : 'w Ecs) =
     inherit Query<'w> (filter, ecs)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name]
     override this.Correlation = correlation
@@ -217,7 +238,7 @@ and Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             'c4 : struct and 'c4 :> 'c4 Component and
             'c5 : struct and 'c5 :> 'c5 Component and
             'c6 : struct and 'c6 :> 'c6 Component and
-            'c7 : struct and 'c7 :> 'c7 Component> (filter, ecs) =
+            'c7 : struct and 'c7 :> 'c7 Component> (filter, ecs : 'w Ecs) =
     inherit Query<'w> (filter, ecs)
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name]
     override this.Correlation = correlation
@@ -617,7 +638,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
     member this.IndexJunctionedUnbuffered fieldPath index = &(this.IndexJunction<'j> fieldPath).[index]
     member this.IndexJunctionedBuffered fieldPath index = (junctionsMapped.[fieldPath] :?> 'j ArrayRef).[index]
 
-    member inline private this.IndexCorrelatedToI entityId =
+    member this.IndexCorrelatedToI entityId =
         let (found, index) = correlations.TryGetValue entityId
         if not found then raise (ArgumentOutOfRangeException "entityId")
         index
@@ -754,22 +775,25 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
     type Query<'c, 'w when
                 'c : struct and 'c :> 'c Component> with
 
-        member this.Iter fn =
+        member this.Iter (iter : Iter<'c>) =
             let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let array = system.Correlateds.Array
             for entityId in this.Cache do
-                fn (system.IndexCorrelated entityId)
+                iter.Invoke &array.[system.IndexCorrelatedToI entityId]
 
     type Query<'c, 'c2, 'w when
                 'c : struct and 'c :> 'c Component and
                 'c2 : struct and 'c2 :> 'c2 Component> with
 
-        member this.Iter fn =
+        member this.Iter (iter : Iter<'c, 'c2>) =
             let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
             let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let array = system.Correlateds.Array
+            let array2 = system2.Correlateds.Array
             for entityId in this.Cache do
-                fn
-                    (system.IndexCorrelated entityId)
-                    (system2.IndexCorrelated entityId)
+                iter.Invoke
+                    (&array.[system.IndexCorrelatedToI entityId],
+                     &array2.[system2.IndexCorrelatedToI entityId])
 
     /// An ECS query.
     type Query<'c, 'c2, 'c3, 'w when
@@ -777,15 +801,18 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                 'c2 : struct and 'c2 :> 'c2 Component and
                 'c3 : struct and 'c3 :> 'c3 Component> with
 
-        member this.Iter fn =
+        member this.Iter (iter : Iter<'c, 'c2, 'c3>) =
             let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
             let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
             let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            let array = system.Correlateds.Array
+            let array2 = system2.Correlateds.Array
+            let array3 = system3.Correlateds.Array
             for entityId in this.Cache do
-                fn
-                    (system.IndexCorrelated entityId)
-                    (system2.IndexCorrelated entityId)
-                    (system3.IndexCorrelated entityId)
+                iter.Invoke
+                    (&array.[system.IndexCorrelatedToI entityId],
+                     &array2.[system2.IndexCorrelatedToI entityId],
+                     &array3.[system3.IndexCorrelatedToI entityId])
 
     /// An ECS query.
     type Query<'c, 'c2, 'c3, 'c4, 'w when
@@ -794,17 +821,21 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                 'c3 : struct and 'c3 :> 'c3 Component and
                 'c4 : struct and 'c4 :> 'c4 Component> with
 
-        member this.Iter fn =
+        member this.Iter (iter : Iter<'c, 'c2, 'c3, 'c4>) =
             let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
             let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
             let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
             let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+            let array = system.Correlateds.Array
+            let array2 = system2.Correlateds.Array
+            let array3 = system3.Correlateds.Array
+            let array4 = system4.Correlateds.Array
             for entityId in this.Cache do
-                fn
-                    (system.IndexCorrelated entityId)
-                    (system2.IndexCorrelated entityId)
-                    (system3.IndexCorrelated entityId)
-                    (system4.IndexCorrelated entityId)
+                iter.Invoke
+                    (&array.[system.IndexCorrelatedToI entityId],
+                     &array2.[system2.IndexCorrelatedToI entityId],
+                     &array3.[system3.IndexCorrelatedToI entityId],
+                     &array4.[system4.IndexCorrelatedToI entityId])
 
     /// An ECS query.
     type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
@@ -814,19 +845,24 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                 'c4 : struct and 'c4 :> 'c4 Component and
                 'c5 : struct and 'c5 :> 'c5 Component> with
 
-        member this.Iter fn =
+        member this.Iter (iter : Iter<'c, 'c2, 'c3, 'c4, 'c5>) =
             let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
             let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
             let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
             let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
             let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+            let array = system.Correlateds.Array
+            let array2 = system2.Correlateds.Array
+            let array3 = system3.Correlateds.Array
+            let array4 = system4.Correlateds.Array
+            let array5 = system5.Correlateds.Array
             for entityId in this.Cache do
-                fn
-                    (system.IndexCorrelated entityId)
-                    (system2.IndexCorrelated entityId)
-                    (system3.IndexCorrelated entityId)
-                    (system4.IndexCorrelated entityId)
-                    (system5.IndexCorrelated entityId)
+                iter.Invoke
+                    (&array.[system.IndexCorrelatedToI entityId],
+                     &array2.[system2.IndexCorrelatedToI entityId],
+                     &array3.[system3.IndexCorrelatedToI entityId],
+                     &array4.[system4.IndexCorrelatedToI entityId],
+                     &array5.[system5.IndexCorrelatedToI entityId])
 
     /// An ECS query.
     type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
@@ -837,21 +873,27 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                 'c5 : struct and 'c5 :> 'c5 Component and
                 'c6 : struct and 'c6 :> 'c6 Component> with
 
-        member this.Iter fn =
+        member this.Iter (iter : Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6>) =
             let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
             let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
             let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
             let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
             let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
             let system6 = this.Ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
+            let array = system.Correlateds.Array
+            let array2 = system2.Correlateds.Array
+            let array3 = system3.Correlateds.Array
+            let array4 = system4.Correlateds.Array
+            let array5 = system5.Correlateds.Array
+            let array6 = system6.Correlateds.Array
             for entityId in this.Cache do
-                fn
-                    (system.IndexCorrelated entityId)
-                    (system2.IndexCorrelated entityId)
-                    (system3.IndexCorrelated entityId)
-                    (system4.IndexCorrelated entityId)
-                    (system5.IndexCorrelated entityId)
-                    (system6.IndexCorrelated entityId)
+                iter.Invoke
+                    (&array.[system.IndexCorrelatedToI entityId],
+                     &array2.[system2.IndexCorrelatedToI entityId],
+                     &array3.[system3.IndexCorrelatedToI entityId],
+                     &array4.[system4.IndexCorrelatedToI entityId],
+                     &array5.[system5.IndexCorrelatedToI entityId],
+                     &array6.[system6.IndexCorrelatedToI entityId])
 
     /// An ECS query.
     type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
@@ -863,7 +905,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                 'c6 : struct and 'c6 :> 'c6 Component and
                 'c7 : struct and 'c7 :> 'c7 Component> with
 
-        member this.Iter fn =
+        member this.Iter (iter : Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7>) =
             let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
             let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
             let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
@@ -871,15 +913,22 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
             let system6 = this.Ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
             let system7 = this.Ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
+            let array = system.Correlateds.Array
+            let array2 = system2.Correlateds.Array
+            let array3 = system3.Correlateds.Array
+            let array4 = system4.Correlateds.Array
+            let array5 = system5.Correlateds.Array
+            let array6 = system6.Correlateds.Array
+            let array7 = system7.Correlateds.Array
             for entityId in this.Cache do
-                fn
-                    (system.IndexCorrelated entityId)
-                    (system2.IndexCorrelated entityId)
-                    (system3.IndexCorrelated entityId)
-                    (system4.IndexCorrelated entityId)
-                    (system5.IndexCorrelated entityId)
-                    (system6.IndexCorrelated entityId)
-                    (system7.IndexCorrelated entityId)
+                iter.Invoke
+                    (&array.[system.IndexCorrelatedToI entityId],
+                     &array2.[system2.IndexCorrelatedToI entityId],
+                     &array3.[system3.IndexCorrelatedToI entityId],
+                     &array4.[system4.IndexCorrelatedToI entityId],
+                     &array5.[system5.IndexCorrelatedToI entityId],
+                     &array6.[system6.IndexCorrelatedToI entityId],
+                     &array7.[system6.IndexCorrelatedToI entityId])
 
     type 'w Ecs with
 
