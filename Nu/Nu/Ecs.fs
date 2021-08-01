@@ -134,7 +134,7 @@ and [<NoEquality; NoComparison; Struct>] 'w EntityRef =
 /// An ECS query.
 and [<AbstractClass>] 'w Query (filter : (string HashSet -> bool), ecs : 'w Ecs) =
 
-    let cache = dictPlus<Guid, 'w EntityRef> HashIdentity.Structural []
+    let cache = hashSetPlus<Guid> HashIdentity.Structural []
 
     abstract Correlation : string HashSet
     member this.Ecs = ecs
@@ -142,15 +142,15 @@ and [<AbstractClass>] 'w Query (filter : (string HashSet -> bool), ecs : 'w Ecs)
 
     member this.Filter correlation entityId =
         if filter correlation then
-            cache.[entityId] <- { EntityId = entityId; EntityEcs = ecs }
+            cache.Add entityId |> ignore<bool>
             true
         else
             cache.Remove entityId |> ignore<bool>
             false
 
     member this.Iter (fn : 'w EntityRef -> unit) =
-        for kvp in cache do
-            fn kvp.Value
+        for entityId in cache do
+            fn { EntityId = entityId; EntityEcs = ecs }
 
 /// An ECS query.
 and Query<'c, 'w when
@@ -293,7 +293,7 @@ and 'w Ecs () as this =
     member this.UnregisterQuery query =
         queries.UnregisterQuery query
 
-    member this.Filter systemName correlation entityId =
+    member this.FilterForQueries systemName correlation entityId =
         queries.Filter systemName correlation entityId
 
     member this.RegisterSystemGeneralized (system : 'w System) : 'w System =
@@ -681,12 +681,12 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                 | (true, correlation) ->
                     correlation.Add this.Name |> ignore<bool>
                     ecs.CorrelationChanges.[entityId] <- correlation
-                    ecs.Filter this.Name correlation entityId
+                    ecs.FilterForQueries this.Name correlation entityId
                 | (false, _) ->
                     let correlation = HashSet.singleton StringComparer.Ordinal this.Name
                     ecs.Correlations.Add (entityId, correlation)
                     ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
-                    ecs.Filter this.Name correlation entityId
+                    ecs.FilterForQueries this.Name correlation entityId
 
             // make component ref
             ComponentRef.make index correlateds correlatedsBuffered
@@ -727,11 +727,11 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
                 ecs.CorrelationChanges.[entityId] <- correlation
-                ecs.Filter this.Name correlation entityId
+                ecs.FilterForQueries this.Name correlation entityId
             | (false, _) ->
                 let correlation = ecs.EmptyCorrelation
                 ecs.CorrelationChanges.[entityId] <- correlation
-                ecs.Filter this.Name correlation entityId
+                ecs.FilterForQueries this.Name correlation entityId
 
         // fin
         unregistered
@@ -756,8 +756,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
 
         member this.Iter fn =
             let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            for kvp in this.Cache do
-                let entityId = kvp.Key
+            for entityId in this.Cache do
                 fn (system.IndexCorrelated entityId)
 
     type Query<'c, 'c2, 'w when
@@ -767,8 +766,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
         member this.Iter fn =
             let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
             let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-            for kvp in this.Cache do
-                let entityId = kvp.Key
+            for entityId in this.Cache do
                 fn
                     (system.IndexCorrelated entityId)
                     (system2.IndexCorrelated entityId)
@@ -783,8 +781,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
             let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
             let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-            for kvp in this.Cache do
-                let entityId = kvp.Key
+            for entityId in this.Cache do
                 fn
                     (system.IndexCorrelated entityId)
                     (system2.IndexCorrelated entityId)
@@ -802,8 +799,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
             let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
             let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-            for kvp in this.Cache do
-                let entityId = kvp.Key
+            for entityId in this.Cache do
                 fn
                     (system.IndexCorrelated entityId)
                     (system2.IndexCorrelated entityId)
@@ -824,8 +820,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
             let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
             let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
-            for kvp in this.Cache do
-                let entityId = kvp.Key
+            for entityId in this.Cache do
                 fn
                     (system.IndexCorrelated entityId)
                     (system2.IndexCorrelated entityId)
@@ -849,8 +844,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
             let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
             let system6 = this.Ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
-            for kvp in this.Cache do
-                let entityId = kvp.Key
+            for entityId in this.Cache do
                 fn
                     (system.IndexCorrelated entityId)
                     (system2.IndexCorrelated entityId)
@@ -877,8 +871,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
             let system6 = this.Ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
             let system7 = this.Ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
-            for kvp in this.Cache do
-                let entityId = kvp.Key
+            for entityId in this.Cache do
                 fn
                     (system.IndexCorrelated entityId)
                     (system2.IndexCorrelated entityId)
@@ -1021,12 +1014,12 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated
         | (true, correlation) ->
             correlation.Add this.Name |> ignore<bool>
             ecs.CorrelationChanges.[entityId] <- correlation
-            ecs.Filter this.Name correlation entityId
+            ecs.FilterForQueries this.Name correlation entityId
         | (false, _) ->
             let correlation = HashSet.singleton StringComparer.Ordinal this.Name
             ecs.Correlations.Add (entityId, correlation)
             ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
-            ecs.Filter this.Name correlation entityId
+            ecs.FilterForQueries this.Name correlation entityId
 
         // fin
         componentMultiplexed
@@ -1045,11 +1038,11 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
                 ecs.CorrelationChanges.[entityId] <- correlation
-                ecs.Filter this.Name correlation entityId
+                ecs.FilterForQueries this.Name correlation entityId
             | (false, _) ->
                 let correlation = ecs.EmptyCorrelation
                 ecs.CorrelationChanges.[entityId] <- correlation
-                ecs.Filter this.Name correlation entityId
+                ecs.FilterForQueries this.Name correlation entityId
 
         // fin
         unregistered
@@ -1340,12 +1333,12 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
             | (true, correlation) ->
                 correlation.Add this.Name |> ignore<bool>
                 ecs.CorrelationChanges.[entityId] <- correlation
-                ecs.Filter this.Name correlation entityId
+                ecs.FilterForQueries this.Name correlation entityId
             | (false, _) ->
                 let correlation = HashSet.singleton StringComparer.Ordinal this.Name
                 ecs.Correlations.Add (entityId, correlation)
                 ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
-                ecs.Filter this.Name correlation entityId
+                ecs.FilterForQueries this.Name correlation entityId
 
         // fin
         registered
@@ -1368,11 +1361,11 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
                 ecs.CorrelationChanges.[entityId] <- correlation
-                ecs.Filter this.Name correlation entityId
+                ecs.FilterForQueries this.Name correlation entityId
             | (false, _) ->
                 let correlation = ecs.EmptyCorrelation
                 ecs.CorrelationChanges.[entityId] <- correlation
-                ecs.Filter this.Name correlation entityId
+                ecs.FilterForQueries this.Name correlation entityId
 
         // fin
         unregistered
