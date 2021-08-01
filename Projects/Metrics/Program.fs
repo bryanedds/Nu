@@ -168,14 +168,14 @@ type MyGameDispatcher () =
         let ecs = screen.GetEcs world
 
         // create systems
-        let _ = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
-        let _ = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
-        let moverStaticSystem = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
-        let _ = ecs.RegisterSystem (SystemCorrelated<MoverDynamic, World> ecs)
+        let positionSystem = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
+        let velocitySystem = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
+        //let moverStaticSystem = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
+        //let _ = ecs.RegisterSystem (SystemCorrelated<MoverDynamic, World> ecs)
 
-        //// create query
-        //let query = Query<Velocity, Position, World> (ecs)
-        //query.Iter (fun v p -> ignore (v, p))
+        // create query
+        let query = Query<Position, Velocity, World> (ecs)
+        ecs.RegisterQuery query
 
         //// create object references
         //let count = 2500000
@@ -197,41 +197,23 @@ type MyGameDispatcher () =
         //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
-        // create 3M movers (goal: 60FPS, current: 54FPS)
-        for _ in 0 .. 4000000 - 1 do
-            let mover = ecs.RegisterCorrelated false Unchecked.defaultof<MoverStatic> Gen.id
-            mover.Index.Velocity.Index.Velocity <- v2One
+        // create 1M movers (goal: 60FPS, current: 30FPS)
+        for _ in 0 .. 1000000 - 1 do
+            let entityId = Gen.id
+            let _ = ecs.RegisterCorrelated false Unchecked.defaultof<Position> entityId
+            let _ = ecs.RegisterCorrelated false { Active = true; Velocity = v2One } entityId
+            ()
 
         // define synchronize correlation changes for dynamic movers
-        ecs.Subscribe EcsEvents.SynchronizeCorrelationChanges $ fun (evt : World SynchronizeCorrelationEvent) _ _ ->
-            for change in evt.SystemEventData do
-                ecs.SynchronizeCorrelated<MoverDynamic> false change.Value change.Key |> ignore<SynchronizeResult>
+        //ecs.Subscribe EcsEvents.SynchronizeCorrelationChanges $ fun (evt : World SynchronizeCorrelationEvent) _ _ ->
+        //    for change in evt.SystemEventData do
+        //        ecs.SynchronizeCorrelated<MoverDynamic> false change.Value change.Key |> ignore<SynchronizeResult>
 
-  #if SYSTEM_ITERATION
-        // define update for static movers
+        // define update for query
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            let components = moverStaticSystem.Correlateds.Array
-            let velocities = moverStaticSystem.IndexJunction<Velocity>(nameof Velocity).Array
-            let positions = moverStaticSystem.IndexJunction<Position>(nameof Position).Array
-            for i in 0 .. components.Length - 1 do
-                let comp = &components.[i]
-                if  comp.Active then
-                    let velocity = &velocities.[i]
-                    let position = &positions.[i]
-                    position.Position.X <- position.Position.X + velocity.Velocity.X
-                    position.Position.Y <- position.Position.Y + velocity.Velocity.Y
-  #else
-        // define update for static movers
-        ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
-            for components in ecs.GetComponentArrays<MoverStatic> () do
-                for i in 0 .. components.Length - 1 do
-                    let mutable comp = &components.[i]
-                    if  comp.Active then
-                        let velocity = &comp.Velocity.Index
-                        let position = &comp.Position.Index
-                        position.Position.X <- position.Position.X + velocity.Velocity.X
-                        position.Position.Y <- position.Position.Y + velocity.Velocity.Y
-  #endif
+            query.Iter (fun position velocity ->
+                position.Position.X <- position.Position.X + velocity.Velocity.X
+                position.Position.Y <- position.Position.Y + velocity.Velocity.Y)
 
         // [| mutable P : Vector2; mutable V : Vector2 |]       8M
         //
