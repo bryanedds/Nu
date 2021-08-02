@@ -206,6 +206,11 @@ namespace System.Collections.Generic
         public ValueCollection Values => new ValueCollection(values);
 
         /// <summary>
+        /// Gets the values in the dictionary.
+        /// </summary>
+        public List<TValue> ValuesUnsafe => values;
+
+        /// <summary>
         /// Gets or sets the value at the given index.
         /// </summary>
         /// <param name="index">The index of the value to get.</param>
