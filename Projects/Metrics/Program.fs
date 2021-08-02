@@ -151,8 +151,8 @@ type MyGameDispatcher () =
         // create 4M movers (goal: 60FPS, current: 47FPS)
         for _ in 0 .. 4000000 - 1 do
             let entityId = Gen.id
-            let _ = ecs.RegisterCorrelated false Unchecked.defaultof<Position> entityId
-            let _ = ecs.RegisterCorrelated false { Active = true; Velocity = v2One } entityId
+            let _ = positionSystem.RegisterCorrelated false Unchecked.defaultof<Position> entityId
+            let _ = velocitySystem.RegisterCorrelated false { Active = true; Velocity = v2One } entityId
             ()
 
         // define update for query
