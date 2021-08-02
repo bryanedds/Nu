@@ -132,10 +132,7 @@ and [<NoEquality; NoComparison; Struct>] 'w EntityRef =
         { EntityId = entityId; EntityEcs = ecs } : 'w EntityRef
 
 /// An ECS query.
-and [<AbstractClass>] 'w Query (ecs : 'w Ecs) =
-    let cache = OrderedDictionary<Guid, int array> HashIdentity.Structural
-    member this.Ecs = ecs
-    member this.Cache = cache
+and 'w Query =
     abstract Correlation : string HashSet
     abstract Filter : Guid -> bool
 
@@ -774,85 +771,82 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
 
 /// An ECS query.
 type Query<'c, 'w when
-            'c : struct and 'c :> 'c Component> (ecs) =
-
-    inherit Query<'w> (ecs)
+            'c : struct and 'c :> 'c Component> (ecs : 'w Ecs) =
+            
+    let cache = OrderedDictionary<Guid, int> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
-    override this.Correlation = correlation
 
-    override this.Filter entityId =
-        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-        let indexOpt = system.TryIndexCorrelatedToI entityId
-        if indexOpt > -1 then
-            this.Cache.Add (entityId, [|indexOpt|])
-            true
-        else
-            this.Cache.Remove entityId |> ignore<bool>
-            false
+    member this.Ecs = ecs
+    member this.Cache = cache
 
     member inline this.Iter (iter : Iter<'c>) =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let array = system.Correlateds.Array
-        for indices in this.Cache.Values do
-            iter.Invoke &array.[indices.[0]]
+        for index in this.Cache.Values do
+            iter.Invoke &array.[index]
+    
+    interface Query<'w> with
+
+        override this.Correlation = correlation
+
+        override this.Filter entityId =
+            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let indexOpt = system.TryIndexCorrelatedToI entityId
+            if indexOpt > -1 then
+                this.Cache.Add (entityId, indexOpt)
+                true
+            else
+                this.Cache.Remove entityId |> ignore<bool>
+                false
 
 /// An ECS query.
 type Query<'c, 'c2, 'w when
             'c : struct and 'c :> 'c Component and
-            'c2 : struct and 'c2 :> 'c2 Component> (ecs) =
+            'c2 : struct and 'c2 :> 'c2 Component> (ecs : 'w Ecs) =
 
-    inherit Query<'w> (ecs)
+    let cache = OrderedDictionary<Guid, struct (int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
-    override this.Correlation = correlation
 
-    override this.Filter entityId =
-        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-        let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-        let indexOpt = system.TryIndexCorrelatedToI entityId
-        let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-        if  indexOpt > -1 &&
-            indexOpt2 > -1 then
-            this.Cache.Add (entityId, [|indexOpt; indexOpt2|])
-            true
-        else
-            this.Cache.Remove entityId |> ignore<bool>
-            false
+    member this.Ecs = ecs
+    member this.Cache = cache
 
     member inline this.Iter (iter : Iter<'c, 'c2>) =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let array = system.Correlateds.Array
         let array2 = system2.Correlateds.Array
-        for indices in this.Cache.Values do
+        for indices in this.Cache.ValuesUnsafe do
             iter.Invoke
-                (&array.[indices.[0]],
-                 &array2.[indices.[1]])
+                (&array.[fst' indices],
+                 &array2.[snd' indices])
+    
+    interface Query<'w> with
+
+        override this.Correlation = correlation
+
+        override this.Filter entityId =
+            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let indexOpt = system.TryIndexCorrelatedToI entityId
+            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
+            if  indexOpt > -1 && indexOpt2 > -1 then
+                cache.Add (entityId, struct (indexOpt, indexOpt2))
+                true
+            else
+                cache.Remove entityId |> ignore<bool>
+                false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component and
-            'c3 : struct and 'c3 :> 'c3 Component> (ecs) =
-
-    inherit Query<'w> (ecs)
+            'c3 : struct and 'c3 :> 'c3 Component> (ecs : 'w Ecs) =
+            
+    let cache = OrderedDictionary<Guid, struct (int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name]
-    override this.Correlation = correlation
-
-    override this.Filter entityId =
-        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-        let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-        let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-        let indexOpt = system.TryIndexCorrelatedToI entityId
-        let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-        let indexOpt3 = system3.TryIndexCorrelatedToI entityId
-        if  indexOpt > -1 &&
-            indexOpt2 > -1 &&
-            indexOpt3 > -1 then
-            this.Cache.Add (entityId, [|indexOpt; indexOpt2; indexOpt3|])
-            true
-        else
-            this.Cache.Remove entityId |> ignore<bool>
-            false
+    
+    member this.Ecs = ecs
+    member this.Cache = cache
 
     member inline this.Iter (iter : Iter<'c, 'c2, 'c3>) =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
@@ -861,41 +855,42 @@ type Query<'c, 'c2, 'c3, 'w when
         let array = system.Correlateds.Array
         let array2 = system2.Correlateds.Array
         let array3 = system3.Correlateds.Array
-        for indices in this.Cache.Values do
+        for struct (index, index2, index3) in this.Cache.Values do
             iter.Invoke
-                (&array.[indices.[0]],
-                 &array2.[indices.[1]],
-                 &array3.[indices.[2]])
+                (&array.[index],
+                 &array2.[index2],
+                 &array3.[index3])
+    
+    interface Query<'w> with
+
+        override this.Correlation = correlation
+
+        override this.Filter entityId =
+            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            let indexOpt = system.TryIndexCorrelatedToI entityId
+            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
+            let indexOpt3 = system3.TryIndexCorrelatedToI entityId
+            if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 then
+                this.Cache.Add (entityId, struct (indexOpt, indexOpt2, indexOpt3))
+                true
+            else
+                this.Cache.Remove entityId |> ignore<bool>
+                false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'w when
             'c : struct and 'c :> 'c Component and
             'c2 : struct and 'c2 :> 'c2 Component and
             'c3 : struct and 'c3 :> 'c3 Component and
-            'c4 : struct and 'c4 :> 'c4 Component> (ecs) =
-
-    inherit Query<'w> (ecs)
+            'c4 : struct and 'c4 :> 'c4 Component> (ecs : 'w Ecs) =
+            
+    let cache = OrderedDictionary<Guid, struct (int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name]
-    override this.Correlation = correlation
-
-    override this.Filter entityId =
-        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-        let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-        let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-        let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-        let indexOpt = system.TryIndexCorrelatedToI entityId
-        let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-        let indexOpt3 = system3.TryIndexCorrelatedToI entityId
-        let indexOpt4 = system4.TryIndexCorrelatedToI entityId
-        if  indexOpt > -1 &&
-            indexOpt2 > -1 &&
-            indexOpt3 > -1 &&
-            indexOpt4 > -1 then
-            this.Cache.Add (entityId, [|indexOpt; indexOpt2; indexOpt3; indexOpt4|])
-            true
-        else
-            this.Cache.Remove entityId |> ignore<bool>
-            false
+    
+    member this.Ecs = ecs
+    member this.Cache = cache
 
     member inline this.Iter (iter : Iter<'c, 'c2, 'c3, 'c4>) =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
@@ -906,12 +901,32 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         let array2 = system2.Correlateds.Array
         let array3 = system3.Correlateds.Array
         let array4 = system4.Correlateds.Array
-        for indices in this.Cache.Values do
+        for struct (index, index2, index3, index4) in this.Cache.Values do
             iter.Invoke
-                (&array.[indices.[0]],
-                 &array2.[indices.[1]],
-                 &array3.[indices.[2]],
-                 &array4.[indices.[3]])
+                (&array.[index],
+                 &array2.[index2],
+                 &array3.[index3],
+                 &array4.[index4])
+    
+    interface Query<'w> with
+
+        override this.Correlation = correlation
+
+        override this.Filter entityId =
+            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+            let indexOpt = system.TryIndexCorrelatedToI entityId
+            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
+            let indexOpt3 = system3.TryIndexCorrelatedToI entityId
+            let indexOpt4 = system4.TryIndexCorrelatedToI entityId
+            if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 then
+                this.Cache.Add (entityId, struct (indexOpt, indexOpt2, indexOpt3, indexOpt4))
+                true
+            else
+                this.Cache.Remove entityId |> ignore<bool>
+                false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
@@ -919,33 +934,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             'c2 : struct and 'c2 :> 'c2 Component and
             'c3 : struct and 'c3 :> 'c3 Component and
             'c4 : struct and 'c4 :> 'c4 Component and
-            'c5 : struct and 'c5 :> 'c5 Component> (ecs) =
+            'c5 : struct and 'c5 :> 'c5 Component> (ecs : 'w Ecs) =
 
-    inherit Query<'w> (ecs)
+    let cache = OrderedDictionary<Guid, struct (int * int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name]
-    override this.Correlation = correlation
-
-    override this.Filter entityId =
-        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-        let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-        let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-        let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-        let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
-        let indexOpt = system.TryIndexCorrelatedToI entityId
-        let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-        let indexOpt3 = system3.TryIndexCorrelatedToI entityId
-        let indexOpt4 = system4.TryIndexCorrelatedToI entityId
-        let indexOpt5 = system5.TryIndexCorrelatedToI entityId
-        if  indexOpt > -1 &&
-            indexOpt2 > -1 &&
-            indexOpt3 > -1 &&
-            indexOpt4 > -1 &&
-            indexOpt5 > -1 then
-            this.Cache.Add (entityId, [|indexOpt; indexOpt2; indexOpt3; indexOpt4; indexOpt5|])
-            true
-        else
-            this.Cache.Remove entityId |> ignore<bool>
-            false
+    
+    member this.Ecs = ecs
+    member this.Cache = cache
 
     member inline this.Iter (iter : Iter<'c, 'c2, 'c3, 'c4, 'c5>) =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
@@ -958,13 +953,35 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         let array3 = system3.Correlateds.Array
         let array4 = system4.Correlateds.Array
         let array5 = system5.Correlateds.Array
-        for indices in this.Cache.Values do
+        for struct (index, index2, index3, index4, index5) in this.Cache.Values do
             iter.Invoke
-                (&array.[indices.[0]],
-                 &array2.[indices.[1]],
-                 &array3.[indices.[2]],
-                 &array4.[indices.[3]],
-                 &array5.[indices.[4]])
+                (&array.[index],
+                 &array2.[index2],
+                 &array3.[index3],
+                 &array4.[index4],
+                 &array5.[index5])
+    
+    interface Query<'w> with
+
+        override this.Correlation = correlation
+
+        override this.Filter entityId =
+            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+            let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+            let indexOpt = system.TryIndexCorrelatedToI entityId
+            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
+            let indexOpt3 = system3.TryIndexCorrelatedToI entityId
+            let indexOpt4 = system4.TryIndexCorrelatedToI entityId
+            let indexOpt5 = system5.TryIndexCorrelatedToI entityId
+            if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 then
+                this.Cache.Add (entityId, struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5))
+                true
+            else
+                this.Cache.Remove entityId |> ignore<bool>
+                false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
@@ -973,36 +990,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             'c3 : struct and 'c3 :> 'c3 Component and
             'c4 : struct and 'c4 :> 'c4 Component and
             'c5 : struct and 'c5 :> 'c5 Component and
-            'c6 : struct and 'c6 :> 'c6 Component> (ecs) =
+            'c6 : struct and 'c6 :> 'c6 Component> (ecs : 'w Ecs) =
 
-    inherit Query<'w> (ecs)
+    let cache = OrderedDictionary<Guid, struct (int * int * int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name]
-    override this.Correlation = correlation
-
-    override this.Filter entityId =
-        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-        let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-        let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-        let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-        let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
-        let system6 = this.Ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
-        let indexOpt = system.TryIndexCorrelatedToI entityId
-        let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-        let indexOpt3 = system3.TryIndexCorrelatedToI entityId
-        let indexOpt4 = system4.TryIndexCorrelatedToI entityId
-        let indexOpt5 = system5.TryIndexCorrelatedToI entityId
-        let indexOpt6 = system6.TryIndexCorrelatedToI entityId
-        if  indexOpt > -1 &&
-            indexOpt2 > -1 &&
-            indexOpt3 > -1 &&
-            indexOpt4 > -1 &&
-            indexOpt5 > -1 &&
-            indexOpt6 > -1 then
-            this.Cache.Add (entityId, [|indexOpt; indexOpt2; indexOpt3; indexOpt4; indexOpt5; indexOpt6|])
-            true
-        else
-            this.Cache.Remove entityId |> ignore<bool>
-            false
+    
+    member this.Ecs = ecs
+    member this.Cache = cache
 
     member inline this.Iter (iter : Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6>) =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
@@ -1017,14 +1011,38 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         let array4 = system4.Correlateds.Array
         let array5 = system5.Correlateds.Array
         let array6 = system6.Correlateds.Array
-        for indices in this.Cache.Values do
+        for struct (index, index2, index3, index4, index5, index6) in this.Cache.Values do
             iter.Invoke
-                (&array.[indices.[0]],
-                 &array2.[indices.[1]],
-                 &array3.[indices.[2]],
-                 &array4.[indices.[3]],
-                 &array5.[indices.[4]],
-                 &array6.[indices.[5]])
+                (&array.[index],
+                 &array2.[index2],
+                 &array3.[index3],
+                 &array4.[index4],
+                 &array5.[index5],
+                 &array6.[index6])
+    
+    interface Query<'w> with
+
+        override this.Correlation = correlation
+
+        override this.Filter entityId =
+            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+            let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+            let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
+            let indexOpt = system.TryIndexCorrelatedToI entityId
+            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
+            let indexOpt3 = system3.TryIndexCorrelatedToI entityId
+            let indexOpt4 = system4.TryIndexCorrelatedToI entityId
+            let indexOpt5 = system5.TryIndexCorrelatedToI entityId
+            let indexOpt6 = system6.TryIndexCorrelatedToI entityId
+            if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 then
+                this.Cache.Add (entityId, struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6))
+                true
+            else
+                this.Cache.Remove entityId |> ignore<bool>
+                false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
@@ -1034,39 +1052,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             'c4 : struct and 'c4 :> 'c4 Component and
             'c5 : struct and 'c5 :> 'c5 Component and
             'c6 : struct and 'c6 :> 'c6 Component and
-            'c7 : struct and 'c7 :> 'c7 Component> (ecs) =
+            'c7 : struct and 'c7 :> 'c7 Component> (ecs : 'w Ecs) =
 
-    inherit Query<'w> (ecs)
+    let cache = OrderedDictionary<Guid, struct (int * int * int * int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name]
-    override this.Correlation = correlation
-
-    override this.Filter entityId =
-        let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-        let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-        let system3 = this.Ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-        let system4 = this.Ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-        let system5 = this.Ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
-        let system6 = this.Ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
-        let system7 = this.Ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
-        let indexOpt = system.TryIndexCorrelatedToI entityId
-        let indexOpt2 = system2.TryIndexCorrelatedToI entityId
-        let indexOpt3 = system3.TryIndexCorrelatedToI entityId
-        let indexOpt4 = system4.TryIndexCorrelatedToI entityId
-        let indexOpt5 = system5.TryIndexCorrelatedToI entityId
-        let indexOpt6 = system6.TryIndexCorrelatedToI entityId
-        let indexOpt7 = system7.TryIndexCorrelatedToI entityId
-        if  indexOpt > -1 &&
-            indexOpt2 > -1 &&
-            indexOpt3 > -1 &&
-            indexOpt4 > -1 &&
-            indexOpt5 > -1 &&
-            indexOpt6 > -1 &&
-            indexOpt7 > -1 then
-            this.Cache.Add (entityId, [|indexOpt; indexOpt2; indexOpt3; indexOpt4; indexOpt5; indexOpt6; indexOpt7|])
-            true
-        else
-            this.Cache.Remove entityId |> ignore<bool>
-            false
+    
+    member this.Ecs = ecs
+    member this.Cache = cache
 
     member inline this.Iter (iter : Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7>) =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
@@ -1083,16 +1075,41 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         let array5 = system5.Correlateds.Array
         let array6 = system6.Correlateds.Array
         let array7 = system7.Correlateds.Array
-        for entry in this.Cache do
-            let indices = entry.Value
+        for struct (index, index2, index3, index4, index5, index6, index7) in this.Cache.Values do
             iter.Invoke
-                (&array.[indices.[0]],
-                 &array2.[indices.[1]],
-                 &array3.[indices.[2]],
-                 &array4.[indices.[3]],
-                 &array5.[indices.[4]],
-                 &array6.[indices.[5]],
-                 &array7.[indices.[6]])
+                (&array.[index],
+                 &array2.[index2],
+                 &array3.[index3],
+                 &array4.[index4],
+                 &array5.[index5],
+                 &array6.[index6],
+                 &array7.[index7])
+    
+    interface Query<'w> with
+
+        override this.Correlation = correlation
+
+        override this.Filter entityId =
+            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+            let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+            let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+            let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+            let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
+            let system7 = ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
+            let indexOpt = system.TryIndexCorrelatedToI entityId
+            let indexOpt2 = system2.TryIndexCorrelatedToI entityId
+            let indexOpt3 = system3.TryIndexCorrelatedToI entityId
+            let indexOpt4 = system4.TryIndexCorrelatedToI entityId
+            let indexOpt5 = system5.TryIndexCorrelatedToI entityId
+            let indexOpt6 = system6.TryIndexCorrelatedToI entityId
+            let indexOpt7 = system7.TryIndexCorrelatedToI entityId
+            if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 && indexOpt7 > -1 then
+                this.Cache.Add (entityId, struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6, indexOpt7))
+                true
+            else
+                this.Cache.Remove entityId |> ignore<bool>
+                false
 
 /// Handle to one of an array of multiplexed components.
 type Simplex<'c when 'c : struct> =
