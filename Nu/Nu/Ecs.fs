@@ -22,11 +22,6 @@ type 'c ArrayRef =
 type Component<'c when 'c : struct and 'c :> 'c Component> =
     interface
         abstract Active : bool with get, set
-        abstract ShouldJunction : string HashSet -> bool
-        abstract AllocateJunctions : 'w Ecs -> (string * obj * obj) array
-        abstract ResizeJunctions : int -> obj array -> 'w Ecs -> unit
-        abstract Junction : int -> obj array -> obj array -> Guid -> 'w Ecs -> 'c
-        abstract Disjunction : int -> obj array -> Guid -> 'w Ecs -> unit
         abstract TypeName : string
         end
 
@@ -202,9 +197,7 @@ and 'w Ecs () as this =
     let systemsUnordered = dictPlus<string, 'w System> StringComparer.Ordinal []
     let systemsOrdered = List<string * 'w System> ()
     let correlations = dictPlus<Guid, string HashSet> HashIdentity.Structural []
-    let mutable correlationChanges = dictPlus<Guid, string HashSet> HashIdentity.Structural []
     let emptySystemNames = hashSetPlus<string> StringComparer.Ordinal [] // the empty systems dict to elide allocation on IndexSystemNames
-    let emptyCorrelation = hashSetPlus<string> StringComparer.Ordinal [] // the empty correlation to elide allocation on IndexEntitiesChanged
     let queries = Queries<'w> ()
 
     do this.RegisterSystemGeneralized systemGlobal |> ignore<'w System>
@@ -217,9 +210,7 @@ and 'w Ecs () as this =
             callback evt system
         boxableCallback :> obj
 
-    member internal this.EmptyCorrelation = emptyCorrelation
     member internal this.Correlations = correlations
-    member internal this.CorrelationChanges = correlationChanges
     member this.SystemGlobal = systemGlobal
 
     member this.GetEntityRef entityId =
@@ -227,9 +218,11 @@ and 'w Ecs () as this =
 
     member this.RegisterQuery query =
         queries.RegisterQuery query
+        query
 
     member this.UnregisterQuery query =
         queries.UnregisterQuery query
+        query
 
     member this.FilterForQueries systemName entityId =
         queries.Filter systemName entityId
@@ -337,11 +330,6 @@ and 'w Ecs () as this =
             | (false, _) -> Vsync.Parallel []
         Vsync.StartAsTask vsync
 
-    member this.PopCorrelationChanges () =
-        let result = correlationChanges
-        correlationChanges <- dictPlus<Guid, string HashSet> HashIdentity.Structural []
-        result
-
     member this.AllocateComponents<'c when 'c : struct and 'c :> 'c Component> buffered =
         let componentName = Unchecked.defaultof<'c>.TypeName
         match arrayObjss.TryGetValue componentName with
@@ -357,28 +345,6 @@ and 'w Ecs () as this =
                 let arefBuffered = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
                 arrayObjss.Add (componentName, { ArrayObjsUnbuffered = List [box aref]; ArrayObjsBuffered = List [box arefBuffered] })
                 (aref, arefBuffered)
-
-    member this.AllocateJunction<'c when 'c : struct and 'c :> 'c Component> (fieldPath : string) =
-        let componentName = Unchecked.defaultof<'c>.TypeName
-        match arrayObjss.TryGetValue componentName with
-        | (true, found) ->
-            if found.Buffered then
-                let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                found.ArrayObjsUnbuffered.Add (box aref)
-                (fieldPath, box aref, box aref)
-            else
-                let aref = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                let arefBuffered = { Array = Array.zeroCreate<'c> Constants.Ecs.ArrayReserve }
-                found.ArrayObjsUnbuffered.Add (box aref)
-                found.ArrayObjsBuffered.Add (box arefBuffered)
-                (fieldPath, box aref, box arefBuffered)
-        | (false, _) -> failwith ("No array initially allocated for '" + componentName + "'. Did you neglect to register a system for this component?")
-
-    member this.AllocateJunctions<'c when 'c : struct and 'c :> 'c Component> () =
-        let comp = Unchecked.defaultof<'c>
-        let junctionObjss = comp.AllocateJunctions this
-        let (fieldPaths, junctions, buffereds) = Array.unzip3 junctionObjss
-        (Array.zip fieldPaths junctions, Array.zip fieldPaths buffereds)
 
     member this.GetComponentArrays<'c when 'c : struct and 'c :> 'c Component> () =
         let componentName = Unchecked.defaultof<'c>.TypeName
@@ -519,15 +485,10 @@ type SystemUncorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (buffere
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
 /// An ECS system with components correlated by entity id (Guid).
-/// All junctions are guaranteed to keep the same size and order as the junctioning components so they can be accessed
-/// by the same index.
 type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, buffered, ecs : 'w Ecs) =
     inherit System<'w> (Unchecked.defaultof<'c>.TypeName)
 
     let mutable (correlateds, correlatedsBuffered) = ecs.AllocateComponents<'c> buffered
-    let mutable (junctionsNamed, junctionsBufferedNamed) = ecs.AllocateJunctions<'c> ()
-    let mutable (junctionsMapped, junctionsBufferedMapped) = (dictPlus HashIdentity.Structural junctionsNamed, dictPlus HashIdentity.Structural junctionsBufferedNamed)
-    let mutable (junctions, junctionsBuffered) = (Array.map snd junctionsNamed, Array.map snd junctionsBufferedNamed)
     let mutable freeIndex = 0
     let freeList = HashSet<int> HashIdentity.Structural
     let correlations = dictPlus<Guid, int> HashIdentity.Structural []
@@ -546,14 +507,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
         while freeList.Remove (dec freeIndex) do
             freeIndex <- dec freeIndex
 
-    member this.IndexJunction<'j when 'j : struct and 'j :> 'j Component> fieldPath = junctionsMapped.[fieldPath] :?> 'j ArrayRef
-    member this.WithJunctionBuffered<'j when 'j : struct and 'j :> 'j Component> fn fieldPath (worldOpt : 'w option) = let junction = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef in lock junction (fun () -> fn junction worldOpt)
-
     member this.IndexCorrelatedUnbuffered index = &correlateds.Array.[index]
     member this.IndexCorrelatedBuffered index = correlatedsBuffered.Array.[index]
-
-    member this.IndexJunctionedUnbuffered fieldPath index = &(this.IndexJunction<'j> fieldPath).[index]
-    member this.IndexJunctionedBuffered fieldPath index = (junctionsMapped.[fieldPath] :?> 'j ArrayRef).[index]
 
     /// OPTIMIZATION: returns -1 for failure to find rather than for speed.
     member this.TryIndexCorrelatedToI entityId =
@@ -571,12 +526,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
     member this.IndexCorrelated entityId =
         let index = this.IndexCorrelatedToI entityId
         ComponentRef<'c>.make index correlateds correlatedsBuffered
-
-    member this.IndexJunctioned<'j when 'j : struct and 'j :> 'j Component> fieldPath entityId =
-        let index = this.IndexCorrelatedToI entityId
-        let junction = junctionsMapped.[fieldPath] :?> 'j ArrayRef
-        let buffered = junctionsBufferedMapped.[fieldPath] :?> 'j ArrayRef
-        ComponentRef<'j>.make index junction buffered
 
     member this.RegisterCorrelated ordered (comp : 'c) entityId =
 
@@ -601,9 +550,7 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                     else
                         let length = correlateds.Length * Constants.Ecs.ArrayGrowth
                         let arr = Array.zeroCreate length in correlateds.Array.CopyTo (arr, 0); correlateds.Array <- arr
-                        comp.ResizeJunctions length junctions ecs
                         lock correlatedsBuffered (fun () -> let arr = Array.zeroCreate length in correlatedsBuffered.Array.CopyTo (arr, 0); correlatedsBuffered.Array <- arr)
-                        lock junctionsBuffered (fun () -> comp.ResizeJunctions length junctionsBuffered ecs)
                         let index = freeIndex
                         freeIndex <- inc freeIndex
                         index
@@ -613,7 +560,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                     index
 
             // allocate component
-            let comp = comp.Junction index junctions junctionsBuffered entityId ecs
             correlations.Add (entityId, index)
             correlationsBack.Add (index, entityId)
             correlateds.Array.[index] <- comp
@@ -623,12 +569,10 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                 match ecs.Correlations.TryGetValue entityId with
                 | (true, correlation) ->
                     correlation.Add this.Name |> ignore<bool>
-                    ecs.CorrelationChanges.[entityId] <- correlation
                     ecs.FilterForQueries this.Name entityId
                 | (false, _) ->
                     let correlation = HashSet.singleton StringComparer.Ordinal this.Name
                     ecs.Correlations.Add (entityId, correlation)
-                    ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
                     ecs.FilterForQueries this.Name entityId
 
             // make component ref
@@ -647,7 +591,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
                 // deallocate component
                 correlations.Remove entityId |> ignore<bool>
                 correlationsBack.Remove index |> ignore<bool>
-                Unchecked.defaultof<'c>.Disjunction index junctions entityId ecs
 
                 // deallocate index for component
                 if index <> freeIndex
@@ -669,11 +612,8 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
-                ecs.CorrelationChanges.[entityId] <- correlation
                 ecs.FilterForQueries this.Name entityId
             | (false, _) ->
-                let correlation = ecs.EmptyCorrelation
-                ecs.CorrelationChanges.[entityId] <- correlation
                 ecs.FilterForQueries this.Name entityId
 
         // fin
@@ -711,12 +651,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             let system = Option.get systemOpt
             system.IndexCorrelated entityId
 
-        member inline this.IndexJunctioned<'c, 'j when 'c : struct and 'c :> 'c Component and 'j : struct and 'j :> 'j Component> fieldPath entityId : 'j ComponentRef =
-            let systemOpt = this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            if Option.isNone systemOpt then failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-            let system = Option.get systemOpt
-            system.IndexJunctioned<'j> fieldPath entityId
-
         member this.RegisterCorrelated<'c when 'c : struct and 'c :> 'c Component> ordered comp entityId =
             match this.TryIndexSystem<'c, SystemCorrelated<'c, 'w>> () with
             | Some system -> system.RegisterCorrelated ordered comp entityId
@@ -732,43 +666,6 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             | Some system -> system.UnregisterComponent entityId
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
-        member this.SynchronizeCorrelated<'c when 'c : struct and 'c :> 'c Component> ordered (correlation : string HashSet) entityId =
-            if correlation.Contains Unchecked.defaultof<'c>.TypeName then
-                if not (Unchecked.defaultof<'c>.ShouldJunction correlation) then
-                    this.UnregisterCorrelated<'c> entityId |> ignore<bool>
-                    Unregistered
-                else Unchanged true
-            else
-                if Unchecked.defaultof<'c>.ShouldJunction correlation then
-                    this.RegisterCorrelated ordered Unchecked.defaultof<'c> entityId |> ignore<'c ComponentRef>
-                    Registered
-                else Unchanged false
-
-        member this.JunctionPlus<'c when 'c : struct and 'c :> 'c Component> (comp : 'c) (index : int) (componentsObj : obj) (componentsBufferedObj : obj) =
-
-            // ensure component is active
-            let mutable comp = comp
-            comp.Active <- true
-
-            // set component
-            let components = componentsObj :?> 'c ArrayRef
-            let componentsBuffered = componentsBufferedObj :?> 'c ArrayRef
-            components.[index] <- comp
-            ComponentRef<'c>.make index components componentsBuffered
-            
-        member this.Junction<'c when 'c : struct and 'c :> 'c Component> index componentsObj componentsBufferedObj =
-            this.JunctionPlus<'c> Unchecked.defaultof<'c> index componentsObj componentsBufferedObj
-
-        member this.Disjunction<'c when 'c : struct and 'c :> 'c Component> (index : int) (componentsObj : obj) =
-            let components = componentsObj :?> 'c ArrayRef
-            components.[index].Active <- false
-
-        member this.ResizeJunction<'c when 'c : struct and 'c :> 'c Component> (size : int) (componentsObj : obj) =
-            let components = componentsObj :?> 'c ArrayRef
-            let arr = Array.zeroCreate<'c> size
-            Array.blit components.Array 0 arr 0 (min components.Array.Length arr.Length)
-            components.Array <- arr
-
 /// An ECS query.
 type Query<'c, 'w when
             'c : struct and 'c :> 'c Component> (ecs : 'w Ecs) =
@@ -782,8 +679,9 @@ type Query<'c, 'w when
     member inline this.Iter (iter : Iter<'c>) =
         let system = this.Ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
         let array = system.Correlateds.Array
-        for index in this.Cache.Values do
-            iter.Invoke &array.[index]
+        let mutable enr = this.Cache.ValuesEnumerator
+        while enr.MoveNext () do
+            iter.Invoke &array.[enr.Current]
     
     interface Query<'w> with
 
@@ -815,10 +713,10 @@ type Query<'c, 'c2, 'w when
         let system2 = this.Ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
         let array = system.Correlateds.Array
         let array2 = system2.Correlateds.Array
-        for indices in this.Cache.ValuesUnsafe do
-            iter.Invoke
-                (&array.[fst' indices],
-                 &array2.[snd' indices])
+        let mutable enr = this.Cache.ValuesEnumerator
+        while enr.MoveNext () do
+            let struct (index, index2) = enr.Current
+            iter.Invoke (&array.[index], &array2.[index2])
     
     interface Query<'w> with
 
@@ -855,11 +753,10 @@ type Query<'c, 'c2, 'c3, 'w when
         let array = system.Correlateds.Array
         let array2 = system2.Correlateds.Array
         let array3 = system3.Correlateds.Array
-        for struct (index, index2, index3) in this.Cache.Values do
-            iter.Invoke
-                (&array.[index],
-                 &array2.[index2],
-                 &array3.[index3])
+        let mutable enr = this.Cache.ValuesEnumerator
+        while enr.MoveNext () do
+            let struct (index, index2, index3) = enr.Current
+            iter.Invoke (&array.[index], &array2.[index2], &array3.[index3])
     
     interface Query<'w> with
 
@@ -901,12 +798,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         let array2 = system2.Correlateds.Array
         let array3 = system3.Correlateds.Array
         let array4 = system4.Correlateds.Array
-        for struct (index, index2, index3, index4) in this.Cache.Values do
-            iter.Invoke
-                (&array.[index],
-                 &array2.[index2],
-                 &array3.[index3],
-                 &array4.[index4])
+        let mutable enr = this.Cache.ValuesEnumerator
+        while enr.MoveNext () do
+            let struct (index, index2, index3, index4) = enr.Current
+            iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4])
     
     interface Query<'w> with
 
@@ -953,13 +848,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         let array3 = system3.Correlateds.Array
         let array4 = system4.Correlateds.Array
         let array5 = system5.Correlateds.Array
-        for struct (index, index2, index3, index4, index5) in this.Cache.Values do
-            iter.Invoke
-                (&array.[index],
-                 &array2.[index2],
-                 &array3.[index3],
-                 &array4.[index4],
-                 &array5.[index5])
+        let mutable enr = this.Cache.ValuesEnumerator
+        while enr.MoveNext () do
+            let struct (index, index2, index3, index4, index5) = enr.Current
+            iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5])
     
     interface Query<'w> with
 
@@ -1011,14 +903,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         let array4 = system4.Correlateds.Array
         let array5 = system5.Correlateds.Array
         let array6 = system6.Correlateds.Array
-        for struct (index, index2, index3, index4, index5, index6) in this.Cache.Values do
-            iter.Invoke
-                (&array.[index],
-                 &array2.[index2],
-                 &array3.[index3],
-                 &array4.[index4],
-                 &array5.[index5],
-                 &array6.[index6])
+        let mutable enr = this.Cache.ValuesEnumerator
+        while enr.MoveNext () do
+            let struct (index, index2, index3, index4, index5, index6) = enr.Current
+            iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6])
     
     interface Query<'w> with
 
@@ -1075,15 +963,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         let array5 = system5.Correlateds.Array
         let array6 = system6.Correlateds.Array
         let array7 = system7.Correlateds.Array
-        for struct (index, index2, index3, index4, index5, index6, index7) in this.Cache.Values do
-            iter.Invoke
-                (&array.[index],
-                 &array2.[index2],
-                 &array3.[index3],
-                 &array4.[index4],
-                 &array5.[index5],
-                 &array6.[index6],
-                 &array7.[index7])
+        let mutable enr = this.Cache.ValuesEnumerator
+        while enr.MoveNext () do
+            let struct (index, index2, index3, index4, index5, index6, index7) = enr.Current
+            iter.Invoke (&array.[index], &array2.[index2], &array3.[index3], &array4.[index4], &array5.[index5], &array6.[index6], &array7.[index7])
     
     interface Query<'w> with
 
@@ -1125,11 +1008,6 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
       TypeName : string }
     interface Component<'c ComponentMultiplexed> with
         member this.Active with get() = this.Active and set value = this.Active <- value
-        member this.ShouldJunction _ = true
-        member this.AllocateJunctions _ = [||]
-        member this.ResizeJunctions _ _ _ = ()
-        member this.Junction _ _ _ _ _ = this
-        member this.Disjunction _ _ _ _ = ()
         member this.TypeName = getTypeName this
     member this.RegisterMultiplexed (simplexName, comp) =
         this.Simplexes.Add (simplexName, { Simplex = comp })
@@ -1168,12 +1046,10 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated
         match ecs.Correlations.TryGetValue entityId with
         | (true, correlation) ->
             correlation.Add this.Name |> ignore<bool>
-            ecs.CorrelationChanges.[entityId] <- correlation
             ecs.FilterForQueries this.Name entityId
         | (false, _) ->
             let correlation = HashSet.singleton StringComparer.Ordinal this.Name
             ecs.Correlations.Add (entityId, correlation)
-            ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
             ecs.FilterForQueries this.Name entityId
 
         // fin
@@ -1192,11 +1068,8 @@ type SystemMultiplexed<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
-                ecs.CorrelationChanges.[entityId] <- correlation
                 ecs.FilterForQueries this.Name entityId
             | (false, _) ->
-                let correlation = ecs.EmptyCorrelation
-                ecs.CorrelationChanges.[entityId] <- correlation
                 ecs.FilterForQueries this.Name entityId
 
         // fin
@@ -1285,9 +1158,6 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolate
     member this.IndexHierarchical entityId =
         this.IndexCorrelated entityId
 
-    member this.IndexHierarchicalJunctioned fieldPath entityId =
-        this.IndexJunctioned fieldPath entityId
-
     member this.RegisterHierarchical ordered (parentIdOpt : Guid option) comp entityId =
         let this' = this :> SystemCorrelated<'c, 'w>
         let cref = this'.RegisterCorrelated ordered comp entityId
@@ -1350,11 +1220,6 @@ type SystemHierarchical<'c, 'w when 'c : struct and 'c :> 'c Component> (isolate
         member this.IndexHierarchical<'c when 'c : struct and 'c :> 'c Component> entityId =
             match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
             | Some system -> system.IndexHierarchical entityId
-            | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
-
-        member this.IndexHierarchicalJunctioned<'c, 'j when 'c : struct and 'c :> 'c Component and 'j : struct and 'j :> 'j Component> fieldPath entityId : 'j ComponentRef =
-            match this.TryIndexSystem<'c, SystemHierarchical<'c, 'w>> () with
-            | Some system -> system.IndexHierarchicalJunctioned fieldPath entityId
             | None -> failwith ("Could not find expected system '" + Unchecked.defaultof<'c>.TypeName + "'.")
 
         member this.RegisterHierarchical<'c when 'c : struct and 'c :> 'c Component> parentIdOpt =
@@ -1487,12 +1352,10 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Add this.Name |> ignore<bool>
-                ecs.CorrelationChanges.[entityId] <- correlation
                 ecs.FilterForQueries this.Name entityId
             | (false, _) ->
                 let correlation = HashSet.singleton StringComparer.Ordinal this.Name
                 ecs.Correlations.Add (entityId, correlation)
-                ecs.CorrelationChanges.[entityId] <- ecs.EmptyCorrelation
                 ecs.FilterForQueries this.Name entityId
 
         // fin
@@ -1515,11 +1378,8 @@ type SystemFamilial<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated, b
             match ecs.Correlations.TryGetValue entityId with
             | (true, correlation) ->
                 correlation.Remove this.Name |> ignore<bool>
-                ecs.CorrelationChanges.[entityId] <- correlation
                 ecs.FilterForQueries this.Name entityId
             | (false, _) ->
-                let correlation = ecs.EmptyCorrelation
-                ecs.CorrelationChanges.[entityId] <- correlation
                 ecs.FilterForQueries this.Name entityId
 
         // fin

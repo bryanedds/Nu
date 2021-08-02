@@ -13,11 +13,6 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
       mutable Sprite : Image AssetTag }
     interface StaticSpriteComponent Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
-        member this.ShouldJunction _ = true
-        member this.AllocateJunctions _ = [||]
-        member this.ResizeJunctions _ _ _ = ()
-        member this.Junction _ _ _ _ _ = this
-        member this.Disjunction _ _ _ _ = ()
         member this.TypeName = nameof StaticSpriteComponent
 #endif
 
@@ -27,11 +22,6 @@ type [<NoEquality; NoComparison; Struct>] Velocity =
       mutable Velocity : Vector2 }
     interface Velocity Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
-        member this.ShouldJunction _ = true
-        member this.AllocateJunctions _ = [||]
-        member this.ResizeJunctions _ _ _ = ()
-        member this.Junction _ _ _ _ _ = this
-        member this.Disjunction _ _ _ _ = ()
         member this.TypeName = nameof Velocity
 
 type [<NoEquality; NoComparison; Struct>] Position =
@@ -39,43 +29,7 @@ type [<NoEquality; NoComparison; Struct>] Position =
       mutable Position : Vector2 }
     interface Position Component with
         member this.Active with get () = this.Active and set value = this.Active <- value
-        member this.ShouldJunction _ = true
-        member this.AllocateJunctions _ = [||]
-        member this.ResizeJunctions _ _ _ = ()
-        member this.Junction _ _ _ _ _ = this
-        member this.Disjunction _ _ _ _ = ()
         member this.TypeName = nameof Position
-
-type [<NoEquality; NoComparison; Struct>] MoverStatic =
-    { mutable Active : bool
-      Velocity : Velocity ComponentRef
-      Position : Position ComponentRef }
-    interface MoverStatic Component with
-        member this.Active with get () = this.Active and set value = this.Active <- value
-        member this.ShouldJunction _ = true
-        member this.AllocateJunctions ecs = [|ecs.AllocateJunction<Velocity> "Velocity"; ecs.AllocateJunction<Position> "Position"|]
-        member this.ResizeJunctions size junctions ecs = ecs.ResizeJunction<Velocity> size junctions.[0]; ecs.ResizeJunction<Position> size junctions.[1]
-        member this.Junction index junctions buffereds _ ecs = { id this with Velocity = ecs.Junction<Velocity> index junctions.[0] buffereds.[0]; Position = ecs.Junction<Position> index junctions.[1] buffereds.[1] }
-        member this.Disjunction index junctions _ ecs = ecs.Disjunction<Velocity> index junctions.[0]; ecs.Disjunction<Position> index junctions.[1]
-        member this.TypeName = nameof MoverStatic
-
-type [<NoEquality; NoComparison; Struct>] MoverDynamic =
-    { mutable Active : bool
-      Velocity : Velocity ComponentRef
-      Position : Position ComponentRef }
-    interface MoverDynamic Component with
-        member this.Active with get () = this.Active and set value = this.Active <- value
-        member this.ShouldJunction systemNames =
-            systemNames.Contains (nameof Velocity) &&
-            systemNames.Contains (nameof Position)
-        member this.AllocateJunctions _ = [||]
-        member this.ResizeJunctions _ _ _ = ()
-        member this.Junction _ _ _ entityId ecs =
-            { id this with
-                Velocity = ecs.IndexSystemCorrelated<Velocity>().IndexCorrelated entityId
-                Position = ecs.IndexSystemCorrelated<Position>().IndexCorrelated entityId }
-        member this.Disjunction _ _ _ _ = ()
-        member this.TypeName = nameof MoverDynamic
 #endif
 
 #if FACETED
@@ -170,12 +124,9 @@ type MyGameDispatcher () =
         // create systems
         let positionSystem = ecs.RegisterSystem (SystemCorrelated<Position, World> ecs)
         let velocitySystem = ecs.RegisterSystem (SystemCorrelated<Velocity, World> ecs)
-        //let moverStaticSystem = ecs.RegisterSystem (SystemCorrelated<MoverStatic, World> ecs)
-        //let _ = ecs.RegisterSystem (SystemCorrelated<MoverDynamic, World> ecs)
 
         // create query
-        let query = Query<Position, Velocity, World> (ecs)
-        ecs.RegisterQuery query
+        let query = ecs.RegisterQuery (Query<Position, Velocity, World> ecs)
 
         //// create object references
         //let count = 2500000
@@ -203,11 +154,6 @@ type MyGameDispatcher () =
             let _ = ecs.RegisterCorrelated false Unchecked.defaultof<Position> entityId
             let _ = ecs.RegisterCorrelated false { Active = true; Velocity = v2One } entityId
             ()
-
-        // define synchronize correlation changes for dynamic movers
-        //ecs.Subscribe EcsEvents.SynchronizeCorrelationChanges $ fun (evt : World SynchronizeCorrelationEvent) _ _ ->
-        //    for change in evt.SystemEventData do
-        //        ecs.SynchronizeCorrelated<MoverDynamic> false change.Value change.Key |> ignore<SynchronizeResult>
 
         // define update for query
         ecs.Subscribe EcsEvents.Update $ fun _ _ _ ->
