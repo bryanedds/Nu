@@ -12,8 +12,8 @@ type [<NoEquality; NoComparison; Struct>] StaticSpriteComponent =
       mutable Entity : Entity
       mutable Sprite : Image AssetTag }
     interface StaticSpriteComponent Component with
-        member this.Active with get () = this.Active and set value = this.Active <- value
         member this.TypeName = nameof StaticSpriteComponent
+        member this.Active with get () = this.Active and set value = this.Active <- value
 #endif
 
 #if ECS
@@ -21,15 +21,15 @@ type [<NoEquality; NoComparison; Struct>] Velocity =
     { mutable Active : bool
       mutable Velocity : Vector2 }
     interface Velocity Component with
-        member this.Active with get () = this.Active and set value = this.Active <- value
         member this.TypeName = nameof Velocity
+        member this.Active with get () = this.Active and set value = this.Active <- value
 
 type [<NoEquality; NoComparison; Struct>] Position =
     { mutable Active : bool
       mutable Position : Vector2 }
     interface Position Component with
-        member this.Active with get () = this.Active and set value = this.Active <- value
         member this.TypeName = nameof Position
+        member this.Active with get () = this.Active and set value = this.Active <- value
 #endif
 
 #if FACETED

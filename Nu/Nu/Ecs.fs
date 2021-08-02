@@ -21,8 +21,8 @@ type 'c ArrayRef =
 /// The base component type of an Ecs.
 type Component<'c when 'c : struct and 'c :> 'c Component> =
     interface
-        abstract Active : bool with get, set
         abstract TypeName : string
+        abstract Active : bool with get, set
         end
 
 /// A storable reference to a component in its containing array.
@@ -131,27 +131,7 @@ and 'w Query =
     abstract Correlation : string HashSet
     abstract Filter : Guid -> bool
 
-/// A delegate that enables passing of values byref.
-and Iter<'c> = delegate of 'c byref -> unit
-
-/// A delegate that enables passing of values byref.
-and Iter<'c, 'c2> = delegate of 'c byref * 'c2 byref -> unit
-
-/// A delegate that enables passing of values byref.
-and Iter<'c, 'c2, 'c3> = delegate of 'c byref * 'c2 byref * 'c3 byref -> unit
-
-/// A delegate that enables passing of values byref.
-and Iter<'c, 'c2, 'c3, 'c4> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref -> unit
-
-/// A delegate that enables passing of values byref.
-and Iter<'c, 'c2, 'c3, 'c4, 'c5> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref -> unit
-
-/// A delegate that enables passing of values byref.
-and Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref -> unit
-
-/// A delegate that enables passing of values byref.
-and Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref -> unit
-
+/// A collection of ECS queries.
 and 'w Queries () =
 
     let queries = dictPlus<string, 'w Query HashSet> StringComparer.Ordinal []
@@ -666,6 +646,27 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             | Some system -> system.UnregisterComponent entityId
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
+/// A delegate that enables passing of values byref.
+type Iter<'c> = delegate of 'c byref -> unit
+
+/// A delegate that enables passing of values byref.
+type Iter<'c, 'c2> = delegate of 'c byref * 'c2 byref -> unit
+
+/// A delegate that enables passing of values byref.
+type Iter<'c, 'c2, 'c3> = delegate of 'c byref * 'c2 byref * 'c3 byref -> unit
+
+/// A delegate that enables passing of values byref.
+type Iter<'c, 'c2, 'c3, 'c4> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref -> unit
+
+/// A delegate that enables passing of values byref.
+type Iter<'c, 'c2, 'c3, 'c4, 'c5> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref -> unit
+
+/// A delegate that enables passing of values byref.
+type Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref -> unit
+
+/// A delegate that enables passing of values byref.
+type Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref -> unit
+
 /// An ECS query.
 type Query<'c, 'w when
             'c : struct and 'c :> 'c Component> (ecs : 'w Ecs) =
@@ -1007,8 +1008,8 @@ type [<NoEquality; NoComparison; Struct>] ComponentMultiplexed<'c when 'c : stru
       Simplexes : Dictionary<string, 'c Simplex>
       TypeName : string }
     interface Component<'c ComponentMultiplexed> with
-        member this.Active with get() = this.Active and set value = this.Active <- value
         member this.TypeName = getTypeName this
+        member this.Active with get() = this.Active and set value = this.Active <- value
     member this.RegisterMultiplexed (simplexName, comp) =
         this.Simplexes.Add (simplexName, { Simplex = comp })
     member this.UnregisterMultiplexed simplexName =
