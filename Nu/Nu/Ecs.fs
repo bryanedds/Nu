@@ -726,7 +726,7 @@ type Query<'c, 'w when
         override this.Filter entityId =
             let indexOpt = system.TryIndexCorrelatedToI entityId
             if indexOpt > -1 then
-                this.Cache.Add (entityId, indexOpt)
+                this.Cache.[entityId] <- indexOpt
                 true
             else
                 this.Cache.Remove entityId |> ignore<bool>
@@ -763,11 +763,12 @@ type Query<'c, 'c2, 'w when
             let indexOpt = system.TryIndexCorrelatedToI entityId
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 then
-                cache.Add (entityId, struct (indexOpt, indexOpt2))
+                cache.[entityId] <- struct (indexOpt, indexOpt2)
                 true
-            else
+            elif indexOpt > -1 || indexOpt2 > -1 then // OPTIMIZATION: make sure it exists and needs removing
                 cache.Remove entityId |> ignore<bool>
                 false
+            else false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'w when
@@ -805,11 +806,12 @@ type Query<'c, 'c2, 'c3, 'w when
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 then
-                this.Cache.Add (entityId, struct (indexOpt, indexOpt2, indexOpt3))
+                this.Cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3)
                 true
-            else
-                this.Cache.Remove entityId |> ignore<bool>
+            elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 then // OPTIMIZATION: make sure it exists and needs removing
+                cache.Remove entityId |> ignore<bool>
                 false
+            else false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'w when
@@ -852,11 +854,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
             let indexOpt4 = system4.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 then
-                this.Cache.Add (entityId, struct (indexOpt, indexOpt2, indexOpt3, indexOpt4))
+                this.Cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4)
                 true
-            else
-                this.Cache.Remove entityId |> ignore<bool>
+            elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 then // OPTIMIZATION: make sure it exists and needs removing
+                cache.Remove entityId |> ignore<bool>
                 false
+            else false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
@@ -904,11 +907,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
             let indexOpt4 = system4.TryIndexCorrelatedToI entityId
             let indexOpt5 = system5.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 then
-                this.Cache.Add (entityId, struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5))
+                this.Cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5)
                 true
-            else
-                this.Cache.Remove entityId |> ignore<bool>
+            elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 then // OPTIMIZATION: make sure it exists and needs removing
+                cache.Remove entityId |> ignore<bool>
                 false
+            else false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
@@ -961,11 +965,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
             let indexOpt5 = system5.TryIndexCorrelatedToI entityId
             let indexOpt6 = system6.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 then
-                this.Cache.Add (entityId, struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6))
+                this.Cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6)
                 true
-            else
-                this.Cache.Remove entityId |> ignore<bool>
+            elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 then // OPTIMIZATION: make sure it exists and needs removing
+                cache.Remove entityId |> ignore<bool>
                 false
+            else false
 
 /// An ECS query.
 type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
@@ -1023,11 +1028,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
             let indexOpt6 = system6.TryIndexCorrelatedToI entityId
             let indexOpt7 = system7.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 && indexOpt3 > -1 && indexOpt4 > -1 && indexOpt5 > -1 && indexOpt6 > -1 && indexOpt7 > -1 then
-                this.Cache.Add (entityId, struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6, indexOpt7))
+                this.Cache.[entityId] <- struct (indexOpt, indexOpt2, indexOpt3, indexOpt4, indexOpt5, indexOpt6, indexOpt7)
                 true
-            else
-                this.Cache.Remove entityId |> ignore<bool>
+            elif indexOpt > -1 || indexOpt2 > -1 || indexOpt3 > -1 || indexOpt4 > -1 || indexOpt5 > -1 || indexOpt6 > -1 || indexOpt7 > -1 then // OPTIMIZATION: make sure it exists and needs removing
+                cache.Remove entityId |> ignore<bool>
                 false
+            else false
 
 /// Handle to one of an array of multiplexed components.
 type Simplex<'c when 'c : struct> =
