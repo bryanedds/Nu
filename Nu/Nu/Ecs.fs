@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
@@ -647,25 +646,60 @@ type SystemCorrelated<'c, 'w when 'c : struct and 'c :> 'c Component> (isolated,
             | None -> failwith ("Could not find expected system '" + systemName + "'.")
 
 /// A delegate that enables passing of values byref.
-type Iter<'c> = delegate of 'c byref -> unit
+type Iter<'c when
+            'c : struct and 'c :> 'c Component> =
+            delegate of 'c byref -> unit
 
 /// A delegate that enables passing of values byref.
-type Iter<'c, 'c2> = delegate of 'c byref * 'c2 byref -> unit
+type Iter<'c, 'c2 when
+           'c : struct and 'c :> 'c Component and
+           'c2 : struct and 'c2 :> 'c2 Component> =
+            delegate of 'c byref * 'c2 byref -> unit
 
 /// A delegate that enables passing of values byref.
-type Iter<'c, 'c2, 'c3> = delegate of 'c byref * 'c2 byref * 'c3 byref -> unit
+type Iter<'c, 'c2, 'c3 when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component and
+            'c3 : struct and 'c3 :> 'c3 Component> =
+            delegate of 'c byref * 'c2 byref * 'c3 byref -> unit
 
 /// A delegate that enables passing of values byref.
-type Iter<'c, 'c2, 'c3, 'c4> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref -> unit
+type Iter<'c, 'c2, 'c3, 'c4 when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component and
+            'c3 : struct and 'c3 :> 'c3 Component and
+            'c4 : struct and 'c4 :> 'c4 Component> =
+            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref -> unit
 
 /// A delegate that enables passing of values byref.
-type Iter<'c, 'c2, 'c3, 'c4, 'c5> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref -> unit
+type Iter<'c, 'c2, 'c3, 'c4, 'c5 when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component and
+            'c3 : struct and 'c3 :> 'c3 Component and
+            'c4 : struct and 'c4 :> 'c4 Component and
+            'c5 : struct and 'c5 :> 'c5 Component> =
+            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref -> unit
 
 /// A delegate that enables passing of values byref.
-type Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref -> unit
+type Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6 when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component and
+            'c3 : struct and 'c3 :> 'c3 Component and
+            'c4 : struct and 'c4 :> 'c4 Component and
+            'c5 : struct and 'c5 :> 'c5 Component and
+            'c6 : struct and 'c6 :> 'c6 Component> =
+            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref -> unit
 
 /// A delegate that enables passing of values byref.
-type Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7> = delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref -> unit
+type Iter<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7 when
+            'c : struct and 'c :> 'c Component and
+            'c2 : struct and 'c2 :> 'c2 Component and
+            'c3 : struct and 'c3 :> 'c3 Component and
+            'c4 : struct and 'c4 :> 'c4 Component and
+            'c5 : struct and 'c5 :> 'c5 Component and
+            'c6 : struct and 'c6 :> 'c6 Component and
+            'c7 : struct and 'c7 :> 'c7 Component> =
+            delegate of 'c byref * 'c2 byref * 'c3 byref * 'c4 byref * 'c5 byref * 'c6 byref * 'c7 byref -> unit
 
 /// An ECS query.
 type Query<'c, 'w when
@@ -673,6 +707,7 @@ type Query<'c, 'w when
             
     let cache = OrderedDictionary<Guid, int> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name]
+    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
 
     member this.Ecs = ecs
     member this.Cache = cache
@@ -689,7 +724,6 @@ type Query<'c, 'w when
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
             let indexOpt = system.TryIndexCorrelatedToI entityId
             if indexOpt > -1 then
                 this.Cache.Add (entityId, indexOpt)
@@ -705,6 +739,8 @@ type Query<'c, 'c2, 'w when
 
     let cache = OrderedDictionary<Guid, struct (int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name]
+    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
 
     member this.Ecs = ecs
     member this.Cache = cache
@@ -724,8 +760,6 @@ type Query<'c, 'c2, 'w when
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
             let indexOpt = system.TryIndexCorrelatedToI entityId
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             if  indexOpt > -1 && indexOpt2 > -1 then
@@ -743,6 +777,9 @@ type Query<'c, 'c2, 'c3, 'w when
             
     let cache = OrderedDictionary<Guid, struct (int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name]
+    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+    let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
     
     member this.Ecs = ecs
     member this.Cache = cache
@@ -764,9 +801,6 @@ type Query<'c, 'c2, 'c3, 'w when
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-            let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
             let indexOpt = system.TryIndexCorrelatedToI entityId
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
@@ -786,6 +820,10 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
             
     let cache = OrderedDictionary<Guid, struct (int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name]
+    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+    let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+    let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
     
     member this.Ecs = ecs
     member this.Cache = cache
@@ -809,10 +847,6 @@ type Query<'c, 'c2, 'c3, 'c4, 'w when
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-            let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-            let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
             let indexOpt = system.TryIndexCorrelatedToI entityId
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
@@ -834,6 +868,11 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
 
     let cache = OrderedDictionary<Guid, struct (int * int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name]
+    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+    let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+    let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+    let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
     
     member this.Ecs = ecs
     member this.Cache = cache
@@ -859,11 +898,6 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'w when
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-            let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-            let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-            let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
             let indexOpt = system.TryIndexCorrelatedToI entityId
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
@@ -887,6 +921,12 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
 
     let cache = OrderedDictionary<Guid, struct (int * int * int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name]
+    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+    let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+    let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+    let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+    let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
     
     member this.Ecs = ecs
     member this.Cache = cache
@@ -914,12 +954,6 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'w when
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-            let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-            let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-            let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
-            let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
             let indexOpt = system.TryIndexCorrelatedToI entityId
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
@@ -945,6 +979,13 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
 
     let cache = OrderedDictionary<Guid, struct (int * int * int * int * int * int * int)> HashIdentity.Structural
     let correlation = hashSetPlus<string> StringComparer.Ordinal [typeof<'c>.Name; typeof<'c2>.Name; typeof<'c3>.Name; typeof<'c4>.Name; typeof<'c5>.Name; typeof<'c6>.Name; typeof<'c7>.Name]
+    let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
+    let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
+    let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
+    let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
+    let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
+    let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
+    let system7 = ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
     
     member this.Ecs = ecs
     member this.Cache = cache
@@ -974,13 +1015,6 @@ type Query<'c, 'c2, 'c3, 'c4, 'c5, 'c6, 'c7, 'w when
         override this.Correlation = correlation
 
         override this.Filter entityId =
-            let system = ecs.IndexSystem<'c, SystemCorrelated<'c, 'w>> ()
-            let system2 = ecs.IndexSystem<'c2, SystemCorrelated<'c2, 'w>> ()
-            let system3 = ecs.IndexSystem<'c3, SystemCorrelated<'c3, 'w>> ()
-            let system4 = ecs.IndexSystem<'c4, SystemCorrelated<'c4, 'w>> ()
-            let system5 = ecs.IndexSystem<'c5, SystemCorrelated<'c5, 'w>> ()
-            let system6 = ecs.IndexSystem<'c6, SystemCorrelated<'c6, 'w>> ()
-            let system7 = ecs.IndexSystem<'c7, SystemCorrelated<'c7, 'w>> ()
             let indexOpt = system.TryIndexCorrelatedToI entityId
             let indexOpt2 = system2.TryIndexCorrelatedToI entityId
             let indexOpt3 = system3.TryIndexCorrelatedToI entityId
