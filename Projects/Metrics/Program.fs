@@ -148,8 +148,8 @@ type MyGameDispatcher () =
         //            obj.P.P.X <- obj.P.P.X + obj.V.V.X
         //            obj.P.P.Y <- obj.P.P.Y + obj.V.V.Y
 
-        // create 4M movers (goal: 60FPS, current: 47FPS)
-        for _ in 0 .. 4000000 - 1 do
+        // create 3M movers (goal: 60FPS, current: 60FPS)
+        for _ in 0 .. 3000000 - 1 do
             let entityId = Gen.id
             let _ = positionSystem.RegisterCorrelated false Unchecked.defaultof<Position> entityId
             let _ = velocitySystem.RegisterCorrelated false { Active = true; Velocity = v2One } entityId
