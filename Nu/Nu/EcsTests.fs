@@ -12,31 +12,31 @@ module EcsTests =
         { mutable Active : bool
           mutable Color : Color }
         interface Skin Component with
-            member this.Active with get () = this.Active and set value = this.Active <- value
             member this.TypeName = nameof Skin
+            member this.Active with get () = this.Active and set value = this.Active <- value
 
     type [<NoEquality; NoComparison; Struct>] Airship =
         { mutable Active : bool
           Transform : Transform ComponentRef
           Skin : Skin ComponentRef }
         interface Airship Component with
-            member this.Active with get () = this.Active and set value = this.Active <- value
             member this.TypeName = nameof Airship
+            member this.Active with get () = this.Active and set value = this.Active <- value
 
     type [<NoEquality; NoComparison; Struct>] Node =
         { mutable Active : bool
           Transform : Transform }
         interface Node Component with
-            member this.Active with get () = this.Active and set value = this.Active <- value
             member this.TypeName = nameof Node
+            member this.Active with get () = this.Active and set value = this.Active <- value
 
     type [<NoEquality; NoComparison; Struct>] Prop =
         { mutable Active : bool
           Node : Node ComponentRef
           NodeId : Guid }
         interface Prop Component with
-            member this.Active with get () = this.Active and set value = this.Active <- value
             member this.TypeName = nameof Prop
+            member this.Active with get () = this.Active and set value = this.Active <- value
 
     let example (world : World) =
 

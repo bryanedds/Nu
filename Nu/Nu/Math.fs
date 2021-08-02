@@ -114,8 +114,8 @@ type [<NoEquality; NoComparison; Struct>] Transform =
           Flags = 0b0010001100100001 }
 
     interface Transform Component with
-        member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
         member this.TypeName = nameof Transform
+        member this.Active with get () = this.Flags &&& ActiveMask <> 0 and set value = this.Flags <- if value then this.Flags ||| ActiveMask else this.Flags &&& ~~~ActiveMask
 
 [<AutoOpen>]
 module TransformOperators =
