@@ -115,20 +115,10 @@ module WorldScreenModule =
 
     type World with
 
-        static member private synchronizeCorrelationChanges (ecs : 'w Ecs) (world : 'w) =
-            match ecs.PopCorrelationChanges () with
-            | correlationChanges when correlationChanges.Count <> 0 ->
-                let world = ecs.Publish EcsEvents.SynchronizeCorrelationChanges correlationChanges ecs.SystemGlobal world
-                World.synchronizeCorrelationChanges ecs world
-            | _ -> world
-
         static member internal updateScreen (screen : Screen) world =
 
-            // synchronize correlaction changes for ecs
-            let ecs = World.getScreenEcs screen world
-            let world = World.synchronizeCorrelationChanges ecs world
-
             // update ecs
+            let ecs = World.getScreenEcs screen world
 #if ECS_BUFFERED_PLUS
             let updateTask = ecs.PublishAsync EcsEvents.UpdateParallel () ecs.SystemGlobal
             let world = ecs.Publish EcsEvents.Update () ecs.SystemGlobal world
@@ -150,11 +140,8 @@ module WorldScreenModule =
 
         static member internal postUpdateScreen (screen : Screen) world =
         
-            // synchronize correlaction changes for ecs
-            let ecs = World.getScreenEcs screen world
-            let world = World.synchronizeCorrelationChanges ecs world
-
             // post-update ecs
+            let ecs = World.getScreenEcs screen world
 #if ECS_BUFFERED_PLUS
             let postUpdateTask = ecs.PublishAsync EcsEvents.PostUpdateParallel () ecs.SystemGlobal
             let world = ecs.Publish EcsEvents.PostUpdate () ecs.SystemGlobal world
@@ -176,11 +163,8 @@ module WorldScreenModule =
 
         static member internal actualizeScreen (screen : Screen) world =
         
-            // synchronize correlaction changes for ecs
-            let ecs = World.getScreenEcs screen world
-            let world = World.synchronizeCorrelationChanges ecs world
-
             // actualize ecs
+            let ecs = World.getScreenEcs screen world
             let world = ecs.Publish EcsEvents.Actualize () ecs.SystemGlobal world
 
             // actualize via dispatcher

@@ -208,7 +208,7 @@ namespace System.Collections.Generic
         /// <summary>
         /// Gets the values in the dictionary.
         /// </summary>
-        public List<TValue> ValuesUnsafe => values;
+        public List<TValue>.Enumerator ValuesEnumerator => values.GetEnumerator();
 
         /// <summary>
         /// Gets or sets the value at the given index.
@@ -324,7 +324,7 @@ namespace System.Collections.Generic
 
         ICollection<TKey> IDictionary<TKey, TValue>.Keys => Keys;
 
-        ICollection<TValue> IDictionary<TKey, TValue>.Values => Values;
+        ICollection<TValue> IDictionary<TKey, TValue>.Values => new ValueCollection(values);
 
         void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item)
         {
