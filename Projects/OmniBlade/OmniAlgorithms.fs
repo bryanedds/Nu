@@ -173,6 +173,6 @@ module Algorithms =
 
     let itemPrizeOpt archetypeType (level : int) =
         // TODO: pull this from data.
-        if Gen.random1 8 = 0 then
+        if Gen.random1 16 = 0 then
             Some (Consumable GreenHerb)
         else None
