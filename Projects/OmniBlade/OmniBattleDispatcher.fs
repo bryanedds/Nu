@@ -392,14 +392,16 @@ module BattleDispatcher =
                 let text = textA + textB + textC + textD
                 let dialog = { DialogForm = DialogThick; DialogTokenized = text; DialogProgress = 0; DialogPage = 0; DialogPromptOpt = None; DialogBattleOpt = None }
                 let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
-                if outcome then
-                    let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
-                    let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
-                    let battle = Battle.updateInventory (Inventory.tryAddItems battle.PrizePool.Items >> snd) battle
-                    if List.notEmpty alliesLevelingUp
-                    then withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.GrowthSound)) battle
-                    else just battle
-                else just battle
+                let (sigs, battle) =
+                    if outcome then
+                        let battle = Battle.updateAllies (fun ally -> if ally.IsHealthy then Character.updateExpPoints ((+) battle.PrizePool.Exp) ally else ally) battle
+                        let battle = Battle.updateInventory (fun inv -> { inv with Gold = inv.Gold + battle.PrizePool.Gold }) battle
+                        let battle = Battle.updateInventory (Inventory.tryAddItems battle.PrizePool.Items >> snd) battle
+                        if List.notEmpty alliesLevelingUp
+                        then ([cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.GrowthSound))], battle)
+                        else ([], battle)
+                    else ([], battle)
+                (cmd (FadeOutSong 5000) :: sigs, battle)
             else
                 match battle.DialogOpt with
                 | None -> just (Battle.updateBattleState (constant (BattleCease (outcome, battle.PrizePool.Consequents, time))) battle)

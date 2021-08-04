@@ -580,7 +580,9 @@ module FieldDispatcher =
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                             let battle = Battle.makeFromTeam field.Inventory prizePool field.Team battleData (World.getTickTime world)
                             let field = Field.updateBattleOpt (constant (Some battle)) field
-                            (cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) :: signals, field)
+                            let fade = cmd (FadeOutSong 1000)
+                            let beastGrowl = cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound))
+                            (fade :: beastGrowl :: signals, field)
                         | Right field -> (signals, field)
                     else (signals, field)
 #else
