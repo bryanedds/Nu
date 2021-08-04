@@ -401,7 +401,7 @@ module BattleDispatcher =
                         then ([cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.GrowthSound))], battle)
                         else ([], battle)
                     else ([], battle)
-                (cmd (FadeOutSong 5000) :: sigs, battle)
+                (cmd (FadeOutSong 6000) :: sigs, battle)
             else
                 match battle.DialogOpt with
                 | None -> just (Battle.updateBattleState (constant (BattleCease (outcome, battle.PrizePool.Consequents, time))) battle)
