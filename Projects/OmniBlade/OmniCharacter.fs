@@ -321,7 +321,7 @@ module Character =
 
     let shouldCounter (character : Character) =
         // TODO: pull this from stats
-        character.IsAlly && Gen.random1 4 = 0
+        character.IsAlly && Gen.random1 8 = 0
     
     let evaluateAutoBattle (source : Character) (target : Character) =
         let techOpt =

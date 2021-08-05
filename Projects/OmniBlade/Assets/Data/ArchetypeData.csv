@@ -17,6 +17,7 @@ Rat,0.5,0.5,0.5,0.5,0.5,0.5,0.5,Melee,Pelt,[],SmallStature,Semi-weak physical at
 Scorpion,0.5,0.5,0.5,0.5,0.5,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
 Plant,0.5,0.5,0.5,0.5,0.5,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Debuff effects.
 Goblin,1,1,1,1,1,1,1,Melee,Pelt,[[2 Ice] [6 Bolt] [10 Stone]],NormalStature,Normal physical attacks with weak Elemental magic.
+MagicGoblin,1,1,1,1,1,1,1,Melee,Pelt,[[2 Fire] [6 Ice] [10 Bolt]],NormalStature,Normal physical attacks with medium Elemental magic.
 Ghost,1,1,1,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff magic.
 Imp,1,1,1,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff effects.
 Zombie,1,1,1,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Status effects.

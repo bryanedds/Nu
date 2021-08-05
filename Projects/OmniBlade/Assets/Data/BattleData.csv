@@ -7,7 +7,7 @@ CastleBattle4,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[DarkBat DarkBat Dark
 CastleBattle5,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin BlueGoblin],[Castle CastleBattle],[Some [Battle Battle]]
 CastleBattle6,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BlueGoblin DarkBat DarkBat DarkBat],[Castle CastleBattle],[Some [Battle Battle]]
 CastleBattle7,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur DarkBat DarkBat DarkBat],[Castle CastleBattle],[Some [Battle Battle]]
-CastleBattle8,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur BlueGoblin DarkBat DarkBat],[Castle CastleBattle],[Some [Battle Battle]]
+CastleBattle8,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur BlueGoblin DarkBat],[Castle CastleBattle],[Some [Battle Battle]]
 CastleBattle9,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur MadMinotaur],[Castle CastleBattle],[Some [Battle Battle]]
 FireGoblinBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[MadMinotaur MadMinotaur FireGoblin],[Castle CastleBattle],[Some [Battle Battle2]]
 Castle2Battle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[PoisonGorgon],[Castle CastleBattle],[Some [Battle Battle]]
