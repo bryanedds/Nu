@@ -165,37 +165,61 @@ module TmxMap =
             | None -> None
         | None -> None
 
-    let tryGetTileLayerBodyShape ti (tl : TmxLayer) tmd =
-        match tryGetTileDescriptor ti tl tmd with
-        | Some td ->
-            match td.TileSetTileOpt with
-            | Some tileSetTile ->
-                match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
-                | (true, cexpr) ->
-                    let tileCenter =
-                        v2
-                            (td.TilePositionF.X + tmd.TileSizeF.X * 0.5f)
-                            (td.TilePositionF.Y + tmd.TileSizeF.Y * 0.5f)
-                    let tileBody =
+    let getTileLayerBodyShapes (tileLayer : TmxLayer) tileMapDescriptor =
+        
+        // construct a list of body shapes
+        let bodyShapes = List<BodyShape> ()
+        let tileBoxes = dictPlus<single, Vector4 List> HashIdentity.Structural []
+        for i in 0 .. dec tileLayer.Tiles.Count do
+
+            // construct a dictionary of tile boxes, adding non boxes to the result list
+            match tryGetTileDescriptor i tileLayer tileMapDescriptor with
+            | Some td ->
+                match td.TileSetTileOpt with
+                | Some tileSetTile ->
+                    match tileSetTile.Properties.TryGetValue Constants.TileMap.CollisionPropertyName with
+                    | (true, cexpr) ->
+                        let tileCenter =
+                            v2
+                                (td.TilePositionF.X + tileMapDescriptor.TileSizeF.X * 0.5f)
+                                (td.TilePositionF.Y + tileMapDescriptor.TileSizeF.Y * 0.5f)
                         match cexpr with
-                        | "" -> BodyBox { Extent = tmd.TileSizeF * 0.5f; Center = tileCenter; PropertiesOpt = None }
+                        | "" ->
+                            match tileBoxes.TryGetValue tileCenter.Y with
+                            | (true, l) ->
+                                l.Add (v4Bounds (tileCenter - tileMapDescriptor.TileSizeF * 0.5f) tileMapDescriptor.TileSizeF)
+                            | (false, _) ->
+                                tileBoxes.Add (tileCenter.Y, List [v4Bounds (tileCenter - tileMapDescriptor.TileSizeF * 0.5f) tileMapDescriptor.TileSizeF])
                         | _ ->
                             let tileShape = scvalue<BodyShape> cexpr
-                            let tileShapeImported = importShape tileShape tmd.TileSizeF tileCenter
-                            tileShapeImported
-                    Some tileBody
-                | (false, _) -> None
-            | None -> None
-        | None -> None
+                            let tileShapeImported = importShape tileShape tileMapDescriptor.TileSizeF tileCenter
+                            bodyShapes.Add tileShapeImported
+                    | (false, _) -> ()
+                | None -> ()
+            | None -> ()
 
-    let getTileLayerBodyShapes (tileLayer : TmxLayer) tileMapDescriptor =
-        Seq.foldi
-            (fun i bodyShapes _ ->
-                match tryGetTileLayerBodyShape i tileLayer tileMapDescriptor with
-                | Some bodyShape -> bodyShape :: bodyShapes
-                | None -> bodyShapes)
-            [] tileLayer.Tiles |>
-        Seq.toList
+        // combine adjacent tiles on the same row into strips
+        let strips = List ()
+        for boxes in tileBoxes.Values do
+            let mutable box = boxes.[0]
+            let epsilon = box.Size.X * 0.001f
+            for i in 1 .. dec boxes.Count do
+                let box2 = boxes.[i]
+                let distance = abs (box2.Left.X - box.Right.X)
+                if distance < epsilon then
+                    box <- box.WithSize (v2 (box.Size.X + box2.Size.X) box.Size.Y)
+                else
+                    strips.Add box
+                    box <- box2
+                if i = dec boxes.Count then
+                    strips.Add box
+
+        // convert strips into BodyShapes and add to the resulting list
+        for strip in strips do
+            strip |> BodyBox.fromBounds |> BodyBox |> bodyShapes.Add
+
+        // fin
+        bodyShapes
 
     let getBodyShapes tileMapDescriptor =
         tileMapDescriptor.TileMap.Layers |>
