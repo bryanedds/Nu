@@ -19,4 +19,4 @@ Castle2Battle6,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[FacelessSoldier Poi
 Castle2Battle7,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Hawk PoisonGorgon PoisonGorgon PoisonGorgon],[Castle CastleBattle],[Some [Battle Battle]]
 Castle2Battle8,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Hawk FacelessSoldier PoisonGorgon PoisonGorgon],[Castle CastleBattle],[Some [Battle Battle]]
 Castle2Battle9,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Hawk Hawk],[Castle CastleBattle],[Some [Battle Battle]]
-HeavyArmorosBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[HeavyArmoros PoisonGorgon PoisonGorgon PoisonGorgon PoisonGorgon],[Castle CastleBattle],[Some [Battle Battle2]]
+HeavyArmorosBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[HeavyArmoros Hawk PoisonGorgon PoisonGorgon PoisonGorgon],[Castle CastleBattle],[Some [Battle Battle2]]
