@@ -67,6 +67,7 @@ module Constants =
         let SpiritActivityMinimum = 120L
         let SpiritActivityThreshold = 120L
         let SpiritRadius = SpiritOrbRadius / SpiritOrbRatio
+        let WalkLengthScalar = 1.0f / 12.0f
         let TreasureProbability = 0.5f
         let RecruitmentFees = [|200; 1000; 5000; 25000|]
         let ConnectorFadeYMax = 1440.0f

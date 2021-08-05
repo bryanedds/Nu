@@ -915,9 +915,13 @@ module FieldData =
         match tryGetTileMap omniSeedState fieldData world with
         | Some tmxTileMap ->
             match fieldData.FieldTileMap with
-            | FieldRandom (_, _, origin, _, _) ->
+            | FieldRandom (walkLength, _, origin, _, _) ->
                 let tileMapBounds = v4Bounds v2Zero (v2 (single tmxTileMap.Width * single tmxTileMap.TileWidth) (single tmxTileMap.Height * single tmxTileMap.TileHeight))
-                let distanceFromOriginMax = let delta = tileMapBounds.Bottom - tileMapBounds.Top in delta.Length ()
+                let distanceFromOriginMax =
+                    let walkRatio = single walkLength * Constants.Field.WalkLengthScalar
+                    let tileMapBoundsScaled = tileMapBounds.Scale (v2Dup walkRatio)
+                    let delta = tileMapBoundsScaled.Bottom - tileMapBoundsScaled.Top
+                    delta.Length ()
                 let distanceFromOrigin =
                     match origin with
                     | OriginC -> let delta = avatarBottom - tileMapBounds.Center in delta.Length ()

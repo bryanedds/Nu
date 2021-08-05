@@ -292,6 +292,7 @@ module Vector4 =
         member this.Left = v2 this.X (this.Y + (this.W * 0.5f))
         member this.Right = v2 (this.X + this.Z) (this.Y + (this.W * 0.5f))
         member this.Translate (translation : Vector2) = Vector4 (this.X + translation.X, this.Y + translation.Y, this.Z, this.W)
+        member this.Scale (scale : Vector2) = Vector4 (this.X, this.Y, this.Z * scale.X, this.W * scale.Y)
         member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
         member this.MapZ mapper = Vector4 (this.X, this.Y, mapper this.Z, this.W)
@@ -552,6 +553,7 @@ module Vector4i =
 
     type Vector4i with
         member this.Translate (translation : Vector2i) = Vector4i (this.X + translation.X, this.Y + translation.Y, this.Z + translation.X, this.W + translation.Y)
+        member this.Scale (scale : Vector2i) = Vector4i (this.X, this.Y, this.Z * scale.X, this.W * scale.Y)
         member this.MapX mapper = Vector4i (mapper this.X, this.Y, this.Z, this.W)
         member this.MapY mapper = Vector4i (this.X, mapper this.Y, this.Z, this.W)
         member this.MapZ mapper = Vector4i (this.X, this.Y, mapper this.Z, this.W)
