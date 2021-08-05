@@ -24,7 +24,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;ECS</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\Metrics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
@@ -38,7 +38,7 @@
     <Optimize>true</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;ECS</DefineConstants>
+    <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Release\Metrics.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
@@ -137,7 +137,7 @@
       <HintPath>..\..\packages\Prime.Scripting.7.2.0\lib\net472\Prime.Scripting.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
-      <HintPath>..\..\packages\SDL2-CS.dll.2.0.0.0\lib\net20\SDL2-CS.dll</HintPath>
+      <HintPath>..\..\Nu\Nu.Dependencies\SDL-CS.dll\lib\net20\SDL2-CS.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

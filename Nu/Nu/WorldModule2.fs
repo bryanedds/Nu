@@ -846,6 +846,7 @@ module WorldModule2 =
                 SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
                 SDL.SDL_RenderClear renderContext |> ignore
             renderer.Render eyeCenter eyeSize renderMessages
+            SDL.SDL_RenderFlush renderContext |> ignore
             SDL.SDL_RenderPresent renderContext
 
         static member private play audioMessages (audioPlayer : AudioPlayer) =
