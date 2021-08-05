@@ -368,6 +368,7 @@ module BattleDispatcher =
             if localTime = 0L then
                 let alliesLevelingUp =
                     battle |> Battle.getAllies |> Map.toValueList |>
+                    List.filter (fun ally -> ally.HitPoints > 0) |>
                     List.filter (fun ally -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
                 let textA =
                     match alliesLevelingUp with
