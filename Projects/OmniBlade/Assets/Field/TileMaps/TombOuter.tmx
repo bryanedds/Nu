@@ -45,7 +45,7 @@
   </object>
   <object id="11" gid="443" x="2592" y="1440" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc RiainNpc Downward [Prompt &quot;... $FEE... gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc RiainNpc Rightward [Prompt &quot;... $FEE... gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="12" gid="443" x="1056" y="624" width="144" height="144">
