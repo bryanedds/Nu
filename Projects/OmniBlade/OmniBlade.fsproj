@@ -24,7 +24,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;DEV</DefineConstants>
     <WarningLevel>5</WarningLevel>
     <DocumentationFile>bin\Debug\OmniBlade.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
