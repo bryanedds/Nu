@@ -242,7 +242,7 @@
       <HintPath>..\..\packages\Prime.Scripting.7.2.0\lib\net472\Prime.Scripting.exe</HintPath>
     </Reference>
     <Reference Include="SDL2-CS">
-      <HintPath>..\..\packages\SDL2-CS.dll.2.0.0.0\lib\net20\SDL2-CS.dll</HintPath>
+      <HintPath>..\Nu.Dependencies\SDL-CS.dll\lib\net20\SDL2-CS.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />

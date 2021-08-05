@@ -4,6 +4,9 @@
 namespace Nu
 open System
 open System.Collections.Generic
+#if MULTITHREAD_RENDER_SORT
+open System.Linq
+#endif
 open System.Numerics
 open System.IO
 open SDL2
@@ -253,7 +256,8 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
         | ".bmp"
         | ".png" ->
             let textureOpt = SDL_image.IMG_LoadTexture (renderContext, asset.FilePath)
-            if textureOpt <> IntPtr.Zero then Some (asset.AssetTag.AssetName, TextureAsset textureOpt)
+            if textureOpt <> IntPtr.Zero then
+                Some (asset.AssetTag.AssetName, TextureAsset textureOpt)
             else
                 let errorMsg = SDL.SDL_GetError ()
                 Log.debug ("Could not load texture '" + asset.FilePath + "' due to '" + errorMsg + "'.")
