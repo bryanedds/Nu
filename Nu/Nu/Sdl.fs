@@ -104,8 +104,8 @@ module SdlDeps =
     let tryMake sdlConfig =
         match attemptPerformSdlInit
             (fun () ->
-                // NOTE: avoids depending on the presence of tilt sensor hardware.
-                let initConfig = SDL.SDL_INIT_EVERYTHING - SDL.SDL_INIT_SENSOR
+                SDL.SDL_SetHint (SDL.SDL_HINT_RENDER_BATCHING, "1") |> ignore
+                let initConfig = SDL.SDL_INIT_EVERYTHING - SDL.SDL_INIT_SENSOR // NOTE: avoids depending on the presence of tilt sensor hardware.
                 SDL.SDL_Init initConfig)
             (fun () -> SDL.SDL_Quit ()) with
         | Left error -> Left error
@@ -119,9 +119,7 @@ module SdlDeps =
             | Left error -> Left error
             | Right (window, destroy) ->
                 match tryMakeSdlResource
-                    (fun () ->
-                        SDL.SDL_SetHint (SDL.SDL_HINT_RENDER_BATCHING, "1") |> ignore
-                        SDL.SDL_CreateRenderer (window, -1, sdlConfig.RendererFlags))
+                    (fun () -> SDL.SDL_CreateRenderer (window, -1, sdlConfig.RendererFlags))
                     (fun renderContext -> SDL.SDL_DestroyRenderer renderContext; destroy window) with
                 | Left error -> Left error
                 | Right (renderContext, destroy) ->
