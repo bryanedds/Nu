@@ -8,7 +8,7 @@ Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Acces
 [Enemy DarkBat],Bat,2,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.25],1,1,A bat from the darkest parts of the tomb.
 [Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],[Some ThinFur],[],[Some 0.333],1,1,A minor goblin from the Golobogos Islands.
 [Enemy MadMinotaur],Minotaur,2,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.333],1,1,A minotaur gone mad with vengeance.
-[Enemy FireGoblin],Goblin,7,[Castle FireGoblin],None,[Some Paws],[Some ThickFur],[],[Some 0.333],2,2,A goblin borne from the Golobogos Volcano.
+[Enemy FireGoblin],FireGoblin,7,[Castle FireGoblin],None,[Some Paws],[Some ThickFur],[],[Some 0.333],2,2,A goblin borne from the Golobogos Volcano.
 [Enemy PoisonGorgon],Gorgon,3,[Castle PoisonGorgon],None,[Some Paws],None,[],[Some 0.25],1,1,A poisonous gorgon.
 [Enemy FacelessSoldier],Fighter,6,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.25],1,1,A soldier whose face is long forgotten.
 [Enemy Hawk],Avian,6,[Castle Hawk],None,[Some Paws],None,[],[Some 0.333],1,1,A vengeful avian.

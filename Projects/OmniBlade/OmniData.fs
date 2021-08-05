@@ -298,7 +298,7 @@ type ArchetypeType =
     | Scorpion
     | Plant
     | Goblin
-    | MagicGoblin
+    | FireGoblin
     | Ghost
     | Imp
     | Zombie
