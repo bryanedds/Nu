@@ -9,7 +9,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt1W0KQEAQBuC1f1zA142Ei0qutCQXMaJMG4ryDpmpyf7y7L7ZEVtj4gudUB9VdPFdd1p99dVX3686NKYLn/cz6jGQOftZBkjfz2CgdQr0eQYSNveRue/5OT1LsF1RF6vfWPwe5rO3q+/ssgf0/evt9v07oM+zl7j/PHspvxf2/ULOoLfNfokZ6GeA9nkGf///qP9tfwLbpGFG
+   eJzt1VEKgCAMBmDzxQtkdaOoLhrRlSqiizSJQEYGBv1GbDDwqW/+hlqtlI3ogjpUeeS3nrT44osvPq/eKDWb9/2KesvS7P0uA6TPM1hpXQJ9ngFy71/0a1q3QLujbjx/0NgZ3N5Hz5/0MQPqHJy/eP45A8Ln2aPvAJ59Cp9nj/avCnUHhnzUvy/vn7x/4v/H3wE9WF7D
   </data>
  </layer>
  <objectgroup id="3" name="Props">
@@ -21,7 +21,7 @@
     <property name="I" value="[Sensor StepPlateSensor None [If [CastleUnsealed] [Sequence [[PlaySound 0.5 [Field Sealed]] [Dialog &quot;Castle seal reactivated...&quot;] [RemoveAdvent CastleUnsealed]]]]]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="720" y="1536" width="48" height="48">
+  <object id="4" gid="235" x="720" y="1536" width="96" height="48">
    <properties>
     <property name="I" value="[Portal AirPortal South Upward TombGround [IX 0]]"/>
    </properties>
