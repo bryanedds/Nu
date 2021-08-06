@@ -8,6 +8,7 @@ Cleric,0.9,0.9,1.1,1.1,1,1,1,Bow,Vest,[[2 Aura] [4 Empower] [6 Enlighten] [8 Pro
 Bat,0.5,0.5,0.5,0.5,0.5,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Drain magic.
 Spider,0.5,0.5,0.5,0.5,0.5,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
 Snake,0.5,0.5,0.5,0.5,0.5,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
+Gorgon,0.5,0.5,0.5,0.5,0.5,0.5,0.5,Melee,Pelt,[],SmallStature,Physical attacks and Status magic.
 Willowisp,0.5,0.5,0.5,0.5,0.5,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Fire magic.
 Chillowisp,0.5,0.5,0.5,0.5,0.5,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Ice magic.
 Fairy,0.5,0.5,0.5,0.5,0.5,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Elemental magic.
@@ -35,7 +36,6 @@ Thief,1,1,1,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks and High Evasio
 Lizardman,1,1,1,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attack w/ High Defense with Buff magic.
 Trixter,1,1,1,1,1,1,1,Melee,Pelt,[],NormalStature,
 Monk,1,1,1,1,1,1,1,Melee,Pelt,[],NormalStature,
-Gorgon,1,1,1,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attacks and Status magic.
 Tortoise,1,1,1,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attack w/ High Defense with Buff magic.
 Robot,1,1,1,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
 Harpy,1,1,1,1,1,1,1,Melee,Pelt,[],LargeStature,
