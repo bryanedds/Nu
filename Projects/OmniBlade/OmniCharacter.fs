@@ -311,7 +311,6 @@ module Character =
 
     let isReadyForAutoBattle character =
         Option.isNone character.AutoBattleOpt_ &&
-        character.ActionTime >= Constants.Battle.AutoBattleReadyTime &&
         character.IsEnemy
 
     let isAutoBattling character =
@@ -547,7 +546,7 @@ module Character =
             let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
             let characterType = characterData.CharacterType
             let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
-            let actionTime = 250 - 50 * index // NOTE: started enemies in the negative, but I think that works with the algorithm okay. TODO: P1: put this in Constants.
+            let actionTime = -50 * index // NOTE: started enemies in the negative, but I think that works with the algorithm okay. TODO: P1: put this in Constants.
             let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet Rightward actionTime
             Some enemy
         | None -> None
