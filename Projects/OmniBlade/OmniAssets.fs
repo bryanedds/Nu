@@ -47,6 +47,7 @@ module Assets =
         let ButtonShortDownImage = asset<Image> PackageName "ButtonShortDown" // TODO: P1: Convert art.
         let AffirmSound = asset<Sound> PackageName "Affirm"
         let MistakeSound = asset<Sound> PackageName "Mistake"
+        let SlotSound = asset<Sound> PackageName "Slot"
         let TitleSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Title" }
         let IntroSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = 1500; Song = asset<Song> PackageName "Intro" }
         let TitleGroupFilePath = "Assets/Gui/Groups/Title.nugroup"
@@ -101,7 +102,6 @@ module Assets =
         let BeastDeathSound = asset<Sound> PackageName "BeastDeath"
         let HealSound = asset<Sound> PackageName "Heal"
         let PurchaseSound = asset<Sound> PackageName "Purchase" // TODO: P1: Move this to Gui?
-        let SaveSound = asset<Sound> PackageName "Save"
         let DoorOpenSound = asset<Sound> PackageName "DoorOpen"
         let ChestOpenSound = asset<Sound> PackageName "ChestOpen"
         let UseSwitchSound = asset<Sound> PackageName "UseSwitch"
