@@ -40,7 +40,7 @@
   </object>
   <object id="10" gid="443" x="2928" y="1104" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc PericNpc Downward [Prompt &quot;I hope we can work together, but I cannot work for free. My fee is $FEE gold...&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Nil]]]"/>
+    <property name="I" value="[Npc PericNpc Downward [Prompt &quot;I hope we can work together, but I cannot work for free... My fee is $FEE gold.&quot; [&quot;Yes&quot; [Recruit Peric]] [&quot;No&quot; Nil]]]"/>
    </properties>
   </object>
   <object id="11" gid="443" x="2592" y="1440" width="144" height="144">
