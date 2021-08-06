@@ -228,7 +228,7 @@ module FieldDispatcher =
         static let interactSavePoint (field : Field) =
             let field = Field.restoreTeam field
             Field.save field
-            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SaveSound)) field
+            withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
 
         static let rec runCue cue (field : Field) world : Cue * (Signal<FieldMessage, FieldCommand> list * Field) =
 
@@ -503,7 +503,12 @@ module FieldDispatcher =
                     Content.button Gen.name
                         [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 336.0f 72.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
-                         Entity.Text <== selectionLens --> fun (_, (itemType, countOpt)) -> match countOpt with Some count when count > 1 -> ItemType.getName itemType + " x" + string count | _ -> ItemType.getName itemType
+                         Entity.Text <== selectionLens --> fun (_, (itemType, countOpt)) ->
+                            match countOpt with
+                            | Some count when count > 1 ->
+                                let itemName = ItemType.getName itemType
+                                itemName + String (Array.create (17 - itemName.Length) ' ') + "x" + string count
+                            | _ -> ItemType.getName itemType
                          Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
 

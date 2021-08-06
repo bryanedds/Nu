@@ -14,7 +14,7 @@
 #r "../../packages/FSharpx.Collections.2.1.3/lib/net45/FSharpx.Collections.dll"
 #r "../../packages/Aether.Physics2D.1.5.0/lib/net40/Aether.Physics2D.dll"
 #r "../../packages/Nito.Collections.Deque.1.1.0/lib/netstandard2.0/Nito.Collections.Deque.dll"
-#r "../../packages/SDL2-CS.dll.2.0.0.0/lib/net20/SDL2-CS.dll"
+#r "../../Nu/Nu.Dependencies/SDL2-CS.dll/lib/net20/SDL2-CS.dll"
 #r "../../Nu/Nu.Math/bin/x64/Debug/Nu.Math.dll"
 #r "../../Nu/Nu/bin/Debug/Nu.exe"
 #r "../../Nu/Nu.Gaia.Design/bin/x64/Debug/Nu.Gaia.Design.exe"
