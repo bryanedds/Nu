@@ -20,15 +20,15 @@
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Code: Bryan Edds"]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" ""]]
     [Position [-432 0]]
     [Size [864 90]]
-    [Text "Code: Bryan Edds"]]]
+    [Text "Code: Bryan Edds & Dean J. Lee"]]]
   [TextDispatcher
    [[BackgroundImageOpt
      [Some [Gui DialogThin]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
-    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" "Art: Placeholder for now."]]
+    [Model ["System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" ""]]
     [Position [-432 -126]]
     [Size [864 90]]
-    [Text "Art: Placeholder for now."]]]]]
+    [Text "Art: Various"]]]]]
