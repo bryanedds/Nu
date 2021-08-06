@@ -5,7 +5,7 @@ DarkCritical,3,Physical,1.5,1,False,False,False,True,0,[Some Dark],[],[],[Single
 Cyclone,3,Physical,0.75,1,False,False,False,False,0,None,[],[],[RadialTarget 144 [EnemyAim True]],
 PowerCut,2,Physical,1.5,1,False,False,False,False,0,None,[],[],[SingleTarget [EnemyAim True]],
 SneakCut,2,Physical,1,1,False,True,False,False,0,None,[],[],[SingleTarget [EnemyAim True]],
-DoubleCut,3,Physical,2,1,False,False,False,False,0,None,[],[],[SingleTarget [EnemyAim True]],
+DoubleCut,4,Physical,2,1,False,False,False,False,0,None,[],[],[SingleTarget [EnemyAim True]],
 ProvokeCut,4,Physical,1.5,1,False,False,True,False,0,None,[],[],[SingleTarget [EnemyAim True]],
 Fire,3,Magical,1.5,1,False,False,False,False,0,[Some Fire],[],[],[SingleTarget [EnemyAim True]],
 Flame,4,Magical,0.75,1,False,False,False,False,0,[Some Fire],[],[],[SegmentTarget 48 [EnemyAim True]],
