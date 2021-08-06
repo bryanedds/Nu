@@ -26,8 +26,8 @@ module Constants =
     module Intro =
 
         let Dissolve =
-            { IncomingTime = 90L
-              OutgoingTime = 90L
+            { IncomingTime = 95L
+              OutgoingTime = 95L
               DissolveImage = Assets.Default.Image8 }
 
         let Splash =
