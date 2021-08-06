@@ -456,17 +456,17 @@ module FieldDispatcher =
                     Entity.ClickEvent ==> msg MenuItemOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 160.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "T"
+                    Entity.Text == "E"
                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
                     Entity.ClickEvent ==> msg MenuTechOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 240.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "O"
+                    Entity.Text == "P" // party
                     Entity.EnabledLocal == false
                     Entity.ClickEvent ==> msg Nop]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 320.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "Q"
+                    Entity.Text == "O" // options - includes quit to main menu
                     Entity.EnabledLocal == false
                     Entity.ClickEvent ==> msg Nop]
                  Content.button Gen.name
