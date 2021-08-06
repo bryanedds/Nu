@@ -3,12 +3,12 @@
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0rsKACAIQFGhPt6hxy9HkNRcg4R3OIODXAQ1ieilutzuv6Lv029ZpOfdtznK/fR9+2X+3vF/Nke5n/7ue7XpAwCAXw3zyizk
+   eJzt0rsKACAIQFGhPt6hxy9HkNScg4N3uIODHAS1iOhn/fS77w0/xh9VZNbr25zlfvxYv+3fe/7P5iz34+Pj4+Pn9omIPC0tQy05
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlcEOgjAMhpuNPQIvwEHxvTQYCEbfz5Mv5EG8M7I1NBNN8PCXiEsa0gtf+6XrckOUz4jW0dtzdPP+9U0sgf+wRJ0duZyj+GVGtMtGPudr8b92vvb8bfysbcX8ca7pvwawOU4TNSB6/+QAyU8dDO73YD470GBL/tl/KzC/8bxL5F8Nvoah95sJ/LsJNaDn/xn5hQ01oPjsvhT7twDt3tS9xv2X7rX40r0GPz3IHaS9+w/u9f1Dvz2pAzRfOtB+f9C9//m/xe8BVkx7TQ==
+   eJwTZWJgECUB57Iy4AQZrKSZRQ4eDPZ/ZmZg+MKMsBfGp5f9GiwMDJosCPth/JES/iPd/oFOf2rAtKaOlP5g/IEM/yygeAod7E8F2pGHxQ308Du+MKCn/ehhQK+wxxUG9PQ7NvsLgOx0OrohG2hXIZL9e5jo6waQ3w8xIex/zwRxA73iAWT/VyT7lZghbqCH/bCw10Aqf2FuoFf5hxz29C4D0MN+IOxHD3t6248N0KsMxGU/vfLeaP03Wv+N2j987AcAUI16PA==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
