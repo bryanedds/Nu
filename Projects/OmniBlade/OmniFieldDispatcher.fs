@@ -460,6 +460,16 @@ module FieldDispatcher =
                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
                     Entity.ClickEvent ==> msg MenuTechOpen]
                  Content.button Gen.name
+                   [Entity.PositionLocal == position - v2 0.0f 240.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
+                    Entity.Text == "O"
+                    Entity.EnabledLocal == false
+                    Entity.ClickEvent ==> msg Nop]
+                 Content.button Gen.name
+                   [Entity.PositionLocal == position - v2 0.0f 320.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
+                    Entity.Text == "Q"
+                    Entity.EnabledLocal == false
+                    Entity.ClickEvent ==> msg Nop]
+                 Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.Text == "X"
                     Entity.ClickEvent ==> msg MenuClose]]
@@ -476,26 +486,6 @@ module FieldDispatcher =
                          Entity.EnabledLocal <== teammateAndMenu --> fun (teammate, menu) -> filter teammate menu
                          Entity.Text <== teammateAndMenu --> fun (teammate, _) -> CharacterType.getName teammate.CharacterType
                          Entity.ClickEvent ==> msg (fieldMsg index)])
-
-        static let techs (position : Vector2) elevation field fieldMsg =
-            Content.entities field
-                (fun (field : Field) _ -> (field.Menu, field.Team))
-                (fun (menu, team) _ ->
-                    match menu.MenuState with
-                    | MenuTech menuTech ->
-                        match Map.tryFind menuTech.TeammateIndex team with
-                        | Some teammate -> teammate.Techs |> Seq.index |> Map.ofSeq
-                        | None -> Map.empty
-                    | _ -> Map.empty)
-                (fun i techLens _ ->
-                    let x = position.X
-                    let y = position.Y - single i * 60.0f
-                    Content.button Gen.name
-                        [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 336.0f 60.0f
-                         Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
-                         Entity.EnabledLocal == false
-                         Entity.Text <== techLens --> scstringm
-                         Entity.ClickEvent ==> msg (fieldMsg i)])
 
         static let items (position : Vector2) elevation columns field fieldMsg =
             Content.entities field
@@ -531,6 +521,26 @@ module FieldDispatcher =
                             | _ -> ItemType.getName itemType
                          Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
+
+        static let techs (position : Vector2) elevation field fieldMsg =
+            Content.entities field
+                (fun (field : Field) _ -> (field.Menu, field.Team))
+                (fun (menu, team) _ ->
+                    match menu.MenuState with
+                    | MenuTech menuTech ->
+                        match Map.tryFind menuTech.TeammateIndex team with
+                        | Some teammate -> teammate.Techs |> Seq.index |> Map.ofSeq
+                        | None -> Map.empty
+                    | _ -> Map.empty)
+                (fun i techLens _ ->
+                    let x = position.X
+                    let y = position.Y - single i * 60.0f
+                    Content.button Gen.name
+                        [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 336.0f 60.0f
+                         Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
+                         Entity.Text <== techLens --> scstringm
+                         Entity.EnabledLocal == false
+                         Entity.ClickEvent ==> msg (fieldMsg i)])
 
         override this.Channel (_, field) =
             [Simulants.Field.Scene.Avatar.Avatar.ChangeEvent =|> fun evt -> msg (UpdateAvatar (evt.Data.Value :?> Avatar))
