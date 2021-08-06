@@ -483,7 +483,7 @@ module FieldDispatcher =
                 (fun (menu, team) _ ->
                     match menu.MenuState with
                     | MenuTech menuTech ->
-                        match MenuTech.tryGetTeammate team menuTech with
+                        match Map.tryFind menuTech.TeammateIndex team with
                         | Some teammate -> teammate.Techs |> Seq.index |> Map.ofSeq
                         | None -> Map.empty
                     | _ -> Map.empty)
@@ -723,7 +723,7 @@ module FieldDispatcher =
                 just field
 
             | MenuTechOpen ->
-                let state = MenuTech { TechIndexOpt = None }
+                let state = MenuTech { TeammateIndex = 0 }
                 let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
                 just field
             
@@ -732,7 +732,7 @@ module FieldDispatcher =
                     Field.updateMenu (fun menu ->
                         let state =
                             match menu.MenuState with
-                            | MenuTech menuTech -> MenuTech { menuTech with TechIndexOpt = Some index }
+                            | MenuTech menuTech -> MenuTech { menuTech with TeammateIndex = index }
                             | state -> state
                         { menu with MenuState = state })
                         field
