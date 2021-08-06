@@ -3,7 +3,7 @@
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0rsKACAIQFEhP76hxy9HUNRsg0V3uINDnARjEInG8sj6/jR8H7+oSNXlz/mX/fF9/dRvb7u/Of+yPz4+Pj6+v+9l3/QHInqzBirDLTk=
+   eJzt0rsKACAIQFGhPt6hxy9HUNRcg4V3uINDnAQ1iOhheXT6/jZ8G79EkRqXP2cv++Pb+qnf3nZ/c/ayPz4+Pr53X419691f+QMR/VkDEG8tNA==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
