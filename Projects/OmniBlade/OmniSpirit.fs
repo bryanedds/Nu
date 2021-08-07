@@ -36,7 +36,7 @@ type [<NoEquality; NoComparison>] SpiritPattern =
     static member toSpiritMovement pattern =
         match pattern with
         | Disinterested -> [|Wander|]
-        | Curious -> [|Creep; Scatter|]
+        | Curious -> [|Chase; Scatter|]
         | Confused -> [|Creep; Wander|]
         | Stalking -> [|Chase; Creep|]
         | Ambushing -> [|Chase|]
