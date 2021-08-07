@@ -299,6 +299,7 @@ type ArchetypeType =
     | Plant
     | Goblin
     | FireGoblin
+    | Soldier
     | Ghost
     | Imp
     | Zombie
@@ -689,9 +690,9 @@ type ArchetypeData =
     { ArchetypeType : ArchetypeType // key
       Stamina : single // hit points scalar
       Strength : single // power scalar
-      Focus : single // tech points scalar
       Intelligence : single // magic scalar
       Toughness : single // shield scalar
+      Focus : single // tech points scalar
       Wealth : single // gold scalar
       Mythos : single // exp scala
       WeaponSubtype : WeaponSubtype
