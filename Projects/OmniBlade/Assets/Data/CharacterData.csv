@@ -9,7 +9,7 @@ Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Acces
 [Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],[Some ThinFur],[],[Some 0.333],1,1,A minor goblin from the Golobogos Islands.
 [Enemy MadMinotaur],Minotaur,2,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.333],1,1,A minotaur gone mad with vengeance.
 [Enemy FireGoblin],FireGoblin,7,[Castle FireGoblin],None,[Some Paws],[Some ThickFur],[],[Some 0.333],2,2,A goblin borne from the Golobogos Volcano.
-[Enemy PoisonGorgon],Gorgon,5,[Castle PoisonGorgon],None,[Some Paws],None,[],[Some 0.25],1,1,A poisonous gorgon.
+[Enemy PoisonGorgon],Gorgon,6,[Castle PoisonGorgon],None,[Some Paws],None,[],[Some 0.25],1,1,A poisonous gorgon.
 [Enemy FacelessSoldier],Fighter,6,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.333],1,1,A soldier whose face is long forgotten.
 [Enemy Hawk],Avian,4,[Castle Hawk],None,[Some Paws],None,[],[Some 0.333],1,1,A vengeful avian.
 [Enemy HeavyArmoros],Armoros,6,[Castle HeavyArmoros],None,[Some Paws],[Some ThickFur],[],[Some 0.333],2,2,The heaviest armoros you’ve ever seen!
