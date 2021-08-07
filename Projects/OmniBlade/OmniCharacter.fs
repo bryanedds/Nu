@@ -320,8 +320,9 @@ module Character =
 
     let shouldCounter (character : Character) =
         // TODO: pull this from stats
-        character.IsAlly && Gen.random1 8 = 0
-    
+        character.ArchetypeType = Fighter &&
+        Gen.random1 8 = 0
+
     let evaluateAutoBattle (source : Character) (target : Character) =
         let techOpt =
             if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
