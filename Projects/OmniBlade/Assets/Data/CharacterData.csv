@@ -8,8 +8,8 @@ Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Acces
 [Enemy DarkBat],Bat,2,[Castle DarkBat],None,[Some Paws],None,[],[Some 0.25],1,1,A bat from the darkest parts of the tomb.
 [Enemy BlueGoblin],Goblin,2,[Castle BlueGoblin],None,[Some Paws],[Some ThinFur],[],[Some 0.333],1,1,A minor goblin from the Golobogos Islands.
 [Enemy MadMinotaur],Minotaur,2,[Castle MadMinotaur],None,[Some Paws],None,[],[Some 0.333],1,1,A minotaur gone mad with vengeance.
-[Enemy MadTrixter],Trixter,4,[Castle MadTrixter],None,[Some Paws],[Some ThickFur],[],[Some 0.333],2,2,???
+[Enemy MadTrixter],Trixter,3,[Castle MadTrixter],None,[Some Paws],[Some ThickFur],[],[Some 0.333],3,3,???
 [Enemy PoisonGorgon],Gorgon,5,[Castle PoisonGorgon],None,[Some Paws],None,[],[Some 0.25],1,1,A poisonous gorgon.
 [Enemy FacelessSoldier],Soldier,5,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.333],1,1,A soldier whose face is long forgotten.
 [Enemy Hawk],Avian,5,[Castle Hawk],None,[Some Paws],None,[],[Some 0.333],1,1,A vengeful avian.
-[Enemy HeavyArmoros],Armoros,7,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.333],2,2,The heaviest armoros you’ve ever seen!
+[Enemy HeavyArmoros],Armoros,7,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.333],3,3,The heaviest armoros you’ve ever seen!
