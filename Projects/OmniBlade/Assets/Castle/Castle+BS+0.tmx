@@ -14,12 +14,12 @@
  <objectgroup id="3" name="Props">
   <object id="2" gid="235" x="696" y="480" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc FireGoblinNpc Downward [Sequence [[Dialog &quot;Welcome to your doom!&quot;] [Battle FireGoblinBattle [FireGoblinDefeated]]]]]"/>
+    <property name="I" value="[Npc BlueGoblinNpc Downward [Sequence [[Dialog &quot;Welcome to your doom!&quot;] [Battle BlueGoblinBattle [BlueGoblinDefeated]]]]]"/>
    </properties>
   </object>
   <object id="3" gid="235" x="744" y="288" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [StairsPortal true] [IX 1] Downward [Castle 1] [IX 0] false [FireGoblinDefeated]]"/>
+    <property name="I" value="[Portal [StairsPortal true] [IX 1] Downward [Castle 1] [IX 0] false [BlueGoblinDefeated]]"/>
    </properties>
   </object>
  </objectgroup>
