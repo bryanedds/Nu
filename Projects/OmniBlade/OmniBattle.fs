@@ -207,7 +207,7 @@ module Battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
         prependActionCommand attackCommand battle
 
-    let rec private tryRandomizeEnemy attempts enemy (layout : Either<unit, EnemyType option> array array) =
+    let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
         if attempts < 10000 then
             let (w, h) = (layout.Length, layout.[0].Length)
             let (x, y) = (Gen.random1 w, Gen.random1 h)
@@ -226,10 +226,10 @@ module Battle =
                                  Left (), Left (), Left (),
                                  Left ()) ->
                                 layout.[x+0].[y+1] <- Right None
-                                layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some enemy); layout.[x+1].[y+0] <- Right None
+                                layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None
                                 layout.[x+0].[y-1] <- Right None
-                            | _ -> tryRandomizeEnemy (inc attempts) enemy layout
-                        else tryRandomizeEnemy (inc attempts) enemy layout
+                            | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
+                        else tryRandomizeEnemy (inc attempts) index enemy layout
                     | HugeStature ->
                         if x > 1 && x < w - 2 && y > 1 && y < h - 2 then 
                             match
@@ -245,22 +245,22 @@ module Battle =
                                  Left ()) ->
                                 layout.[x+0].[y+2] <- Right None
                                 layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None
-                                layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some enemy); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
+                                layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
                                 layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None; layout.[x+1].[y-1] <- Right None
                                 layout.[x+0].[y-2] <- Right None
-                            | _ -> tryRandomizeEnemy (inc attempts) enemy layout
-                        else tryRandomizeEnemy (inc attempts) enemy layout
+                            | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
+                        else tryRandomizeEnemy (inc attempts) index enemy layout
                 | None -> ()
             | None -> ()
         else Log.debug ("No enemy fit found for '" + scstring enemy + "' in layout.")
 
-    let private randomizeEnemyLayout w h enemies =
+    let private randomizeEnemyLayout w h (enemies : EnemyType list) =
         let layout = Array.init w (fun _ -> Array.init h (fun _ -> Left ()))
         layout.[0].[0] <- Left () // don't put enemies in the corners
         layout.[w-1].[0] <- Left ()
         layout.[0].[h-1] <- Left ()
         layout.[w-1].[h-1] <- Left ()
-        List.iter (fun enemy -> tryRandomizeEnemy 0 enemy layout) enemies
+        List.iteri (fun index enemy -> tryRandomizeEnemy 0 index enemy layout) enemies
         layout
 
     let private randomizeEnemies offsetCharacters enemies =
@@ -268,18 +268,17 @@ module Battle =
         let origin = v2 -288.0f -240.0f
         let tile = v2 48.0f 48.0f
         let layout = randomizeEnemyLayout w h enemies
+        let enemyIndexMax = dec enemies.Length
         let enemies =
-            let mutable index = -1
             layout |>
             Array.mapi (fun x arr ->
                 Array.mapi (fun y enemyOpt ->
                     match enemyOpt with
                     | Left () -> None
                     | Right None -> None
-                    | Right (Some enemy) ->
-                        index <- inc index
+                    | Right (Some (enemyIndex, enemy)) ->
                         let position = v2 (origin.X + single x * tile.X) (origin.Y + single y * tile.Y)
-                        Character.tryMakeEnemy index offsetCharacters { EnemyType = enemy; EnemyPosition = position })
+                        Character.tryMakeEnemy enemyIndex enemyIndexMax offsetCharacters { EnemyType = enemy; EnemyPosition = position })
                     arr) |>
             Array.concat |>
             Array.definitize |>
@@ -326,7 +325,7 @@ module Battle =
                         let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.ofVector2 -bounds.Bottom
-                        let actionTime = 1000 - 500 * index // TODO: P1: put this in Constants.
+                        let actionTime = 1000 - Constants.Battle.AllyActionTimeSpacing * index
                         let character = Character.make bounds characterIndex characterType characterState animationSheet direction actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
