@@ -33,7 +33,7 @@ type Advent =
     | MaelRecruited
     | RiainRecruited
     | PericRecruited
-    | BlueGoblinDefeated
+    | MadTrixterDefeated
     | HeavyArmorosDefeated
     | CastleUnsealed
     | ForestUnsealed
@@ -396,7 +396,7 @@ type BattleType =
     | CastleBattle7
     | CastleBattle8
     | CastleBattle9
-    | BlueGoblinBattle
+    | MadTrixterBattle
     | Castle2Battle
     | Castle2Battle2
     | Castle2Battle3
@@ -448,7 +448,7 @@ type NpcType =
     | AdvenNpc
     | EildaenNpc
     | ShamanaNpc
-    | BlueGoblinNpc
+    | MadTrixterNpc
     | HeavyArmorosNpc
     
     static member exists advents specialty =
@@ -457,7 +457,7 @@ type NpcType =
         | MaelNpc -> not (Set.contains MaelRecruited advents)
         | RiainNpc -> not (Set.contains RiainRecruited advents)
         | PericNpc -> not (Set.contains PericRecruited advents)
-        | BlueGoblinNpc -> not (Set.contains BlueGoblinDefeated advents)
+        | MadTrixterNpc -> not (Set.contains MadTrixterDefeated advents)
         | HeavyArmorosNpc -> not (Set.contains HeavyArmorosDefeated advents)
         | RavelNpc | AdvenNpc | EildaenNpc | ShamanaNpc -> true
 
@@ -516,9 +516,9 @@ type AllyType =
 type EnemyType =
     | DebugGoblin
     | DarkBat
-    | GreenGoblin
-    | MadMinotaur
     | BlueGoblin
+    | MadMinotaur
+    | MadTrixter
     | PoisonGorgon
     | FacelessSoldier
     | Hawk
