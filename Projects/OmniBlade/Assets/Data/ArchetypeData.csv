@@ -5,18 +5,18 @@ Ninja,1.1,1,1,0.9,1,1,1,Knife,Vest,[[2 PowerCut] [4 SneakCut] [6 DoubleCut] [8 P
 Wizard,0.9,0.8,1.2,1.2,1,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball]],SmallStature,
 Conjuror,0.9,0.8,1.2,1.2,1,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 ConjureIfrit] [8 Slow]],SmallStature,
 Cleric,0.9,0.9,1.1,1.1,1,1,1,Bow,Vest,[[2 Aura] [4 Empower] [6 Enlighten] [8 Protect]],SmallStature,
-Bat,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Drain magic.
-Spider,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
-Snake,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
-Gorgon,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Physical attacks and Status magic.
-Willowisp,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Fire magic.
-Chillowisp,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Ice magic.
-Fairy,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Elemental magic.
-Gel,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Elemental magic.
-Beetle,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Curative magic.
-Rat,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Semi-weak physical attacks.
-Scorpion,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
-Plant,0.5,0.75,0.75,0.75,0.75,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Debuff effects.
+Bat,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Drain magic.
+Spider,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
+Snake,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
+Gorgon,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Physical attacks and Status magic.
+Willowisp,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Fire magic.
+Chillowisp,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Ice magic.
+Fairy,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Elemental magic.
+Gel,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Elemental magic.
+Beetle,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Curative magic.
+Rat,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Semi-weak physical attacks.
+Scorpion,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
+Plant,0.4,0.9,0.9,0.9,0.9,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Debuff effects.
 Goblin,1,1,1,1,1,1,1,Melee,Pelt,[[2 Ice] [6 Bolt] [10 Stone]],NormalStature,Normal physical attacks with weak Elemental magic.
 FireGoblin,1,1,1,1,1,1,1,Melee,Pelt,[[2 Fire]],NormalStature,Normal physical attacks with weak Fire magic.
 Ghost,1,1,1,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff magic.
