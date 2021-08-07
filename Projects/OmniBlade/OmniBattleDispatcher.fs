@@ -744,7 +744,7 @@ module BattleDispatcher =
                     withCmds [playHit; displayCut] battle
                 | Fire ->
                     let time = World.getTickTime world
-                    let playFire = PlaySound (65L, Constants.Audio.SoundVolumeDefault, Assets.Field.FlameSound)
+                    let playFire = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.FlameSound)
                     let displayFire = DisplayFire (0L, sourceIndex, targetIndex)
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
                     withCmds [playFire; displayFire] battle
