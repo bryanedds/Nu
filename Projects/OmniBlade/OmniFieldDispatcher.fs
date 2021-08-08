@@ -44,7 +44,7 @@ module FieldDispatcher =
         | UpdateEye
         | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
-        | PlaySong of int * single * Song AssetTag
+        | PlaySong of int * single * double * Song AssetTag
         | FadeOutSong of int
         | Nop
 
@@ -239,8 +239,8 @@ module FieldDispatcher =
             | Cue.PlaySound (volume, sound) ->
                 (Cue.Nil, withCmd (PlaySound (0L, volume, sound)) field)
 
-            | Cue.PlaySong (fade, volume, song) ->
-                (Cue.Nil, withCmd (PlaySong (fade, volume, song)) field)
+            | Cue.PlaySong (fade, volume, start, song) ->
+                (Cue.Nil, withCmd (PlaySong (fade, volume, start, song)) field)
 
             | Cue.FadeOutSong fade ->
                 (Cue.Nil, withCmd (FadeOutSong fade) field)
@@ -666,7 +666,7 @@ module FieldDispatcher =
                                 | Some fieldSong ->
                                     match currentSongOpt with
                                     | Some song when assetEq song fieldSong -> Nop
-                                    | _ -> PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)
+                                    | _ -> PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, fieldSong)
                                 | None -> Nop
                             withCmd songCmd field
 
@@ -887,9 +887,9 @@ module FieldDispatcher =
                     match (fieldData.FieldSongOpt, World.getCurrentSongOpt world) with
                     | (Some fieldSong, Some currentSong) ->
                         if not (AssetTag.equals fieldSong currentSong.Song)
-                        then withCmd (PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)) world
+                        then withCmd (PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, fieldSong)) world
                         else just world
-                    | (Some fieldSong, None) -> withCmd (PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, fieldSong)) world
+                    | (Some fieldSong, None) -> withCmd (PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, fieldSong)) world
                     | (None, _) -> just world
                 | (false, _) -> just world
 
@@ -897,8 +897,8 @@ module FieldDispatcher =
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
 
-            | PlaySong (fade, volume, assetTag) ->
-                let world = World.playSong fade volume assetTag world
+            | PlaySong (fade, volume, start, assetTag) ->
+                let world = World.playSong fade volume start assetTag world
                 just world
 
             | FadeOutSong fade ->

@@ -48,8 +48,8 @@ module Assets =
         let AffirmSound = asset<Sound> PackageName "Affirm"
         let MistakeSound = asset<Sound> PackageName "Mistake"
         let SlotSound = asset<Sound> PackageName "Slot"
-        let TitleSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Title" }
-        let IntroSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = 1500; Song = asset<Song> PackageName "Intro" }
+        let TitleSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Start = 0.0; Song = asset<Song> PackageName "Title" }
+        let IntroSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = 1500; Start = 0.0; Song = asset<Song> PackageName "Intro" }
         let TitleGroupFilePath = "Assets/Gui/Groups/Title.nugroup"
         let PickGroupFilePath = "Assets/Gui/Groups/Pick.nugroup"
         let IntroGroupFilePath = "Assets/Gui/Groups/Intro.nugroup"
@@ -117,7 +117,7 @@ module Assets =
         let FlameSound = asset<Sound> PackageName "Flame"
         let ThunderSound = asset<Sound> PackageName "Thunder"
         let ExplosionSound = asset<Sound> PackageName "Explosion"
-        let FieldSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Song = asset<Song> PackageName "Field" }
+        let FieldSong = { Volume = Constants.Audio.SongVolumeDefault; FadeOutMs = Constants.Audio.FadeOutMsDefault; Start = 0.0; Song = asset<Song> PackageName "Field" }
 
     [<RequireQualifiedAccess>]
     module Battle =
