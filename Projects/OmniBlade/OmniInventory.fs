@@ -93,4 +93,4 @@ type [<ReferenceEquality; NoComparison>] Inventory =
         { inventory with Gold = updater inventory.Gold }
 
     static member initial =
-        { Items = Map.empty; Gold = 10 }
+        { Items = Map.singleton (Consumable GreenHerb) 1; Gold = 0 }
