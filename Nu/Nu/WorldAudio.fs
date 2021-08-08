@@ -31,11 +31,17 @@ module WorldAudio =
             for message in messages do audioPlayer.EnqueueMessage message
             world
 
-        /// Send a message to the audio system to play a song.
+        /// Get the currently playing song, if any.
         [<FunctionBinding>]
         static member getCurrentSongOpt world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.CurrentSongOpt
+            
+        /// Get the currently playing song's position or 0.0.
+        [<FunctionBinding>]
+        static member getCurrentSongPosition world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.CurrentSongPosition
 
         /// Get the master volume.
         [<FunctionBinding>]
@@ -78,15 +84,15 @@ module WorldAudio =
 
         /// Send a message to the audio system to play a song.
         [<FunctionBinding>]
-        static member playSong timeToFadeOutSongMs volume start song world =
-            let playSongMessage = PlaySongMessage { FadeOutMs = timeToFadeOutSongMs; Volume = volume; Start = start; Song = song }
+        static member playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world =
+            let playSongMessage = PlaySongMessage { FadeInMs = timeToFadeInSongMs; FadeOutMs = timeToFadeOutSongMs; Volume = volume; Start = start; Song = song }
             World.enqueueAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a song.
-        [<FunctionBinding "playSong5">]
-        static member playSong6 timeToFadeOutSongMs volume start songPackageName songAssetName world =
+        [<FunctionBinding "playSong6">]
+        static member playSong7 timeToFadeInSongMs timeToFadeOutSongMs volume start songPackageName songAssetName world =
             let song = AssetTag.make<Song> songPackageName songAssetName
-            World.playSong timeToFadeOutSongMs volume start song world
+            World.playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world
 
         /// Send a message to the audio system to play a sound.
         [<FunctionBinding>]

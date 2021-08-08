@@ -44,7 +44,7 @@ module FieldDispatcher =
         | UpdateEye
         | PlayFieldSong
         | PlaySound of int64 * single * Sound AssetTag
-        | PlaySong of int * single * double * Song AssetTag
+        | PlaySong of int * int * single * double * Song AssetTag
         | FadeOutSong of int
         | Nop
 
@@ -239,8 +239,8 @@ module FieldDispatcher =
             | Cue.PlaySound (volume, sound) ->
                 (Cue.Nil, withCmd (PlaySound (0L, volume, sound)) field)
 
-            | Cue.PlaySong (fade, volume, start, song) ->
-                (Cue.Nil, withCmd (PlaySong (fade, volume, start, song)) field)
+            | Cue.PlaySong (fadeIn, fadeOut, volume, start, song) ->
+                (Cue.Nil, withCmd (PlaySong (fadeIn, fadeOut, volume, start, song)) field)
 
             | Cue.FadeOutSong fade ->
                 (Cue.Nil, withCmd (FadeOutSong fade) field)
@@ -612,8 +612,10 @@ module FieldDispatcher =
                         Option.isNone field.FieldTransitionOpt then
                         match Field.advanceSpirits field world with
                         | Left (battleData, field) ->
+                            let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                             let battle = Battle.makeFromTeam field.Inventory prizePool field.Team battleData (World.getTickTime world)
+                            let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
                             let field = Field.updateBattleOpt (constant (Some battle)) field
                             let fade = cmd (FadeOutSong 1000)
                             let beastGrowl = cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound))
@@ -666,7 +668,7 @@ module FieldDispatcher =
                                 | Some fieldSong ->
                                     match currentSongOpt with
                                     | Some song when assetEq song fieldSong -> Nop
-                                    | _ -> PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, fieldSong)
+                                    | _ -> PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, fieldSong)
                                 | None -> Nop
                             withCmd songCmd field
 
@@ -870,7 +872,7 @@ module FieldDispatcher =
                 | Some dialog ->
                     interactDialog dialog field
 
-        override this.Command (field, command, _, world) =
+        override this.Command (field, command, screen, world) =
 
             match command with
             | UpdateEye ->
@@ -886,10 +888,23 @@ module FieldDispatcher =
                 | (true, fieldData) ->
                     match (fieldData.FieldSongOpt, World.getCurrentSongOpt world) with
                     | (Some fieldSong, Some currentSong) ->
-                        if not (AssetTag.equals fieldSong currentSong.Song)
-                        then withCmd (PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, fieldSong)) world
+                        if not (AssetTag.equals fieldSong currentSong.Song) then
+                            let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
+                            let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
+                            let startTime = clockTime - playTime
+                            let fadeIn = if startTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
+                            let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
+                            let world = screen.SetField field world
+                            withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double startTime / 1000.0, fieldSong)) world
                         else just world
-                    | (Some fieldSong, None) -> withCmd (PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, fieldSong)) world
+                    | (Some fieldSong, None) ->
+                        let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
+                        let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
+                        let startTime = clockTime - playTime
+                        let fadeIn = if startTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
+                        let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
+                        let world = screen.SetField field world
+                        withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double startTime / 1000.0, fieldSong)) world
                     | (None, _) -> just world
                 | (false, _) -> just world
 
@@ -897,8 +912,8 @@ module FieldDispatcher =
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
 
-            | PlaySong (fade, volume, start, assetTag) ->
-                let world = World.playSong fade volume start assetTag world
+            | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
+                let world = World.playSong fadeIn fadeOut volume start assetTag world
                 just world
 
             | FadeOutSong fade ->

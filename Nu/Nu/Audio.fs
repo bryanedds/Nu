@@ -17,7 +17,8 @@ type Sound = private { __ : unit }
 
 /// Descrides a song.
 type [<NoEquality; NoComparison>] SongDescriptor =
-    { FadeOutMs : int
+    { FadeInMs: int
+      FadeOutMs : int
       Volume : single
       Start : double
       Song : Song AssetTag }
@@ -156,7 +157,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
             | OggAsset oggAsset ->
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, 50, playSongMessage.Start) |> ignore // Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a very short fade is used instead...
+                SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, max 50 playSongMessage.FadeInMs, playSongMessage.Start) |> ignore // Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a short min fade is used instead...
                 audioPlayer.CurrentSongOpt <- Some (playSongMessage, oggAsset)
         | None ->
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
@@ -281,8 +282,8 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
 
         member audioPlayer.CurrentSongPosition =
             match audioPlayer.CurrentSongOpt with
-            | Some (_, oggAsset) -> SDL_mixer.Mix_GetMusicPosition oggAsset
-            | None -> 0.0
+            | Some (_, oggAsset) -> ignore oggAsset; failwithnie () // SDL_mixer.Mix_GetMusicPosition oggAsset
+            | None -> failwithnie () // 0.0
 
         member audioPlayer.Play audioMessages =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer

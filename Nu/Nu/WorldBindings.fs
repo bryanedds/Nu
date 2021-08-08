@@ -462,60 +462,6 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSongVolume' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let playSong timeToFadeOutSongMs volume start song world =
-        let oldWorld = world
-        try
-            let timeToFadeOutSongMs =
-                match ScriptingSystem.tryExport typeof<Int32> timeToFadeOutSongMs world with
-                | Some value -> value :?> Int32
-                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
-            let volume =
-                match ScriptingSystem.tryExport typeof<Single> volume world with
-                | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
-            let start =
-                match ScriptingSystem.tryExport typeof<Double> start world with
-                | Some value -> value :?> Double
-                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Double."
-            let song =
-                match ScriptingSystem.tryExport typeof<AssetTag<Song>> song world with
-                | Some value -> value :?> AssetTag<Song>
-                | None -> failwith "Invalid argument type for 'song'; expecting a value convertable to AssetTag`1."
-            let result = World.playSong timeToFadeOutSongMs volume start song world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let playSong4 timeToFadeOutSongMs volume start songPackageName songAssetName world =
-        let oldWorld = world
-        try
-            let timeToFadeOutSongMs =
-                match ScriptingSystem.tryExport typeof<Int32> timeToFadeOutSongMs world with
-                | Some value -> value :?> Int32
-                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
-            let volume =
-                match ScriptingSystem.tryExport typeof<Single> volume world with
-                | Some value -> value :?> Single
-                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
-            let start =
-                match ScriptingSystem.tryExport typeof<Double> start world with
-                | Some value -> value :?> Double
-                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Double."
-            let songPackageName =
-                match ScriptingSystem.tryExport typeof<String> songPackageName world with
-                | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'songPackageName'; expecting a value convertable to String."
-            let songAssetName =
-                match ScriptingSystem.tryExport typeof<String> songAssetName world with
-                | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'songAssetName'; expecting a value convertable to String."
-            let result = World.playSong6 timeToFadeOutSongMs volume start songPackageName songAssetName world
-            struct (Scripting.Unit, result)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong4' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
     let playSound volume sound world =
         let oldWorld = world
         try
@@ -2787,28 +2733,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalPlaySongBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|timeToFadeOutSongMs; volume; start; song|] -> playSong timeToFadeOutSongMs volume start song world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalPlaySong4Binding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|timeToFadeOutSongMs; volume; start; songPackageName; songAssetName|] -> playSong4 timeToFadeOutSongMs volume start songPackageName songAssetName world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalPlaySoundBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -4117,8 +4041,6 @@ module WorldBindings =
              ("setMasterAudioVolume", { Fn = evalSetMasterAudioVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
              ("setMasterSoundVolume", { Fn = evalSetMasterSoundVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
              ("setMasterSongVolume", { Fn = evalSetMasterSongVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
-             ("playSong", { Fn = evalPlaySongBinding; Pars = [|"timeToFadeOutSongMs"; "volume"; "song"|]; DocOpt = None })
-             ("playSong4", { Fn = evalPlaySong4Binding; Pars = [|"timeToFadeOutSongMs"; "volume"; "songPackageName"; "songAssetName"|]; DocOpt = None })
              ("playSound", { Fn = evalPlaySoundBinding; Pars = [|"volume"; "sound"|]; DocOpt = None })
              ("playSound3", { Fn = evalPlaySound3Binding; Pars = [|"volume"; "soundPackageName"; "soundAssetName"|]; DocOpt = None })
              ("fadeOutSong", { Fn = evalFadeOutSongBinding; Pars = [|"timeToFadeOutSongMs"|]; DocOpt = None })

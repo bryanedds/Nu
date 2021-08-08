@@ -554,7 +554,7 @@ type [<NoEquality; NoComparison>] CueTarget =
 type [<NoEquality; NoComparison>] Cue =
     | Nil
     | PlaySound of single * Sound AssetTag
-    | PlaySong of int * single * double * Song AssetTag
+    | PlaySong of int * int * single * double * Song AssetTag
     | FadeOutSong of int
     | Face of Direction * CueTarget
     | Glow of Color * CueTarget

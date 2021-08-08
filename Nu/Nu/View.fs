@@ -8,7 +8,7 @@ open System
 type [<NoEquality; NoComparison>] View =
     | Render of single * single * obj AssetTag * RenderDescriptor
     | PlaySound of single * Sound AssetTag
-    | PlaySong of int * single * double * Song AssetTag
+    | PlaySong of int * int * single * double * Song AssetTag
     | FadeOutSong of int
     | StopSong
     | SpawnEmitter of string * Particles.BasicEmitterDescriptor
