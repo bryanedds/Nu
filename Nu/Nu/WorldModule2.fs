@@ -247,7 +247,7 @@ module WorldModule2 =
                                 | Some playSong ->
                                     match World.getCurrentSongOpt world with
                                     | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
-                                    | _ -> World.playSong playSong.FadeOutMs playSong.Volume playSong.Song world // play song when song is different
+                                    | _ -> World.playSong playSong.FadeOutMs playSong.Volume 0.0 playSong.Song world // play song when song is different
                                 | None -> world
                             let eventTrace = EventTrace.debug "World" "updateScreenTransition" "IncomingStart" EventTrace.empty
                             World.publish () (Events.IncomingStart --> selectedScreen) eventTrace selectedScreen world

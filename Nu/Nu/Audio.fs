@@ -19,6 +19,7 @@ type Sound = private { __ : unit }
 type [<NoEquality; NoComparison>] SongDescriptor =
     { FadeOutMs : int
       Volume : single
+      Start : double
       Song : Song AssetTag }
 
 /// Describes a sound.
@@ -55,8 +56,10 @@ type AudioPlayer =
     abstract ClearMessages : unit -> unit
     /// Enqueue a message from an external source.
     abstract EnqueueMessage : AudioMessage -> unit
-    /// Get the current optionally-playing song
+    /// Get the current optionally-playing song.
     abstract CurrentSongOpt : SongDescriptor option
+    /// Get the current song's position or 0 if one isn't playing.
+    abstract CurrentSongPosition : double
     /// 'Play' the audio system. Must be called once per frame.
     abstract Play : AudioMessage List -> unit
 
@@ -70,6 +73,7 @@ type [<ReferenceEquality; NoComparison>] MockAudioPlayer =
         member audioPlayer.ClearMessages () = ()
         member audioPlayer.EnqueueMessage _ = ()
         member audioPlayer.CurrentSongOpt = None
+        member audioPlayer.CurrentSongPosition = 0.0
         member audioPlayer.Play _ = ()
         member audioPlayer.MasterAudioVolume with get () = 1.0f and set _ = ()
         member audioPlayer.MasterSoundVolume with get () = 1.0f and set _ = ()
@@ -87,7 +91,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
           mutable MasterAudioVolume : single
           mutable MasterSoundVolume : single
           mutable MasterSongVolume : single
-          mutable CurrentSongOpt : SongDescriptor option }
+          mutable CurrentSongOpt : (SongDescriptor * nativeint) option }
 
     static member private haltSound () =
         SDL_mixer.Mix_HaltMusic () |> ignore
@@ -152,8 +156,8 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
             | OggAsset oggAsset ->
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                SDL_mixer.Mix_FadeInMusic (oggAsset, -1, 50) |> ignore // Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a very short fade is used instead...
-            audioPlayer.CurrentSongOpt <- Some playSongMessage
+                SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, 50, playSongMessage.Start) |> ignore // Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a very short fade is used instead...
+                audioPlayer.CurrentSongOpt <- Some (playSongMessage, oggAsset)
         | None ->
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
     
@@ -222,7 +226,7 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
 
     static member private tryUpdateCurrentSongVolume audioPlayer =
         match audioPlayer.CurrentSongOpt with
-        | Some currentSong -> SDL_mixer.Mix_VolumeMusic (int (currentSong.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
+        | Some (currentSong, _) -> SDL_mixer.Mix_VolumeMusic (int (currentSong.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
         | None -> ()
     
     static member private tryUpdateCurrentSong audioPlayer =
@@ -273,7 +277,12 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
             audioPlayer.AudioMessages.Add audioMessage 
 
         member audioPlayer.CurrentSongOpt =
-            audioPlayer.CurrentSongOpt
+            Option.map fst audioPlayer.CurrentSongOpt
+
+        member audioPlayer.CurrentSongPosition =
+            match audioPlayer.CurrentSongOpt with
+            | Some (_, oggAsset) -> SDL_mixer.Mix_GetMusicPosition oggAsset
+            | None -> 0.0
 
         member audioPlayer.Play audioMessages =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer

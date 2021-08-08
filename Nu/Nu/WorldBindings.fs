@@ -462,7 +462,7 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSongVolume' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let playSong timeToFadeOutSongMs volume song world =
+    let playSong timeToFadeOutSongMs volume start song world =
         let oldWorld = world
         try
             let timeToFadeOutSongMs =
@@ -473,17 +473,21 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
                 | Some value -> value :?> Single
                 | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let start =
+                match ScriptingSystem.tryExport typeof<Double> start world with
+                | Some value -> value :?> Double
+                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Double."
             let song =
                 match ScriptingSystem.tryExport typeof<AssetTag<Song>> song world with
                 | Some value -> value :?> AssetTag<Song>
                 | None -> failwith "Invalid argument type for 'song'; expecting a value convertable to AssetTag`1."
-            let result = World.playSong timeToFadeOutSongMs volume song world
+            let result = World.playSong timeToFadeOutSongMs volume start song world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
-    let playSong4 timeToFadeOutSongMs volume songPackageName songAssetName world =
+    let playSong4 timeToFadeOutSongMs volume start songPackageName songAssetName world =
         let oldWorld = world
         try
             let timeToFadeOutSongMs =
@@ -494,6 +498,10 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<Single> volume world with
                 | Some value -> value :?> Single
                 | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let start =
+                match ScriptingSystem.tryExport typeof<Double> start world with
+                | Some value -> value :?> Double
+                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Double."
             let songPackageName =
                 match ScriptingSystem.tryExport typeof<String> songPackageName world with
                 | Some value -> value :?> String
@@ -502,7 +510,7 @@ module WorldBindings =
                 match ScriptingSystem.tryExport typeof<String> songAssetName world with
                 | Some value -> value :?> String
                 | None -> failwith "Invalid argument type for 'songAssetName'; expecting a value convertable to String."
-            let result = World.playSong5 timeToFadeOutSongMs volume songPackageName songAssetName world
+            let result = World.playSong6 timeToFadeOutSongMs volume start songPackageName songAssetName world
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong4' due to: " + scstring exn, None)
@@ -2784,7 +2792,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|timeToFadeOutSongMs; volume; song|] -> playSong timeToFadeOutSongMs volume song world
+            | [|timeToFadeOutSongMs; volume; start; song|] -> playSong timeToFadeOutSongMs volume start song world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -2795,7 +2803,7 @@ module WorldBindings =
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
         | None ->
             match evaleds with
-            | [|timeToFadeOutSongMs; volume; songPackageName; songAssetName|] -> playSong4 timeToFadeOutSongMs volume songPackageName songAssetName world
+            | [|timeToFadeOutSongMs; volume; start; songPackageName; songAssetName|] -> playSong4 timeToFadeOutSongMs volume start songPackageName songAssetName world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
