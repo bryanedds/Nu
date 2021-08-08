@@ -41,7 +41,8 @@ module Field =
               ShopOpt_ : Shop option
               FieldTransitionOpt_ : FieldTransition option
               DialogOpt_ : Dialog option
-              BattleOpt_ : Battle option }
+              BattleOpt_ : Battle option
+              FieldSongTimeOpt_ : int64 option }
 
         (* Local Properties *)
         member this.FieldType = this.FieldType_
@@ -59,6 +60,7 @@ module Field =
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.BattleOpt = this.BattleOpt_
+        member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
 
     let getRecruitmentFee (field : Field) =
         let advents = Set.ofArray [|ShadeRecruited; MaelRecruited; RiainRecruited; PericRecruited|]
@@ -159,6 +161,9 @@ module Field =
 
     let updateReference field =
         { field with FieldType_ = field.FieldType_ }
+
+    let updateFieldSongTimeOpt updater field =
+        { field with FieldSongTimeOpt_ = updater field.FieldSongTimeOpt_ }
 
     let recruit allyType (field : Field) =
         let index = Map.count field.Team
@@ -277,7 +282,8 @@ module Field =
           ShopOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
-          BattleOpt_ = None }
+          BattleOpt_ = None
+          FieldSongTimeOpt_ = None }
 
     let empty =
         { SaveSlot = Slot1
@@ -295,7 +301,8 @@ module Field =
           ShopOpt_ = None
           FieldTransitionOpt_ = None
           DialogOpt_ = None
-          BattleOpt_ = None }
+          BattleOpt_ = None
+          FieldSongTimeOpt_ = None }
 
     let debug =
         { empty with

@@ -29,7 +29,7 @@ module DeclarativeOperators2 =
                 let message = { Elevation = elevation; PositionY = positionY; AssetTag = AssetTag.generalize assetTag; RenderDescriptor = descriptor }
                 World.enqueueRenderLayeredMessage message world
             | PlaySound (volume, assetTag) -> World.playSound volume assetTag world
-            | PlaySong (fade, volume, start, assetTag) -> World.playSong fade volume start assetTag world
+            | PlaySong (fadeIn, fadeOut, volume, start, assetTag) -> World.playSong fadeIn fadeOut volume start assetTag world
             | FadeOutSong fade -> World.fadeOutSong fade world
             | StopSong -> World.stopSong world
             | SpawnEmitter (_, _) -> world

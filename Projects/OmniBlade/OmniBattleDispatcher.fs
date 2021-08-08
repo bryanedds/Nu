@@ -76,7 +76,7 @@ module BattleDispatcher =
         | DisplayHop of Hop
         | DisplayCircle of Vector2 * single
         | PlaySound of int64 * single * AssetTag<Sound>
-        | PlaySong of int * single * double * Song AssetTag
+        | PlaySong of int * int * single * double * Song AssetTag
         | FadeOutSong of int
 
     type Screen with
@@ -268,7 +268,7 @@ module BattleDispatcher =
             let timeLocal = time - timeStart
             if timeLocal = inc 61L then // first frame after transitioning in (including last transition frame)
                 match battle.BattleSongOpt with
-                | Some battleSong -> withCmd (PlaySong (Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, battleSong)) battle
+                | Some battleSong -> withCmd (PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, battleSong)) battle
                 | None -> just battle
             elif timeLocal >= 90L && timeLocal < 160L then
                 let timeLocalReady = timeLocal - 90L
@@ -1102,8 +1102,8 @@ module BattleDispatcher =
                 let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
                 just world
 
-            | PlaySong (fade, volume, start, assetTag) ->
-                let world = World.playSong fade volume start assetTag world
+            | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
+                let world = World.playSong fadeIn fadeOut volume start assetTag world
                 just world
 
             | FadeOutSong fade ->

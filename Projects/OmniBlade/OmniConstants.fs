@@ -77,6 +77,7 @@ module Constants =
         let SpiritOrbElevation = 20.0f
         let GuiElevation = 30.0f
         let GuiEffectElevation = 40.0f
+        let FieldSongFadeInMs = 2000
 
     [<RequireQualifiedAccess>]
     module Battle =
