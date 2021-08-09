@@ -40,6 +40,9 @@ Exploring a level in OmniBlade.
 ![Screenshot](Projects/OmniBlade/Promotional/OmniBladeBattle.png?raw=true)
 A Chrono Trigger-style battle in OmniBlade.
 
+![Screenshot](Projects/OmniBlade/Promotional/OmniBladeCancel.png?raw=true)
+The Grandia-style Cancel mechanic.
+
 Getting Started
 ===============
 
