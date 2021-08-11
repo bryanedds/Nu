@@ -839,8 +839,10 @@ module FieldDispatcher =
                 match Map.tryFind battleType Data.Value.Battles with
                 | Some battleData ->
                     let time = World.getTickTime world
+                    let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromTeam field.Inventory prizePool (Field.getParty field) battleData time
+                    let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
                     let field = Field.updateBattleOpt (constant (Some battle)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
