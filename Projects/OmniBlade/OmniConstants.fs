@@ -39,7 +39,9 @@ module Constants =
     module Gameplay =
 
         let TileSize = v2 48.0f 48.0f
+        let TileCelSize = v2 16.0f 16.0f
         let CharacterSize = v2 144.0f 144.0f
+        let CharacterCelSize = v2 48.0f 48.0f
         let DialogSplit = '^'
         let ItemLimit = 9
 

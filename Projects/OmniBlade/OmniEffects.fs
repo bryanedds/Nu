@@ -88,10 +88,10 @@ module Effects =
                 (Resource (AssetTag.toPair Assets.Battle.BoltAnimationSheet),
                  [|Insets
                     (Set, Constant, Once,
-                     [|{ TweenValue = v4 0.0f   0.0f    192.0f  768.0f; TweenLength = 5L }
-                       { TweenValue = v4 192.0f 0.0f    192.0f  768.0f; TweenLength = 5L }
-                       { TweenValue = v4 384.0f 0.0f    192.0f  768.0f; TweenLength = 5L }
-                       { TweenValue = v4 384.0f 0.0f    192.0f  768.0f; TweenLength = 65L }|])
+                     [|{ TweenValue = v4 0.0f   0.0f    64.0f   256.0f; TweenLength = 5L }
+                       { TweenValue = v4 64.0f 0.0f     64.0f   256.0f; TweenLength = 5L }
+                       { TweenValue = v4 128.0f 0.0f    64.0f   256.0f; TweenLength = 5L }
+                       { TweenValue = v4 128.0f 0.0f    64.0f   256.0f; TweenLength = 65L }|])
                    Colors
                     (Set, EaseOut, Once,
                      [|{ TweenValue = Color.White; TweenLength = 40L }
@@ -101,7 +101,7 @@ module Effects =
         let explosionSprite =
             AnimatedSprite
                 (Resource (AssetTag.toPair Assets.Battle.ExplosionAnimationSheet),
-                 v2i 96 96, 4, 12, 2L, Once,
+                 v2i 32 32, 4, 12, 2L, Once,
                  [|PositionRelative (v2 0.0f -384.0f)
                    Size (v2 96.0f 96.0f)
                    Colors
@@ -134,12 +134,12 @@ module Effects =
                 (Shift 0.0f,
                  [|AnimatedSprite
                     (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
-                     v2i 96 96, 3, 3, 8L, Once,
+                     v2i 32 32, 3, 3, 8L, Once,
                      [|PositionRelative (v2 -48.0f 0.0f); Size (v2 96.0f 96.0f); Flip FlipH|],
                      Nil)
                    AnimatedSprite
                     (Resource (AssetTag.toPair Assets.Battle.ImpactSplashAnimationSheet),
-                     v2i 96 96, 3, 3, 8L, Once,
+                     v2i 32 32, 3, 3, 8L, Once,
                      [|PositionRelative (v2 48.0f 0.0f); Size (v2 96.0f 96.0f); Flip FlipNone|],
                      Nil)|]) }
 
@@ -158,7 +158,7 @@ module Effects =
                 Nil) }
 
     let makeSlashSpikeEffect position position2 =
-        let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.SpikeAnimationSheet), v2i 96 96, 5, 5, 3L, Once, [||], Nil)
+        let spike = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.SpikeAnimationSheet), v2i 32 32, 5, 5, 3L, Once, [||], Nil)
         let emit =
             Emit
                 (Shift 0.1f,
@@ -178,7 +178,7 @@ module Effects =
           Content =
               AnimatedSprite
                (Resource (AssetTag.toPair Assets.Battle.CycloneBlurAnimationSheet),
-                v2i 234 234, 2, 4, 3L, Loop,
+                v2i 78 78, 2, 4, 3L, Loop,
                 [|Circle (radius, 2.0f, 100L)|],
                 Nil) }
 
@@ -189,11 +189,11 @@ module Effects =
         let fire playback aspects =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.FireAnimationSheet),
-              v2i 48 48, 4, 4, 3L, playback, aspects, Nil)
+              v2i 16 16, 4, 4, 3L, playback, aspects, Nil)
         let burn =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.BurnAnimationSheet),
-              v2i 48 48, 4, 4, 3L, Once, [||], Nil)
+              v2i 16 16, 4, 4, 3L, Once, [||], Nil)
         let fireball travel activation =
             Contents
                 (Shift 0.0f,
@@ -221,7 +221,7 @@ module Effects =
                  [|Sizes (Set, Linear, Once, [|{ TweenValue = v2 32.0f 32.0f; TweenLength = 36L}; { TweenValue = v2 192.0f 192.0f; TweenLength = 0L}|])
                    Positions (Set, EaseIn, Once, [|{ TweenValue = position; TweenLength = 36L}; { TweenValue = position2; TweenLength = 0L}|])
                    Color (colWhite.WithA (byte 207))|],
-                 AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 192 192, 6, 6, 6L, Once, [||], Nil))}
+                 AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil))}
 
     let makeIceEffect () =
         let coverRadius = 50.0f
@@ -255,13 +255,13 @@ module Effects =
           Content =
               AnimatedSprite
                (Resource (AssetTag.toPair Assets.Battle.HolyCastAnimationSheet),
-                v2i 300 300, 6, 36, 1L, Once, [||], Nil) }
+                v2i 100 100, 6, 36, 1L, Once, [||], Nil) }
     
     let makePurifyEffect () =
         let sprite position =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.PurifyAnimationSheet),
-              v2i 192 192, 5, 10, 3L, Once, [|PositionRelative position|], Nil)
+              v2i 64 64, 5, 10, 3L, Once, [|PositionRelative position|], Nil)
         { EffectName = "Purify"
           LifeTimeOpt = Some 54L
           Definitions = Map.empty
@@ -289,7 +289,7 @@ module Effects =
         let sparkle =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.SparkleAnimationSheet),
-              v2i 48 48, 6, 6, 4L, Once, [||], Nil)
+              v2i 16 16, 6, 6, 4L, Once, [||], Nil)
         { EffectName = "Aura"
           LifeTimeOpt = Some 100L
           Definitions = Map.empty
@@ -375,7 +375,7 @@ module Effects =
         let fireSpin aspects =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.FireSpinAnimationSheet),
-              v2i 300 300, 8, 61, 1L, Loop, aspects, Nil)
+              v2i 100 100, 8, 61, 1L, Loop, aspects, Nil)
         { EffectName = "ConjureIfrit"
           LifeTimeOpt = Some 80L
           Definitions = Map.empty

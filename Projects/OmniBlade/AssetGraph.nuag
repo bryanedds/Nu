@@ -12,14 +12,14 @@
  [Gui
   [[Asset Font "Assets/Gui/Fonts/Manaspc.024.ttf" [Render] []]
    [Assets Assets/Gui csv [Symbol] []]
-   [Assets Assets/Gui psd [Render] [PsdToPng Retro]]
+   [Assets Assets/Gui psd [Render] [PsdToPng]]
    [Assets Assets/Gui png [Render] []]
    [Assets Assets/Gui wav [Audio] []]
    [Assets Assets/Gui ogg [Audio] []]
    [Assets Assets/Gui nugroup [] []]]]
  [Field
   [[Assets Assets/Field csv [Symbol] []]
-   [Assets Assets/Field psd [Render] [PsdToPng Retro]]
+   [Assets Assets/Field psd [Render] [PsdToPng]]
    [Assets Assets/Field png [Render] []]
    [Assets Assets/Field wav [Audio] []]
    [Assets Assets/Field ogg [Audio] []]
@@ -28,7 +28,7 @@
    [Assets Assets/Field nugroup [] []]]]
  [Battle
   [[Assets Assets/Battle csv [Symbol] []]
-   [Assets Assets/Battle psd [Render] [PsdToPng Retro]]
+   [Assets Assets/Battle psd [Render] [PsdToPng]]
    [Assets Assets/Battle png [Render] []]
    [Assets Assets/Battle wav [Audio] []]
    [Assets Assets/Battle ogg [Audio] []]
@@ -37,7 +37,7 @@
    [Assets Assets/Battle nugroup [] []]]]
  [Castle
   [[Assets Assets/Castle csv [Symbol] []]
-   [Assets Assets/Castle psd [Render] [PsdToPng Retro]]
+   [Assets Assets/Castle psd [Render] [PsdToPng]]
    [Assets Assets/Castle png [Render] []]
    [Assets Assets/Castle wav [Audio] []]
    [Assets Assets/Castle ogg [Audio] []]

@@ -130,7 +130,7 @@ module PropDispatcher =
                         | SealState true ->
                             let time = World.getTickTime world
                             let localTime = time / 20L
-                            let celSize = v2 96.0f 96.0f // TODO: P1: put this in Constants.
+                            let celSize = v2 32.0f 32.0f // TODO: P1: put this in Constants.
                             let celColumn = single (localTime % 4L)
                             let inset = v4Bounds (v2 (celSize.X * celColumn) 0.0f) celSize // TODO: P1: turn this into a general animation function if one doesn't already exist...
                             let image = Assets.Field.SealAnimationSheet
@@ -159,8 +159,8 @@ module PropDispatcher =
                                 | MadTrixterNpc -> (4, 0)
                                 | HeavyArmorosNpc -> (5, 0)
                             let column = column + CharacterAnimationState.directionToInt direction
-                            let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
-                            let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
+                            let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterCelSize
+                            let inset = v4Bounds insetPosition Constants.Gameplay.CharacterCelSize
                             (false, color, glow, Some inset, image)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Shopkeep (shopkeepType, direction, _, _) ->
@@ -169,8 +169,8 @@ module PropDispatcher =
                             let image = Assets.Field.ShopkeepAnimationSheet
                             let row = match shopkeepType with RobehnShopkeep -> 0 | SchaalShopkeep -> 1
                             let column = CharacterAnimationState.directionToInt direction
-                            let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterSize
-                            let inset = v4Bounds insetPosition Constants.Gameplay.CharacterSize
+                            let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterCelSize
+                            let inset = v4Bounds insetPosition Constants.Gameplay.CharacterCelSize
                             (false, colWhite, colZero, Some inset, image)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Flame (flameType, mirror) ->
@@ -180,15 +180,15 @@ module PropDispatcher =
                         let cel = int (World.getTickTime world / 10L % 4L) // TODO: P1: put this in Constants.
                         let inset =
                             v4 // TODO: P1: put the following hard-coded dimensions in Constants.
-                                (single column * 48.0f) (single (row + cel) * 48.0f)
-                                48.0f 48.0f
+                                (single column * 16.0f) (single (row + cel) * 16.0f)
+                                16.0f 16.0f
                         (false, colWhite, colZero, Some inset, image)
                     | SavePoint ->
                         let time = World.getTickTime world
                         let image = Assets.Field.SavePointImage
                         let column = (int time / 15) % 4
-                        let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileSize
-                        let inset = v4Bounds insetPosition Constants.Gameplay.TileSize
+                        let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileCelSize
+                        let inset = v4Bounds insetPosition Constants.Gameplay.TileCelSize
                         (false, colWhite, colZero, Some inset, image)
                     | ChestSpawn | EmptyProp ->
                         (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
