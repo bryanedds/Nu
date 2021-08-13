@@ -26,8 +26,8 @@ module Field =
 
     type [<ReferenceEquality; NoComparison>] Field =
         private
-            { SaveSlot : SaveSlot
-              FieldType_ : FieldType
+            { FieldType_ : FieldType
+              SaveSlot_ : SaveSlot
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
               Team_ : Map<int, Teammate>
@@ -267,8 +267,8 @@ module Field =
         { field with Avatar_ = Avatar.toSymbolizable field.Avatar }
 
     let make fieldType randSeedState avatar team advents inventory =
-        { SaveSlot = Slot1
-          FieldType_ = fieldType
+        { FieldType_ = fieldType
+          SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
           Avatar_ = avatar
           SpiritActivity_ = 0.0f
@@ -286,8 +286,8 @@ module Field =
           FieldSongTimeOpt_ = None }
 
     let empty =
-        { SaveSlot = Slot1
-          FieldType_ = DebugRoom
+        { FieldType_ = DebugRoom
+          SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty
           Team_ = Map.empty
@@ -310,8 +310,8 @@ module Field =
 
     let initial saveSlot randSeedState =
         { empty with
-            SaveSlot = saveSlot
             FieldType_ = TombOuter
+            SaveSlot_ = saveSlot
             OmniSeedState_ = OmniSeedState.makeFromSeedState randSeedState
             Avatar_ = Avatar.initial
             Team_ = Map.singleton 0 (Teammate.make 0 Jinn)
@@ -319,7 +319,7 @@ module Field =
 
     let save field =
         let saveFilePath =
-            match field.SaveSlot with
+            match field.SaveSlot_ with
             | Slot1 -> Assets.Global.SaveFilePath1
             | Slot2 -> Assets.Global.SaveFilePath2
             | Slot3 -> Assets.Global.SaveFilePath3
