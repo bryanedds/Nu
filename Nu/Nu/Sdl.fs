@@ -25,7 +25,6 @@ type [<StructuralEquality; NoComparison>] SdlWindowConfig =
 type [<StructuralEquality; NoComparison>] SdlViewConfig =
     | NewWindow of SdlWindowConfig
     | ExistingWindow of nativeint
-    //| FullScreen TODO: implement
 
 /// Describes the general configuration of SDL.
 type [<StructuralEquality; NoComparison>] SdlConfig =
