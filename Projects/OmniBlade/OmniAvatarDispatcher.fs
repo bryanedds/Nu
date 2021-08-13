@@ -38,8 +38,8 @@ module AvatarDispatcher =
         static let getSpriteInset (entity : Entity) world =
             let avatar = entity.GetAvatar world
             let index = Avatar.getAnimationIndex (World.getTickTime world) avatar
-            let offset = v2 (single index.X) (single index.Y) * Constants.Gameplay.CharacterSize
-            let inset = v4Bounds offset Constants.Gameplay.CharacterSize
+            let offset = v2 (single index.X) (single index.Y) * Constants.Gameplay.CharacterCelSize
+            let inset = v4Bounds offset Constants.Gameplay.CharacterCelSize
             inset
 
         static let isIntersectedBodyShape collider collidee world =
