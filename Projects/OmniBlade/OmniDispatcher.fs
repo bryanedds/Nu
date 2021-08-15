@@ -34,7 +34,7 @@ module GameDispatcher =
 
     type [<NoEquality; NoComparison>] OmniCommand =
         | Picks
-        | CheckAltEnter of KeyboardKeyData
+        | TryFullScreen of KeyboardKeyData
         | Show of Screen
         | Exit
 
@@ -71,7 +71,7 @@ module GameDispatcher =
              Simulants.Intro5.Screen.DeselectEvent => msg FromIntro
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
-             Events.KeyboardKeyDown =|> fun keyEvent -> cmd (CheckAltEnter keyEvent.Data)]
+             Events.KeyboardKeyDown =|> fun keyEvent -> cmd (TryFullScreen keyEvent.Data)]
 
         override this.Message (omni, message, _, world) =
 
@@ -134,14 +134,14 @@ module GameDispatcher =
             | Picks ->
                 if Simulants.Pick.Screen.IsSelected world then
                     let world = Simulants.Pick.Gui.NewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
-                    let world = Simulants.Pick.Gui.LoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
                     let world = Simulants.Pick.Gui.NewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
-                    let world = Simulants.Pick.Gui.LoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
                     let world = Simulants.Pick.Gui.NewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
+                    let world = Simulants.Pick.Gui.LoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
+                    let world = Simulants.Pick.Gui.LoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
                     let world = Simulants.Pick.Gui.LoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
                     just world
                 else just world
-            | CheckAltEnter keyData ->
+            | TryFullScreen keyData ->
                 if KeyboardState.isAltDown () && keyData.Down && keyData.KeyboardKey = KeyboardKey.Return then
                     match World.tryGetWindowFullScreen world with
                     | Some fullScreen -> just (World.trySetWindowFullScreen (not fullScreen) world)
