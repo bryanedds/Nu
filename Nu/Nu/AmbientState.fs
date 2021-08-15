@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Numerics
 open SDL2
 open Prime
 open Nu
@@ -183,13 +184,28 @@ module AmbientState =
 
     /// Attempt to check that the window is in a full screen state.
     let tryGetWindowFullScreen state =
-        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP <> 0u) (tryGetWindowFlags state)
+        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> 0u) (tryGetWindowFlags state)
 
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen state =
         match state.SdlDepsOpt with
         | Some deps -> { state with SdlDepsOpt = Some (SdlDeps.trySetWindowFullScreen fullScreen deps) }
         | None -> state
+
+    /// Get the margin around the camera eye given the display mode's full screen state and resolution.
+    let getEyeMargin (eyeSize : Vector2) state =
+        match (Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt), tryGetWindowFullScreen state) with
+        | (Some window, Some fullScreen) when fullScreen ->
+            let displayMode = ref Unchecked.defaultof<SDL2.SDL.SDL_DisplayMode>
+            SDL.SDL_GetWindowDisplayMode (window, displayMode) |> ignore
+            let eyeMargin =
+                v2
+                    (single displayMode.Value.w - eyeSize.X * single Constants.Render.VirtualScalar)
+                    (single displayMode.Value.h - eyeSize.Y * single Constants.Render.VirtualScalar)
+            let eyeMargin = eyeMargin / 2.0f
+            let eyeMargin = v2 (max eyeMargin.X 0.0f) (max eyeMargin.Y 0.0f) // avoid negative margins
+            eyeMargin
+        | (_, _) -> v2Zero
 
     /// Get the symbol store with the by map.
     let getSymbolStoreBy by state =
