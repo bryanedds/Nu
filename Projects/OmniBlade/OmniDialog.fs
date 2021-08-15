@@ -42,10 +42,10 @@ type [<ReferenceEquality; NoComparison>] Dialog =
         dialog.DialogPage = lastPage &&
         dialog.DialogProgress > pages.[lastPage].Length
 
-    static member wordWrap (limit : int) (string : string) =
+    // TODO: use a fold here instead of an inner function if possible.
+    static member wordWrap limit (text : string) =
         let rec wordWrap acc (string : string) =
-            if string.Length <= limit then string :: acc
-            else
+            if string.Length > limit then
                 let (left, right) =
                     let seq = String.explode string |> Seq.ofList
                     let seqLeft = Seq.take limit seq
@@ -59,8 +59,8 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                 let (left, right) = (Seq.toList left |> String.implode, Seq.toList right |> String.implode)
                 let acc = left :: acc
                 wordWrap acc right
-        wordWrap [] string |> List.rev |> String.join "\n"
-                    
+            else string :: acc
+        wordWrap [] text |> List.rev |> String.join "\n"
     
     static member content name elevation promptLeft promptRight (detokenizeAndDialogOpt : Lens<(string -> string) * Dialog option, World>) =
         Content.entityWithContent<TextDispatcher> name
