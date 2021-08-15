@@ -72,12 +72,7 @@ module MouseState =
     /// Get the position of the mouse.
     let getPosition () =
         let (_, x, y) = SDL.SDL_GetMouseState ()
-        Vector2i (x, y)
-
-    /// Get the position of the mouse in floating-point coordinates.
-    let getPositionF world =
-        let mousePosition = getPosition world
-        v2 (single mousePosition.X) (single mousePosition.Y)
+        v2 (single x) (single y)
 
 [<RequireQualifiedAccess>]
 module KeyboardState =

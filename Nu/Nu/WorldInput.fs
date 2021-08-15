@@ -28,14 +28,8 @@ module WorldInputModule =
         /// Get the position of the mouse.
         [<FunctionBinding>]
         static member getMousePosition world =
-            ignore (world : World)
-            MouseState.getPosition ()
-
-        /// Get the position of the mouse in floating-point coordinates.
-        [<FunctionBinding>]
-        static member getMousePositionF world =
-            ignore (world : World)
-            MouseState.getPositionF ()
+            let eyeMargin = World.getEyeMargin world
+            MouseState.getPosition () - eyeMargin
 
         /// Check that the given keyboard key is down.
         [<FunctionBinding>]
