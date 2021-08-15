@@ -34,6 +34,7 @@ module GameDispatcher =
 
     type [<NoEquality; NoComparison>] OmniCommand =
         | Picks
+        | CheckAltEnter of KeyboardKeyData
         | Show of Screen
         | Exit
 
@@ -69,7 +70,8 @@ module GameDispatcher =
              Simulants.Pick.Gui.Back.ClickEvent => msg (Change (Gui Title))
              Simulants.Intro5.Screen.DeselectEvent => msg FromIntro
              Simulants.Credits.Gui.Back.ClickEvent => msg (Change (Gui Title))
-             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit]
+             Simulants.Title.Gui.Exit.ClickEvent => cmd Exit
+             Events.KeyboardKeyDown =|> fun keyEvent -> cmd (CheckAltEnter keyEvent.Data)]
 
         override this.Message (omni, message, _, world) =
 
@@ -139,8 +141,16 @@ module GameDispatcher =
                     let world = Simulants.Pick.Gui.LoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
                     just world
                 else just world
-            | Show screen -> World.transitionScreen screen world |> just
-            | Exit -> World.exit world |> just
+            | CheckAltEnter keyData ->
+                if KeyboardState.isAltDown () && keyData.Down && keyData.KeyboardKey = KeyboardKey.Return then
+                    match World.tryGetWindowFullScreen world with
+                    | Some fullScreen -> just (World.trySetWindowFullScreen (not fullScreen) world)
+                    | None -> just world
+                else just world
+            | Show screen ->
+                World.transitionScreen screen world |> just
+            | Exit ->
+                World.exit world |> just
 
         override this.Content (omni, _) =
 

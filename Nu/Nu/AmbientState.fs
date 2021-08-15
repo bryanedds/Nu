@@ -175,11 +175,21 @@ module AmbientState =
 
     /// Attempt to check that the window is minimized.
     let tryGetWindowMinimized state =
-        Option.map (fun flags -> flags ||| uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED = 0u) (tryGetWindowFlags state)
+        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MINIMIZED <> 0u) (tryGetWindowFlags state)
 
     /// Attempt to check that the window is maximized.
     let tryGetWindowMaximized state =
-        Option.map (fun flags -> flags ||| uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MAXIMIZED = 0u) (tryGetWindowFlags state)
+        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_MAXIMIZED <> 0u) (tryGetWindowFlags state)
+
+    /// Attempt to check that the window is in a full screen state.
+    let tryGetWindowFullScreen state =
+        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP <> 0u) (tryGetWindowFlags state)
+
+    /// Attempt to set the window's full screen state.
+    let trySetWindowFullScreen fullScreen state =
+        match state.SdlDepsOpt with
+        | Some deps -> { state with SdlDepsOpt = Some (SdlDeps.trySetWindowFullScreen fullScreen deps) }
+        | None -> state
 
     /// Get the symbol store with the by map.
     let getSymbolStoreBy by state =

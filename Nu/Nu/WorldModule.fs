@@ -450,6 +450,14 @@ module WorldModule =
         /// Attempt to check that the window is maximized.
         static member tryGetWindowMaximized world =
             World.getAmbientStateBy AmbientState.tryGetWindowMaximized world
+            
+        /// Attempt to check that the window is in a full screen state.
+        static member tryGetWindowFullScreen world =
+            World.getAmbientStateBy AmbientState.tryGetWindowFullScreen world
+
+        /// Attempt to set the window's full screen state.
+        static member trySetWindowFullScreen fullScreen world =
+            World.updateAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
 
         static member internal getSymbolStoreBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolStoreBy by) world

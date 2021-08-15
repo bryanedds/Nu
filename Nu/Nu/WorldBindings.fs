@@ -20,10 +20,10 @@ module WorldBindings =
         "v2 v4 v2i v4i color get getAsStream set setAsStream update streamEvent stream bind self parent grandparent game toData monitor " +
         "resolve relate tryGetIsSelectedScreenIdling tryGetIsSelectedScreenTransitioning isSelectedScreenIdling " +
         "isSelectedScreenTransitioning selectScreenOpt selectScreen tryTransitionScreen transitionScreen " +
-        "setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 " +
-        "createSplashScreen reloadExistingAssets tryReloadAssets getCurrentSongOpt " +
+        "setScreenSplash createDissolveScreenFromGroupFile6 createDissolveScreenFromGroupFile createSplashScreen6 createSplashScreen " +
+        "reloadExistingAssets tryReloadAssets getCurrentSongOpt getCurrentSongPosition " +
         "getMasterAudioVolume getMasterSoundVolume getMasterSongVolume setMasterAudioVolume " +
-        "setMasterSoundVolume setMasterSongVolume playSong playSong4 " +
+        "setMasterSoundVolume setMasterSongVolume playSong playSong6 " +
         "playSound playSound3 fadeOutSong stopSong " +
         "hintAudioPackageUse hintAudioPackageDisuse reloadAudioAssets hintRenderPackageUse " +
         "hintRenderPackageDisuse reloadRenderAssets bodyExists getBodyContactNormals " +
@@ -40,8 +40,8 @@ module WorldBindings =
         "getScreens setScreenDissolve destroyScreen createScreen " +
         "createDissolveScreen writeScreenToFile readScreenFromFile getGroups " +
         "createGroup destroyGroup destroyGroups writeGroupToFile " +
-        "readGroupFromFile getEntities destroyEntity destroyEntities " +
-        "tryPickEntity writeEntityToFile createEntity readEntityFromFile " +
+        "readGroupFromFile tryPickEntity writeEntityToFile getEntities " +
+        "destroyEntity destroyEntities createEntity readEntityFromFile " +
         "reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames getEyeCenter " +
         "setEyeCenter getEyeSize setEyeSize getEyeBounds " +
         "getOmniScreenOpt setOmniScreenOpt getOmniScreen setOmniScreen " +
@@ -390,6 +390,17 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getCurrentSongOpt' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let getCurrentSongPosition world =
+        let oldWorld = world
+        try
+            let result = World.getCurrentSongPosition world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Double> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getCurrentSongPosition' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let getMasterAudioVolume world =
         let oldWorld = world
         try
@@ -460,6 +471,68 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'setMasterSongVolume' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world =
+        let oldWorld = world
+        try
+            let timeToFadeInSongMs =
+                match ScriptingSystem.tryExport typeof<Int32> timeToFadeInSongMs world with
+                | Some value -> value :?> Int32
+                | None -> failwith "Invalid argument type for 'timeToFadeInSongMs'; expecting a value convertable to Int32."
+            let timeToFadeOutSongMs =
+                match ScriptingSystem.tryExport typeof<Int32> timeToFadeOutSongMs world with
+                | Some value -> value :?> Int32
+                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
+            let volume =
+                match ScriptingSystem.tryExport typeof<Single> volume world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let start =
+                match ScriptingSystem.tryExport typeof<Double> start world with
+                | Some value -> value :?> Double
+                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Double."
+            let song =
+                match ScriptingSystem.tryExport typeof<AssetTag<Song>> song world with
+                | Some value -> value :?> AssetTag<Song>
+                | None -> failwith "Invalid argument type for 'song'; expecting a value convertable to AssetTag`1."
+            let result = World.playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let playSong6 timeToFadeInSongMs timeToFadeOutSongMs volume start songPackageName songAssetName world =
+        let oldWorld = world
+        try
+            let timeToFadeInSongMs =
+                match ScriptingSystem.tryExport typeof<Int32> timeToFadeInSongMs world with
+                | Some value -> value :?> Int32
+                | None -> failwith "Invalid argument type for 'timeToFadeInSongMs'; expecting a value convertable to Int32."
+            let timeToFadeOutSongMs =
+                match ScriptingSystem.tryExport typeof<Int32> timeToFadeOutSongMs world with
+                | Some value -> value :?> Int32
+                | None -> failwith "Invalid argument type for 'timeToFadeOutSongMs'; expecting a value convertable to Int32."
+            let volume =
+                match ScriptingSystem.tryExport typeof<Single> volume world with
+                | Some value -> value :?> Single
+                | None -> failwith "Invalid argument type for 'volume'; expecting a value convertable to Single."
+            let start =
+                match ScriptingSystem.tryExport typeof<Double> start world with
+                | Some value -> value :?> Double
+                | None -> failwith "Invalid argument type for 'start'; expecting a value convertable to Double."
+            let songPackageName =
+                match ScriptingSystem.tryExport typeof<String> songPackageName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'songPackageName'; expecting a value convertable to String."
+            let songAssetName =
+                match ScriptingSystem.tryExport typeof<String> songAssetName world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'songAssetName'; expecting a value convertable to String."
+            let result = World.playSong7 timeToFadeInSongMs timeToFadeOutSongMs volume start songPackageName songAssetName world
+            struct (Scripting.Unit, result)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'playSong6' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let playSound volume sound world =
@@ -1674,6 +1747,63 @@ module WorldBindings =
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'readGroupFromFile' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
+    let tryPickEntity position entities world =
+        let oldWorld = world
+        try
+            let position =
+                match ScriptingSystem.tryExport typeof<Vector2> position world with
+                | Some value -> value :?> Vector2
+                | None -> failwith "Invalid argument type for 'position'; expecting a value convertable to Vector2."
+            let struct (entities, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal entities world with
+                | struct (Scripting.List simulants, world) ->
+                    List.fold (fun struct (simulants, world) simulant ->
+                        match simulant with
+                        | Scripting.String str
+                        | Scripting.Keyword str ->
+                            let relation = Relation.makeFromString str
+                            let address = Relation.resolve context.SimulantAddress relation
+                            struct (Entity address :: simulants, world)
+                        | Scripting.Violation (_, error, _) -> failwith error
+                        | _ -> failwith "Relation must be either a String or Keyword.")
+                        struct ([], world)
+                        simulants
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Expecting a list of relations."
+            let result = World.tryPickEntity position entities world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<FSharpOption<Entity>> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryPickEntity' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let writeEntityToFile filePath enity world =
+        let oldWorld = world
+        try
+            let filePath =
+                match ScriptingSystem.tryExport typeof<String> filePath world with
+                | Some value -> value :?> String
+                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
+            let struct (enity, world) =
+                let context = World.getScriptContext world
+                match World.evalInternal enity world with
+                | struct (Scripting.String str, world)
+                | struct (Scripting.Keyword str, world) ->
+                    let relation = Relation.makeFromString str
+                    let address = Relation.resolve context.SimulantAddress relation
+                    struct (Entity address, world)
+                | struct (Scripting.Violation (_, error, _), _) -> failwith error
+                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
+            let result = World.writeEntityToFile filePath enity world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'writeEntityToFile' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
     let getEntities group world =
         let oldWorld = world
         try
@@ -1738,63 +1868,6 @@ module WorldBindings =
             struct (Scripting.Unit, result)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'destroyEntities' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let tryPickEntity position entities world =
-        let oldWorld = world
-        try
-            let position =
-                match ScriptingSystem.tryExport typeof<Vector2> position world with
-                | Some value -> value :?> Vector2
-                | None -> failwith "Invalid argument type for 'position'; expecting a value convertable to Vector2."
-            let struct (entities, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal entities world with
-                | struct (Scripting.List simulants, world) ->
-                    List.fold (fun struct (simulants, world) simulant ->
-                        match simulant with
-                        | Scripting.String str
-                        | Scripting.Keyword str ->
-                            let relation = Relation.makeFromString str
-                            let address = Relation.resolve context.SimulantAddress relation
-                            struct (Entity address :: simulants, world)
-                        | Scripting.Violation (_, error, _) -> failwith error
-                        | _ -> failwith "Relation must be either a String or Keyword.")
-                        struct ([], world)
-                        simulants
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Expecting a list of relations."
-            let result = World.tryPickEntity position entities world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<FSharpOption<Entity>> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'tryPickEntity' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let writeEntityToFile filePath enity world =
-        let oldWorld = world
-        try
-            let filePath =
-                match ScriptingSystem.tryExport typeof<String> filePath world with
-                | Some value -> value :?> String
-                | None -> failwith "Invalid argument type for 'filePath'; expecting a value convertable to String."
-            let struct (enity, world) =
-                let context = World.getScriptContext world
-                match World.evalInternal enity world with
-                | struct (Scripting.String str, world)
-                | struct (Scripting.Keyword str, world) ->
-                    let relation = Relation.makeFromString str
-                    let address = Relation.resolve context.SimulantAddress relation
-                    struct (Entity address, world)
-                | struct (Scripting.Violation (_, error, _), _) -> failwith error
-                | struct (_, _) -> failwith "Relation must be either a String or Keyword."
-            let result = World.writeEntityToFile filePath enity world
-            let value = result
-            let value = ScriptingSystem.tryImport typeof<Void> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'writeEntityToFile' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let createEntity dispatcherName nameOpt overlayDescriptor group world =
@@ -2667,6 +2740,17 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalGetCurrentSongPositionBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getCurrentSongPosition world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetMasterAudioVolumeBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -2728,6 +2812,28 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|volume|] -> setMasterSongVolume volume world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalPlaySongBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|timeToFadeInSongMs; timeToFadeOutSongMs; volume; start; song|] -> playSong timeToFadeInSongMs timeToFadeOutSongMs volume start song world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalPlaySong6Binding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|timeToFadeInSongMs; timeToFadeOutSongMs; volume; start; songPackageName; songAssetName|] -> playSong6 timeToFadeInSongMs timeToFadeOutSongMs volume start songPackageName songAssetName world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -3448,6 +3554,28 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
+    let evalTryPickEntityBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|position; entities|] -> tryPickEntity position entities world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalWriteEntityToFileBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [|filePath; enity|] -> writeEntityToFile filePath enity world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
     let evalGetEntitiesBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3476,28 +3604,6 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [|entities|] -> destroyEntities entities world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalTryPickEntityBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|position; entities|] -> tryPickEntity position entities world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
-    let evalWriteEntityToFileBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [|filePath; enity|] -> writeEntityToFile filePath enity world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4035,12 +4141,15 @@ module WorldBindings =
              ("reloadExistingAssets", { Fn = evalReloadExistingAssetsBinding; Pars = [||]; DocOpt = None })
              ("tryReloadAssets", { Fn = evalTryReloadAssetsBinding; Pars = [||]; DocOpt = None })
              ("getCurrentSongOpt", { Fn = evalGetCurrentSongOptBinding; Pars = [||]; DocOpt = None })
+             ("getCurrentSongPosition", { Fn = evalGetCurrentSongPositionBinding; Pars = [||]; DocOpt = None })
              ("getMasterAudioVolume", { Fn = evalGetMasterAudioVolumeBinding; Pars = [||]; DocOpt = None })
              ("getMasterSoundVolume", { Fn = evalGetMasterSoundVolumeBinding; Pars = [||]; DocOpt = None })
              ("getMasterSongVolume", { Fn = evalGetMasterSongVolumeBinding; Pars = [||]; DocOpt = None })
              ("setMasterAudioVolume", { Fn = evalSetMasterAudioVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
              ("setMasterSoundVolume", { Fn = evalSetMasterSoundVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
              ("setMasterSongVolume", { Fn = evalSetMasterSongVolumeBinding; Pars = [|"volume"|]; DocOpt = None })
+             ("playSong", { Fn = evalPlaySongBinding; Pars = [|"timeToFadeInSongMs"; "timeToFadeOutSongMs"; "volume"; "start"; "song"|]; DocOpt = None })
+             ("playSong6", { Fn = evalPlaySong6Binding; Pars = [|"timeToFadeInSongMs"; "timeToFadeOutSongMs"; "volume"; "start"; "songPackageName"; "songAssetName"|]; DocOpt = None })
              ("playSound", { Fn = evalPlaySoundBinding; Pars = [|"volume"; "sound"|]; DocOpt = None })
              ("playSound3", { Fn = evalPlaySound3Binding; Pars = [|"volume"; "soundPackageName"; "soundAssetName"|]; DocOpt = None })
              ("fadeOutSong", { Fn = evalFadeOutSongBinding; Pars = [|"timeToFadeOutSongMs"|]; DocOpt = None })
@@ -4106,11 +4215,11 @@ module WorldBindings =
              ("destroyGroups", { Fn = evalDestroyGroupsBinding; Pars = [|"groups"|]; DocOpt = None })
              ("writeGroupToFile", { Fn = evalWriteGroupToFileBinding; Pars = [|"filePath"; "group"|]; DocOpt = None })
              ("readGroupFromFile", { Fn = evalReadGroupFromFileBinding; Pars = [|"filePath"; "nameOpt"; "screen"|]; DocOpt = None })
+             ("tryPickEntity", { Fn = evalTryPickEntityBinding; Pars = [|"position"; "entities"|]; DocOpt = None })
+             ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
              ("getEntities", { Fn = evalGetEntitiesBinding; Pars = [|"group"|]; DocOpt = None })
              ("destroyEntity", { Fn = evalDestroyEntityBinding; Pars = [|"entity"|]; DocOpt = None })
              ("destroyEntities", { Fn = evalDestroyEntitiesBinding; Pars = [|"entities"|]; DocOpt = None })
-             ("tryPickEntity", { Fn = evalTryPickEntityBinding; Pars = [|"position"; "entities"|]; DocOpt = None })
-             ("writeEntityToFile", { Fn = evalWriteEntityToFileBinding; Pars = [|"filePath"; "enity"|]; DocOpt = None })
              ("createEntity", { Fn = evalCreateEntityBinding; Pars = [|"dispatcherName"; "nameOpt"; "overlayDescriptor"; "group"|]; DocOpt = None })
              ("readEntityFromFile", { Fn = evalReadEntityFromFileBinding; Pars = [|"filePath"; "nameOpt"; "group"|]; DocOpt = None })
              ("reassignEntity", { Fn = evalReassignEntityBinding; Pars = [|"entity"; "nameOpt"; "group"|]; DocOpt = None })

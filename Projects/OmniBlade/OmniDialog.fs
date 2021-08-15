@@ -44,10 +44,10 @@ type [<ReferenceEquality; NoComparison>] Dialog =
 
     // TODO: use a fold here instead of an inner function if possible.
     static member wordWrap limit (text : string) =
-        let rec wordWrap acc (string : string) =
-            if string.Length > limit then
+        let rec wordWrap acc (text : string) =
+            if text.Length > limit then
                 let (left, right) =
-                    let seq = String.explode string |> Seq.ofList
+                    let seq = String.explode text |> Seq.ofList
                     let seqLeft = Seq.take limit seq
                     if Seq.exists (fun c -> c = '\n' || c = ' ') seqLeft then
                         let index =
@@ -59,9 +59,9 @@ type [<ReferenceEquality; NoComparison>] Dialog =
                 let (left, right) = (Seq.toList left |> String.implode, Seq.toList right |> String.implode)
                 let acc = left :: acc
                 wordWrap acc right
-            else string :: acc
+            else text :: acc
         wordWrap [] text |> List.rev |> String.join "\n"
-    
+
     static member content name elevation promptLeft promptRight (detokenizeAndDialogOpt : Lens<(string -> string) * Dialog option, World>) =
         Content.entityWithContent<TextDispatcher> name
             [Entity.Bounds <== detokenizeAndDialogOpt --> fun (_, dialogOpt) ->

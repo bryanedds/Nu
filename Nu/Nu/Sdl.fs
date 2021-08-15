@@ -76,6 +76,18 @@ module SdlDeps =
     let getConfig sdlDeps =
         sdlDeps.Config
 
+    /// Attempt to set the window's full screen state.
+    let trySetWindowFullScreen fullScreen sdlDeps =
+        match sdlDeps.WindowOpt with
+        | Some window ->
+            let flags =
+                if fullScreen
+                then uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP
+                else 0u
+            SDL.SDL_SetWindowFullscreen (window, flags) |> ignore
+        | None -> ()
+        sdlDeps
+
     /// Attempt to initalize an SDL module.
     let internal attemptPerformSdlInit create destroy =
         let initResult = create ()
