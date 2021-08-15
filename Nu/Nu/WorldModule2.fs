@@ -531,7 +531,7 @@ module WorldModule2 =
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseMove" EventTrace.empty
                     World.publishPlus { MouseMoveData.Position = mousePosition } Events.MouseMove eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
-                    let mousePosition = World.getMousePositionF world
+                    let mousePosition = World.getMousePosition world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                     let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event")
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
@@ -541,7 +541,7 @@ module WorldModule2 =
                     let eventTrace = EventTrace.debug "World" "processInput" "MouseButtonChange" EventTrace.empty
                     World.publishPlus eventData mouseButtonChangeEvent eventTrace Simulants.Game true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
-                    let mousePosition = World.getMousePositionF world
+                    let mousePosition = World.getMousePosition world
                     let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                     let mouseButtonUpEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Up/Event")
                     let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event")
@@ -839,13 +839,13 @@ module WorldModule2 =
             let world = Seq.fold (flip World.processIntegrationMessage) world integrationMessages
             world
 
-        static member private render renderMessages renderContext (renderer : Renderer) eyeCenter eyeSize =
+        static member private render renderMessages renderContext (renderer : Renderer) eyeCenter eyeSize eyeMargin =
             match Constants.Render.ScreenClearing with
             | NoClear -> ()
             | ColorClear (r, g, b) ->
                 SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
                 SDL.SDL_RenderClear renderContext |> ignore
-            renderer.Render eyeCenter eyeSize renderMessages
+            renderer.Render eyeCenter eyeSize eyeMargin renderMessages
             if Environment.OSVersion.Platform <> PlatformID.Unix then // render flush not likely availble on linux SDL2...
                 SDL.SDL_RenderFlush renderContext |> ignore
             SDL.SDL_RenderPresent renderContext
@@ -936,7 +936,8 @@ module WorldModule2 =
                                                                 let world = World.setRenderer renderer world
                                                                 let eyeCenter = World.getEyeCenter world
                                                                 let eyeSize = World.getEyeSize world
-                                                                let rendererThread : Task = Task.Factory.StartNew (fun () -> World.render renderMessages renderContext renderer eyeCenter eyeSize)
+                                                                let eyeMargin = World.getEyeMargin world
+                                                                let rendererThread : Task = Task.Factory.StartNew (fun () -> World.render renderMessages renderContext renderer eyeCenter eyeSize eyeMargin)
                                                                 (Some rendererThread, world)
                                                             | None -> (None, world)
     
@@ -960,7 +961,8 @@ module WorldModule2 =
                                                                 let world = World.setRenderer renderer world
                                                                 let eyeCenter = World.getEyeCenter world
                                                                 let eyeSize = World.getEyeSize world
-                                                                World.render renderMessages renderContext renderer eyeCenter eyeSize
+                                                                let eyeMargin = World.getEyeMargin world
+                                                                World.render renderMessages renderContext renderer eyeCenter eyeSize eyeMargin
                                                                 world
                                                             | None -> world
                                                         RenderTimer.Stop ()

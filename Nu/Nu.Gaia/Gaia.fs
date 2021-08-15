@@ -322,7 +322,7 @@ module Gaia =
 
     let private handleNuMouseRightDown (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         let handled = if World.isTicking world then Cascade else Resolve
-        let mousePosition = World.getMousePositionF world
+        let mousePosition = World.getMousePosition world
         let (_, world) = tryMousePick mousePosition form world
         let world = updateEditorState (fun editorState -> { editorState with RightClickPosition = mousePosition }) world
         (handled, world)
@@ -330,7 +330,7 @@ module Gaia =
     let private handleNuEntityDragBegin (form : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
         if not (canEditWithMouse form world) then
             let handled = if World.isTicking world then Cascade else Resolve
-            let mousePosition = World.getMousePositionF world
+            let mousePosition = World.getMousePosition world
             match tryMousePick mousePosition form world with
             | (Some entity, world) ->
                 Globals.pushPastWorld world
@@ -360,7 +360,7 @@ module Gaia =
             | DragEntityNone -> (Resolve, world)
 
     let private handleNuCameraDragBegin (_ : GaiaForm) (_ : Event<MouseButtonData, Game>) world =
-        let mousePosition = World.getMousePositionF world
+        let mousePosition = World.getMousePosition world
         let mousePositionScreen = World.mouseToScreen mousePosition world
         let dragState = DragCameraPosition (World.getEyeCenter world + mousePositionScreen, mousePositionScreen)
         let world = updateEditorState (fun editorState -> { editorState with DragCameraState = dragState }) world
@@ -851,7 +851,7 @@ module Gaia =
                     | overlayName -> ExplicitOverlay overlayName
                 let (entity, world) = World.createEntity5 dispatcherName None overlayNameDescriptor selectedGroup world
                 let (positionSnap, rotationSnap) = getSnaps form
-                let mousePosition = World.getMousePositionF world
+                let mousePosition = World.getMousePosition world
                 let entityPosition =
                     if atMouse
                     then World.mouseToWorld (entity.GetAbsolute world) mousePosition world
@@ -1343,7 +1343,7 @@ module Gaia =
                 // is held during selection
                 if entity.Exists world then
                     let (positionSnap, _) = getSnaps form
-                    let mousePosition = World.getMousePositionF world
+                    let mousePosition = World.getMousePosition world
                     let mousePositionWorld = World.mouseToWorld (entity.GetAbsolute world) mousePosition world
                     let entityPosition = (pickOffset - mousePositionWorldOrig) + (mousePositionWorld - mousePositionWorldOrig)
                     let entityPositionSnapped = Math.snap2F positionSnap entityPosition
@@ -1366,7 +1366,7 @@ module Gaia =
     let private updateCameraDrag (_ : GaiaForm) world =
         match (getEditorState world).DragCameraState with
         | DragCameraPosition (pickOffset, mousePositionScreenOrig) ->
-            let mousePosition = World.getMousePositionF world
+            let mousePosition = World.getMousePosition world
             let mousePositionScreen = World.mouseToScreen mousePosition world
             let eyeCenter = (pickOffset - mousePositionScreenOrig) + -Constants.Editor.CameraSpeed * (mousePositionScreen - mousePositionScreenOrig)
             let world = World.setEyeCenter eyeCenter world

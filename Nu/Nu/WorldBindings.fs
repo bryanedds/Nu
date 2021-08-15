@@ -33,17 +33,17 @@ module WorldBindings =
         "destroyJoints setBodyEnabled setBodyPosition setBodyRotation " +
         "setBodyLinearVelocity applyBodyLinearImpulse setBodyAngularVelocity applyBodyAngularImpulse " +
         "applyBodyForce localizeBodyShape isMouseButtonDown getMousePosition " +
-        "getMousePositionF isKeyboardKeyDown expandContent destroyImmediate " +
-        "destroy tryGetParent getParent tryGetGrandparent " +
-        "getGrandparent getChildren getExists getEntities0 " +
-        "getGroups0 isSelected writeGameToFile readGameFromFile " +
-        "getScreens setScreenDissolve destroyScreen createScreen " +
-        "createDissolveScreen writeScreenToFile readScreenFromFile getGroups " +
-        "createGroup destroyGroup destroyGroups writeGroupToFile " +
-        "readGroupFromFile tryPickEntity writeEntityToFile getEntities " +
-        "destroyEntity destroyEntities createEntity readEntityFromFile " +
-        "reassignEntity trySetEntityOverlayNameOpt trySetEntityFacetNames getEyeCenter " +
-        "setEyeCenter getEyeSize setEyeSize getEyeBounds " +
+        "isKeyboardKeyDown expandContent destroyImmediate destroy " +
+        "tryGetParent getParent tryGetGrandparent getGrandparent " +
+        "getChildren getExists getEntities0 getGroups0 " +
+        "isSelected writeGameToFile readGameFromFile getScreens " +
+        "setScreenDissolve destroyScreen createScreen createDissolveScreen " +
+        "writeScreenToFile readScreenFromFile getGroups createGroup " +
+        "destroyGroup destroyGroups writeGroupToFile readGroupFromFile " +
+        "tryPickEntity writeEntityToFile getEntities destroyEntity " +
+        "destroyEntities createEntity readEntityFromFile reassignEntity " +
+        "trySetEntityOverlayNameOpt trySetEntityFacetNames getEyeCenter setEyeCenter " +
+        "getEyeSize getEyeMargin setEyeSize getEyeBounds " +
         "getOmniScreenOpt setOmniScreenOpt getOmniScreen setOmniScreen " +
         "getSelectedScreenOpt constrainEyeBounds setSelectedScreenOpt getSelectedScreen " +
         "setSelectedScreen getViewBoundsRelative getViewBoundsAbsolute getViewBounds " +
@@ -1141,21 +1141,10 @@ module WorldBindings =
         try
             let result = World.getMousePosition world
             let value = result
-            let value = ScriptingSystem.tryImport typeof<Vector2i> value world |> Option.get
-            struct (value, world)
-        with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMousePosition' due to: " + scstring exn, None)
-            struct (violation, World.choose oldWorld)
-
-    let getMousePositionF world =
-        let oldWorld = world
-        try
-            let result = World.getMousePositionF world
-            let value = result
             let value = ScriptingSystem.tryImport typeof<Vector2> value world |> Option.get
             struct (value, world)
         with exn ->
-            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMousePositionF' due to: " + scstring exn, None)
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getMousePosition' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let isKeyboardKeyDown key world =
@@ -2044,6 +2033,17 @@ module WorldBindings =
             struct (value, world)
         with exn ->
             let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeSize' due to: " + scstring exn, None)
+            struct (violation, World.choose oldWorld)
+
+    let getEyeMargin world =
+        let oldWorld = world
+        try
+            let result = World.getEyeMargin world
+            let value = result
+            let value = ScriptingSystem.tryImport typeof<Vector2> value world |> Option.get
+            struct (value, world)
+        with exn ->
+            let violation = Scripting.Violation (["InvalidBindingInvocation"], "Could not invoke binding 'getEyeMargin' due to: " + scstring exn, None)
             struct (violation, World.choose oldWorld)
 
     let setEyeSize value world =
@@ -3235,17 +3235,6 @@ module WorldBindings =
                 struct (violation, world)
         | Some violation -> struct (violation, world)
 
-    let evalGetMousePositionFBinding fnName exprs originOpt world =
-        let struct (evaleds, world) = World.evalManyInternal exprs world
-        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
-        | None ->
-            match evaleds with
-            | [||] -> getMousePositionF world
-            | _ ->
-                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
-                struct (violation, world)
-        | Some violation -> struct (violation, world)
-
     let evalIsKeyboardKeyDownBinding fnName exprs originOpt world =
         let struct (evaleds, world) = World.evalManyInternal exprs world
         match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
@@ -3692,6 +3681,17 @@ module WorldBindings =
         | None ->
             match evaleds with
             | [||] -> getEyeSize world
+            | _ ->
+                let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
+                struct (violation, world)
+        | Some violation -> struct (violation, world)
+
+    let evalGetEyeMarginBinding fnName exprs originOpt world =
+        let struct (evaleds, world) = World.evalManyInternal exprs world
+        match Array.tryFind (function Scripting.Violation _ -> true | _ -> false) evaleds with
+        | None ->
+            match evaleds with
+            | [||] -> getEyeMargin world
             | _ ->
                 let violation = Scripting.Violation (["InvalidBindingInvocation"], "Incorrect number of arguments for binding '" + fnName + "' at:\n" + SymbolOrigin.tryPrint originOpt, None)
                 struct (violation, world)
@@ -4186,7 +4186,6 @@ module WorldBindings =
              ("localizeBodyShape", { Fn = evalLocalizeBodyShapeBinding; Pars = [|"extent"; "bodyShape"|]; DocOpt = None })
              ("isMouseButtonDown", { Fn = evalIsMouseButtonDownBinding; Pars = [|"mouseButton"|]; DocOpt = None })
              ("getMousePosition", { Fn = evalGetMousePositionBinding; Pars = [||]; DocOpt = None })
-             ("getMousePositionF", { Fn = evalGetMousePositionFBinding; Pars = [||]; DocOpt = None })
              ("isKeyboardKeyDown", { Fn = evalIsKeyboardKeyDownBinding; Pars = [|"key"|]; DocOpt = None })
              ("expandContent", { Fn = evalExpandContentBinding; Pars = [|"setScreenSplash"; "content"; "origin"; "owner"; "parent"|]; DocOpt = None })
              ("destroyImmediate", { Fn = evalDestroyImmediateBinding; Pars = [|"simulant"|]; DocOpt = None })
@@ -4228,6 +4227,7 @@ module WorldBindings =
              ("getEyeCenter", { Fn = evalGetEyeCenterBinding; Pars = [||]; DocOpt = None })
              ("setEyeCenter", { Fn = evalSetEyeCenterBinding; Pars = [|"value"|]; DocOpt = None })
              ("getEyeSize", { Fn = evalGetEyeSizeBinding; Pars = [||]; DocOpt = None })
+             ("getEyeMargin", { Fn = evalGetEyeMarginBinding; Pars = [||]; DocOpt = None })
              ("setEyeSize", { Fn = evalSetEyeSizeBinding; Pars = [|"value"|]; DocOpt = None })
              ("getEyeBounds", { Fn = evalGetEyeBoundsBinding; Pars = [||]; DocOpt = None })
              ("getOmniScreenOpt", { Fn = evalGetOmniScreenOptBinding; Pars = [||]; DocOpt = None })
