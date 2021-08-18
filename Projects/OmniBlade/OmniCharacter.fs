@@ -56,7 +56,9 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         let hitPoints = updater state.HitPoints
         let hitPoints = max 0 hitPoints
         let hitPoints = min state.HitPointsMax hitPoints
-        { state with HitPoints = hitPoints }
+        { state with
+            HitPoints = hitPoints
+            Statuses = if hitPoints = 0 then Map.empty else state.Statuses }
 
     static member updateTechPoints updater state =
         let techPoints = updater state.TechPoints
@@ -315,7 +317,7 @@ module Character =
         Option.isNone character.AutoBattleOpt_ &&
         character.IsEnemy
 
-    let isAutoBattling character =
+    let isAutoTeching character =
         match character.AutoBattleOpt_ with
         | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
         | None -> false
@@ -409,19 +411,19 @@ module Character =
             | Magical -> source.CharacterState_.Magic
         if techData.Curative then
             let healing = single efficacy * techData.Scalar |> int |> max 1
-            (target.CharacterIndex, false, healing)
+            (target.CharacterIndex, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
-            let cancelled = techData.Cancels && isAutoBattling target
+            let cancelled = techData.Cancels && isAutoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
             let damage = single (efficacy - shield) * techData.Scalar * defendingScalar |> int |> max 1
-            (target.CharacterIndex, cancelled, -damage)
+            (target.CharacterIndex, cancelled, -damage, techData.StatusesAdded, techData.StatusesRemoved)
 
     let evaluateTechMove techData source target characters =
         let targets = evaluateTargetType techData.TargetType source target characters
         Map.fold (fun results _ target ->
-            let (index, cancelled, delta) = evaluateTech techData source target
-            Map.add index (cancelled, delta) results)
+            let (index, cancelled, delta, added, removed) = evaluateTech techData source target
+            Map.add index (cancelled, delta, added, removed) results)
             Map.empty
             targets
 
@@ -500,6 +502,15 @@ module Character =
 
     let updateBottom updater (character : Character) =
         { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
+
+    let applyStatusChanges statusesAdded statusesRemoved (character : Character) =
+        if character.IsHealthy then
+            updateStatuses (fun statuses ->
+                let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.BurndownTime statuses) statuses statusesAdded
+                let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
+                statuses)
+                character
+        else character
 
     let autoBattle (source : Character) (target : Character) =
         let sourceToTarget = target.Position - source.Position

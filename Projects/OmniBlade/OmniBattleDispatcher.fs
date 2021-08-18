@@ -826,9 +826,8 @@ module BattleDispatcher =
                     let characters = Battle.getCharacters battle
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, cmds) =
-                        Map.fold (fun (battle, cmds) characterIndex (cancelled, hitPointsChange) ->
-                            let character = Battle.getCharacter characterIndex battle
-                            if hitPointsChange < 0 && character.IsHealthy then
+                        Map.fold (fun (battle, cmds) characterIndex (cancelled, hitPointsChange, _, _) ->
+                            if hitPointsChange < 0 && Battle.getCharacterHealthy characterIndex battle then
                                 let battle = Battle.updateCharacter (Character.animate time DamageAnimation) characterIndex battle
                                 let cmds = if cancelled then DisplayCancel characterIndex :: cmds else cmds
                                 (battle, cmds)
@@ -846,7 +845,7 @@ module BattleDispatcher =
                     let characters = Battle.getCharacters battle
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, sigs) =
-                        Map.fold (fun (battle, sigs) _ (_, _) ->
+                        Map.fold (fun (battle, sigs) _ (_, _, _, _) ->
                             // TODO: glow effect
                             (battle, sigs))
                             (battle, [])
@@ -877,8 +876,13 @@ module BattleDispatcher =
                     let characters = Battle.getCharacters battle
                     let results = Character.evaluateTechMove techData source target characters
                     let (battle, sigs) =
-                        Map.fold (fun (battle, sigs) characterIndex (cancelled, hitPointsChange) ->
-                            let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled)) false) characterIndex battle
+                        Map.fold (fun (battle, sigs) characterIndex (cancelled, hitPointsChange, added, removed) ->
+                            let battle =
+                                Battle.updateCharacter (
+                                    Character.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled)) false >>
+                                    Character.applyStatusChanges added removed)
+                                    characterIndex
+                                    battle
                             let wounded = (Battle.getCharacter characterIndex battle).IsWounded
                             let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
                             let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (characterIndex, hitPointsChange)) :: sigs else sigs

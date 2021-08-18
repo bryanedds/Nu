@@ -166,6 +166,12 @@ module Battle =
     let getCharacter characterIndex battle =
         tryGetCharacter characterIndex battle |> Option.get
 
+    let getCharacterHealthy characterIndex battle =
+        (getCharacter characterIndex battle).IsHealthy
+
+    let getCharacterWounded characterIndex battle =
+        (getCharacter characterIndex battle).IsWounded
+
     let tryUpdateCharacter updater characterIndex battle =
         match tryGetCharacter characterIndex battle with
         | Some character ->
@@ -201,7 +207,7 @@ module Battle =
         { battle with ActionCommands_ = Queue.conj command battle.ActionCommands }
 
     let prependActionCommand command battle =
-         { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
+        { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
     let counterAttack sourceIndex targetIndex battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
@@ -352,7 +358,7 @@ module Battle =
             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
             let team =
                 Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>
-                Map.add 1 (Teammate.makeAtLevel level 1 Riain) |>
+                Map.add 1 (Teammate.makeAtLevel level 1 Mael) |>
                 Map.add 2 (Teammate.makeAtLevel level 2 Peric)
             makeFromTeam Inventory.initial prizePool team battle 0L
         | None -> empty
