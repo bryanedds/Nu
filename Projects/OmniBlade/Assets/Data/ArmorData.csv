@@ -1,8 +1,8 @@
-Type,Subtype,HitPointsBase (increase by 50%),TechPointsBase (increase constant amount),Cost,Description
+Type,Subtype,HitPointsBase (increase by 50% / 100%),TechPointsBase (increase constant amount),Cost,Description
 TinMail,Mail,12,7,10,
 CottonVest,Vest,10,8,10,
 CottonRobe,Robe,8,9,10,
-ThinFur,Pelt,4,4,10,
+ThinFur,Pelt,8,4,10,
 BronzeMail,Mail,18,14,50,
 LeatherVest,Vest,15,16,50,
 LeatherRobe,Robe,12,18,50,
@@ -10,4 +10,5 @@ ThickFur,Pelt,15,16,50,
 IronMail,Mail,27,21,100,
 RubberVest,Vest,22,24,100,
 SilkRobe,Robe,18,27,100,
-ToughHide,Pelt,22,24,100,
+ToughHide,Pelt,30,24,100,
+StoneHide,Pelt,60,32,200,

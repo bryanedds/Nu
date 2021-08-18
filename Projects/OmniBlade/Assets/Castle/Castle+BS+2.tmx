@@ -12,14 +12,14 @@
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="2" gid="235" x="696" y="480" width="144" height="144">
+  <object id="2" gid="235" x="606" y="576" width="324" height="276">
    <properties>
-    <property name="I" value="[Npc MadTrixterNpc Downward [Sequence [[Dialog &quot;Welcome to your doom!&quot;] [Battle MadTrixterBattle [MadTrixterDefeated]]]]]"/>
+    <property name="I" value="[Npc AraneaImplicitumNpc Downward [Sequence [[Dialog &quot;What a delightful addition... to my web of souls!&quot;] [Battle AraneaImplicitumBattle [AraneaImplicitumDefeated]]]]]"/>
    </properties>
   </object>
   <object id="3" gid="235" x="744" y="288" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [StairsPortal true] [IX 1] Downward TombGround [IX 0] false [MadTrixterDefeated]]"/>
+    <property name="I" value="[Portal [StairsPortal true] [IX 1] Downward TombGround [IX 0] false [AraneaImplicitumDefeated]]"/>
    </properties>
   </object>
  </objectgroup>
