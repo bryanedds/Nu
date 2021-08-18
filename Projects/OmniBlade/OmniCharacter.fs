@@ -242,7 +242,8 @@ module Character =
               CharacterAnimationState_ : CharacterAnimationState
               AutoBattleOpt_ : AutoBattle option
               ActionTime_ : int
-              InputState_ : CharacterInputState }
+              InputState_ : CharacterInputState
+              CelSize_ : Vector2 }
 
         (* Bounds Original Properties *)
         member this.BoundsOriginal = this.BoundsOriginal_
@@ -274,6 +275,7 @@ module Character =
         member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
         member this.IsEnemy = not this.IsAlly
         member this.ActionTime = this.ActionTime_
+        member this.CelSize = this.CelSize_
         member this.ArchetypeType = this.CharacterState_.ArchetypeType
         member this.ExpPoints = this.CharacterState_.ExpPoints
         member this.HitPoints = this.CharacterState_.HitPoints
@@ -522,7 +524,7 @@ module Character =
     let animate time characterAnimationType character =
         { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
 
-    let make bounds characterIndex characterType (characterState : CharacterState) animationSheet direction actionTime =
+    let make bounds characterIndex characterType (characterState : CharacterState) animationSheet celSize direction actionTime =
         let animationType = if characterState.IsHealthy then IdleAnimation else WoundAnimation
         let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
         { BoundsOriginal_ = bounds
@@ -533,24 +535,31 @@ module Character =
           CharacterAnimationState_ = animationState
           AutoBattleOpt_ = None
           ActionTime_ = actionTime
+          CelSize_ = celSize
           InputState_ = NoInput }
 
     let tryMakeEnemy index indexMax offsetCharacters enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
-            let size = Constants.Gameplay.CharacterSize
-            let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
-            let bounds = v4Bounds position size
-            let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
-            let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
-            let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
-            let characterType = characterData.CharacterType
-            let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
-            let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
-            let actionTime = 0 - Constants.Battle.EnemyActionTimeSpacing * indexRev
-            let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet Rightward actionTime
-            Some enemy
+            match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
+            | Some archetypeData ->
+                let (size, celSize) =
+                    match archetypeData.Stature with
+                    | SmallStature | NormalStature | LargeStature -> (Constants.Gameplay.CharacterSize, Constants.Gameplay.CharacterCelSize)
+                    | HugeStature -> (Constants.Gameplay.BossSize, Constants.Gameplay.BossCelSize)
+                let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
+                let bounds = v4Bounds position size
+                let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
+                let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
+                let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
+                let characterType = characterData.CharacterType
+                let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
+                let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
+                let actionTime = 0 - Constants.Battle.EnemyActionTimeSpacing * indexRev
+                let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward actionTime
+                Some enemy
+            | None -> None
         | None -> None
 
     let empty =
@@ -564,7 +573,8 @@ module Character =
           CharacterAnimationState_ = characterAnimationState
           AutoBattleOpt_ = None
           ActionTime_ = 0
-          InputState_ = NoInput }
+          InputState_ = NoInput
+          CelSize_ = Constants.Gameplay.CharacterSize }
 
 type Character = Character.Character
 

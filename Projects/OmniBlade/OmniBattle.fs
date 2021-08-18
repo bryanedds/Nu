@@ -318,6 +318,7 @@ module Battle =
                     | Some characterData ->
                         // TODO: bounds checking
                         let size = Constants.Gameplay.CharacterSize
+                        let celSize = Constants.Gameplay.CharacterCelSize
                         let position = if offsetCharacters then allyPositions.[teamIndex] + Constants.Battle.CharacterOffset else allyPositions.[teamIndex]
                         let bounds = v4Bounds position size
                         let characterIndex = AllyIndex teamIndex
@@ -326,7 +327,7 @@ module Battle =
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.ofVector2 -bounds.Bottom
                         let actionTime = 1000 - Constants.Battle.AllyActionTimeSpacing * index
-                        let character = Character.make bounds characterIndex characterType characterState animationSheet direction actionTime
+                        let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party

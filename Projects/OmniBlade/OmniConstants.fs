@@ -42,6 +42,8 @@ module Constants =
         let TileCelSize = v2 16.0f 16.0f
         let CharacterSize = v2 144.0f 144.0f
         let CharacterCelSize = v2 48.0f 48.0f
+        let BossSize = v2 324.0f 276.0f
+        let BossCelSize = v2 108.0f 92.0f
         let DialogSplit = '^'
         let ItemLimit = 9
 

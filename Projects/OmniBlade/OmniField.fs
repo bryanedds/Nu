@@ -178,6 +178,9 @@ module Field =
         | (true, fieldData) -> Option.isSome fieldData.EncounterTypeOpt
         | (false, _) -> false
 
+    let clearSpirits field =
+        { field with Spirits_= [||] }
+
     let advanceSpirits (field : Field) world =
         match field.FieldTransitionOpt with
         | None ->
