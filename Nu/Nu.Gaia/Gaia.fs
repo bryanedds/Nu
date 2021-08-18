@@ -183,7 +183,7 @@ module Gaia =
         let entityNodeKey = scstring entity
         match tryFindHierarchyTreeNode entityNodeKey form world with
         | Some node -> node.Remove ()
-        | None -> failwithumf ()
+        | None -> ()
 
     let private refreshHierarchyTreeView (form : GaiaForm) world =
         // TODO: this code causes severe performance issues. To unfuck performance, we will probably have to find
