@@ -1,5 +1,5 @@
 Type,Subtype,PowerBase,MindBase,Cost,Description
-Bare,Melee,0,0,5,
+Bare,Melee,0,1,5,
 ShortSword,Sword,1,1,10,
 Dagger,Knife,1,1,10,
 OakRod,Rod,1,2,10,
