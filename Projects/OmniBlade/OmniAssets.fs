@@ -114,6 +114,7 @@ module Assets =
         let ChargeDimensionSound = asset<Sound> PackageName "ChargeDimension"
         let SlashSound = asset<Sound> PackageName "Slash"
         let IceSound = asset<Sound> PackageName "Ice"
+        let SnowballSound = asset<Sound> PackageName "Snowball"
         let FireSound = asset<Sound> PackageName "Fire"
         let FlameSound = asset<Sound> PackageName "Flame"
         let ThunderSound = asset<Sound> PackageName "Thunder"

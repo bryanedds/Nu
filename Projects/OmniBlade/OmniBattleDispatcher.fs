@@ -763,8 +763,10 @@ module BattleDispatcher =
                     withCmds [playIce; displayIce] battle
                 | Snowball ->
                     let time = World.getTickTime world
+                    let playSnowball = PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.SnowballSound)
+                    let displaySnowball = DisplaySnowball (0L, targetIndex)
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplaySnowball (0L, targetIndex)) battle
+                    withCmds [playSnowball; displaySnowball] battle
                 | Bolt ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
