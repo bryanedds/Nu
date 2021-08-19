@@ -15,56 +15,6 @@ module Nu =
 
     let mutable private Initialized = false
 
-    let private loadEntityGetters2 (assembly : Assembly) =
-        let types =
-            assembly.DefinedTypes |>
-            Seq.filter (fun ty -> ty.IsAbstract && ty.IsSealed)
-        for ty in types do
-            let mds =
-                ty.DeclaredMethods |>
-                Seq.filter (fun md ->
-                    if  md.IsPublic &&
-                        md.IsStatic &&
-                        md.IsGenericMethod |> not &&
-                        md.ReturnType.IsByRef |> not &&
-                        md.Name.StartsWith "Entity.Get" then
-                        let pars = md.GetParameters ()
-                        pars.Length = 2 &&
-                        pars.[0].ParameterType = typeof<Entity> &&
-                        pars.[1].ParameterType = typeof<World>
-                    else false)
-            for md in mds do
-                let name = md.Name.Replace ("Entity.Get", "")
-                if  not (WorldModuleEntity.EntityGetters.ContainsKey name) then
-                    let compiled = FastInvoke.compile md
-                    WorldModuleEntity.EntityGetters.Add (name, InvokeGetter (md.ReturnType, compiled))
-
-    let private loadEntitySetters2 (assembly : Assembly) =
-        let types =
-            assembly.DefinedTypes |>
-            Seq.filter (fun ty -> ty.IsAbstract && ty.IsSealed)
-        for ty in types do
-            let mds =
-                ty.DeclaredMethods |>
-                Seq.filter (fun md ->
-                    if  md.IsPublic &&
-                        md.IsStatic &&
-                        md.IsGenericMethod |> not &&
-                        md.ReturnType = typeof<World> &&
-                        md.Name.StartsWith "Entity.Set" then
-                        let pars = md.GetParameters ()
-                        pars.Length = 3 &&
-                        pars.[0].ParameterType = typeof<Entity> &&
-                        pars.[1].ParameterType.IsByRef |> not &&
-                        pars.[2].ParameterType = typeof<World>
-                    else false)
-            for md in mds do
-                let name = md.Name.Replace ("Entity.Set", "")
-                if  not (WorldModuleEntity.EntitySetters.ContainsKey name) then
-                    let compiled = FastInvoke.compile md
-                    let propertyType = md.GetParameters().[1].ParameterType
-                    WorldModuleEntity.EntitySetters.Add (name, InvokeSetter (propertyType, compiled))
-
     let private tryPropagateByLens (left : World Lens) (right : World Lens) world =
         if right.Validate world then
             let value = right.GetWithoutValidation world
@@ -96,19 +46,13 @@ module Nu =
 
             // process loading assemblies
             AppDomain.CurrentDomain.AssemblyLoad.Add (fun args ->
-                Reflection.AssembliesLoaded.Assign (args.LoadedAssembly.FullName, args.LoadedAssembly)
-                loadEntityGetters2 args.LoadedAssembly
-                loadEntitySetters2 args.LoadedAssembly)
+                Reflection.AssembliesLoaded.Assign (args.LoadedAssembly.FullName, args.LoadedAssembly))
             AppDomain.CurrentDomain.add_AssemblyResolve (ResolveEventHandler (fun _ args ->
                 snd (Reflection.AssembliesLoaded.TryGetValue args.Name)))
 
             // process existing assemblies
             for assembly in AppDomain.CurrentDomain.GetAssemblies () do
                 Reflection.AssembliesLoaded.Assign (assembly.FullName, assembly)
-                if  assembly.ManifestModule.Name <> "mscorlib.dll" &&
-                    not (assembly.ManifestModule.Name.StartsWith "xunit") then
-                    loadEntityGetters2 assembly
-                    loadEntitySetters2 assembly
 
             // ensure the current culture is invariate
             Thread.CurrentThread.CurrentCulture <- Globalization.CultureInfo.InvariantCulture
