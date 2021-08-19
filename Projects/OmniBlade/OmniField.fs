@@ -262,7 +262,6 @@ module Field =
         let allies = Battle.getAllies battle
         let field = synchronizeTeamFromAllies allies field
         let field = updateInventory (constant battle.Inventory) field
-        let field = updateBattleOpt (constant None) field
         let field = updateAdvents (Set.union consequents) field
         field
 
