@@ -145,19 +145,24 @@ module BattleDispatcher =
                 just battle
 
         static let tickDefend sourceIndex time timeLocal battle =
-            match timeLocal with
-            | 0L ->
-                let battle =
-                    Battle.updateCharacter
-                        (Character.updateActionTime (constant 0.0f) >>
-                         Character.updateInputState (constant NoInput) >>
-                         Character.animate time (PoiseAnimation Defending) >>
-                         Character.defend)
-                        sourceIndex
-                        battle
+            match Battle.tryGetCharacter sourceIndex battle with
+            | Some source when source.IsHealthy ->
+                match timeLocal with
+                | 0L ->
+                    let battle =
+                        Battle.updateCharacter
+                            (Character.updateActionTime (constant 0.0f) >>
+                             Character.updateInputState (constant NoInput) >>
+                             Character.animate time (PoiseAnimation Defending) >>
+                             Character.defend)
+                            sourceIndex
+                            battle
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | _ -> just battle
+            | Some _ | None ->
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 just battle
-            | _ -> just battle
 
         static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal battle =
             match targetIndexOpt with
