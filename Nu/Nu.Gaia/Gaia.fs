@@ -300,12 +300,12 @@ module Gaia =
         addHierarchyTreeEntityNode entity form world
         (Cascade, world)
 
-    let private handleNuGroupRegister (form : GaiaForm) evt world =
+    let private handleNuGroupRegister (form : GaiaForm) (_ : Event<unit, Screen>) world =
         refreshGroupTabs form world
         refreshHierarchyTreeView form world
         (Cascade, world)
 
-    let private handleNuGroupUnregistering (form : GaiaForm) evt world =
+    let private handleNuGroupUnregistering (form : GaiaForm) (_ : Event<unit, Screen>) world =
         refreshGroupTabs form world
         refreshHierarchyTreeView form world
         (Cascade, world)
