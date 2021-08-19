@@ -17,7 +17,7 @@ Beetle,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and 
 Rat,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Semi-weak physical attacks.
 Scorpion,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
 Plant,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Debuff effects.
-Goblin,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [2 Flame] [3 Ice] [4 Snowball] [5 Bolt]],NormalStature,Normal physical attacks with normal Elemental magic.
+Goblin,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[4 Snowball]],NormalStature,Normal physical attacks with normal Elemental magic.
 Soldier,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 PowerCut] [2 SneakCut] [3 DoubleCut] [4 ProvokeCut]],NormalStature,Physical attacks with ???.
 Ghost,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff magic.
 Imp,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff effects.

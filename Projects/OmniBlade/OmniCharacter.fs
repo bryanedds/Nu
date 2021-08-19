@@ -524,7 +524,7 @@ module Character =
 
     let autoBattle (source : Character) (target : Character) =
         let sourceToTarget = target.Position - source.Position
-        let direction = Direction.ofVector2 sourceToTarget
+        let direction = if sourceToTarget.X > 0.0f then Rightward else Leftward // only two directions in this game
         let animationState = { source.CharacterAnimationState_ with Direction = direction }
         let autoBattle = evaluateAutoBattle source target
         { source with CharacterAnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
