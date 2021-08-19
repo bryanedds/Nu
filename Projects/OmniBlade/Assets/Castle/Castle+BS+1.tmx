@@ -14,7 +14,7 @@
  <objectgroup id="3" name="Props">
   <object id="2" gid="235" x="696" y="480" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc HeavyArmorosNpc Downward [Sequence [[Dialog &quot;...&quot;] [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]"/>
+    <property name="I" value="[Npc HeavyArmorosNpc Downward [Sequence [[Dialog &quot;Darkness beckons...&quot;] [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]"/>
    </properties>
   </object>
   <object id="3" gid="235" x="744" y="288" width="48" height="48">
