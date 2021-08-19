@@ -409,14 +409,24 @@ module Character =
             match techData.EffectType with
             | Physical -> source.CharacterState_.Power
             | Magical -> source.CharacterState_.Magic
+        let specialScalar =
+            // NOTE: certain techs can't be used effectively by enemies, so they are given a special scalar.
+            // TODO: pull this from TechData.EnemyScalarOpt.
+            if source.IsEnemy then
+                match techData.TechType with
+                | Critical -> 1.25f
+                | Slash -> 1.333f
+                | TechType.Flame -> 1.667f
+                | _ -> 1.0f
+            else 1.0f
         if techData.Curative then
-            let healing = single efficacy * techData.Scalar |> int |> max 1
+            let healing = single efficacy * techData.Scalar * specialScalar |> int |> max 1
             (target.CharacterIndex, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && isAutoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
-            let damage = single (efficacy - shield) * techData.Scalar * defendingScalar |> int |> max 1
+            let damage = single (efficacy - shield) * techData.Scalar * specialScalar * defendingScalar |> int |> max 1
             (target.CharacterIndex, cancelled, -damage, techData.StatusesAdded, techData.StatusesRemoved)
 
     let evaluateTechMove techData source target characters =
