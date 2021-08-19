@@ -108,12 +108,14 @@ module GameDispatcher =
                         | BattleCease (result, consequents, time) ->
                             let localTime = World.getTickTime world - time
                             if localTime = 60L then
+                                let field = Field (Field.synchronizeFromBattle consequents battle field)
                                 if result
-                                then withCmd (Show Simulants.Field.Screen) (Field (Field.synchronizeFromBattle consequents battle field))
-                                else withCmd (Show Simulants.Title.Screen) (Gui Title)
+                                then withCmd (Show Simulants.Field.Screen) field
+                                else withCmd (Show Simulants.Title.Screen) field
                             elif localTime = 60L + Constants.Gui.Dissolve.OutgoingTime then
-                                let field = Field.updateBattleOpt (constant None) field
-                                just (Field field)
+                                if result
+                                then just (Field (Field.updateBattleOpt (constant None) field))
+                                else just (Gui Title)
                             else withCmd (Show Simulants.Battle.Screen) omni
                         | _ -> withCmd (Show Simulants.Battle.Screen) omni
                     | None -> withCmd (Show Simulants.Field.Screen) omni
