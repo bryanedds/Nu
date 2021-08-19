@@ -136,6 +136,7 @@ module Assets =
         let BurnAnimationSheet = asset<Image> PackageName "Burn"
         let FlameAnimationSheet = asset<Image> PackageName "Flame"
         let IceImage = asset<Image> PackageName "Ice"
+        let SnowballImage = asset<Image> PackageName "Snowball"
         let HolyCastAnimationSheet = asset<Image> PackageName "HolyCast"
         let PurifyAnimationSheet = asset<Image> PackageName "Purify"
         let SparkleAnimationSheet = asset<Image> PackageName "Sparkle"

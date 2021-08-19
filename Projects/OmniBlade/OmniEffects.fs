@@ -218,14 +218,14 @@ module Effects =
                 (Shift 0.0f,
                  Rate 0.25f,
                  [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 64L }; { LogicValue = false; LogicLength = 0L }|])|],
-                 [|Sizes (Set, Linear, Once, [|{ TweenValue = v2 32.0f 32.0f; TweenLength = 36L}; { TweenValue = v2 192.0f 192.0f; TweenLength = 0L}|])
-                   Positions (Set, EaseIn, Once, [|{ TweenValue = position; TweenLength = 36L}; { TweenValue = position2; TweenLength = 0L}|])
+                 [|Sizes (Set, Linear, Once, [|{ TweenValue = v2 32.0f 32.0f; TweenLength = 36L }; { TweenValue = v2 192.0f 192.0f; TweenLength = 0L }|])
+                   Positions (Set, EaseIn, Once, [|{ TweenValue = position; TweenLength = 36L }; { TweenValue = position2; TweenLength = 0L }|])
                    Color (colWhite.WithA (byte 207))|],
                  AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil))}
 
     let makeIceEffect () =
         let coverRadius = 50.0f
-        let bombardActivation = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 10L };{ LogicValue = false; LogicLength = 0L}|])
+        let bombardActivation = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 10L };{ LogicValue = false; LogicLength = 0L }|])
         let bombardTravel origin = Positions (Sum, Linear, Once, [|{ TweenValue = origin; TweenLength = 10L };{ TweenValue = v2Zero; TweenLength = 0L }|])
         let coverTravel =
             Aspects
@@ -247,6 +247,16 @@ module Effects =
             Contents
                 (Shift 0.0f,
                  [|iceCover; iceBombard (v2 -700.0f 0.0f); iceBombard (v2 500.0f 500.0f); iceBombard (v2 500.0f -500.0f)|])}
+    
+    let makeSnowballEffect () =
+        let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v2 0.0f 600.0f; TweenLength = 80L };{ TweenValue = v2 0.0f -600.0f; TweenLength = 0L }|])
+        { EffectName = "Snowball"
+          LifeTimeOpt = Some 80L
+          Definitions = Map.empty
+          Content =
+              StaticSprite
+               (Resource (AssetTag.toPair Assets.Battle.SnowballImage),
+                [|Size (v2 432.0f 432.0f); fall|], Nil)}
     
     let makeHolyCastEffect () =
         { EffectName = "HolyCast"
