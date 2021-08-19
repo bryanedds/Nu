@@ -86,14 +86,14 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Battle =
 
-        let AllyMax = 3
-        let ActionTime = 1000
-        let BurndownTime = 3000
-        let AutoBattleReadyTime = 50
-        let AllyActionTimeDelta = 4
-        let AllyActionTimeSpacing = 500
-        let EnemyActionTimeDelta = 3
-        let EnemyActionTimeSpacing = 75
+        let AllyMax = 3.0f
+        let ActionTime = 1000.0f
+        let BurndownTime = 3000.0f
+        let AutoBattleReadyTime = 50.0f
+        let AllyActionTimeDelta = 4.0f
+        let AllyActionTimeSpacing = 500.0f
+        let EnemyActionTimeDelta = 3.0f
+        let EnemyActionTimeSpacing = 75.0f
         let DefendingDamageScalar = 0.5f
         let CancelPosition = v2 -438.0f -228.0f
         let StrikingDistance = 48.0f

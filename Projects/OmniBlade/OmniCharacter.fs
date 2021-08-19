@@ -16,7 +16,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
       Accessories : AccessoryType list
       HitPoints : int
       TechPoints : int
-      Statuses : Map<StatusType, int>
+      Statuses : Map<StatusType, single>
       Defending : bool // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
       Charging : bool
       TechProbabilityOpt : single option
@@ -45,7 +45,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         let statuses =
             Map.fold (fun statuses status burndown2 ->
                 let burndown3 = burndown2 - burndown
-                if burndown3 <= 0
+                if burndown3 <= 0.0f
                 then Map.remove status statuses
                 else Map.add status burndown3 statuses)
                 Map.empty
@@ -243,7 +243,7 @@ module Character =
               CharacterState_ : CharacterState
               CharacterAnimationState_ : CharacterAnimationState
               AutoBattleOpt_ : AutoBattle option
-              ActionTime_ : int
+              ActionTime_ : single
               InputState_ : CharacterInputState
               CelSize_ : Vector2 }
 
@@ -577,7 +577,7 @@ module Character =
                 let characterType = characterData.CharacterType
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
-                let actionTime = 0 - Constants.Battle.EnemyActionTimeSpacing * indexRev
+                let actionTime = 0.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward actionTime
                 Some enemy
             | None -> None
@@ -593,7 +593,7 @@ module Character =
           CharacterState_ = CharacterState.empty
           CharacterAnimationState_ = characterAnimationState
           AutoBattleOpt_ = None
-          ActionTime_ = 0
+          ActionTime_ = 0.0f
           InputState_ = NoInput
           CelSize_ = Constants.Gameplay.CharacterSize }
 
