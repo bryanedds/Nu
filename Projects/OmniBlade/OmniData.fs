@@ -153,6 +153,7 @@ type WeaponType =
     | Fangs
 
 type ArmorType =
+    | MicroFur
     | TinMail
     | CottonVest
     | CottonRobe
