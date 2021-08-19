@@ -4,12 +4,12 @@
  <tileset firstgid="1480" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0qENACAQBMEL7h209P0XRQUISHAjRqzfHknDhVXJrHPDT/4DAIA3GwnWDrw=
+   eJzt0qERACAMQ9Ec2axLAZ0eFqhElPviia9iEkMKtDItLdf9Wt6t7brxN/4HAAAA9HQA5xITiA==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt1VEKgCAMBmDzxQtkdaOoLhrRlSqiizSJQEYGBv1GbDDwqW/+hlqtlI3ogjpUeeS3nrT44osvPq/eKDWb9/2KesvS7P0uA6TPM1hpXQJ9ngFy71/0a1q3QLujbjx/0NgZ3N5Hz5/0MQPqHJy/eP45A8Ln2aPvAJ59Cp9nj/avCnUHhnzUvy/vn7x/4v/H3wE9WF7D
+   eJzt1cEJgDAMBdC0M1h1I1E3FVcSERcxRYQSjFAPvyIJBDz5kq+0wROFjK65taoy3/WmzTfffPNlbY6oAfgt9+7K7P6UAdKXGaCy1zJA7v5Fv+PnAWiP3H3iTx47Q9x9TvzFnzOgvkP018S/ZkD4Mnv0GSCzL+HL7NH+XaHOQM1H/ft2/9n9Z/5//AOLsl4q
   </data>
  </layer>
  <objectgroup id="3" name="Props">

@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="5" nextobjectid="17">
  <tileset firstgid="1" source="TombInner.tsx"/>
- <tileset firstgid="1480" source="../../Castle/Castle.tsx"/>
  <layer id="2" name="Floor" width="64" height="64">
   <data encoding="base64" compression="zlib">
-   eJzt2k0OgjAQBWDjynN5Ju/ENQ0LIiGVznTe/LaTsBKm72uLBuLjUaPez98xW53tleaA6jnO+bzqzEPL1Dt3a/gzzUEr+9bxt67JOAcjBqo9kp+T+c4gudajJO6rQTp31oWwS/yZzcu67Msez+/tXfa57R7lbfZyW9hbz66Z7JJr9+Pfs2tmO6dHxbXn9olmp+a+nifpFcnOzcx5V5XBvhcn7/U7TNLTqxDfVRRDNPc5E+W3GLGGkeznPL3fYqv713p+kHt/dj8yR+9+rGzn3I+eds+xpXmqmEcyWrgtvdy8ld2U7NXdPQfS7u0bmQOU33rfSsalXu9llxR3jCh+ZFn6Pc29XlI/Ja+VWyMjtS/ifYCmmTKexC99H6DppI4r8Wu4NcdtZeB+pmW3clPWWStTJPvo3kD7va2UnNH9dxU5p/beGhkHPZdWfkR2bkXz3xnQ9hGLl1/bTh3Lws8dR9MrXReEX3PNj16j/1Hy2v+oOvpRnoM8/VqFyJXVzs2P6BHNTs2P6BHV3ipJtux2RM3mbdWs7nMtv5//C2ZnHPs=
+   eJzt2ksOgzAMBFDUo/W+vRNHqVigIuQSOx5/4sQSq4IzLwmtQN22GvV+/Y7Z6mqvNAdcz3nOp9A8UKbWuTvhH2kOqOx7w0FdM+Ic9Bi49kx+SeYng+baiNK47wbt3HkXwq7xj2xe1mVf9nz+aO+yz22PqGhzlNvDTj27jmTXXHsc/55dR7ZLelRce2mfbHZu7vt5ml6Z7NLMkndVI9iPkuS9f4dpekYV4ruKY8jmvmbi/BYj1jCT/Zqn9Vvsdf96zw9y78/uR+Zo3Y+V7ZL7MdIeObY2TxVzT0YPt6dXmreym5O9urvlQNqjfT1zgPJ771vNuNzro+yako6RxY8sT3+kudVL6+fk9XJbZOT2RbwPsDRzxtP4te8DLJ3ccTV+C7fluFQG6WdWdi83Z52tMmWy9+4NtD/aysmZ3f9UmXNa762ecdBz6eVHZJdWNv+TAW3vsUT5re3csTz80nEsvdp1Qfgt1/zs1fsfpaj9j6qzH+c5KNJvVYhco9ql+RE9stm5+RE9stqp0mQb3Y6o2bxUzeq+1vLH+b8HaiAr
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="64" height="64">
