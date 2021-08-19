@@ -136,6 +136,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
         StatusType.enumerate this
 
 type WeaponType =
+    | Bare
     | ShortSword
     | Dagger
     | OakRod
