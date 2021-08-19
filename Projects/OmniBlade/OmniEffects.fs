@@ -249,14 +249,15 @@ module Effects =
                  [|iceCover; iceBombard (v2 -700.0f 0.0f); iceBombard (v2 500.0f 500.0f); iceBombard (v2 500.0f -500.0f)|])}
     
     let makeSnowballEffect () =
-        let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v2 0.0f 600.0f; TweenLength = 80L };{ TweenValue = v2 0.0f -600.0f; TweenLength = 0L }|])
+        let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v2 0.0f 800.0f; TweenLength = 80L };{ TweenValue = v2 0.0f -800.0f; TweenLength = 0L }|])
+        let rotate = Rotations (Set, Constant, Loop, [|{ TweenValue = 0.0f; TweenLength = 5L };{ TweenValue = 90.0f; TweenLength = 5L };{ TweenValue = 180.0f; TweenLength = 5L };{ TweenValue = 270.0f; TweenLength = 5L }|])
         { EffectName = "Snowball"
           LifeTimeOpt = Some 80L
           Definitions = Map.empty
           Content =
               StaticSprite
                (Resource (AssetTag.toPair Assets.Battle.SnowballImage),
-                [|Size (v2 432.0f 432.0f); fall|], Nil)}
+                [|Size (v2 432.0f 432.0f); fall; rotate|], Nil) }
     
     let makeHolyCastEffect () =
         { EffectName = "HolyCast"
