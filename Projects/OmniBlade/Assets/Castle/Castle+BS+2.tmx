@@ -8,7 +8,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlksKgzAQhoMlR/ACbtqD9SEttno/N+2F3NR9IyQQBjOvxEXBgQEhM/m+Pn6wroypkX5YY17Kvln8bqoX9uD6Xem6z3AI7I97/ip7VDrE7Nn18aDrSeEA2Sd3j7YaoUNJttSBYt/d2dX106ZZqRnKgfO5W7/TIXxsBnPoGN957zM9IHxqJnZoAZ/6vUef6cUzZyY4QD71X5t8pmfkbs5McIB8qhqfacyTMxNKyi9dMf+C5IqTO+nOcn4GGUw5cHIn2VljYw6c3MFK7WDslAMnU7DWdjjsNQdupuKCOxI2dJBkKlS8o2FzcsGpHHauQwm21qEkW+qwBZvrsCU7NOf9Y+fv/J3/H/wfVK+vtg==
+   eJztlksKgzAQhkPFi7hpD9aHtNjqRTyRm/ZCbuq+ERIIQzKvxEXBgdmYmXxfHz84VsaMSD9qY17KvtX43VSv7MH2+6DrPsPBsz/2nq+yJ6VDyF5sHytdzwoHyD7ZZ9pqhA4l2VIHin23Z1fbzzrNSs1QDpzP3bqdDuFjM5hDx/jOe5fpAeFTM6FDC/jU7z25TK+eOTPeAfKp/9rsMr0gd3NmvAPkU9W4TGOenBlfUn7pCvkXJFec3El31vMzyGDKgZM7yU6MjTlwcgcrtYOxUw6cTMGK7XDYMQdupsKCOxI2dJBkyle4o2FzcsGpHHauQwm21qEkW+qwBZvrsCXbN+f9Y+fv/J3/H/wf8PVzKQ==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
