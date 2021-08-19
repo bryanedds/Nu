@@ -2,7 +2,7 @@ Type,Subtype,HitPointsBase (increase by 50% / 100%),TechPointsBase (increase con
 TinMail,Mail,12,7,10,
 CottonVest,Vest,10,8,10,
 CottonRobe,Robe,8,9,10,
-ThinFur,Pelt,8,4,10,
+ThinFur,Pelt,4,4,10,
 BronzeMail,Mail,18,14,50,
 LeatherVest,Vest,15,16,50,
 LeatherRobe,Robe,12,18,50,
