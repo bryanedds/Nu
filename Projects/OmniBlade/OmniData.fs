@@ -808,6 +808,7 @@ type [<NoEquality; NoComparison>] FieldTileMap =
 type [<NoEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : FieldTileMap
+      FieldTileIndexOffset : int
       FieldBackgroundColor : Color
       FieldSongOpt : Song AssetTag option
       EncounterTypeOpt : EncounterType option

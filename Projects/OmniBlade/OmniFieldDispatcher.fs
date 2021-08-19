@@ -967,6 +967,10 @@ module FieldDispatcher =
                             | Some tileMap -> tileMap
                             | None -> failwithumf ()
                         | None -> failwithumf ()
+                     Entity.TileIndexOffset <== field --> fun field ->
+                         match Map.tryFind field.FieldType Data.Value.Fields with
+                         | Some fieldData -> fieldData.FieldTileIndexOffset
+                         | None -> failwithumf ()
                      Entity.TileLayerClearance == 10.0f]
 
                  // tmx map fade

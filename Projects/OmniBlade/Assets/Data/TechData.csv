@@ -23,4 +23,4 @@ Weaken,2,Magical,0.5,1,False,False,False,False,0,None,[[Power False False]],[],[
 Muddle,2,Magical,0.5,1,False,False,False,False,0,None,[[Magic False False]],[],[SingleTarget [EnemyAim True]],
 ConjureIfrit,8,Magical,0.5,1,False,False,False,False,0,None,[],[],[AllTarget [EnemyAim True]],
 Slow,2,Magical,0.5,1,False,False,False,False,0,None,[[Time False]],[],[SingleTarget [EnemyAim True]],
-Purify,1,Magical,1,1,True,False,False,False,0,None,[],[Poison Silence Sleep [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True] [Provoke [AllyIndex 0]] [Provoke [AllyIndex 1]] [Provoke [AllyIndex 2]]],[SingleTarget [AllyAim True]],
+Purify,1,Magical,0.5,1,True,False,False,False,0,None,[],[Poison Silence Sleep [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True] [Provoke [AllyIndex 0]] [Provoke [AllyIndex 1]] [Provoke [AllyIndex 2]]],[SingleTarget [AllyAim True]],
