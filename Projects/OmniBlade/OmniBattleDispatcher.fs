@@ -149,7 +149,7 @@ module BattleDispatcher =
             | 0L ->
                 let battle =
                     Battle.updateCharacter
-                        (Character.updateActionTime (constant 0) >>
+                        (Character.updateActionTime (constant 0.0f) >>
                          Character.updateInputState (constant NoInput) >>
                          Character.animate time (PoiseAnimation Defending) >>
                          Character.defend)
@@ -954,7 +954,7 @@ module BattleDispatcher =
 
             | ResetCharacter characterIndex ->
                 let character = Battle.getCharacter characterIndex battle
-                let battle = Battle.updateCharacter (Character.updateActionTime (constant 0)) characterIndex battle
+                let battle = Battle.updateCharacter (Character.updateActionTime (constant 0.0f)) characterIndex battle
                 let battle =
                     if character.IsAlly
                     then Battle.updateCharacter (Character.updateInputState (constant NoInput)) characterIndex battle

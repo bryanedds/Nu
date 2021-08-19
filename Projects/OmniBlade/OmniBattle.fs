@@ -336,7 +336,7 @@ module Battle =
                         let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.ofVector2 -bounds.Bottom
-                        let actionTime = 1000 - Constants.Battle.AllyActionTimeSpacing * index
+                        let actionTime = 1000.0f - Constants.Battle.AllyActionTimeSpacing * single index
                         let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
