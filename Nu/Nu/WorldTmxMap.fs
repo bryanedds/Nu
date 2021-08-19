@@ -310,19 +310,20 @@ module TmxMap =
                                     if xI < tileMap.Width then
                                         let xTileIndex = xI + yI * tileMap.Width
                                         let xTile = layer.Tiles.[xTileIndex]
-                                        let xTileIndexOffset =
-                                            if xTile.Gid = 0 then 0 // never offset the zero tile!
-                                            elif xTile.Gid + tileIndexOffset < 0 then 0
-                                            elif xTile.Gid + tileIndexOffset >= layer.Tiles.Count then 0
-                                            else tileIndexOffset
+                                        let xTileGid =
+                                            if xTile.Gid <> 0 then // never offset the zero tile!
+                                                let xTileGidOffset = xTile.Gid + tileIndexOffset
+                                                if xTileGidOffset > 0 && xTileGidOffset < layer.Tiles.Count then xTileGidOffset
+                                                else xTile.Gid
+                                            else xTile.Gid
                                         let xTile =
                                             match tryGetTileAnimationDescriptor xTileIndex layer tileMapDescriptor with
                                             | Some xTileAnimationDescriptor ->
                                                 let compressedTime = time / xTileAnimationDescriptor.TileAnimationDelay
-                                                let xTileAnimationOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun
-                                                makeLayerTile (xTile.Gid + xTileIndexOffset + xTileAnimationOffset) xTile.X xTile.Y xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
+                                                let xTileOffset = int compressedTime % xTileAnimationDescriptor.TileAnimationRun
+                                                makeLayerTile (xTileGid + xTileOffset) xTile.X xTile.Y xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
                                             | None ->
-                                                makeLayerTile (xTile.Gid + xTileIndexOffset) xTile.X xTile.Y xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
+                                                makeLayerTile xTileGid xTile.X xTile.Y xTile.HorizontalFlip xTile.VerticalFlip xTile.DiagonalFlip
                                         tiles.Add xTile
                                 else xS <- xS + tileSize.X
                                 xO <- xO + tileSize.X
