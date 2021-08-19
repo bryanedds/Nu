@@ -66,6 +66,7 @@ module BattleDispatcher =
         | DisplayFire of int64 * CharacterIndex * CharacterIndex
         | DisplayFlame of int64 * CharacterIndex * CharacterIndex
         | DisplayIce of int64 * CharacterIndex
+        | DisplaySnowball of int64 * CharacterIndex
         | DisplayHolyCast of int64 * CharacterIndex
         | DisplayPurify of int64 * CharacterIndex
         | DisplayAura of int64 * CharacterIndex
@@ -763,7 +764,7 @@ module BattleDispatcher =
                 | Snowball ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayIce (0L, targetIndex)) battle
+                    withCmd (DisplaySnowball (0L, targetIndex)) battle
                 | Bolt ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
@@ -1069,6 +1070,11 @@ module BattleDispatcher =
                 | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeIceEffect ()) world |> just
                 | None -> just world
             
+            | DisplaySnowball (delay, targetIndex) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target -> displayEffect delay (v2 432.0f 432.0f) (Bottom target.Bottom) (Effects.makeSnowballEffect ()) world |> just
+                | None -> just world
+
             | DisplayHolyCast (delay, sourceIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
                 | Some source -> displayEffect delay (v2 300.0f 300.0f) (Bottom (source.Bottom - v2 0.0f 100.0f)) (Effects.makeHolyCastEffect ()) world |> just
