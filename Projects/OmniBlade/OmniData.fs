@@ -751,6 +751,7 @@ type [<NoEquality; NoComparison>] BattleData =
       BattleAllyPositions : Vector2 list
       BattleEnemies : EnemyType list
       BattleTileMap : TileMap AssetTag
+      BattleTileIndexOffset : int
       BattleSongOpt : Song AssetTag option }
 
 type [<NoEquality; NoComparison>] EncounterData =
