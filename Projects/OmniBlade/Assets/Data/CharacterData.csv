@@ -12,7 +12,7 @@ Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Acces
 [Enemy PoisonGorgon],Gorgon,5,[Castle PoisonGorgon],None,[Some Paws],None,[],[Some 0.25],1,1,A poisonous gorgon.
 [Enemy FacelessSoldier],Soldier,5,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.333],1,1,A soldier whose face is long forgotten.
 [Enemy Hawk],Avian,5,[Castle Hawk],None,[Some Paws],None,[],[Some 0.333],1,1,A vengeful avian.
-[Enemy HeavyArmoros],Armoros,7,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.333],3,3,The heaviest armoros you’ve ever seen!
+[Enemy HeavyArmoros],Armoros,6,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.333],3,3,The heaviest armoros you’ve ever seen!
 [Enemy Apparition],Ghost,7,[Castle Apparition],None,[Some Paws],None,[],[Some 0.25],1,1,A dark spirit rejected by Heaven and ignored by Hell.
 [Enemy Cloak],Shaman,7,[Castle Cloak],None,[Some Paws],None,[],[Some 0.333],1,1,A conjurer of the darkness and malice.
 [Enemy BloodArmoros],Armoros,7,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.333],1,1,A long-dead warrior shadow the lives off of blood.
