@@ -161,7 +161,7 @@ module Algorithms =
             | Some archetypeData -> archetypeData.Wealth
             | None -> 1.0f
         let algo = single level * 1.5f
-        int (wealth * scalar * algo)
+        max (int (wealth * scalar * algo)) 1
 
     let expPrize archetypeType scalar (level : int) =
         let mythos =
@@ -169,10 +169,10 @@ module Algorithms =
             | Some archetypeData -> archetypeData.Mythos
             | None -> 1.0f
         let algo = single level * 1.5f
-        int (mythos * scalar * algo)
+        max (int (mythos * scalar * algo)) 1
 
     let itemPrizeOpt archetypeType (level : int) =
         // TODO: pull this from data.
-        if Gen.random1 16 = 0 then
+        if Gen.random1 24 = 0 then
             Some (Consumable GreenHerb)
         else None

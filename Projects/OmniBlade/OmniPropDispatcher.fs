@@ -54,9 +54,14 @@ module PropDispatcher =
                     match prop.PropState with
                     | SealState false -> BodyEmpty
                     | _ -> BodyBox { Extent = v2 0.5f 0.5f; Center = v2Zero; PropertiesOpt = None }
-                | Npc _ | NpcBranching _ ->
+                | Npc (npcType, _, _, _) | NpcBranching (npcType, _, _, _) ->
                     match prop.PropState with
-                    | NpcState (_, _, _, _, true) -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
+                    | NpcState (_, _, _, _, true) ->
+                        match npcType with
+                        | ShadeNpc | MaelNpc | RiainNpc | PericNpc
+                        | RavelNpc | AdvenNpc | EildaenNpc | ShamanaNpc
+                        | MadTrixterNpc | HeavyArmorosNpc -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
+                        | AraneaImplicitumNpc -> BodyBox { Extent = v2 0.16f 0.16f; Center = v2 -0.01f -0.36f; PropertiesOpt = None }
                     | _ -> BodyEmpty
                 | Shopkeep _ ->
                     match prop.PropState with
@@ -81,15 +86,15 @@ module PropDispatcher =
                                 match portalType with
                                 | AirPortal -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                                 | StairsPortal descending ->
-                                    let offsetY = if descending then Constants.Gameplay.TileSize.Y else 0.0f
+                                    let offsetY = if descending then Constants.Gameplay.TileCelSize.Y else 0.0f
                                     let offsetX =
                                         match direction with
                                         | Upward -> 0.0f
-                                        | Rightward -> Constants.Gameplay.TileSize.X
-                                        | Downward -> Constants.Gameplay.TileSize.X * 2.0f
-                                        | Leftward -> Constants.Gameplay.TileSize.X * 3.0f
+                                        | Rightward -> Constants.Gameplay.TileCelSize.X
+                                        | Downward -> Constants.Gameplay.TileCelSize.X * 2.0f
+                                        | Leftward -> Constants.Gameplay.TileCelSize.X * 3.0f
                                     let offset = v2 offsetX offsetY
-                                    (true, colWhite, colZero, Some (v4Bounds offset Constants.Gameplay.TileSize), Assets.Field.StairsImage)
+                                    (true, colWhite, colZero, Some (v4Bounds offset Constants.Gameplay.TileCelSize), Assets.Field.StairsImage)
                             else (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Door (doorType, _, _, _) ->
@@ -139,13 +144,14 @@ module PropDispatcher =
                     | Npc (_, _, _, _) | NpcBranching (_, _, _, _) ->
                         match prop.PropState with
                         | NpcState (npcType, direction, color, glow, true) ->
-                            let image =
+                            let (image, size) =
                                 match npcType with
-                                | ShadeNpc -> Assets.Field.ShadeAnimationSheet
-                                | MaelNpc -> Assets.Field.MaelAnimationSheet
-                                | RiainNpc -> Assets.Field.RiainAnimationSheet
-                                | PericNpc -> Assets.Field.PericAnimationSheet
-                                | _ -> Assets.Field.NpcAnimationSheet
+                                | ShadeNpc -> (Assets.Field.ShadeAnimationSheet, Constants.Gameplay.CharacterSize)
+                                | MaelNpc -> (Assets.Field.MaelAnimationSheet, Constants.Gameplay.CharacterSize)
+                                | RiainNpc -> (Assets.Field.RiainAnimationSheet, Constants.Gameplay.CharacterSize)
+                                | PericNpc -> (Assets.Field.PericAnimationSheet, Constants.Gameplay.CharacterSize)
+                                | RavelNpc | AdvenNpc | EildaenNpc | ShamanaNpc | MadTrixterNpc | HeavyArmorosNpc -> (Assets.Field.NpcAnimationSheet, Constants.Gameplay.CharacterSize)
+                                | AraneaImplicitumNpc -> (Assets.Field.BossAnimationSheet, Constants.Gameplay.BossSize)
                             let (row, column) =
                                 match npcType with
                                 | ShadeNpc
@@ -158,9 +164,11 @@ module PropDispatcher =
                                 | ShamanaNpc -> (3, 0)
                                 | MadTrixterNpc -> (4, 0)
                                 | HeavyArmorosNpc -> (5, 0)
+                                | AraneaImplicitumNpc -> (0, 0)
                             let column = column + CharacterAnimationState.directionToInt direction
-                            let insetPosition = v2 (single column) (single row) * Constants.Gameplay.CharacterCelSize
-                            let inset = v4Bounds insetPosition Constants.Gameplay.CharacterCelSize
+                            let celSize = size / 3.0f
+                            let insetPosition = v2 (single column) (single row) * celSize
+                            let inset = v4Bounds insetPosition celSize
                             (false, color, glow, Some inset, image)
                         | _ -> (false, colWhite, colZero, None, Assets.Default.ImageEmpty)
                     | Shopkeep (shopkeepType, direction, _, _) ->

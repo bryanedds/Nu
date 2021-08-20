@@ -183,7 +183,7 @@ module Gaia =
         let entityNodeKey = scstring entity
         match tryFindHierarchyTreeNode entityNodeKey form world with
         | Some node -> node.Remove ()
-        | None -> failwithumf ()
+        | None -> ()
 
     let private refreshHierarchyTreeView (form : GaiaForm) world =
         // TODO: this code causes severe performance issues. To unfuck performance, we will probably have to find
@@ -300,6 +300,16 @@ module Gaia =
         addHierarchyTreeEntityNode entity form world
         (Cascade, world)
 
+    let private handleNuGroupRegister (form : GaiaForm) (_ : Event<unit, Screen>) world =
+        refreshGroupTabs form world
+        refreshHierarchyTreeView form world
+        (Cascade, world)
+
+    let private handleNuGroupUnregistering (form : GaiaForm) (_ : Event<unit, Screen>) world =
+        refreshGroupTabs form world
+        refreshHierarchyTreeView form world
+        (Cascade, world)
+
     let private handleNuEntityRegister (form : GaiaForm) evt world =
         let entity = Entity (atoa evt.Publisher.SimulantAddress)
         addEntityTreeViewNode entity form world
@@ -372,6 +382,11 @@ module Gaia =
             let world = updateEditorState (fun editorState -> { editorState with DragCameraState = DragCameraNone }) world
             (Resolve, world)
         | DragCameraNone -> (Resolve, world)
+
+    let private monitorGroupEvents form world =
+        let world = World.monitor (handleNuGroupRegister form) (Events.Register --> Globals.Screen --> Events.Wildcard) Globals.Screen world
+        let world = World.monitor (handleNuGroupUnregistering form) (Events.Unregistering --> Globals.Screen --> Events.Wildcard) Globals.Screen world
+        world
 
     let private monitorEntityEvents (group : Group) form world =
         let world = World.monitor (handleNuChangeParentNodeOpt form) (Events.Change Property? ParentNodeOpt --> group --> Events.Wildcard) group world
@@ -1436,6 +1451,7 @@ module Gaia =
                     | Some _ -> (defaultGroup, world) // NOTE: conclude world is already attached
                 | [] -> failwith ("Cannot attach Gaia to a world with no groups inside the '" + scstring Globals.Screen + "' screen.")
             let world = List.fold (fun world group -> monitorEntityEvents group form world) world groups
+            let world = monitorGroupEvents form world
             (defaultGroup, world)
         else failwith ("Cannot attach Gaia to a world with a screen selected other than '" + scstring Globals.Screen + "'.")
 
@@ -1465,8 +1481,8 @@ module Gaia =
         refreshOverlayComboBox form Globals.World
         refreshCreateComboBox form Globals.World
         refreshEntityTreeView form Globals.World
-        refreshHierarchyTreeView form Globals.World
         refreshGroupTabs form Globals.World
+        refreshHierarchyTreeView form Globals.World
         selectGroup defaultGroup form Globals.World
         form.tickingButton.CheckState <- CheckState.Unchecked
         form.songPlaybackButton.CheckState <- if World.getMasterSongVolume world = 0.0f then CheckState.Unchecked else CheckState.Checked

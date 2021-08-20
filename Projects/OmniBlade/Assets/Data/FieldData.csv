@@ -1,9 +1,9 @@
-Type,FieldTileMap,FieldBackgroundColor,FieldSongOpt,EncounterTypeOpt,TreasureList
-DebugRoom,[FieldStatic [Field DebugRoom]],[8 8 8 255],[Some [Field Field]],None,[]
-DebugRoom2,[FieldStatic [Field DebugRoom2]],[8 8 8 255],[Some [Field Field]],None,[]
-TombOuter,[FieldStatic [Field TombOuter]],[131 156 172 255],[Some [Field TombOuter]],None,[]
-TombGround,[FieldStatic [Field TombGround]],[54 46 63 255],[Some [Field TombGround]],None,[]
-CastleConnector,[FieldConnector [Castle CastleConnector] [Castle CastleConnectorFade]],[54 46 63 255],[Some [Castle CastleAmbience]],None,[]
-[Castle 0],[FieldRandom 5 0 OriginS 0 Assets/Castle/Castle],[54 46 63 255],[Some [Castle CastlePart1]],[Some CastleEncounter],[[Consumable Ether] [Consumable GreenHerb] [Consumable GreenHerb] [Consumable GreenHerb] [Stash 10] [Stash 10] [Stash 5] [Stash 5]]
-[Castle 1],[FieldRandom 4 0 OriginS 1 Assets/Castle/Castle],[54 46 63 255],[Some [Castle CastlePart2]],[Some Castle2Encounter],[[Equipment [ArmorType BronzeMail]] [Equipment [ArmorType LeatherVest]] [Equipment [ArmorType LeatherRobe]] [Equipment [ArmorType LeatherRobe]] [Consumable Ether] [Consumable GreenHerb] [Stash 20] [Stash 10]]
-[Castle 2],[FieldRandom 3 0 OriginS 2 Assets/Castle/Castle],[54 46 63 255],[Some [Castle CastlePart3]],[Some Castle2Encounter],[[Equipment [WeaponType BronzeSword]] [Equipment [WeaponType BronzeKatana]] [Equipment [WeaponType BronzeRod]] [Equipment [WeaponType LightBow]] [Consumable Ether] [Consumable GreenHerb] [Stash 20] [Stash 10]]
+Type,FieldTileMap,FieldTileIndexOffset,FieldBackgroundColor,FieldSongOpt,EncounterTypeOpt,TreasureList
+DebugRoom,[FieldStatic [Field DebugRoom]],0,[8 8 8 255],[Some [Field Field]],None,[]
+DebugRoom2,[FieldStatic [Field DebugRoom2]],0,[8 8 8 255],[Some [Field Field]],None,[]
+TombOuter,[FieldStatic [Field TombOuter]],0,[131 156 172 255],[Some [Field TombOuter]],None,[]
+TombGround,[FieldStatic [Field TombGround]],0,[54 46 63 255],[Some [Field TombGround]],None,[]
+CastleConnector,[FieldConnector [Castle CastleConnector] [Castle CastleConnectorFade]],0,[54 46 63 255],[Some [Castle CastleAmbience]],None,[]
+[Castle 0],[FieldRandom 5 0 OriginS 0 Assets/Castle/Castle],0,[54 46 63 255],[Some [Castle CastlePart1]],[Some CastleEncounter],[[Consumable Revive] [Consumable Ether] [Consumable Remedy] [Consumable Remedy] [Consumable GreenHerb] [Consumable GreenHerb] [Consumable GreenHerb] [Stash 50]]
+[Castle 1],[FieldRandom 4 0 OriginS 1 Assets/Castle/Castle],-612,[60 72 80 255],[Some [Castle CastlePart2]],[Some Castle2Encounter],[[Equipment [WeaponType BronzeSword]] [Equipment [WeaponType BronzeKatana]] [Equipment [WeaponType BronzeRod]] [Equipment [WeaponType LightBow]]  [Consumable Revive] [Consumable Ether] [Consumable GreenHerb] [Consumable Remedy]]
+[Castle 2],[FieldRandom 3 0 OriginS 2 Assets/Castle/Castle],-18,[53 65 73 255],[Some [Castle CastlePart3]],[Some Castle3Encounter],[[Equipment [ArmorType BronzeMail]] [Equipment [ArmorType LeatherVest]] [Equipment [ArmorType LeatherRobe]] [Equipment [ArmorType LeatherRobe]] [Consumable Revive] [Consumable Ether] [Consumable GreenHerb] [Consumable Remedy]]

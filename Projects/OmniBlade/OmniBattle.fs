@@ -41,6 +41,7 @@ module Battle =
               Inventory_ : Inventory
               PrizePool_ : PrizePool
               TileMap_ : TileMap AssetTag
+              TileIndexOffset_ : int
               BattleSongOpt_ : Song AssetTag option
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand Queue
@@ -53,6 +54,7 @@ module Battle =
         member this.Inventory = this.Inventory_
         member this.PrizePool = this.PrizePool_
         member this.TileMap = this.TileMap_
+        member this.TileIndexOffset = this.TileIndexOffset_
         member this.BattleSongOpt = this.BattleSongOpt_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
@@ -85,6 +87,14 @@ module Battle =
 
     let getAlliesWounded battle =
         getAllies battle |>
+        Map.filter (fun _ character -> character.IsWounded)
+
+    let getEnemiesHealthy battle =
+        getEnemies battle |>
+        Map.filter (fun _ character -> character.IsHealthy)
+
+    let getEnemiesWounded battle =
+        getEnemies battle |>
         Map.filter (fun _ character -> character.IsWounded)
 
     let getTargets aimType battle =
@@ -121,15 +131,6 @@ module Battle =
         getAlliesWounded battle |>
         Map.toKeyList
 
-    let getAllyIndexRandom battle =
-        let alliesHealthyIndices = getAlliesHealthyIndices battle
-        List.item (Gen.random1 alliesHealthyIndices.Length) alliesHealthyIndices
-
-    let getEnemyIndexRandom battle =
-        let enemyIndices = getEnemyIndices battle
-        let enemyIndex = List.item (Gen.random1 enemyIndices.Length) enemyIndices
-        enemyIndex
-
     let addCharacter index character (battle : Battle) =
         { battle with Characters_ = Map.add index character battle.Characters_ }
 
@@ -163,8 +164,22 @@ module Battle =
     let tryGetCharacter characterIndex battle =
         Map.tryFind characterIndex battle.Characters_
 
+    let tryGetCharacterBy by characterIndex battle =
+        match Map.tryFind characterIndex battle.Characters_ with
+        | Some character -> Some (by character)
+        | None -> None
+
     let getCharacter characterIndex battle =
         tryGetCharacter characterIndex battle |> Option.get
+
+    let getCharacterBy by characterIndex battle =
+        tryGetCharacter characterIndex battle |> Option.get |> by
+
+    let getCharacterHealthy characterIndex battle =
+        (getCharacter characterIndex battle).IsHealthy
+
+    let getCharacterWounded characterIndex battle =
+        (getCharacter characterIndex battle).IsWounded
 
     let tryUpdateCharacter updater characterIndex battle =
         match tryGetCharacter characterIndex battle with
@@ -201,11 +216,23 @@ module Battle =
         { battle with ActionCommands_ = Queue.conj command battle.ActionCommands }
 
     let prependActionCommand command battle =
-         { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
+        { battle with ActionCommands_ = Queue.rev battle.ActionCommands |> Queue.conj command |> Queue.rev }
 
     let counterAttack sourceIndex targetIndex battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
         prependActionCommand attackCommand battle
+
+    let shouldCounter characterIndex battle =
+        getCharacterBy Character.shouldCounter characterIndex battle
+
+    let evaluateTechMove sourceIndex targetIndex techType battle =
+        match Map.tryFind techType Data.Value.Techs with
+        | Some techData ->
+            let source = getCharacter sourceIndex battle
+            let target = getCharacter targetIndex battle
+            let characters = getCharacters battle
+            (techData.TechCost, Character.evaluateTechMove techData source target characters)
+        | None -> (0, Map.empty)
 
     let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
         if attempts < 10000 then
@@ -234,19 +261,19 @@ module Battle =
                         if x > 1 && x < w - 2 && y > 1 && y < h - 2 then 
                             match
                                 (layout.[x+0].[y+2],
-                                 layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1],
+                                 layout.[x-2].[y+1], layout.[x-1].[y+1], layout.[x+0].[y+1], layout.[x+1].[y+1], layout.[x+2].[y+1],
                                  layout.[x-2].[y+0], layout.[x-1].[y+0], layout.[x+0].[y+0], layout.[x+1].[y+0], layout.[x+2].[y+0],
-                                 layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1],
+                                 layout.[x-2].[y-1], layout.[x-1].[y-1], layout.[x+0].[y-1], layout.[x+1].[y-1], layout.[x+2].[y-1],
                                  layout.[x+0].[y-2]) with
                             |   (Left (),
-                                 Left (), Left (), Left (),
                                  Left (), Left (), Left (), Left (), Left (),
-                                 Left (), Left (), Left (),
+                                 Left (), Left (), Left (), Left (), Left (),
+                                 Left (), Left (), Left (), Left (), Left (),
                                  Left ()) ->
                                 layout.[x+0].[y+2] <- Right None
-                                layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None
+                                layout.[x-2].[y+1] <- Right None; layout.[x-1].[y+1] <- Right None; layout.[x+0].[y+1] <- Right None; layout.[x+1].[y+1] <- Right None; layout.[x+2].[y+1] <- Right None
                                 layout.[x-2].[y+0] <- Right None; layout.[x-1].[y+0] <- Right None; layout.[x+0].[y+0] <- Right (Some (index, enemy)); layout.[x+1].[y+0] <- Right None; layout.[x+2].[y+0] <- Right None
-                                layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None; layout.[x+1].[y-1] <- Right None
+                                layout.[x-2].[y-1] <- Right None; layout.[x-1].[y-1] <- Right None; layout.[x+0].[y-1] <- Right None; layout.[x+1].[y-1] <- Right None; layout.[x+2].[y-1] <- Right None
                                 layout.[x+0].[y-2] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
@@ -292,12 +319,14 @@ module Battle =
         let prizePool = { prizePool with Exp = List.fold (fun exp (enemy : Character) -> exp + enemy.ExpPrize) prizePool.Exp enemies }
         let prizePool = { prizePool with Items = List.fold (fun items (enemy : Character) -> match enemy.ItemPrizeOpt with Some item -> item :: items | None -> items) prizePool.Items enemies }
         let tileMap = battleData.BattleTileMap
+        let tileIndexOffset = battleData.BattleTileIndexOffset
         let battle =
             { BattleState_ = BattleReady time
               Characters_ = characters
               Inventory_ = inventory
               PrizePool_ = prizePool
               TileMap_ = tileMap
+              TileIndexOffset_ = tileIndexOffset
               BattleSongOpt_ = battleData.BattleSongOpt
               CurrentCommandOpt_ = None
               ActionCommands_ = Queue.empty
@@ -318,6 +347,7 @@ module Battle =
                     | Some characterData ->
                         // TODO: bounds checking
                         let size = Constants.Gameplay.CharacterSize
+                        let celSize = Constants.Gameplay.CharacterCelSize
                         let position = if offsetCharacters then allyPositions.[teamIndex] + Constants.Battle.CharacterOffset else allyPositions.[teamIndex]
                         let bounds = v4Bounds position size
                         let characterIndex = AllyIndex teamIndex
@@ -325,8 +355,8 @@ module Battle =
                         let characterState = CharacterState.make characterData teammate.HitPoints teammate.TechPoints teammate.ExpPoints teammate.WeaponOpt teammate.ArmorOpt teammate.Accessories
                         let animationSheet = characterData.AnimationSheet
                         let direction = Direction.ofVector2 -bounds.Bottom
-                        let actionTime = 1000 - Constants.Battle.AllyActionTimeSpacing * index
-                        let character = Character.make bounds characterIndex characterType characterState animationSheet direction actionTime
+                        let actionTime = 1000.0f - Constants.Battle.AllyActionTimeSpacing * single index
+                        let character = Character.make bounds characterIndex characterType characterState animationSheet celSize direction actionTime
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
@@ -339,6 +369,7 @@ module Battle =
           Inventory_ = { Items = Map.empty; Gold = 0 }
           PrizePool_ = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
           TileMap_ = Assets.Field.DebugBattleTileMap
+          TileIndexOffset_ = 0
           BattleSongOpt_ = None
           CurrentCommandOpt_ = None
           ActionCommands_ = Queue.empty
@@ -351,7 +382,7 @@ module Battle =
             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
             let team =
                 Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>
-                Map.add 1 (Teammate.makeAtLevel level 1 Riain) |>
+                Map.add 1 (Teammate.makeAtLevel level 1 Mael) |>
                 Map.add 2 (Teammate.makeAtLevel level 2 Peric)
             makeFromTeam Inventory.initial prizePool team battle 0L
         | None -> empty

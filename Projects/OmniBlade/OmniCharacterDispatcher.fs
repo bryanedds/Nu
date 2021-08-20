@@ -24,8 +24,8 @@ module CharacterDispatcher =
         static let getSpriteInset (entity : Entity) world =
             let character = entity.GetCharacter world
             let index = Character.getAnimationIndex (World.getTickTime world) character
-            let offset = v2 (single index.X) (single index.Y) * Constants.Gameplay.CharacterCelSize
-            let inset = v4Bounds offset Constants.Gameplay.CharacterCelSize
+            let offset = v2 (single index.X) (single index.Y) * character.CelSize
+            let inset = v4Bounds offset character.CelSize
             inset
 
         static let getSpriteColor (entity : Entity) world =
@@ -45,10 +45,18 @@ module CharacterDispatcher =
             let character = entity.GetCharacter world
             let statuses = character.Statuses
             if character.IsWounded then Color.Zero
-            elif Character.isAutoBattling character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
+            elif Character.isAutoTeching character then Color (byte 255, byte 64, byte 64, pulseIntensity) // bright red
             elif Map.containsKey Poison statuses then Color (byte 0, byte 255, byte 0, pulseIntensity) // green
             elif Map.containsKey Silence statuses then Color (byte 255,byte 255, byte 0, pulseIntensity) // orange
             elif Map.containsKey Sleep statuses then Color (byte 0, byte 0, byte 255, pulseIntensity) // blue
+            elif Map.exists (fun key _ -> match key with Time true -> true | _ -> false) statuses then Color (byte 127, byte 255, byte 127, pulseIntensity) // bright yellow
+            elif Map.exists (fun key _ -> match key with Power (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 127, pulseIntensity) // bright orange
+            elif Map.exists (fun key _ -> match key with Magic (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 127, byte 255, pulseIntensity) // bright purple
+            elif Map.exists (fun key _ -> match key with Shield (true, _) -> true | _ -> false) statuses then Color (byte 255, byte 255, byte 255, pulseIntensity) // bright white
+            elif Map.exists (fun key _ -> match key with Time false -> true | _ -> false) statuses then Color (byte 0, byte 127, byte 0, pulseIntensity) // dark red
+            elif Map.exists (fun key _ -> match key with Power (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 0, pulseIntensity) // dark orange
+            elif Map.exists (fun key _ -> match key with Magic (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 0, byte 127, pulseIntensity) // dark purple
+            elif Map.exists (fun key _ -> match key with Shield (false, _) -> true | _ -> false) statuses then Color (byte 127, byte 127, byte 127, pulseIntensity) // dark white
             else Color.Zero
 
         static member Properties =

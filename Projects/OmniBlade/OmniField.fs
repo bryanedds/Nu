@@ -178,6 +178,9 @@ module Field =
         | (true, fieldData) -> Option.isSome fieldData.EncounterTypeOpt
         | (false, _) -> false
 
+    let clearSpirits field =
+        { field with Spirits_= [||] }
+
     let advanceSpirits (field : Field) world =
         match field.FieldTransitionOpt with
         | None ->
@@ -259,7 +262,6 @@ module Field =
         let allies = Battle.getAllies battle
         let field = synchronizeTeamFromAllies allies field
         let field = updateInventory (constant battle.Inventory) field
-        let field = updateBattleOpt (constant None) field
         let field = updateAdvents (Set.union consequents) field
         field
 

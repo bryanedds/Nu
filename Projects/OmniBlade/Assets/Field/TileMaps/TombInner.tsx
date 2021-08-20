@@ -109,4 +109,29 @@
    <property name="C" value=""/>
   </properties>
  </tile>
+ <tile id="885">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="886">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="887">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="888">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
+ <tile id="889">
+  <properties>
+   <property name="C" value=""/>
+  </properties>
+ </tile>
 </tileset>

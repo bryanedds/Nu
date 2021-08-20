@@ -63,9 +63,11 @@ module BattleDispatcher =
         | DisplayImpactSplash of int64 * CharacterIndex
         | DisplayCut of int64 * bool * CharacterIndex
         | DisplaySlashSpike of int64 * Vector2 * CharacterIndex
+        | DisplayArcaneCast of int64 * CharacterIndex
         | DisplayFire of int64 * CharacterIndex * CharacterIndex
         | DisplayFlame of int64 * CharacterIndex * CharacterIndex
         | DisplayIce of int64 * CharacterIndex
+        | DisplaySnowball of int64 * CharacterIndex
         | DisplayHolyCast of int64 * CharacterIndex
         | DisplayPurify of int64 * CharacterIndex
         | DisplayAura of int64 * CharacterIndex
@@ -144,19 +146,24 @@ module BattleDispatcher =
                 just battle
 
         static let tickDefend sourceIndex time timeLocal battle =
-            match timeLocal with
-            | 0L ->
-                let battle =
-                    Battle.updateCharacter
-                        (Character.updateActionTime (constant 0) >>
-                         Character.updateInputState (constant NoInput) >>
-                         Character.animate time (PoiseAnimation Defending) >>
-                         Character.defend)
-                        sourceIndex
-                        battle
+            match Battle.tryGetCharacter sourceIndex battle with
+            | Some source when source.IsHealthy ->
+                match timeLocal with
+                | 0L ->
+                    let battle =
+                        Battle.updateCharacter
+                            (Character.updateActionTime (constant 0.0f) >>
+                             Character.updateInputState (constant NoInput) >>
+                             Character.animate time (PoiseAnimation Defending) >>
+                             Character.defend)
+                            sourceIndex
+                            battle
+                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                    just battle
+                | _ -> just battle
+            | Some _ | None ->
                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
                 just battle
-            | _ -> just battle
 
         static let tickConsume consumable sourceIndex (targetIndexOpt : CharacterIndex option) time timeLocal battle =
             match targetIndexOpt with
@@ -345,9 +352,11 @@ module BattleDispatcher =
                         else character
                     let character =
                         if Character.isReadyForAutoBattle character then
-                            let targetIndex = Battle.getAllyIndexRandom battle
-                            let target = Battle.getCharacter targetIndex battle
-                            Character.autoBattle character target
+                            let alliesHealthy = Battle.getAlliesHealthy battle
+                            let alliesWounded = Battle.getAlliesWounded battle
+                            let enemiesHealthy = Battle.getEnemiesHealthy battle
+                            let enemiesWounded = Battle.getEnemiesWounded battle
+                            Character.autoBattle character alliesHealthy alliesWounded enemiesHealthy enemiesWounded
                         else character
                     character)
                     battle
@@ -656,26 +665,20 @@ module BattleDispatcher =
                         Left (DisplayHop { HopStart = source.Bottom; HopStop = hopStop })
                     | Cyclone ->
                         Left (DisplayHop { HopStart = source.Bottom; HopStop = target.BottomOffset2 })
-                    | Slash ->
-                        let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
-                        let displayCast = DisplayDimensionalCast (0L, sourceIndex)
-                        Right [cmd playCharge; cmd displayCast]
-                    | Fire | TechType.Flame | Ice | Snowball | Bolt | BoltBeam | Stone | Quake ->
-                        let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
-                        let displayCast = DisplayDimensionalCast (0L, sourceIndex)
-                        Right [cmd playCharge; cmd displayCast]
-                    | Aura | Empower | Enlighten | Protect ->
-                        let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeHolySound)
-                        let displayCast = DisplayHolyCast (0L, sourceIndex)
-                        Right [cmd playCharge; cmd displayCast]
-                    | Weaken | Muddle | ConjureIfrit | Slow ->
-                        let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
-                        let displayCast = DisplayDimensionalCast (0L, sourceIndex)
-                        Right [cmd playCharge; cmd displayCast]
-                    | Purify ->
-                        let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeHolySound)
-                        let displayCast = DisplayHolyCast (0L, sourceIndex)
-                        Right [cmd playCharge; cmd displayCast]
+                    | _ ->
+                        match source.ArchetypeType with
+                        | Cleric ->
+                            let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeHolySound)
+                            let displayCast = DisplayHolyCast (0L, sourceIndex)
+                            Right [cmd playCharge; cmd displayCast]
+                        | Wizard ->
+                            let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
+                            let displayCast = DisplayArcaneCast (0L, sourceIndex)
+                            Right [cmd playCharge; cmd displayCast]
+                        | _ ->
+                            let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
+                            let displayCast = DisplayDimensionalCast (0L, sourceIndex)
+                            Right [cmd playCharge; cmd displayCast]
                 match effectOpt with
                 | Left hopEffect ->
                     withCmd hopEffect battle
@@ -715,9 +718,9 @@ module BattleDispatcher =
                     let playSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.SlashSound)
                     let playHit = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                     let slashSpike = DisplaySlashSpike (10L, (Battle.getCharacter sourceIndex battle).Bottom, targetIndex)
-                    let impactSplash = DisplayImpactSplash (70L, targetIndex)
+                    let impactSplashes = Battle.evaluateTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex))
                     let battle = Battle.updateCharacter (Character.animate time SlashAnimation) sourceIndex battle
-                    withCmds [playSlash; playHit; slashSpike; impactSplash] battle
+                    withCmds (playSlash :: playHit :: slashSpike :: impactSplashes) battle
                 | PowerCut ->
                     let time = World.getTickTime world
                     let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
@@ -762,48 +765,58 @@ module BattleDispatcher =
                     withCmds [playIce; displayIce] battle
                 | Snowball ->
                     let time = World.getTickTime world
+                    let playSnowball = PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.SnowballSound)
+                    let displaySnowball = DisplaySnowball (0L, targetIndex)
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayIce (0L, targetIndex)) battle
+                    withCmds [playSnowball; displaySnowball] battle
                 | Bolt ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayBolt (0L, targetIndex)) battle
+                    withCmd (DisplayBolt (0L, targetIndex)) battle // TODO: use sound.
                 | BoltBeam ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayBolt (0L, targetIndex)) battle
+                    withCmd (DisplayBolt (0L, targetIndex)) battle // TODO: use new sound and effect.
                 | Stone ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayIce (0L, targetIndex)) battle // TODO: replace with stone effect.
+                    withCmd (DisplayIce (0L, targetIndex)) battle // TODO: use new sound and effect.
                 | Quake ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayBolt (0L, targetIndex)) battle // TODO: replace with quake effect.
+                    withCmd (DisplayBolt (0L, targetIndex)) battle // TODO: use new sound and effect.
                 | Aura ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayAura (0L, targetIndex)) battle
+                    let playAura = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.AuraSound)
+                    let displayAuras = Battle.evaluateTechMove sourceIndex targetIndex techType battle |> snd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayAura (0L, targetIndex))
+                    withCmds (playAura :: displayAuras) battle
                 | Empower ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayAura (0L, targetIndex)) battle
+                    let playAura = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.AuraSound) // TODO: use new sound and effect.
+                    let displayAura = DisplayAura (0L, targetIndex)
+                    withCmds [playAura; displayAura] battle
                 | Enlighten ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayAura (0L, targetIndex)) battle
+                    let playAura = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.AuraSound) // TODO: use new sound and effect.
+                    let displayAura = DisplayAura (0L, targetIndex)
+                    withCmds [playAura; displayAura] battle
                 | Protect ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayProtect (0L, targetIndex)) battle
+                    let playAura = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.AuraSound) // TODO: use new sound.
+                    let displayProtect = DisplayProtect (0L, targetIndex)
+                    withCmds [playAura; displayProtect] battle
                 | Weaken ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayXDown (0L, false, targetIndex)) battle
+                    withCmd (DisplayXDown (0L, false, targetIndex)) battle // TODO: use new sound and effect.
                 | Muddle ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayXDown (0L, true, targetIndex)) battle
+                    withCmd (DisplayXDown (0L, true, targetIndex)) battle // TODO: use new sound and effect.
                 | ConjureIfrit ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
@@ -811,48 +824,35 @@ module BattleDispatcher =
                 | Slow ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayXDown (0L, true, targetIndex)) battle
+                    withCmd (DisplayXDown (0L, true, targetIndex)) battle // TODO: use new sound and effect.
                 | Purify ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayPurify (0L, targetIndex)) battle
+                    withCmd (DisplayPurify (0L, targetIndex)) battle // TODO: use new sound and effect.
 
             | TechCharacter3 (sourceIndex, targetIndex, techType) ->
                 let time = World.getTickTime world
-                match Map.tryFind techType Data.Value.Techs with
-                | Some techData ->
-                    let source = Battle.getCharacter sourceIndex battle
-                    let target = Battle.getCharacter targetIndex battle
-                    let characters = Battle.getCharacters battle
-                    let results = Character.evaluateTechMove techData source target characters
-                    let (battle, cmds) =
-                        Map.fold (fun (battle, cmds) characterIndex (cancelled, hitPointsChange) ->
-                            let character = Battle.getCharacter characterIndex battle
-                            if hitPointsChange < 0 && character.IsHealthy then
-                                let battle = Battle.updateCharacter (Character.animate time DamageAnimation) characterIndex battle
-                                let cmds = if cancelled then DisplayCancel characterIndex :: cmds else cmds
-                                (battle, cmds)
-                            else (battle, cmds))
-                            (battle, [])
-                            results
-                    withCmds cmds battle
-                | None -> just battle
+                let results = Battle.evaluateTechMove sourceIndex targetIndex techType battle |> snd
+                let (battle, cmds) =
+                    Map.fold (fun (battle, cmds) characterIndex (cancelled, hitPointsChange, _, _) ->
+                        if hitPointsChange < 0 && Battle.getCharacterHealthy characterIndex battle then
+                            let battle = Battle.updateCharacter (Character.animate time DamageAnimation) characterIndex battle
+                            let cmds = if cancelled then DisplayCancel characterIndex :: cmds else cmds
+                            (battle, cmds)
+                        else (battle, cmds))
+                        (battle, [])
+                        results
+                withCmds cmds battle
 
             | TechCharacter4 (sourceIndex, targetIndex, techType) ->
-                match Map.tryFind techType Data.Value.Techs with
-                | Some techData ->
-                    let source = Battle.getCharacter sourceIndex battle
-                    let target = Battle.getCharacter targetIndex battle
-                    let characters = Battle.getCharacters battle
-                    let results = Character.evaluateTechMove techData source target characters
-                    let (battle, sigs) =
-                        Map.fold (fun (battle, sigs) _ (_, _) ->
-                            // TODO: glow effect
-                            (battle, sigs))
-                            (battle, [])
-                            results
-                    withSigs sigs battle
-                | None -> just battle
+                let results = Battle.evaluateTechMove sourceIndex targetIndex techType battle |> snd 
+                let (battle, sigs) =
+                    Map.fold (fun (battle, sigs) _ (_, _, _, _) ->
+                        // TODO: glow effect
+                        (battle, sigs))
+                        (battle, [])
+                        results
+                withSigs sigs battle
 
             | TechCharacter5 (sourceIndex, targetIndex, techType) ->
                 let source = Battle.getCharacter sourceIndex battle
@@ -870,38 +870,37 @@ module BattleDispatcher =
                 | None -> just battle
 
             | TechCharacter6 (sourceIndex, targetIndex, techType) ->
-                match Map.tryFind techType Data.Value.Techs with
-                | Some techData ->
-                    let source = Battle.getCharacter sourceIndex battle
-                    let target = Battle.getCharacter targetIndex battle
-                    let characters = Battle.getCharacters battle
-                    let results = Character.evaluateTechMove techData source target characters
-                    let (battle, sigs) =
-                        Map.fold (fun (battle, sigs) characterIndex (cancelled, hitPointsChange) ->
-                            let battle = Battle.updateCharacter (Character.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled)) false) characterIndex battle
-                            let wounded = (Battle.getCharacter characterIndex battle).IsWounded
-                            let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
-                            let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (characterIndex, hitPointsChange)) :: sigs else sigs
-                            let (battle, sigs) =
-                                if wounded then
-                                    let woundCommand = ActionCommand.make Wound sourceIndex (Some characterIndex)
-                                    let battle = Battle.prependActionCommand woundCommand battle
-                                    (battle, sigs)
-                                else
-                                    let sigs = Message (PoiseCharacter characterIndex) :: sigs
-                                    (battle, sigs)
-                            (battle, sigs))
-                            (battle, [])
-                            results
-                    let battle = Battle.updateCharacter (Character.updateTechPoints ((+) -techData.TechCost)) sourceIndex battle
-                    let battle =
-                        if Character.shouldCounter target
-                        then Battle.counterAttack sourceIndex targetIndex battle
-                        else battle
-                    let battle = Battle.updateCurrentCommandOpt (constant None) battle
-                    let sigs = Message (PoiseCharacter sourceIndex) :: sigs
-                    withSigs sigs battle
-                | None -> just battle
+                let (techCost, results) = Battle.evaluateTechMove sourceIndex targetIndex techType battle
+                let (battle, sigs) =
+                    Map.fold (fun (battle, sigs) characterIndex (cancelled, hitPointsChange, added, removed) ->
+                        let battle =
+                            Battle.updateCharacter (
+                                Character.updateHitPoints (fun hitPoints -> (hitPoints + hitPointsChange, cancelled)) false >>
+                                Character.applyStatusChanges added removed)
+                                characterIndex
+                                battle
+                        let wounded = (Battle.getCharacter characterIndex battle).IsWounded
+                        let sigs = if wounded then Message (ResetCharacter characterIndex) :: sigs else sigs
+                        let sigs = if hitPointsChange <> 0 then Command (DisplayHitPointsChange (characterIndex, hitPointsChange)) :: sigs else sigs
+                        let (battle, sigs) =
+                            if wounded then
+                                let woundCommand = ActionCommand.make Wound sourceIndex (Some characterIndex)
+                                let battle = Battle.prependActionCommand woundCommand battle
+                                (battle, sigs)
+                            else
+                                let sigs = Message (PoiseCharacter characterIndex) :: sigs
+                                (battle, sigs)
+                        (battle, sigs))
+                        (battle, [])
+                        results
+                let battle = Battle.updateCharacter (Character.updateTechPoints ((+) -techCost)) sourceIndex battle
+                let battle =
+                    if Battle.shouldCounter targetIndex battle
+                    then Battle.counterAttack sourceIndex targetIndex battle
+                    else battle
+                let battle = Battle.updateCurrentCommandOpt (constant None) battle
+                let sigs = Message (PoiseCharacter sourceIndex) :: sigs
+                withSigs sigs battle
 
             | TechCharacterAmbient (sourceIndex, _, _) ->
                 if Simulants.Battle.Scene.Ride.Exists world then
@@ -947,7 +946,7 @@ module BattleDispatcher =
 
             | ResetCharacter characterIndex ->
                 let character = Battle.getCharacter characterIndex battle
-                let battle = Battle.updateCharacter (Character.updateActionTime (constant 0)) characterIndex battle
+                let battle = Battle.updateCharacter (Character.updateActionTime (constant 0.0f)) characterIndex battle
                 let battle =
                     if character.IsAlly
                     then Battle.updateCharacter (Character.updateInputState (constant NoInput)) characterIndex battle
@@ -1038,6 +1037,11 @@ module BattleDispatcher =
                     just world
                 | None -> just world
 
+            | DisplayArcaneCast (delay, sourceIndex) ->
+                match Battle.tryGetCharacter sourceIndex battle with
+                | Some source -> displayEffect delay (v2 300.0f 300.0f) (Bottom (source.Bottom - v2 0.0f 120.0f)) (Effects.makeArcaneCastEffect ()) world |> just
+                | None -> just world
+            
             | DisplayFire (delay, sourceIndex, targetIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
                 | Some source ->
@@ -1065,6 +1069,11 @@ module BattleDispatcher =
                 | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeIceEffect ()) world |> just
                 | None -> just world
             
+            | DisplaySnowball (delay, targetIndex) ->
+                match Battle.tryGetCharacter targetIndex battle with
+                | Some target -> displayEffect delay (v2 432.0f 432.0f) (Bottom target.Bottom) (Effects.makeSnowballEffect ()) world |> just
+                | None -> just world
+
             | DisplayHolyCast (delay, sourceIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
                 | Some source -> displayEffect delay (v2 300.0f 300.0f) (Bottom (source.Bottom - v2 0.0f 100.0f)) (Effects.makeHolyCastEffect ()) world |> just
@@ -1119,7 +1128,8 @@ module BattleDispatcher =
                  Content.tileMap Gen.name
                     [Entity.Position == v2 -480.0f -270.0f
                      Entity.Elevation == Constants.Battle.BackgroundElevation
-                     Entity.TileMap <== battle --> fun battle -> battle.TileMap]
+                     Entity.TileMap <== battle --> fun battle -> battle.TileMap
+                     Entity.TileIndexOffset <== battle --> fun battle -> battle.TileIndexOffset]
 
                  // dialog
                  Dialog.content Gen.name

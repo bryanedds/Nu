@@ -349,6 +349,7 @@ module WorldTypes =
         static member Properties =
             [Define? Position Vector2.Zero
              Define? Size Constants.Engine.EntitySizeDefault
+             Define? Angle 0.0f
              Define? Rotation 0.0f
              Define? Elevation 0.0f
              Define? Omnipresent false
@@ -748,6 +749,7 @@ module WorldTypes =
         // Member properties; only for use by internal reflection facilities.
         member this.Position with get () = this.Transform.Position and set value = this.Transform.Position <- value
         member this.Size with get () = this.Transform.Size and set value = this.Transform.Size <- value
+        member this.Angle with get () = Math.radiansToDegrees this.Transform.Rotation and set value = this.Transform.Rotation <- Math.degreesToRadians value
         member this.Rotation with get () = this.Transform.Rotation and set value = this.Transform.Rotation <- value
         member this.Elevation with get () = this.Transform.Elevation and set value = this.Transform.Elevation <- value
         member internal this.Active with get () = this.Transform.Active and set value = this.Transform.Active <- value

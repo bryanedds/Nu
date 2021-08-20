@@ -413,7 +413,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 destRect.y <- int (-positionOffset.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
                 destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
                 destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
-                let rotation = double -transform.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
+                let rotation = double (Math.radiansToDegrees transform.Rotation) // negation for right-handedness
                 let mutable rotationCenter = SDL.SDL_Point ()
                 rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
                 rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
@@ -515,7 +515,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                         destRect.y <- int tilePositionOffset.Y * Constants.Render.VirtualScalar
                         destRect.w <- int tileSize.X * Constants.Render.VirtualScalar
                         destRect.h <- int tileSize.Y * Constants.Render.VirtualScalar
-                        let rotation = double -tileRotation * Constants.Math.RadiansToDegrees // negation for right-handedness
+                        let rotation = double (Math.radiansToDegrees -tileRotation) // negation for right-handedness
                         let mutable rotationCenter = SDL.SDL_Point ()
                         rotationCenter.x <- int (tileSize.X * 0.5f) * Constants.Render.VirtualScalar
                         rotationCenter.y <- int (tileSize.Y * 0.5f) * Constants.Render.VirtualScalar
@@ -659,7 +659,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                     destRect.y <- int (-positionView.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
                     destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
                     destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
-                    let rotation = double -transform.Rotation * Constants.Math.RadiansToDegrees // negation for right-handedness
+                    let rotation = double (Math.radiansToDegrees -transform.Rotation) // negation for right-handedness
                     let mutable rotationCenter = SDL.SDL_Point ()
                     rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
                     rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar

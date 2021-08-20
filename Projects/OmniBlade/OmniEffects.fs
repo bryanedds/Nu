@@ -182,6 +182,24 @@ module Effects =
                 [|Circle (radius, 2.0f, 100L)|],
                 Nil) }
 
+    let makeArcaneCastEffect () =
+        let halfWidth = 50.0f
+        let altitude = halfWidth * 2.0f * 0.866f
+        let candle position = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.CandleAnimationSheet), v2i 16 20, 3, 3, 5L, Loop, [|Size (v2 64.0f 80.0f); position|], Nil)
+        let staticEffect position angle = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.StaticAnimationSheet), v2i 64 64, 5, 5, 3L, Loop, [|Size (v2 128.0f 128.0f); position; angle|], Nil)
+        { EffectName = "ArcaneCast"
+          LifeTimeOpt = Some 36L
+          Definitions = Map.empty
+          Content =
+            Contents
+                (Shift 0.0f,
+                 [|candle (PositionRelative (v2 0.0f altitude))
+                   candle (PositionRelative (v2 -halfWidth 0.0f))
+                   candle (PositionRelative (v2 halfWidth 0.0f))
+                   staticEffect (PositionRelative (v2 0.0f 0.0f)) (Angle 90.0f)
+                   staticEffect (PositionRelative (v2 -25.0f 50.0f)) (Angle 30.0f)
+                   staticEffect (PositionRelative (v2 25.0f 50.0f)) (Angle -30.0f)|]) }
+    
     let makeFireEffect position position2 =
         let fireSize = Size (v2 64.0f 64.0f)
         let activation timeOn timeOff = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = timeOn}; { LogicValue = false; LogicLength = timeOff }|])
@@ -218,14 +236,14 @@ module Effects =
                 (Shift 0.0f,
                  Rate 0.25f,
                  [|Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 64L }; { LogicValue = false; LogicLength = 0L }|])|],
-                 [|Sizes (Set, Linear, Once, [|{ TweenValue = v2 32.0f 32.0f; TweenLength = 36L}; { TweenValue = v2 192.0f 192.0f; TweenLength = 0L}|])
-                   Positions (Set, EaseIn, Once, [|{ TweenValue = position; TweenLength = 36L}; { TweenValue = position2; TweenLength = 0L}|])
+                 [|Sizes (Set, Linear, Once, [|{ TweenValue = v2 32.0f 32.0f; TweenLength = 36L }; { TweenValue = v2 192.0f 192.0f; TweenLength = 0L }|])
+                   Positions (Set, EaseIn, Once, [|{ TweenValue = position; TweenLength = 36L }; { TweenValue = position2; TweenLength = 0L }|])
                    Color (colWhite.WithA (byte 207))|],
                  AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil))}
 
     let makeIceEffect () =
         let coverRadius = 50.0f
-        let bombardActivation = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 10L };{ LogicValue = false; LogicLength = 0L}|])
+        let bombardActivation = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 10L };{ LogicValue = false; LogicLength = 0L }|])
         let bombardTravel origin = Positions (Sum, Linear, Once, [|{ TweenValue = origin; TweenLength = 10L };{ TweenValue = v2Zero; TweenLength = 0L }|])
         let coverTravel =
             Aspects
@@ -247,6 +265,17 @@ module Effects =
             Contents
                 (Shift 0.0f,
                  [|iceCover; iceBombard (v2 -700.0f 0.0f); iceBombard (v2 500.0f 500.0f); iceBombard (v2 500.0f -500.0f)|])}
+    
+    let makeSnowballEffect () =
+        let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v2 0.0f 800.0f; TweenLength = 80L };{ TweenValue = v2 0.0f -800.0f; TweenLength = 0L }|])
+        let rotate = Rotations (Set, Constant, Loop, [|{ TweenValue = 0.0f; TweenLength = 5L };{ TweenValue = 90.0f; TweenLength = 5L };{ TweenValue = 180.0f; TweenLength = 5L };{ TweenValue = 270.0f; TweenLength = 5L }|])
+        { EffectName = "Snowball"
+          LifeTimeOpt = Some 80L
+          Definitions = Map.empty
+          Content =
+              StaticSprite
+               (Resource (AssetTag.toPair Assets.Battle.SnowballImage),
+                [|Size (v2 432.0f 432.0f); fall; rotate|], Nil) }
     
     let makeHolyCastEffect () =
         { EffectName = "HolyCast"

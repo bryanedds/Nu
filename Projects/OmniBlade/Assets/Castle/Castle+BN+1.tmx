@@ -8,13 +8,13 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlE0OgkAMRskQjkDimo0eTJFIULwfG70QG90LiROGie18nR9XNPlWtLynoS1VlpWCdEVGVlPI3uWTf/Pb6Z03I3eG31u950Cf9st7qCVPRfMHte7tAxw0e+a9jLwZ/mj1Dp4OJnvm7fMlh5zmV/m6d/RwsNkcz1WV0CEmW+qQgo06pGQjDh3DvkzP6ilXZu/tomZMh8biU79b93F3TzKjHWw+9Z/rm8bdPenM7GDzqdI3jbt7PjMoX9807u75zKD8Crh7PjMoP1VJ+cgeSnbV5O+UewbZQ3RXZ8+jdQNPDm9kD5GeX2zEAdkpVw/HdjkgO8X1IGzOAdkpqkfCRr8HtHzYsRxC2KEOMdimQy1MLPaWLSnzAVW4naI=
+   eJztlEsOgkAQRAkTLsJGD6ZIJCpehBOx0Qux0b1M4oRhYvdUz8cVndSKal5pqB5UUQwCXaqCnLaSvStE/+Z38ztvlu4Mv3e8p8g83Zf3KBc9S5o/lmtvH5HBsDXvZenN8CfHOwZmsNmat1OL9orm12rtnQIyuGyO55tamCElW5ohBxvNkJONZLgw7PP8rJl1ZXrvDrVjZ2gdPvW7jY+7e5Idk8HlU/+5uWnc3ZPu6Awunxpz07i7F7KD8s1N4+5eyA7KNzdN0glkB+XnGikf6aGkqzb/COwgPUS7qnMenBvoy4D0EPH8YiMZkE75PBzblwHpFOdB2FwGpFOUR8KWfJPIhLBTZYhhx2ZIwbYzNEKlYm/alFMfJstX3Q==
   </data>
  </layer>
  <objectgroup id="3" name="Props">
   <object id="1" gid="235" x="696" y="1008" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc HeavyArmorosNpc Upward [Sequence [[Dialog &quot;...&quot;] [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]"/>
+    <property name="I" value="[Npc HeavyArmorosNpc Upward [Sequence [[Dialog &quot;Darkness beckons...&quot;] [Battle HeavyArmorosBattle [HeavyArmorosDefeated]]]]]"/>
    </properties>
   </object>
   <object id="2" gid="235" x="744" y="1200" width="48" height="48">

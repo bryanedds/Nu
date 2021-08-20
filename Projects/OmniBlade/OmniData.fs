@@ -35,6 +35,7 @@ type Advent =
     | PericRecruited
     | MadTrixterDefeated
     | HeavyArmorosDefeated
+    | AraneaImplicitumDefeated
     | CastleUnsealed
     | ForestUnsealed
     | FactoryUnsealed
@@ -135,6 +136,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
         StatusType.enumerate this
 
 type WeaponType =
+    | Bare
     | ShortSword
     | Dagger
     | OakRod
@@ -152,6 +154,7 @@ type WeaponType =
     | Fangs
 
 type ArmorType =
+    | MicroFur
     | TinMail
     | CottonVest
     | CottonRobe
@@ -164,6 +167,7 @@ type ArmorType =
     | RubberVest
     | SilkRobe
     | ToughHide
+    | StoneHide
 
 type AccessoryType =
     | LeatherBrace
@@ -320,6 +324,7 @@ type ArchetypeType =
     | Tortoise
     | Robot
     | Harpy
+    | Avian
     | Minotaur
     | Dragon
     | Troll
@@ -327,7 +332,6 @@ type ArchetypeType =
     | Ogre
     | Djinn
     | Naga
-    | Avian
     | Armoros
     | Golem
     | Jack
@@ -342,6 +346,7 @@ type ArchetypeType =
     | ShamanBig
     | RobotBig
     | Dinoman
+    | Arachnos
 
 type ShopType =
     | Chemist
@@ -407,11 +412,22 @@ type BattleType =
     | Castle2Battle8
     | Castle2Battle9
     | HeavyArmorosBattle
+    | Castle3Battle
+    | Castle3Battle2
+    | Castle3Battle3
+    | Castle3Battle4
+    | Castle3Battle5
+    | Castle3Battle6
+    | Castle3Battle7
+    | Castle3Battle8
+    | Castle3Battle9
+    | AraneaImplicitumBattle
 
 type EncounterType =
     | DebugEncounter
     | CastleEncounter
     | Castle2Encounter
+    | Castle3Encounter
 
 type LockType =
     | BrassKey
@@ -450,6 +466,7 @@ type NpcType =
     | ShamanaNpc
     | MadTrixterNpc
     | HeavyArmorosNpc
+    | AraneaImplicitumNpc
     
     static member exists advents specialty =
         match specialty with
@@ -459,6 +476,7 @@ type NpcType =
         | PericNpc -> not (Set.contains PericRecruited advents)
         | MadTrixterNpc -> not (Set.contains MadTrixterDefeated advents)
         | HeavyArmorosNpc -> not (Set.contains HeavyArmorosDefeated advents)
+        | AraneaImplicitumNpc -> not (Set.contains AraneaImplicitumDefeated advents)
         | RavelNpc | AdvenNpc | EildaenNpc | ShamanaNpc -> true
 
 type ShopkeepType =
@@ -523,6 +541,10 @@ type EnemyType =
     | FacelessSoldier
     | Hawk
     | HeavyArmoros
+    | Apparition
+    | Cloak
+    | BloodArmoros
+    | AraneaImplicitum
 
 type CharacterType =
     | Ally of AllyType
@@ -731,6 +753,7 @@ type [<NoEquality; NoComparison>] BattleData =
       BattleAllyPositions : Vector2 list
       BattleEnemies : EnemyType list
       BattleTileMap : TileMap AssetTag
+      BattleTileIndexOffset : int
       BattleSongOpt : Song AssetTag option }
 
 type [<NoEquality; NoComparison>] EncounterData =
@@ -788,6 +811,7 @@ type [<NoEquality; NoComparison>] FieldTileMap =
 type [<NoEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
       FieldTileMap : FieldTileMap
+      FieldTileIndexOffset : int
       FieldBackgroundColor : Color
       FieldSongOpt : Song AssetTag option
       EncounterTypeOpt : EncounterType option

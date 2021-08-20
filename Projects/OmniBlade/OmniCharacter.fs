@@ -16,7 +16,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
       Accessories : AccessoryType list
       HitPoints : int
       TechPoints : int
-      Statuses : Map<StatusType, int>
+      Statuses : Map<StatusType, single>
       Defending : bool // also applies a perhaps stackable buff for attributes such as countering or magic power depending on class
       Charging : bool
       TechProbabilityOpt : single option
@@ -45,7 +45,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         let statuses =
             Map.fold (fun statuses status burndown2 ->
                 let burndown3 = burndown2 - burndown
-                if burndown3 <= 0
+                if burndown3 <= 0.0f
                 then Map.remove status statuses
                 else Map.add status burndown3 statuses)
                 Map.empty
@@ -56,7 +56,9 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         let hitPoints = updater state.HitPoints
         let hitPoints = max 0 hitPoints
         let hitPoints = min state.HitPointsMax hitPoints
-        { state with HitPoints = hitPoints }
+        { state with
+            HitPoints = hitPoints
+            Statuses = if hitPoints = 0 then Map.empty else state.Statuses }
 
     static member updateTechPoints updater state =
         let techPoints = updater state.TechPoints
@@ -241,8 +243,9 @@ module Character =
               CharacterState_ : CharacterState
               CharacterAnimationState_ : CharacterAnimationState
               AutoBattleOpt_ : AutoBattle option
-              ActionTime_ : int
-              InputState_ : CharacterInputState }
+              ActionTime_ : single
+              InputState_ : CharacterInputState
+              CelSize_ : Vector2 }
 
         (* Bounds Original Properties *)
         member this.BoundsOriginal = this.BoundsOriginal_
@@ -274,6 +277,7 @@ module Character =
         member this.IsAlly = match this.CharacterIndex with AllyIndex _ -> true | EnemyIndex _ -> false
         member this.IsEnemy = not this.IsAlly
         member this.ActionTime = this.ActionTime_
+        member this.CelSize = this.CelSize_
         member this.ArchetypeType = this.CharacterState_.ArchetypeType
         member this.ExpPoints = this.CharacterState_.ExpPoints
         member this.HitPoints = this.CharacterState_.HitPoints
@@ -313,7 +317,7 @@ module Character =
         Option.isNone character.AutoBattleOpt_ &&
         character.IsEnemy
 
-    let isAutoBattling character =
+    let isAutoTeching character =
         match character.AutoBattleOpt_ with
         | Some autoBattle -> Option.isSome autoBattle.AutoTechOpt
         | None -> false
@@ -322,13 +326,6 @@ module Character =
         // TODO: pull this from stats
         character.ArchetypeType = Fighter &&
         Gen.random1 8 = 0
-
-    let evaluateAutoBattle (source : Character) (target : Character) =
-        let techOpt =
-            if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
-            then CharacterState.tryGetTechRandom source.CharacterState_
-            else None
-        { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
 
     let evaluateAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
         match aimType with
@@ -405,21 +402,32 @@ module Character =
             match techData.EffectType with
             | Physical -> source.CharacterState_.Power
             | Magical -> source.CharacterState_.Magic
+        let specialScalar =
+            // NOTE: certain techs can't be used effectively by enemies, so they are given a special scalar.
+            // TODO: pull this from TechData.EnemyScalarOpt.
+            if source.IsEnemy then
+                match techData.TechType with
+                | Critical -> 1.333f
+                | Slash -> 1.5f
+                | TechType.Flame -> 1.667f
+                | Aura -> 0.5f
+                | _ -> 1.0f
+            else 1.0f
         if techData.Curative then
-            let healing = single efficacy * techData.Scalar |> int |> max 1
-            (target.CharacterIndex, false, healing)
+            let healing = single efficacy * techData.Scalar * specialScalar |> int |> max 1
+            (target.CharacterIndex, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
-            let cancelled = techData.Cancels && isAutoBattling target
+            let cancelled = techData.Cancels && isAutoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
-            let damage = single (efficacy - shield) * techData.Scalar * defendingScalar |> int |> max 1
-            (target.CharacterIndex, cancelled, -damage)
+            let damage = single (efficacy - shield) * techData.Scalar * specialScalar * defendingScalar |> int |> max 1
+            (target.CharacterIndex, cancelled, -damage, techData.StatusesAdded, techData.StatusesRemoved)
 
     let evaluateTechMove techData source target characters =
         let targets = evaluateTargetType techData.TargetType source target characters
         Map.fold (fun results _ target ->
-            let (index, cancelled, delta) = evaluateTech techData source target
-            Map.add index (cancelled, delta) results)
+            let (index, cancelled, delta, added, removed) = evaluateTech techData source target
+            Map.add index (cancelled, delta, added, removed) results)
             Map.empty
             targets
 
@@ -499,12 +507,55 @@ module Character =
     let updateBottom updater (character : Character) =
         { character with Bounds_ = character.Bottom |> updater |> character.Bounds.WithBottom }
 
-    let autoBattle (source : Character) (target : Character) =
-        let sourceToTarget = target.Position - source.Position
-        let direction = Direction.ofVector2 sourceToTarget
-        let animationState = { source.CharacterAnimationState_ with Direction = direction }
-        let autoBattle = evaluateAutoBattle source target
-        { source with CharacterAnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
+    let applyStatusChanges statusesAdded statusesRemoved (character : Character) =
+        if character.IsHealthy then
+            updateStatuses (fun statuses ->
+                let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.BurndownTime statuses) statuses statusesAdded
+                let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
+                statuses)
+                character
+        else character
+
+    let autoBattle (source : Character) alliesHealthy alliesWounded enemiesHealthy enemiesWounded =
+
+        // TODO: once techs have the ability to revive, check for that in the curative case.
+        ignore (enemiesWounded, alliesWounded)
+        
+        // randomly choose a tech type
+        let techOpt =
+            if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
+            then CharacterState.tryGetTechRandom source.CharacterState_
+            else None
+
+        // randomly choose a target
+        let targetOpt =
+            match techOpt with
+            | Some tech ->
+                match Data.Value.Techs.TryGetValue tech with
+                | (true, techData) ->
+                    if techData.Curative then
+                        if Map.notEmpty enemiesHealthy
+                        then Map.toValueList enemiesHealthy |> List.item (Gen.random1 enemiesHealthy.Count) |> Some
+                        else None
+                    else
+                        if Map.notEmpty alliesHealthy
+                        then Map.toValueList alliesHealthy |> List.item (Gen.random1 alliesHealthy.Count) |> Some
+                        else None
+                | (false, _) -> None
+            | None ->
+                if Map.notEmpty alliesHealthy
+                then Map.toValueList alliesHealthy |> List.item (Gen.random1 alliesHealthy.Count) |> Some
+                else None
+
+        // update character with auto-battle and appropriate facing direction
+        match targetOpt with
+        | Some (target : Character) ->
+            let sourceToTarget = target.Position - source.Position
+            let direction = if sourceToTarget.X > 0.0f then Rightward else Leftward // only two directions in this game
+            let animationState = { source.CharacterAnimationState_ with Direction = direction }
+            let autoBattle = { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
+            { source with CharacterAnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
+        | None -> source
 
     let defend character =
         let characterState = character.CharacterState_
@@ -522,7 +573,7 @@ module Character =
     let animate time characterAnimationType character =
         { character with CharacterAnimationState_ = CharacterAnimationState.setCharacterAnimationType (Some time) characterAnimationType character.CharacterAnimationState_ }
 
-    let make bounds characterIndex characterType (characterState : CharacterState) animationSheet direction actionTime =
+    let make bounds characterIndex characterType (characterState : CharacterState) animationSheet celSize direction actionTime =
         let animationType = if characterState.IsHealthy then IdleAnimation else WoundAnimation
         let animationState = { TimeStart = 0L; AnimationSheet = animationSheet; CharacterAnimationType = animationType; Direction = direction }
         { BoundsOriginal_ = bounds
@@ -533,24 +584,31 @@ module Character =
           CharacterAnimationState_ = animationState
           AutoBattleOpt_ = None
           ActionTime_ = actionTime
+          CelSize_ = celSize
           InputState_ = NoInput }
 
     let tryMakeEnemy index indexMax offsetCharacters enemyData =
         match Map.tryFind (Enemy enemyData.EnemyType) Data.Value.Characters with
         | Some characterData ->
             let archetypeType = characterData.ArchetypeType
-            let size = Constants.Gameplay.CharacterSize
-            let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
-            let bounds = v4Bounds position size
-            let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
-            let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
-            let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
-            let characterType = characterData.CharacterType
-            let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
-            let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
-            let actionTime = 0 - Constants.Battle.EnemyActionTimeSpacing * indexRev
-            let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet Rightward actionTime
-            Some enemy
+            match Data.Value.Archetypes.TryFind characterData.ArchetypeType with
+            | Some archetypeData ->
+                let (size, celSize) =
+                    match archetypeData.Stature with
+                    | SmallStature | NormalStature | LargeStature -> (Constants.Gameplay.CharacterSize, Constants.Gameplay.CharacterCelSize)
+                    | HugeStature -> (Constants.Gameplay.BossSize, Constants.Gameplay.BossCelSize)
+                let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
+                let bounds = v4Bounds position size
+                let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
+                let techPoints = Algorithms.techPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
+                let expPoints = Algorithms.levelToExpPoints characterData.LevelBase
+                let characterType = characterData.CharacterType
+                let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
+                let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
+                let actionTime = 0.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
+                let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward actionTime
+                Some enemy
+            | None -> None
         | None -> None
 
     let empty =
@@ -563,8 +621,9 @@ module Character =
           CharacterState_ = CharacterState.empty
           CharacterAnimationState_ = characterAnimationState
           AutoBattleOpt_ = None
-          ActionTime_ = 0
-          InputState_ = NoInput }
+          ActionTime_ = 0.0f
+          InputState_ = NoInput
+          CelSize_ = Constants.Gameplay.CharacterSize }
 
 type Character = Character.Character
 

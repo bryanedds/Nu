@@ -804,6 +804,14 @@ module Math =
             assignTypeConverter<Color, ColorConverter> ()
             Initialized <- true
 
+    /// Convert radians to degrees.
+    let radiansToDegrees (radians : single) =
+        MathHelper.RadiansToDegrees -radians
+
+    /// Convert degrees to radians.
+    let degreesToRadians (degrees : single) =
+        MathHelper.DegreesToRadians -degrees
+
     /// Snap an int value to an offset.
     let snap offset value =
         if offset <> 0 then
@@ -814,11 +822,11 @@ module Math =
 
     /// Snap an radian value to an offset.
     let snapR offset value =
-        mul Constants.Math.RadiansToDegreesF value |>
+        radiansToDegrees value |>
         int |>
         snap offset |>
         single |>
-        mul Constants.Math.DegreesToRadiansF
+        degreesToRadians
 
     /// Snap an single float value to an offset.
     let snapF offset (value : single) =
