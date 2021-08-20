@@ -2,7 +2,7 @@ Type,Stamina,Strength,Intelligence,Toughness,Focus,Wealth,Mythos,WeaponSubtype,A
 Apprentice,1,1,1,1,1,1,1,Sword,Vest,[],SmallStature,Generic character.
 Fighter,1.2,1.1,0.8,1,0.9,1,1,Sword,Mail,[[2 Critical] [4 Slash] [6 DarkCritical] [8 Cyclone]],SmallStature,
 Ninja,1.1,1,0.9,1,1,1,1,Knife,Vest,[[2 PowerCut] [4 SneakCut] [6 DoubleCut] [8 ProvokeCut]],SmallStature,
-Wizard,0.9,0.8,1.2,1,1.2,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball] [10 Bolt]],SmallStature,
+Wizard,0.9,0.8,1.2,1,1.2,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball]],SmallStature,
 Conjuror,0.9,0.8,1.2,1,1.2,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 ConjureIfrit] [8 Slow]],SmallStature,
 Cleric,0.9,0.9,1.1,1,1.1,1,1,Bow,Vest,[[2 Aura] [4 Empower] [6 Enlighten] [8 Protect]],SmallStature,
 Bat,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Drain magic.
@@ -17,7 +17,7 @@ Beetle,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and 
 Rat,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Semi-weak physical attacks.
 Scorpion,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
 Plant,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Debuff effects.
-Goblin,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [2 Flame] [3 Ice] [4 Snowball] [5 Bolt]],NormalStature,Normal physical attacks with normal Elemental magic.
+Goblin,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [2 Flame] [3 Ice] [4 Snowball]],NormalStature,Normal physical attacks with normal Elemental magic.
 Soldier,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 PowerCut] [2 SneakCut] [3 DoubleCut] [4 ProvokeCut]],NormalStature,Physical attacks with ???.
 Ghost,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff magic.
 Imp,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff effects.
@@ -34,7 +34,7 @@ Merman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks and Lightn
 Feral,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Countering and Curative magic.
 Thief,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks and High Evasion.
 Lizardman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attack w/ High Defense with Buff magic.
-Trixter,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [2 Flame] [3 Ice] [4 Snowball] [5 Bolt]],NormalStature,???
+Trixter,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [2 Flame] [3 Ice] [4 Snowball]],NormalStature,???
 Monk,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,
 Tortoise,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attack w/ High Defense with Buff magic.
 Robot,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.

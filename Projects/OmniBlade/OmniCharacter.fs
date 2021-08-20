@@ -414,8 +414,8 @@ module Character =
             // TODO: pull this from TechData.EnemyScalarOpt.
             if source.IsEnemy then
                 match techData.TechType with
-                | Critical -> 1.25f
-                | Slash -> 1.333f
+                | Critical -> 1.333f
+                | Slash -> 1.5f
                 | TechType.Flame -> 1.667f
                 | _ -> 1.0f
             else 1.0f
