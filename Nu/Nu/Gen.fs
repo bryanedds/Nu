@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Text
 open Prime
 
@@ -73,16 +74,24 @@ module Gen =
         static member random2 minValue ceiling =
             lock Lock (fun () -> Random.Next (minValue, ceiling))
 
-        /// Get a random element from a sequence if there are any elements..
-        static member randomItem seq =
+        /// Get a random element from a sequence if there are any elements or None.
+        static member randomItemOpt seq =
             let arr = Seq.toArray seq
             if Array.notEmpty arr
             then Some arr.[Gen.random1 arr.Length]
             else None
 
+        /// Get a random key if there are any or None.
+        static member randomKeyOpt (dict : IDictionary<'k, 'v>) =
+            Gen.randomItemOpt dict.Keys
+
+        /// Get a random value if there are any or None.
+        static member randomValueOpt (dict : IDictionary<'k, 'v>) =
+            Gen.randomItemOpt dict.Values
+
         /// Get a random element from a sequence or a default if sequence is empty.
         static member randomItemOrDefault default_ seq =
-            match Gen.randomItem seq with
+            match Gen.randomItemOpt seq with
             | Some item -> item
             | None -> default_
 

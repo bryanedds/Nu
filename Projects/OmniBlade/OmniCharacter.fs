@@ -72,12 +72,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         { state with ExpPoints = expPoints }
 
     static member tryGetTechRandom (state : CharacterState) =
-        let techs = state.Techs
-        if Set.notEmpty techs then
-            let techIndex = Gen.random1 techs.Count
-            let tech = Seq.item techIndex techs
-            Some tech
-        else None
+        Gen.randomItemOpt state.Techs
 
     static member getPoiseType state =
         if state.Defending then Defending
@@ -415,19 +410,19 @@ module Character =
             else 1.0f
         if techData.Curative then
             let healing = single efficacy * techData.Scalar * specialScalar |> int |> max 1
-            (target.CharacterIndex, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
+            (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && isAutoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
             let damage = single (efficacy - shield) * techData.Scalar * specialScalar * defendingScalar |> int |> max 1
-            (target.CharacterIndex, cancelled, -damage, techData.StatusesAdded, techData.StatusesRemoved)
+            (target.CharacterIndex, cancelled, false, -damage, techData.StatusesAdded, techData.StatusesRemoved)
 
     let evaluateTechMove techData source target characters =
         let targets = evaluateTargetType techData.TargetType source target characters
         Map.fold (fun results _ target ->
-            let (index, cancelled, delta, added, removed) = evaluateTech techData source target
-            Map.add index (cancelled, delta, added, removed) results)
+            let (index, cancelled, affectsWounded, delta, added, removed) = evaluateTech techData source target
+            Map.add index (cancelled, affectsWounded, delta, added, removed) results)
             Map.empty
             targets
 
@@ -470,16 +465,19 @@ module Character =
         let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
         { character with CharacterState_ = characterState }
 
-    let updateHitPoints updater affectWounded character =
-        let (characterState, cancel) =
+    let updateHitPoints updater affectWounded alliesHealthy character =
+        let (cancel, characterState) =
             if character.CharacterState_.IsHealthy || affectWounded then
-                let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
+                let (cancel, hitPoints) = updater character.CharacterState_.HitPoints
                 let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
-                (characterState, cancel)
-            else (character.CharacterState_, false)
+                (cancel, characterState)
+            else (false, character.CharacterState_)
         let autoBattleOpt =
             match character.AutoBattleOpt_ with
-            | Some autoBattle when cancel -> Some { autoBattle with AutoTechOpt = None }
+            | Some _ when cancel ->
+                match Gen.randomKeyOpt alliesHealthy with
+                | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None }
+                | None -> None
             | autoBattleOpt -> autoBattleOpt // use existing state if not cancelled
         { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
 
@@ -521,37 +519,29 @@ module Character =
         // TODO: once techs have the ability to revive, check for that in the curative case.
         ignore (enemiesWounded, alliesWounded)
         
-        // randomly choose a tech type
+        // attempt to randomly choose a tech type
         let techOpt =
             if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
             then CharacterState.tryGetTechRandom source.CharacterState_
             else None
 
-        // randomly choose a target
+        // attempt to randomly choose a target
         let targetOpt =
             match techOpt with
             | Some tech ->
                 match Data.Value.Techs.TryGetValue tech with
                 | (true, techData) ->
-                    if techData.Curative then
-                        if Map.notEmpty enemiesHealthy
-                        then Map.toValueList enemiesHealthy |> List.item (Gen.random1 enemiesHealthy.Count) |> Some
-                        else None
-                    else
-                        if Map.notEmpty alliesHealthy
-                        then Map.toValueList alliesHealthy |> List.item (Gen.random1 alliesHealthy.Count) |> Some
-                        else None
+                    if techData.Curative
+                    then Gen.randomValueOpt enemiesHealthy
+                    else Gen.randomValueOpt alliesHealthy
                 | (false, _) -> None
-            | None ->
-                if Map.notEmpty alliesHealthy
-                then Map.toValueList alliesHealthy |> List.item (Gen.random1 alliesHealthy.Count) |> Some
-                else None
+            | None -> Gen.randomValueOpt alliesHealthy
 
-        // update character with auto-battle and appropriate facing direction
+        // attempt to update character with auto-battle and appropriate facing direction
         match targetOpt with
         | Some (target : Character) ->
             let sourceToTarget = target.Position - source.Position
-            let direction = if sourceToTarget.X > 0.0f then Rightward else Leftward // only two directions in this game
+            let direction = if sourceToTarget.X >= 0.0f then Rightward else Leftward // only two directions in this game
             let animationState = { source.CharacterAnimationState_ with Direction = direction }
             let autoBattle = { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
             { source with CharacterAnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
