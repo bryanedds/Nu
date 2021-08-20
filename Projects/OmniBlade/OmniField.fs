@@ -266,7 +266,9 @@ module Field =
         field
 
     let toSymbolizable field =
-        { field with Avatar_ = Avatar.toSymbolizable field.Avatar }
+        { field with
+            Avatar_ = Avatar.toSymbolizable field.Avatar
+            FieldSongTimeOpt_ = None }
 
     let make fieldType randSeedState avatar team advents inventory =
         { FieldType_ = fieldType
