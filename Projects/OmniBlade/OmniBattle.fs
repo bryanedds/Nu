@@ -165,8 +165,16 @@ module Battle =
     let tryGetCharacter characterIndex battle =
         Map.tryFind characterIndex battle.Characters_
 
+    let tryGetCharacterBy by characterIndex battle =
+        match Map.tryFind characterIndex battle.Characters_ with
+        | Some character -> Some (by character)
+        | None -> None
+
     let getCharacter characterIndex battle =
         tryGetCharacter characterIndex battle |> Option.get
+
+    let getCharacterBy by characterIndex battle =
+        tryGetCharacter characterIndex battle |> Option.get |> by
 
     let getCharacterHealthy characterIndex battle =
         (getCharacter characterIndex battle).IsHealthy
@@ -214,6 +222,18 @@ module Battle =
     let counterAttack sourceIndex targetIndex battle =
         let attackCommand = ActionCommand.make Attack targetIndex (Some sourceIndex)
         prependActionCommand attackCommand battle
+
+    let shouldCounter characterIndex battle =
+        getCharacterBy Character.shouldCounter characterIndex battle
+
+    let evaluateTechMove sourceIndex targetIndex techType battle =
+        match Map.tryFind techType Data.Value.Techs with
+        | Some techData ->
+            let source = getCharacter sourceIndex battle
+            let target = getCharacter targetIndex battle
+            let characters = getCharacters battle
+            (techData.TechCost, Character.evaluateTechMove techData source target characters)
+        | None -> (0, Map.empty)
 
     let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
         if attempts < 10000 then

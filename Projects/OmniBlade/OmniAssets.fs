@@ -102,6 +102,7 @@ module Assets =
         let BeastGrowlSound = asset<Sound> PackageName "BeastGrowl"
         let BeastDeathSound = asset<Sound> PackageName "BeastDeath"
         let HealSound = asset<Sound> PackageName "Heal"
+        let AuraSound = asset<Sound> PackageName "Aura"
         let PurchaseSound = asset<Sound> PackageName "Purchase" // TODO: P1: Move this to Gui?
         let DoorOpenSound = asset<Sound> PackageName "DoorOpen"
         let ChestOpenSound = asset<Sound> PackageName "ChestOpen"
