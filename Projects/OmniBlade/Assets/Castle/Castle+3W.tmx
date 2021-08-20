@@ -8,7 +8,7 @@
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlVsKwjAQRYcE9+C3Irow0aL42khXpIhuSBH9d4IJDIFMJqGxIhm4NEzDPdCP01YDrAcAO2EOmNDsE3qWmFZ/ssHzWQFcSE42dGfuXFWYf1TynsbjP3D3JLnb0J2582L4NyXv8fkTfE5JxjZ0Z+7MdJg/0vIen//tqfzKl/BX+G6RmS3T6/hdOi3FlY6f4zTObVJXOn6O0zi3SV3p+DlO49wmdaXj9zWVX/mGH/NUaf/F/FvafzF+af/F+KX9F+OX9t+v//8r///5Q9WN01JcOSf8lHDfqsns7JP/BpGe6IA=
+   eJztlVsKwjAQRYcEN6KILsxHUXxtpCtSRDekiP47wQSGQCaT0FiRDFwapuEe6MdpqwHWA4CdMAdMaPYJPUtMqz/Z4PmsAC4kJxu6M3euKsw/KnlP4/EfuHuS3G3oztx5Mfybkvf4/DE+JyQjG7ozd6Y6zB9qeY/P//ZUfuVL+Ct8t8jMlul1/C6dluJKx89xGuc2qSsdP8dpnNukrnT8HKdxbpO60vH7msqvfMOPeaq0/2L+Le2/GL+0/2L80v6L8Uv779f//5X///x5R05LceWM8FPCfasms7NP/hsIaujQ
   </data>
  </layer>
  <objectgroup id="3" name="Props">
