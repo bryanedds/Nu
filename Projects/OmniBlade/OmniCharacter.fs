@@ -533,19 +533,11 @@ module Character =
             | Some tech ->
                 match Data.Value.Techs.TryGetValue tech with
                 | (true, techData) ->
-                    if techData.Curative then
-                        if Map.notEmpty enemiesHealthy
-                        then Map.toValueList enemiesHealthy |> List.item (Gen.random1 enemiesHealthy.Count) |> Some
-                        else None
-                    else
-                        if Map.notEmpty alliesHealthy
-                        then Map.toValueList alliesHealthy |> List.item (Gen.random1 alliesHealthy.Count) |> Some
-                        else None
+                    if techData.Curative
+                    then enemiesHealthy |> Map.toValueList |> Gen.randomItemOpt
+                    else alliesHealthy |> Map.toValueList |> Gen.randomItemOpt
                 | (false, _) -> None
-            | None ->
-                if Map.notEmpty alliesHealthy
-                then Map.toValueList alliesHealthy |> List.item (Gen.random1 alliesHealthy.Count) |> Some
-                else None
+            | None -> alliesHealthy |> Map.toValueList |> Gen.randomItemOpt
 
         // update character with auto-battle and appropriate facing direction
         match targetOpt with
