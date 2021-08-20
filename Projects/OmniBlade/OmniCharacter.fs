@@ -72,12 +72,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
         { state with ExpPoints = expPoints }
 
     static member tryGetTechRandom (state : CharacterState) =
-        let techs = state.Techs
-        if Set.notEmpty techs then
-            let techIndex = Gen.random1 techs.Count
-            let tech = Seq.item techIndex techs
-            Some tech
-        else None
+        Gen.randomItemOpt state.Techs
 
     static member getPoiseType state =
         if state.Defending then Defending
@@ -534,16 +529,16 @@ module Character =
                 match Data.Value.Techs.TryGetValue tech with
                 | (true, techData) ->
                     if techData.Curative
-                    then enemiesHealthy |> Map.toValueList |> Gen.randomItemOpt
-                    else alliesHealthy |> Map.toValueList |> Gen.randomItemOpt
+                    then enemiesHealthy |> Map.toValueSeq |> Gen.randomItemOpt
+                    else alliesHealthy |> Map.toValueSeq |> Gen.randomItemOpt
                 | (false, _) -> None
-            | None -> alliesHealthy |> Map.toValueList |> Gen.randomItemOpt
+            | None -> alliesHealthy |> Map.toValueSeq |> Gen.randomItemOpt
 
         // update character with auto-battle and appropriate facing direction
         match targetOpt with
         | Some (target : Character) ->
             let sourceToTarget = target.Position - source.Position
-            let direction = if sourceToTarget.X > 0.0f then Rightward else Leftward // only two directions in this game
+            let direction = if sourceToTarget.X >= 0.0f then Rightward else Leftward // only two directions in this game
             let animationState = { source.CharacterAnimationState_ with Direction = direction }
             let autoBattle = { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
             { source with CharacterAnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
