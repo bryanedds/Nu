@@ -73,8 +73,8 @@ module Gen =
         static member random2 minValue ceiling =
             lock Lock (fun () -> Random.Next (minValue, ceiling))
 
-        /// Get a random element from a sequence if there are any elements..
-        static member randomItem seq =
+        /// Get a random element from a sequence if there are any elements or None.
+        static member randomItemOpt seq =
             let arr = Seq.toArray seq
             if Array.notEmpty arr
             then Some arr.[Gen.random1 arr.Length]
@@ -82,7 +82,7 @@ module Gen =
 
         /// Get a random element from a sequence or a default if sequence is empty.
         static member randomItemOrDefault default_ seq =
-            match Gen.randomItem seq with
+            match Gen.randomItemOpt seq with
             | Some item -> item
             | None -> default_
 
