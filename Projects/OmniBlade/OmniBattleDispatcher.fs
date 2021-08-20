@@ -663,26 +663,20 @@ module BattleDispatcher =
                         Left (DisplayHop { HopStart = source.Bottom; HopStop = hopStop })
                     | Cyclone ->
                         Left (DisplayHop { HopStart = source.Bottom; HopStop = target.BottomOffset2 })
-                    | Slash ->
-                        let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
-                        let displayCast = DisplayDimensionalCast (0L, sourceIndex)
-                        Right [cmd playCharge; cmd displayCast]
-                    | Fire | TechType.Flame | Ice | Snowball | Bolt | BoltBeam | Stone | Quake ->
-                        let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
-                        let displayCast = DisplayArcaneCast (0L, sourceIndex)
-                        Right [cmd playCharge; cmd displayCast]
-                    | Aura | Empower | Enlighten | Protect ->
-                        let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeHolySound)
-                        let displayCast = DisplayHolyCast (0L, sourceIndex)
-                        Right [cmd playCharge; cmd displayCast]
-                    | Weaken | Muddle | ConjureIfrit | Slow ->
-                        let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
-                        let displayCast = DisplayDimensionalCast (0L, sourceIndex)
-                        Right [cmd playCharge; cmd displayCast]
-                    | Purify ->
-                        let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeHolySound)
-                        let displayCast = DisplayHolyCast (0L, sourceIndex)
-                        Right [cmd playCharge; cmd displayCast]
+                    | _ ->
+                        match source.ArchetypeType with
+                        | Cleric ->
+                            let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeHolySound)
+                            let displayCast = DisplayHolyCast (0L, sourceIndex)
+                            Right [cmd playCharge; cmd displayCast]
+                        | Wizard ->
+                            let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
+                            let displayCast = DisplayArcaneCast (0L, sourceIndex)
+                            Right [cmd playCharge; cmd displayCast]
+                        | _ ->
+                            let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
+                            let displayCast = DisplayDimensionalCast (0L, sourceIndex)
+                            Right [cmd playCharge; cmd displayCast]
                 match effectOpt with
                 | Left hopEffect ->
                     withCmd hopEffect battle
