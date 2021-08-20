@@ -86,14 +86,6 @@ module Effects =
 
     let [<Literal>] EffectHistoryMaxDefault = Engine.DesiredFps // 1 second of effect history
 
-[<RequireQualifiedAccess>]
-module Math =
-
-    let [<Literal>] RadiansToDegrees = 57.2957795
-    let (*Literal*) DegreesToRadians = 1.0 / RadiansToDegrees
-    let (*Literal*) RadiansToDegreesF = single RadiansToDegrees
-    let (*Literal*) DegreesToRadiansF = single DegreesToRadians
-
 module Ecs =
 
     let [<Literal>] ArrayReserve = 256

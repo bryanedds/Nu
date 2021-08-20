@@ -265,7 +265,7 @@ module WorldModuleEntity =
                 let center = position + size * 0.5f
                 let corner = position + size
                 let centerToCorner = corner - center
-                let quaternion = Quaternion.CreateFromAxisAngle (Vector3.UnitZ, Constants.Math.DegreesToRadiansF * 45.0f)
+                let quaternion = Quaternion.CreateFromAxisAngle (Vector3.UnitZ, Math.degreesToRadians 45.0f)
                 let newSizeOver2 = v2Dup (Vector2.Transform (centerToCorner, quaternion)).Y
                 let newPosition = center - newSizeOver2
                 let newSize = newSizeOver2 * 2.0f
@@ -347,6 +347,7 @@ module WorldModuleEntity =
         static member internal getEntityFacets entity world = (World.getEntityState entity world).Facets
         static member internal getEntityPosition entity world = (World.getEntityState entity world).Transform.Position
         static member internal getEntitySize entity world = (World.getEntityState entity world).Transform.Size
+        static member internal getEntityAngle entity world = Math.radiansToDegrees (World.getEntityState entity world).Transform.Rotation
         static member internal getEntityRotation entity world = (World.getEntityState entity world).Transform.Rotation
         static member internal getEntityElevation entity world = (World.getEntityState entity world).Transform.Elevation
         static member internal getEntityFlags entity world = (World.getEntityState entity world).Transform.Flags
@@ -448,7 +449,12 @@ module WorldModuleEntity =
                     let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Center (valueInRef.Position + valueInRef.Size * 0.5f) entity world else world
                     let world = if positionChanged || sizeChanged then World.publishEntityChange Property? Bottom (valueInRef.Position + valueInRef.Size.WithY 0.0f * 0.5f) entity world else world
                     let world = if sizeChanged then World.publishEntityChange Property? Size valueInRef.Size entity world else world
-                    let world = if rotationChanged then World.publishEntityChange Property? Rotation valueInRef.Rotation entity world else world
+                    let world =
+                        if rotationChanged then
+                            let world = World.publishEntityChange Property? Angle (Math.radiansToDegrees valueInRef.Rotation) entity world
+                            let world = World.publishEntityChange Property? Rotation valueInRef.Rotation entity world
+                            world
+                        else world
                     let world = if elevationChanged then World.publishEntityChange Property? Elevation valueInRef.Elevation entity world else world
                     struct (changed, world)
                 else struct (changed, world)
@@ -465,6 +471,14 @@ module WorldModuleEntity =
             let mutable transform = (World.getEntityState entity world).Transform
             if v2Neq value transform.Size then
                 transform.Size <- value
+                World.setEntityTransformByRef (&transform, entity, world)
+            else (false, world)
+        
+        static member internal setEntityAngle value entity world =
+            let mutable transform = (World.getEntityState entity world).Transform
+            let radians = Math.degreesToRadians value
+            if radians <> transform.Rotation then
+                transform.Rotation <- radians
                 World.setEntityTransformByRef (&transform, entity, world)
             else (false, world)
         
@@ -1408,6 +1422,7 @@ module WorldModuleEntity =
         EntityGetters.Assign ("Center", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityCenter entity world })
         EntityGetters.Assign ("Bottom", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntityBottom entity world })
         EntityGetters.Assign ("Size", fun entity world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getEntitySize entity world })
+        EntityGetters.Assign ("Angle", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityAngle entity world })
         EntityGetters.Assign ("Rotation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityRotation entity world })
         EntityGetters.Assign ("Elevation", fun entity world -> { PropertyType = typeof<single>; PropertyValue = World.getEntityElevation entity world })
         EntityGetters.Assign ("Omnipresent", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityOmnipresent entity world })
@@ -1439,6 +1454,7 @@ module WorldModuleEntity =
         EntitySetters.Assign ("Center", fun property entity world -> World.setEntityCenter (property.PropertyValue :?> Vector2) entity world)
         EntitySetters.Assign ("Bottom", fun property entity world -> World.setEntityBottom (property.PropertyValue :?> Vector2) entity world)
         EntitySetters.Assign ("Size", fun property entity world -> World.setEntitySize (property.PropertyValue :?> Vector2) entity world)
+        EntitySetters.Assign ("Angle", fun property entity world -> World.setEntityAngle (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("Rotation", fun property entity world -> World.setEntityRotation (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("Elevation", fun property entity world -> World.setEntityElevation (property.PropertyValue :?> single) entity world)
         EntitySetters.Assign ("Omnipresent", fun property entity world -> World.setEntityOmnipresent (property.PropertyValue :?> bool) entity world)
