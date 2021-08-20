@@ -135,6 +135,7 @@ module Assets =
         let CutImage = asset<Image> PackageName "Cut"
         let LightCutImage = asset<Image> PackageName "LightCut"
         let CandleAnimationSheet = asset<Image> PackageName "Candle"
+        let StaticAnimationSheet = asset<Image> PackageName "Static"
         let FireAnimationSheet = asset<Image> PackageName "Fire"
         let BurnAnimationSheet = asset<Image> PackageName "Burn"
         let FlameAnimationSheet = asset<Image> PackageName "Flame"
