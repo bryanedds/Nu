@@ -134,6 +134,7 @@ module Assets =
         let ImpactSplashAnimationSheet = asset<Image> PackageName "ImpactSplash" // TODO: P1: Convert effect art.
         let CutImage = asset<Image> PackageName "Cut"
         let LightCutImage = asset<Image> PackageName "LightCut"
+        let CandleAnimationSheet = asset<Image> PackageName "Candle"
         let FireAnimationSheet = asset<Image> PackageName "Fire"
         let BurnAnimationSheet = asset<Image> PackageName "Burn"
         let FlameAnimationSheet = asset<Image> PackageName "Flame"

@@ -182,6 +182,20 @@ module Effects =
                 [|Circle (radius, 2.0f, 100L)|],
                 Nil) }
 
+    let makeArcaneCastEffect () =
+        let halfWidth = 50.0f
+        let altitude = halfWidth * 2.0f * 0.866f
+        let candle position = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.CandleAnimationSheet), v2i 16 20, 3, 3, 3L, Loop, [|Size (v2 64.0f 80.0f); position|], Nil)
+        { EffectName = "ArcaneCast"
+          LifeTimeOpt = Some 36L
+          Definitions = Map.empty
+          Content =
+            Contents
+                (Shift 0.0f,
+                 [|candle (PositionRelative (v2 0.0f altitude))
+                   candle (PositionRelative (v2 -halfWidth 0.0f))
+                   candle (PositionRelative (v2 halfWidth 0.0f))|]) }
+    
     let makeFireEffect position position2 =
         let fireSize = Size (v2 64.0f 64.0f)
         let activation timeOn timeOff = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = timeOn}; { LogicValue = false; LogicLength = timeOff }|])
