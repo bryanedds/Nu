@@ -806,11 +806,11 @@ module Math =
 
     /// Convert radians to degrees.
     let radiansToDegrees (radians : single) =
-        MathHelper.RadiansToDegrees radians
+        MathHelper.RadiansToDegrees -radians
 
     /// Convert degrees to radians.
     let degreesToRadians (degrees : single) =
-        MathHelper.DegreesToRadians degrees
+        MathHelper.DegreesToRadians -degrees
 
     /// Snap an int value to an offset.
     let snap offset value =

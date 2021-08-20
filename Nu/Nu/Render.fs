@@ -413,7 +413,7 @@ type [<ReferenceEquality; NoComparison>] SdlRenderer =
                 destRect.y <- int (-positionOffset.Y + eyeSize.Y * 0.5f) * Constants.Render.VirtualScalar - (int sizeView.Y * Constants.Render.VirtualScalar) // negation for right-handedness
                 destRect.w <- int sizeView.X * Constants.Render.VirtualScalar
                 destRect.h <- int sizeView.Y * Constants.Render.VirtualScalar
-                let rotation = double (Math.radiansToDegrees -transform.Rotation) // negation for right-handedness
+                let rotation = double (Math.radiansToDegrees transform.Rotation) // negation for right-handedness
                 let mutable rotationCenter = SDL.SDL_Point ()
                 rotationCenter.x <- int (sizeView.X * 0.5f) * Constants.Render.VirtualScalar
                 rotationCenter.y <- int (sizeView.Y * 0.5f) * Constants.Render.VirtualScalar
