@@ -89,6 +89,14 @@ module Battle =
         getAllies battle |>
         Map.filter (fun _ character -> character.IsWounded)
 
+    let getEnemiesHealthy battle =
+        getEnemies battle |>
+        Map.filter (fun _ character -> character.IsHealthy)
+
+    let getEnemiesWounded battle =
+        getEnemies battle |>
+        Map.filter (fun _ character -> character.IsWounded)
+
     let getTargets aimType battle =
         match aimType with
         | EnemyAim _ ->
@@ -122,15 +130,6 @@ module Battle =
     let getAlliesWoundedIndices battle =
         getAlliesWounded battle |>
         Map.toKeyList
-
-    let getAllyIndexRandom battle =
-        let alliesHealthyIndices = getAlliesHealthyIndices battle
-        List.item (Gen.random1 alliesHealthyIndices.Length) alliesHealthyIndices
-
-    let getEnemyIndexRandom battle =
-        let enemyIndices = getEnemyIndices battle
-        let enemyIndex = List.item (Gen.random1 enemyIndices.Length) enemyIndices
-        enemyIndex
 
     let addCharacter index character (battle : Battle) =
         { battle with Characters_ = Map.add index character battle.Characters_ }

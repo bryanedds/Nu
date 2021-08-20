@@ -327,13 +327,6 @@ module Character =
         character.ArchetypeType = Fighter &&
         Gen.random1 8 = 0
 
-    let evaluateAutoBattle (source : Character) (target : Character) =
-        let techOpt =
-            if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
-            then CharacterState.tryGetTechRandom source.CharacterState_
-            else None
-        { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
-
     let evaluateAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
         match aimType with
         | AnyAim healthy ->
@@ -417,6 +410,7 @@ module Character =
                 | Critical -> 1.333f
                 | Slash -> 1.5f
                 | TechType.Flame -> 1.667f
+                | Aura -> 0.5f
                 | _ -> 1.0f
             else 1.0f
         if techData.Curative then
@@ -522,12 +516,46 @@ module Character =
                 character
         else character
 
-    let autoBattle (source : Character) (target : Character) =
-        let sourceToTarget = target.Position - source.Position
-        let direction = if sourceToTarget.X > 0.0f then Rightward else Leftward // only two directions in this game
-        let animationState = { source.CharacterAnimationState_ with Direction = direction }
-        let autoBattle = evaluateAutoBattle source target
-        { source with CharacterAnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
+    let autoBattle (source : Character) alliesHealthy alliesWounded enemiesHealthy enemiesWounded =
+
+        // TODO: once techs have the ability to revive, check for that in the curative case.
+        ignore (enemiesWounded, alliesWounded)
+        
+        // randomly choose a tech type
+        let techOpt =
+            if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
+            then CharacterState.tryGetTechRandom source.CharacterState_
+            else None
+
+        // randomly choose a target
+        let targetOpt =
+            match techOpt with
+            | Some tech ->
+                match Data.Value.Techs.TryGetValue tech with
+                | (true, techData) ->
+                    if techData.Curative then
+                        if Map.notEmpty enemiesHealthy
+                        then Map.toValueList enemiesHealthy |> List.item (Gen.random1 enemiesHealthy.Count) |> Some
+                        else None
+                    else
+                        if Map.notEmpty alliesHealthy
+                        then Map.toValueList alliesHealthy |> List.item (Gen.random1 alliesHealthy.Count) |> Some
+                        else None
+                | (false, _) -> None
+            | None ->
+                if Map.notEmpty alliesHealthy
+                then Map.toValueList alliesHealthy |> List.item (Gen.random1 alliesHealthy.Count) |> Some
+                else None
+
+        // update character with auto-battle and appropriate facing direction
+        match targetOpt with
+        | Some (target : Character) ->
+            let sourceToTarget = target.Position - source.Position
+            let direction = if sourceToTarget.X > 0.0f then Rightward else Leftward // only two directions in this game
+            let animationState = { source.CharacterAnimationState_ with Direction = direction }
+            let autoBattle = { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt }
+            { source with CharacterAnimationState_ = animationState; AutoBattleOpt_ = Some autoBattle }
+        | None -> source
 
     let defend character =
         let characterState = character.CharacterState_
