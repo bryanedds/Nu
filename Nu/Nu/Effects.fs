@@ -127,6 +127,7 @@ module Effects =
         | Translation of Vector2
         | Offset of Vector2
         | Size of Vector2
+        | Angle of single
         | Rotation of single
         | Elevation of single
         | Inset of Vector4
@@ -140,6 +141,7 @@ module Effects =
         | Translations of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
         | Offsets of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
         | Sizes of TweenApplicator * TweenAlgorithm * Playback * Tween2KeyFrame array
+        | Angles of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
         | Rotations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
         | Elevations of TweenApplicator * TweenAlgorithm * Playback * TweenKeyFrame array
         | Insets of TweenApplicator * TweenAlgorithm * Playback * Tween4KeyFrame array
@@ -183,8 +185,8 @@ module Effects =
             "Rate " +
             "Shift " +
             "Expand Resource " +
-            "Expand Enabled PositionAbsolute PositionRelative Translation Offset Inset Size Rotation Elevation Color Glow Volume " +
-            "Expand Enableds Positions Translations Offsets Insets Sizes Rotations Elevations Colors Glows Volumes Aspects " +
+            "Expand Enabled PositionAbsolute PositionRelative Translation Offset Inset Size Angle Rotation Elevation Color Glow Volume " +
+            "Expand Enableds Positions Translations Offsets Insets Sizes Angles Rotations Elevations Colors Glows Volumes Aspects " +
             "Expand StaticSprite AnimatedSprite TextSprite SoundEffect Mount Repeat Emit Delay Segment Composite Tag Nil " +
             "View",
             "", "", "", "",
@@ -386,6 +388,7 @@ module EffectSystem =
             let translated = slice.Position + oriented
             { slice with Position = translated }
         | Size size -> { slice with Size = size }
+        | Angle degree -> { slice with Rotation = Math.degreesToRadians degree }
         | Rotation rotation -> { slice with Rotation = rotation }
         | Elevation elevation -> { slice with Elevation = elevation }
         | Offset offset -> { slice with Offset = offset }
@@ -425,6 +428,14 @@ module EffectSystem =
                 let tweened = tween Vector2.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
                 let applied = applyTween Vector2.Multiply Vector2.Divide slice.Size tweened applicator
                 { slice with Size = applied }
+            else slice
+        | Angles (applicator, algorithm, playback, keyFrames) ->
+            if Array.notEmpty keyFrames then
+                let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
+                let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
+                let tweened = tween (fun (x, y) -> x * y) keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
+                let applied = applyTween (fun (x, y) -> x * y) (fun (x, y) -> x / y) (Math.radiansToDegrees slice.Rotation) tweened applicator
+                { slice with Rotation = Math.degreesToRadians applied }
             else slice
         | Rotations (applicator, algorithm, playback, keyFrames) ->
             if Array.notEmpty keyFrames then
