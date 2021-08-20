@@ -63,6 +63,7 @@ module BattleDispatcher =
         | DisplayImpactSplash of int64 * CharacterIndex
         | DisplayCut of int64 * bool * CharacterIndex
         | DisplaySlashSpike of int64 * Vector2 * CharacterIndex
+        | DisplayArcaneCast of int64 * CharacterIndex
         | DisplayFire of int64 * CharacterIndex * CharacterIndex
         | DisplayFlame of int64 * CharacterIndex * CharacterIndex
         | DisplayIce of int64 * CharacterIndex
@@ -668,7 +669,7 @@ module BattleDispatcher =
                         Right [cmd playCharge; cmd displayCast]
                     | Fire | TechType.Flame | Ice | Snowball | Bolt | BoltBeam | Stone | Quake ->
                         let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
-                        let displayCast = DisplayDimensionalCast (0L, sourceIndex)
+                        let displayCast = DisplayArcaneCast (0L, sourceIndex)
                         Right [cmd playCharge; cmd displayCast]
                     | Aura | Empower | Enlighten | Protect ->
                         let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeHolySound)
@@ -1040,6 +1041,11 @@ module BattleDispatcher =
                     just world
                 | None -> just world
 
+            | DisplayArcaneCast (delay, sourceIndex) ->
+                match Battle.tryGetCharacter sourceIndex battle with
+                | Some source -> displayEffect delay (v2 300.0f 300.0f) (Bottom (source.Bottom - v2 0.0f 120.0f)) (Effects.makeArcaneCastEffect ()) world |> just
+                | None -> just world
+            
             | DisplayFire (delay, sourceIndex, targetIndex) ->
                 match Battle.tryGetCharacter sourceIndex battle with
                 | Some source ->
