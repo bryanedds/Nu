@@ -324,6 +324,7 @@ type ArchetypeType =
     | Tortoise
     | Robot
     | Harpy
+    | Avian
     | Minotaur
     | Dragon
     | Troll
@@ -331,7 +332,6 @@ type ArchetypeType =
     | Ogre
     | Djinn
     | Naga
-    | Avian
     | Armoros
     | Golem
     | Jack

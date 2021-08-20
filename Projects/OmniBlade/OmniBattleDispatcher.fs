@@ -352,9 +352,11 @@ module BattleDispatcher =
                         else character
                     let character =
                         if Character.isReadyForAutoBattle character then
-                            let targetIndex = Battle.getAllyIndexRandom battle
-                            let target = Battle.getCharacter targetIndex battle
-                            Character.autoBattle character target
+                            let alliesHealthy = Battle.getAlliesHealthy battle
+                            let alliesWounded = Battle.getAlliesWounded battle
+                            let enemiesHealthy = Battle.getEnemiesHealthy battle
+                            let enemiesWounded = Battle.getEnemiesWounded battle
+                            Character.autoBattle character alliesHealthy alliesWounded enemiesHealthy enemiesWounded
                         else character
                     character)
                     battle
