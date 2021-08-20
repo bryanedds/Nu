@@ -185,7 +185,8 @@ module Effects =
     let makeArcaneCastEffect () =
         let halfWidth = 50.0f
         let altitude = halfWidth * 2.0f * 0.866f
-        let candle position = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.CandleAnimationSheet), v2i 16 20, 3, 3, 3L, Loop, [|Size (v2 64.0f 80.0f); position|], Nil)
+        let candle position = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.CandleAnimationSheet), v2i 16 20, 3, 3, 5L, Loop, [|Size (v2 64.0f 80.0f); position|], Nil)
+        let staticEffect position angle = AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.StaticAnimationSheet), v2i 64 64, 5, 5, 3L, Loop, [|Size (v2 128.0f 128.0f); position; angle|], Nil)
         { EffectName = "ArcaneCast"
           LifeTimeOpt = Some 36L
           Definitions = Map.empty
@@ -194,7 +195,10 @@ module Effects =
                 (Shift 0.0f,
                  [|candle (PositionRelative (v2 0.0f altitude))
                    candle (PositionRelative (v2 -halfWidth 0.0f))
-                   candle (PositionRelative (v2 halfWidth 0.0f))|]) }
+                   candle (PositionRelative (v2 halfWidth 0.0f))
+                   staticEffect (PositionRelative (v2 0.0f 0.0f)) (Angle 90.0f)
+                   staticEffect (PositionRelative (v2 -25.0f 50.0f)) (Angle 30.0f)
+                   staticEffect (PositionRelative (v2 25.0f 50.0f)) (Angle -30.0f)|]) }
     
     let makeFireEffect position position2 =
         let fireSize = Size (v2 64.0f 64.0f)
