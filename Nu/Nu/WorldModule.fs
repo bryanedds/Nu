@@ -459,6 +459,10 @@ module WorldModule =
         static member trySetWindowFullScreen fullScreen world =
             World.updateAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
 
+        /// Check whether the world should sleep rather than run.
+        static member shouldSleep world =
+            World.getAmbientStateBy AmbientState.shouldSleep world
+
         static member internal getSymbolStoreBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolStoreBy by) world
 

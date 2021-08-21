@@ -155,9 +155,19 @@ type [<ReferenceEquality; NoComparison>] SdlAudioPlayer =
             | WavAsset _ ->
                 Log.info ("Cannot play wav file as song '" + scstring song + "'.")
             | OggAsset oggAsset ->
-                SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play
+                // NOTE: this code will get the accurate song start time when SDL_mixer.Mix_GetMusicLoopLengthTime gets implemented...
+                //let songLength = SDL_mixer.Mix_GetMusicLoopLengthTime oggAsset
+                //let songStart =
+                //    if songLength < 0.0 // NOTE: may be -1.0 if duration query is unsupported.
+                //    then playSongMessage.Start - playSongMessage.Start % songLength
+                //    else 0.0
+                SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play.
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, max 50 playSongMessage.FadeInMs, playSongMessage.Start) |> ignore // Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a short min fade is used instead...
+                match SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, max Constants.Audio.FadeInMinimum playSongMessage.FadeInMs, playSongMessage.Start) with
+                | -1 ->
+                    // HACK: start time exceeded length of track, so starting over.
+                    SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, max Constants.Audio.FadeInMinimum playSongMessage.FadeInMs, 0.0) |> ignore
+                | _ -> ()
                 audioPlayer.CurrentSongOpt <- Some (playSongMessage, oggAsset)
         | None ->
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")

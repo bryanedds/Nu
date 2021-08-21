@@ -613,7 +613,6 @@ module FieldDispatcher =
 
                 // update spirits
                 let (signals, field) =
-#if !DEV_FIELD
                     if  field.Menu.MenuState = MenuClosed &&
                         Cue.notInterrupting field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
@@ -623,18 +622,17 @@ module FieldDispatcher =
                         match Field.advanceSpirits field world with
                         | Left (battleData, field) ->
                             let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
+                            let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
+                            let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                             let battle = Battle.makeFromTeam field.Inventory prizePool field.Team battleData (World.getTickTime world)
-                            let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
+                            let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let field = Field.updateBattleOpt (constant (Some battle)) field
                             let fade = cmd (FadeOutSong 1000)
                             let beastGrowl = cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound))
                             (fade :: beastGrowl :: signals, field)
                         | Right field -> (signals, field)
                     else (signals, field)
-#else
-                    (signals, field)
-#endif
 
                 // fin
                 (signals, field)
@@ -850,10 +848,12 @@ module FieldDispatcher =
                 | Some battleData ->
                     let time = World.getTickTime world
                     let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
+                    let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
+                    let startTime = clockTime - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
                     let battle = Battle.makeFromTeam field.Inventory prizePool (Field.getParty field) battleData time
                     let field = Field.clearSpirits field
-                    let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
+                    let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                     let field = Field.updateBattleOpt (constant (Some battle)) field
                     withCmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
                 | None -> just field
@@ -902,22 +902,34 @@ module FieldDispatcher =
                     match (fieldData.FieldSongOpt, World.getCurrentSongOpt world) with
                     | (Some fieldSong, Some currentSong) ->
                         if not (AssetTag.equals fieldSong currentSong.Song) then
-                            let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
-                            let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
-                            let startTime = clockTime - playTime
-                            let fadeIn = if startTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
-                            let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
+                            let (playTime, startTime) =
+                                let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
+                                match field.FieldSongTimeOpt with
+                                | Some playTime ->
+                                    let deltaTime = clockTime - playTime
+                                    if playTime < Constants.Audio.SongResumptionMaximum
+                                    then (playTime, deltaTime)
+                                    else (0L, clockTime)
+                                | None -> (0L, clockTime)
+                            let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
+                            let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let world = screen.SetField field world
-                            withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double startTime / 1000.0, fieldSong)) world
+                            withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
                         else just world
                     | (Some fieldSong, None) ->
-                        let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
-                        let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
-                        let startTime = clockTime - playTime
-                        let fadeIn = if startTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
-                        let field = Field.updateFieldSongTimeOpt (constant (Some clockTime)) field
+                        let (playTime, startTime) =
+                            let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
+                            match field.FieldSongTimeOpt with
+                            | Some playTime ->
+                                let deltaTime = clockTime - playTime
+                                if playTime < Constants.Audio.SongResumptionMaximum
+                                then (playTime, deltaTime)
+                                else (0L, clockTime)
+                            | None -> (0L, clockTime)
+                        let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInMs else 0
+                        let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                         let world = screen.SetField field world
-                        withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double startTime / 1000.0, fieldSong)) world
+                        withCmd (PlaySong (fadeIn, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, double playTime / 1000.0, fieldSong)) world
                     | (None, _) -> just world
                 | (false, _) -> just world
 

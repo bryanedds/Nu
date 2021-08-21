@@ -192,6 +192,15 @@ module AmbientState =
         | Some deps -> { state with SdlDepsOpt = Some (SdlDeps.trySetWindowFullScreen fullScreen deps) }
         | None -> state
 
+    /// Check whether we should sleep rather than run.
+    let shouldSleep state =
+        match tryGetWindowFlags state with
+        | Some flags ->
+            let focused = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_INPUT_FOCUS <> 0u
+            let fullScreen = flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> 0u
+            not focused && fullScreen
+        | None -> false
+
     /// Get the margin around the camera eye given the display mode's full screen state and resolution.
     let getEyeMargin (eyeSize : Vector2) state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
