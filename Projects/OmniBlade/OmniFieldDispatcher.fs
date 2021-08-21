@@ -500,12 +500,12 @@ module FieldDispatcher =
                             match shop.ShopState with
                             | ShopBuying ->
                                 match Map.tryFind shop.ShopType Data.Value.Shops with
-                                | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 10 |> Map.map (fun _ (i, item) -> (i, (item, None)))
+                                | Some shopData -> shopData.ShopItems |> List.indexed |> pageItems shop.ShopPage 8 |> Map.map (fun _ (i, item) -> (i, (item, None)))
                                 | None -> Map.empty
                             | ShopSelling ->
                                 inventory.Items |> Map.toSeq |> Seq.sortBy sorter |> Seq.index |>
                                 Seq.choose (function (_, (Equipment _, _) as item) | (_, (Consumable _, _) as item) -> Some item | (_, (KeyItem _, _)) | (_, (Stash _, _)) -> None) |>
-                                pageItems shop.ShopPage 10 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
+                                pageItems shop.ShopPage 8 |> Map.map (fun _ (i, (item, count)) -> (i, (item, Some count)))
                         | None -> Map.empty)
                 (fun i selectionLens _ ->
                     let x = if i < columns then position.X else position.X + 368.0f
