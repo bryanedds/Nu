@@ -310,7 +310,8 @@ module Character =
 
     let isReadyForAutoBattle character =
         Option.isNone character.AutoBattleOpt_ &&
-        character.IsEnemy
+        character.IsEnemy &&
+        character.ActionTime >= 30.0f
 
     let isAutoTeching character =
         match character.AutoBattleOpt_ with
