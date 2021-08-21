@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open System.IO
+open System.Threading
 open System.Threading.Tasks
 open FSharpx.Collections
 open SDL2
@@ -846,7 +847,7 @@ module WorldModule2 =
                 SDL.SDL_SetRenderDrawColor (renderContext, r, g, b, 255uy) |> ignore
                 SDL.SDL_RenderClear renderContext |> ignore
             renderer.Render eyeCenter eyeSize eyeMargin renderMessages
-            if Environment.OSVersion.Platform <> PlatformID.Unix then // render flush not likely availble on linux SDL2...
+            if Environment.OSVersion.Platform <> PlatformID.Unix then // render flush not likely available on linux SDL2...
                 SDL.SDL_RenderFlush renderContext |> ignore
             SDL.SDL_RenderPresent renderContext
 
@@ -861,6 +862,7 @@ module WorldModule2 =
         static member runWithoutCleanUp runWhile preProcess postProcess sdlDeps liveness (rendererThreadOpt : Task option) (audioPlayerThreadOpt : Task option) world =
             TotalTimer.Start ()
             if runWhile world then
+                if World.shouldSleep world then Thread.Sleep (1000 / Constants.Engine.DesiredFps) // don't let game run too fast while full screen unfocused
                 PreFrameTimer.Start ()
                 let world = preProcess world
                 let world = World.preFrame world
