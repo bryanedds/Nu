@@ -383,15 +383,21 @@ module Effects =
                      StaticSprite (Resource (AssetTag.toPair Assets.Battle.ElectronGreenImage), [|orbitV; electronSize; positionAdjustY|], Nil);
                      Emit (Shift 0.0f, Rate 1.0f, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|])}
     
-    let makeXDownEffect powerDown =
-        let image = if powerDown then Assets.Battle.PowerImage else Assets.Battle.ShieldImage
+    let makeDebuffEffect statusType =
+        let image =
+            match statusType with
+            | Power (_, _) -> Assets.Battle.PowerDebuffImage
+            | Magic (_, _) -> Assets.Battle.MagicDebuffImage
+            | Shield (_, _) -> Assets.Battle.ShieldDebuffImage
+            | Time _ -> Assets.Battle.TimeDebuffImage
+            | _ -> Assets.Default.ImageEmpty
         let shrink =
             Sizes
                (Set, EaseIn, Once,
                 [|{ TweenValue = v2 96.0f 96.0f; TweenLength = 20L }
                   { TweenValue = v2 96.0f 96.0f; TweenLength = 10L }
                   { TweenValue = v2 48.0f 48.0f; TweenLength = 20L }|])
-        { EffectName = "Weaken"
+        { EffectName = "Debuff"
           LifeTimeOpt = Some 50L
           Definitions = Map.empty
           Content =

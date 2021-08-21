@@ -120,6 +120,7 @@ module Assets =
         let FlameSound = asset<Sound> PackageName "Flame"
         let ThunderSound = asset<Sound> PackageName "Thunder"
         let ExplosionSound = asset<Sound> PackageName "Explosion"
+        let DebuffSound = asset<Sound> PackageName "Debuff"
         let FieldSong = { FadeInMs = 0; FadeOutMs = Constants.Audio.FadeOutMsDefault; Volume = Constants.Audio.SongVolumeDefault; Start = 0.0; Song = asset<Song> PackageName "Field" }
 
     [<RequireQualifiedAccess>]
@@ -149,6 +150,8 @@ module Assets =
         let NonLocationBlueImage = asset<Image> PackageName "NonLocationBlue"
         let ElectronGreenImage = asset<Image> PackageName "ElectronGreen"
         let NonLocationGreenImage = asset<Image> PackageName "NonLocationGreen"
-        let ShieldImage = asset<Image> PackageName "Shield"
-        let PowerImage = asset<Image> PackageName "Power"
+        let PowerDebuffImage = asset<Image> PackageName "PowerDebuff"
+        let MagicDebuffImage = asset<Image> PackageName "MagicDebuff"
+        let ShieldDebuffImage = asset<Image> PackageName "ShieldDebuff"
+        let TimeDebuffImage = asset<Image> PackageName "TimeDebuff"
         let FireSpinAnimationSheet = asset<Image> PackageName "FireSpin"
