@@ -235,6 +235,21 @@ module Battle =
             (techData.TechCost, Character.evaluateTechMove techData source target characters)
         | None -> (0, Map.empty)
 
+    let updateHitPoints characterIndex cancelled affectsWounded hitPointsChange battle =
+        let alliesHealthy = getAlliesHealthy battle
+        let character = getCharacter characterIndex battle
+        let character = Character.updateHitPoints (fun hitPoints -> (cancelled, hitPoints + hitPointsChange)) affectsWounded alliesHealthy character
+        updateCharacter (constant character) characterIndex battle
+
+    let updateStatuses characterIndex added removed battle =
+        updateCharacter (Character.applyStatusChanges added removed) characterIndex battle
+
+    let updateTechPoints characterIndex techPointsChange battle =
+        updateCharacter (Character.updateTechPoints ((+) techPointsChange)) characterIndex battle
+
+    let applyStatusChanges characterIndex added removed battle =
+        updateCharacter (Character.applyStatusChanges added removed) characterIndex battle
+
     let rec private tryRandomizeEnemy attempts index enemy (layout : Either<unit, (int * EnemyType) option> array array) =
         if attempts < 10000 then
             let (w, h) = (layout.Length, layout.[0].Length)
