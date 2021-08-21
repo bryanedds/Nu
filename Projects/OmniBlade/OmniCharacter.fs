@@ -529,10 +529,10 @@ module Character =
                 match Data.Value.Techs.TryGetValue tech with
                 | (true, techData) ->
                     if techData.Curative
-                    then enemiesHealthy |> Map.toValueSeq |> Gen.randomItemOpt
-                    else alliesHealthy |> Map.toValueSeq |> Gen.randomItemOpt
+                    then Gen.randomValueOpt enemiesHealthy
+                    else Gen.randomValueOpt alliesHealthy
                 | (false, _) -> None
-            | None -> alliesHealthy |> Map.toValueSeq |> Gen.randomItemOpt
+            | None -> Gen.randomValueOpt alliesHealthy
 
         // update character with auto-battle and appropriate facing direction
         match targetOpt with
