@@ -516,13 +516,13 @@ module Character =
         // TODO: once techs have the ability to revive, check for that in the curative case.
         ignore (enemiesWounded, alliesWounded)
         
-        // randomly choose a tech type
+        // attempt to randomly choose a tech type
         let techOpt =
             if Gen.randomf < Option.getOrDefault 0.0f source.CharacterState_.TechProbabilityOpt
             then CharacterState.tryGetTechRandom source.CharacterState_
             else None
 
-        // randomly choose a target
+        // attempt to randomly choose a target
         let targetOpt =
             match techOpt with
             | Some tech ->
@@ -534,7 +534,7 @@ module Character =
                 | (false, _) -> None
             | None -> Gen.randomValueOpt alliesHealthy
 
-        // update character with auto-battle and appropriate facing direction
+        // attempt to update character with auto-battle and appropriate facing direction
         match targetOpt with
         | Some (target : Character) ->
             let sourceToTarget = target.Position - source.Position
