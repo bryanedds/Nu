@@ -446,32 +446,36 @@ module FieldDispatcher =
             Content.association Gen.name []
                 [Content.button Gen.name
                    [Entity.PositionLocal == position; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "T"
+                    Entity.UpImage == asset "Field" "TeamButtonUp"
+                    Entity.DownImage == asset "Field" "TeamButtonDown"
                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTeam _ -> false | _ -> true
                     Entity.ClickEvent ==> msg MenuTeamOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 80.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "I"
+                    Entity.UpImage == asset "Field" "InventoryButtonUp"
+                    Entity.DownImage == asset "Field" "InventoryButtonDown"
                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuItem _ -> false | _ -> true
                     Entity.ClickEvent ==> msg MenuItemOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 160.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "E"
+                    Entity.UpImage == asset "Field" "TechButtonUp"
+                    Entity.DownImage == asset "Field" "TechButtonDown"
                     Entity.EnabledLocal <== field --> fun field -> match field.Menu.MenuState with MenuTech _ -> false | _ -> true
                     Entity.ClickEvent ==> msg MenuTechOpen]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 240.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "P" // party
-                    Entity.EnabledLocal == false
+                    Entity.UpImage == asset "Field" "OptionButtonUp"
+                    Entity.DownImage == asset "Field" "OptionButtonDown"
                     Entity.ClickEvent ==> msg Nop]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 320.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "O" // options - includes quit to main menu
-                    Entity.EnabledLocal == false
+                    Entity.UpImage == asset "Field" "HelpButtonUp"
+                    Entity.DownImage == asset "Field" "HelpButtonDown"
                     Entity.ClickEvent ==> msg Nop]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
-                    Entity.Text == "X"
+                    Entity.UpImage == asset "Field" "CloseButtonUp"
+                    Entity.DownImage == asset "Field" "CloseButtonDown"
                     Entity.ClickEvent ==> msg MenuClose]]
 
         static let team (position : Vector2) elevation rows (field : Lens<Field, World>) filter fieldMsg =
@@ -479,12 +483,14 @@ module FieldDispatcher =
                 (fun field _ -> (field.Team, field.Menu))
                 (fun (team, menu) _ -> Map.map (fun _ teammate -> (teammate, menu)) team)
                 (fun index teammateAndMenu _ ->
-                    let x = position.X + if index >= rows then 256.0f + 48.0f else 0.0f
-                    let y = position.Y - single (index % rows) * 72.0f
+                    let x = position.X + if index >= rows then 252.0f + 48.0f else 0.0f
+                    let y = position.Y - single (index % rows) * 80.0f
                     Content.button Gen.name
-                        [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 256.0f 72.0f
+                        [Entity.PositionLocal == v2 x y; Entity.ElevationLocal == elevation; Entity.Size == v2 252.0f 72.0f
                          Entity.EnabledLocal <== teammateAndMenu --> fun (teammate, menu) -> filter teammate menu
                          Entity.Text <== teammateAndMenu --> fun (teammate, _) -> CharacterType.getName teammate.CharacterType
+                         Entity.UpImage == Assets.Gui.ButtonBigUpImage
+                         Entity.DownImage == Assets.Gui.ButtonBigDownImage
                          Entity.ClickEvent ==> msg (fieldMsg index)])
 
         static let items (position : Vector2) elevation columns field fieldMsg =
@@ -520,6 +526,8 @@ module FieldDispatcher =
                                 itemName + String (Array.create (17 - itemName.Length) ' ') + "x" + string count
                             | _ -> ItemType.getName itemType
                          Entity.EnabledLocal <== selectionLens --> fun (_, (itemType, _)) -> match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
+                         Entity.UpImage == Assets.Gui.ButtonBigUpImage
+                         Entity.DownImage == Assets.Gui.ButtonBigDownImage
                          Entity.ClickEvent ==> msg (fieldMsg selectionLens)])
 
         static let techs (position : Vector2) elevation field fieldMsg =
@@ -540,6 +548,8 @@ module FieldDispatcher =
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.Margins == v2 16.0f 0.0f
                          Entity.Text <== techLens --> scstringm
                          Entity.EnabledLocal == false
+                         Entity.UpImage == Assets.Gui.ButtonBigUpImage
+                         Entity.DownImage == Assets.Gui.ButtonBigDownImage
                          Entity.ClickEvent ==> msg (fieldMsg i)])
 
         override this.Channel (_, field) =
@@ -1237,12 +1247,16 @@ module FieldDispatcher =
                             Entity.Text == "Leave"
                             Entity.ClickEvent ==> msg ShopLeave]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 24.0f 18.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
+                           [Entity.PositionLocal == v2 24.0f 18.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 64.0f 64.0f
                             Entity.Text == "<"
+                            Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                            Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                             Entity.ClickEvent ==> msg ShopPageUp]
                         Content.button Gen.name
-                           [Entity.PositionLocal == v2 822.0f 18.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 48.0f 64.0f
+                           [Entity.PositionLocal == v2 804.0f 18.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v2 64.0f 64.0f
                             Entity.Text == ">"
+                            Entity.UpImage == Assets.Gui.ButtonSmallUpImage
+                            Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                             Entity.ClickEvent ==> msg ShopPageDown]
                         Content.text Gen.name
                            [Entity.PositionLocal == v2 352.0f 3.0f; Entity.ElevationLocal == 1.0f
