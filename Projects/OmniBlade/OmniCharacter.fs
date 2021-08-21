@@ -410,19 +410,19 @@ module Character =
             else 1.0f
         if techData.Curative then
             let healing = single efficacy * techData.Scalar * specialScalar |> int |> max 1
-            (target.CharacterIndex, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
+            (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && isAutoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingDamageScalar else 1.0f
             let damage = single (efficacy - shield) * techData.Scalar * specialScalar * defendingScalar |> int |> max 1
-            (target.CharacterIndex, cancelled, -damage, techData.StatusesAdded, techData.StatusesRemoved)
+            (target.CharacterIndex, cancelled, false, -damage, techData.StatusesAdded, techData.StatusesRemoved)
 
     let evaluateTechMove techData source target characters =
         let targets = evaluateTargetType techData.TargetType source target characters
         Map.fold (fun results _ target ->
-            let (index, cancelled, delta, added, removed) = evaluateTech techData source target
-            Map.add index (cancelled, delta, added, removed) results)
+            let (index, cancelled, affectsWounded, delta, added, removed) = evaluateTech techData source target
+            Map.add index (cancelled, affectsWounded, delta, added, removed) results)
             Map.empty
             targets
 
@@ -466,12 +466,12 @@ module Character =
         { character with CharacterState_ = characterState }
 
     let updateHitPoints updater affectWounded alliesHealthy character =
-        let (characterState, cancel) =
+        let (cancel, characterState) =
             if character.CharacterState_.IsHealthy || affectWounded then
-                let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
+                let (cancel, hitPoints) = updater character.CharacterState_.HitPoints
                 let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
-                (characterState, cancel)
-            else (character.CharacterState_, false)
+                (cancel, characterState)
+            else (false, character.CharacterState_)
         let autoBattleOpt =
             match character.AutoBattleOpt_ with
             | Some _ when cancel ->
