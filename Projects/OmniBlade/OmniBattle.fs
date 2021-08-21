@@ -7,6 +7,7 @@ open System.Numerics
 open FSharpx.Collections
 open Prime
 open Nu
+open OmniBlade
 
 type BattleState =
     | BattleReady of int64
