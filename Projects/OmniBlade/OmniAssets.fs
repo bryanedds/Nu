@@ -41,8 +41,12 @@ module Assets =
         let DialogThickImage = asset<Image> PackageName "DialogThick" // TODO: P1: Convert art.
         let DialogXLImage = asset<Image> PackageName "DialogXL" // TODO: P1: Convert art.
         let DialogXXLImage = asset<Image> PackageName "DialogXXL" // TODO: P1: Convert art.
+        let ButtonSmallUpImage = asset<Image> PackageName "ButtonSmallUp" // TODO: P1: Convert art.
+        let ButtonSmallDownImage = asset<Image> PackageName "ButtonSmallDown" // TODO: P1: Convert art.
         let ButtonUpImage = asset<Image> PackageName "ButtonUp" // TODO: P1: Convert art.
         let ButtonDownImage = asset<Image> PackageName "ButtonDown" // TODO: P1: Convert art.
+        let ButtonBigUpImage = asset<Image> PackageName "ButtonBigUp" // TODO: P1: Convert art.
+        let ButtonBigDownImage = asset<Image> PackageName "ButtonBigDown" // TODO: P1: Convert art.
         let ButtonShortUpImage = asset<Image> PackageName "ButtonShortUp" // TODO: P1: Convert art.
         let ButtonShortDownImage = asset<Image> PackageName "ButtonShortDown" // TODO: P1: Convert art.
         let AffirmSound = asset<Sound> PackageName "Affirm"
@@ -120,6 +124,7 @@ module Assets =
         let FlameSound = asset<Sound> PackageName "Flame"
         let ThunderSound = asset<Sound> PackageName "Thunder"
         let ExplosionSound = asset<Sound> PackageName "Explosion"
+        let DebuffSound = asset<Sound> PackageName "Debuff"
         let FieldSong = { FadeInMs = 0; FadeOutMs = Constants.Audio.FadeOutMsDefault; Volume = Constants.Audio.SongVolumeDefault; Start = 0.0; Song = asset<Song> PackageName "Field" }
 
     [<RequireQualifiedAccess>]
@@ -149,6 +154,8 @@ module Assets =
         let NonLocationBlueImage = asset<Image> PackageName "NonLocationBlue"
         let ElectronGreenImage = asset<Image> PackageName "ElectronGreen"
         let NonLocationGreenImage = asset<Image> PackageName "NonLocationGreen"
-        let ShieldImage = asset<Image> PackageName "Shield"
-        let PowerImage = asset<Image> PackageName "Power"
+        let PowerDebuffImage = asset<Image> PackageName "PowerDebuff"
+        let MagicDebuffImage = asset<Image> PackageName "MagicDebuff"
+        let ShieldDebuffImage = asset<Image> PackageName "ShieldDebuff"
+        let TimeDebuffImage = asset<Image> PackageName "TimeDebuff"
         let FireSpinAnimationSheet = asset<Image> PackageName "FireSpin"
