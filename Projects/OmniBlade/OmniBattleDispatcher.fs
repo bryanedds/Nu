@@ -73,7 +73,7 @@ module BattleDispatcher =
         | DisplayAura of int64 * CharacterIndex
         | DisplayProtect of int64 * CharacterIndex
         | DisplayDimensionalCast of int64 * CharacterIndex
-        | DisplayXDown of int64 * bool * CharacterIndex
+        | DisplayDebuff of int64 * StatusType * CharacterIndex
         | DisplayConjureIfrit of int64
         | DisplayHop of Hop
         | DisplayCircle of Vector2 * single
@@ -813,11 +813,15 @@ module BattleDispatcher =
                 | Weaken ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayXDown (0L, false, targetIndex)) battle // TODO: use new sound and effect.
+                    let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
+                    let displayDebuff = DisplayDebuff (0L, Power (false, false), targetIndex)
+                    withCmds [playDebuff; displayDebuff] battle
                 | Muddle ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayXDown (0L, true, targetIndex)) battle // TODO: use new sound and effect.
+                    let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
+                    let displayDebuff = DisplayDebuff (0L, Magic (false, false), targetIndex)
+                    withCmds [playDebuff; displayDebuff] battle
                 | ConjureIfrit ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
@@ -825,7 +829,9 @@ module BattleDispatcher =
                 | Slow ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayXDown (0L, true, targetIndex)) battle // TODO: use new sound and effect.
+                    let playDebuff = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DebuffSound)
+                    let displayDebuff = DisplayDebuff (0L, Time false, targetIndex)
+                    withCmds [playDebuff; displayDebuff] battle
                 | Purify ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
@@ -1096,9 +1102,9 @@ module BattleDispatcher =
                 | Some source -> displayEffect delay (v2 48.0f 48.0f) (Bottom source.Bottom) (Effects.makeDimensionalCastEffect ()) world |> just
                 | None -> just world
 
-            | DisplayXDown (delay, powerDown, targetIndex) ->
+            | DisplayDebuff (delay, powerDown, targetIndex) ->
                 match Battle.tryGetCharacter targetIndex battle with
-                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeXDownEffect powerDown) world |> just
+                | Some target -> displayEffect delay (v2 48.0f 48.0f) (Bottom target.Bottom) (Effects.makeDebuffEffect powerDown) world |> just
                 | None -> just world
 
             | DisplayConjureIfrit delay ->
