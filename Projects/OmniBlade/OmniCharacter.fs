@@ -465,7 +465,7 @@ module Character =
         let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
         { character with CharacterState_ = characterState }
 
-    let updateHitPoints updater affectWounded character =
+    let updateHitPoints updater affectWounded alliesHealthy character =
         let (characterState, cancel) =
             if character.CharacterState_.IsHealthy || affectWounded then
                 let (hitPoints, cancel) = updater character.CharacterState_.HitPoints
@@ -474,7 +474,10 @@ module Character =
             else (character.CharacterState_, false)
         let autoBattleOpt =
             match character.AutoBattleOpt_ with
-            | Some autoBattle when cancel -> Some { autoBattle with AutoTechOpt = None }
+            | Some _ when cancel ->
+                match Gen.randomKeyOpt alliesHealthy with
+                | Some ally -> Some { AutoTarget = ally; AutoTechOpt = None }
+                | None -> None
             | autoBattleOpt -> autoBattleOpt // use existing state if not cancelled
         { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt }
 
