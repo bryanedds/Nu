@@ -39,26 +39,28 @@ Monk,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,
 Tortoise,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attack w/ High Defense with Buff magic.
 Robot,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
 Harpy,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,
-Avian,1.5,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[[1 Aura]],LargeStature,Strong physical attacks with Curative magic.
-Minotaur,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash]],LargeStature,Physical attacks.
-Dragon,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attacks and Elemental magic.
-Troll,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Buff magic.
-Mare,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
-Ogre,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Curative magic.
-Djinn,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Elemental and Status magic.
-Naga,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
-Armoros,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[2 Slash] [3 DarkCritical]],LargeStature,Strong physical attacks with Buff magic.
-Golem,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Earth magic.
-Jack,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Fire and Debuff magic.
-Trap,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Debuff magic.
-Vampire,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Status magic.
-Cerebus,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks w/ Countering.
-Hydra,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
-FireElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Fire magic.
-IceElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Ice magic.
-LightningElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
-EarthElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Earth magic.
-ShamanBig,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Elemental magic.
-RobotBig,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
-Dinoman,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Buff magic.
-Arachnos,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[3 ConjureIfrit] [4 Slow]],HugeStature,Strong physical attacks with Debuff magic.
+Jack,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Fire and Debuff magic.
+Avian,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[[1 Aura]],LargeStature,Strong physical attacks with Curative magic.
+Troll,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Strong physical attacks with Buff magic.
+Mare,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
+Djinn,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Elemental and Status magic.
+Naga,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
+Jackorider,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Fire and Debuff magic.
+Trap,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Strong physical attacks with Debuff magic.
+Vampire,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Status magic.
+Cerebus,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Strong physical attacks w/ Countering.
+Hydra,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
+ShamanBig,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Elemental magic.
+FireElemental,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack and Fire magic.
+IceElemental,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack and Ice magic.
+LightningElemental,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
+EarthElemental,1.4,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack and Earth magic.
+Minotaur,1.8,1.7,1.7,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash]],LargeStature,Physical attacks.
+Dragon,1.8,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attacks and Elemental magic.
+Ogre,1.8,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Curative magic.
+HydraBig,1.8,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
+Armoros,1.8,1.7,1.7,1,1,2,2,Melee,Pelt,[[2 Slash] [3 DarkCritical]],LargeStature,Strong physical attacks with Buff magic.
+Golem,1.8,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Earth magic.
+RobotBig,1.8,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
+Dinoman,1.8,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Buff magic.
+Arachnos,1.8,1.7,1.7,1,1,2,2,Melee,Pelt,[[3 ConjureIfrit] [4 Slow]],HugeStature,Strong physical attacks with Debuff magic.
