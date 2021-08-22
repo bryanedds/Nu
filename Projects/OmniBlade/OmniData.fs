@@ -324,26 +324,28 @@ type ArchetypeType =
     | Tortoise
     | Robot
     | Harpy
+    | Jack
     | Avian
-    | Minotaur
-    | Dragon
     | Troll
     | Mare
-    | Ogre
     | Djinn
     | Naga
-    | Armoros
-    | Golem
-    | Jack
+    | Jackorider
     | Trap
     | Vampire
     | Cerebus
     | Hydra
+    | ShamanBig
     | FireElemental
     | IceElemental
     | LightningElemental
     | EarthElemental
-    | ShamanBig
+    | Minotaur
+    | Dragon
+    | Ogre
+    | HydraBig
+    | Armoros
+    | Golem
     | RobotBig
     | Dinoman
     | Arachnos
