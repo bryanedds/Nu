@@ -659,8 +659,8 @@ module FieldDispatcher =
                                 | (_, _) -> withCmd (FadeOutSong Constants.Audio.FadeOutMsDefault) field
                             | (false, _) -> just field
 
-                        // half-way point of transition
-                        elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L then
+                        // just past half-way point of transition
+                        elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
                             let field = Field.updateFieldType (constant fieldTransition.FieldType) field
                             let field =
                                 Field.updateAvatar (fun avatar ->
