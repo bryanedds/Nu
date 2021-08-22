@@ -248,10 +248,10 @@ type TechType =
     | Slash
     | DarkCritical
     | Cyclone
-    | PowerCut
     | SneakCut
-    | DoubleCut
+    | PowerCut
     | ProvokeCut
+    | DoubleCut
     | Fire
     | Flame
     | Ice
