@@ -405,7 +405,7 @@ module Character =
                 match techData.TechType with
                 | Critical -> 1.333f
                 | Slash -> 1.5f
-                | TechType.Flame -> 1.667f
+                | TechType.Flame -> 1.75f
                 | Aura -> 0.5f
                 | _ -> 1.0f
             else 1.0f
