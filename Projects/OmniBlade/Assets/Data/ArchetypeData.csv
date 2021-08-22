@@ -5,10 +5,10 @@ Ninja,1.1,1,0.9,1,1,1,1,Knife,Vest,[[2 SneakCut] [4 PowerCut] [6 ProvokeCut] [8 
 Wizard,0.9,0.8,1.2,1,1.2,1,1,Rod,Robe,[[2 Fire] [4 Flame] [6 Ice] [8 Snowball]],SmallStature,
 Conjuror,0.9,0.8,1.2,1,1.2,1,1,Rod,Robe,[[2 Weaken] [4 Muddle] [6 ConjureIfrit] [8 Slow]],SmallStature,
 Cleric,0.9,0.9,1.1,1,1.1,1,1,Bow,Vest,[[2 Aura] [4 Empower] [6 Enlighten] [8 Protect]],SmallStature,
-Bat,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Drain magic.
+Bat,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and no Techs.
 Spider,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
 Snake,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
-Gorgon,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 Weaken] [2 Muddle] [4 Slow]],SmallStature,Physical attacks and Status magic.
+Gorgon,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[[2 Muddle]],SmallStature,Physical attacks and Status magic.
 Willowisp,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Fire magic.
 Chillowisp,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Ice magic.
 Fairy,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and Elemental magic.
@@ -17,13 +17,13 @@ Beetle,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks and 
 Rat,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Semi-weak physical attacks.
 Scorpion,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Status effects.
 Plant,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks with Debuff effects.
-Goblin,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [2 Flame] [3 Ice] [4 Snowball]],NormalStature,Normal physical attacks with normal Elemental magic.
-Soldier,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 SneakCut] [2 PowerCut] [3 ProvokeCut] [4 DoubleCut]],NormalStature,Physical attacks with ???.
-Ghost,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff magic.
+Ghost,0.5,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 SneakCut]],NormalStature,Physical attacks with Debuff magic.
+Goblin,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [2 Flame]],NormalStature,Normal physical attacks with normal Elemental magic.
+Soldier,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[2 PowerCut]],NormalStature,Physical attacks with ???.
 Imp,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff effects.
 Zombie,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Status effects.
 Skeleton,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Countering.
-Shaman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Status and Debuff magic.
+Shaman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Weaken]],NormalStature,Status and Debuff magic.
 Glurble,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Elemental magic and Countering.
 Wolfman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Countering.
 Dryad,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attack and Earth magic.
@@ -34,20 +34,20 @@ Merman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks and Lightn
 Feral,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Countering and Curative magic.
 Thief,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks and High Evasion.
 Lizardman,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attack w/ High Defense with Buff magic.
-Trixter,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[1 Fire] [2 Flame] [3 Ice] [4 Snowball]],NormalStature,???
+Trixter,1,1.4,1.4,1,1,1,1,Melee,Pelt,[[3 Ice] [4 Snowball]],NormalStature,???
 Monk,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],NormalStature,
 Tortoise,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attack w/ High Defense with Buff magic.
 Robot,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
 Harpy,1,1.4,1.4,1,1,1,1,Melee,Pelt,[],LargeStature,
-Avian,1.5,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[[1 Aura] [2 Empower] [3 Enlighten] [4 Protect]],LargeStature,Strong physical attacks with Curative magic.
-Minotaur,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash] [3 DarkCritical]],LargeStature,Physical attacks.
+Avian,1.5,1.55,1.55,1,1,1.5,1.5,Melee,Pelt,[[1 Aura]],LargeStature,Strong physical attacks with Curative magic.
+Minotaur,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash]],LargeStature,Physical attacks.
 Dragon,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attacks and Elemental magic.
 Troll,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Buff magic.
 Mare,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
 Ogre,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Curative magic.
 Djinn,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Elemental and Status magic.
 Naga,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
-Armoros,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[1 Critical] [2 Slash] [3 DarkCritical]],LargeStature,Strong physical attacks with Buff magic.
+Armoros,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[2 Slash] [3 DarkCritical]],LargeStature,Strong physical attacks with Buff magic.
 Golem,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Earth magic.
 Jack,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Fire and Debuff magic.
 Trap,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Debuff magic.
@@ -61,4 +61,4 @@ EarthElemental,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and 
 ShamanBig,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Elemental magic.
 RobotBig,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Physical attack and Lightning magic.
 Dinoman,2,1.7,1.7,1,1,2,2,Melee,Pelt,[],LargeStature,Strong physical attacks with Buff magic.
-Arachnos,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[1 Weaken] [2 Muddle] [3 ConjureIfrit] [4 Slow]],HugeStature,Strong physical attacks with Debuff magic.
+Arachnos,2,1.7,1.7,1,1,2,2,Melee,Pelt,[[3 ConjureIfrit]],HugeStature,Strong physical attacks with Debuff magic.

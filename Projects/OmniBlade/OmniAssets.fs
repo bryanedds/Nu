@@ -123,6 +123,7 @@ module Assets =
         let FireSound = asset<Sound> PackageName "Fire"
         let FlameSound = asset<Sound> PackageName "Flame"
         let ThunderSound = asset<Sound> PackageName "Thunder"
+        let IfritSound = asset<Sound> PackageName "Ifrit"
         let ExplosionSound = asset<Sound> PackageName "Explosion"
         let DebuffSound = asset<Sound> PackageName "Debuff"
         let FieldSong = { FadeInMs = 0; FadeOutMs = Constants.Audio.FadeOutMsDefault; Volume = Constants.Audio.SongVolumeDefault; Start = 0.0; Song = asset<Song> PackageName "Field" }

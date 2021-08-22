@@ -13,7 +13,7 @@ Type,ArchetypeType,LevelBase,AnimationSheet,PortraitOpt,WeaponOpt,ArmorOpt,Acces
 [Enemy FacelessSoldier],Soldier,5,[Castle FacelessSoldier],None,[Some Paws],None,[],[Some 0.333],1,1,A soldier whose face is long forgotten.
 [Enemy Hawk],Avian,5,[Castle Hawk],None,[Some Paws],None,[],[Some 0.333],1,1,A vengeful avian.
 [Enemy HeavyArmoros],Armoros,6,[Castle HeavyArmoros],None,[Some Paws],[Some ToughHide],[],[Some 0.5],4,4,The heaviest armoros you’ve ever seen!
-[Enemy Apparition],Ghost,7,[Castle Apparition],None,[Some Paws],None,[],[Some 0.25],1,1,A dark spirit rejected by Heaven and ignored by Hell.
-[Enemy Cloak],Shaman,7,[Castle Cloak],None,[Some Paws],None,[],[Some 0.333],1,1,A conjurer of the darkness and malice.
-[Enemy BloodArmoros],Armoros,7,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.333],1,1,A long-dead warrior shadow that lives off of blood.
-[Enemy AraneaImplicitum],Arachnos,8,[Castle AraneaImplicitum],None,[Some Paws],[Some StoneHide],[],[Some 0.5],1,1,Demon of Entanglement.
+[Enemy Apparition],Ghost,6,[Castle Apparition],None,[Some Paws],None,[],[Some 0.25],1,1,A dark spirit rejected by Heaven and ignored by Hell.
+[Enemy Cloak],Shaman,6,[Castle Cloak],None,[Some Paws],None,[],[Some 0.333],1,1,A conjurer of the darkness and malice.
+[Enemy BloodArmoros],Armoros,6,[Castle BloodArmoros],None,[Some Paws],None,[],[Some 0.333],1,1,A long-dead warrior shadow that lives off of blood.
+[Enemy AraneaImplicitum],Arachnos,7,[Castle AraneaImplicitum],None,[Some Paws],[Some StoneHide],[],[Some 0.5],1,1,Demon of Entanglement.

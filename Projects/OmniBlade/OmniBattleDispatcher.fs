@@ -748,7 +748,7 @@ module BattleDispatcher =
                     withCmds [playHit; displayCut] battle
                 | Fire ->
                     let time = World.getTickTime world
-                    let playFire = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.FlameSound)
+                    let playFire = PlaySound (60L, Constants.Audio.SoundVolumeDefault, Assets.Field.FireSound)
                     let displayFire = DisplayFire (0L, sourceIndex, targetIndex)
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
                     withCmds [playFire; displayFire] battle
@@ -825,7 +825,9 @@ module BattleDispatcher =
                 | ConjureIfrit ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
-                    withCmd (DisplayConjureIfrit 0L) battle
+                    let playIfrit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.IfritSound)
+                    let displayConjureIfrit = DisplayConjureIfrit 0L
+                    withCmds [playIfrit; displayConjureIfrit] battle
                 | Slow ->
                     let time = World.getTickTime world
                     let battle = Battle.updateCharacter (Character.animate time Cast2Animation) sourceIndex battle
