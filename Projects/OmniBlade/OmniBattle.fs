@@ -273,7 +273,7 @@ module Battle =
                                 layout.[x+0].[y-1] <- Right None
                             | _ -> tryRandomizeEnemy (inc attempts) index enemy layout
                         else tryRandomizeEnemy (inc attempts) index enemy layout
-                    | HugeStature ->
+                    | BossStature ->
                         if x > 1 && x < w - 2 && y > 1 && y < h - 2 then 
                             match
                                 (layout.[x+0].[y+2],
@@ -394,7 +394,7 @@ module Battle =
     let debug =
         match Map.tryFind DebugBattle Data.Value.Battles with
         | Some battle ->
-            let level = 9
+            let level = 24
             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
             let team =
                 Map.singleton 0 (Teammate.makeAtLevel level 0 Jinn) |>

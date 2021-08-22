@@ -995,7 +995,7 @@ module BattleDispatcher =
                     let effect = Effects.makeCancelEffect ()
                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Group world
                     let world = entity.SetEffect effect world
-                    let world = entity.SetCenter target.CenterOffset3 world
+                    let world = entity.SetCenter target.CenterOffset4 world
                     let world = entity.SetElevation (Constants.Battle.GuiEffectElevation + 1.0f) world
                     let world = entity.SetSelfDestruct true world
                     just world
@@ -1007,7 +1007,7 @@ module BattleDispatcher =
                     let effect = Effects.makeHitPointsChangeEffect delta
                     let (entity, world) = World.createEntity<EffectDispatcher> None DefaultOverlay Simulants.Battle.Scene.Group world
                     let world = entity.SetEffect effect world
-                    let world = entity.SetCenter target.CenterOffset2 world
+                    let world = entity.SetCenter target.CenterOffset3 world
                     let world = entity.SetElevation Constants.Battle.GuiEffectElevation world
                     let world = entity.SetSelfDestruct true world
                     just world
@@ -1226,8 +1226,7 @@ module BattleDispatcher =
 
                      // reticles
                      Content.entity<ReticlesDispatcher> "Reticles"
-                        [Entity.Position <== ally --> fun ally -> ally.CenterOffset
-                         Entity.Elevation == Constants.Battle.GuiElevation
+                        [Entity.Elevation == Constants.Battle.GuiElevation
                          Entity.Visible <== ally --> fun ally -> match ally.InputState with AimReticles _ -> true | _ -> false
                          Entity.Reticles <== battle --> fun battle ->
                             let aimType =
@@ -1235,7 +1234,12 @@ module BattleDispatcher =
                                 | Some character -> character.InputState.AimType
                                 | None -> NoAim
                             let characters = Battle.getTargets aimType battle
-                            let reticles = Map.map (fun _ (c : Character) -> c.CenterOffset) characters
+                            let reticles =
+                                Map.map (fun _ (c : Character) ->
+                                    match c.Stature with
+                                    | BossStature -> c.CenterOffset2
+                                    | _ -> c.CenterOffset)
+                                    characters
                             reticles
                          Entity.TargetSelectEvent ==|> fun evt -> msg (ReticlesSelect (evt.Data, index))
                          Entity.CancelEvent ==> msg (ReticlesCancel index)]]]

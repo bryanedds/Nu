@@ -281,7 +281,7 @@ type StatureType =
     | SmallStature
     | NormalStature
     | LargeStature
-    | HugeStature
+    | BossStature
 
 type ArchetypeType =
     | Apprentice
