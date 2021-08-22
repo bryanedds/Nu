@@ -301,9 +301,9 @@ type ArchetypeType =
     | Rat
     | Scorpion
     | Plant
+    | Ghost
     | Goblin
     | Soldier
-    | Ghost
     | Imp
     | Zombie
     | Skeleton

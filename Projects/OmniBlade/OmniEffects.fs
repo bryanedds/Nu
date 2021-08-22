@@ -417,10 +417,10 @@ module Effects =
           Content =
               Contents
                   (Shift 0.0f,
-                   [|fireSpin [|fireSpinSize; PositionAbsolute (v2 -99.0f 264.0f)|]
-                     fireSpin [|fireSpinSize; PositionAbsolute (v2 99.0f 264.0f)|]
-                     fireSpin [|fireSpinSize; PositionAbsolute (v2 -99.0f -222.0f)|]
-                     fireSpin [|fireSpinSize; PositionAbsolute (v2 99.0f -222.0f)|]|])}
+                   [|fireSpin [|fireSpinSize; PositionAbsolute (v2 -144.0f 168.0f)|]
+                     fireSpin [|fireSpinSize; PositionAbsolute (v2 144.0f 168.0f)|]
+                     fireSpin [|fireSpinSize; PositionAbsolute (v2 -144.0f -140.0f)|]
+                     fireSpin [|fireSpinSize; PositionAbsolute (v2 144.0f -140.0f)|]|])}
     
     let makeHopEffect start stop =
         { EffectName = "Hop"

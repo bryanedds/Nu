@@ -28,5 +28,5 @@ Castle3Battle5,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BloodArmoros],[Cast
 Castle3Battle6,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Cloak Cloak Apparition Apparition],[Castle CastleBattle],-18,[Some [Battle Battle]]
 Castle3Battle7,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BloodArmoros Cloak Cloak Cloak],[Castle CastleBattle],-18,[Some [Battle Battle]]
 Castle3Battle8,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[Apparition Apparition Apparition Apparition Apparition],[Castle CastleBattle],-18,[Some [Battle Battle]]
-Castle3Battle9,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BloodArmoros BloodArmoros BloodArmoros],[Castle CastleBattle],-18,[Some [Battle Battle]]
+Castle3Battle9,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[BloodArmoros BloodArmoros Apparition],[Castle CastleBattle],-18,[Some [Battle Battle]]
 AraneaImplicitumBattle,[[240 -48] [-384 -48] [-384 72] [-384 -156]],[AraneaImplicitum Apparition Apparition Apparition],[Castle CastleBattle],-18,[Some [Castle CastleBoss]]
