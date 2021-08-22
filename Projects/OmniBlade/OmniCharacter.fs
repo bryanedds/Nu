@@ -33,6 +33,7 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     member this.Magic = Algorithms.magic this.WeaponOpt this.Statuses this.ArchetypeType this.Level
     member this.Shield effectType = Algorithms.shield effectType this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
+    member this.Stature = match Map.tryFind this.ArchetypeType Data.Value.Archetypes with Some archetypeData -> archetypeData.Stature | None -> NormalStature
 
     static member getAttackResult effectType (source : CharacterState) (target : CharacterState) =
         let power = source.Power
@@ -260,6 +261,7 @@ module Character =
         member this.CenterOffset = this.Center + Constants.Battle.CharacterCenterOffset
         member this.CenterOffset2 = this.Center + Constants.Battle.CharacterCenterOffset2
         member this.CenterOffset3 = this.Center + Constants.Battle.CharacterCenterOffset3
+        member this.CenterOffset4 = this.Center + Constants.Battle.CharacterCenterOffset4
         member this.BottomOffset = this.Bottom + Constants.Battle.CharacterBottomOffset
         member this.BottomOffset2 = this.Bottom + Constants.Battle.CharacterBottomOffset2
         member this.BottomOffset3 = this.Bottom + Constants.Battle.CharacterBottomOffset3
@@ -281,6 +283,7 @@ module Character =
         member this.ArmorOpt = this.CharacterState_.ArmorOpt
         member this.Accessories = this.CharacterState_.Accessories
         member this.Techs = this.CharacterState_.Techs
+        member this.Stature = this.CharacterState_.Stature
         member this.Statuses = this.CharacterState_.Statuses
         member this.Defending = this.CharacterState_.Defending
         member this.Charging = this.CharacterState_.Charging
@@ -587,7 +590,7 @@ module Character =
                 let (size, celSize) =
                     match archetypeData.Stature with
                     | SmallStature | NormalStature | LargeStature -> (Constants.Gameplay.CharacterSize, Constants.Gameplay.CharacterCelSize)
-                    | HugeStature -> (Constants.Gameplay.BossSize, Constants.Gameplay.BossCelSize)
+                    | BossStature -> (Constants.Gameplay.BossSize, Constants.Gameplay.BossCelSize)
                 let position = if offsetCharacters then enemyData.EnemyPosition + Constants.Battle.CharacterOffset else enemyData.EnemyPosition
                 let bounds = v4Bounds position size
                 let hitPoints = Algorithms.hitPointsMax characterData.ArmorOpt archetypeType characterData.LevelBase
