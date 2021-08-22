@@ -465,13 +465,11 @@ module FieldDispatcher =
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 240.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.UpImage == asset "Field" "OptionButtonUp"
-                    Entity.DownImage == asset "Field" "OptionButtonDown"
-                    Entity.ClickEvent ==> msg Nop]
+                    Entity.DownImage == asset "Field" "OptionButtonDown"]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 320.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.UpImage == asset "Field" "HelpButtonUp"
-                    Entity.DownImage == asset "Field" "HelpButtonDown"
-                    Entity.ClickEvent ==> msg Nop]
+                    Entity.DownImage == asset "Field" "HelpButtonDown"]
                  Content.button Gen.name
                    [Entity.PositionLocal == position - v2 0.0f 400.0f; Entity.ElevationLocal == elevation; Entity.Size == v2 72.0f 72.0f
                     Entity.UpImage == asset "Field" "CloseButtonUp"
