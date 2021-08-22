@@ -273,7 +273,7 @@ module BattleDispatcher =
 
         and tickReady time timeStart (battle : Battle) =
             let timeLocal = time - timeStart
-            if timeLocal = inc 61L then // first frame after transitioning in (including last transition frame)
+            if timeLocal = inc 62L then // first frame after transitioning in (including last transition frame)
                 match battle.BattleSongOpt with
                 | Some battleSong -> withCmd (PlaySong (0, Constants.Audio.FadeOutMsDefault, Constants.Audio.SongVolumeDefault, 0.0, battleSong)) battle
                 | None -> just battle

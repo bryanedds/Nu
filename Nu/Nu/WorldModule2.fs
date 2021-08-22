@@ -226,10 +226,10 @@ module WorldModule2 =
         static member private updateScreenTransition3 (screen : Screen) transition world =
             // NOTE: we do not immediately transition when transition time is zero because we only want screen
             // transitions to happen outside the update loop!
-            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX for
-            // full black if fading.
+            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
+            // full opacity if fading and and an extra frame for the render messages to actually get processed.
             let transitionTicks = screen.GetTransitionTicks world
-            if transitionTicks = transition.TransitionLifeTime then
+            if transitionTicks = transition.TransitionLifeTime + 1L then
                 (true, screen.SetTransitionTicks 0L world)
             elif transitionTicks > transition.TransitionLifeTime then
                 Log.debug ("TransitionLifeTime for screen '" + scstring screen.ScreenAddress + "' must be a consistent multiple of TickRate.")
