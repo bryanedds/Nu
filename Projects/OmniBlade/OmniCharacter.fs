@@ -32,6 +32,8 @@ type [<ReferenceEquality; NoComparison>] CharacterState =
     member this.Power = Algorithms.power this.WeaponOpt this.Statuses this.ArchetypeType this.Level
     member this.Magic = Algorithms.magic this.WeaponOpt this.Statuses this.ArchetypeType this.Level
     member this.Shield effectType = Algorithms.shield effectType this.Accessories this.Statuses this.ArchetypeType this.Level
+    member this.Defense = Algorithms.defense this.Accessories this.Statuses this.ArchetypeType this.Level
+    member this.Absorb = Algorithms.absorb this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
     member this.Stature = match Map.tryFind this.ArchetypeType Data.Value.Archetypes with Some archetypeData -> archetypeData.Stature | None -> NormalStature
 
@@ -294,6 +296,8 @@ module Character =
         member this.Power = this.CharacterState_.Power
         member this.Magic = this.CharacterState_.Magic
         member this.Shield = this.CharacterState_.Shield
+        member this.Defense = this.CharacterState_.Defense
+        member this.Absorb = this.CharacterState_.Absorb
         member this.GoldPrize = this.CharacterState_.GoldPrize
         member this.ExpPrize = this.CharacterState_.ExpPrize
         member this.ItemPrizeOpt = this.CharacterState_.ItemPrizeOpt

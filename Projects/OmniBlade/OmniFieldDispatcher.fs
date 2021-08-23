@@ -1156,8 +1156,8 @@ module FieldDispatcher =
                                        let tpm = Algorithms.techPointsMax teammate.ArmorOpt characterData.ArchetypeType level
                                        let pow = Algorithms.power teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
                                        let mag = Algorithms.magic teammate.WeaponOpt Map.empty characterData.ArchetypeType level // no statuses outside battle
-                                       let def = Algorithms.shield Physical teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
-                                       let abs = Algorithms.shield Magical teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
+                                       let def = Algorithms.defense teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
+                                       let abs = Algorithms.absorb teammate.Accessories Map.empty characterData.ArchetypeType level // no statuses outside battle
                                        "HP  "   + (string teammate.HitPoints).PadLeft 3 + " /" + (string hpm).PadLeft 3 +
                                        "\nTP  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string tpm).PadLeft 3 +
                                        "\nPow " + (string pow).PadLeft 3 + "    Mag " + (string mag).PadLeft 3 +

@@ -28,6 +28,8 @@ type [<ReferenceEquality; NoComparison>] Teammate =
     member this.Power = Algorithms.power this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Magic = Algorithms.magic this.WeaponOpt Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Shield effectType = Algorithms.shield effectType this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
+    member this.Defense = Algorithms.defense this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
+    member this.Absorb = Algorithms.absorb this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
     static member equipWeaponOpt weaponTypeOpt (teammate : Teammate) =

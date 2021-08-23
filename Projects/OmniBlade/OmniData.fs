@@ -714,7 +714,8 @@ type ArchetypeData =
       Stamina : single // hit points scalar
       Strength : single // power scalar
       Intelligence : single // magic scalar
-      Toughness : single // shield scalar
+      Defense : single // defense scalar
+      Absorb : single // absorb scalar
       Focus : single // tech points scalar
       Wealth : single // gold scalar
       Mythos : single // exp scala
