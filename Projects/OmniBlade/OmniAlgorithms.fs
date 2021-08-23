@@ -132,9 +132,9 @@ module Algorithms =
             statuses |>
             Map.tryFindKey (function Shield (_, _) -> constant true | _ -> constant false) |>
             Option.mapOrDefault (function Shield (false, false) -> 0.667f | Shield (false, true) -> 0.333f | Shield (true, false) -> 1.333f | Shield (true, true) -> 1.667f | _ -> 1.0f) 1.0f
-        let (toughness, intelligence) = 
+        let (defense, absorb) = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
-            | Some archetypeData -> (archetypeData.Toughness, archetypeData.Intelligence)
+            | Some archetypeData -> (archetypeData.Defense, archetypeData.Absorb)
             | None -> (1.0f, 1.0f)
         let intermediate =
             match Seq.tryHead accessories with
@@ -143,8 +143,14 @@ module Algorithms =
                 | Some accessoryData -> single accessoryData.ShieldBase
                 | None -> 0.0f
             | None -> 0.0f
-        let scalar = match effectType with Magical -> intelligence * 0.5f | Physical -> toughness * 0.5f
+        let scalar = match effectType with Physical -> defense * 0.5f | Magical -> absorb * 0.5f
         (intermediate + single level) * shieldBuff * scalar |> int |> max 0
+
+    let defense accessories statuses archetypeType level =
+        shield Physical accessories statuses archetypeType level
+
+    let absorb accessories statuses archetypeType level =
+        shield Magical accessories statuses archetypeType level
 
     let techs archetypeType level =
         let techs =
