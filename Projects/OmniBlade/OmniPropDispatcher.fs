@@ -133,7 +133,7 @@ module PropDispatcher =
                     | Seal (color, _, _) ->
                         match prop.PropState with
                         | SealState true ->
-                            let time = World.getTickTime world
+                            let time = World.getUpdateTime world
                             let localTime = time / 20L
                             let celSize = v2 32.0f 32.0f // TODO: P1: put this in Constants.
                             let celColumn = single (localTime % 4L)
@@ -185,14 +185,14 @@ module PropDispatcher =
                         let image = Assets.Field.FlameImage
                         let column = match flameType with FatFlame -> 0 | SkinnyFlame -> 3 | SmallFlame -> 1 | LargeFlame -> 2
                         let row = if mirror then 4 else 0
-                        let cel = int (World.getTickTime world / 10L % 4L) // TODO: P1: put this in Constants.
+                        let cel = int (World.getUpdateTime world / 10L % 4L) // TODO: P1: put this in Constants.
                         let inset =
                             v4 // TODO: P1: put the following hard-coded dimensions in Constants.
                                 (single column * 16.0f) (single (row + cel) * 16.0f)
                                 16.0f 16.0f
                         (false, colWhite, colZero, Some inset, image)
                     | SavePoint ->
-                        let time = World.getTickTime world
+                        let time = World.getUpdateTime world
                         let image = Assets.Field.SavePointImage
                         let column = (int time / 15) % 4
                         let insetPosition = v2 (single column) 0.0f * Constants.Gameplay.TileCelSize

@@ -318,7 +318,7 @@ module Character =
     let isReadyForAutoBattle character =
         Option.isNone character.AutoBattleOpt_ &&
         character.IsEnemy &&
-        character.ActionTime >= 30.0f
+        (character.ActionTime >= 60.0f || character.ActionTime < 0.0f) // HACK: instantly get enemies ready at the start of battle
 
     let isAutoTeching character =
         match character.AutoBattleOpt_ with
@@ -603,7 +603,7 @@ module Character =
                 let characterType = characterData.CharacterType
                 let characterState = CharacterState.make characterData hitPoints techPoints expPoints characterData.WeaponOpt characterData.ArmorOpt characterData.Accessories
                 let indexRev = indexMax - index // NOTE: since enemies are ordered strongest to weakest in battle data, we assign make them move sooner as index increases.
-                let actionTime = 0.0f - Constants.Battle.EnemyActionTimeSpacing * single indexRev
+                let actionTime = -Single.Epsilon - Constants.Battle.EnemyActionTimeSpacing * single indexRev
                 let enemy = make bounds (EnemyIndex index) characterType characterState characterData.AnimationSheet celSize Rightward actionTime
                 Some enemy
             | None -> None
