@@ -34,6 +34,13 @@ type Origin =
             | _ -> failwithumf ()
         (origin, rand)
 
+type OriginRand =
+    | OriginStatic of Origin
+    | OriginSouthern // SW, S, SE
+    | OriginNorthern // NW, N, NE
+    | OriginHorizonal // W, E
+    | OriginRandom
+
 type Segment =
     | Segment0 = 0b000000
     | Segment1N = 0b000001
