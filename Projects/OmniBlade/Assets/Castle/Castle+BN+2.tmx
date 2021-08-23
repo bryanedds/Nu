@@ -19,7 +19,7 @@
   </object>
   <object id="2" gid="235" x="744" y="1200" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [StairsPortal true] [IX 1] Upward TombGround [IX 0] false [AraneaImplicitumDefeated]]"/>
+    <property name="I" value="[Portal [StairsPortal true] [IX 2] Upward TombGround [IX 0] false [AraneaImplicitumDefeated]]"/>
    </properties>
   </object>
  </objectgroup>

@@ -19,7 +19,7 @@
   </object>
   <object id="3" gid="235" x="744" y="288" width="48" height="48">
    <properties>
-    <property name="I" value="[Portal [StairsPortal true] [IX 1] Downward [Castle 2] [IX 0] false [HeavyArmorosDefeated]]"/>
+    <property name="I" value="[Portal [StairsPortal true] [IX 2] Downward [Castle 2] [IX 1] false [HeavyArmorosDefeated]]"/>
    </properties>
   </object>
  </objectgroup>
