@@ -28,7 +28,7 @@
   </object>
   <object id="6" gid="235" x="624" y="48" width="288" height="48">
    <properties>
-    <property name="I" value="[Portal AirPortal North Downward [Castle 0] South]"/>
+    <property name="I" value="[Portal AirPortal [IX 0] Downward [Castle 0] [IX 0]]"/>
    </properties>
   </object>
  </objectgroup>

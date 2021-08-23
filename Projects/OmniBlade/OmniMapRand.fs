@@ -301,15 +301,15 @@ type MapRand =
         if floor = 0 then
             let (openingX, openingY, openingWidth, openingHeight, openingInfo) =
                 match origin with
-                | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2, mapTmx.TileHeight * 2, "[Portal AirPortal Center Downward " + fieldName + "Connector North]")
-                | OriginN ->    (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal North Downward " + fieldName + "Connector North]")
-                | OriginE ->    (31 * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal East Leftward " + fieldName + "Connector North]")
-                | OriginS ->    (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal South Upward " + fieldName + "Connector North]")
-                | OriginW ->    (0  * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal West Rightward " + fieldName + "Connector North]")
-                | OriginNE ->   (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal South Downward " + fieldName + "Connector North]")
-                | OriginNW ->   (0  * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal West Rightward " + fieldName + "Connector North]")
-                | OriginSE ->   (31 * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal East Leftward " + fieldName + "Connector North]")
-                | OriginSW ->   (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal South Upward " + fieldName + "Connector North]")
+                | OriginC ->    (15 * mapTmx.TileWidth, 15 * mapTmx.TileHeight, mapTmx.TileWidth * 2, mapTmx.TileHeight * 2, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginN ->    (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginE ->    (31 * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Leftward " + fieldName + "Connector [IX 0]]")
+                | OriginS ->    (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
+                | OriginW ->    (0  * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Rightward " + fieldName + "Connector [IX 0]]")
+                | OriginNE ->   (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
+                | OriginNW ->   (0  * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Rightward " + fieldName + "Connector [IX 0]]")
+                | OriginSE ->   (31 * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Leftward " + fieldName + "Connector [IX 0]]")
+                | OriginSW ->   (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
             let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
             let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * 32
             let object = TmxMap.makeObject entryId 0 (double openingXX) (double openingYY) (double openingWidth) (double openingHeight)
@@ -317,7 +317,7 @@ type MapRand =
             objects.[0] <- object
         else
             let (stairsX, stairsY, stairsWidth, stairsHeight) = (16 * mapTmx.TileWidth, 16 * mapTmx.TileHeight, mapTmx.TileWidth, mapTmx.TileHeight)
-            let stairsInfo = "[Portal [StairsPortal true] [IX 0] Upward [" + fieldName + " " + scstring (dec floor) + "] [IX 1]]"
+            let stairsInfo = "[Portal [StairsPortal true] [IX 1] Upward [" + fieldName + " " + scstring (dec floor) + "] [IX 2]]"
             let stairsXX = stairsX + cursor.X * mapTmx.TileWidth * 32
             let stairsYY = stairsY + cursor.Y * mapTmx.TileHeight * 32
             let object = TmxMap.makeObject entryId 0 (double stairsXX) (double stairsYY) (double stairsWidth) (double stairsHeight)
