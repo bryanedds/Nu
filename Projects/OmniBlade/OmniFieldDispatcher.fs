@@ -984,7 +984,11 @@ module FieldDispatcher =
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
                             match FieldData.tryGetTileMap field.OmniSeedState fieldData world with
-                            | Some tileMap -> tileMap
+                            | Some tileMapChc ->
+                                match tileMapChc with
+                                | Choice1Of3 tileMap
+                                | Choice2Of3 (tileMap, _)
+                                | Choice3Of3 (tileMap, _) -> tileMap
                             | None -> failwithumf ()
                         | None -> failwithumf ()
                      Entity.TileIndexOffset <== field --> fun field ->
@@ -1003,8 +1007,12 @@ module FieldDispatcher =
                      Entity.TmxMap <== field --|> fun field world ->
                         match Map.tryFind field.FieldType Data.Value.Fields with
                         | Some fieldData ->
-                            match FieldData.tryGetTileMapFade field.OmniSeedState fieldData world with
-                            | Some tileMapFade -> tileMapFade
+                            match FieldData.tryGetTileMap field.OmniSeedState fieldData world with
+                            | Some tileMapChc ->
+                                match tileMapChc with
+                                | Choice1Of3 _ -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
+                                | Choice2Of3 (_, tileMapFade) -> tileMapFade
+                                | Choice3Of3 (_, _) ->  World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
                             | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
                         | None -> World.getTileMapMetadata Assets.Default.TileMapEmpty world |> __c
                      Entity.TileLayerClearance == 10.0f]

@@ -809,7 +809,7 @@ type [<NoEquality; NoComparison>] PropDescriptor =
 type [<NoEquality; NoComparison>] FieldTileMap =
     | FieldStatic of TileMap AssetTag
     | FieldConnector of TileMap AssetTag * TileMap AssetTag
-    | FieldRandom of int * single * OriginRand * int * string
+    | FieldRandom of int * single * Origin option * int * string
 
 type [<NoEquality; NoComparison>] FieldData =
     { FieldType : FieldType // key
@@ -823,7 +823,7 @@ type [<NoEquality; NoComparison>] FieldData =
 [<RequireQualifiedAccess>]
 module FieldData =
 
-    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, TmxMap option>
+    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, TmxMap * Origin>>
     let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, (TmxMap * TmxObjectGroup * TmxObject) list>
     let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
@@ -864,37 +864,27 @@ module FieldData =
         | None ->
             let tileMapOpt =
                 match fieldData.FieldTileMap with
-                | FieldStatic fieldAsset
-                | FieldConnector (fieldAsset, _) ->
+                | FieldStatic fieldAsset ->
                     match World.tryGetTileMapMetadata fieldAsset world with
-                    | Some (_, _, tileMap) -> Some tileMap
+                    | Some (_, _, tileMap) -> Some (Choice1Of3 tileMap)
                     | None -> None
-                | FieldRandom (walkLength, bias, origin, floor, fieldPath) ->
+                | FieldConnector (fieldAsset, fieldFadeAsset) ->
+                    match (World.tryGetTileMapMetadata fieldAsset world, World.tryGetTileMapMetadata fieldFadeAsset world) with
+                    | (Some (_, _, tileMap), Some (_, _, tileMapFade)) -> Some (Choice2Of3 (tileMap, tileMapFade))
+                    | (_, _) -> None
+                | FieldRandom (walkLength, bias, originOpt, floor, fieldPath) ->
                     let rand = Rand.makeFromSeedState rotatedSeedState
+                    let (originRandom, rand) = Origin.random rand
+                    let origin = Option.getOrDefault originRandom originOpt
                     let (cursor, mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
                     let mapTmx = MapRand.toTmx fieldName fieldPath origin cursor floor mapRand
-                    Some mapTmx
-            tileMapsMemoized <- Map.add memoKey tileMapOpt tileMapsMemoized
+                    Some (Choice3Of3 (mapTmx, origin))
+            match tileMapOpt with
+            | Some tileMapChc -> tileMapsMemoized <- Map.add memoKey tileMapChc tileMapsMemoized
+            | None -> ()
             tileMapOpt
-        | Some tileMapOpt -> tileMapOpt
-
-    let tryGetTileMapFade omniSeedState fieldData world =
-        let rotatedSeedState = OmniSeedState.rotate true fieldData.FieldType omniSeedState
-        let memoKey = (rotatedSeedState, fieldData.FieldType)
-        match Map.tryFind memoKey tileMapsMemoized with
-        | None ->
-            let tileMapOpt =
-                match fieldData.FieldTileMap with
-                | FieldStatic _
-                | FieldRandom _ -> None
-                | FieldConnector (_, fieldFadeAsset) ->
-                    match World.tryGetTileMapMetadata fieldFadeAsset world with
-                    | Some (_, _, tileMap) -> Some tileMap
-                    | None -> None
-            tileMapsMemoized <- Map.add memoKey tileMapOpt tileMapsMemoized
-            tileMapOpt
-        | Some tileMapOpt -> tileMapOpt
+        | tileMapOpt -> tileMapOpt
 
     let getPropObjects omniSeedState fieldData world =
         let rotatedSeedState = OmniSeedState.rotate false fieldData.FieldType omniSeedState
@@ -903,11 +893,15 @@ module FieldData =
         | None ->
             let propObjects =
                 match tryGetTileMap omniSeedState fieldData world with
-                | Some tileMap ->
-                    if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
-                        let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
-                        enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (tileMap, group, propObject)) |> Seq.toList
-                    else []
+                | Some tileMapChc ->
+                    match tileMapChc with
+                    | Choice1Of3 tileMap
+                    | Choice2Of3 (tileMap, _)
+                    | Choice3Of3 (tileMap, _) ->
+                        if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
+                            let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
+                            enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (tileMap, group, propObject)) |> Seq.toList
+                        else []
                 | None -> []
             propObjectsMemoized <- Map.add memoKey propObjects propObjectsMemoized
             propObjects
@@ -941,33 +935,37 @@ module FieldData =
 
     let tryGetSpiritType omniSeedState avatarBottom fieldData world =
         match tryGetTileMap omniSeedState fieldData world with
-        | Some tmxTileMap ->
-            match fieldData.FieldTileMap with
-            | FieldRandom (walkLength, _, origin, _, _) ->
-                let tileMapBounds = v4Bounds v2Zero (v2 (single tmxTileMap.Width * single tmxTileMap.TileWidth) (single tmxTileMap.Height * single tmxTileMap.TileHeight))
-                let distanceFromOriginMax =
-                    let walkRatio = single walkLength * Constants.Field.WalkLengthScalar
-                    let tileMapBoundsScaled = tileMapBounds.Scale (v2Dup walkRatio)
-                    let delta = tileMapBoundsScaled.Bottom - tileMapBoundsScaled.Top
-                    delta.Length ()
-                let distanceFromOrigin =
-                    match origin with
-                    | OriginC -> let delta = avatarBottom - tileMapBounds.Center in delta.Length ()
-                    | OriginN -> let delta = avatarBottom - tileMapBounds.Top in delta.Length ()
-                    | OriginE -> let delta = avatarBottom - tileMapBounds.Right in delta.Length ()
-                    | OriginS -> let delta = avatarBottom - tileMapBounds.Bottom in delta.Length ()
-                    | OriginW -> let delta = avatarBottom - tileMapBounds.Left in delta.Length ()
-                    | OriginNE -> let delta = avatarBottom - tileMapBounds.TopRight in delta.Length ()
-                    | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
-                    | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
-                    | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
-                let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
-                match battleIndex with
-                | 0 | 1 -> Some WeakSpirit
-                | 2 | 3 -> Some NormalSpirit
-                | _ -> Some StrongSpirit
-            | FieldConnector _ -> None
-            | FieldStatic _ -> None
+        | Some tileMapChc ->
+            match tileMapChc with
+            | Choice3Of3 (tileMap, origin) ->
+                match fieldData.FieldTileMap with
+                | FieldRandom (walkLength, _, _, _, _) ->
+                    let tileMapBounds = v4Bounds v2Zero (v2 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight))
+                    let distanceFromOriginMax =
+                        let walkRatio = single walkLength * Constants.Field.WalkLengthScalar
+                        let tileMapBoundsScaled = tileMapBounds.Scale (v2Dup walkRatio)
+                        let delta = tileMapBoundsScaled.Bottom - tileMapBoundsScaled.Top
+                        delta.Length ()
+                    let distanceFromOrigin =
+                        match origin with
+                        | OriginC -> let delta = avatarBottom - tileMapBounds.Center in delta.Length ()
+                        | OriginN -> let delta = avatarBottom - tileMapBounds.Top in delta.Length ()
+                        | OriginE -> let delta = avatarBottom - tileMapBounds.Right in delta.Length ()
+                        | OriginS -> let delta = avatarBottom - tileMapBounds.Bottom in delta.Length ()
+                        | OriginW -> let delta = avatarBottom - tileMapBounds.Left in delta.Length ()
+                        | OriginNE -> let delta = avatarBottom - tileMapBounds.TopRight in delta.Length ()
+                        | OriginNW -> let delta = avatarBottom - tileMapBounds.TopLeft in delta.Length ()
+                        | OriginSE -> let delta = avatarBottom - tileMapBounds.BottomRight in delta.Length ()
+                        | OriginSW -> let delta = avatarBottom - tileMapBounds.BottomLeft in delta.Length ()
+                    let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
+                    match battleIndex with
+                    | 0 | 1 -> Some WeakSpirit
+                    | 2 | 3 -> Some NormalSpirit
+                    | _ -> Some StrongSpirit
+                | FieldConnector _ -> None
+                | FieldStatic _ -> None
+            | Choice1Of3 _ -> None
+            | Choice2Of3 _ -> None
         | None -> None
 
 [<RequireQualifiedAccess>]
