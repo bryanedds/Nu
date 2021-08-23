@@ -23,7 +23,7 @@ module CharacterDispatcher =
 
         static let getSpriteInset (entity : Entity) world =
             let character = entity.GetCharacter world
-            let index = Character.getAnimationIndex (World.getTickTime world) character
+            let index = Character.getAnimationIndex (World.getUpdateTime world) character
             let offset = v2 (single index.X) (single index.Y) * character.CelSize
             let inset = v4Bounds offset character.CelSize
             inset
@@ -32,14 +32,14 @@ module CharacterDispatcher =
             let character = entity.GetCharacter world
             let color =
                 if character.CharacterAnimationType = WoundAnimation && character.IsEnemy then
-                    match Character.getAnimationProgressOpt (World.getTickTime world) character with
+                    match Character.getAnimationProgressOpt (World.getUpdateTime world) character with
                     | Some progress -> Color (byte 255, byte 128, byte 255, byte 255 - (byte (progress * 255.0f))) // purple
                     | None -> failwithumf ()
                 else Color.White
             color
 
         static let getSpriteGlow (entity : Entity) world =
-            let pulseTime = World.getTickTime world % Constants.Battle.CharacterPulseLength
+            let pulseTime = World.getUpdateTime world % Constants.Battle.CharacterPulseLength
             let pulseProgress = single pulseTime / single Constants.Battle.CharacterPulseLength
             let pulseIntensity = byte (sin (pulseProgress * single Math.PI) * 255.0f)
             let character = entity.GetCharacter world

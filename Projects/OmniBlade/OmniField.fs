@@ -181,7 +181,7 @@ module Field =
     let clearSpirits field =
         { field with Spirits_= [||] }
 
-    let advanceSpirits (field : Field) world =
+    let updateSpirits (field : Field) world =
         match field.FieldTransitionOpt with
         | None ->
             let field =
@@ -190,7 +190,7 @@ module Field =
             let field =
                 { field with
                     Spirits_ =
-                        Array.map (Spirit.advance (World.getTickTime world) field.Avatar.Center) field.Spirits_ }
+                        Array.map (Spirit.advance (World.getUpdateTime world) field.Avatar.Center) field.Spirits_ }
             let field =
                 { field with
                     Spirits_ =
@@ -211,7 +211,7 @@ module Field =
                             match FieldData.tryGetSpiritType field.OmniSeedState field.Avatar.Bottom fieldData world with
                             | Some spiritType ->
                                 let spiritMovement = SpiritPattern.toSpiritMovement (SpiritPattern.random ())
-                                let spirit = Spirit.spawn (World.getTickTime world) field.Avatar.Bottom spiritType spiritMovement
+                                let spirit = Spirit.spawn (World.getUpdateTime world) field.Avatar.Bottom spiritType spiritMovement
                                 Some spirit
                             | None -> None) |>
                         Array.definitize

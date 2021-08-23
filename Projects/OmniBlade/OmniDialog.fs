@@ -20,7 +20,7 @@ type [<ReferenceEquality; NoComparison>] Dialog =
       DialogBattleOpt : (BattleType * Advent Set) option }
 
     static member update dialog world =
-        let increment = if World.getTickTime world % 2L = 0L then 1 else 0
+        let increment = if World.getUpdateTime world % 2L = 0L then 1 else 0
         let dialog = { dialog with DialogProgress = dialog.DialogProgress + increment }
         dialog
 

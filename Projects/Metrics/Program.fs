@@ -336,7 +336,7 @@ type TestBedGameDispatcher () =
     override this.Message (stringsOpt, message, _, world) =
         match message with
         | () ->
-            match World.getTickTime world % 4L with
+            match World.getUpdateTime world % 4L with
             | 0L -> just { StringsOpt = None }
             | 1L -> just { StringsOpt = None }
             | 2L -> just { StringsOpt = Some (Map.ofList [(0, "0"); (1, "1"); (2, "2")]) }

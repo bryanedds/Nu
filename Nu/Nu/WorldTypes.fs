@@ -133,7 +133,7 @@ type [<StructuralEquality; NoComparison>] NuConfig =
 type [<StructuralEquality; NoComparison>] WorldConfig =
     { Imperative : bool
       StandAlone : bool
-      TickRate : int64
+      UpdateRate : int64
       SdlConfig : SdlConfig
       NuConfig : NuConfig }
 
@@ -141,7 +141,7 @@ type [<StructuralEquality; NoComparison>] WorldConfig =
     static member defaultConfig =
         { Imperative = true
           StandAlone = true
-          TickRate = 1L
+          UpdateRate = 1L
           SdlConfig = SdlConfig.defaultConfig
           NuConfig = NuConfig.defaultConfig }
 
@@ -524,7 +524,7 @@ module WorldTypes =
           Model : DesignerProperty
           Ecs : World Ecs
           TransitionState : TransitionState
-          TransitionTicks : int64
+          TransitionUpdates : int64
           Incoming : Transition
           Outgoing : Transition
           Persistent : bool
@@ -544,7 +544,7 @@ module WorldTypes =
               Model = { DesignerType = typeof<unit>; DesignerValue = () }
               Ecs = ecs
               TransitionState = IdlingState
-              TransitionTicks = 0L // TODO: roll this field into Incoming/OutgoingState values
+              TransitionUpdates = 0L // TODO: roll this field into Incoming/OutgoingState values
               Incoming = Transition.make Incoming
               Outgoing = Transition.make Outgoing
               Persistent = true

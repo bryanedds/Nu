@@ -14,9 +14,9 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] noMoreThanOncePerUpdate (stream : Stream<'a, World>) =
         World.noMoreThanOncePerUpdate stream
 
-    /// Take events from a stream only while World.isTicking evaluates to true.
-    let [<DebuggerHidden; DebuggerStepThrough>] isTicking stream =
-        Stream.filterEvent (fun _ -> World.isTicking) stream
+    /// Take events from a stream only while World.isAdvancing evaluates to true.
+    let [<DebuggerHidden; DebuggerStepThrough>] isAdvancing stream =
+        Stream.filterEvent (fun _ -> World.isAdvancing) stream
 
     /// Take events from a stream only when the simulant is contained by, or is the same as,
     /// the currently selected screen. Game is always considered 'selected' as well.

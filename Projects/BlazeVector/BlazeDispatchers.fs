@@ -32,7 +32,7 @@ module BulletModule =
         static let handleCollision evt world =
             let bullet = evt.Subscriber : Entity
             let world =
-                if World.isTicking world
+                if World.isAdvancing world
                 then World.destroyEntity bullet world
                 else world
             (Cascade, world)
@@ -89,7 +89,7 @@ module EnemyModule =
         static let handleCollision evt world =
             let enemy = evt.Subscriber : Entity
             let world =
-                if World.isTicking world then
+                if World.isAdvancing world then
                     let collidee = evt.Data.Collidee.Entity
                     let isBullet = collidee.Is<BulletDispatcher> world
                     if isBullet then
@@ -161,9 +161,9 @@ module PlayerModule =
         static let handleSpawnBullet evt world =
             let player = evt.Subscriber : Entity
             let world =
-                if World.isTicking world then
+                if World.isAdvancing world then
                     if not (player.HasFallen world) then
-                        if World.getTickTime world % 5L = 0L
+                        if World.getUpdateTime world % 5L = 0L
                         then shootBullet player world
                         else world
                     else world
@@ -173,7 +173,7 @@ module PlayerModule =
         static let getLastTimeOnGround (player : Entity) world =
             if not (World.isBodyOnGround (player.GetPhysicsId world) world)
             then player.GetLastTimeOnGroundNp world
-            else World.getTickTime world
+            else World.getUpdateTime world
 
         static let handleMovement evt world =
             let player = evt.Subscriber : Entity
@@ -192,7 +192,7 @@ module PlayerModule =
 
         static let handleJump evt world =
             let player = evt.Subscriber : Entity
-            let time = World.getTickTime world
+            let time = World.getUpdateTime world
             if  time >= player.GetLastTimeJumpNp world + 12L &&
                 time <= player.GetLastTimeOnGroundNp world + 10L then
                 let world = player.SetLastTimeJumpNp time world
@@ -252,7 +252,7 @@ module SceneModule =
             let world =
                 match command with
                 | AdjustCamera ->
-                    if World.getTickRate world <> 0L then
+                    if World.getUpdateRate world <> 0L then
                         let playerPosition = Simulants.Gameplay.Scene.Player.GetPosition world
                         let playerSize = Simulants.Gameplay.Scene.Player.GetSize world
                         let eyeCenter = World.getEyeCenter world

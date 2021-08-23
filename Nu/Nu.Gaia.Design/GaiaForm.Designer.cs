@@ -124,8 +124,8 @@
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
             this.reloadAssetsButton = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
-            this.tickingButton = new System.Windows.Forms.ToolStripButton();
-            this.decTickTime = new System.Windows.Forms.ToolStripButton();
+            this.advancingButton = new System.Windows.Forms.ToolStripButton();
+            this.decUpdateTime = new System.Windows.Forms.ToolStripButton();
             this.editWhileInteractiveCheckBox = new System.Windows.Forms.ToolStripButton();
             this.toolStrip = new System.Windows.Forms.ToolStrip();
             this.fileDropDownButton = new System.Windows.Forms.ToolStripDropDownButton();
@@ -150,12 +150,12 @@
             this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.quickSizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem11 = new System.Windows.Forms.ToolStripSeparator();
-            this.startStopTickingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.startStopAdvancingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem12 = new System.Windows.Forms.ToolStripSeparator();
             this.changeGroupNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator11 = new System.Windows.Forms.ToolStripSeparator();
-            this.resetTickTime = new System.Windows.Forms.ToolStripButton();
-            this.incTickTime = new System.Windows.Forms.ToolStripButton();
+            this.resetUpdateTime = new System.Windows.Forms.ToolStripButton();
+            this.incUpdateTime = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.songPlaybackButton = new System.Windows.Forms.ToolStripButton();
             this.displayPanel = new Nu.Gaia.Design.SelectablePanel();
@@ -1192,27 +1192,27 @@
             this.toolStripSeparator9.Name = "toolStripSeparator9";
             this.toolStripSeparator9.Size = new System.Drawing.Size(6, 25);
             // 
-            // tickingButton
+            // advancingButton
             // 
-            this.tickingButton.CheckOnClick = true;
-            this.tickingButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.tickingButton.Image = ((System.Drawing.Image)(resources.GetObject("tickingButton.Image")));
-            this.tickingButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.tickingButton.Name = "tickingButton";
-            this.tickingButton.Size = new System.Drawing.Size(72, 22);
-            this.tickingButton.Text = "Ticking (F5)";
+            this.advancingButton.CheckOnClick = true;
+            this.advancingButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.advancingButton.Image = ((System.Drawing.Image)(resources.GetObject("advancingButton.Image")));
+            this.advancingButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.advancingButton.Name = "advancingButton";
+            this.advancingButton.Size = new System.Drawing.Size(72, 22);
+            this.advancingButton.Text = "Advancing (F5)";
             // 
-            // decTickTime
+            // decUpdateTime
             // 
-            this.decTickTime.AutoSize = false;
-            this.decTickTime.AutoToolTip = false;
-            this.decTickTime.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.decTickTime.Image = ((System.Drawing.Image)(resources.GetObject("decTickTime.Image")));
-            this.decTickTime.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.decTickTime.Name = "decTickTime";
-            this.decTickTime.Size = new System.Drawing.Size(17, 22);
-            this.decTickTime.Text = "[-";
-            this.decTickTime.ToolTipText = "Decrement Time (Ctrl+-)";
+            this.decUpdateTime.AutoSize = false;
+            this.decUpdateTime.AutoToolTip = false;
+            this.decUpdateTime.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.decUpdateTime.Image = ((System.Drawing.Image)(resources.GetObject("decUpdateTime.Image")));
+            this.decUpdateTime.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.decUpdateTime.Name = "decUpdateTime";
+            this.decUpdateTime.Size = new System.Drawing.Size(17, 22);
+            this.decUpdateTime.Text = "[-";
+            this.decUpdateTime.ToolTipText = "Decrement Time (Ctrl+-)";
             // 
             // editWhileInteractiveCheckBox
             // 
@@ -1256,12 +1256,12 @@
             this.toolStripSeparator8,
             this.reloadAssetsButton,
             this.toolStripSeparator9,
-            this.tickingButton,
+            this.advancingButton,
             this.editWhileInteractiveCheckBox,
             this.toolStripSeparator11,
-            this.decTickTime,
-            this.resetTickTime,
-            this.incTickTime,
+            this.decUpdateTime,
+            this.resetUpdateTime,
+            this.incUpdateTime,
             this.toolStripSeparator7,
             this.songPlaybackButton});
             this.toolStrip.Location = new System.Drawing.Point(0, 0);
@@ -1363,7 +1363,7 @@
             this.deleteToolStripMenuItem,
             this.quickSizeToolStripMenuItem,
             this.toolStripMenuItem11,
-            this.startStopTickingToolStripMenuItem,
+            this.startStopAdvancingToolStripMenuItem,
             this.toolStripMenuItem12,
             this.changeGroupNameToolStripMenuItem});
             this.editDropDownButton.Image = ((System.Drawing.Image)(resources.GetObject("editDropDownButton.Image")));
@@ -1443,12 +1443,12 @@
             this.toolStripMenuItem11.Name = "toolStripMenuItem11";
             this.toolStripMenuItem11.Size = new System.Drawing.Size(198, 6);
             // 
-            // startStopTickingToolStripMenuItem
+            // startStopAdvancingToolStripMenuItem
             // 
-            this.startStopTickingToolStripMenuItem.Name = "startStopTickingToolStripMenuItem";
-            this.startStopTickingToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5;
-            this.startStopTickingToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
-            this.startStopTickingToolStripMenuItem.Text = "[&S]tart / Stop Ticking";
+            this.startStopAdvancingToolStripMenuItem.Name = "startStopAdvancingToolStripMenuItem";
+            this.startStopAdvancingToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5;
+            this.startStopAdvancingToolStripMenuItem.Size = new System.Drawing.Size(201, 22);
+            this.startStopAdvancingToolStripMenuItem.Text = "[&S]tart / Stop Advancing";
             // 
             // toolStripMenuItem12
             // 
@@ -1467,28 +1467,28 @@
             this.toolStripSeparator11.Name = "toolStripSeparator11";
             this.toolStripSeparator11.Size = new System.Drawing.Size(6, 25);
             // 
-            // resetTickTime
+            // resetUpdateTime
             // 
-            this.resetTickTime.AutoToolTip = false;
-            this.resetTickTime.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.resetTickTime.Image = ((System.Drawing.Image)(resources.GetObject("resetTickTime.Image")));
-            this.resetTickTime.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.resetTickTime.Name = "resetTickTime";
-            this.resetTickTime.Size = new System.Drawing.Size(37, 22);
-            this.resetTickTime.Text = "Time";
-            this.resetTickTime.ToolTipText = "Reset Tick Time (Ctrl+0)";
+            this.resetUpdateTime.AutoToolTip = false;
+            this.resetUpdateTime.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.resetUpdateTime.Image = ((System.Drawing.Image)(resources.GetObject("resetUpdateTime.Image")));
+            this.resetUpdateTime.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.resetUpdateTime.Name = "resetUpdateTime";
+            this.resetUpdateTime.Size = new System.Drawing.Size(37, 22);
+            this.resetUpdateTime.Text = "Time";
+            this.resetUpdateTime.ToolTipText = "Reset Update Time (Ctrl+0)";
             // 
-            // incTickTime
+            // incUpdateTime
             // 
-            this.incTickTime.AutoSize = false;
-            this.incTickTime.AutoToolTip = false;
-            this.incTickTime.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-            this.incTickTime.Image = ((System.Drawing.Image)(resources.GetObject("incTickTime.Image")));
-            this.incTickTime.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.incTickTime.Name = "incTickTime";
-            this.incTickTime.Size = new System.Drawing.Size(17, 22);
-            this.incTickTime.Text = "+]";
-            this.incTickTime.ToolTipText = "Increment Time (Ctrl++)";
+            this.incUpdateTime.AutoSize = false;
+            this.incUpdateTime.AutoToolTip = false;
+            this.incUpdateTime.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.incUpdateTime.Image = ((System.Drawing.Image)(resources.GetObject("incUpdateTime.Image")));
+            this.incUpdateTime.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.incUpdateTime.Name = "incUpdateTime";
+            this.incUpdateTime.Size = new System.Drawing.Size(17, 22);
+            this.incUpdateTime.Text = "+]";
+            this.incUpdateTime.ToolTipText = "Increment Time (Ctrl++)";
             // 
             // toolStripSeparator7
             // 
@@ -1806,8 +1806,8 @@
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         public System.Windows.Forms.ToolStripButton reloadAssetsButton;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
-        public System.Windows.Forms.ToolStripButton tickingButton;
-        public System.Windows.Forms.ToolStripButton decTickTime;
+        public System.Windows.Forms.ToolStripButton advancingButton;
+        public System.Windows.Forms.ToolStripButton decUpdateTime;
         public System.Windows.Forms.ToolStripButton editWhileInteractiveCheckBox;
         public System.Windows.Forms.ToolStrip toolStrip;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
@@ -1834,12 +1834,12 @@
         public System.Windows.Forms.ToolStripMenuItem createToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem deleteToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem quickSizeToolStripMenuItem;
-        public System.Windows.Forms.ToolStripMenuItem startStopTickingToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem startStopAdvancingToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem changeGroupNameToolStripMenuItem;
         public System.Windows.Forms.TabPage evaluatorTabPage;
         public System.Windows.Forms.TabPage preludeTabPage;
-        public System.Windows.Forms.ToolStripButton incTickTime;
-        public System.Windows.Forms.ToolStripButton resetTickTime;
+        public System.Windows.Forms.ToolStripButton incUpdateTime;
+        public System.Windows.Forms.ToolStripButton resetUpdateTime;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
         public System.Windows.Forms.ToolStripButton songPlaybackButton;
     }

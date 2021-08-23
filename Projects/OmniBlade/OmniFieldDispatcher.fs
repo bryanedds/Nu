@@ -279,7 +279,7 @@ module FieldDispatcher =
             | Animate (characterAnimationType, target) ->
                 match target with
                 | AvatarTarget ->
-                    let field = Field.updateAvatar (Avatar.animate (World.getTickTime world) characterAnimationType) field
+                    let field = Field.updateAvatar (Avatar.animate (World.getUpdateTime world) characterAnimationType) field
                     (Cue.Nil, just field)
                 | NpcTarget _ | ShopkeepTarget _ | AllyTarget _ | EnemyTarget _ ->
                     (Cue.Nil, just field)
@@ -320,15 +320,15 @@ module FieldDispatcher =
                 (Cue.Nil, just (Field.updateAdvents (Set.remove advent) field))
 
             | Wait time ->
-                (WaitState (World.getTickTime world + time), just field)
+                (WaitState (World.getUpdateTime world + time), just field)
 
             | WaitState time ->
-                if World.getTickTime world < time
+                if World.getUpdateTime world < time
                 then (cue, just field)
                 else (Cue.Nil, just field)
 
             | Fade (time, fadeIn, target) ->
-                (FadeState (World.getTickTime world, time, fadeIn, target), just field)
+                (FadeState (World.getUpdateTime world, time, fadeIn, target), just field)
 
             | FadeState (startTime, totalTime, fadeIn, target) ->
                 match target with
@@ -337,7 +337,7 @@ module FieldDispatcher =
                     | Some propKey ->
                         match field.PropStates.[propKey] with
                         | NpcState (_, direction, _, glow, exists) ->
-                            let localTime = World.getTickTime world - startTime
+                            let localTime = World.getUpdateTime world - startTime
                             let progress = single localTime / single totalTime
                             let color = colWhite * if fadeIn then progress else 1.0f - progress
                             let field = Field.updatePropStates (Map.add propKey (NpcState (npcType, direction, color, glow, exists))) field
@@ -356,7 +356,7 @@ module FieldDispatcher =
                         { FieldType = fieldType
                           FieldDestination = fieldDestination
                           FieldDirection = fieldDirection
-                          FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
+                          FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
                     let field = Field.updateFieldTransitionOpt (constant (Some fieldTransition)) field
                     (WarpState, just field)
 
@@ -585,7 +585,7 @@ module FieldDispatcher =
                                     { FieldType = fieldType
                                       FieldDestination = destination
                                       FieldDirection = direction
-                                      FieldTransitionTime = World.getTickTime world + Constants.Field.TransitionTime }
+                                      FieldTransitionTime = World.getUpdateTime world + Constants.Field.TransitionTime }
                                 let field = Field.updateFieldTransitionOpt (constant (Some transition)) field
                                 (cmd (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)) :: signals, field)
                             else (signals, field)
@@ -617,13 +617,13 @@ module FieldDispatcher =
                         Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt then
-                        match Field.advanceSpirits field world with
+                        match Field.updateSpirits field world with
                         | Left (battleData, field) ->
                             let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
                             let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
                             let startTime = clockTime - playTime
                             let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                            let battle = Battle.makeFromTeam field.Inventory prizePool field.Team battleData (World.getTickTime world)
+                            let battle = Battle.makeFromTeam field.Inventory prizePool field.Team battleData (World.getUpdateTime world)
                             let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
                             let field = Field.updateBattleOpt (constant (Some battle)) field
                             let fade = cmd (FadeOutSong 1000)
@@ -646,7 +646,7 @@ module FieldDispatcher =
                 | Some fieldTransition ->
 
                     // handle field transition
-                    let time = World.getTickTime world
+                    let time = World.getUpdateTime world
                     let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
                     let (signals, field) =
 
@@ -844,7 +844,7 @@ module FieldDispatcher =
             | TryBattle (battleType, consequents) ->
                 match Map.tryFind battleType Data.Value.Battles with
                 | Some battleData ->
-                    let time = World.getTickTime world
+                    let time = World.getUpdateTime world
                     let clockTime = let t = World.getClockTime world in t.ToUnixTimeMilliseconds ()
                     let playTime = Option.getOrDefault clockTime field.FieldSongTimeOpt
                     let startTime = clockTime - playTime
@@ -932,7 +932,7 @@ module FieldDispatcher =
                 | (false, _) -> just world
 
             | PlaySound (delay, volume, sound) ->
-                let world = World.schedule (World.playSound volume sound) (World.getTickTime world + delay) world
+                let world = World.schedule (World.playSound volume sound) (World.getUpdateTime world + delay) world
                 just world
 
             | PlaySong (fadeIn, fadeOut, volume, start, assetTag) ->
@@ -967,7 +967,7 @@ module FieldDispatcher =
                      Entity.Color <== field --|> fun field world ->
                         match field.FieldTransitionOpt with
                         | Some transition ->
-                            let time = World.getTickTime world
+                            let time = World.getUpdateTime world
                             let deltaTime = single transition.FieldTransitionTime - single time
                             let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
                             let progress =

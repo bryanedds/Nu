@@ -56,7 +56,7 @@ type MyGameplayDispatcher () =
                     World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                 else world
             | EyeTrack ->
-                if World.getTickRate world <> 0L
+                if World.getUpdateRate world <> 0L
                 then Simulants.Game.SetEyeCenter (Simulants.Gameplay.Scene.Player.GetCenter world) world
                 else world
             | Back ->

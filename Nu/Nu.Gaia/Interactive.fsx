@@ -54,8 +54,8 @@ let (sdlConfig, sdlDeps) = Gaia.tryMakeSdlDeps form |> Either.getRightValue
 // make world ready for use in Gaia
 let world = Gaia.tryMakeWorld false sdlDeps { WorldConfig.defaultConfig with SdlConfig = sdlConfig } plugin |> Either.getRightValue
 
-// stop world from ticking (new variable since you can't shadow in repl for some reason...)
-let world' = World.setTickRate 0L world
+// stop world from advancing (new variable since you can't shadow in repl for some reason...)
+let world' = World.setUpdateRate 0L world
 
 //run Gaia from repl
 Gaia.runFromRepl tautology targetDir sdlDeps form world'
