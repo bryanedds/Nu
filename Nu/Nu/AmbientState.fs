@@ -64,10 +64,6 @@ module AmbientState =
     let getTickRate state =
         state.TickRate
 
-    /// Get the tick rate as a floating-point value.
-    let getTickRateF state =
-        single (getTickRate state)
-
     /// Set the tick rate.
     let setTickRateImmediate tickRate state =
         { state with TickRate = tickRate }

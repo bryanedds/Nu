@@ -274,11 +274,6 @@ module WorldModule =
         static member getTickRate world =
             World.getAmbientStateBy AmbientState.getTickRate world
 
-        /// Get the tick rate as a floating-point value.
-        [<FunctionBinding>]
-        static member getTickRateF world =
-            World.getAmbientStateBy AmbientState.getTickRateF world
-
         /// Set the tick rate, starting at the end of the current frame.
         [<FunctionBinding>]
         static member setTickRate tickRate world =
