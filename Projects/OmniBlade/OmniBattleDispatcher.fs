@@ -124,7 +124,7 @@ module BattleDispatcher =
                             let target = Battle.getCharacter targetIndex battle
                             if target.IsHealthy then
                                 let battle =
-                                    if Character.shouldCounter target
+                                    if Battle.shouldCounter targetIndex battle
                                     then Battle.counterAttack sourceIndex targetIndex battle
                                     else battle
                                 let battle = Battle.updateCurrentCommandOpt (constant None) battle
@@ -616,17 +616,10 @@ module BattleDispatcher =
 
             | AttackCharacter2 (sourceIndex, targetIndex) ->
                 let time = World.getTickTime world
-                let source = Battle.getCharacter sourceIndex battle
-                let target = Battle.getCharacter targetIndex battle
-                let alliesHealthy = Battle.getAlliesHealthy battle
-                let damage = Character.getAttackResult Physical source target
+                let damage = Battle.getAttackResult Physical sourceIndex targetIndex battle
                 let battle = Battle.updateHitPoints targetIndex false false -damage battle
-                let (battle, sigs) =
-                    if target.HitPoints <= 0
-                    then (battle, [Message (ResetCharacter targetIndex)]) // wounded
-                    else (Battle.updateCharacter (Character.animate time DamageAnimation) targetIndex battle, []) // just damaged
-                let sigs = Command (DisplayHitPointsChange (targetIndex, -damage)) :: sigs
-                withSigs sigs battle
+                let battle = Battle.updateCharacter (Character.animate time DamageAnimation) targetIndex battle
+                withCmd (DisplayHitPointsChange (targetIndex, -damage)) battle
 
             | ConsumeCharacter1 (consumable, sourceIndex) ->
                 let time = World.getTickTime world

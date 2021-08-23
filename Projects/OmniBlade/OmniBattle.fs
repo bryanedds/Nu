@@ -225,6 +225,11 @@ module Battle =
 
     let shouldCounter characterIndex battle =
         getCharacterBy Character.shouldCounter characterIndex battle
+    
+    let getAttackResult effectType sourceIndex targetIndex battle =
+        let source = getCharacter sourceIndex battle
+        let target = getCharacter targetIndex battle
+        Character.getAttackResult effectType source target
 
     let evaluateTechMove sourceIndex targetIndex techType battle =
         match Map.tryFind techType Data.Value.Techs with
