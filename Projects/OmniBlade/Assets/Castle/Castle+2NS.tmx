@@ -3,21 +3,21 @@
  <tileset firstgid="1" source="Castle.tsx"/>
  <layer id="2" name="Floor" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJzt0bENACAIAEESl6dhZxoHMAgq8YvvkCNRh4gGs1n0/W74+Ph1e1fLvvMV//QcPn4nv2ofPj4+fnZd/Fv/hP+f76S3L3E=
+   eJzt1SsOADAIBFGSXh7DnWt6Aj4lm4wYR3kCUT9mnixe2ffV8PHx5/Z2p+b/nsPHx8fHx8ff//+3/O47TYWv7189pTAb
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJztlvEKgjAQxseGL2JEPVhWKJW9iE9kRL1QEfV/O7jBPJzedIbEDj7YuPn9huL2VUqIykOHRDhrn/h5DdGU/EI/f+rR2YPf5rdz7LFA76sU4oa6oMwcenfJ49t+xgfGpWMP8F7B+6X1Rj1RZg69D5Nv+xkfGNey/TvBevBe6vEKtUCZOfTWis83fsYHxo8Ofpc3pyi/zS9Vbv7YonzOusifPz/XvS3qyPQNyR/iG/mRPwU/s/4Fqs0P+FyF5JeMXDImp/Txa9nMJXY2oRnFN6dw+A+SS+xsQjOKb07h8FPVzCV2NqEZxTenhLx/uBX58+NnPXd7qMrJOUn34DpbOfkjZzzvYk91robWv/G/JAcl0A==
+   eJztl1EKwjAMhkvLLqKIHsypONR5kZ1IEb3QRPTdBhLoxLSpdMqkgR9SmuQr20P/NkapJkKbQrGxKuJmfaI++ZXt3wW09/BrQf+SOWOFs09aqTPqiKI17F00zz/obj/10BzIa+YM8F1h9s3qjrqiaA17Dw+/femnHpoDOZzx3X8CPsye2HyKGqNoDXszw/NHpttPPTQH8tbD981OFXBGjv+tyPxh8dd2b4HaJqiL5bv1qesyP/Mz31/v+gqp//DVxfLJV0j9R6gulk++Quo/QnWxfNdXhPyHxKcM7f7J/P75ZeDOThXgEebMG6R0/AMnqf/gxLGl+uf35y/4TwxPCCo=
   </data>
  </layer>
  <objectgroup id="3" name="Props">
-  <object id="3" gid="235" x="1248" y="384" width="48" height="48">
+  <object id="3" gid="235" x="1296" y="768" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
   </object>
-  <object id="4" gid="235" x="672" y="768" width="48" height="48">
+  <object id="4" gid="235" x="192" y="768" width="48" height="48">
    <properties>
     <property name="I" value="[ChestSpawn]"/>
    </properties>
