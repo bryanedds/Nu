@@ -341,9 +341,9 @@ type MapRand =
                 | OriginW ->    (0  * mapTmx.TileWidth, 13 * mapTmx.TileHeight, mapTmx.TileWidth * 1, mapTmx.TileHeight * 6, "[Portal AirPortal [IX 0] Rightward " + fieldName + "Connector [IX 0]]")
                 | OriginN ->    (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
                 | OriginNE ->   (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
-                | OriginNW ->   (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Rightward " + fieldName + "Connector [IX 0]]")
+                | OriginNW ->   (13 * mapTmx.TileWidth, 31 * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Downward " + fieldName + "Connector [IX 0]]")
                 | OriginS ->    (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
-                | OriginSE ->   (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Leftward " + fieldName + "Connector [IX 0]]")
+                | OriginSE ->   (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
                 | OriginSW ->   (13 * mapTmx.TileWidth, 0  * mapTmx.TileHeight, mapTmx.TileWidth * 6, mapTmx.TileHeight * 1, "[Portal AirPortal [IX 0] Upward " + fieldName + "Connector [IX 0]]")
             let openingXX = openingX + cursor.X * mapTmx.TileWidth * 32
             let openingYY = openingY + inc cursor.Y * mapTmx.TileHeight * 32
