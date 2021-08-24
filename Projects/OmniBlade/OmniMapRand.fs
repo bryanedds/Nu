@@ -260,6 +260,8 @@ type MapRand =
                 (map :: maps, rand))
                 ([], rand)
                 biases
+        let (maps, rand) = Rand.nextPermutation maps rand
+        let maps = List.take 3 maps
         let map = List.reduce MapRand.concat maps
         let opening =
             if floor = 0 then
