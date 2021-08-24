@@ -912,15 +912,17 @@ module FieldData =
         let memoKey = (rotatedSeedState, fieldData.FieldType)
         match Map.tryFind memoKey propDescriptorsMemoized with
         | None ->
+            let rand = Rand.makeFromSeedState rotatedSeedState
             let propObjects = getPropObjects omniSeedState fieldData world
             let propsUninflated = List.choose (fun (tileMap, group, object) -> objectToPropOpt object group tileMap) propObjects
+            let (propsRandomized, rand) = Rand.randomize propsUninflated rand
             let (propDescriptors, _, _) =
-                List.foldBack (fun prop (propDescriptors, treasures, rand) ->
+                Array.foldBack (fun prop (propDescriptors, treasures, rand) ->
                     let (propDescriptor, treasures, rand) = inflateProp prop treasures rand
                     let treasures = if FStack.isEmpty treasures then FStack.ofSeq fieldData.Treasures else treasures
                     (propDescriptor :: propDescriptors, treasures, rand))
-                    propsUninflated
-                    ([], FStack.ofSeq fieldData.Treasures, Rand.makeFromSeedState rotatedSeedState)
+                    propsRandomized
+                    ([], FStack.ofSeq fieldData.Treasures, rand)
             propDescriptorsMemoized <- Map.add memoKey propDescriptors propDescriptorsMemoized
             propDescriptors
         | Some propDescriptors -> propDescriptors
