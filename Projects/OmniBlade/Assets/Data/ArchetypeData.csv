@@ -20,6 +20,7 @@ Plant,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[],SmallStature,Weak physical attacks wit
 Ghost,0.5,1,1,1,1,1,0.5,0.5,Melee,Pelt,[[1 SneakCut]],NormalStature,Physical attacks with Debuff magic.
 Goblin,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[1 Fire]],NormalStature,Normal physical attacks with normal Elemental magic.
 Soldier,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[2 PowerCut]],NormalStature,Physical attacks with ???.
+Knight,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[[2 PowerCut]],NormalStature,Physical attacks with ???.
 Imp,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Debuff effects.
 Zombie,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Status effects.
 Skeleton,1,1.4,1.4,1,1,1,1,1,Melee,Pelt,[],NormalStature,Physical attacks with Countering.
@@ -50,6 +51,7 @@ Trap,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Strong physical atta
 Vampire,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Status magic.
 Cerebus,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Strong physical attacks w/ Countering.
 Hydra,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack with Status effects.
+Gargoyle,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack with Gravity magic.
 ShamanBig,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Elemental magic.
 FireElemental,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack and Fire magic.
 IceElemental,1.4,1.55,1.55,1,1,1,1.5,1.5,Melee,Pelt,[],LargeStature,Physical attack and Ice magic.
