@@ -874,7 +874,7 @@ module FieldData =
                     | (_, _) -> None
                 | FieldRandom (walkLength, bias, originRand, floor, fieldPath) ->
                     let rand = Rand.makeFromSeedState rotatedSeedState
-                    let (origin, rand) = OriginRand.random originRand rand
+                    let (origin, rand) = OriginRand.toOrigin originRand rand
                     let (cursor, mapRand, _) = MapRand.makeFromRand walkLength bias Constants.Field.MapRandSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
                     let mapTmx = MapRand.toTmx fieldName fieldPath origin cursor floor mapRand

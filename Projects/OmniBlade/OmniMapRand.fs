@@ -21,17 +21,27 @@ type Origin =
 
 type OriginRand =
     | OriginStatic of Origin
-    | OriginSouthern
     | OriginNorthern
-    | OriginHorizonal
+    | OriginEastern
+    | OriginSouthern
+    | OriginWestern
+    | OriginHorizontal
+    | OriginVertical
+    | OriginCardinal
+    | OriginDiagonal
     | OriginRandom
 
-    static member random originRand rand =
+    static member toOrigin originRand rand =
         match originRand with
         | OriginStatic origin -> (origin, rand)
-        | OriginSouthern -> Rand.nextItem [OriginSW; OriginS; OriginSE] rand
         | OriginNorthern -> Rand.nextItem [OriginNW; OriginN; OriginNE] rand
-        | OriginHorizonal -> Rand.nextItem [OriginW; OriginE] rand
+        | OriginEastern -> (OriginE, rand)
+        | OriginSouthern -> Rand.nextItem [OriginSW; OriginS; OriginSE] rand
+        | OriginWestern -> (OriginW, rand)
+        | OriginHorizontal -> Rand.nextItem [OriginE; OriginW] rand
+        | OriginVertical -> Rand.nextItem [OriginN; OriginS] rand
+        | OriginCardinal -> Rand.nextItem [OriginN; OriginE; OriginS; OriginW] rand
+        | OriginDiagonal -> Rand.nextItem [OriginNE; OriginNW; OriginSE; OriginSW] rand
         | OriginRandom -> Rand.nextItem [OriginC; OriginN; OriginE; OriginS; OriginW; OriginNE; OriginNW; OriginSE; OriginSW] rand
 
 type Segment =
